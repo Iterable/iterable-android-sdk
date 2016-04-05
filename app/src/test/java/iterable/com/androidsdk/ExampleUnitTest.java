@@ -1,4 +1,4 @@
-package iterable.com.androidsdk;
+package com.iterable.androidsdk;
 
 import org.junit.Test;
 

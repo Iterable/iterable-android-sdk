@@ -1,4 +1,4 @@
-package iterable.com.iterableapi;
+package com.iterable.iterableapi;
 
 import org.junit.Test;
 

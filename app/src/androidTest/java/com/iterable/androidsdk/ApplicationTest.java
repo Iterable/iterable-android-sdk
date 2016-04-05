@@ -1,4 +1,4 @@
-package iterable.com.iterableapi;
+package com.iterable.androidsdk;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

@@ -1,4 +1,4 @@
-package iterable.com.androidsdk;
+package com.iterable.androidsdk;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
