@@ -4,10 +4,13 @@ import android.app.Application;
 import android.content.Context;
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -28,9 +31,14 @@ public class IterableApi {
     //static final String iterableBaseUrl = "https://api.iterable.com/api/";
     //static final String iterableBaseUrl = "https://canary.iterable.com/api/";
     //static final String iterableBaseUrl = "http://staging.iterable.com/api/";
-    static final String iterableBaseUrl = "http://192.168.86.103:9000/api/";
+    static final String iterableBaseUrl = "http://192.168.86.102:9000/api/";
+
+    static final int devTestCampaignId = 2;
 
     static IterableApi sharedInstance = null;
+
+    static Application application;
+    static Context applicationContext;
 
     //Singleton
     public static IterableApi sharedInstanceWithApiKey(String apikey, String email)
@@ -53,10 +61,58 @@ public class IterableApi {
         this._email = email;
     }
 
+    public static void init(Context applicationContext){
+        IterableApi.applicationContext = applicationContext;
+        Class applicationClass = applicationContext.getClass();
+        Log.d("class", applicationClass.toString());
+    }
+
+    public void registerDeviceToken(String email, String regid) {
+        String platform = "GCM";
+        //TODO: update this application name
+        String applicationName = "iterableapp";
+
+        JSONObject requestJSON = new JSONObject();
+        try {
+            requestJSON.put("email", email);
+            JSONObject device = new JSONObject();
+            device.put("token", regid);
+            device.put("platform", platform);
+            device.put("applicationName", applicationName);
+            JSONObject dataFields = new JSONObject();
+
+            device.put("dataFields", dataFields);
+            requestJSON.put("device", device);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        String jsonString = requestJSON.toString();
+        sendRequest("users/registerDeviceToken", jsonString);
+    }
+
     public void track(JSONObject dataFields) {
 
         String jsonString = dataFields.toString();
         sendRequest("events/trackPushOpen", jsonString);
+    }
+
+    //TODO: setup test pushes with a given campaignID
+    public void sendPush(String email) {
+        JSONObject requestJSON = new JSONObject();
+        int campaignId = devTestCampaignId;
+
+        try {
+            requestJSON.put("recipientEmail", email);
+            requestJSON.put("campaignId", campaignId);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        String jsonString = requestJSON.toString();
+        sendRequest("push/target", jsonString);
     }
 
     protected void sendRequest(String uri, String json) {
