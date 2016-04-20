@@ -31,11 +31,9 @@ public class IterableApi {
     //static final String iterableBaseUrl = "https://api.iterable.com/api/";
     //static final String iterableBaseUrl = "https://canary.iterable.com/api/";
     //static final String iterableBaseUrl = "http://staging.iterable.com/api/";
-    static final String iterableBaseUrl = "http://192.168.86.102:9000/api/";
+    static final String iterableBaseUrl = "http://192.168.86.108:9000/api/";
 
-    static final int devTestCampaignId = 2;
-
-    static IterableApi sharedInstance = null;
+    protected static IterableApi sharedInstance = null;
 
     static Application application;
     static Context applicationContext;
@@ -98,10 +96,25 @@ public class IterableApi {
         sendRequest("events/trackPushOpen", jsonString);
     }
 
-    //TODO: setup test pushes with a given campaignID
-    public void sendPush(String email) {
+    public void trackPushOpen(int campaignId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
-        int campaignId = devTestCampaignId;
+
+        try {
+            requestJSON.put("email", _email);
+            requestJSON.put("campaignId", campaignId);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        String jsonString = requestJSON.toString();
+        sendRequest("events/trackPushOpen", jsonString);
+    }
+
+
+    //TODO: setup test pushes with a given campaignID
+    public void sendPush(String email, int campaignId) {
+        JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put("recipientEmail", email);
