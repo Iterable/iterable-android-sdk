@@ -136,6 +136,9 @@ public class IterableApi {
             writer.close();
             os.close();
 
+            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+            //TODO: read input stream to validate request status
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
