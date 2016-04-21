@@ -88,8 +88,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        String jsonString = requestJSON.toString();
-        sendRequest("users/registerDeviceToken", jsonString);
+        sendRequest("users/registerDeviceToken", requestJSON);
     }
 
     public void track(String eventName, JSONObject dataFields) {
@@ -104,24 +103,22 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        String jsonString = requestJSON.toString();
-        sendRequest("events/track", jsonString);
+        sendRequest("events/track", requestJSON);
     }
 
-    public void trackConversion(String email, int campaignId, JSONObject dataFields) {
+    public void trackConversion(int campaignId, JSONObject dataFields) {
 
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put("email", email);
+            requestJSON.put("email", _email);
             requestJSON.put("campaignId", campaignId);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        String jsonString = requestJSON.toString();
-        sendRequest("events/trackConversion", jsonString);
+        sendRequest("events/trackConversion", requestJSON);
     }
 
     public void trackPushOpen(int campaignId, JSONObject dataFields) {
@@ -135,12 +132,9 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        String jsonString = requestJSON.toString();
-        sendRequest("events/trackPushOpen", jsonString);
+        sendRequest("events/trackPushOpen", requestJSON);
     }
 
-
-    //TODO: setup test pushes with a given campaignID
     public void sendPush(String email, int campaignId) {
         JSONObject requestJSON = new JSONObject();
 
@@ -152,13 +146,12 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        String jsonString = requestJSON.toString();
-        sendRequest("push/target", jsonString);
+        sendRequest("push/target", requestJSON);
     }
 
     // Performs network operations on an async thread instead of the main thread.
-    protected void sendRequest(String uri, String json) {
-        new IterableRequest().execute(iterableBaseUrl, _apiKey, uri, json);
+    private void sendRequest(String uri, JSONObject json) {
+        new IterableRequest().execute(iterableBaseUrl, _apiKey, uri, json.toString());
     }
 
 }
