@@ -2,34 +2,23 @@ package com.iterable.iterableapi;
 
 import android.app.Application;
 import android.content.Context;
-import android.os.AsyncTask;
 import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+import java.security.KeyPair;
+import java.util.Map;
 
 /**
  * Created by davidtruong on 4/4/16.
  */
 public class IterableApi {
-    private String _apiKey;
-    private String _email;
 
-
-    //Configs for endpoints
+    /**
+     * Configuration URLs for different enviornment endpoints.
+     * TODO: Should this be moved into IterableRequest?
+     */
     //static final String iterableBaseUrl = "https://api.iterable.com/api/";
     //static final String iterableBaseUrl = "https://canary.iterable.com/api/";
     //static final String iterableBaseUrl = "http://staging.iterable.com/api/";
@@ -40,43 +29,53 @@ public class IterableApi {
     static Application application;
     static Context applicationContext;
 
-    //Singleton
-    public static IterableApi sharedInstanceWithApiKey(String apikey, String email)
+    private Context _context;
+    private String _apiKey;
+    private String _email;
+
+    public IterableApi(Context context, String apiKey, String email){
+        //TODO: add in data validation
+
+        this._context = context;
+        this._apiKey = apiKey;
+        this._email = email;
+    }
+
+    /**
+     * Creates and returns the stored IterableApi instance.
+     * @param context
+     * @param apikey
+     * @param email
+     * @return the singleton instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKey(Context context, String apikey, String email)
     {
-        //TODO: what if the app is already running and the notif is pressed?
+        //TODO: what if the singleton is called with different init params?
         if (sharedInstance == null)
         {
-            sharedInstance = new IterableApi(apikey, email);
-
-            //Create instance and track pushOpen
-            //sharedInstance.trackPushOpen();
+            sharedInstance = new IterableApi(context, apikey, email);
         }
 
         return sharedInstance;
     }
 
-    public IterableApi(String apiKey, String email){
-        //TODO: add in data validation
-        this._apiKey = apiKey;
-        this._email = email;
-    }
-
-    public static void init(Context applicationContext){
-        IterableApi.applicationContext = applicationContext;
-        Class applicationClass = applicationContext.getClass();
-        Log.d("class", applicationClass.toString());
-    }
-
-    public void registerDeviceToken(String email, String regid) {
+    /**
+     * Registers the GCM registration ID with Iterable.
+     * @param email
+     * @param token
+     */
+    public void registerDeviceToken(String email, String token) {
+        //TODO: Update thie platform flag for Kindle support
         String platform = "GCM";
-        //TODO: update this application name
-        String applicationName = "iterableapp";
+
+        int stringId = _context.getApplicationInfo().labelRes;
+        String applicationName  = _context.getString(stringId);
 
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put("email", email);
             JSONObject device = new JSONObject();
-            device.put("token", regid);
+            device.put("token", token);
             device.put("platform", platform);
             device.put("applicationName", applicationName);
             JSONObject dataFields = new JSONObject();
@@ -91,13 +90,39 @@ public class IterableApi {
         sendRequest("users/registerDeviceToken", requestJSON);
     }
 
-    public void track(String eventName, JSONObject dataFields) {
+//TODO: hashmap vs additional params
+    public void track(String eventName, JSONObject dataFields, Map.Entry<String, Object>... additionalParams) {
+        //String[]requiredArgs = {""};
+        String[] optArgs = {"createdAt", "dataFields", "campaignId", "templateId"};
+
 
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put("email", _email);
             requestJSON.put("eventName", eventName);
+
+            if (dataFields != null) {
+                requestJSON.put("dataFields", eventName);
+            }
+
+//            for (Map.Entry<String, Object> param: additionalParams) {
+//                String key = param.getKey();
+//                Object obj = param.getValue();
+//                requestJSON.put(key, obj);
+//            }
+
+            //================================
+            //EX: check if not null
+
+
+            //default values in parameters: still have to null check
+            //secondary overloaded methods : don't know what combination of params exist
+            // optional args (array of objects): can't specify the key
+            //map as the last arg
+            //json data as the last arg
+
+            //================================
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -105,6 +130,7 @@ public class IterableApi {
 
         sendRequest("events/track", requestJSON);
     }
+
 
     public void trackConversion(int campaignId, JSONObject dataFields) {
 
@@ -149,9 +175,32 @@ public class IterableApi {
         sendRequest("push/target", requestJSON);
     }
 
+    // FIXME: 4/22/16
+    public void trackPurchase(CommerceItem[] commerceItems, double total) {
+        JSONObject requestJSON = new JSONObject();
+
+        //TODO: optional user
+        JSONObject userJSON = new JSONObject();
+
+        for(CommerceItem item : commerceItems) {
+            //item.serialize();
+        }
+
+        try {
+            userJSON.put("email", _email);
+            requestJSON.put("user", userJSON);
+            requestJSON.put("items", commerceItems.toString());
+            requestJSON.put("total", total);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendRequest("commerce/trackPurchase", requestJSON);
+    }
+
     // Performs network operations on an async thread instead of the main thread.
     private void sendRequest(String uri, JSONObject json) {
         new IterableRequest().execute(iterableBaseUrl, _apiKey, uri, json.toString());
     }
-
 }
