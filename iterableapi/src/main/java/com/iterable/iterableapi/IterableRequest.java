@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
@@ -11,15 +12,23 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
+ * Async task to handle sending data to the Iterable server
  * Created by davidtruong on 4/21/16.
  */
 class IterableRequest extends AsyncTask<String, Integer, String> {
+    static final String TAG = "IterableRequest";
+
     private Exception exception;
 
-    // iterableBaseUrl
-    // _apiKey
-    // String uri
-    // String json
+    /**
+     * Sends the given request to Iterable using a HttpUserConnection
+     * @param params array of parameters
+     *               iterableBaseUrl
+     *               apiKey
+     *               uri
+     *               json
+     * @return
+     */
     protected String doInBackground(String... params) {
         String iterableBaseUrl = params[0];
         String apiKey = params[1];
@@ -47,7 +56,10 @@ class IterableRequest extends AsyncTask<String, Integer, String> {
             os.close();
 
             InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-            //TODO: read input stream to validate request status
+
+            java.util.Scanner s = new java.util.Scanner(in).useDelimiter("\\A");
+            String inputString = s.hasNext() ? s.next() : "";
+            Log.d(TAG, inputString);
 
         } catch (Exception e) {
             e.printStackTrace();
