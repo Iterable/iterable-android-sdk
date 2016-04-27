@@ -90,9 +90,11 @@ public class IterableApi {
         sendRequest("users/registerDeviceToken", requestJSON);
     }
 
-//TODO: hashmap vs additional params
-    public void track(String eventName, JSONObject dataFields, Map.Entry<String, Object>... additionalParams) {
-        //String[]requiredArgs = {""};
+    public void track(String eventName, JSONObject dataFields) {
+        track(eventName, dataFields, null);
+    }
+
+    public void track(String eventName, JSONObject dataFields, Map<String, Object> additionalParams) {
         String[] optArgs = {"createdAt", "dataFields", "campaignId", "templateId"};
 
 
@@ -103,7 +105,15 @@ public class IterableApi {
             requestJSON.put("eventName", eventName);
 
             if (dataFields != null) {
-                requestJSON.put("dataFields", eventName);
+                requestJSON.put("dataFields", dataFields);
+            }
+
+            if (additionalParams != null) {
+                for (String optArgsKey : optArgs) {
+                    if (additionalParams.containsKey(optArgsKey)) {
+                        requestJSON.put(optArgsKey, additionalParams.get(optArgsKey));
+                    }
+                }
             }
 
 //            for (Map.Entry<String, Object> param: additionalParams) {
