@@ -61,26 +61,36 @@ public class IterableApi {
 
     /**
      * Registers the GCM registration ID with Iterable.
-     * @param email
      * @param token
      */
-    public void registerDeviceToken(String email, String token) {
-        //TODO: Update thie platform flag for Kindle support
+    public void registerDeviceToken(String applicationName, String token) {
+        registerDeviceToken(applicationName, token, null);
+    }
+
+    /**
+     * Registers the GCM registration ID with Iterable.
+     * @param token
+     * @param dataFields
+     */
+    public void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
+        //TODO: Update thie platform flag for Kindle support based upon device type or store build
         String platform = "GCM";
 
-        int stringId = _context.getApplicationInfo().labelRes;
-        String applicationName  = _context.getString(stringId);
+        //TODO: Investigate create a self service page on our site to create the push integration application
+//        int stringId = _context.getApplicationInfo().labelRes;
+//        applicationName  = _context.getString(stringId);
 
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put("email", email);
+            requestJSON.put("email", _email);
             JSONObject device = new JSONObject();
             device.put("token", token);
             device.put("platform", platform);
             device.put("applicationName", applicationName);
-            JSONObject dataFields = new JSONObject();
 
-            device.put("dataFields", dataFields);
+            if (dataFields != null) {
+                device.put("dataFields", dataFields);
+            }
             requestJSON.put("device", device);
 
         } catch (JSONException e) {
@@ -96,7 +106,6 @@ public class IterableApi {
 
     public void track(String eventName, JSONObject dataFields, Map<String, Object> additionalParams) {
         String[] optArgs = {"createdAt", "dataFields", "campaignId", "templateId"};
-
 
         JSONObject requestJSON = new JSONObject();
 
@@ -115,24 +124,6 @@ public class IterableApi {
                     }
                 }
             }
-
-//            for (Map.Entry<String, Object> param: additionalParams) {
-//                String key = param.getKey();
-//                Object obj = param.getValue();
-//                requestJSON.put(key, obj);
-//            }
-
-            //================================
-            //EX: check if not null
-
-
-            //default values in parameters: still have to null check
-            //secondary overloaded methods : don't know what combination of params exist
-            // optional args (array of objects): can't specify the key
-            //map as the last arg
-            //json data as the last arg
-
-            //================================
         }
         catch (JSONException e) {
             e.printStackTrace();
