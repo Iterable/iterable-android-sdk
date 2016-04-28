@@ -2,13 +2,9 @@ package com.iterable.iterableapi;
 
 import android.app.Application;
 import android.content.Context;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.security.KeyPair;
-import java.util.Map;
 
 /**
  * Created by davidtruong on 4/4/16.
@@ -51,7 +47,7 @@ public class IterableApi {
     public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
     {
         //TODO: what if the singleton is called with different init params?
-        //Should we call users/update or require the app to do so?
+        // Should we call users/update or require the app to do so?
         if (sharedInstance == null)
         {
             sharedInstance = new IterableApi(context, apiKey, email);
@@ -79,7 +75,8 @@ public class IterableApi {
         //TODO: Update thie platform flag for Kindle support based upon device type or store build
         String platform = "GCM";
 
-        //TODO: Investigate creating a self service page on our site to create the push integration application
+        // TODO: Investigate creating a self service page on our site to
+        // create the push integration application
 //        int stringId = _context.getApplicationInfo().labelRes;
 //        applicationName  = _context.getString(stringId);
 
@@ -104,14 +101,18 @@ public class IterableApi {
     }
 
     public void track(String eventName) {
-        track(eventName, null, null);
+        track(eventName, null, null, null);
     }
 
-    public void track(String eventName, String campaignID) {
-        track(eventName, campaignID, null);
+    public void track(String eventName, JSONObject dataFields) {
+        track(eventName, null, null, dataFields);
     }
 
     public void track(String eventName, String campaignID, String templateId) {
+        track(eventName, campaignID, templateId, null);
+    }
+
+    public void track(String eventName, String campaignID, String templateId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put("email", _email);
@@ -123,8 +124,9 @@ public class IterableApi {
             if (templateId != null) {
                 requestJSON.put("templateId", templateId);
             }
-
-            //TODO: add any additional optional params to the requestJSON
+            if (dataFields != null) {
+                requestJSON.put("dataFields", dataFields);
+            }
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -133,10 +135,21 @@ public class IterableApi {
         sendRequest("events/track", requestJSON);
     }
 
+    /**
+     * Track a custom conversion event.
+     * @param campaignId
+     * @param templateId
+     */
     public void trackConversion(int campaignId, int templateId) {
         trackConversion(campaignId, templateId, null);
     }
 
+    /**
+     * Track a custom conversion event.
+     * @param campaignId
+     * @param templateId
+     * @param dataFields
+     */
     public void trackConversion(int campaignId, int templateId, JSONObject dataFields) {
 
         JSONObject requestJSON = new JSONObject();
@@ -157,7 +170,7 @@ public class IterableApi {
     }
 
     /**
-     * Tracks when a push notification is opened on device.
+     * Track when a push notification is opened on device.
      * @param campaignId
      * @param templateId
      */
@@ -167,9 +180,8 @@ public class IterableApi {
         try {
             requestJSON.put("email", _email);
             requestJSON.put("campaignId", campaignId);
-            if (templateId != 0){
-                requestJSON.put("campaignId", templateId);
-            }
+            requestJSON.put("templateId", templateId);
+
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -184,27 +196,46 @@ public class IterableApi {
      * @param campaignId
      */
     public void sendPush(String email, int campaignId) {
-        sendPush(email, campaignId, null);
+        sendPush(email, campaignId, null, null);
     }
 
     /**
      * Sends a push campaign to the given email address at the given time
      * @param email
      * @param campaignId
-     * @param sendAt Schedule the message for up to 365 days in the future. If set in the past, message is sent immediately. Format is YYYY-MM-DD HH:MM:SS in UTC
+     * @param sendAt Schedule the message for up to 365 days in the future.
+     *               If set in the past, message is sent immediately.
+     *               Format is YYYY-MM-DD HH:MM:SS in UTC
      */
     public void sendPush(String email, int campaignId, String sendAt) {
+        sendPush(email, campaignId, sendAt, null);
+    }
+
+    /**
+     * Sends a push campaign to the given email address at the given time
+     * @param email
+     * @param campaignId
+     * @param dataFields
+     */
+    public void sendPush(String email, int campaignId, JSONObject dataFields) {
+        sendPush(email, campaignId, null, dataFields);
+    }
+
+    /**
+     * Sends a push campaign to the given email address at the given time
+     * @param email
+     * @param campaignId
+     * @param sendAt Schedule the message for up to 365 days in the future.
+     *               If set in the past, message is sent immediately.
+     *               Format is YYYY-MM-DD HH:MM:SS in UTC
+     */
+    public void sendPush(String email, int campaignId, String sendAt, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put("recipientEmail", email);
             requestJSON.put("campaignId", campaignId);
             if (sendAt != null){
-                if (sendAt.isEmpty())
-                {
-                    //TODO: Error validation
-                    return;
-                }
                 requestJSON.put("sendAt", sendAt);
             }
         }

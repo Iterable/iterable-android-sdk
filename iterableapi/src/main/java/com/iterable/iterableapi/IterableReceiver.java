@@ -48,7 +48,7 @@ public class IterableReceiver extends BroadcastReceiver {
                 int templateId = 0;
                 try {
                     JSONObject iterableJson = new JSONObject(iterableData);
-                    //TODO: do we need data validation here?
+                    //TODO: do we need data validation for the params?
                     campaignId = iterableJson.getInt("campaignId");
                     templateId = iterableJson.getInt("templateId");
 
@@ -61,10 +61,9 @@ public class IterableReceiver extends BroadcastReceiver {
                 if (IterableApi.sharedInstance != null) {
                     IterableApi.sharedInstance.trackPushOpen(campaignId, templateId);
                 }
-
+            } else {
+                //TODO: Tried to track a push open that was did not contain iterable extraData
             }
         }
-
-
     }
 }
