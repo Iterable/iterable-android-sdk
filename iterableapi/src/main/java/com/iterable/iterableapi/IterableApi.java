@@ -44,17 +44,17 @@ public class IterableApi {
     /**
      * Creates and returns the stored IterableApi instance.
      * @param context
-     * @param apikey
+     * @param apiKey
      * @param email
      * @return the singleton instance of IterableApi
      */
-    public static IterableApi sharedInstanceWithApiKey(Context context, String apikey, String email)
+    public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
     {
         //TODO: what if the singleton is called with different init params?
         //Should we call users/update or require the app to do so?
         if (sharedInstance == null)
         {
-            sharedInstance = new IterableApi(context, apikey, email);
+            sharedInstance = new IterableApi(context, apiKey, email);
         }
 
         return sharedInstance;
@@ -133,8 +133,10 @@ public class IterableApi {
         sendRequest("events/track", requestJSON);
     }
 
+    public void trackConversion(int campaignId) {
+        trackConversion(campaignId, null);
+    }
 
-    //TODO: what params
     public void trackConversion(int campaignId, JSONObject dataFields) {
 
         JSONObject requestJSON = new JSONObject();
@@ -142,6 +144,10 @@ public class IterableApi {
         try {
             requestJSON.put("email", _email);
             requestJSON.put("campaignId", campaignId);
+            if (dataFields != null) {
+                requestJSON.put("dataFields", dataFields);
+            }
+
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -153,17 +159,9 @@ public class IterableApi {
     /**
      * Tracks when a push notification is opened on device.
      * @param campaignId
-     */
-    public void trackPushOpen(int campaignId) {
-        trackPushOpen(campaignId, 0);
-    }
-
-    /**
-     * Tracks when a push notification is opened on device.
-     * @param campaignId
      * @param templateId
      */
-    public void trackPushOpen(int campaignId, int templateId) {
+    protected void trackPushOpen(int campaignId, int templateId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
