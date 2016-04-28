@@ -24,7 +24,7 @@ public class IterableReceiver extends BroadcastReceiver {
     private static final String INTENT_ACTION_GCM_RECEIVE = "com.google.android.c2dm.intent.RECEIVE";
 
     /**
-     * IterableReceiver.onReceive
+     * IterableReceiver.onReceive handles
      * @param context
      * @param intent
      */
@@ -36,28 +36,31 @@ public class IterableReceiver extends BroadcastReceiver {
         if (intentAction.equals(INTENT_ACTION_GCM_RECEIVE)){
 
         } else if (intentAction.equals(IterableConstants.NOTIF_OPENED)){
-            Log.i(TAG, "track ");
+            Log.i(TAG, "track");
 
             Bundle extras = intent.getExtras();
             if (extras != null && !extras.isEmpty() && extras.containsKey("itbl"))
             {
-                //TODO: data validation
                 String iterableData = extras.getString("itbl");
                 Toast.makeText(context, "Sending Iterable push open data: " + iterableData, Toast.LENGTH_LONG).show();
 
-                int campaignId = -1;
+                int campaignId = 0;
+                int templateId = 0;
                 try {
                     JSONObject iterableJson = new JSONObject(iterableData);
+                    //TODO: do we need data validation here?
                     campaignId = iterableJson.getInt("campaignId");
+                    templateId = iterableJson.getInt("templateId");
+
+                    //TODO: do we need to parse out any additional dataFields to pass to trackPushOpen?
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
-                //TODO: pass in additional requestJson from the system device
-                JSONObject requestJSON = new JSONObject();
-
-                //TODO: check that the sharedInstance exists before using it.
-                IterableApi.sharedInstance.trackPushOpen(campaignId, requestJSON);
+                if (IterableApi.sharedInstance != null) {
+                    IterableApi.sharedInstance.trackPushOpen(campaignId, templateId);
+                }
 
             }
         }

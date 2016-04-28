@@ -17,7 +17,7 @@ public class IterableApi {
 
     /**
      * Configuration URLs for different enviornment endpoints.
-     * TODO: Should this be moved into IterableRequest?
+     * TODO: Should this be moved into IterableRequest or into an xml/constants file?
      */
     //static final String iterableBaseUrl = "https://api.iterable.com/api/";
     //static final String iterableBaseUrl = "https://canary.iterable.com/api/";
@@ -51,6 +51,7 @@ public class IterableApi {
     public static IterableApi sharedInstanceWithApiKey(Context context, String apikey, String email)
     {
         //TODO: what if the singleton is called with different init params?
+        //Should we call users/update or require the app to do so?
         if (sharedInstance == null)
         {
             sharedInstance = new IterableApi(context, apikey, email);
@@ -61,6 +62,7 @@ public class IterableApi {
 
     /**
      * Registers the GCM registration ID with Iterable.
+     * @param applicationName
      * @param token
      */
     public void registerDeviceToken(String applicationName, String token) {
@@ -69,6 +71,7 @@ public class IterableApi {
 
     /**
      * Registers the GCM registration ID with Iterable.
+     * @param applicationName
      * @param token
      * @param dataFields
      */
@@ -76,7 +79,7 @@ public class IterableApi {
         //TODO: Update thie platform flag for Kindle support based upon device type or store build
         String platform = "GCM";
 
-        //TODO: Investigate create a self service page on our site to create the push integration application
+        //TODO: Investigate creating a self service page on our site to create the push integration application
 //        int stringId = _context.getApplicationInfo().labelRes;
 //        applicationName  = _context.getString(stringId);
 
@@ -100,30 +103,28 @@ public class IterableApi {
         sendRequest("users/registerDeviceToken", requestJSON);
     }
 
-    public void track(String eventName, JSONObject dataFields) {
-        track(eventName, dataFields, null);
+    public void track(String eventName) {
+        track(eventName, null, null);
     }
 
-    public void track(String eventName, JSONObject dataFields, Map<String, Object> additionalParams) {
-        String[] optArgs = {"createdAt", "dataFields", "campaignId", "templateId"};
+    public void track(String eventName, String campaignID) {
+        track(eventName, campaignID, null);
+    }
 
+    public void track(String eventName, String campaignID, String templateId) {
         JSONObject requestJSON = new JSONObject();
-
         try {
             requestJSON.put("email", _email);
             requestJSON.put("eventName", eventName);
 
-            if (dataFields != null) {
-                requestJSON.put("dataFields", dataFields);
+            if (campaignID != null) {
+                requestJSON.put("campaignID", campaignID);
+            }
+            if (templateId != null) {
+                requestJSON.put("templateId", templateId);
             }
 
-            if (additionalParams != null) {
-                for (String optArgsKey : optArgs) {
-                    if (additionalParams.containsKey(optArgsKey)) {
-                        requestJSON.put(optArgsKey, additionalParams.get(optArgsKey));
-                    }
-                }
-            }
+            //TODO: add any additional optional params to the requestJSON
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -133,6 +134,7 @@ public class IterableApi {
     }
 
 
+    //TODO: what params
     public void trackConversion(int campaignId, JSONObject dataFields) {
 
         JSONObject requestJSON = new JSONObject();
@@ -148,12 +150,28 @@ public class IterableApi {
         sendRequest("events/trackConversion", requestJSON);
     }
 
-    public void trackPushOpen(int campaignId, JSONObject dataFields) {
+    /**
+     * Tracks when a push notification is opened on device.
+     * @param campaignId
+     */
+    public void trackPushOpen(int campaignId) {
+        trackPushOpen(campaignId, 0);
+    }
+
+    /**
+     * Tracks when a push notification is opened on device.
+     * @param campaignId
+     * @param templateId
+     */
+    public void trackPushOpen(int campaignId, int templateId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put("email", _email);
             requestJSON.put("campaignId", campaignId);
+            if (templateId != 0){
+                requestJSON.put("campaignId", templateId);
+            }
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -162,12 +180,35 @@ public class IterableApi {
         sendRequest("events/trackPushOpen", requestJSON);
     }
 
+    /**
+     * Sends a push campaign to the given email address
+     * @param email
+     * @param campaignId
+     */
     public void sendPush(String email, int campaignId) {
+        sendPush(email, campaignId, null);
+    }
+
+    /**
+     * Sends a push campaign to the given email address at the given time
+     * @param email
+     * @param campaignId
+     * @param sendAt Schedule the message for up to 365 days in the future. If set in the past, message is sent immediately. Format is YYYY-MM-DD HH:MM:SS in UTC
+     */
+    public void sendPush(String email, int campaignId, String sendAt) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put("recipientEmail", email);
             requestJSON.put("campaignId", campaignId);
+            if (sendAt != null){
+                if (sendAt.isEmpty())
+                {
+                    //TODO: Error validation
+                    return;
+                }
+                requestJSON.put("sendAt", sendAt);
+            }
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -176,11 +217,10 @@ public class IterableApi {
         sendRequest("push/target", requestJSON);
     }
 
-    // FIXME: 4/22/16
+    // FIXME: 4/22/16 Not yet complete
     public void trackPurchase(CommerceItem[] commerceItems, double total) {
         JSONObject requestJSON = new JSONObject();
 
-        //TODO: optional user
         JSONObject userJSON = new JSONObject();
 
         for(CommerceItem item : commerceItems) {
@@ -200,7 +240,11 @@ public class IterableApi {
         sendRequest("commerce/trackPurchase", requestJSON);
     }
 
-    // Performs network operations on an async thread instead of the main thread.
+    /**
+     * Performs network operations on an async thread instead of the main thread.
+     * @param uri
+     * @param json
+     */
     private void sendRequest(String uri, JSONObject json) {
         new IterableRequest().execute(iterableBaseUrl, _apiKey, uri, json.toString());
     }
