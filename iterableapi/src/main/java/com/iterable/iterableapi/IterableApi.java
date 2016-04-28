@@ -133,21 +133,21 @@ public class IterableApi {
         sendRequest("events/track", requestJSON);
     }
 
-    public void trackConversion(int campaignId) {
-        trackConversion(campaignId, null);
+    public void trackConversion(int campaignId, int templateId) {
+        trackConversion(campaignId, templateId, null);
     }
 
-    public void trackConversion(int campaignId, JSONObject dataFields) {
+    public void trackConversion(int campaignId, int templateId, JSONObject dataFields) {
 
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put("email", _email);
             requestJSON.put("campaignId", campaignId);
+            requestJSON.put("templateId", templateId);
             if (dataFields != null) {
                 requestJSON.put("dataFields", dataFields);
             }
-
         }
         catch (JSONException e) {
             e.printStackTrace();
