@@ -24,7 +24,7 @@ public class IterableReceiver extends BroadcastReceiver {
     private static final String INTENT_ACTION_GCM_RECEIVE = "com.google.android.c2dm.intent.RECEIVE";
 
     /**
-     * IterableReceiver.onReceive handles
+     * IterableReceiver handles the broadcast for tracking a pushOpen.
      * @param context
      * @param intent
      */
@@ -36,13 +36,11 @@ public class IterableReceiver extends BroadcastReceiver {
         if (intentAction.equals(INTENT_ACTION_GCM_RECEIVE)){
 
         } else if (intentAction.equals(IterableConstants.NOTIF_OPENED)){
-            Log.i(TAG, "track");
-
             Bundle extras = intent.getExtras();
             if (extras != null && !extras.isEmpty() && extras.containsKey("itbl"))
             {
                 String iterableData = extras.getString("itbl");
-                Toast.makeText(context, "Sending Iterable push open data: " + iterableData, Toast.LENGTH_LONG).show();
+                //Toast.makeText(context, "Sending Iterable push open data: " + iterableData, Toast.LENGTH_LONG).show();
 
                 int campaignId = 0;
                 int templateId = 0;

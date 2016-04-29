@@ -18,10 +18,9 @@ import java.net.URL;
 class IterableRequest extends AsyncTask<String, Integer, String> {
     static final String TAG = "IterableRequest";
 
-    private Exception exception;
-
     /**
      * Sends the given request to Iterable using a HttpUserConnection
+     * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
      * @param params array of parameters
      *               iterableBaseUrl
      *               apiKey

@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +19,9 @@ import android.support.v7.app.NotificationCompat;
  * Created by davidtruong on 4/29/16.
  */
 public class IterableNotification extends NotificationCompat.Builder {
+
+    //TODO: update notificationID to use a bitwise timestamp so it doesn't overwrite old notifications
+    public static final int NOTIFICATION_ID = 1;
 
     protected IterableNotification(Context context) {
         super(context);
@@ -59,6 +63,13 @@ public class IterableNotification extends NotificationCompat.Builder {
         if (intent.hasExtra("itbl")) {
             notificationBody = extras.getString("body");
         }
+        //TODO: should we be checking for other default values for the body
+        else if (intent.hasExtra("default")) {
+            notificationBody = extras.getString("default");
+        }
+        else if (intent.hasExtra("message")) {
+            notificationBody = extras.getString("message");
+        }
 
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName  = context.getString(stringId);
@@ -73,5 +84,13 @@ public class IterableNotification extends NotificationCompat.Builder {
         notificationBuilder.setContentIntent(notificationClickedIntent);
 
         return notificationBuilder;
+    }
+
+    public void postNotificationOnDevice(Context context) {
+        NotificationManager mNotificationManager = (NotificationManager)
+                context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        //TODO: enable collapsing of notification
+        mNotificationManager.notify(NOTIFICATION_ID, this.build());
     }
 }
