@@ -86,11 +86,14 @@ public class IterableNotification extends NotificationCompat.Builder {
         return notificationBuilder;
     }
 
-    public void postNotificationOnDevice(Context context) {
-        NotificationManager mNotificationManager = (NotificationManager)
-                context.getSystemService(Context.NOTIFICATION_SERVICE);
+    public static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
+        if (iterableNotification != null) {
 
-        //TODO: enable collapsing of notification
-        mNotificationManager.notify(NOTIFICATION_ID, this.build());
+            NotificationManager mNotificationManager = (NotificationManager)
+                    context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+            //TODO: enable collapsing of notification via unique notification_id
+            mNotificationManager.notify(NOTIFICATION_ID, iterableNotification.build());
+        }
     }
 }
