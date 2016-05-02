@@ -4,7 +4,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.media.RingtoneManager;
 import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
 
@@ -32,7 +31,8 @@ public class IterableNotification extends NotificationCompat.Builder {
     }
 
     /**
-     * Creates and returns a IterableNotification.
+     * Creates and returns an instance of IterableNotification.
+     * If the notification is a ghostPush, then the function returns null.
      * @param context
      * @param intent
      * @param classToOpen
@@ -58,18 +58,18 @@ public class IterableNotification extends NotificationCompat.Builder {
         String notificationBody = (defaultMessageBody == null) ? defaultMessageBody : "";
 
         /**
-         * If it is an Iterable sent notification set the notification body to use that data.
+         * If it is a notification sent from Iterable, set the notification body to use that data.
          */
         if (intent.hasExtra("itbl")) {
             notificationBody = extras.getString("body");
         }
-        //TODO: should we be checking for other default values for the body
-        else if (intent.hasExtra("default")) {
-            notificationBody = extras.getString("default");
-        }
-        else if (intent.hasExtra("message")) {
-            notificationBody = extras.getString("message");
-        }
+        //TODO: should we be checking for other default values for the body text?
+//        else if (intent.hasExtra("default")) {
+//            notificationBody = extras.getString("default");
+//        }
+//        else if (intent.hasExtra("message")) {
+//            notificationBody = extras.getString("message");
+//        }
 
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName  = context.getString(stringId);
@@ -86,6 +86,13 @@ public class IterableNotification extends NotificationCompat.Builder {
         return notificationBuilder;
     }
 
+    /**
+     * Posts the notification on device.
+     * Only sets the notification if it is not a ghostPush/null iterableNotification.
+     * @param context
+     * @param iterableNotification Function assumes that the iterableNotification is a ghostPush
+     *                             if the IterableNotification passed in is null.
+     */
     public static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
         if (iterableNotification != null) {
 
