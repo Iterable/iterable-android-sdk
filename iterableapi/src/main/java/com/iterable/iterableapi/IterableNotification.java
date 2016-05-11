@@ -42,19 +42,24 @@ public class IterableNotification extends NotificationCompat.Builder {
      */
     public static IterableNotification createIterableNotification(Context context, Intent intent, Class classToOpen, int icon, String defaultMessageBody) {
 
+        //TODO: we can abstract out intent to just be the extras bundle
         if (IterableHelper.isGhostPush(intent)) {
             return null;
         }
 
         Bundle extras = intent.getExtras();
 
-        Intent mainIntentWithExtras = new Intent(IterableConstants.NOTIF_OPENED);
+        //if classToOpen is null open main class from context
+        Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
         mainIntentWithExtras.setClass(context, classToOpen);
         mainIntentWithExtras.putExtras(extras);
+
+        //TODO: custom handler for deep-linking
 
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, 0);
 
+        //TODO: is a default message necessary?
         String notificationBody = (defaultMessageBody == null) ? defaultMessageBody : "";
 
         /**
@@ -71,6 +76,7 @@ public class IterableNotification extends NotificationCompat.Builder {
 //            notificationBody = extras.getString("message");
 //        }
 
+        //TODO: allow for a custom title to be passed in
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName  = context.getString(stringId);
 
@@ -79,6 +85,7 @@ public class IterableNotification extends NotificationCompat.Builder {
                 .setContentTitle(applicationName)
                 .setStyle(new android.support.v4.app.NotificationCompat.BigTextStyle()
                 .bigText(notificationBody))
+                .setAutoCancel(true)
                 .setContentText(notificationBody);
 
         notificationBuilder.setContentIntent(notificationClickedIntent);

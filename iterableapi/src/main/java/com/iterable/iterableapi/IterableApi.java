@@ -1,12 +1,9 @@
 package com.iterable.iterableapi;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.ResultReceiver;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,7 +14,7 @@ import org.json.JSONObject;
 public class IterableApi {
 
     /**
-     * Configuration URLs for different enviornment endpoints.
+     * Configuration URLs for different environment endpoints.
      * TODO: Should this be moved into IterableRequest or into an xml/constants file?
      */
     //static final String iterableBaseUrl = "https://api.iterable.com/api/";
@@ -51,19 +48,20 @@ public class IterableApi {
      */
     public static IterableApi sharedInstanceWithApiKey(Activity activity, String apiKey, String email)
     {
-        return sharedInstance = new IterableApi(activity, apiKey, email);
+        sharedInstance = new IterableApi(activity, apiKey, email);
+        Intent calledIntent = activity.getIntent();
+        sharedInstance.trackAppOpen(calledIntent);
+        return sharedInstance;
     }
 
     public void init(String iterableAppId, String gcmProjectId) {
-        Intent calledIntent = _mainActivity.getIntent();
-        trackAppOpen(calledIntent);
-
         //TODO: set this up as a callback then call registerDeviceToken
         Intent GCMRegistrationService = new Intent(_context, IterableGCMRegistrationHelper.class);
         GCMRegistrationService.putExtra("IterableAppId", iterableAppId);
         GCMRegistrationService.putExtra("GCMProjectNumber", gcmProjectId);
+        //TODO: possibly use broadcast instead of service
+//        GCMRegistrationService.setAction(IterableConstants.ACTION_REGISTER_GCM);
         _context.startService(GCMRegistrationService);
-        //TODO: possibly use broadcast intead of service
 //        _context.sendBroadcast(GCMRegistrationService);
     }
 
@@ -73,7 +71,7 @@ public class IterableApi {
         if (extras != null) {
             Intent intent = new Intent();
             intent.setClass(_context, IterableReceiver.class);
-            intent.setAction(IterableConstants.NOTIF_OPENED);
+            intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
             intent.putExtras(extras);
             _context.sendBroadcast(intent);
         }
