@@ -11,6 +11,7 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
 /**
  * Created by davidtruong on 4/6/16.
  *
@@ -21,7 +22,8 @@ import org.json.JSONObject;
 public class IterableReceiver extends BroadcastReceiver {
     static final String TAG = "IterableReceiver";
 
-    private static final String INTENT_ACTION_GCM_RECEIVE = "com.google.android.c2dm.intent.RECEIVE";
+    private static final String ACTION_GCM_RECEIVE_INTENT = "com.google.android.c2dm.intent.RECEIVE";
+    private static final String ACTION_GCM_REGISTRATION_INTENT = "com.google.android.c2dm.intent.REGISTRATION";
 
     /**
      * IterableReceiver handles the broadcast for tracking a pushOpen.
@@ -31,16 +33,44 @@ public class IterableReceiver extends BroadcastReceiver {
     @CallSuper
     public void onReceive(Context context, Intent intent) {
         String intentAction = intent.getAction();
-        //TODO: should we handle all of the intent action here?
-            //use a switch statement here for each type of notif action
-        if (intentAction.equals(INTENT_ACTION_GCM_RECEIVE)){
 
+        if (intentAction.equals(ACTION_GCM_RECEIVE_INTENT)) {
+            //TODO: handle the case where the app was already opened in the foreground, send  in-app notif instead
+            //http://stackoverflow.com/questions/3667022/checking-if-an-android-application-is-running-in-the-background
+            //http://stackoverflow.com/questions/23558986/gcm-how-do-i-detect-if-app-is-open-and-if-so-pop-up-an-alert-box-instead-of-nor
+
+            //TODO: Process deeplinks here Create an override for the defaultClass opened.
+            //Deep Link Example
+            //Passed in from the Push Payload: { "deepLink": "main_page" }
+
+            Class classObj = IterableApi.sharedInstance._mainActivity.getClass();
+
+            //TODO: set the notification icon in a config file (set by developer)
+            //int notificationIconId = context.getResources().getIdentifier("notification_icon", "drawable", context.getPackageName());
+            int iconId = IterableApi.sharedInstance._mainActivity.getApplicationContext().getApplicationInfo().icon;
+
+            if (iconId != 0) {
+                //TODO: ensure that this is never null since people might call notificationBuilder.something()
+                IterableNotification notificationBuilder = IterableNotification.createIterableNotification(
+                        context, intent, classObj, iconId); //have a default for no icon.
+
+                IterableNotification.postNotificationOnDevice(context, notificationBuilder);
+            }
+            else {
+                //no default notif icon defined.
+            }
         } else if (intentAction.equals(IterableConstants.NOTIF_OPENED)){
             Bundle extras = intent.getExtras();
             if (extras != null && !extras.isEmpty() && extras.containsKey("itbl"))
             {
                 String iterableData = extras.getString("itbl");
-                //Toast.makeText(context, "Sending Iterable push open data: " + iterableData, Toast.LENGTH_LONG).show();
+
+                //DEBUG
+//                Toast.makeText(context, "Sending Iterable push open data: " + iterableData, Toast.LENGTH_LONG).show();
+
+                //TODO: storeCampaignID/Template for 24 hrs to match web
+                //Need local storage on device
+                //Currently this is only set for the given session
 
                 int campaignId = 0;
                 int templateId = 0;
@@ -62,6 +92,8 @@ public class IterableReceiver extends BroadcastReceiver {
             } else {
                 //TODO: Tried to track a push open that was did not contain iterable extraData
             }
+        } else if (intentAction.equals(ACTION_GCM_REGISTRATION_INTENT)) {
+            Log.d("IterableReceiver", "received GCM registration intent action");
         }
     }
 }

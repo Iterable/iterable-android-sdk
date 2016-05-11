@@ -1,7 +1,12 @@
 package com.iterable.iterableapi;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.ResultReceiver;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,38 +27,56 @@ public class IterableApi {
 
     protected static IterableApi sharedInstance = null;
 
-    static Application application;
-    static Context applicationContext;
-
-    private Context _context;
+    //TODO: refactor out context
+    protected Context _context;
     private String _apiKey;
     private String _email;
+    protected Activity _mainActivity;
 
-    public IterableApi(Context context, String apiKey, String email){
+    public IterableApi(Activity activity, String apiKey, String email){
         //TODO: add in data validation
 
-        this._context = context;
+        _mainActivity = activity;
+        this._context = activity.getApplicationContext();
         this._apiKey = apiKey;
         this._email = email;
     }
 
     /**
      * Creates and returns the stored IterableApi instance.
-     * @param context
+     * @param activity
      * @param apiKey
      * @param email
-     * @return the singleton instance of IterableApi
+     * @return
      */
-    public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
+    public static IterableApi sharedInstanceWithApiKey(Activity activity, String apiKey, String email)
     {
-        //TODO: what if the singleton is called with different init params?
-        // Should we call users/update or require the app to do so?
-        if (sharedInstance == null)
-        {
-            sharedInstance = new IterableApi(context, apiKey, email);
-        }
+        return sharedInstance = new IterableApi(activity, apiKey, email);
+    }
 
-        return sharedInstance;
+    public void init(String iterableAppId, String gcmProjectId) {
+        Intent calledIntent = _mainActivity.getIntent();
+        trackAppOpen(calledIntent);
+
+        //TODO: set this up as a callback then call registerDeviceToken
+        Intent GCMRegistrationService = new Intent(_context, IterableGCMRegistrationHelper.class);
+        GCMRegistrationService.putExtra("IterableAppId", iterableAppId);
+        GCMRegistrationService.putExtra("GCMProjectNumber", gcmProjectId);
+        _context.startService(GCMRegistrationService);
+        //TODO: possibly use broadcast intead of service
+//        _context.sendBroadcast(GCMRegistrationService);
+    }
+
+    private void trackAppOpen(Intent calledIntent)
+    {
+        Bundle extras = calledIntent.getExtras();
+        if (extras != null) {
+            Intent intent = new Intent();
+            intent.setClass(_context, IterableReceiver.class);
+            intent.setAction(IterableConstants.NOTIF_OPENED);
+            intent.putExtras(extras);
+            _context.sendBroadcast(intent);
+        }
     }
 
     /**
@@ -75,11 +98,6 @@ public class IterableApi {
         //TODO: Update thie platform flag for Kindle support based upon device type or store build
         String platform = "GCM";
 
-        // TODO: Investigate creating a self service page on our site to
-        // create the push integration application
-//        int stringId = _context.getApplicationInfo().labelRes;
-//        applicationName  = _context.getString(stringId);
-
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put("email", _email);
@@ -87,12 +105,7 @@ public class IterableApi {
             device.put("token", token);
             device.put("platform", platform);
             device.put("applicationName", applicationName);
-
-            if (dataFields != null) {
-                device.put("dataFields", dataFields);
-            }
             requestJSON.put("device", device);
-
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -119,6 +132,7 @@ public class IterableApi {
             requestJSON.put("eventName", eventName);
 
             if (campaignID != null) {
+                //TODO: set to lowerCase
                 requestJSON.put("campaignID", campaignID);
             }
             if (templateId != null) {
@@ -267,6 +281,37 @@ public class IterableApi {
         }
 
         sendRequest("commerce/trackPurchase", requestJSON);
+    }
+
+    //TODO: reset current user profile
+    public static void reset() {
+        // clears all the current device
+
+        //TODO:Require the app to re-initialize with the SDK
+
+    }
+
+    //TODO: identity(with a new email)
+    public void updateEmail(String newEmail) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put("currentEmail", _email);
+            requestJSON.put("newEmail", newEmail);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendRequest("users/updateEmail", requestJSON);
+
+        //TODO: wait for a callback from sendRequest before changing email
+        _email = newEmail;
+    }
+
+    //TODO: use adid or android ID
+    private void getDeviceAdid() {
+        //Reference - https://developer.android.com/google/play-services/id.html#example
     }
 
     /**
