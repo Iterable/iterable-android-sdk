@@ -10,9 +10,9 @@ import org.json.JSONObject;
  * Created by davidtruong on 4/29/16.
  */
 public class IterableHelper {
-    public static Boolean isGhostPush(Intent intent) {
+    public static boolean isGhostPush(Intent intent) {
 
-        Boolean isGhostPush = false;
+        boolean isGhostPush = false;
 
         Bundle extras = intent.getExtras();
         if (intent.hasExtra("itbl")) {
@@ -32,4 +32,3 @@ public class IterableHelper {
         return isGhostPush;
     }
 }
-
