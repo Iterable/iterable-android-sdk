@@ -13,16 +13,16 @@ import org.json.JSONObject;
 /**
  * Created by davidtruong on 4/6/16.
  *
- * The IterableReceiver should be used to handle broadcasts to track push opens.
+ * The IterablePushOpenReceiver should be used to handle broadcasts to track push opens.
  * The sending intent should use the action: IterableConstants.ACTION_NOTIF_OPENED
  * Additionally include the extra data passed down from GCM receive intent.
  */
-public class IterableReceiver extends BroadcastReceiver {
-    static final String TAG = "IterableReceiver";
+public class IterablePushOpenReceiver extends BroadcastReceiver {
+    static final String TAG = "IterablePushOpenReceiver";
 
 
     /**
-     * IterableReceiver handles the broadcast for tracking a pushOpen.
+     * IterablePushOpenReceiver handles the broadcast for tracking a pushOpen.
      * @param context
      * @param intent
      */

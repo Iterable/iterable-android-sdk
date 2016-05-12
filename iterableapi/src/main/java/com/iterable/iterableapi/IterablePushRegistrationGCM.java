@@ -1,11 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.app.IntentService;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
@@ -13,30 +8,19 @@ import com.google.android.gms.iid.InstanceID;
 
 import java.io.IOException;
 
-import iterable.com.iterableapi.R;
-
 /**
  * Created by davidtruong on 5/4/16.
  */
-public class IterableGCMRegistrationHelper extends IntentService {
-    /**
-     * Creates an IntentService.  Invoked by your subclass's constructor.
-     *
-     * @param name Used to name the worker thread, important only for debugging.
-     */
-    public IterableGCMRegistrationHelper(String name) {
-        super(name);
-    }
+public class IterablePushRegistrationGCM extends AsyncTask<String, Integer, String> {
+    static final String TAG = "IterableRequest";
 
-    public IterableGCMRegistrationHelper() {
-        super(IterableGCMRegistrationHelper.class.getName());
-    }
 
-    @Override
-    public void onHandleIntent(Intent intent) {
+    protected String doInBackground(String... params) {
         try {
-            String iterableAppId = intent.getStringExtra("IterableAppId");
-            String projectNumber = intent.getStringExtra("GCMProjectNumber");
+            String iterableAppId = params[0];
+            String projectNumber = params[1];
+//            String iterableAppId = intent.getStringExtra("IterableAppId");
+//            String projectNumber = intent.getStringExtra("GCMProjectNumber");
 
             //TODO: look onto passing the AppID in via the androidManifest
 //            PackageManager pm = IterableApi.sharedInstance._mainActivity.getPackageManager();
@@ -51,7 +35,7 @@ public class IterableGCMRegistrationHelper extends IntentService {
             if (iterableAppId != null) {
                 Class II = Class.forName("com.google.android.gms.iid.InstanceID");
                 if (II != null) {
-                    InstanceID instanceID = InstanceID.getInstance(this);
+                    InstanceID instanceID = InstanceID.getInstance(IterableApi.sharedInstance.getApplicationContext());
                     String registrationId = "";
                     registrationId = instanceID.getToken(projectNumber,
                             GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
@@ -75,6 +59,7 @@ public class IterableGCMRegistrationHelper extends IntentService {
         } //catch (PackageManager.NameNotFoundException e) {
 //            e.printStackTrace();
 //        }
+        return null;
     }
 }
 

@@ -25,10 +25,10 @@ public class IterableApi {
     protected static IterableApi sharedInstance = null;
 
     //TODO: refactor out context
-    protected Context _context;
+    private Context _context;
     private String _apiKey;
     private String _email;
-    protected Activity _mainActivity;
+    private Activity _mainActivity;
 
     public IterableApi(Activity activity, String apiKey, String email){
         //TODO: add in data validation
@@ -54,15 +54,21 @@ public class IterableApi {
         return sharedInstance;
     }
 
-    public void init(String iterableAppId, String gcmProjectId) {
+    protected Activity getApplicationActivity() {
+        return _mainActivity;
+    }
+
+    protected Context getApplicationContext() {
+        return _context;
+    }
+
+    public void registerForPush(String iterableAppId, String gcmProjectId) {
         //TODO: set this up as a callback then call registerDeviceToken
-        Intent GCMRegistrationService = new Intent(_context, IterableGCMRegistrationHelper.class);
-        GCMRegistrationService.putExtra("IterableAppId", iterableAppId);
-        GCMRegistrationService.putExtra("GCMProjectNumber", gcmProjectId);
-        //TODO: possibly use broadcast instead of service
-//        GCMRegistrationService.setAction(IterableConstants.ACTION_REGISTER_GCM);
-        _context.startService(GCMRegistrationService);
-//        _context.sendBroadcast(GCMRegistrationService);
+        Intent pushRegistrationIntent = new Intent(_context, IterablePushReceiver.class);
+        pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
+        pushRegistrationIntent.putExtra("IterableAppId", iterableAppId);
+        pushRegistrationIntent.putExtra("GCMProjectNumber", gcmProjectId);
+        _context.sendBroadcast(pushRegistrationIntent);
     }
 
     private void trackAppOpen(Intent calledIntent)
@@ -70,7 +76,7 @@ public class IterableApi {
         Bundle extras = calledIntent.getExtras();
         if (extras != null) {
             Intent intent = new Intent();
-            intent.setClass(_context, IterableReceiver.class);
+            intent.setClass(_context, IterablePushOpenReceiver.class);
             intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
             intent.putExtras(extras);
             _context.sendBroadcast(intent);
