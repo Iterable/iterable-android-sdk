@@ -28,34 +28,26 @@ public class IterableApi {
     private Context _context;
     private String _apiKey;
     private String _email;
-    private Activity _mainActivity;
 
-    public IterableApi(Activity activity, String apiKey, String email){
-        //TODO: add in data validation
-
-        _mainActivity = activity;
-        this._context = activity.getApplicationContext();
+    public IterableApi(Context context, String apiKey, String email){
+        this._context = context;
         this._apiKey = apiKey;
         this._email = email;
     }
 
     /**
      * Creates and returns the stored IterableApi instance.
-     * @param activity
+     * @param context
      * @param apiKey
      * @param email
      * @return
      */
-    public static IterableApi sharedInstanceWithApiKey(Activity activity, String apiKey, String email)
+    public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
     {
-        sharedInstance = new IterableApi(activity, apiKey, email);
-        Intent calledIntent = activity.getIntent();
+        sharedInstance = new IterableApi(context, apiKey, email);
+        Intent calledIntent = ((Activity) context).getIntent();
         sharedInstance.trackAppOpen(calledIntent);
         return sharedInstance;
-    }
-
-    protected Activity getApplicationActivity() {
-        return _mainActivity;
     }
 
     protected Context getApplicationContext() {

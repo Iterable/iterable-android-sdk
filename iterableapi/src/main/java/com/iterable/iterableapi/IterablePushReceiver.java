@@ -1,19 +1,12 @@
 package com.iterable.iterableapi;
 
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.os.Bundle;
+import android.content.pm.PackageManager;
+import android.support.v4.content.IntentCompat;
 import android.util.Log;
-
-import com.google.android.gms.gcm.GoogleCloudMessaging;
-import com.google.android.gms.iid.InstanceID;
-import com.iterable.iterableapi.IterableNotification;
-
-import java.io.IOException;
-
 
 /**
  * Handles processing the Receive intent from GCM called when an
@@ -57,7 +50,27 @@ public class IterablePushReceiver extends BroadcastReceiver{
         //Deep Link Example
         //Passed in from the Push Payload: { "deepLink": "main_page" }
 
-        Class classObj = IterableApi.sharedInstance.getApplicationActivity().getClass();
+//        Class classObj = IterableApi.sharedInstance.getApplicationActivity().getClass();
+
+        context = IterableApi.sharedInstance.getApplicationContext();
+
+        //TODO: get launcher activity class from xml
+        //context should be from main activity context
+        PackageManager packageManager = context.getPackageManager();
+        Intent packageIntent = packageManager.getLaunchIntentForPackage(context.getPackageName());
+        ComponentName componentPackageName = packageIntent.getComponent();
+        String mainClassName = componentPackageName.getClassName();
+        Class mainClass = null;
+        try {
+            mainClass = Class.forName(mainClassName);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+//            ComponentName componentName = intent.getComponent();
+//            Intent mainIntent = IntentCompat.makeRestartActivityTask(componentName);
+//            context.startActivity(mainIntent);
+
 
         //TODO: set the notification icon in a config file (set by developer)
         //int notificationIconId = context.getResources().getIdentifier("notification_icon", "drawable", context.getPackageName());
@@ -65,8 +78,8 @@ public class IterablePushReceiver extends BroadcastReceiver{
 
         if (iconId != 0) {
             //TODO: ensure that this is never null since people might call notificationBuilder.something()
-            IterableNotification notificationBuilder = IterableNotification.createIterableNotification(
-                    context, intent, classObj, iconId); //have a default for no icon.
+            IterableNotification notificationBuilder = IterableNotification.createNotification(
+                    context, intent, mainClass, iconId); //have a default for no icon.
 
             IterableNotification.postNotificationOnDevice(context, notificationBuilder);
         }
