@@ -50,9 +50,7 @@ public class IterablePushReceiver extends BroadcastReceiver{
         //Deep Link Example
         //Passed in from the Push Payload: { "deepLink": "main_page" }
 
-//        Class classObj = IterableApi.sharedInstance.getApplicationActivity().getClass();
-
-        context = IterableApi.sharedInstance.getApplicationContext();
+        context = context.getApplicationContext();
 
         //TODO: get launcher activity class from xml
         //context should be from main activity context
@@ -67,14 +65,9 @@ public class IterablePushReceiver extends BroadcastReceiver{
             e.printStackTrace();
         }
 
-//            ComponentName componentName = intent.getComponent();
-//            Intent mainIntent = IntentCompat.makeRestartActivityTask(componentName);
-//            context.startActivity(mainIntent);
-
-
         //TODO: set the notification icon in a config file (set by developer)
         //int notificationIconId = context.getResources().getIdentifier("notification_icon", "drawable", context.getPackageName());
-        int iconId = IterableApi.sharedInstance.getApplicationContext().getApplicationInfo().icon;
+        int iconId = context.getApplicationInfo().icon;
 
         if (iconId != 0) {
             //TODO: ensure that this is never null since people might call notificationBuilder.something()
