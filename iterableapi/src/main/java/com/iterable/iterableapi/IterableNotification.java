@@ -22,6 +22,8 @@ public class IterableNotification extends NotificationCompat.Builder {
     //TODO: update notificationID to use a bitwise timestamp so it doesn't overwrite old notifications
     public static final int NOTIFICATION_ID = 1;
 
+    private boolean isGhostPush;
+
     protected IterableNotification(Context context) {
         super(context);
     }
@@ -46,33 +48,17 @@ public class IterableNotification extends NotificationCompat.Builder {
          * @return Returns null if the intent comes from an Iterable ghostPush
          */
     private static IterableNotification createNotification(Context context, Intent intent, Class classToOpen, int icon, String defaultMessageBody) {
-
-        //TODO: we can abstract out intent to just be the extras bundle
-        if (IterableHelper.isGhostPush(intent)) {
-            return null;
-        }
-
         Bundle extras = intent.getExtras();
 
         String notificationBody = (defaultMessageBody == null) ? defaultMessageBody : "";
         if (intent.hasExtra("itbl")) {
             notificationBody = extras.getString("body");
         }
-        //TODO: should we be checking for other default values for the body text?
-   /*     else if (intent.hasExtra("default")) {
-            notificationBody = extras.getString("default");
-        }
-        else if (intent.hasExtra("message")) {
-            notificationBody = extras.getString("message");
-        }*/
 
-        //if classToOpen is null open main class from context
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
         mainIntentWithExtras.setClass(context, classToOpen);
         mainIntentWithExtras.putExtras(extras);
         mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-        //TODO: custom handler for deep-linking
 
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, 0);
@@ -80,17 +66,17 @@ public class IterableNotification extends NotificationCompat.Builder {
         //TODO: allow for a custom title to be passed in
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName  = context.getString(stringId);
-        //applicationName = "";
 
         IterableNotification notificationBuilder = new IterableNotification(context);
         notificationBuilder.setSmallIcon(icon)
                 .setContentTitle(applicationName)
-                .setStyle(new android.support.v4.app.NotificationCompat.BigTextStyle()
-                .bigText(notificationBody))
-                .setAutoCancel(true)
-                .setContentText(notificationBody);
+                .setContentText(notificationBody)
+                .setAutoCancel(true);
 
         notificationBuilder.setContentIntent(notificationClickedIntent);
+
+        //TODO: we can abstract out intent to just be the extras bundle
+        notificationBuilder.isGhostPush = IterableHelper.isGhostPush(intent);
 
         return notificationBuilder;
     }
@@ -102,9 +88,8 @@ public class IterableNotification extends NotificationCompat.Builder {
      * @param iterableNotification Function assumes that the iterableNotification is a ghostPush
      *                             if the IterableNotification passed in is null.
      */
-    public static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
-        if (iterableNotification != null) {
-
+    protected static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
+        if ( !iterableNotification.isGhostPush) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getSystemService(Context.NOTIFICATION_SERVICE);
 
