@@ -70,6 +70,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
         mainIntentWithExtras.setClass(context, classToOpen);
         mainIntentWithExtras.putExtras(extras);
+        mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         //TODO: custom handler for deep-linking
 
