@@ -13,6 +13,8 @@ import org.json.JSONObject;
  */
 public class IterableApi {
 
+    static final String TAG = "IterableApi";
+
     /**
      * Configuration URLs for different environment endpoints.
      * TODO: Should this be moved into IterableRequest or into an xml/constants file?
@@ -24,10 +26,11 @@ public class IterableApi {
 
     protected static IterableApi sharedInstance = null;
 
-    //TODO: refactor out context
     private Context _context;
     private String _apiKey;
     private String _email;
+    private String _notificationIcon;
+
 
     public IterableApi(Context context, String apiKey, String email){
         this._context = context;
@@ -52,6 +55,15 @@ public class IterableApi {
 
     protected Context getApplicationContext() {
         return _context;
+    }
+
+    public void setNotificationIcon(String iconName) {
+        _notificationIcon = iconName;
+
+    }
+
+    protected String getNotificationIcon() {
+        return _notificationIcon;
     }
 
     public void registerForPush(String iterableAppId, String gcmProjectId) {
