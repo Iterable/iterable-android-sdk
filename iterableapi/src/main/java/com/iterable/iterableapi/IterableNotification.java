@@ -60,8 +60,9 @@ public class IterableNotification extends NotificationCompat.Builder {
         mainIntentWithExtras.putExtras(extras);
         mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
+
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
-                mainIntentWithExtras, 0);
+                mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
         //TODO: allow for a custom title to be passed in
         int stringId = context.getApplicationInfo().labelRes;
