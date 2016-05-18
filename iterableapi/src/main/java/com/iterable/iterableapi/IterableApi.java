@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import org.json.JSONException;
@@ -14,6 +15,7 @@ import org.json.JSONObject;
 public class IterableApi {
 
     static final String TAG = "IterableApi";
+    static final String NOTIFICATION_ICON_NAME = "iterable_notification_icon";
 
     /**
      * Configuration URLs for different environment endpoints.
@@ -29,8 +31,6 @@ public class IterableApi {
     private Context _context;
     private String _apiKey;
     private String _email;
-    private String _notificationIcon;
-
 
     public IterableApi(Context context, String apiKey, String email){
         this._context = context;
@@ -58,12 +58,20 @@ public class IterableApi {
     }
 
     public void setNotificationIcon(String iconName) {
-        _notificationIcon = iconName;
-
+        setNotificationIcon(_context, iconName);
     }
 
-    protected String getNotificationIcon() {
-        return _notificationIcon;
+    protected static void setNotificationIcon(Context context, String iconName) {
+        SharedPreferences sharedPref = ((Activity) context).getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(NOTIFICATION_ICON_NAME, iconName);
+        editor.commit();
+    }
+
+    protected static String getNotificationIcon(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        String iconName = sharedPref.getString(NOTIFICATION_ICON_NAME, null);
+        return iconName;
     }
 
     public void registerForPush(String iterableAppId, String gcmProjectId) {

@@ -1,9 +1,11 @@
 package com.iterable.iterableapi;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.v4.content.IntentCompat;
 import android.util.Log;
@@ -52,10 +54,10 @@ public class IterablePushReceiver extends BroadcastReceiver{
         //Deep Link Example
         //Passed in from the Push Payload: { "deepLink": "main_page" }
 
-        context = context.getApplicationContext();
+        Context appContext = context.getApplicationContext();
 
-        PackageManager packageManager = context.getPackageManager();
-        Intent packageIntent = packageManager.getLaunchIntentForPackage(context.getPackageName());
+        PackageManager packageManager = appContext.getPackageManager();
+        Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
         ComponentName componentPackageName = packageIntent.getComponent();
         String mainClassName = componentPackageName.getClassName();
         Class mainClass = null;
@@ -65,16 +67,12 @@ public class IterablePushReceiver extends BroadcastReceiver{
             e.printStackTrace();
         }
 
-        //TODO: set the notification icon in a config file (set by developer)
-        String notificationIconName = null;
-        if (IterableApi.sharedInstance != null) {
-            notificationIconName = IterableApi.sharedInstance.getNotificationIcon();
-        }
+        //TODO: set the notification icon to optionally be set in a config file
+        String notificationIconName = IterableApi.getNotificationIcon(context);
 
-        //TODO: store notificationIconName in prefs
-        int iconId = context.getApplicationInfo().icon; //fallback icon is the app icon
+        int iconId = appContext.getApplicationInfo().icon;
         if (notificationIconName != null) {
-            iconId = context.getResources().getIdentifier(notificationIconName, "drawable", context.getPackageName());
+            iconId = appContext.getResources().getIdentifier(notificationIconName, "drawable", appContext.getPackageName());
         } else if (iconId != 0){
             Log.d(TAG, "No Notification Icon defined - defaulting to app icon");
         } else {
@@ -82,11 +80,10 @@ public class IterablePushReceiver extends BroadcastReceiver{
         }
 
         if (iconId != 0) {
-            //TODO: ensure that this is never null since people might call notificationBuilder.something()
             IterableNotification notificationBuilder = IterableNotification.createNotification(
-                    context, intent, mainClass, iconId);
+                    appContext, intent, mainClass, iconId);
 
-            IterableNotification.postNotificationOnDevice(context, notificationBuilder);
+            IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
         }
     }
 }
