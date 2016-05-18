@@ -50,6 +50,7 @@ public class IterableNotification extends NotificationCompat.Builder {
     private static IterableNotification createNotification(Context context, Intent intent, Class classToOpen, int icon, String defaultMessageBody) {
         Bundle extras = intent.getExtras();
 
+        //TODO: Should we surpress non-iterable notifications?
         String notificationBody = (defaultMessageBody == null) ? defaultMessageBody : "";
         if (intent.hasExtra("itbl")) {
             notificationBody = extras.getString("body");
