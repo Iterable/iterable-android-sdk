@@ -17,6 +17,8 @@ import android.util.Log;
  */
 public class IterablePushReceiver extends BroadcastReceiver{
 
+    static final String TAG = "IterablePushReceiver";
+
     private static final String ACTION_GCM_RECEIVE_INTENT = "com.google.android.c2dm.intent.RECEIVE";
     private static final String ACTION_GCM_REGISTRATION_INTENT = "com.google.android.c2dm.intent.REGISTRATION";
 
@@ -31,7 +33,7 @@ public class IterablePushReceiver extends BroadcastReceiver{
         } else if (intentAction.equals(ACTION_GCM_RECEIVE_INTENT)) {
             handlePushReceived(context, intent);
         } else if (intentAction.equals(ACTION_GCM_REGISTRATION_INTENT)) {
-            Log.d("IterablePushReceiver", "received GCM registration intent action");
+            Log.d(TAG, "received GCM registration intent action");
         }
     }
 
@@ -52,8 +54,6 @@ public class IterablePushReceiver extends BroadcastReceiver{
 
         context = context.getApplicationContext();
 
-        //TODO: get launcher activity class from xml
-        //context should be from main activity context
         PackageManager packageManager = context.getPackageManager();
         Intent packageIntent = packageManager.getLaunchIntentForPackage(context.getPackageName());
         ComponentName componentPackageName = packageIntent.getComponent();
@@ -66,7 +66,6 @@ public class IterablePushReceiver extends BroadcastReceiver{
         }
 
         //TODO: set the notification icon in a config file (set by developer)
-        //int notificationIconId = context.getResources().getIdentifier("notification_icon", "drawable", context.getPackageName());
         int iconId = context.getApplicationInfo().icon;
 
         if (iconId != 0) {
@@ -75,9 +74,6 @@ public class IterablePushReceiver extends BroadcastReceiver{
                     context, intent, mainClass, iconId); //have a default for no icon.
 
             IterableNotification.postNotificationOnDevice(context, notificationBuilder);
-        }
-        else {
-            //no default notif icon defined.
         }
     }
 }
