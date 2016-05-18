@@ -70,7 +70,7 @@ public class IterableApi {
 
     protected static String getNotificationIcon(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        String iconName = sharedPref.getString(NOTIFICATION_ICON_NAME, null);
+        String iconName = sharedPref.getString(NOTIFICATION_ICON_NAME, "");
         return iconName;
     }
 

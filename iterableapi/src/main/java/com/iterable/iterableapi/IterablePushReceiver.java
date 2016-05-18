@@ -68,22 +68,23 @@ public class IterablePushReceiver extends BroadcastReceiver{
         }
 
         //TODO: set the notification icon to optionally be set in a config file
-        String notificationIconName = IterableApi.getNotificationIcon(context);
+        int iconId = appContext.getResources().getIdentifier(
+                IterableApi.getNotificationIcon(context),
+                "drawable",
+                appContext.getPackageName());
 
-        int iconId = appContext.getApplicationInfo().icon;
-        if (notificationIconName != null) {
-            iconId = appContext.getResources().getIdentifier(notificationIconName, "drawable", appContext.getPackageName());
-        } else if (iconId != 0){
-            Log.d(TAG, "No Notification Icon defined - defaulting to app icon");
-        } else {
-            Log.d(TAG, "No Notification Icon defined - push notifications will not be displayed");
+        if (iconId == 0) {
+            iconId = appContext.getApplicationInfo().icon;
+            if (iconId != 0){
+                Log.d(TAG, "No Notification Icon defined - defaulting to app icon");
+            } else {
+                Log.d(TAG, "No Notification Icon defined - push notifications will not be displayed");
+            }
         }
 
-        if (iconId != 0) {
-            IterableNotification notificationBuilder = IterableNotification.createNotification(
-                    appContext, intent, mainClass, iconId);
+        IterableNotification notificationBuilder = IterableNotification.createNotification(
+                appContext, intent, mainClass, iconId);
 
-            IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
-        }
+        IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
     }
 }
