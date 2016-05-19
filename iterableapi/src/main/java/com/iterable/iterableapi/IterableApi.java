@@ -9,6 +9,8 @@ import android.os.Bundle;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Date;
+
 /**
  * Created by davidtruong on 4/4/16.
  */
@@ -78,8 +80,8 @@ public class IterableApi {
         //TODO: set this up as a callback then call registerDeviceToken
         Intent pushRegistrationIntent = new Intent(_context, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
-        pushRegistrationIntent.putExtra("IterableAppId", iterableAppId);
-        pushRegistrationIntent.putExtra("GCMProjectNumber", gcmProjectId);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECTID, gcmProjectId);
         _context.sendBroadcast(pushRegistrationIntent);
     }
 
@@ -112,21 +114,21 @@ public class IterableApi {
      */
     public void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
         //TODO: Update thie platform flag for Kindle support based upon device type or store build
-        String platform = "GCM";
+        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
 
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put("email", _email);
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
             JSONObject device = new JSONObject();
-            device.put("token", token);
-            device.put("platform", platform);
-            device.put("applicationName", applicationName);
-            requestJSON.put("device", device);
+            device.put(IterableConstants.KEY_TOKEN, token);
+            device.put(IterableConstants.KEY_PLATFORM, platform);
+            device.put(IterableConstants.KEY_APPLICATIONNAME, applicationName);
+            requestJSON.put(IterableConstants.KEY_DEVICE, device);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest("users/registerDeviceToken", requestJSON);
+        sendRequest(IterableConstants.ENDPOINT_REGISTERDEVICETOKEN, requestJSON);
     }
 
     public void track(String eventName) {
@@ -137,32 +139,31 @@ public class IterableApi {
         track(eventName, null, null, dataFields);
     }
 
-    public void track(String eventName, String campaignID, String templateId) {
-        track(eventName, campaignID, templateId, null);
+    public void track(String eventName, String campaignId, String templateId) {
+        track(eventName, campaignId, templateId, null);
     }
 
-    public void track(String eventName, String campaignID, String templateId, JSONObject dataFields) {
+    public void track(String eventName, String campaignId, String templateId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put("email", _email);
-            requestJSON.put("eventName", eventName);
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
 
-            if (campaignID != null) {
-                //TODO: set to lowerCase
-                requestJSON.put("campaignID", campaignID);
+            if (campaignId != null) {
+                requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             }
             if (templateId != null) {
-                requestJSON.put("templateId", templateId);
+                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             }
             if (dataFields != null) {
-                requestJSON.put("dataFields", dataFields);
+                requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
             }
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest("events/track", requestJSON);
+        sendRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
     /**
@@ -185,18 +186,18 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put("email", _email);
-            requestJSON.put("campaignId", campaignId);
-            requestJSON.put("templateId", templateId);
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             if (dataFields != null) {
-                requestJSON.put("dataFields", dataFields);
+                requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
             }
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest("events/trackConversion", requestJSON);
+        sendRequest(IterableConstants.ENDPOINT_TRACKCONVERSION, requestJSON);
     }
 
     /**
@@ -208,16 +209,16 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put("email", _email);
-            requestJSON.put("campaignId", campaignId);
-            requestJSON.put("templateId", templateId);
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
 
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest("events/trackPushOpen", requestJSON);
+        sendRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
     }
 
     /**
@@ -237,7 +238,7 @@ public class IterableApi {
      *               If set in the past, message is sent immediately.
      *               Format is YYYY-MM-DD HH:MM:SS in UTC
      */
-    public void sendPush(String email, int campaignId, String sendAt) {
+    public void sendPush(String email, int campaignId, Date sendAt) {
         sendPush(email, campaignId, sendAt, null);
     }
 
@@ -259,21 +260,21 @@ public class IterableApi {
      *               If set in the past, message is sent immediately.
      *               Format is YYYY-MM-DD HH:MM:SS in UTC
      */
-    public void sendPush(String email, int campaignId, String sendAt, JSONObject dataFields) {
+    public void sendPush(String email, int campaignId, Date sendAt, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put("recipientEmail", email);
-            requestJSON.put("campaignId", campaignId);
+            requestJSON.put(IterableConstants.KEY_RECIPIENT_EMAIL, email);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             if (sendAt != null){
-                requestJSON.put("sendAt", sendAt);
+                requestJSON.put(IterableConstants.KEY_SEND_AT, sendAt.toString());
             }
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest("push/target", requestJSON);
+        sendRequest(IterableConstants.ENDPOINT_PUSHTARGET, requestJSON);
     }
 
     // FIXME: 4/22/16 Not yet complete
@@ -287,16 +288,16 @@ public class IterableApi {
         }
 
         try {
-            userJSON.put("email", _email);
-            requestJSON.put("user", userJSON);
-            requestJSON.put("items", commerceItems.toString());
-            requestJSON.put("total", total);
+            userJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_USER, userJSON);
+            requestJSON.put(IterableConstants.KEY_ITEMS, commerceItems.toString());
+            requestJSON.put(IterableConstants.KEY_TOTAL, total);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest("commerce/trackPurchase", requestJSON);
+        sendRequest(IterableConstants.ENDPOINT_TRACKPURCHASE, requestJSON);
     }
 
     //TODO: reset current user profile
@@ -312,14 +313,14 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put("currentEmail", _email);
-            requestJSON.put("newEmail", newEmail);
+            requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest("users/updateEmail", requestJSON);
+        sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
 
         //TODO: wait for a callback from sendRequest before changing email
         _email = newEmail;
@@ -336,6 +337,7 @@ public class IterableApi {
      * @param json
      */
     private void sendRequest(String uri, JSONObject json) {
-        new IterableRequest().execute(iterableBaseUrl, _apiKey, uri, json.toString());
+        IterableApiRequest request = new IterableApiRequest(iterableBaseUrl, _apiKey, uri, json.toString());
+        new IterableRequest().execute(request);
     }
 }

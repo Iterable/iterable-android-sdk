@@ -15,7 +15,7 @@ import java.net.URL;
  * Async task to handle sending data to the Iterable server
  * Created by davidtruong on 4/21/16.
  */
-class IterableRequest extends AsyncTask<String, Integer, String> {
+class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
 
     /**
@@ -28,46 +28,58 @@ class IterableRequest extends AsyncTask<String, Integer, String> {
      *               json
      * @return
      */
-    protected String doInBackground(String... params) {
-        String iterableBaseUrl = params[0];
-        String apiKey = params[1];
-        String uri = params[2];
-        String json = params[3];
+    protected String doInBackground(IterableApiRequest... params) {
+        IterableApiRequest iterableApiRequest = params[0];
+        if (iterableApiRequest != null) {
+            URL url;
+            HttpURLConnection urlConnection = null;
+            try {
+                url = new URL(iterableApiRequest.url + iterableApiRequest.uri);
 
-        URL url;
-        HttpURLConnection urlConnection = null;
-        try {
-            url = new URL(iterableBaseUrl + uri);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setDoOutput(true);
+                urlConnection.setRequestMethod("POST");
 
-            urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setDoOutput(true);
-            urlConnection.setRequestMethod("POST");
+                urlConnection.setRequestProperty("Accept", "application/json");
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.setRequestProperty(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
 
-            urlConnection.setRequestProperty("Accept", "application/json");
-            urlConnection.setRequestProperty("Content-type", "application/json");
-            urlConnection.setRequestProperty("api_key", apiKey);
+                OutputStream os = urlConnection.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                writer.write(iterableApiRequest.json);
+                writer.flush();
+                writer.close();
+                os.close();
 
-            OutputStream os = urlConnection.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-            writer.write(json);
-            writer.flush();
-            writer.close();
-            os.close();
+                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
 
-            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                java.util.Scanner s = new java.util.Scanner(in).useDelimiter("\\A");
+                String inputString = s.hasNext() ? s.next() : "";
+                Log.d(TAG, inputString); //TODO: pass back as the result
 
-            java.util.Scanner s = new java.util.Scanner(in).useDelimiter("\\A");
-            String inputString = s.hasNext() ? s.next() : "";
-            Log.d(TAG, inputString);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
             }
         }
 
         return null;
+    }
+}
+
+class IterableApiRequest {
+    String url = "";
+    String apiKey = "";
+    String uri = "";
+    String json = "";
+
+    public IterableApiRequest(String url, String apiKey, String uri, String json){
+        this.url = url;
+        this.apiKey = apiKey;
+        this.uri = uri;
+        this.json = json;
     }
 }

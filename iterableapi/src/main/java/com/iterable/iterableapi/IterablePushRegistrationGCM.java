@@ -33,8 +33,8 @@ public class IterablePushRegistrationGCM extends AsyncTask<String, Integer, Stri
 //            String iterableAppId = bundle.getString("IterableAppId");
 
             if (iterableAppId != null) {
-                Class II = Class.forName("com.google.android.gms.iid.InstanceID");
-                if (II != null) {
+                Class instanceIdClass = Class.forName("com.google.android.gms.iid.InstanceID");
+                if (instanceIdClass != null) {
                     InstanceID instanceID = InstanceID.getInstance(IterableApi.sharedInstance.getApplicationContext());
                     String registrationId = "";
                     registrationId = instanceID.getToken(projectNumber,

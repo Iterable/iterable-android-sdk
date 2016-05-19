@@ -40,8 +40,8 @@ public class IterablePushReceiver extends BroadcastReceiver{
     }
 
     private void handlePushRegistration(Context context, Intent intent) {
-        String iterableAppId = intent.getStringExtra("IterableAppId");
-        String projectNumber = intent.getStringExtra("GCMProjectNumber");
+        String iterableAppId = intent.getStringExtra(IterableConstants.PUSH_APPID);
+        String projectNumber = intent.getStringExtra(IterableConstants.PUSH_PROJECTID);
         new IterablePushRegistrationGCM().execute(iterableAppId, projectNumber);
     }
 
@@ -78,7 +78,7 @@ public class IterablePushReceiver extends BroadcastReceiver{
             if (iconId != 0){
                 Log.d(TAG, "No Notification Icon defined - defaulting to app icon");
             } else {
-                Log.d(TAG, "No Notification Icon defined - push notifications will not be displayed");
+                Log.w(TAG, "No Notification Icon defined - push notifications will not be displayed");
             }
         }
 
