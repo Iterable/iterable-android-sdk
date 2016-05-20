@@ -21,20 +21,17 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     /**
      * Sends the given request to Iterable using a HttpUserConnection
      * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
-     * @param params array of parameters
-     *               iterableBaseUrl
-     *               apiKey
-     *               uri
-     *               json
+     * @param params
      * @return
      */
     protected String doInBackground(IterableApiRequest... params) {
+        //TODO: perhaps loop through all the request parameters
         IterableApiRequest iterableApiRequest = params[0];
         if (iterableApiRequest != null) {
             URL url;
             HttpURLConnection urlConnection = null;
             try {
-                url = new URL(iterableApiRequest.url + iterableApiRequest.uri);
+                url = new URL(iterableApiRequest.url + iterableApiRequest.resourcePath);
 
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setDoOutput(true);
@@ -47,7 +44,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 OutputStream os = urlConnection.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
                 writer.write(iterableApiRequest.json);
-                writer.flush();
                 writer.close();
                 os.close();
 
@@ -73,13 +69,13 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 class IterableApiRequest {
     String url = "";
     String apiKey = "";
-    String uri = "";
+    String resourcePath = "";
     String json = "";
 
-    public IterableApiRequest(String url, String apiKey, String uri, String json){
+    public IterableApiRequest(String url, String apiKey, String resourcePath, String json){
         this.url = url;
         this.apiKey = apiKey;
-        this.uri = uri;
+        this.resourcePath = resourcePath;
         this.json = json;
     }
 }

@@ -333,11 +333,11 @@ public class IterableApi {
 
     /**
      * Performs network operations on an async thread instead of the main thread.
-     * @param uri
+     * @param resourcePath
      * @param json
      */
-    private void sendRequest(String uri, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(iterableBaseUrl, _apiKey, uri, json.toString());
+    private void sendRequest(String resourcePath, JSONObject json) {
+        IterableApiRequest request = new IterableApiRequest(iterableBaseUrl, _apiKey, resourcePath, json.toString());
         new IterableRequest().execute(request);
     }
 }

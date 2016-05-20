@@ -8,12 +8,6 @@ import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
 
 /**
- * An extension of {@link android.support.v7.app.NotificationCompat.Builder}
- * In addition to the builder in v7, this builder also includes a factory for creating
- * IterableNotification objects.
- *
- * IterableNotification takes care of ghostPushes which are sent to determine whether an
- * application is currently installed or uninstalled.
  *
  * Created by davidtruong on 4/29/16.
  */
@@ -28,31 +22,20 @@ public class IterableNotification extends NotificationCompat.Builder {
         super(context);
     }
 
-    //TODO: create public notification to be modified
-//    public static IterableNotification createNotification(Context context, Class classToOpen, int icon, String defaultMessageBody) {
-//        return createNotification(context, null, classToOpen, icon, defaultMessageBody);
-//    }
-
-    protected static IterableNotification createNotification(Context context, Intent intent, Class classToOpen, int icon) {
-        return createNotification(context, intent, classToOpen, icon, null);
-    }
-
         /**
          * Creates and returns an instance of IterableNotification.
-         * If the notification is a ghostPush, then the function returns null.
          * @param context
          * @param intent
          * @param classToOpen
          * @param icon
-         * @param defaultMessageBody
          * @return Returns null if the intent comes from an Iterable ghostPush
          */
-    private static IterableNotification createNotification(Context context, Intent intent, Class classToOpen, int icon, String defaultMessageBody) {
+    public static IterableNotification createNotification(Context context, Intent intent, Class classToOpen, int icon) {
         Bundle extras = intent.getExtras();
 
         //TODO: Should we surpress non-iterable notifications?
-        String notificationBody = (defaultMessageBody == null) ? defaultMessageBody : "";
-        if (intent.hasExtra("itbl")) {
+        String notificationBody = null;
+        if (intent.hasExtra("itbl") && extras.containsKey("body")) {
             notificationBody = extras.getString("body");
         }
 
@@ -60,7 +43,6 @@ public class IterableNotification extends NotificationCompat.Builder {
         mainIntentWithExtras.setClass(context, classToOpen);
         mainIntentWithExtras.putExtras(extras);
         mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
 
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -90,7 +72,7 @@ public class IterableNotification extends NotificationCompat.Builder {
      * @param iterableNotification Function assumes that the iterableNotification is a ghostPush
      *                             if the IterableNotification passed in is null.
      */
-    protected static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
+    public static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
         if ( !iterableNotification.isGhostPush) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getSystemService(Context.NOTIFICATION_SERVICE);
