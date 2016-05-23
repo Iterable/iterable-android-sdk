@@ -19,15 +19,6 @@ public class IterableApi {
     static final String TAG = "IterableApi";
     static final String NOTIFICATION_ICON_NAME = "iterable_notification_icon";
 
-    /**
-     * Configuration URLs for different environment endpoints.
-     * TODO: Should this be moved into IterableRequest or into an xml/constants file?
-     */
-    //static final String iterableBaseUrl = "https://api.iterable.com/api/";
-    //static final String iterableBaseUrl = "https://canary.iterable.com/api/";
-    //static final String iterableBaseUrl = "http://staging.iterable.com/api/";
-    static final String iterableBaseUrl = "http://Davids-MBP-2.lan:9000/api/"; //Local Dev endpoint
-
     protected static IterableApi sharedInstance = null;
 
     private Context _context;
@@ -278,7 +269,7 @@ public class IterableApi {
     }
 
     // FIXME: 4/22/16 Not yet complete
-    public void trackPurchase(CommerceItem[] commerceItems, double total) {
+    private void trackPurchase(CommerceItem[] commerceItems, double total) {
         JSONObject requestJSON = new JSONObject();
 
         JSONObject userJSON = new JSONObject();
@@ -301,14 +292,13 @@ public class IterableApi {
     }
 
     //TODO: reset current user profile
-    public static void reset() {
+    private static void reset() {
         // clears all the current device
 
         //TODO:Require the app to re-initialize with the SDK
 
     }
 
-    //TODO: identity(with a new email)
     public void updateEmail(String newEmail) {
         JSONObject requestJSON = new JSONObject();
 
@@ -337,7 +327,7 @@ public class IterableApi {
      * @param json
      */
     private void sendRequest(String resourcePath, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(iterableBaseUrl, _apiKey, resourcePath, json.toString());
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json.toString());
         new IterableRequest().execute(request);
     }
 }

@@ -36,12 +36,12 @@ public class IterablePushRegistrationGCM extends AsyncTask<String, Integer, Stri
                 Class instanceIdClass = Class.forName("com.google.android.gms.iid.InstanceID");
                 if (instanceIdClass != null) {
                     InstanceID instanceID = InstanceID.getInstance(IterableApi.sharedInstance.getApplicationContext());
-                    String registrationId = "";
-                    registrationId = instanceID.getToken(projectNumber,
+                    String registrationToken = "";
+                    registrationToken = instanceID.getToken(projectNumber,
                             GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
 
-                    if (!registrationId.isEmpty()) {
-                        IterableApi.sharedInstance.registerDeviceToken(iterableAppId, registrationId);
+                    if (!registrationToken.isEmpty()) {
+                        IterableApi.sharedInstance.registerDeviceToken(iterableAppId, registrationToken);
                     }
                 }
             } else {

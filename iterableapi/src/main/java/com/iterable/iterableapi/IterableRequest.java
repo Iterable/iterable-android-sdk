@@ -19,6 +19,16 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
 
     /**
+     * Configuration URLs for different environment endpoints.
+     * TODO: Set in a constants file which gets pulled at
+     */
+    //static final String iterableBaseUrl = "https://api.iterable.com/api/";
+    //static final String iterableBaseUrl = "https://canary.iterable.com/api/";
+    //static final String iterableBaseUrl = "http://staging.iterable.com/api/";
+    static final String iterableBaseUrl = "http://Davids-MBP-2.lan:9000/api/"; //Local Dev endpoint
+
+
+    /**
      * Sends the given request to Iterable using a HttpUserConnection
      * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
      * @param params
@@ -31,7 +41,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             URL url;
             HttpURLConnection urlConnection = null;
             try {
-                url = new URL(iterableApiRequest.url + iterableApiRequest.resourcePath);
+                url = new URL(iterableBaseUrl + iterableApiRequest.resourcePath);
 
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setDoOutput(true);
@@ -67,13 +77,11 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 }
 
 class IterableApiRequest {
-    String url = "";
     String apiKey = "";
     String resourcePath = "";
     String json = "";
 
-    public IterableApiRequest(String url, String apiKey, String resourcePath, String json){
-        this.url = url;
+    public IterableApiRequest(String apiKey, String resourcePath, String json){
         this.apiKey = apiKey;
         this.resourcePath = resourcePath;
         this.json = json;
