@@ -9,7 +9,9 @@ import android.os.Bundle;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Created by davidtruong on 4/4/16.
@@ -25,10 +27,8 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
 
-    public IterableApi(Context context, String apiKey, String email){
-        this._context = context;
-        this._apiKey = apiKey;
-        this._email = email;
+    private IterableApi(Context context, String apiKey, String email){
+        updateData(context, apiKey, email);
     }
 
     /**
@@ -40,10 +40,23 @@ public class IterableApi {
      */
     public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
     {
-        sharedInstance = new IterableApi(context, apiKey, email);
+        if (sharedInstance == null)
+        {
+            sharedInstance = new IterableApi(context, apiKey, email);
+        } else{
+            //TODO: check to see if we need to call updateEmail
+            sharedInstance.updateData(context, apiKey, email);
+        }
+
         Intent calledIntent = ((Activity) context).getIntent();
         sharedInstance.trackAppOpen(calledIntent);
         return sharedInstance;
+    }
+
+    private void updateData(Context context, String apiKey, String email) {
+        this._context = context;
+        this._apiKey = apiKey;
+        this._email = email;
     }
 
     protected Context getApplicationContext() {
@@ -140,15 +153,9 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
             requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
 
-            if (campaignId != null) {
-                requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
-            }
-            if (templateId != null) {
-                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            }
-            if (dataFields != null) {
-                requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
-            }
+            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -258,7 +265,11 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_RECIPIENT_EMAIL, email);
             requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             if (sendAt != null){
-                requestJSON.put(IterableConstants.KEY_SEND_AT, sendAt.toString());
+                String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
+                SimpleDateFormat sdf = new SimpleDateFormat(DATEFORMAT);
+                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                String dateString = sdf.format(sendAt);
+                requestJSON.put(IterableConstants.KEY_SEND_AT, dateString);
             }
         }
         catch (JSONException e) {
