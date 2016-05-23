@@ -33,10 +33,16 @@ public class IterableNotification extends NotificationCompat.Builder {
     public static IterableNotification createNotification(Context context, Intent intent, Class classToOpen, int icon) {
         Bundle extras = intent.getExtras();
 
-        //TODO: Should we surpress non-iterable notifications?
+        int stringId = context.getApplicationInfo().labelRes;
+        String applicationName  = context.getString(stringId);
         String notificationBody = null;
-        if (intent.hasExtra("itbl") && extras.containsKey("body")) {
-            notificationBody = extras.getString("body");
+        if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
+            if (extras.containsKey(IterableConstants.ITERABLE_DATA_BODY)) {
+                notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
+            }
+            if (extras.containsKey(IterableConstants.ITERABLE_DATA_TITLE)) {
+                applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE);
+            }
         }
 
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
@@ -47,9 +53,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        //TODO: allow for a custom title to be passed in
-        int stringId = context.getApplicationInfo().labelRes;
-        String applicationName  = context.getString(stringId);
+
 
         IterableNotification notificationBuilder = new IterableNotification(context);
         notificationBuilder.setSmallIcon(icon)
@@ -59,7 +63,6 @@ public class IterableNotification extends NotificationCompat.Builder {
 
         notificationBuilder.setContentIntent(notificationClickedIntent);
 
-        //TODO: we can abstract out intent to just be the extras bundle
         notificationBuilder.isGhostPush = IterableHelper.isGhostPush(intent);
 
         return notificationBuilder;

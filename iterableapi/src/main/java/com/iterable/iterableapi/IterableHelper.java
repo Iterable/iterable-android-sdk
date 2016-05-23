@@ -11,22 +11,13 @@ import org.json.JSONObject;
  */
 public class IterableHelper {
     public static boolean isGhostPush(Intent intent) {
-
         boolean isGhostPush = false;
 
         Bundle extras = intent.getExtras();
-        if (intent.hasExtra("itbl")) {
-            String iterableData = extras.getString("itbl");
-
-            //TODO: should we change the android architecture to handle ghost pushes automatically
-            try {
-                JSONObject iterableJson = new JSONObject(iterableData);
-                if (iterableJson.has("isGhostPush")) {
-                    isGhostPush = iterableJson.getBoolean("isGhostPush");
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+        if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
+            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+            IterableNotificationData data = new IterableNotificationData(iterableData);
+            isGhostPush = data.getIsGhostPush();
         }
 
         return isGhostPush;

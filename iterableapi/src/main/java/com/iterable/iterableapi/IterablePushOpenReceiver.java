@@ -9,6 +9,9 @@ import android.support.annotation.CallSuper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Dictionary;
+import java.util.Map;
+
 
 /**
  * Created by davidtruong on 4/6/16.
@@ -20,7 +23,6 @@ import org.json.JSONObject;
 public class IterablePushOpenReceiver extends BroadcastReceiver {
     static final String TAG = "IterablePushOpenReceiver";
 
-
     /**
      * IterablePushOpenReceiver handles the broadcast for tracking a pushOpen.
      * @param context
@@ -31,33 +33,18 @@ public class IterablePushOpenReceiver extends BroadcastReceiver {
         String intentAction = intent.getAction();
         if (intentAction.equals(IterableConstants.ACTION_NOTIF_OPENED)){
             Bundle extras = intent.getExtras();
-            if (extras != null && !extras.isEmpty() && extras.containsKey("itbl"))
+            if (extras != null && !extras.isEmpty() && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY))
             {
-                String iterableData = extras.getString("itbl");
-
-                //DEBUG
-//                Toast.makeText(context, "Sending Iterable push open data: " + iterableData, Toast.LENGTH_LONG).show();
+                String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+                IterableNotificationData iterableNotificationData = new IterableNotificationData(iterableData);
 
                 //TODO: storeCampaignID/Template for 24 hrs to match web
                 //Need local storage on device
                 //Currently this is only set for the given session
 
-                int campaignId = 0;
-                int templateId = 0;
-                try {
-                    JSONObject iterableJson = new JSONObject(iterableData);
-                    //TODO: do we need data validation for the params?
-                    campaignId = iterableJson.getInt("campaignId");
-                    templateId = iterableJson.getInt("templateId");
-
-                    //TODO: do we need to parse out any additional dataFields to pass to trackPushOpen?
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
 
                 if (IterableApi.sharedInstance != null) {
-                    IterableApi.sharedInstance.trackPushOpen(campaignId, templateId);
+                    IterableApi.sharedInstance.trackPushOpen(iterableNotificationData.getCampaignId(), iterableNotificationData.getTemplateId());
                 }
             } else {
                 //TODO: Tried to track a push open that was did not contain iterable extraData

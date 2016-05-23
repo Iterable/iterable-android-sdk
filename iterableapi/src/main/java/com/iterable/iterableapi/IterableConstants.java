@@ -27,7 +27,7 @@ public final class IterableConstants {
     public static final String KEY_USER                = "user";
     public static final String KEY_ITEMS               = "items";
     public static final String KEY_TOTAL               = "total";
-
+    
     public static final String ENDPOINT_PUSHTARGET          = "push/target";
     public static final String ENDPOINT_REGISTERDEVICETOKEN = "users/registerDeviceToken";
     public static final String ENDPOINT_TRACK               = "events/track";
@@ -41,4 +41,9 @@ public final class IterableConstants {
 
     public static final String MESSAGING_PLATFORM_GOOGLE = "GCM";
     public static final String MESSAGING_PLATFORM_AMAZON = "ADM";
+
+    public static final String IS_GHOST_PUSH = "isGhostPush";
+    public static final String ITERABLE_DATA_KEY = "itbl";
+    public static final String ITERABLE_DATA_BODY = "body";
+    public static final String ITERABLE_DATA_TITLE = "title";
 }
