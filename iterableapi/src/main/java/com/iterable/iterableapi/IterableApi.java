@@ -27,6 +27,9 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
 
+    private Bundle _payloadData;
+    private IterableNotificationData _notificationData;
+    
     private IterableApi(Context context, String apiKey, String email){
         updateData(context, apiKey, email);
     }
@@ -324,6 +327,38 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
 
         _email = newEmail;
+    }
+
+    public String getPayloadData(String key) {
+        String dataString = null;
+        if (_payloadData != null){
+            dataString = _payloadData.getString(key, null);
+        }
+        return dataString;
+    }
+
+    void setPayloadData(Bundle bundle) {
+        _payloadData = bundle;
+    }
+
+    public int getTemplateId() {
+        int returnId = 0;
+        if (_notificationData != null){
+            returnId = _notificationData.getTemplateId();
+        }
+        return returnId;
+    }
+
+    public int getCampaignId() {
+        int returnId = 0;
+        if (_notificationData != null){
+            returnId = _notificationData.getCampaignId();
+        }
+        return returnId;
+    }
+
+    void setNotificationData(IterableNotificationData data) {
+        _notificationData = data;
     }
 
     //TODO: use adid or android ID

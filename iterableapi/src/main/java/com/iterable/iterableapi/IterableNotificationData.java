@@ -6,7 +6,7 @@ import org.json.JSONObject;
 /**
  * Created by davidtruong on 5/23/16.
  */
-public class IterableNotificationData {
+class IterableNotificationData {
         private int campaignId;
         private int templateId;
         private boolean isGhostPush;

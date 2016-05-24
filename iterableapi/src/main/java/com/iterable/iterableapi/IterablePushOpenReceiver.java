@@ -35,15 +35,16 @@ public class IterablePushOpenReceiver extends BroadcastReceiver {
             Bundle extras = intent.getExtras();
             if (extras != null && !extras.isEmpty() && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY))
             {
-                String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
-                IterableNotificationData iterableNotificationData = new IterableNotificationData(iterableData);
+                String iterableDataString = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+                IterableNotificationData iterableNotificationData = new IterableNotificationData(iterableDataString);
 
                 //TODO: storeCampaignID/Template for 24 hrs to match web
                 //Need local storage on device
                 //Currently this is only set for the given session
 
-
                 if (IterableApi.sharedInstance != null) {
+                    IterableApi.sharedInstance.setPayloadData(extras);
+                    IterableApi.sharedInstance.setNotificationData(iterableNotificationData);
                     IterableApi.sharedInstance.trackPushOpen(iterableNotificationData.getCampaignId(), iterableNotificationData.getTemplateId());
                 }
             } else {
