@@ -1,6 +1,9 @@
 package com.iterable.iterableapi;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
@@ -11,37 +14,25 @@ import java.io.IOException;
 /**
  * Created by davidtruong on 5/4/16.
  */
-public class IterablePushRegistrationGCM extends AsyncTask<String, Integer, String> {
+class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData, Void, String> {
     static final String TAG = "IterableRequest";
 
 
-    protected String doInBackground(String... params) {
+    protected String doInBackground(IterableGCMRegistrationData... params) {
         try {
-            String iterableAppId = params[0];
-            String projectNumber = params[1];
-//            String iterableAppId = intent.getStringExtra("IterableAppId");
-//            String projectNumber = intent.getStringExtra("GCMProjectNumber");
+            //TODO: perhaps loop through all the request parameters
+            IterableGCMRegistrationData iterableGCMRegistrationData = params[0];
 
-            //TODO: look onto passing the AppID in via the androidManifest
-//            PackageManager pm = IterableApi.sharedInstance._mainActivity.getPackageManager();
-//            ApplicationInfo ai = pm.getApplicationInfo(IterableApi.sharedInstance._mainActivity
-//                            .getPackageName(), PackageManager.GET_META_DATA);
-//            Bundle bundle = ai.metaData;
-//
-//            //Add <meta-data android:name="IterableAppId" android:value="<registerd_app_id>" />
-//            //to the androidmanifest.xml
-//            String iterableAppId = bundle.getString("IterableAppId");
-
-            if (iterableAppId != null) {
+            if (iterableGCMRegistrationData.iterableAppId != null) {
                 Class instanceIdClass = Class.forName("com.google.android.gms.iid.InstanceID");
                 if (instanceIdClass != null) {
                     InstanceID instanceID = InstanceID.getInstance(IterableApi.sharedInstance.getApplicationContext());
                     String registrationToken = "";
-                    registrationToken = instanceID.getToken(projectNumber,
+                    registrationToken = instanceID.getToken(iterableGCMRegistrationData.projectNumber,
                             GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
 
                     if (!registrationToken.isEmpty()) {
-                        IterableApi.sharedInstance.registerDeviceToken(iterableAppId, registrationToken);
+                        IterableApi.sharedInstance.registerDeviceToken(iterableGCMRegistrationData.iterableAppId, registrationToken);
                     }
                 }
             } else {
@@ -56,10 +47,19 @@ public class IterablePushRegistrationGCM extends AsyncTask<String, Integer, Stri
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } //catch (PackageManager.NameNotFoundException e) {
-//            e.printStackTrace();
-//        }
+        }
+
         return null;
     }
 }
+
+class IterableGCMRegistrationData {
+    String iterableAppId = "";
+    String projectNumber = "";
+    public IterableGCMRegistrationData(String iterableAppId, String projectNumber){
+        this.iterableAppId = iterableAppId;
+        this.projectNumber = projectNumber;
+    }
+}
+
 

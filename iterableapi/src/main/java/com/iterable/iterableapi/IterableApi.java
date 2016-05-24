@@ -49,7 +49,7 @@ public class IterableApi {
         }
 
         Intent calledIntent = ((Activity) context).getIntent();
-        sharedInstance.trackAppOpen(calledIntent);
+        sharedInstance.tryTrackNotifOpen(calledIntent);
         return sharedInstance;
     }
 
@@ -89,7 +89,7 @@ public class IterableApi {
         _context.sendBroadcast(pushRegistrationIntent);
     }
 
-    private void trackAppOpen(Intent calledIntent)
+    private void tryTrackNotifOpen(Intent calledIntent)
     {
         Bundle extras = calledIntent.getExtras();
         if (extras != null) {
@@ -323,7 +323,6 @@ public class IterableApi {
 
         sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
 
-        //TODO: wait for a callback from sendRequest before changing email
         _email = newEmail;
     }
 
