@@ -37,9 +37,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     protected String doInBackground(IterableApiRequest... params) {
         //TODO: perhaps loop through all the request parameters
         IterableApiRequest iterableApiRequest = params[0];
+
+        String requestResult = null;
         if (iterableApiRequest != null) {
             URL url;
             HttpURLConnection urlConnection = null;
+
             try {
                 url = new URL(iterableBaseUrl + iterableApiRequest.resourcePath);
 
@@ -57,11 +60,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 writer.close();
                 os.close();
 
-                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                InputStream inputStream = new BufferedInputStream(urlConnection.getInputStream());
 
-                java.util.Scanner s = new java.util.Scanner(in).useDelimiter("\\A");
-                String inputString = s.hasNext() ? s.next() : "";
-                Log.d(TAG, inputString); //TODO: pass back as the result
+                java.util.Scanner scanner = new java.util.Scanner(inputStream).useDelimiter("\\A");
+                requestResult = scanner.hasNext() ? scanner.next() : "";
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -72,7 +74,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             }
         }
 
-        return null;
+        return requestResult;
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        super.onPostExecute(s);
     }
 }
 
