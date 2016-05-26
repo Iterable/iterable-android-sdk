@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,7 +15,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * Created by davidtruong on 4/4/16.
+ * Created by David Truong dt@iterable.com
  */
 public class IterableApi {
 
@@ -29,17 +30,16 @@ public class IterableApi {
 
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
-    
+
     private IterableApi(Context context, String apiKey, String email){
         updateData(context, apiKey, email);
     }
 
     /**
-     * Creates and returns the stored IterableApi instance.
-     * @param context
-     * @param apiKey
-     * @param email
-     * @return
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * @param context The current activity
+     * @return stored instance of IterableApi
      */
     public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
     {
@@ -51,8 +51,17 @@ public class IterableApi {
             sharedInstance.updateData(context, apiKey, email);
         }
 
-        Intent calledIntent = ((Activity) context).getIntent();
-        sharedInstance.tryTrackNotifOpen(calledIntent);
+        if (context instanceof Activity) {
+            Activity currentActivity = (Activity) context;
+            Intent calledIntent = currentActivity.getIntent();
+            sharedInstance.tryTrackNotifOpen(calledIntent);
+        }
+        else {
+            Log.d(TAG, "Notification Opens will not be tracked. "+
+                    "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
+                    "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking.");
+        }
+
         return sharedInstance;
     }
 
@@ -66,6 +75,11 @@ public class IterableApi {
         return _context;
     }
 
+    /**
+     * Sets the icon to be displayed in notifications.
+     * The icon name should match the resource name stored in the /res/drawable directory.
+     * @param iconName
+     */
     public void setNotificationIcon(String iconName) {
         setNotificationIcon(_context, iconName);
     }
@@ -83,6 +97,13 @@ public class IterableApi {
         return iconName;
     }
 
+    /**
+     * Automatically generates a GCM token and registers it with Iterable.
+     * @param iterableAppId The applicationId of the Iterable Push Integration
+     *                      - https://app.iterable.com/integrations/mobilePush
+     * @param gcmProjectId  The Google Project Number
+     *                       - https://console.developers.google.com/iam-admin/settings
+     */
     public void registerForPush(String iterableAppId, String gcmProjectId) {
         //TODO: set this up as a callback then call registerDeviceToken
         Intent pushRegistrationIntent = new Intent(_context, IterablePushReceiver.class);
@@ -92,8 +113,7 @@ public class IterableApi {
         _context.sendBroadcast(pushRegistrationIntent);
     }
 
-    private void tryTrackNotifOpen(Intent calledIntent)
-    {
+    private void tryTrackNotifOpen(Intent calledIntent) {
         Bundle extras = calledIntent.getExtras();
         if (extras != null) {
             Intent intent = new Intent();
@@ -105,7 +125,8 @@ public class IterableApi {
     }
 
     /**
-     * Registers the GCM registration ID with Iterable.
+     * Registers an existing GCM device token with Iterable.
+     * Recommended to use registerForPush if you do not already have a deviceToken
      * @param applicationName
      * @param token
      */
@@ -119,18 +140,26 @@ public class IterableApi {
      * @param token
      * @param dataFields
      */
-    public void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
+    private void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
         //TODO: Update thie platform flag for Kindle support based upon device type or store build
         String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
 
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            if (dataFields == null) {
+                dataFields = new JSONObject();
+            }
+            //TODO: extra data fields about the device
+            //dataFields.put()
+
             JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, token);
-            device.put(IterableConstants.KEY_PLATFORM, platform);
-            device.put(IterableConstants.KEY_APPLICATIONNAME, applicationName);
+                device.put(IterableConstants.KEY_TOKEN, token);
+                device.put(IterableConstants.KEY_PLATFORM, platform);
+                device.put(IterableConstants.KEY_APPLICATIONNAME, applicationName);
+                device.put(IterableConstants.KEY_DATAFIELDS, dataFields);
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -167,21 +196,10 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
-    /**
-     * Track a custom conversion event.
-     * @param campaignId
-     * @param templateId
-     */
     public void trackConversion(int campaignId, int templateId) {
         trackConversion(campaignId, templateId, null);
     }
 
-    /**
-     * Track a custom conversion event.
-     * @param campaignId
-     * @param templateId
-     * @param dataFields
-     */
     public void trackConversion(int campaignId, int templateId, JSONObject dataFields) {
 
         JSONObject requestJSON = new JSONObject();
@@ -222,19 +240,12 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
     }
 
-    /**
-     * Sends a push campaign to the given email address
-     * @param email
-     * @param campaignId
-     */
     public void sendPush(String email, int campaignId) {
         sendPush(email, campaignId, null, null);
     }
 
     /**
-     * Sends a push campaign to the given email address at the given time
-     * @param email
-     * @param campaignId
+     * Sends a push campaign to an email address at the given time.
      * @param sendAt Schedule the message for up to 365 days in the future.
      *               If set in the past, message is sent immediately.
      *               Format is YYYY-MM-DD HH:MM:SS in UTC
@@ -243,20 +254,12 @@ public class IterableApi {
         sendPush(email, campaignId, sendAt, null);
     }
 
-    /**
-     * Sends a push campaign to the given email address at the given time
-     * @param email
-     * @param campaignId
-     * @param dataFields
-     */
     public void sendPush(String email, int campaignId, JSONObject dataFields) {
         sendPush(email, campaignId, null, dataFields);
     }
 
     /**
-     * Sends a push campaign to the given email address at the given time
-     * @param email
-     * @param campaignId
+     * Sends a push campaign to an email address at the given time.
      * @param sendAt Schedule the message for up to 365 days in the future.
      *               If set in the past, message is sent immediately.
      *               Format is YYYY-MM-DD HH:MM:SS in UTC
@@ -329,6 +332,12 @@ public class IterableApi {
         _email = newEmail;
     }
 
+    /**
+     * Retrieves the payload string for a given key.
+     * Used for deeplinking and retrieving extra data passed down along with a campaign.
+     * @param key
+     * @return Returns the requested payload data from the current push campaign if it exists.
+     */
     public String getPayloadData(String key) {
         String dataString = null;
         if (_payloadData != null){
@@ -341,6 +350,10 @@ public class IterableApi {
         _payloadData = bundle;
     }
 
+    /**
+     * Gets the current Template ID.
+     * @return returns 0 if the current templateId does not exist.
+     */
     public int getTemplateId() {
         int returnId = 0;
         if (_notificationData != null){
@@ -349,6 +362,10 @@ public class IterableApi {
         return returnId;
     }
 
+    /**
+     * Gets the current Campaign ID.
+     * @returns 0 if the current templateId does not exist.
+     */
     public int getCampaignId() {
         int returnId = 0;
         if (_notificationData != null){
