@@ -14,13 +14,19 @@ class IterableNotificationData {
     IterableNotificationData(String data){
         try {
             JSONObject iterableJson = new JSONObject(data);
-            campaignId = iterableJson.getInt(IterableConstants.KEY_CAMPAIGNID);
-            templateId = iterableJson.getInt(IterableConstants.KEY_TEMPLATE_ID);
-            isGhostPush = iterableJson.getBoolean(IterableConstants.IS_GHOST_PUSH);
+            if (iterableJson.has(IterableConstants.KEY_CAMPAIGNID)){
+                campaignId = iterableJson.getInt(IterableConstants.KEY_CAMPAIGNID);
+            }
+
+            if (iterableJson.has(IterableConstants.KEY_TEMPLATE_ID)) {
+                templateId = iterableJson.getInt(IterableConstants.KEY_TEMPLATE_ID);
+            }
+
+            if (iterableJson.has(IterableConstants.IS_GHOST_PUSH)) {
+                isGhostPush = iterableJson.getBoolean(IterableConstants.IS_GHOST_PUSH);
+            }
 
             //TODO: do we need to parse out any additional dataFields to pass to trackPushOpen?
-            //How do should we handle missing data?
-
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -44,3 +50,4 @@ class IterableNotificationData {
         return this.isGhostPush;
     }
 }
+
