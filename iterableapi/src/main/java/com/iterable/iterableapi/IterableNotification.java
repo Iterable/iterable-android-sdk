@@ -37,12 +37,8 @@ public class IterableNotification extends NotificationCompat.Builder {
         String applicationName  = context.getString(stringId);
         String notificationBody = null;
         if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
-            if (extras.containsKey(IterableConstants.ITERABLE_DATA_BODY)) {
-                notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
-            }
-            if (extras.containsKey(IterableConstants.ITERABLE_DATA_TITLE)) {
-                applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE);
-            }
+            notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY, notificationBody);
+            applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
         }
 
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
