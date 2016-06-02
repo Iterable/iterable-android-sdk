@@ -332,6 +332,21 @@ public class IterableApi {
         _email = newEmail;
     }
 
+    public void disablePush(String token) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_TOKEN, token);
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
+
+    }
+
     /**
      * Retrieves the payload string for a given key.
      * Used for deeplinking and retrieving extra data passed down along with a campaign.
@@ -364,7 +379,7 @@ public class IterableApi {
 
     /**
      * Gets the current Campaign ID.
-     * @returns 0 if the current templateId does not exist.
+     * @return 0 if the current templateId does not exist.
      */
     public int getCampaignId() {
         int returnId = 0;
