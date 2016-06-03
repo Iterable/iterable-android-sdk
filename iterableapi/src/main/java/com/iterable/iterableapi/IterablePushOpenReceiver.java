@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.CallSuper;
 
 /**
- * Created by davidtruong on 4/6/16.
+ * Created by David Truong dt@iterable.com
  *
  * The IterablePushOpenReceiver should be used to handle broadcasts to track push opens.
  * The sending intent should use the action: IterableConstants.ACTION_NOTIF_OPENED
@@ -30,18 +30,11 @@ public class IterablePushOpenReceiver extends BroadcastReceiver {
             {
                 String iterableDataString = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
                 IterableNotificationData iterableNotificationData = new IterableNotificationData(iterableDataString);
-
-                //TODO: storeCampaignID/Template for 24 hrs to match web
-                //Need local storage on device
-                //Currently this is only set for the given session
-
                 if (IterableApi.sharedInstance != null) {
                     IterableApi.sharedInstance.setPayloadData(extras);
                     IterableApi.sharedInstance.setNotificationData(iterableNotificationData);
                     IterableApi.sharedInstance.trackPushOpen(iterableNotificationData.getCampaignId(), iterableNotificationData.getTemplateId());
                 }
-            } else {
-                //TODO: Tried to track a push open that was did not contain iterable extraData
             }
         }
     }

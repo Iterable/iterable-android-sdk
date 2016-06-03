@@ -11,7 +11,7 @@ import java.util.Date;
 
 /**
  *
- * Created by davidtruong on 4/29/16.
+ * Created by David Truong dt@iterable.com
  */
 public class IterableNotification extends NotificationCompat.Builder {
     private boolean isGhostPush;

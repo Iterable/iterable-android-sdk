@@ -1,7 +1,7 @@
 package com.iterable.iterableapi;
 
 /**
- * Created by davidtruong on 4/6/16.
+ * Created by David Truong dt@iterable.com
  *
  * IterableConstants contains a list of constants used with the Iterable mobile SDK.
  */

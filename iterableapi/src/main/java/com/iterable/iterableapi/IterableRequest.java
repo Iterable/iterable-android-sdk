@@ -14,7 +14,7 @@ import java.net.URL;
 
 /**
  * Async task to handle sending data to the Iterable server
- * Created by davidtruong on 4/21/16.
+ * Created by David Truong dt@iterable.com
  */
 class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
@@ -106,7 +106,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             e.printStackTrace();
         }
         retryDelay *= 2; //exponential retry backoff
-        //TODO: look into queuing/caching requests
         doInBackground(iterableApiRequest);
     }
 

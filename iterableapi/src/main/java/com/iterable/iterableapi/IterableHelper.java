@@ -7,13 +7,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Created by davidtruong on 4/29/16.
+ * Created by David Truong dt@iterable.com
  */
 public class IterableHelper {
     public static boolean isGhostPush(Bundle extras) {
         boolean isGhostPush = false;
-
-//        Bundle extras = intent.getExtras();
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
             String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
             IterableNotificationData data = new IterableNotificationData(iterableData);

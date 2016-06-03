@@ -9,7 +9,7 @@ import android.util.Log;
 
 /**
  *
- * Created by davidtruong on 4/19/16.
+ * Created by David Truong dt@iterable.com
  */
 public class IterablePushReceiver extends BroadcastReceiver{
 

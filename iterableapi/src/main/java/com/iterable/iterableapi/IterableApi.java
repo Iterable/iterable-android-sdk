@@ -48,7 +48,6 @@ public class IterableApi {
         {
             sharedInstance = new IterableApi(context, apiKey, email);
         } else{
-            //TODO: check to see if we need to call updateEmail
             sharedInstance.updateData(context, apiKey, email);
         }
 
@@ -108,7 +107,6 @@ public class IterableApi {
      *                       - https://console.developers.google.com/iam-admin/settings
      */
     public void registerForPush(String iterableAppId, String gcmProjectId) {
-        //TODO: set this up as a callback then call registerDeviceToken
         Intent pushRegistrationIntent = new Intent(_context, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
@@ -144,7 +142,6 @@ public class IterableApi {
      * @param dataFields
      */
     private void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
-        //TODO: Update thie platform flag for Kindle support based upon device type or store build
         String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
 
         JSONObject requestJSON = new JSONObject();
@@ -153,8 +150,6 @@ public class IterableApi {
             if (dataFields == null) {
                 dataFields = new JSONObject();
             }
-            //TODO: extra data fields about the device
-            //dataFields.put()
 
             JSONObject device = new JSONObject();
                 device.put(IterableConstants.KEY_TOKEN, token);

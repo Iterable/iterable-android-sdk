@@ -9,7 +9,7 @@ import com.google.android.gms.iid.InstanceID;
 import java.io.IOException;
 
 /**
- * Created by davidtruong on 5/4/16.
+ * Created by David Truong dt@iterable.com
  */
 class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData, Void, String> {
     static final String TAG = "IterableGCM";
