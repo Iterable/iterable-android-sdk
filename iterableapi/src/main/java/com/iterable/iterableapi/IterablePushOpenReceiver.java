@@ -6,13 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.CallSuper;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.Dictionary;
-import java.util.Map;
-
-
 /**
  * Created by davidtruong on 4/6/16.
  *

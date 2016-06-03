@@ -30,6 +30,7 @@ public class IterableApi {
 
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
+    private String _pushToken;
 
     private IterableApi(Context context, String apiKey, String email){
         updateData(context, apiKey, email);
@@ -57,7 +58,7 @@ public class IterableApi {
             sharedInstance.tryTrackNotifOpen(calledIntent);
         }
         else {
-            Log.d(TAG, "Notification Opens will not be tracked. "+
+            Log.d(TAG, "Notification Opens will not be tracked: "+
                     "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
                     "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking.");
         }
@@ -71,7 +72,7 @@ public class IterableApi {
         this._email = email;
     }
 
-    protected Context getApplicationContext() {
+    protected Context getMainActivityContext() {
         return _context;
     }
 
@@ -83,6 +84,8 @@ public class IterableApi {
     public void setNotificationIcon(String iconName) {
         setNotificationIcon(_context, iconName);
     }
+
+    public void setPushToken(String token) { _pushToken = token; }
 
     protected static void setNotificationIcon(Context context, String iconName) {
         SharedPreferences sharedPref = ((Activity) context).getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
@@ -285,37 +288,6 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_PUSHTARGET, requestJSON);
     }
 
-    // FIXME: 4/22/16 Not yet complete
-    private void trackPurchase(CommerceItem[] commerceItems, double total) {
-        JSONObject requestJSON = new JSONObject();
-
-        JSONObject userJSON = new JSONObject();
-
-        for(CommerceItem item : commerceItems) {
-            //item.serialize();
-        }
-
-        try {
-            userJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_USER, userJSON);
-            requestJSON.put(IterableConstants.KEY_ITEMS, commerceItems.toString());
-            requestJSON.put(IterableConstants.KEY_TOTAL, total);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendRequest(IterableConstants.ENDPOINT_TRACKPURCHASE, requestJSON);
-    }
-
-    //TODO: reset current user profile
-    private static void reset() {
-        // clears all the current device
-
-        //TODO:Require the app to re-initialize with the SDK
-
-    }
-
     public void updateEmail(String newEmail) {
         JSONObject requestJSON = new JSONObject();
 
@@ -332,17 +304,17 @@ public class IterableApi {
         _email = newEmail;
     }
 
-    public void disablePush(String token) {
-        JSONObject requestJSON = new JSONObject();
+    public void disablePush(String iterableAppId, String gcmProjectId) {
+        registerForPush(iterableAppId, gcmProjectId);
 
+        JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);
+            requestJSON.put(IterableConstants.KEY_TOKEN, _pushToken);
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-
         sendRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
 
     }
@@ -363,6 +335,9 @@ public class IterableApi {
 
     void setPayloadData(Bundle bundle) {
         _payloadData = bundle;
+    }
+    void setNotificationData(IterableNotificationData data) {
+        _notificationData = data;
     }
 
     /**
@@ -389,16 +364,12 @@ public class IterableApi {
         return returnId;
     }
 
-    void setNotificationData(IterableNotificationData data) {
-        _notificationData = data;
-    }
-
-    //TODO: use adid or android ID
-    private void getDeviceAdid() {
-        //Reference - https://developer.android.com/google/play-services/id.html#example
+    public static void initDebugMode(String url) {
+        IterableRequest.overrideUrl = url;
     }
 
     /**
+     * Sends the request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
      * @param resourcePath
      * @param json
