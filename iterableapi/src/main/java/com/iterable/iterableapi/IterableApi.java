@@ -84,7 +84,7 @@ public class IterableApi {
         setNotificationIcon(_context, iconName);
     }
 
-    public void setPushToken(String token) { _pushToken = token; }
+    protected void setPushToken(String token) { _pushToken = token; }
 
     protected static void setNotificationIcon(Context context, String iconName) {
         SharedPreferences sharedPref = ((Activity) context).getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
