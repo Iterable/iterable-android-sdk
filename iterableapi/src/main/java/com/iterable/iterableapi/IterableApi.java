@@ -299,6 +299,20 @@ public class IterableApi {
         _email = newEmail;
     }
 
+    public void updateUser(JSONObject dataFields) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
+    }
+
     public void disablePush(String iterableAppId, String gcmProjectId) {
         registerForPush(iterableAppId, gcmProjectId);
 

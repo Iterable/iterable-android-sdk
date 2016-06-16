@@ -27,7 +27,8 @@ public final class IterableConstants {
     public static final String KEY_USER                = "user";
     public static final String KEY_ITEMS               = "items";
     public static final String KEY_TOTAL               = "total";
-    
+
+    public static final String ENDPOINT_DISABLEDEVICE       = "users/disableDevice";
     public static final String ENDPOINT_PUSHTARGET          = "push/target";
     public static final String ENDPOINT_REGISTERDEVICETOKEN = "users/registerDeviceToken";
     public static final String ENDPOINT_TRACK               = "events/track";
@@ -35,7 +36,8 @@ public final class IterableConstants {
     public static final String ENDPOINT_TRACKPURCHASE       = "commerce/trackPurchase";
     public static final String ENDPOINT_TRACKPUSHOPEN       = "events/trackPushOpen";
     public static final String ENDPOINT_UPDATEEMAIL         = "users/updateEmail";
-    public static final String ENDPOINT_DISABLEDEVICE       = "users/disableDevice";
+    public static final String ENDPOINT_UPDATEUSER          = "users/update";
+
 
     public static final String PUSH_APPID = "IterableAppId";
     public static final String PUSH_PROJECTID = "GCMProjectNumber";
