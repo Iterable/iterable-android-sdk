@@ -41,6 +41,7 @@ public final class IterableConstants {
 
     public static final String PUSH_APPID = "IterableAppId";
     public static final String PUSH_PROJECTID = "GCMProjectNumber";
+    public static final String PUSH_DISABLE_AFTER_REGISTRATION = "DisableAfterRegistration";
 
     public static final String MESSAGING_PLATFORM_GOOGLE = "GCM";
     public static final String MESSAGING_PLATFORM_AMAZON = "ADM";

@@ -30,7 +30,6 @@ public class IterableApi {
 
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
-    private String _pushToken;
 
     private IterableApi(Context context, String apiKey, String email){
         updateData(context, apiKey, email);
@@ -84,8 +83,6 @@ public class IterableApi {
         setNotificationIcon(_context, iconName);
     }
 
-    protected void setPushToken(String token) { _pushToken = token; }
-
     protected static void setNotificationIcon(Context context, String iconName) {
         SharedPreferences sharedPref = ((Activity) context).getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -107,10 +104,15 @@ public class IterableApi {
      *                       - https://console.developers.google.com/iam-admin/settings
      */
     public void registerForPush(String iterableAppId, String gcmProjectId) {
+        registerForPush(iterableAppId, gcmProjectId, false);
+    }
+
+    protected void registerForPush(String iterableAppId, String gcmProjectId, boolean disableAfterRegistration) {
         Intent pushRegistrationIntent = new Intent(_context, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECTID, gcmProjectId);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
         _context.sendBroadcast(pushRegistrationIntent);
     }
 
@@ -314,18 +316,23 @@ public class IterableApi {
     }
 
     public void disablePush(String iterableAppId, String gcmProjectId) {
-        registerForPush(iterableAppId, gcmProjectId);
+        registerForPush(iterableAppId, gcmProjectId, true);
+    }
 
+    /**
+     * Internal api call made from IterablePushRegistrionGCM after a registration is completed.
+     * @param token
+     */
+    protected void disablePush(String token) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, _pushToken);
+            requestJSON.put(IterableConstants.KEY_TOKEN, token);
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
         sendRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
-
     }
 
     /**
