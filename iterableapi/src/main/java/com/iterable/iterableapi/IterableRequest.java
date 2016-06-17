@@ -20,6 +20,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
     static final String AUTHENTICATION_IO_EXCEPTION = "Received authentication challenge is null";
     static final int DEFAULT_TIMEOUT = 10000;
+    static final long MAX_RETRY_DELAY = 180000;
 
     long retryDelay = 10000;
 
@@ -101,11 +102,11 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
     private void retryRequest(IterableApiRequest iterableApiRequest) {
         try {
-            wait(retryDelay);
+            Thread.sleep(retryDelay);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        retryDelay *= 2; //exponential retry backoff
+        retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY); //exponential retry backoff
         doInBackground(iterableApiRequest);
     }
 
