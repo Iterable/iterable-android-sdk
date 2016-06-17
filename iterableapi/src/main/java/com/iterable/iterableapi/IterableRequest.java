@@ -19,14 +19,16 @@ import java.net.URL;
 class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
     static final String AUTHENTICATION_IO_EXCEPTION = "Received authentication challenge is null";
-    static final int DEFAULT_TIMEOUT = 10000;
-    static final long MAX_RETRY_DELAY = 180000;
-
-    long retryDelay = 10000;
 
     static final String iterableBaseUrl = "https://api.iterable.com/api/";
-
     static String overrideUrl;
+
+    static final int DEFAULT_TIMEOUT = 10000;
+    static final long RETRY_DELAY = 10000;
+    static final int MAX_RETRY_COUNT = 3;
+
+    int retryCount = 0;
+    IterableApiRequest retryRequest;
 
     /**
      * Sends the given request to Iterable using a HttpUserConnection
@@ -36,6 +38,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
      */
     protected String doInBackground(IterableApiRequest... params) {
         IterableApiRequest iterableApiRequest = params[0];
+
+        try {
+            Thread.sleep(RETRY_DELAY*retryCount);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         String requestResult = null;
         if (iterableApiRequest != null) {
@@ -80,12 +88,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     Log.d(TAG, "Invalid API Key");
                 } else
                 {
-                    retryRequest(iterableApiRequest);
+                    retryRequest = iterableApiRequest;
                 }
                 e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
-                retryRequest(iterableApiRequest);
+                retryRequest = iterableApiRequest;
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -97,19 +105,23 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
     @Override
     protected void onPostExecute(String s) {
+        if (retryRequest != null) {
+            attemptRequestRetry();
+        }
         super.onPostExecute(s);
     }
 
-    private void retryRequest(IterableApiRequest iterableApiRequest) {
-        try {
-            Thread.sleep(retryDelay);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY); //exponential retry backoff
-        doInBackground(iterableApiRequest);
+    protected void updateRetryCount(int count) {
+        retryCount = count+1;
     }
 
+    private void attemptRequestRetry() {
+        if (retryCount <= MAX_RETRY_COUNT) {
+            IterableRequest request = new IterableRequest();
+            request.updateRetryCount(retryCount);
+            request.execute(retryRequest);
+        }
+    }
 }
 
 class IterableApiRequest {
