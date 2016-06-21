@@ -84,7 +84,7 @@ public class IterableApi {
     }
 
     protected static void setNotificationIcon(Context context, String iconName) {
-        SharedPreferences sharedPref = ((Activity) context).getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(NOTIFICATION_ICON_NAME, iconName);
         editor.commit();
