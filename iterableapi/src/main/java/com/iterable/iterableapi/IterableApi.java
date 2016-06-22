@@ -24,7 +24,7 @@ public class IterableApi {
 
     protected static IterableApi sharedInstance = null;
 
-    private Context _context;
+    private Context _applicationContext;
     private String _apiKey;
     private String _email;
 
@@ -38,40 +38,34 @@ public class IterableApi {
     /**
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
      * Should be called whenever the app is opened.
-     * @param context The current activity
+     * @param currentActivity The current activity
      * @return stored instance of IterableApi
      */
-    public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
+    public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey, String email)
     {
+        Context applicationContext = currentActivity.getApplicationContext();
+
         if (sharedInstance == null)
         {
-            sharedInstance = new IterableApi(context, apiKey, email);
+            sharedInstance = new IterableApi(applicationContext, apiKey, email);
         } else{
-            sharedInstance.updateData(context, apiKey, email);
+            sharedInstance.updateData(applicationContext, apiKey, email);
         }
 
-        if (context instanceof Activity) {
-            Activity currentActivity = (Activity) context;
-            Intent calledIntent = currentActivity.getIntent();
-            sharedInstance.tryTrackNotifOpen(calledIntent);
-        }
-        else {
-            Log.d(TAG, "Notification Opens will not be tracked: "+
-                    "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
-                    "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking.");
-        }
+        Intent calledIntent = currentActivity.getIntent();
+        sharedInstance.tryTrackNotifOpen(calledIntent);
 
         return sharedInstance;
     }
 
     private void updateData(Context context, String apiKey, String email) {
-        this._context = context;
+        this._applicationContext = context;
         this._apiKey = apiKey;
         this._email = email;
     }
 
     protected Context getMainActivityContext() {
-        return _context;
+        return _applicationContext;
     }
 
     /**
@@ -80,7 +74,7 @@ public class IterableApi {
      * @param iconName
      */
     public void setNotificationIcon(String iconName) {
-        setNotificationIcon(_context, iconName);
+        setNotificationIcon(_applicationContext, iconName);
     }
 
     protected static void setNotificationIcon(Context context, String iconName) {
@@ -108,22 +102,22 @@ public class IterableApi {
     }
 
     protected void registerForPush(String iterableAppId, String gcmProjectId, boolean disableAfterRegistration) {
-        Intent pushRegistrationIntent = new Intent(_context, IterablePushReceiver.class);
+        Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECTID, gcmProjectId);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
-        _context.sendBroadcast(pushRegistrationIntent);
+        _applicationContext.sendBroadcast(pushRegistrationIntent);
     }
 
     private void tryTrackNotifOpen(Intent calledIntent) {
         Bundle extras = calledIntent.getExtras();
         if (extras != null) {
             Intent intent = new Intent();
-            intent.setClass(_context, IterablePushOpenReceiver.class);
+            intent.setClass(_applicationContext, IterablePushOpenReceiver.class);
             intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
             intent.putExtras(extras);
-            _context.sendBroadcast(intent);
+            _applicationContext.sendBroadcast(intent);
         }
     }
 
