@@ -53,6 +53,7 @@ public class IterableApi {
         }
 
         Intent calledIntent = currentActivity.getIntent();
+        sharedInstance.setPayloadData(calledIntent);
         sharedInstance.tryTrackNotifOpen(calledIntent);
 
         return sharedInstance;
@@ -341,6 +342,13 @@ public class IterableApi {
             dataString = _payloadData.getString(key, null);
         }
         return dataString;
+    }
+
+    void setPayloadData(Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras != null && !extras.isEmpty() && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            setPayloadData(extras);
+        }
     }
 
     void setPayloadData(Bundle bundle) {
