@@ -40,36 +40,37 @@ public class IterablePushReceiver extends BroadcastReceiver{
     }
 
     private void handlePushReceived(Context context, Intent intent) {
-        Context appContext = context.getApplicationContext();
-
-        PackageManager packageManager = appContext.getPackageManager();
-        Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
-        ComponentName componentPackageName = packageIntent.getComponent();
-        String mainClassName = componentPackageName.getClassName();
-        Class mainClass = null;
-        try {
-            mainClass = Class.forName(mainClassName);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        int iconId = appContext.getResources().getIdentifier(
-                IterableApi.getNotificationIcon(context),
-                "drawable",
-                appContext.getPackageName());
-
-        if (iconId == 0) {
-            iconId = appContext.getApplicationInfo().icon;
-            if (iconId != 0){
-                Log.d(TAG, "No Notification Icon defined - defaulting to app icon");
-            } else {
-                Log.w(TAG, "No Notification Icon defined - push notifications will not be displayed");
+        if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
+            Context appContext = context.getApplicationContext();
+            PackageManager packageManager = appContext.getPackageManager();
+            Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
+            ComponentName componentPackageName = packageIntent.getComponent();
+            String mainClassName = componentPackageName.getClassName();
+            Class mainClass = null;
+            try {
+                mainClass = Class.forName(mainClassName);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
+
+            int iconId = appContext.getResources().getIdentifier(
+                    IterableApi.getNotificationIcon(context),
+                    "drawable",
+                    appContext.getPackageName());
+
+            if (iconId == 0) {
+                iconId = appContext.getApplicationInfo().icon;
+                if (iconId != 0) {
+                    Log.d(TAG, "No Notification Icon defined - defaulting to app icon");
+                } else {
+                    Log.w(TAG, "No Notification Icon defined - push notifications will not be displayed");
+                }
+            }
+
+            IterableNotification notificationBuilder = IterableNotification.createNotification(
+                    appContext, intent.getExtras(), mainClass, iconId);
+
+            IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
         }
-
-        IterableNotification notificationBuilder = IterableNotification.createNotification(
-                appContext, intent.getExtras(), mainClass, iconId);
-
-        IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
     }
 }
