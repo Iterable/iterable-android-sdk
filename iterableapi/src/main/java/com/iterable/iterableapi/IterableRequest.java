@@ -19,13 +19,17 @@ import java.net.URL;
 class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
     static final String AUTHENTICATION_IO_EXCEPTION = "Received authentication challenge is null";
-    static final int DEFAULT_TIMEOUT = 10000;
-
-    long retryDelay = 10000;
 
     static final String iterableBaseUrl = "https://api.iterable.com/api/";
-
     static String overrideUrl;
+
+    static final int DEFAULT_TIMEOUT = 10000;
+    static final long RETRY_DELAY = 10000;
+    static final int MAX_RETRY_COUNT = 3;
+
+    int retryCount = 0;
+    IterableApiRequest iterableApiRequest;
+    boolean retryRequest;
 
     /**
      * Sends the given request to Iterable using a HttpUserConnection
@@ -34,7 +38,17 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
      * @return
      */
     protected String doInBackground(IterableApiRequest... params) {
-        IterableApiRequest iterableApiRequest = params[0];
+        if (params != null && params.length > 0) {
+            iterableApiRequest = params[0];
+        }
+
+        if (retryRequest) {
+            try {
+                Thread.sleep(RETRY_DELAY * retryCount);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 
         String requestResult = null;
         if (iterableApiRequest != null) {
@@ -77,14 +91,13 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 String mess = e.getMessage();
                 if (mess.equals(AUTHENTICATION_IO_EXCEPTION)) {
                     Log.d(TAG, "Invalid API Key");
-                } else
-                {
-                    retryRequest(iterableApiRequest);
+                } else {
+                    retryRequest = true;
                 }
                 e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
-                retryRequest(iterableApiRequest);
+                retryRequest = true;
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -96,17 +109,16 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
     @Override
     protected void onPostExecute(String s) {
+        if (retryRequest && retryCount <= MAX_RETRY_COUNT) {
+            IterableRequest request = new IterableRequest();
+            request.setRetryCount(retryCount + 1);
+            request.execute(iterableApiRequest);
+        }
         super.onPostExecute(s);
     }
 
-    private void retryRequest(IterableApiRequest iterableApiRequest) {
-        try {
-            wait(retryDelay);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        retryDelay *= 2; //exponential retry backoff
-        doInBackground(iterableApiRequest);
+    protected void setRetryCount(int count) {
+        retryCount = count;
     }
 
 }

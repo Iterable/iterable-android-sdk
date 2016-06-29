@@ -24,13 +24,12 @@ public class IterableApi {
 
     protected static IterableApi sharedInstance = null;
 
-    private Context _context;
+    private Context _applicationContext;
     private String _apiKey;
     private String _email;
 
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
-    private String _pushToken;
 
     private IterableApi(Context context, String apiKey, String email){
         updateData(context, apiKey, email);
@@ -39,40 +38,35 @@ public class IterableApi {
     /**
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
      * Should be called whenever the app is opened.
-     * @param context The current activity
+     * @param currentActivity The current activity
      * @return stored instance of IterableApi
      */
-    public static IterableApi sharedInstanceWithApiKey(Context context, String apiKey, String email)
+    public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey, String email)
     {
+        Context applicationContext = currentActivity.getApplicationContext();
+
         if (sharedInstance == null)
         {
-            sharedInstance = new IterableApi(context, apiKey, email);
+            sharedInstance = new IterableApi(applicationContext, apiKey, email);
         } else{
-            sharedInstance.updateData(context, apiKey, email);
+            sharedInstance.updateData(applicationContext, apiKey, email);
         }
 
-        if (context instanceof Activity) {
-            Activity currentActivity = (Activity) context;
-            Intent calledIntent = currentActivity.getIntent();
-            sharedInstance.tryTrackNotifOpen(calledIntent);
-        }
-        else {
-            Log.d(TAG, "Notification Opens will not be tracked: "+
-                    "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
-                    "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking.");
-        }
+        Intent calledIntent = currentActivity.getIntent();
+        sharedInstance.setPayloadData(calledIntent);
+        sharedInstance.tryTrackNotifOpen(calledIntent);
 
         return sharedInstance;
     }
 
     private void updateData(Context context, String apiKey, String email) {
-        this._context = context;
+        this._applicationContext = context;
         this._apiKey = apiKey;
         this._email = email;
     }
 
     protected Context getMainActivityContext() {
-        return _context;
+        return _applicationContext;
     }
 
     /**
@@ -81,13 +75,11 @@ public class IterableApi {
      * @param iconName
      */
     public void setNotificationIcon(String iconName) {
-        setNotificationIcon(_context, iconName);
+        setNotificationIcon(_applicationContext, iconName);
     }
 
-    protected void setPushToken(String token) { _pushToken = token; }
-
     protected static void setNotificationIcon(Context context, String iconName) {
-        SharedPreferences sharedPref = ((Activity) context).getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(NOTIFICATION_ICON_NAME, iconName);
         editor.commit();
@@ -107,21 +99,26 @@ public class IterableApi {
      *                       - https://console.developers.google.com/iam-admin/settings
      */
     public void registerForPush(String iterableAppId, String gcmProjectId) {
-        Intent pushRegistrationIntent = new Intent(_context, IterablePushReceiver.class);
+        registerForPush(iterableAppId, gcmProjectId, false);
+    }
+
+    protected void registerForPush(String iterableAppId, String gcmProjectId, boolean disableAfterRegistration) {
+        Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECTID, gcmProjectId);
-        _context.sendBroadcast(pushRegistrationIntent);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
+        _applicationContext.sendBroadcast(pushRegistrationIntent);
     }
 
     private void tryTrackNotifOpen(Intent calledIntent) {
         Bundle extras = calledIntent.getExtras();
         if (extras != null) {
             Intent intent = new Intent();
-            intent.setClass(_context, IterablePushOpenReceiver.class);
+            intent.setClass(_applicationContext, IterablePushOpenReceiver.class);
             intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
             intent.putExtras(extras);
-            _context.sendBroadcast(intent);
+            _applicationContext.sendBroadcast(intent);
         }
     }
 
@@ -314,18 +311,23 @@ public class IterableApi {
     }
 
     public void disablePush(String iterableAppId, String gcmProjectId) {
-        registerForPush(iterableAppId, gcmProjectId);
+        registerForPush(iterableAppId, gcmProjectId, true);
+    }
 
+    /**
+     * Internal api call made from IterablePushRegistrionGCM after a registration is completed.
+     * @param token
+     */
+    protected void disablePush(String token) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, _pushToken);
+            requestJSON.put(IterableConstants.KEY_TOKEN, token);
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
         sendRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
-
     }
 
     /**
@@ -340,6 +342,13 @@ public class IterableApi {
             dataString = _payloadData.getString(key, null);
         }
         return dataString;
+    }
+
+    void setPayloadData(Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras != null && !extras.isEmpty() && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            setPayloadData(extras);
+        }
     }
 
     void setPayloadData(Bundle bundle) {
