@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,6 +27,7 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
 
+    private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
 
@@ -41,22 +41,96 @@ public class IterableApi {
      * @param currentActivity The current activity
      * @return stored instance of IterableApi
      */
-    public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey, String email)
+    public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
+                                                       String email)
     {
-        Context applicationContext = currentActivity.getApplicationContext();
+        return sharedInstanceWithApiKey(currentActivity, apiKey, email, false);
+    }
 
-        if (sharedInstance == null)
-        {
+    /**
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * Allows the IterableApi to be intialized with debugging enabled
+     * @param currentActivity The current activity
+     * @return stored instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
+                                                       String email, boolean debugMode)
+    {
+        return sharedInstanceWithApiKey((Context) currentActivity, apiKey, email, debugMode);
+    }
+
+    /**
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * @param currentActivity The current activity
+     * @return stored instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKey(Context currentActivity, String apiKey,
+                                                       String email)
+    {
+        return sharedInstanceWithApiKey(currentActivity, apiKey, email, false);
+    }
+
+    /**
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * Allows the IterableApi to be intialized with debugging enabled
+     * @param currentContext The current context
+     * @return stored instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
+                                                       String email, boolean debugMode)
+    {
+        Context applicationContext = currentContext.getApplicationContext();
+
+        if (sharedInstance == null) {
             sharedInstance = new IterableApi(applicationContext, apiKey, email);
         } else{
             sharedInstance.updateData(applicationContext, apiKey, email);
         }
 
-        Intent calledIntent = currentActivity.getIntent();
-        sharedInstance.setPayloadData(calledIntent);
-        sharedInstance.tryTrackNotifOpen(calledIntent);
+        if (currentContext instanceof Activity) {
+            Activity currentActivity = (Activity) currentContext;
+            Intent calledIntent = currentActivity.getIntent();
+            if (isIterableIntent(calledIntent)) {
+                sharedInstance.setPayloadData(calledIntent);
+                sharedInstance.tryTrackNotifOpen(calledIntent);
+            }
+        } else {
+            IterableLogger.w(TAG, "Notification Opens will not be tracked: "+
+                "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
+                "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking" +
+                "or call onNewIntent when a new Intent is received.");
+        }
+
+        sharedInstance.setDebugMode(debugMode);
 
         return sharedInstance;
+    }
+
+    public static void onNewIntent(Intent intent) {
+        if (sharedInstance == null) {
+            IterableLogger.w(TAG, "sharedInstanceWithApiKey needs to be called before onNewIntent " +
+                    "can be called");
+            return;
+        } else if (isIterableIntent(intent)) {
+            sharedInstance.setPayloadData(intent);
+            sharedInstance.tryTrackNotifOpen(intent);
+        } else {
+            IterableLogger.d(TAG, "onNewIntent not triggered by an Iterable notification");
+        }
+
+    }
+
+    public static boolean isIterableIntent(Intent intent) {
+        if (intent != null) {
+            Bundle extras = intent.getExtras();
+            if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void updateData(Context context, String apiKey, String email) {
@@ -67,6 +141,14 @@ public class IterableApi {
 
     protected Context getMainActivityContext() {
         return _applicationContext;
+    }
+
+    protected void setDebugMode(boolean debugMode) {
+        _debugMode = debugMode;
+    }
+
+    protected boolean getDebugMode() {
+        return _debugMode;
     }
 
     /**
@@ -95,18 +177,18 @@ public class IterableApi {
      * Automatically generates a GCM token and registers it with Iterable.
      * @param iterableAppId The applicationId of the Iterable Push Integration
      *                      - https://app.iterable.com/integrations/mobilePush
-     * @param gcmProjectId  The Google Project Number
+     * @param gcmProjectNumber  The Google Project Number
      *                       - https://console.developers.google.com/iam-admin/settings
      */
-    public void registerForPush(String iterableAppId, String gcmProjectId) {
-        registerForPush(iterableAppId, gcmProjectId, false);
+    public void registerForPush(String iterableAppId, double gcmProjectNumber) {
+        registerForPush(iterableAppId, gcmProjectNumber, false);
     }
 
-    protected void registerForPush(String iterableAppId, String gcmProjectId, boolean disableAfterRegistration) {
+    protected void registerForPush(String iterableAppId, double gcmProjectNumber, boolean disableAfterRegistration) {
         Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECTID, gcmProjectId);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECT_NUMBER, gcmProjectNumber);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
         _applicationContext.sendBroadcast(pushRegistrationIntent);
     }
@@ -310,7 +392,7 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
     }
 
-    public void disablePush(String iterableAppId, String gcmProjectId) {
+    public void disablePush(String iterableAppId, double gcmProjectId) {
         registerForPush(iterableAppId, gcmProjectId, true);
     }
 
@@ -346,7 +428,7 @@ public class IterableApi {
 
     void setPayloadData(Intent intent) {
         Bundle extras = intent.getExtras();
-        if (extras != null && !extras.isEmpty() && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
             setPayloadData(extras);
         }
     }
@@ -382,7 +464,7 @@ public class IterableApi {
         return returnId;
     }
 
-    public static void initDebugMode(String url) {
+    public static void overrideURLEndpointPath(String url) {
         IterableRequest.overrideUrl = url;
     }
 
@@ -396,4 +478,49 @@ public class IterableApi {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json.toString());
         new IterableRequest().execute(request);
     }
+
+//region Deprecated Fuctions
+//---------------------------------------------------------------------------------------
+
+    /**
+     * deprecated function
+     *
+     * @deprecated use {@link #registerForPush(String, double)} instead.
+     */
+    @Deprecated
+    public void registerForPush(String iterableAppId, String gcmProjectId) {
+        Double projectId = 0.0;
+
+        try {
+            projectId = Double.parseDouble(gcmProjectId);
+        } catch (NumberFormatException e) {
+            IterableLogger.e(TAG, "gcmProjectID must be a double", e);
+            return;
+        }
+
+        registerForPush(iterableAppId, projectId, false);
+    }
+
+    /**
+     * deprecated function
+     *
+     * @deprecated use {@link #disablePush(String, double)} instead.
+     */
+    @Deprecated
+    public void disablePush(String iterableAppId, String gcmProjectId) {
+        Double projectId = 0.0;
+
+        try {
+            projectId = Double.parseDouble(gcmProjectId);
+        } catch (NumberFormatException e) {
+            IterableLogger.e(TAG, "gcmProjectID must be a double");
+            e.printStackTrace();
+            return;
+        }
+
+        registerForPush(iterableAppId, projectId, true);
+    }
+//---------------------------------------------------------------------------------------
+//endregion
+
 }
