@@ -92,11 +92,7 @@ public class IterableApi {
 
         if (currentContext instanceof Activity) {
             Activity currentActivity = (Activity) currentContext;
-            Intent calledIntent = currentActivity.getIntent();
-            if (isIterableIntent(calledIntent)) {
-                sharedInstance.setPayloadData(calledIntent);
-                sharedInstance.tryTrackNotifOpen(calledIntent);
-            }
+            onNewIntent(currentActivity.getIntent());
         } else {
             IterableLogger.w(TAG, "Notification Opens will not be tracked: "+
                 "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
