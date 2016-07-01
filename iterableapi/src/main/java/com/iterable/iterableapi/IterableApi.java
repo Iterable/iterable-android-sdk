@@ -191,9 +191,7 @@ public class IterableApi {
     public boolean isIterableIntent(Intent intent) {
         if (intent != null) {
             Bundle extras = intent.getExtras();
-            if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-                return true;
-            }
+            return (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY));
         }
         return false;
     }
