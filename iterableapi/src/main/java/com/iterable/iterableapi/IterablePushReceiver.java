@@ -29,7 +29,7 @@ public class IterablePushReceiver extends BroadcastReceiver{
 
     private void handlePushRegistration(Context context, Intent intent) {
         String iterableAppId = intent.getStringExtra(IterableConstants.PUSH_APPID);
-        double projectNumber = intent.getDoubleExtra(IterableConstants.PUSH_PROJECT_NUMBER, 0);
+        String projectNumber = intent.getStringExtra(IterableConstants.PUSH_PROJECT_NUMBER);
         boolean disablePush = intent.getBooleanExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, false);
         IterableGCMRegistrationData data = new IterableGCMRegistrationData(iterableAppId, projectNumber, disablePush);
         new IterablePushRegistrationGCM().execute(data);

@@ -28,7 +28,7 @@ class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData,
                     InstanceID instanceID = InstanceID.getInstance(IterableApi.sharedInstance.getMainActivityContext());
 
                     String idInstance = instanceID.getId();
-                    registrationToken = instanceID.getToken(String.format ("%.0f", iterableGCMRegistrationData.projectNumber),
+                    registrationToken = instanceID.getToken(iterableGCMRegistrationData.projectNumber,
                             GoogleCloudMessaging.INSTANCE_ID_SCOPE);
                     if (!registrationToken.isEmpty()) {
                         IterableApi.sharedInstance.registerDeviceToken(iterableGCMRegistrationData.iterableAppId, registrationToken);
@@ -61,9 +61,9 @@ class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData,
 
 class IterableGCMRegistrationData {
     String iterableAppId = "";
-    double projectNumber = 0;
+    String projectNumber = "";
     boolean disableAfterRegistration = false;
-    public IterableGCMRegistrationData(String iterableAppId, double projectNumber, boolean disableAfterRegistration){
+    public IterableGCMRegistrationData(String iterableAppId, String projectNumber, boolean disableAfterRegistration){
         this.iterableAppId = iterableAppId;
         this.projectNumber = projectNumber;
         this.disableAfterRegistration = disableAfterRegistration;

@@ -199,17 +199,6 @@ public class IterableApi {
     }
 
     /**
-     * Automatically generates a GCM token and registers it with Iterable.
-     * @param iterableAppId The applicationId of the Iterable Push Integration
-     *                      - https://app.iterable.com/integrations/mobilePush
-     * @param gcmProjectNumber  The Google Project Number
-     *                       - https://console.developers.google.com/iam-admin/settings
-     */
-    public void registerForPush(String iterableAppId, double gcmProjectNumber) {
-        registerForPush(iterableAppId, gcmProjectNumber, false);
-    }
-
-    /**
      * Registers an existing GCM device token with Iterable.
      * Recommended to use registerForPush if you do not already have a deviceToken
      * @param applicationName
@@ -346,35 +335,12 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
     }
 
-    public void registerForPush(String iterableAppId, String gcmProjectId) {
-        Double projectId = 0.0;
-
-        try {
-            projectId = Double.parseDouble(gcmProjectId);
-        } catch (NumberFormatException e) {
-            IterableLogger.e(TAG, "gcmProjectID must be a double", e);
-            return;
-        }
-
-        registerForPush(iterableAppId, projectId, false);
+    public void registerForPush(String iterableAppId, String gcmProjectNumber) {
+        registerForPush(iterableAppId, gcmProjectNumber, false);
     }
 
-    public void disablePush(String iterableAppId, double gcmProjectNumber) {
+    public void disablePush(String iterableAppId, String gcmProjectNumber) {
         registerForPush(iterableAppId, gcmProjectNumber, true);
-    }
-
-    public void disablePush(String iterableAppId, String gcmProjectId) {
-        Double projectId = 0.0;
-
-        try {
-            projectId = Double.parseDouble(gcmProjectId);
-        } catch (NumberFormatException e) {
-            IterableLogger.e(TAG, "gcmProjectID must be a double");
-            e.printStackTrace();
-            return;
-        }
-
-        registerForPush(iterableAppId, projectId, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -395,7 +361,7 @@ static void setNotificationIcon(Context context, String iconName) {
         return iconName;
     }
 
-    protected void registerForPush(String iterableAppId, double gcmProjectNumber, boolean disableAfterRegistration) {
+    protected void registerForPush(String iterableAppId, String gcmProjectNumber, boolean disableAfterRegistration) {
         Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
