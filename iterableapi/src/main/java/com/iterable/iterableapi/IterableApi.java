@@ -18,23 +18,86 @@ import java.util.TimeZone;
  */
 public class IterableApi {
 
+//region Variables
+//---------------------------------------------------------------------------------------
     static final String TAG = "IterableApi";
     static final String NOTIFICATION_ICON_NAME = "iterable_notification_icon";
 
-    protected static IterableApi sharedInstance = null;
+    static IterableApi sharedInstance = null;
 
     private Context _applicationContext;
     private String _apiKey;
     private String _email;
-
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
 
-    private IterableApi(Context context, String apiKey, String email){
+//---------------------------------------------------------------------------------------
+//endregion
+
+//region Constructor
+//---------------------------------------------------------------------------------------
+    IterableApi(Context context, String apiKey, String email){
         updateData(context, apiKey, email);
     }
+//---------------------------------------------------------------------------------------
+//endregion
 
+
+//region Getters/Setters
+//---------------------------------------------------------------------------------------
+    /**
+     * Sets the icon to be displayed in notifications.
+     * The icon name should match the resource name stored in the /res/drawable directory.
+     * @param iconName
+     */
+    public void setNotificationIcon(String iconName) {
+        setNotificationIcon(_applicationContext, iconName);
+    }
+
+    /**
+     * Retrieves the payload string for a given key.
+     * Used for deeplinking and retrieving extra data passed down along with a campaign.
+     * @param key
+     * @return Returns the requested payload data from the current push campaign if it exists.
+     */
+    public String getPayloadData(String key) {
+        return(_payloadData != null) ? _payloadData.getString(key, null): null;
+    }
+
+    Context getMainActivityContext() {
+        return _applicationContext;
+    }
+
+    void setDebugMode(boolean debugMode) {
+        _debugMode = debugMode;
+    }
+
+    boolean getDebugMode() {
+        return _debugMode;
+    }
+
+    void setPayloadData(Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            setPayloadData(extras);
+        }
+    }
+
+    void setPayloadData(Bundle bundle) {
+        _payloadData = bundle;
+    }
+
+    void setNotificationData(IterableNotificationData data) {
+        _notificationData = data;
+    }
+//---------------------------------------------------------------------------------------
+//endregion
+
+
+
+//region Public Fuctions
+//---------------------------------------------------------------------------------------
     /**
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
      * Should be called whenever the app is opened.
@@ -86,18 +149,18 @@ public class IterableApi {
 
         if (sharedInstance == null) {
             sharedInstance = new IterableApi(applicationContext, apiKey, email);
-        } else{
+        } else {
             sharedInstance.updateData(applicationContext, apiKey, email);
         }
 
         if (currentContext instanceof Activity) {
             Activity currentActivity = (Activity) currentContext;
-            onNewIntent(currentActivity.getIntent());
+            sharedInstance.onNewIntent(currentActivity.getIntent());
         } else {
             IterableLogger.w(TAG, "Notification Opens will not be tracked: "+
-                "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
-                "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking" +
-                "or call onNewIntent when a new Intent is received.");
+                    "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
+                    "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking" +
+                    "or call onNewIntent when a new Intent is received.");
         }
 
         sharedInstance.setDebugMode(debugMode);
@@ -105,21 +168,27 @@ public class IterableApi {
         return sharedInstance;
     }
 
-    public static void onNewIntent(Intent intent) {
-        if (sharedInstance == null) {
-            IterableLogger.w(TAG, "sharedInstanceWithApiKey needs to be called before onNewIntent " +
-                    "can be called");
-            return;
-        } else if (isIterableIntent(intent)) {
-            sharedInstance.setPayloadData(intent);
-            sharedInstance.tryTrackNotifOpen(intent);
+    public static void overrideURLEndpointPath(String url) {
+        IterableRequest.overrideUrl = url;
+    }
+
+    /**
+     * Call onNewIntent to set the payload data and track pushOpens directly if
+     * sharedInstanceWithApiKey was called with a Context rather than an Activity.
+     */
+    public void onNewIntent(Intent intent) {
+        if (isIterableIntent(intent)) {
+            setPayloadData(intent);
+            tryTrackNotifOpen(intent);
         } else {
             IterableLogger.d(TAG, "onNewIntent not triggered by an Iterable notification");
         }
-
     }
 
-    public static boolean isIterableIntent(Intent intent) {
+    /**
+     * Returns where or not the intent was sent from Iterable.
+     */
+    public boolean isIterableIntent(Intent intent) {
         if (intent != null) {
             Bundle extras = intent.getExtras();
             if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
@@ -127,46 +196,6 @@ public class IterableApi {
             }
         }
         return false;
-    }
-
-    private void updateData(Context context, String apiKey, String email) {
-        this._applicationContext = context;
-        this._apiKey = apiKey;
-        this._email = email;
-    }
-
-    protected Context getMainActivityContext() {
-        return _applicationContext;
-    }
-
-    protected void setDebugMode(boolean debugMode) {
-        _debugMode = debugMode;
-    }
-
-    protected boolean getDebugMode() {
-        return _debugMode;
-    }
-
-    /**
-     * Sets the icon to be displayed in notifications.
-     * The icon name should match the resource name stored in the /res/drawable directory.
-     * @param iconName
-     */
-    public void setNotificationIcon(String iconName) {
-        setNotificationIcon(_applicationContext, iconName);
-    }
-
-    protected static void setNotificationIcon(Context context, String iconName) {
-        SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(NOTIFICATION_ICON_NAME, iconName);
-        editor.commit();
-    }
-
-    protected static String getNotificationIcon(Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        String iconName = sharedPref.getString(NOTIFICATION_ICON_NAME, "");
-        return iconName;
     }
 
     /**
@@ -180,26 +209,6 @@ public class IterableApi {
         registerForPush(iterableAppId, gcmProjectNumber, false);
     }
 
-    protected void registerForPush(String iterableAppId, double gcmProjectNumber, boolean disableAfterRegistration) {
-        Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
-        pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECT_NUMBER, gcmProjectNumber);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
-        _applicationContext.sendBroadcast(pushRegistrationIntent);
-    }
-
-    private void tryTrackNotifOpen(Intent calledIntent) {
-        Bundle extras = calledIntent.getExtras();
-        if (extras != null) {
-            Intent intent = new Intent();
-            intent.setClass(_applicationContext, IterablePushOpenReceiver.class);
-            intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
-            intent.putExtras(extras);
-            _applicationContext.sendBroadcast(intent);
-        }
-    }
-
     /**
      * Registers an existing GCM device token with Iterable.
      * Recommended to use registerForPush if you do not already have a deviceToken
@@ -208,36 +217,6 @@ public class IterableApi {
      */
     public void registerDeviceToken(String applicationName, String token) {
         registerDeviceToken(applicationName, token, null);
-    }
-
-    /**
-     * Registers the GCM registration ID with Iterable.
-     * @param applicationName
-     * @param token
-     * @param dataFields
-     */
-    private void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
-        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
-
-        JSONObject requestJSON = new JSONObject();
-        try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            if (dataFields == null) {
-                dataFields = new JSONObject();
-            }
-
-            JSONObject device = new JSONObject();
-                device.put(IterableConstants.KEY_TOKEN, token);
-                device.put(IterableConstants.KEY_PLATFORM, platform);
-                device.put(IterableConstants.KEY_APPLICATIONNAME, applicationName);
-                device.put(IterableConstants.KEY_DATAFIELDS, dataFields);
-            requestJSON.put(IterableConstants.KEY_DEVICE, device);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendRequest(IterableConstants.ENDPOINT_REGISTERDEVICETOKEN, requestJSON);
     }
 
     public void track(String eventName) {
@@ -292,30 +271,9 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_TRACKCONVERSION, requestJSON);
     }
 
-    /**
-     * Track when a push notification is opened on device.
-     * @param campaignId
-     * @param templateId
-     */
-    protected void trackPushOpen(int campaignId, int templateId) {
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
-    }
-
     public void sendPush(String email, int campaignId) {
-        sendPush(email, campaignId, null, null);
-    }
+    sendPush(email, campaignId, null, null);
+}
 
     /**
      * Sends a push campaign to an email address at the given time.
@@ -388,8 +346,83 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
     }
 
-    public void disablePush(String iterableAppId, double gcmProjectId) {
-        registerForPush(iterableAppId, gcmProjectId, true);
+    public void registerForPush(String iterableAppId, String gcmProjectId) {
+        Double projectId = 0.0;
+
+        try {
+            projectId = Double.parseDouble(gcmProjectId);
+        } catch (NumberFormatException e) {
+            IterableLogger.e(TAG, "gcmProjectID must be a double", e);
+            return;
+        }
+
+        registerForPush(iterableAppId, projectId, false);
+    }
+
+    public void disablePush(String iterableAppId, double gcmProjectNumber) {
+        registerForPush(iterableAppId, gcmProjectNumber, true);
+    }
+
+    public void disablePush(String iterableAppId, String gcmProjectId) {
+        Double projectId = 0.0;
+
+        try {
+            projectId = Double.parseDouble(gcmProjectId);
+        } catch (NumberFormatException e) {
+            IterableLogger.e(TAG, "gcmProjectID must be a double");
+            e.printStackTrace();
+            return;
+        }
+
+        registerForPush(iterableAppId, projectId, true);
+    }
+
+//---------------------------------------------------------------------------------------
+//endregion
+
+//region Protected Fuctions
+//---------------------------------------------------------------------------------------
+static void setNotificationIcon(Context context, String iconName) {
+    SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = sharedPref.edit();
+    editor.putString(NOTIFICATION_ICON_NAME, iconName);
+    editor.commit();
+}
+
+    static String getNotificationIcon(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        String iconName = sharedPref.getString(NOTIFICATION_ICON_NAME, "");
+        return iconName;
+    }
+
+    protected void registerForPush(String iterableAppId, double gcmProjectNumber, boolean disableAfterRegistration) {
+        Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
+        pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECT_NUMBER, gcmProjectNumber);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
+        _applicationContext.sendBroadcast(pushRegistrationIntent);
+    }
+
+    /**
+     * Track when a push notification is opened on device.
+     * @param campaignId
+     * @param templateId
+     */
+    protected void trackPushOpen(int campaignId, int templateId) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
     }
 
     /**
@@ -408,62 +441,57 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
     }
 
-    /**
-     * Retrieves the payload string for a given key.
-     * Used for deeplinking and retrieving extra data passed down along with a campaign.
-     * @param key
-     * @return Returns the requested payload data from the current push campaign if it exists.
-     */
-    public String getPayloadData(String key) {
-        String dataString = null;
-        if (_payloadData != null){
-            dataString = _payloadData.getString(key, null);
-        }
-        return dataString;
+//---------------------------------------------------------------------------------------
+//endregion
+
+//region Private Fuctions
+//---------------------------------------------------------------------------------------
+    private void updateData(Context context, String apiKey, String email) {
+        this._applicationContext = context;
+        this._apiKey = apiKey;
+        this._email = email;
     }
 
-    void setPayloadData(Intent intent) {
-        Bundle extras = intent.getExtras();
-        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-            setPayloadData(extras);
+    private void tryTrackNotifOpen(Intent calledIntent) {
+        Bundle extras = calledIntent.getExtras();
+        if (extras != null) {
+            Intent intent = new Intent();
+            intent.setClass(_applicationContext, IterablePushOpenReceiver.class);
+            intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
+            intent.putExtras(extras);
+            _applicationContext.sendBroadcast(intent);
         }
-    }
-
-    void setPayloadData(Bundle bundle) {
-        _payloadData = bundle;
-    }
-    void setNotificationData(IterableNotificationData data) {
-        _notificationData = data;
     }
 
     /**
-     * Gets the current Template ID.
-     * @return returns 0 if the current templateId does not exist.
+     * Registers the GCM registration ID with Iterable.
+     * @param applicationName
+     * @param token
+     * @param dataFields
      */
-    public int getTemplateId() {
-        int returnId = 0;
-        if (_notificationData != null){
-            returnId = _notificationData.getTemplateId();
+    private void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
+        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
+
+        JSONObject requestJSON = new JSONObject();
+        try {
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            if (dataFields == null) {
+                dataFields = new JSONObject();
+            }
+
+            JSONObject device = new JSONObject();
+            device.put(IterableConstants.KEY_TOKEN, token);
+            device.put(IterableConstants.KEY_PLATFORM, platform);
+            device.put(IterableConstants.KEY_APPLICATIONNAME, applicationName);
+            device.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DEVICE, device);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-        return returnId;
-    }
 
-    /**
-     * Gets the current Campaign ID.
-     * @return 0 if the current templateId does not exist.
-     */
-    public int getCampaignId() {
-        int returnId = 0;
-        if (_notificationData != null){
-            returnId = _notificationData.getCampaignId();
-        }
-        return returnId;
+        sendRequest(IterableConstants.ENDPOINT_REGISTERDEVICETOKEN, requestJSON);
     }
-
-    public static void overrideURLEndpointPath(String url) {
-        IterableRequest.overrideUrl = url;
-    }
-
     /**
      * Sends the request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
@@ -475,47 +503,6 @@ public class IterableApi {
         new IterableRequest().execute(request);
     }
 
-//region Deprecated Fuctions
-//---------------------------------------------------------------------------------------
-
-    /**
-     * deprecated function
-     *
-     * @deprecated use {@link #registerForPush(String, double)} instead.
-     */
-    @Deprecated
-    public void registerForPush(String iterableAppId, String gcmProjectId) {
-        Double projectId = 0.0;
-
-        try {
-            projectId = Double.parseDouble(gcmProjectId);
-        } catch (NumberFormatException e) {
-            IterableLogger.e(TAG, "gcmProjectID must be a double", e);
-            return;
-        }
-
-        registerForPush(iterableAppId, projectId, false);
-    }
-
-    /**
-     * deprecated function
-     *
-     * @deprecated use {@link #disablePush(String, double)} instead.
-     */
-    @Deprecated
-    public void disablePush(String iterableAppId, String gcmProjectId) {
-        Double projectId = 0.0;
-
-        try {
-            projectId = Double.parseDouble(gcmProjectId);
-        } catch (NumberFormatException e) {
-            IterableLogger.e(TAG, "gcmProjectID must be a double");
-            e.printStackTrace();
-            return;
-        }
-
-        registerForPush(iterableAppId, projectId, true);
-    }
 //---------------------------------------------------------------------------------------
 //endregion
 
