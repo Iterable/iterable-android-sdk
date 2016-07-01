@@ -38,8 +38,8 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATEEMAIL         = "users/updateEmail";
     public static final String ENDPOINT_UPDATEUSER          = "users/update";
 
-    public static final String PUSH_APPID = "IterableAppId";
-    public static final String PUSH_PROJECT_NUMBER = "GCMProjectNumber";
+    public static final String PUSH_APP_ID = "IterableAppId";
+    public static final String PUSH_GCM_PROJECT_NUMBER = "GCMProjectNumber";
     public static final String PUSH_DISABLE_AFTER_REGISTRATION = "DisableAfterRegistration";
 
     public static final String MESSAGING_PLATFORM_GOOGLE = "GCM";

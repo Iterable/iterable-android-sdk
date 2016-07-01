@@ -22,8 +22,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String iterableBaseUrl = "https://api.iterable.com/api/";
     static String overrideUrl;
 
-    static final int DEFAULT_TIMEOUT = 10000;   //10 seconds
-    static final long RETRY_DELAY = 10000;      //10 seconds
+    static final int DEFAULT_TIMEOUT_MS = 10000;   //10 seconds
+    static final long RETRY_DELAY_MS = 10000;      //10 seconds
     static final int MAX_RETRY_COUNT = 3;
 
     int retryCount = 0;
@@ -43,7 +43,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
         if (retryRequest) {
             try {
-                Thread.sleep(RETRY_DELAY * retryCount);
+                Thread.sleep(RETRY_DELAY_MS * retryCount);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -62,8 +62,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 urlConnection.setDoOutput(true);
                 urlConnection.setRequestMethod("POST");
 
-                urlConnection.setReadTimeout(DEFAULT_TIMEOUT);
-                urlConnection.setConnectTimeout(DEFAULT_TIMEOUT);
+                urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+                urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
 
                 urlConnection.setRequestProperty("Accept", "application/json");
                 urlConnection.setRequestProperty("Content-Type", "application/json");

@@ -364,8 +364,8 @@ static void setNotificationIcon(Context context, String iconName) {
     protected void registerForPush(String iterableAppId, String gcmProjectNumber, boolean disableAfterRegistration) {
         Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_APPID, iterableAppId);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_PROJECT_NUMBER, gcmProjectNumber);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_APP_ID, iterableAppId);
+        pushRegistrationIntent.putExtra(IterableConstants.PUSH_GCM_PROJECT_NUMBER, gcmProjectNumber);
         pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
         _applicationContext.sendBroadcast(pushRegistrationIntent);
     }

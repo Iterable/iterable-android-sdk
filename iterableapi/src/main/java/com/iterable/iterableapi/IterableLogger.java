@@ -7,7 +7,6 @@ import android.util.Log;
  */
 class IterableLogger {
 
-
     public static void d(String tag, String msg) {
         if (isDebugMode()) {
             Log.d(tag, msg);
