@@ -1,11 +1,14 @@
 package com.iterable.iterableapi;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.support.v7.app.NotificationCompat;
+//import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 
 import java.util.Date;
 
@@ -45,13 +48,45 @@ public class IterableNotification extends NotificationCompat.Builder {
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(
+                context);
+        Notification notification = mBuilder.setSmallIcon(icon).setTicker(applicationName).setWhen(0)
+                .setAutoCancel(true)
+                .setContentTitle(applicationName)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
+                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), icon))
+                .setContentText(notificationBody).build();
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(99999, notification);
+
+//        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(
+//                context);
+//        IterableNotification notification = mBuilder.setSmallIcon(icon).setTicker(applicationName).setWhen(0)
+//                .setAutoCancel(true)
+//                .setContentTitle(applicationName)
+//                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
+//                .setSmallIcon(icon)
+//                .setContentText(notificationBody).build();
 
 
         IterableNotification notificationBuilder = new IterableNotification(context);
-        notificationBuilder.setSmallIcon(icon)
+        notificationBuilder
+//                .setSmallIcon(icon)
+//                .setContentTitle(applicationName)
+//                .setContentText(notificationBody)
+//                .setStyle(new NotificationCompat.BigTextStyle()
+//                        .bigText(notificationBody))
+//                .setAutoCancel(true);
+
+        .setTicker(applicationName).setWhen(0)
+                .setAutoCancel(true)
                 .setContentTitle(applicationName)
-                .setContentText(notificationBody)
-                .setAutoCancel(true);
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
+//                .setContentIntent(resultPendingIntent)
+//                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                .setSmallIcon(icon)
+                .setContentText(notificationBody);
 
         notificationBuilder.setContentIntent(notificationClickedIntent);
 
@@ -75,7 +110,7 @@ public class IterableNotification extends NotificationCompat.Builder {
             long dateInMilli = new Date().getTime();
             int notifID = (int) (dateInMilli % Integer.MAX_VALUE);
 
-            mNotificationManager.notify(notifID, iterableNotification.build());
+//            mNotificationManager.notify(notifID, iterableNotification.build());
         }
     }
 }

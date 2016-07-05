@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
 import android.os.AsyncTask;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
@@ -25,13 +26,18 @@ class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData,
             if (iterableGCMRegistrationData.iterableAppId != null) {
                 Class instanceIdClass = Class.forName(IterableConstants.INSTANCE_ID_CLASS);
                 if (instanceIdClass != null) {
-                    InstanceID instanceID = InstanceID.getInstance(IterableApi.sharedInstance.getMainActivityContext());
+                    Context mainContext = IterableApi.sharedInstance.getMainActivityContext();
+                    if (mainContext != null) {
+                        InstanceID instanceID = InstanceID.getInstance(mainContext);
 
-                    String idInstance = instanceID.getId();
-                    registrationToken = instanceID.getToken(iterableGCMRegistrationData.projectNumber,
-                            GoogleCloudMessaging.INSTANCE_ID_SCOPE);
-                    if (!registrationToken.isEmpty()) {
-                        IterableApi.sharedInstance.registerDeviceToken(iterableGCMRegistrationData.iterableAppId, registrationToken);
+                        String idInstance = instanceID.getId();
+                        registrationToken = instanceID.getToken(iterableGCMRegistrationData.projectNumber,
+                                GoogleCloudMessaging.INSTANCE_ID_SCOPE);
+                        if (!registrationToken.isEmpty()) {
+                            IterableApi.sharedInstance.registerDeviceToken(iterableGCMRegistrationData.iterableAppId, registrationToken);
+                        }
+                    } else {
+                        IterableLogger.e(TAG, "MainActivity Context is null");
                     }
                 }
             } else {
