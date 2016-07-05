@@ -41,7 +41,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             iterableApiRequest = params[0];
         }
 
-        if (retryRequest) {
+        if (retryCount > 0) {
             try {
                 Thread.sleep(RETRY_DELAY_MS * retryCount);
             } catch (InterruptedException e) {
