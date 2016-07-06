@@ -64,7 +64,7 @@ public class IterableApi {
      * @return Returns the requested payload data from the current push campaign if it exists.
      */
     public String getPayloadData(String key) {
-        return(_payloadData != null) ? _payloadData.getString(key, null): null;
+        return (_payloadData != null) ? _payloadData.getString(key, null): null;
     }
 
     Context getMainActivityContext() {
@@ -98,7 +98,7 @@ public class IterableApi {
 
 
 
-//region Public Fuctions
+//region Public Functions
 //---------------------------------------------------------------------------------------
     /**
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
@@ -182,7 +182,7 @@ public class IterableApi {
     }
 
     /**
-     * Returns where or not the intent was sent from Iterable.
+     * Returns whether or not the intent was sent from Iterable.
      */
     public boolean isIterableIntent(Intent intent) {
         if (intent != null) {
@@ -386,7 +386,7 @@ public class IterableApi {
     }
 
     /**
-     * Internal api call made from IterablePushRegistrionGCM after a registration is completed.
+     * Internal api call made from IterablePushRegistrationGCM after a registration is completed.
      * @param token
      */
     protected void disablePush(String token) {
