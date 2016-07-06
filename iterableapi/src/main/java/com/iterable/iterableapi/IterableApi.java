@@ -21,9 +21,8 @@ public class IterableApi {
 //region Variables
 //---------------------------------------------------------------------------------------
     static final String TAG = "IterableApi";
-    static final String NOTIFICATION_ICON_NAME = "iterable_notification_icon";
 
-    static IterableApi sharedInstance = null;
+    static volatile IterableApi sharedInstance = new IterableApi();
 
     private Context _applicationContext;
     private String _apiKey;
@@ -37,6 +36,9 @@ public class IterableApi {
 
 //region Constructor
 //---------------------------------------------------------------------------------------
+    IterableApi(){
+    }
+
     IterableApi(Context context, String apiKey, String email){
         updateData(context, apiKey, email);
     }
@@ -145,13 +147,7 @@ public class IterableApi {
     public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
                                                        String email, boolean debugMode)
     {
-        Context applicationContext = currentContext.getApplicationContext();
-
-        if (sharedInstance == null) {
-            sharedInstance = new IterableApi(applicationContext, apiKey, email);
-        } else {
-            sharedInstance.updateData(applicationContext, apiKey, email);
-        }
+        sharedInstance.updateData(currentContext.getApplicationContext(), apiKey, email);
 
         if (currentContext instanceof Activity) {
             Activity currentActivity = (Activity) currentContext;
@@ -346,16 +342,16 @@ public class IterableApi {
 
 //region Protected Fuctions
 //---------------------------------------------------------------------------------------
-static void setNotificationIcon(Context context, String iconName) {
-    SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sharedPref.edit();
-    editor.putString(NOTIFICATION_ICON_NAME, iconName);
-    editor.commit();
-}
+    static void setNotificationIcon(Context context, String iconName) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.NOTIFICATION_ICON_NAME, iconName);
+        editor.commit();
+    }
 
     static String getNotificationIcon(Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        String iconName = sharedPref.getString(NOTIFICATION_ICON_NAME, "");
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
         return iconName;
     }
 

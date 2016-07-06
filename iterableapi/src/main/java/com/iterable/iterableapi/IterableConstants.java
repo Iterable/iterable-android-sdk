@@ -52,4 +52,6 @@ public final class IterableConstants {
 
     public static final String INSTANCE_ID_CLASS = "com.google.android.gms.iid.InstanceID";
     public static final String ICON_FOLDER_IDENTIFIER = "drawable";
+    public static final String NOTIFICATION_ICON_NAME = "iterable_notification_icon";
+    public static final String NOTIFICATION_COLOR = "iterable_notification_color";
 }

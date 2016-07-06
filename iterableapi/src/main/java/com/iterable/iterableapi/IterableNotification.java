@@ -5,9 +5,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-//import android.support.v7.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat;
 
 import java.util.Date;
@@ -17,6 +17,7 @@ import java.util.Date;
  * Created by David Truong dt@iterable.com
  */
 public class IterableNotification extends NotificationCompat.Builder {
+    static final String TAG = "IterableNotification";
     private boolean isGhostPush;
 
     protected IterableNotification(Context context) {
@@ -28,10 +29,9 @@ public class IterableNotification extends NotificationCompat.Builder {
          * @param context
          * @param extras
          * @param classToOpen
-         * @param icon
          * @return Returns null if the intent comes from an Iterable ghostPush
          */
-    public static IterableNotification createNotification(Context context, Bundle extras, Class classToOpen, int icon) {
+    public static IterableNotification createNotification(Context context, Bundle extras, Class classToOpen) {
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName  = context.getString(stringId);
         String notificationBody = null;
@@ -48,51 +48,32 @@ public class IterableNotification extends NotificationCompat.Builder {
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(
+        IterableNotification mBuilder = new IterableNotification(
                 context);
-        Notification notification = mBuilder.setSmallIcon(icon).setTicker(applicationName).setWhen(0)
+                mBuilder
+                .setDefaults(Notification.DEFAULT_SOUND)
+                .setSmallIcon(getIconId(context))
                 .setAutoCancel(true)
                 .setContentTitle(applicationName)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
-                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), icon))
-                .setContentText(notificationBody).build();
-
-        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(99999, notification);
-
-//        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(
-//                context);
-//        IterableNotification notification = mBuilder.setSmallIcon(icon).setTicker(applicationName).setWhen(0)
-//                .setAutoCancel(true)
-//                .setContentTitle(applicationName)
-//                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
-//                .setSmallIcon(icon)
-//                .setContentText(notificationBody).build();
-
-
-        IterableNotification notificationBuilder = new IterableNotification(context);
-        notificationBuilder
-//                .setSmallIcon(icon)
-//                .setContentTitle(applicationName)
-//                .setContentText(notificationBody)
-//                .setStyle(new NotificationCompat.BigTextStyle()
-//                        .bigText(notificationBody))
-//                .setAutoCancel(true);
-
-        .setTicker(applicationName).setWhen(0)
-                .setAutoCancel(true)
-                .setContentTitle(applicationName)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
-//                .setContentIntent(resultPendingIntent)
-//                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                .setSmallIcon(icon)
+                .setPriority(Notification.PRIORITY_HIGH)
                 .setContentText(notificationBody);
 
-        notificationBuilder.setContentIntent(notificationClickedIntent);
+        try {
+            ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            mBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
 
-        notificationBuilder.isGhostPush = IterableHelper.isGhostPush(extras);
+        PackageManager pm = context.getPackageManager();
+        if (pm.checkPermission("android.permission.VIBRATE", context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
+            mBuilder.setDefaults(Notification.DEFAULT_ALL);
+        } else {
+            mBuilder.setVibrate(null);
+        }
 
-        return notificationBuilder;
+        return mBuilder;
     }
 
     /**
@@ -110,7 +91,47 @@ public class IterableNotification extends NotificationCompat.Builder {
             long dateInMilli = new Date().getTime();
             int notifID = (int) (dateInMilli % Integer.MAX_VALUE);
 
-//            mNotificationManager.notify(notifID, iterableNotification.build());
+            mNotificationManager.notify(notifID, iterableNotification.build());
         }
+    }
+
+    /**
+     * Returns the iconId from potential resource locations
+     * @param context
+     * @return
+     */
+    private static int getIconId(Context context) {
+        int iconId = 0;
+
+        //Get the iconId set in the AndroidManifest.xml
+        if (iconId == 0) {
+            try {
+                ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                iconId = info.metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //Get the iconId set in code
+        if (iconId == 0) {
+            iconId = context.getResources().getIdentifier(
+                IterableApi.getNotificationIcon(context),
+                IterableConstants.ICON_FOLDER_IDENTIFIER,
+                context.getPackageName());
+        }
+
+        //Get id from the default app settings
+        if (iconId == 0) {
+            if (context.getApplicationInfo().icon != 0) {
+                IterableLogger.d(TAG, "No Notification Icon defined - defaulting to app icon");
+                iconId = context.getApplicationInfo().icon;
+            }
+            else {
+                IterableLogger.w(TAG, "No Notification Icon defined - push notifications will not be displayed");
+            }
+        }
+
+        return iconId;
     }
 }

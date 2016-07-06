@@ -49,23 +49,8 @@ public class IterablePushReceiver extends BroadcastReceiver{
                 e.printStackTrace();
             }
 
-            int resourceIconId = appContext.getResources().getIdentifier(
-                    IterableApi.getNotificationIcon(context),
-                    IterableConstants.ICON_FOLDER_IDENTIFIER,
-                    appContext.getPackageName());
-
-            int iconId = 0;
-            if (resourceIconId != 0) {
-                iconId = resourceIconId;
-            } else if (appContext.getApplicationInfo().icon != 0) {
-                IterableLogger.d(TAG, "No Notification Icon defined - defaulting to app icon");
-                iconId = appContext.getApplicationInfo().icon;
-            } else {
-                IterableLogger.w(TAG, "No Notification Icon defined - push notifications will not be displayed");
-            }
-
             IterableNotification notificationBuilder = IterableNotification.createNotification(
-                    appContext, intent.getExtras(), mainClass, iconId);
+                    appContext, intent.getExtras(), mainClass);
 
             IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
         }
