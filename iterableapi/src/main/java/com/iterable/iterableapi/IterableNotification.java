@@ -53,6 +53,7 @@ public class IterableNotification extends NotificationCompat.Builder {
                 mBuilder
                 .setDefaults(Notification.DEFAULT_SOUND)
                 .setSmallIcon(getIconId(context))
+                .setTicker(applicationName).setWhen(0)
                 .setAutoCancel(true)
                 .setContentTitle(applicationName)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
