@@ -48,9 +48,9 @@ public class IterableNotification extends NotificationCompat.Builder {
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        IterableNotification mBuilder = new IterableNotification(
+        IterableNotification notificationBuilder = new IterableNotification(
                 context);
-                mBuilder
+                notificationBuilder
                 .setDefaults(Notification.DEFAULT_SOUND)
                 .setSmallIcon(getIconId(context))
                 .setTicker(applicationName).setWhen(0)
@@ -60,21 +60,25 @@ public class IterableNotification extends NotificationCompat.Builder {
                 .setPriority(Notification.PRIORITY_HIGH)
                 .setContentText(notificationBody);
 
+        notificationBuilder.setContentIntent(notificationClickedIntent);
+        notificationBuilder.isGhostPush = IterableHelper.isGhostPush(extras);
+
+
         try {
             ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            mBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+            notificationBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
 
         PackageManager pm = context.getPackageManager();
         if (pm.checkPermission("android.permission.VIBRATE", context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
-            mBuilder.setDefaults(Notification.DEFAULT_ALL);
+            notificationBuilder.setDefaults(Notification.DEFAULT_ALL);
         } else {
-            mBuilder.setVibrate(null);
+            notificationBuilder.setVibrate(null);
         }
 
-        return mBuilder;
+        return notificationBuilder;
     }
 
     /**
