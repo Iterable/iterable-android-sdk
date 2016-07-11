@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 
 import java.util.Date;
+import java.util.jar.Manifest;
 
 /**
  *
@@ -48,17 +49,16 @@ public class IterableNotification extends NotificationCompat.Builder {
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        IterableNotification notificationBuilder = new IterableNotification(
-                context);
-                notificationBuilder
-                .setDefaults(Notification.DEFAULT_SOUND)
-                .setSmallIcon(getIconId(context))
-                .setTicker(applicationName).setWhen(0)
-                .setAutoCancel(true)
-                .setContentTitle(applicationName)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
-                .setPriority(Notification.PRIORITY_HIGH)
-                .setContentText(notificationBody);
+        IterableNotification notificationBuilder = new IterableNotification(context);
+        notificationBuilder
+            .setDefaults(Notification.DEFAULT_SOUND)
+            .setSmallIcon(getIconId(context))
+            .setTicker(applicationName).setWhen(0)
+            .setAutoCancel(true)
+            .setContentTitle(applicationName)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody))
+            .setPriority(Notification.PRIORITY_HIGH)
+            .setContentText(notificationBody);
 
         notificationBuilder.setContentIntent(notificationClickedIntent);
         notificationBuilder.isGhostPush = IterableHelper.isGhostPush(extras);
@@ -72,7 +72,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         }
 
         PackageManager pm = context.getPackageManager();
-        if (pm.checkPermission("android.permission.VIBRATE", context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
+        if (pm.checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
             notificationBuilder.setDefaults(Notification.DEFAULT_ALL);
         } else {
             notificationBuilder.setVibrate(null);
