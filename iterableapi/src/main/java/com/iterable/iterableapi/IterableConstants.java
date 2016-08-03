@@ -38,9 +38,8 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATEEMAIL         = "users/updateEmail";
     public static final String ENDPOINT_UPDATEUSER          = "users/update";
 
-
-    public static final String PUSH_APPID = "IterableAppId";
-    public static final String PUSH_PROJECTID = "GCMProjectNumber";
+    public static final String PUSH_APP_ID = "IterableAppId";
+    public static final String PUSH_GCM_PROJECT_NUMBER = "GCMProjectNumber";
     public static final String PUSH_DISABLE_AFTER_REGISTRATION = "DisableAfterRegistration";
 
     public static final String MESSAGING_PLATFORM_GOOGLE = "GCM";
@@ -50,4 +49,9 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_KEY = "itbl";
     public static final String ITERABLE_DATA_BODY = "body";
     public static final String ITERABLE_DATA_TITLE = "title";
+
+    public static final String INSTANCE_ID_CLASS = "com.google.android.gms.iid.InstanceID";
+    public static final String ICON_FOLDER_IDENTIFIER = "drawable";
+    public static final String NOTIFICATION_ICON_NAME = "iterable_notification_icon";
+    public static final String NOTIFICATION_COLOR = "iterable_notification_color";
 }

@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
 import android.os.AsyncTask;
-import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -23,8 +22,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String iterableBaseUrl = "https://api.iterable.com/api/";
     static String overrideUrl;
 
-    static final int DEFAULT_TIMEOUT = 10000;
-    static final long RETRY_DELAY = 10000;
+    static final int DEFAULT_TIMEOUT_MS = 10000;   //10 seconds
+    static final long RETRY_DELAY_MS = 10000;      //10 seconds
     static final int MAX_RETRY_COUNT = 3;
 
     int retryCount = 0;
@@ -42,9 +41,9 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             iterableApiRequest = params[0];
         }
 
-        if (retryRequest) {
+        if (retryCount > 0) {
             try {
-                Thread.sleep(RETRY_DELAY * retryCount);
+                Thread.sleep(RETRY_DELAY_MS * retryCount);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -63,8 +62,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 urlConnection.setDoOutput(true);
                 urlConnection.setRequestMethod("POST");
 
-                urlConnection.setReadTimeout(DEFAULT_TIMEOUT);
-                urlConnection.setConnectTimeout(DEFAULT_TIMEOUT);
+                urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+                urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
 
                 urlConnection.setRequestProperty("Accept", "application/json");
                 urlConnection.setRequestProperty("Content-Type", "application/json");
@@ -81,16 +80,15 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     InputStream errorStream = urlConnection.getErrorStream();
                     java.util.Scanner scanner = new java.util.Scanner(errorStream).useDelimiter("\\A");
                     requestResult = scanner.hasNext() ? scanner.next() : "";
-                    Log.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
-                    Log.d(TAG, requestResult);
+                    IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
+                    IterableLogger.d(TAG, requestResult);
                 }
             } catch (FileNotFoundException e) {
-                String mess = e.getMessage();
                 e.printStackTrace();
             } catch (IOException e) {
-                String mess = e.getMessage();
-                if (mess.equals(AUTHENTICATION_IO_EXCEPTION)) {
-                    Log.d(TAG, "Invalid API Key");
+                String message = e.getMessage();
+                if (message.equals(AUTHENTICATION_IO_EXCEPTION)) {
+                    IterableLogger.d(TAG, "Invalid API Key");
                 } else {
                     retryRequest = true;
                 }

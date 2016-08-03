@@ -5,7 +5,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.util.Log;
 
 /**
  *
@@ -16,7 +15,6 @@ public class IterablePushReceiver extends BroadcastReceiver{
     static final String TAG = "IterablePushReceiver";
 
     private static final String ACTION_GCM_RECEIVE_INTENT = "com.google.android.c2dm.intent.RECEIVE";
-    private static final String ACTION_GCM_REGISTRATION_INTENT = "com.google.android.c2dm.intent.REGISTRATION";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -26,14 +24,12 @@ public class IterablePushReceiver extends BroadcastReceiver{
            handlePushRegistration(context, intent);
         } else if (intentAction.equals(ACTION_GCM_RECEIVE_INTENT)) {
             handlePushReceived(context, intent);
-        } else if (intentAction.equals(ACTION_GCM_REGISTRATION_INTENT)) {
-            Log.d(TAG, "received GCM registration intent action");
         }
     }
 
     private void handlePushRegistration(Context context, Intent intent) {
-        String iterableAppId = intent.getStringExtra(IterableConstants.PUSH_APPID);
-        String projectNumber = intent.getStringExtra(IterableConstants.PUSH_PROJECTID);
+        String iterableAppId = intent.getStringExtra(IterableConstants.PUSH_APP_ID);
+        String projectNumber = intent.getStringExtra(IterableConstants.PUSH_GCM_PROJECT_NUMBER);
         boolean disablePush = intent.getBooleanExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, false);
         IterableGCMRegistrationData data = new IterableGCMRegistrationData(iterableAppId, projectNumber, disablePush);
         new IterablePushRegistrationGCM().execute(data);
@@ -53,22 +49,8 @@ public class IterablePushReceiver extends BroadcastReceiver{
                 e.printStackTrace();
             }
 
-            int iconId = appContext.getResources().getIdentifier(
-                    IterableApi.getNotificationIcon(context),
-                    "drawable",
-                    appContext.getPackageName());
-
-            if (iconId == 0) {
-                iconId = appContext.getApplicationInfo().icon;
-                if (iconId != 0) {
-                    Log.d(TAG, "No Notification Icon defined - defaulting to app icon");
-                } else {
-                    Log.w(TAG, "No Notification Icon defined - push notifications will not be displayed");
-                }
-            }
-
             IterableNotification notificationBuilder = IterableNotification.createNotification(
-                    appContext, intent.getExtras(), mainClass, iconId);
+                    appContext, intent.getExtras(), mainClass);
 
             IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
         }
