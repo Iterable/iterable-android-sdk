@@ -9,7 +9,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 
 import java.util.Date;
@@ -71,9 +70,14 @@ public class IterableNotification extends NotificationCompat.Builder {
             String[] soundFile = soundName.split("\\.");
             soundName = soundFile[0];
 
-            int soundID = context.getResources().getIdentifier(soundName, "raw", context.getPackageName());
-            Uri soundUri = Uri.parse("android.resource://" + context.getPackageName() + "/" + soundID);
-            notificationBuilder.setSound(soundUri);
+            if (soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)){
+                int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
+                Uri soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
+                notificationBuilder.setSound(soundUri);
+            } else {
+                notifPermissions.defaults |= Notification.DEFAULT_SOUND;
+            }
+
         } else {
             notifPermissions.defaults |= Notification.DEFAULT_SOUND;
         }
