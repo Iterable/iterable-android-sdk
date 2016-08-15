@@ -67,6 +67,10 @@ public class IterableNotification extends NotificationCompat.Builder {
             .setContentText(notificationBody);
 
         if (soundName != null) {
+            //Removes the file type from the name
+            String[] soundFile = soundName.split("\\.");
+            soundName = soundFile[0];
+
             int soundID = context.getResources().getIdentifier(soundName, "raw", context.getPackageName());
             Uri soundUri = Uri.parse("android.resource://" + context.getPackageName() + "/" + soundID);
             notificationBuilder.setSound(soundUri);
