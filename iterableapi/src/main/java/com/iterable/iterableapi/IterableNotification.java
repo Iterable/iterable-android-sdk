@@ -7,11 +7,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 
 import java.util.Date;
-import java.util.jar.Manifest;
 
 /**
  *
@@ -36,9 +37,12 @@ public class IterableNotification extends NotificationCompat.Builder {
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName  = context.getString(stringId);
         String notificationBody = null;
+        String soundName = null;
+
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY, notificationBody);
             applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
+            soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND, soundName);
         }
 
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
@@ -49,9 +53,11 @@ public class IterableNotification extends NotificationCompat.Builder {
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        Notification notifPermissions = new Notification();
+        notifPermissions.defaults |= Notification.DEFAULT_LIGHTS;
+
         IterableNotification notificationBuilder = new IterableNotification(context);
         notificationBuilder
-            .setDefaults(Notification.DEFAULT_SOUND)
             .setSmallIcon(getIconId(context))
             .setTicker(applicationName).setWhen(0)
             .setAutoCancel(true)
@@ -60,9 +66,16 @@ public class IterableNotification extends NotificationCompat.Builder {
             .setPriority(Notification.PRIORITY_HIGH)
             .setContentText(notificationBody);
 
+        if (soundName != null) {
+            int soundID = context.getResources().getIdentifier(soundName, "raw", context.getPackageName());
+            Uri soundUri = Uri.parse("android.resource://" + context.getPackageName() + "/" + soundID);
+            notificationBuilder.setSound(soundUri);
+        } else {
+            notifPermissions.defaults |= Notification.DEFAULT_SOUND;
+        }
+
         notificationBuilder.setContentIntent(notificationClickedIntent);
         notificationBuilder.isGhostPush = IterableHelper.isGhostPush(extras);
-
 
         try {
             ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
@@ -73,10 +86,11 @@ public class IterableNotification extends NotificationCompat.Builder {
 
         PackageManager pm = context.getPackageManager();
         if (pm.checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
-            notificationBuilder.setDefaults(Notification.DEFAULT_ALL);
-        } else {
-            notificationBuilder.setVibrate(null);
+            notifPermissions.defaults |= Notification.DEFAULT_VIBRATE;
         }
+
+
+        notificationBuilder.setDefaults(notifPermissions.defaults);
 
         return notificationBuilder;
     }

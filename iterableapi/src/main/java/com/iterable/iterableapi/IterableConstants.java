@@ -49,6 +49,7 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_KEY = "itbl";
     public static final String ITERABLE_DATA_BODY = "body";
     public static final String ITERABLE_DATA_TITLE = "title";
+    public static final String ITERABLE_DATA_SOUND = "sound";
 
     public static final String INSTANCE_ID_CLASS = "com.google.android.gms.iid.InstanceID";
     public static final String ICON_FOLDER_IDENTIFIER = "drawable";
