@@ -32,7 +32,7 @@ public class IterablePushOpenReceiver extends BroadcastReceiver {
                 IterableNotificationData iterableNotificationData = new IterableNotificationData(iterableDataString);
                 if (IterableApi.sharedInstance != null) {
                     IterableApi.sharedInstance.setNotificationData(iterableNotificationData);
-                    IterableApi.sharedInstance.trackPushOpen(iterableNotificationData.getCampaignId(), iterableNotificationData.getTemplateId());
+                    IterableApi.sharedInstance.trackPushOpen(iterableNotificationData.getCampaignId(), iterableNotificationData.getTemplateId(), iterableNotificationData.getMessageId());
                 }
             }
         }

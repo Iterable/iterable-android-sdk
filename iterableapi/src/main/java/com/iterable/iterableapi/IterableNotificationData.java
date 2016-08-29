@@ -9,6 +9,7 @@ import org.json.JSONObject;
 class IterableNotificationData {
         private int campaignId;
         private int templateId;
+        private String messageId;
         private boolean isGhostPush;
 
     IterableNotificationData(String data){
@@ -20,6 +21,10 @@ class IterableNotificationData {
 
             if (iterableJson.has(IterableConstants.KEY_TEMPLATE_ID)) {
                 templateId = iterableJson.getInt(IterableConstants.KEY_TEMPLATE_ID);
+            }
+
+            if (iterableJson.has(IterableConstants.KEY_MESSAGE_ID)) {
+                messageId = iterableJson.getString(IterableConstants.KEY_MESSAGE_ID);
             }
 
             if (iterableJson.has(IterableConstants.IS_GHOST_PUSH)) {
@@ -39,6 +44,8 @@ class IterableNotificationData {
     {
         return this.templateId;
     }
+
+    public String getMessageId() { return this.messageId; }
 
     public boolean getIsGhostPush()
     {
