@@ -369,14 +369,14 @@ public class IterableApi {
      * @param campaignId
      * @param templateId
      */
-    protected void trackPushOpen(int campaignId, int templateId) {
+    protected void trackPushOpen(int campaignId, int templateId, String messageId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
             requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
         }
         catch (JSONException e) {
             e.printStackTrace();

@@ -20,6 +20,7 @@ public final class IterableConstants {
     public static final String KEY_RECIPIENT_EMAIL     = "recipientEmail";
     public static final String KEY_SEND_AT             = "sendAt";
     public static final String KEY_TEMPLATE_ID         = "templateId";
+    public static final String KEY_MESSAGE_ID         = "messageId";
     public static final String KEY_TOKEN               = "token";
     public static final String KEY_PLATFORM            = "platform";
     public static final String KEY_APPLICATIONNAME     = "applicationName";
