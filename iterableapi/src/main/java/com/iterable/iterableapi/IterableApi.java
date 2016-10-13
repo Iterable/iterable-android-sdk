@@ -278,11 +278,7 @@ public class IterableApi {
     public void track(String eventName, String campaignId, String templateId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
-            if (_email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
-            }
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
 
             requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
@@ -342,19 +338,19 @@ public class IterableApi {
     }
 
     public void updateEmail(String newEmail) {
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
-
         if (_email != null) {
+            JSONObject requestJSON = new JSONObject();
+
+            try {
+                requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
+                requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
+            }
+            catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
+
             _email = newEmail;
         } else {
             IterableLogger.w(TAG, "updateEmail should not be called with a userId. " +
@@ -366,12 +362,7 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            if (_email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
-            }
-
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
         }
         catch (JSONException e) {
@@ -425,11 +416,7 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            if (_email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
-            }
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
@@ -448,12 +435,7 @@ public class IterableApi {
     protected void disablePush(String token) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);
-            if (_email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
-            }
+            requestJSON.put(IterableConstants.KEY_TOKEN, token);addEmailOrUserIdToJson(requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -495,11 +477,7 @@ public class IterableApi {
 
         JSONObject requestJSON = new JSONObject();
         try {
-            if (_email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
-            }
+            addEmailOrUserIdToJson(requestJSON);
 
             if (dataFields == null) {
                 dataFields = new JSONObject();
@@ -527,6 +505,18 @@ public class IterableApi {
     private void sendRequest(String resourcePath, JSONObject json) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json.toString());
         new IterableRequest().execute(request);
+    }
+
+    private void addEmailOrUserIdToJson(JSONObject requestJSON) {
+        try {
+            if (_email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 //---------------------------------------------------------------------------------------
