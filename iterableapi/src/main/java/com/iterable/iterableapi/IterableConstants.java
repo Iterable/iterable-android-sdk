@@ -33,7 +33,6 @@ public final class IterableConstants {
     public static final String ENDPOINT_PUSHTARGET          = "push/target";
     public static final String ENDPOINT_REGISTERDEVICETOKEN = "users/registerDeviceToken";
     public static final String ENDPOINT_TRACK               = "events/track";
-    public static final String ENDPOINT_TRACKCONVERSION     = "events/trackConversion";
     public static final String ENDPOINT_TRACKPURCHASE       = "commerce/trackPurchase";
     public static final String ENDPOINT_TRACKPUSHOPEN       = "events/trackPushOpen";
     public static final String ENDPOINT_UPDATEEMAIL         = "users/updateEmail";

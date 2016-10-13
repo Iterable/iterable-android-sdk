@@ -231,29 +231,6 @@ public class IterableApi {
         sendRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
-    public void trackConversion(int campaignId, int templateId) {
-        trackConversion(campaignId, templateId, null);
-    }
-
-    public void trackConversion(int campaignId, int templateId, JSONObject dataFields) {
-
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            if (dataFields != null) {
-                requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
-            }
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendRequest(IterableConstants.ENDPOINT_TRACKCONVERSION, requestJSON);
-    }
-
     public void sendPush(String email, int campaignId) {
     sendPush(email, campaignId, null, null);
 }
