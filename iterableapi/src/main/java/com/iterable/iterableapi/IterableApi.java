@@ -150,7 +150,7 @@ public class IterableApi {
     {
         return sharedInstanceWithApiKey(currentContext, apiKey, null, userId, debugMode);
     }
-    
+
     /**
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
      * Should be called whenever the app is opened.
@@ -281,7 +281,7 @@ public class IterableApi {
             if (_email != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, _email);
             } else {
-
+                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
             }
             requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
 
@@ -297,8 +297,8 @@ public class IterableApi {
     }
 
     public void sendPush(String email, int campaignId) {
-    sendPush(email, campaignId, null, null);
-}
+        sendPush(email, campaignId, null, null);
+    }
 
     /**
      * Sends a push campaign to an email address at the given time.
@@ -354,7 +354,12 @@ public class IterableApi {
 
         sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
 
-        _email = newEmail;
+        if (_email != null) {
+            _email = newEmail;
+        } else {
+            IterableLogger.w(TAG, "updateEmail should not be called with a userId. " +
+                "Init SDK with sharedInstanceWithApiKey instead of sharedInstanceWithApiKeyWithUserId");
+        }
     }
 
     public void updateUser(JSONObject dataFields) {
@@ -363,6 +368,8 @@ public class IterableApi {
         try {
             if (_email != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
             }
 
             requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
@@ -418,7 +425,11 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            if (_email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
+            }
             requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
@@ -438,7 +449,11 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, token);
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            if (_email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
+            }
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -480,7 +495,12 @@ public class IterableApi {
 
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            if (_email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
+            }
+
             if (dataFields == null) {
                 dataFields = new JSONObject();
             }
