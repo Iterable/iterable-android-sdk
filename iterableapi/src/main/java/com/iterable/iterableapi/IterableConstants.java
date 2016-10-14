@@ -20,8 +20,9 @@ public final class IterableConstants {
     public static final String KEY_RECIPIENT_EMAIL     = "recipientEmail";
     public static final String KEY_SEND_AT             = "sendAt";
     public static final String KEY_TEMPLATE_ID         = "templateId";
-    public static final String KEY_MESSAGE_ID         = "messageId";
+    public static final String KEY_MESSAGE_ID          = "messageId";
     public static final String KEY_TOKEN               = "token";
+    public static final String KEY_USER_ID             = "userId";
     public static final String KEY_PLATFORM            = "platform";
     public static final String KEY_APPLICATIONNAME     = "applicationName";
     public static final String KEY_DEVICE              = "device";
@@ -33,7 +34,6 @@ public final class IterableConstants {
     public static final String ENDPOINT_PUSHTARGET          = "push/target";
     public static final String ENDPOINT_REGISTERDEVICETOKEN = "users/registerDeviceToken";
     public static final String ENDPOINT_TRACK               = "events/track";
-    public static final String ENDPOINT_TRACKCONVERSION     = "events/trackConversion";
     public static final String ENDPOINT_TRACKPURCHASE       = "commerce/trackPurchase";
     public static final String ENDPOINT_TRACKPUSHOPEN       = "events/trackPushOpen";
     public static final String ENDPOINT_UPDATEEMAIL         = "users/updateEmail";
