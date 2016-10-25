@@ -13,6 +13,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RoundRectShape;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -32,7 +33,7 @@ public class IterableInAppManager {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         RelativeLayout centerLayout = new RelativeLayout(context);
-        centerLayout.setBackgroundColor(Color.GREEN);
+        centerLayout.setBackgroundColor(Color.MAGENTA);
         RelativeLayout.LayoutParams centerParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         centerParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
 
@@ -73,9 +74,15 @@ public class IterableInAppManager {
         RelativeLayout bottomButtons = new RelativeLayout(context);
         bottomButtons.setBackgroundColor(Color.CYAN);
 
+        LinearLayout.LayoutParams equalParam = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        equalParam.weight = 1;
+        equalParam.width = 0;
+
+        //TODO: Loop through buttons
         Button buttonLeft = new Button(context);
-        //b.setTextColor(65793);
-        //b.setBackgroundColor(13107200);
+        buttonLeft.setBackgroundColor(Color.GREEN);
         buttonLeft.setText("button click Left");
         buttonLeft.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -85,8 +92,7 @@ public class IterableInAppManager {
         });
 
         Button buttonRight = new Button(context);
-        //b.setTextColor(65793);
-        //b.setBackgroundColor(13107200);
+        buttonRight.setBackgroundColor(Color.RED);
         buttonRight.setText("button click Right");
         buttonRight.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -97,10 +103,10 @@ public class IterableInAppManager {
 
         LinearLayout linearlayout = new LinearLayout(context);
         linearlayout.setOrientation(LinearLayout.HORIZONTAL);
-        linearlayout.addView(buttonLeft);
-        linearlayout.addView(buttonRight);
+        linearlayout.addView(buttonLeft, equalParam);
+        linearlayout.addView(buttonRight, equalParam);
 
-        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT); // You might want to tweak these to WRAP_CONTENT
+        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
         bottomButtons.addView(linearlayout, lp);
