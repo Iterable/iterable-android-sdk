@@ -1,21 +1,11 @@
 package com.iterable.iterableapi.InApp;
 
-import android.annotation.TargetApi;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.graphics.Canvas;
+
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RoundRectShape;
-import android.os.Build;
-import android.util.DisplayMetrics;
+
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -32,19 +22,11 @@ public class IterableInAppManager {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Light);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        RelativeLayout centerLayout = new RelativeLayout(context);
-        centerLayout.setBackgroundColor(Color.MAGENTA);
-        RelativeLayout.LayoutParams centerParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-        centerParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-
-        //LinearLayout.LayoutParams linearlayoutparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-
         LinearLayout verticalLayout = new LinearLayout(context);
         verticalLayout.setOrientation(LinearLayout.VERTICAL);
+        verticalLayout.setBackgroundColor(Color.BLUE);
         LinearLayout.LayoutParams linearlayoutparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
         verticalLayout.setLayoutParams(linearlayoutparams);
-
-
 
         TextView title = new TextView(context);
         title.setText("test title 1");
@@ -56,15 +38,11 @@ public class IterableInAppManager {
         //title2.setLayoutParams(linearlayoutparams);
         verticalLayout.addView(title2);
 
+        //Adds in the bottom buttons
         View bottomButtons = createButtons(context);
         verticalLayout.addView(bottomButtons);
 
-        verticalLayout.setBackgroundColor(Color.BLUE);
-
-        centerLayout.addView(verticalLayout);
-
-        dialog.setContentView(centerLayout, centerParams);
-
+        dialog.setContentView(verticalLayout);
         dialog.setCancelable(false);
         dialog.show();
 
