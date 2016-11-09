@@ -1,21 +1,21 @@
 package com.iterable.iterableapi.InApp;
 
+import android.app.Activity;
 import android.app.Dialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.Context;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 
 import android.graphics.Point;
-import android.os.AsyncTask;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -25,28 +25,103 @@ import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
-import java.io.InputStream;
-
 /**
  * Created by David Truong dt@iterable.com.
  */
 public class IterableInAppManager {
 
+    public static int colorCol;
+
     public static void showNotification(Context context) {
+        showNotificationDialog(context);
+    }
+
+    public static void showNotificationDialog(Context context) {
+        Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar); //Theme_Material_NoActionBar_Overscan
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setCanceledOnTouchOutside(true);
+        dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        Window window = dialog.getWindow();
+        lp.copyFrom(window.getAttributes());
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+        lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        lp.dimAmount = .8f;
+        window.setAttributes(lp);
+
+        LinearLayout verticalLayout = new LinearLayout(context);
+        verticalLayout.setOrientation(LinearLayout.VERTICAL);
+        verticalLayout.setBackgroundColor(Color.GREEN);
+
+        TextView title = new TextView(context);
+        title.setText("Iterable \nand the future of growth marketing");
+        //        title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant/16);
+        title.setGravity(Gravity.CENTER);
+        title.setTextColor(Color.BLACK);
+        title.setBackgroundColor(Color.MAGENTA);
+        verticalLayout.addView(title);
+
+        /*View bottomButtons = createButtons(context);
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        buttonParams.height = 50;
+        verticalLayout.addView(bottomButtons);*/
+
+
+
+        //TODO: Loop through buttons
+        Button buttonLeft = new Button(context);
+        buttonLeft.setBackgroundColor(Color.LTGRAY);
+        buttonLeft.setTextColor(Color.WHITE);
+        buttonLeft.setText("CLOSE");
+        buttonLeft.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+                Toast.makeText(v.getContext(), "You clicked on Left", Toast.LENGTH_SHORT).show();
+            }
+        });
+        buttonLeft.setHeight(100);
+
+        Button buttonRight = new Button(context);
+        buttonRight.setBackgroundColor(colorCol);
+        buttonRight.setTextColor(Color.WHITE);
+        buttonRight.setText("ORDER NOW");
+        buttonRight.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+                Toast.makeText(v.getContext(), "You clicked on Right", Toast.LENGTH_SHORT).show();
+            }
+        });
+        buttonRight.setHeight(100);
+
+        LinearLayout linearlayout = new LinearLayout(context);
+        linearlayout.setOrientation(LinearLayout.HORIZONTAL);
+//        linearlayout.addView(buttonLeft);
+//        linearlayout.addView(buttonRight);
+        LinearLayout.LayoutParams linearlayoutparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        verticalLayout.addView(linearlayout);
+        verticalLayout.addView(createButtons(context));
+
+        dialog.setContentView(verticalLayout);
+        dialog.show();
+    }
+
+    public static void showFullScreenDialog(Context context) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Light);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         LinearLayout verticalLayout = new LinearLayout(context);
         verticalLayout.setOrientation(LinearLayout.VERTICAL);
-//        verticalLayout.setBackgroundColor(Color.BLUE);
-//        verticalLayout.setBackgroundColor(0x333333EE);
-        int col = 0x004C99FF;
+
+        int col = 0xEC3524FF;
         int r = ((col & 0xFF000000) >> 24);
         int g = ((col & 0xFF0000) >>  16);
         int b = ((col & 0xFF00) >> 8);
         int a = ((col & 0xFF));
-//        verticalLayout.setBackgroundColor(Color.rgb(51, 51,51));//a, r, g, b));
-        verticalLayout.setBackgroundColor(Color.argb(a, r, g, b));
+        colorCol = Color.argb(a, r, g, b);
+        verticalLayout.setBackgroundColor(Color.WHITE);
         LinearLayout.LayoutParams linearlayoutparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
         verticalLayout.setLayoutParams(linearlayoutparams);
 
@@ -56,23 +131,21 @@ public class IterableInAppManager {
         equalParam.weight = 1;
         equalParam.height = 0;
 
-        //NSInteger fontConstant = (self.view.frame.size.width > self.view.frame.size.height) ? self.view.frame.size.width : self.view.frame.size.height;
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
         int dialogWidth = size.x;
         int dialogHeight = size.y;
-//        int dialogWidth = dialog.getWindow().getDecorView().getWidth();
-//        int dialogHeight = dialog.getWindow().getDecorView().getHeight();
         int fontConstant = (dialogWidth > dialogHeight) ? dialogWidth : dialogHeight;
 
         //Title Text
         TextView title = new TextView(context);
-        title.setText("SEATGEEK");
+        title.setText("FIVE GUYS \nBURGERS and FRIES");
         title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant/16);
         title.setGravity(Gravity.CENTER);
         title.setTextColor(Color.WHITE);
+        title.setBackgroundColor(colorCol);
         verticalLayout.addView(title, equalParam);
 
         //Main Image
@@ -83,23 +156,19 @@ public class IterableInAppManager {
         //TODO: add runtime checks if picasso is loaded
         Picasso.
                 with(context.getApplicationContext()).
-                load("https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_284x96dp.png").
-//                load("http://i.dailymail.co.uk/i/pix/2016/01/04/21/2FA753A200000578-3384303-image-a-38_1451941484917.jpg").
+                load("http://blogs-images.forbes.com/benkepes/files/2014/10/workflows-1940x1233.png").
+
                 resize(dialogWidth, 0). //TOOD: if in landscape mode use the height to be 1/2 of the screen height
                 into(imageView);
 
-        RelativeLayout.LayoutParams imageParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT);
-        //imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         verticalLayout.addView(imageView);
 
         //Body Text
         TextView bodyText = new TextView(context);
-        bodyText.setText("Sample Image above. Plus a description which can be long and multi line");
+        bodyText.setText("Handcrafted BURGERS & FRIES since 1986.");
         bodyText.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant/30);
         bodyText.setGravity(Gravity.CENTER);
-        bodyText.setTextColor(Color.WHITE);
+        bodyText.setTextColor(Color.BLACK);
         verticalLayout.addView(bodyText, equalParam);
 
         //Adds in the bottom buttons
@@ -127,8 +196,9 @@ public class IterableInAppManager {
 
         //TODO: Loop through buttons
         Button buttonLeft = new Button(context);
-        buttonLeft.setBackgroundColor(Color.GREEN);
-        buttonLeft.setText("button click Left");
+        buttonLeft.setBackgroundColor(Color.LTGRAY);
+        buttonLeft.setTextColor(Color.WHITE);
+        buttonLeft.setText("CLOSE");
         buttonLeft.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Perform action on click
@@ -137,8 +207,9 @@ public class IterableInAppManager {
         });
 
         Button buttonRight = new Button(context);
-        buttonRight.setBackgroundColor(Color.RED);
-        buttonRight.setText("button click Right");
+        buttonRight.setBackgroundColor(colorCol);
+        buttonRight.setTextColor(Color.WHITE);
+        buttonRight.setText("ORDER NOW");
         buttonRight.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Perform action on click
@@ -151,12 +222,9 @@ public class IterableInAppManager {
         linearlayout.addView(buttonLeft, equalParam);
         linearlayout.addView(buttonRight, equalParam);
 
-        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-        lp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
-        bottomButtons.addView(linearlayout, lp);
-        return bottomButtons;
+        return linearlayout;
     }
+
 }
 
 
