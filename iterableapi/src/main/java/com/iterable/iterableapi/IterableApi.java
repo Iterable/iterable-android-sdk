@@ -228,7 +228,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
     public void trackConversion(int campaignId, int templateId) {
@@ -251,7 +251,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_TRACKCONVERSION, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACKCONVERSION, requestJSON);
     }
 
     public void sendPush(String email, int campaignId) {
@@ -296,7 +296,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_PUSHTARGET, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_PUSHTARGET, requestJSON);
     }
 
     public void updateEmail(String newEmail) {
@@ -310,7 +310,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
 
         _email = newEmail;
     }
@@ -326,7 +326,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
     }
 
     public void registerForPush(String iterableAppId, String gcmProjectNumber) {
@@ -396,7 +396,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
     }
 
     /**
@@ -412,7 +412,7 @@ public class IterableApi {
         catch (JSONException e) {
             e.printStackTrace();
         }
-        sendRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -464,16 +464,16 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_REGISTERDEVICETOKEN, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_REGISTERDEVICETOKEN, requestJSON);
     }
     /**
-     * Sends the request to Iterable.
+     * Sends the POST request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
      * @param resourcePath
      * @param json
      */
-    private void sendRequest(String resourcePath, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, "POST");
+    private void sendPostRequest(String resourcePath, JSONObject json) {
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST);
         new IterableRequest().execute(request);
     }
 
@@ -484,7 +484,7 @@ public class IterableApi {
      * @param json
      */
     private void sendGetRequest(String resourcePath, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, "GET");
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET);
         new IterableRequest().execute(request);
     }
 

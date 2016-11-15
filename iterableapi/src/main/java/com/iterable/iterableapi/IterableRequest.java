@@ -59,11 +59,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
             try {
                 String baseUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : iterableBaseUrl;
-                //url = new URL(baseUrl + iterableApiRequest.resourcePath);
-
-                //http://10.233.108.213:9000/api/inApp/getMessagesdt@iterable.com
-
-                if (iterableApiRequest.requestType == "GET") {
+                if (iterableApiRequest.requestType == IterableApiRequest.GET) {
                     String urlString = baseUrl + iterableApiRequest.resourcePath + "?api_key=" + iterableApiRequest.apiKey;
                     Iterator<?> keys = iterableApiRequest.json.keys();
 
@@ -95,7 +91,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     writer.close();
                     os.close();
                 }
-                
+
                 int responseCode = urlConnection.getResponseCode();
                 if (responseCode >= 400) {
                     InputStream errorStream = urlConnection.getErrorStream();
@@ -143,6 +139,9 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 }
 
 class IterableApiRequest {
+    static String GET = "GET";
+    static String POST = "POST";
+
     String apiKey = "";
     String resourcePath = "";
     JSONObject json;
