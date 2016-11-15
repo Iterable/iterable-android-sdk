@@ -337,6 +337,20 @@ public class IterableApi {
         registerForPush(iterableAppId, gcmProjectNumber, true);
     }
 
+    public void getInAppMessages() {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendGetRequest(IterableConstants.ENDPOINT_GETINAPPMESSAGES, requestJSON);
+
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -459,7 +473,18 @@ public class IterableApi {
      * @param json
      */
     private void sendRequest(String resourcePath, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json.toString());
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, "POST");
+        new IterableRequest().execute(request);
+    }
+
+    /**
+     * Sends a GET request to Iterable.
+     * Performs network operations on an async thread instead of the main thread.
+     * @param resourcePath
+     * @param json
+     */
+    private void sendGetRequest(String resourcePath, JSONObject json) {
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, "GET");
         new IterableRequest().execute(request);
     }
 

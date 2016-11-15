@@ -2,6 +2,8 @@ package com.iterable.iterableapi;
 
 import android.os.AsyncTask;
 
+import org.json.JSONObject;
+
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Iterator;
 
 /**
  * Async task to handle sending data to the Iterable server
@@ -56,25 +59,43 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
             try {
                 String baseUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : iterableBaseUrl;
-                url = new URL(baseUrl + iterableApiRequest.resourcePath);
+                //url = new URL(baseUrl + iterableApiRequest.resourcePath);
 
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setDoOutput(true);
-                urlConnection.setRequestMethod("POST");
+                //http://10.233.108.213:9000/api/inApp/getMessagesdt@iterable.com
 
-                urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+                if (iterableApiRequest.requestType == "GET") {
+                    String urlString = baseUrl + iterableApiRequest.resourcePath + "?api_key=" + iterableApiRequest.apiKey;
+                    Iterator<?> keys = iterableApiRequest.json.keys();
 
-                urlConnection.setRequestProperty("Accept", "application/json");
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
+                    while( keys.hasNext() ) {
+                        String key = (String) keys.next();
+                        urlString = urlString + "&&" + key + "=" + iterableApiRequest.json.getString(key);
+                    }
 
-                OutputStream os = urlConnection.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-                writer.write(iterableApiRequest.json);
-                writer.close();
-                os.close();
+                    url = new URL(urlString);
+                    urlConnection = (HttpURLConnection) url.openConnection();
 
+                } else {
+                    url = new URL(baseUrl + iterableApiRequest.resourcePath);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setDoOutput(true);
+                    urlConnection.setRequestMethod(iterableApiRequest.requestType);
+
+                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+
+                    urlConnection.setRequestProperty("Accept", "application/json");
+                    urlConnection.setRequestProperty("Content-Type", "application/json");
+                    urlConnection.setRequestProperty(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
+
+                    OutputStream os = urlConnection.getOutputStream();
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                    writer.write(iterableApiRequest.json.toString());
+
+                    writer.close();
+                    os.close();
+                }
+                
                 int responseCode = urlConnection.getResponseCode();
                 if (responseCode >= 400) {
                     InputStream errorStream = urlConnection.getErrorStream();
@@ -124,11 +145,13 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 class IterableApiRequest {
     String apiKey = "";
     String resourcePath = "";
-    String json = "";
+    JSONObject json;
+    String requestType = "";
 
-    public IterableApiRequest(String apiKey, String resourcePath, String json){
+    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType){
         this.apiKey = apiKey;
         this.resourcePath = resourcePath;
         this.json = json;
+        this.requestType = requestType;
     }
 }

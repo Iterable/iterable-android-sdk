@@ -30,6 +30,7 @@ public final class IterableConstants {
     public static final String KEY_TOTAL               = "total";
 
     public static final String ENDPOINT_DISABLEDEVICE       = "users/disableDevice";
+    public static final String ENDPOINT_GETINAPPMESSAGES    = "inApp/getMessages";
     public static final String ENDPOINT_PUSHTARGET          = "push/target";
     public static final String ENDPOINT_REGISTERDEVICETOKEN = "users/registerDeviceToken";
     public static final String ENDPOINT_TRACK               = "events/track";
