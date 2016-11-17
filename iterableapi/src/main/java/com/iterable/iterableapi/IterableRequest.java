@@ -4,10 +4,12 @@ import android.os.AsyncTask;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -60,7 +62,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             try {
                 String baseUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : iterableBaseUrl;
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
-                    String urlString = baseUrl + iterableApiRequest.resourcePath + "?api_key=" + iterableApiRequest.apiKey;
+                    String urlString = baseUrl + iterableApiRequest.resourcePath + "?" + IterableConstants.KEY_API_KEY + "=" + iterableApiRequest.apiKey;
                     Iterator<?> keys = iterableApiRequest.json.keys();
 
                     while( keys.hasNext() ) {
@@ -70,6 +72,18 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     url = new URL(urlString);
                     urlConnection = (HttpURLConnection) url.openConnection();
+
+                    BufferedReader in = new BufferedReader(
+                            new InputStreamReader(urlConnection.getInputStream()));
+                    String inputLine;
+                    StringBuffer response = new StringBuffer();
+
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    in.close();
+
+                    requestResult = response.toString();
 
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
@@ -129,6 +143,9 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             request.setRetryCount(retryCount + 1);
             request.execute(iterableApiRequest);
         }
+        if (iterableApiRequest.callback != null) {
+            iterableApiRequest.callback.execute(s);
+        }
         super.onPostExecute(s);
     }
 
@@ -139,6 +156,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 }
 
 class IterableApiRequest {
+
+    public interface OnCallbackHandlerListener{
+        void execute(String s);
+    }
     static String GET = "GET";
     static String POST = "POST";
 
@@ -147,10 +168,13 @@ class IterableApiRequest {
     JSONObject json;
     String requestType = "";
 
-    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType){
+    OnCallbackHandlerListener callback;
+
+    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, OnCallbackHandlerListener callback){
         this.apiKey = apiKey;
         this.resourcePath = resourcePath;
         this.json = json;
         this.requestType = requestType;
+        this.callback = callback;
     }
 }

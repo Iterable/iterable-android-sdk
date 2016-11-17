@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import com.iterable.iterableapi.InApp.IterableInAppManager;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -337,7 +339,16 @@ public class IterableApi {
         registerForPush(iterableAppId, gcmProjectNumber, true);
     }
 
-    public void getInAppMessages() {
+    public void spawnInAppNotification(final Context context) {
+        getInAppMessages(new IterableApiRequest.OnCallbackHandlerListener(){
+            @Override
+            public void execute(String s) {
+                IterableInAppManager.showFullScreenDialog(context, s);
+            }
+        });
+    }
+
+    public void getInAppMessages(IterableApiRequest.OnCallbackHandlerListener onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -347,8 +358,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendGetRequest(IterableConstants.ENDPOINT_GETINAPPMESSAGES, requestJSON);
-
+        sendGetRequest(IterableConstants.ENDPOINT_GETINAPPMESSAGES, requestJSON, onCallback);
     }
 
 //---------------------------------------------------------------------------------------
@@ -473,7 +483,7 @@ public class IterableApi {
      * @param json
      */
     private void sendPostRequest(String resourcePath, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null);
         new IterableRequest().execute(request);
     }
 
@@ -483,8 +493,8 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    private void sendGetRequest(String resourcePath, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET);
+    private void sendGetRequest(String resourcePath, JSONObject json, IterableApiRequest.OnCallbackHandlerListener onCallback) {
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
         new IterableRequest().execute(request);
     }
 
