@@ -19,20 +19,22 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.iterable.iterableapi.IterableConstants;
+import com.iterable.iterableapi.IterableLogger;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
 /**
  * Created by David Truong dt@iterable.com.
  */
 public class IterableInAppManager {
+    static final String TAG = "IterableInAppManager";
 
     public static void showNotification(Context context, JSONObject dialogOptions) {
-        showNotificationDialog(context, dialogOptions);
+        showFullScreenDialog(context, dialogOptions);
     }
 
     public static void showNotificationDialog(Context context, JSONObject dialogParameters) {
@@ -122,17 +124,23 @@ public class IterableInAppManager {
             verticalLayout.addView(title, equalParam);
         }
 
-        //Main Image
-        ImageView imageContent = new ImageView(context);
-        verticalLayout.addView(imageContent);
-
         ImageView imageView = new ImageView(context);
-        //TODO: add runtime checks if picasso is loaded
-        Picasso.
-                with(context.getApplicationContext()).
-                load(dialogParameters.optString("mainImage")).
-                resize(dialogWidth, 0). //TOOD: if in landscape mode use the height to be 1/2 of the screen height
-                into(imageView);
+        try {
+            Class picassoClass = Class.forName(IterableConstants.PICASSO_CLASS);
+            if (picassoClass != null) {
+
+                Picasso.
+                        with(context.getApplicationContext()).
+                        load(dialogParameters.optString("mainImage")).
+                        resize(dialogWidth, dialogHeight/2).
+                        centerInside().
+                        into(imageView);
+            }
+        } catch (ClassNotFoundException e) {
+            IterableLogger.e(TAG, "ClassNotFoundException: Check that picasso is added " +
+                    "to the build dependencies", e);
+        }
+
         verticalLayout.addView(imageView);
 
         JSONObject bodyJson = dialogParameters.optJSONObject("body");

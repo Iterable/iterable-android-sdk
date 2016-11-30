@@ -5,7 +5,7 @@ import android.util.Log;
 /**
  * Created by David Truong dt@iterable.com.
  */
-class IterableLogger {
+public class IterableLogger {
 
     public static void d(String tag, String msg) {
         if (isDebugMode()) {

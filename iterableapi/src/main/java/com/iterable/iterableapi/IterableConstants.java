@@ -60,4 +60,6 @@ public final class IterableConstants {
     public static final String DEFAULT_SOUND = "default";
     public static final String SOUND_FOLDER_IDENTIFIER = "raw";
     public static final String ANDROID_RESOURCE_PATH = "android.resource://";
+
+    public static final String PICASSO_CLASS = "com.squareup.picasso.Picasso";
 }
