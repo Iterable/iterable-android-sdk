@@ -342,8 +342,9 @@ public class IterableApi {
     public void spawnInAppNotification(final Context context) {
         getInAppMessages(new IterableApiRequest.OnCallbackHandlerListener(){
             @Override
-            public void execute(String s) {
-                IterableInAppManager.showFullScreenDialog(context, s);
+            public void execute(String payload) {
+                JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
+                IterableInAppManager.showNotification(context, dialogOptions);
             }
         });
     }
