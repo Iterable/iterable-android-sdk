@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import com.iterable.iterableapi.InApp.IterableInAppActionListener;
 import com.iterable.iterableapi.InApp.IterableInAppManager;
 
 import org.json.JSONException;
@@ -339,12 +340,12 @@ public class IterableApi {
         registerForPush(iterableAppId, gcmProjectNumber, true);
     }
 
-    public void spawnInAppNotification(final Context context) {
+    public void spawnInAppNotification(final Context context, final IterableInAppActionListener.IterableOnClick clickCallback) {
         getInAppMessages(new IterableApiRequest.OnCallbackHandlerListener(){
             @Override
             public void execute(String payload) {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
-                IterableInAppManager.showNotification(context, dialogOptions);
+                IterableInAppManager.showNotification(context, dialogOptions, clickCallback);
             }
         });
     }

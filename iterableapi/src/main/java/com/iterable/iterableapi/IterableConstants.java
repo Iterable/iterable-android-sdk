@@ -62,4 +62,17 @@ public final class IterableConstants {
     public static final String ANDROID_RESOURCE_PATH = "android.resource://";
 
     public static final String PICASSO_CLASS = "com.squareup.picasso.Picasso";
+
+    //In-App Constants
+    public static final String ITERABLE_IN_APP_MESSAGE = "inAppMessages";
+    public static final String ITERABLE_IN_APP_BACKGROUND_COLOR = "backgroundColor";
+    public static final String ITERABLE_IN_APP_BODY = "body";
+    public static final String ITERABLE_IN_APP_COLOR = "color";
+    public static final String ITERABLE_IN_APP_CONTENT = "content";
+    public static final String ITERABLE_IN_APP_MAIN_IMAGE = "mainImage";
+    public static final String ITERABLE_IN_APP_TEXT = "text";
+    public static final String ITERABLE_IN_APP_TITLE = "title";
+    public static final String ITERABLE_IN_APP_BUTTONS = "buttons";
+
+    //text, body, mainImage, content
 }
