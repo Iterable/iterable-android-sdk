@@ -203,13 +203,14 @@ public class IterableInAppManager {
             if (buttonJson != null) {
                 final Button button = new Button(context);
                 button.setBackgroundColor(getIntColorFromJson(buttonJson, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.LTGRAY));
+                String action = buttonJson.optString(IterableConstants.ITERABLE_IN_APP_BUTTON_ACTION);
+                if (!action.isEmpty()) {
+                    button.setOnClickListener(new IterableInAppActionListener(i, action, clickCallback));
+                }
 
-                button.setOnClickListener(new IterableInAppActionListener(i, "string", clickCallback));
-
-                //TODO: separate out content
-                button.setTextColor(getIntColorFromJson(buttonJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
-                button.setText("CLOSE");
-
+                JSONObject textJson = buttonJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
+                button.setTextColor(getIntColorFromJson(textJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
+                button.setText(textJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
 
                 linearlayout.addView(button, equalParamWidth);
             }
@@ -243,10 +244,12 @@ public class IterableInAppManager {
     }
 
     private static int getIntColorFromJson(JSONObject json, String key, int defaultColor) {
-        String backgroundColorParam = json.optString(key);
         int backgroundColor = defaultColor;
-        if (!backgroundColorParam.isEmpty()) {
-            backgroundColor = Color.parseColor(backgroundColorParam);
+        if (json != null) {
+            String backgroundColorParam = json.optString(key);
+            if (!backgroundColorParam.isEmpty()) {
+                backgroundColor = Color.parseColor(backgroundColorParam);
+            }
         }
         return backgroundColor;
     }

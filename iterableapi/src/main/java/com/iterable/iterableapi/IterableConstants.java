@@ -73,6 +73,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TEXT = "text";
     public static final String ITERABLE_IN_APP_TITLE = "title";
     public static final String ITERABLE_IN_APP_BUTTONS = "buttons";
+    public static final String ITERABLE_IN_APP_BUTTON_ACTION = "action";
 
     //text, body, mainImage, content
 }
