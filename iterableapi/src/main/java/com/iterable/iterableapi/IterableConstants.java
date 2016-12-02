@@ -64,16 +64,20 @@ public final class IterableConstants {
     public static final String PICASSO_CLASS = "com.squareup.picasso.Picasso";
 
     //In-App Constants
-    public static final String ITERABLE_IN_APP_MESSAGE = "inAppMessages";
     public static final String ITERABLE_IN_APP_BACKGROUND_COLOR = "backgroundColor";
     public static final String ITERABLE_IN_APP_BODY = "body";
+    public static final String ITERABLE_IN_APP_BUTTON_ACTION = "action";
+    public static final String ITERABLE_IN_APP_BUTTONS = "buttons";
     public static final String ITERABLE_IN_APP_COLOR = "color";
     public static final String ITERABLE_IN_APP_CONTENT = "content";
     public static final String ITERABLE_IN_APP_MAIN_IMAGE = "mainImage";
+    public static final String ITERABLE_IN_APP_MESSAGE = "inAppMessages";
     public static final String ITERABLE_IN_APP_TEXT = "text";
     public static final String ITERABLE_IN_APP_TITLE = "title";
-    public static final String ITERABLE_IN_APP_BUTTONS = "buttons";
-    public static final String ITERABLE_IN_APP_BUTTON_ACTION = "action";
+    public static final String ITERABLE_IN_APP_TYPE = "displayType";
 
-    //text, body, mainImage, content
+    public static final String ITERABLE_IN_APP_TYPE_BOTTOM = "BOTTOM";
+    public static final String ITERABLE_IN_APP_TYPE_CENTER = "CENTER";
+    public static final String ITERABLE_IN_APP_TYPE_FULL = "FULL";
+    public static final String ITERABLE_IN_APP_TYPE_TOP = "TOP";
 }

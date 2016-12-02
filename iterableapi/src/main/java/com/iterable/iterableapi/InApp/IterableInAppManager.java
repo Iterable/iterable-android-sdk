@@ -15,7 +15,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.iterable.iterableapi.IterableConstants;
@@ -33,7 +32,16 @@ public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
 
     public static void showNotification(Context context, JSONObject dialogOptions, IterableInAppActionListener.IterableOnClick clickCallback) {
-        showFullScreenDialog(context, dialogOptions, clickCallback);
+        if(dialogOptions != null) {
+            String type = dialogOptions.optString(IterableConstants.ITERABLE_IN_APP_TYPE);
+            if (type.equalsIgnoreCase(IterableConstants.ITERABLE_IN_APP_TYPE_FULL)) {
+                showFullScreenDialog(context, dialogOptions, clickCallback);
+            } else {
+                showNotificationDialog(context, dialogOptions, clickCallback);
+            }
+        } else {
+            IterableLogger.d(TAG, "In-App notification not displayed: showNotification must contain valid dialogOptions");
+        }
     }
 
     public static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableInAppActionListener.IterableOnClick clickCallback) {
@@ -48,41 +56,30 @@ public class IterableInAppManager {
         lp.width = WindowManager.LayoutParams.MATCH_PARENT;
         lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
         lp.dimAmount = .8f;
-        lp.gravity = Gravity.TOP;
+        lp.gravity = getNotifcationLocation(dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_TYPE));
         window.setAttributes(lp);
 
         LinearLayout verticalLayout = new LinearLayout(context);
         verticalLayout.setOrientation(LinearLayout.VERTICAL);
-
-        String backgroundColorParam = dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR);
-        int backgroundColor = Color.WHITE;
-        if (!backgroundColorParam.isEmpty()) {
-            backgroundColor = Color.parseColor(backgroundColorParam);
-        }
-        verticalLayout.setBackgroundColor(backgroundColor);
+        verticalLayout.setBackgroundColor(getIntColorFromJson(dialogParameters, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.WHITE));
 
         Point screenSize = getScreenSize(context);
         int fontConstant = getFontConstant(screenSize);
 
+        //Title
         JSONObject titleJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_TITLE);
         if (titleJson != null) {
-            //Title Text
             TextView title = new TextView(context);
-            title.setText("Iterable");
+            title.setText(titleJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
             title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 24);
             title.setGravity(Gravity.CENTER);
             //TODO: update padding to be orientation relative
             title.setPadding(screenSize.x / 30, screenSize.y / 30, screenSize.x / 30, 0);
-
-            int titleColor = Color.BLACK;
-            String titleColorParam = titleJson.optString(IterableConstants.ITERABLE_IN_APP_COLOR);
-            if (!titleColorParam.isEmpty()) {
-                titleColor = Color.parseColor(titleColorParam);
-            }
-            title.setTextColor(titleColor);
+            title.setTextColor(getIntColorFromJson(titleJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
             verticalLayout.addView(title);
         }
 
+        //Body
         JSONObject bodyJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_BODY);
         if (bodyJson != null) {
             //Body Text
@@ -90,20 +87,18 @@ public class IterableInAppManager {
             bodyText.setText(bodyJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
             bodyText.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 36);
             bodyText.setGravity(Gravity.CENTER);
-            bodyText.setTextColor(Color.parseColor(bodyJson.optString(IterableConstants.ITERABLE_IN_APP_COLOR)));
+            bodyText.setTextColor(getIntColorFromJson(bodyJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
             bodyText.setPadding(screenSize.x/60,0,screenSize.x/60,screenSize.y/60);
             verticalLayout.addView(bodyText);
         }
 
+        //Buttons
         JSONArray buttonJson = dialogParameters.optJSONArray(IterableConstants.ITERABLE_IN_APP_BUTTONS);
         if (buttonJson != null) {
             verticalLayout.addView(createButtons(context, buttonJson, clickCallback));
         }
 
         dialog.setContentView(verticalLayout);
-
-        //TODO: track notif displayed here, or when it gets removed from the queue.
-
         dialog.show();
     }
 
@@ -115,9 +110,7 @@ public class IterableInAppManager {
         LinearLayout verticalLayout = new LinearLayout(context);
         verticalLayout.setOrientation(LinearLayout.VERTICAL);
 
-        int colorCol = Color.parseColor(dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR));
-
-        verticalLayout.setBackgroundColor(colorCol);
+        verticalLayout.setBackgroundColor(getIntColorFromJson(dialogParameters, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.WHITE));
         LinearLayout.LayoutParams linearLayoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
         verticalLayout.setLayoutParams(linearLayoutParams);
 
@@ -132,16 +125,18 @@ public class IterableInAppManager {
         int dialogHeight = size.y;
         int fontConstant = getFontConstant(size);
 
+        //Title
         JSONObject titleJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_TITLE);
         if (titleJson != null) {
             TextView title = new TextView(context);
             title.setText(titleJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
             title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 24);
             title.setGravity(Gravity.CENTER);
-            title.setTextColor(Color.parseColor((titleJson.optString(IterableConstants.ITERABLE_IN_APP_COLOR))));
+            title.setTextColor(getIntColorFromJson(titleJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
             verticalLayout.addView(title, equalParamHeight);
         }
 
+        //Image
         ImageView imageView = new ImageView(context);
         verticalLayout.addView(imageView);
         try {
@@ -160,14 +155,14 @@ public class IterableInAppManager {
                     "to the build dependencies", e);
         }
 
-        //Body Text
+        //Body
         JSONObject bodyJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_BODY);
         if (bodyJson != null) {
             TextView bodyText = new TextView(context);
             bodyText.setText(bodyJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
             bodyText.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 36);
             bodyText.setGravity(Gravity.CENTER);
-            bodyText.setTextColor(Color.parseColor((bodyJson.optString(IterableConstants.ITERABLE_IN_APP_COLOR))));
+            bodyText.setTextColor(getIntColorFromJson(bodyJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
             verticalLayout.addView(bodyText, equalParamHeight);
         }
 
@@ -187,8 +182,23 @@ public class IterableInAppManager {
         dialog.show();
     }
 
-    public static View createButtons(Context context, JSONArray buttons, IterableInAppActionListener.IterableOnClick clickCallback) {
-        RelativeLayout bottomButtons = new RelativeLayout(context);
+    public static JSONObject getNextMessageFromPayload(String payload) {
+        JSONObject returnObject = null;
+        if (payload != null) {
+            try {
+                JSONObject mainObject = new JSONObject(payload);
+                JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
+                if (jsonArray != null) {
+                    returnObject = jsonArray.optJSONObject(0);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return returnObject;
+    }
+
+    private static View createButtons(Context context, JSONArray buttons, IterableInAppActionListener.IterableOnClick clickCallback) {
         LinearLayout.LayoutParams equalParamWidth = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
@@ -218,18 +228,6 @@ public class IterableInAppManager {
         return linearlayout;
     }
 
-    public static JSONObject getNextMessageFromPayload(String s) {
-        JSONObject mainObject = null;
-        try {
-            mainObject = new JSONObject(s);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
-        JSONObject message = jsonArray.optJSONObject(0);
-        return message.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-    }
-
     private static int getFontConstant(Point size) {
         int fontConstant = (size.x > size.y) ? size.x : size.y;
         return fontConstant;
@@ -252,5 +250,22 @@ public class IterableInAppManager {
             }
         }
         return backgroundColor;
+    }
+
+    private static int getNotifcationLocation(String location){
+        int locationValue;
+        switch(location) {
+            case IterableConstants.ITERABLE_IN_APP_TYPE_BOTTOM:
+                locationValue = Gravity.BOTTOM;
+                break;
+            case IterableConstants.ITERABLE_IN_APP_TYPE_TOP:
+                locationValue = Gravity.TOP;
+                break;
+            case IterableConstants.ITERABLE_IN_APP_TYPE_CENTER:
+                locationValue = Gravity.CENTER;
+                break;
+            default: locationValue = Gravity.TOP;
+        }
+        return locationValue;
     }
 }

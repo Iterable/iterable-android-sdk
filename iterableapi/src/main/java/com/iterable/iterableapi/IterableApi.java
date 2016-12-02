@@ -345,6 +345,9 @@ public class IterableApi {
             @Override
             public void execute(String payload) {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
+                //TODO: track dialog show for notification
+
+                JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
                 IterableInAppManager.showNotification(context, dialogOptions, clickCallback);
             }
         });
