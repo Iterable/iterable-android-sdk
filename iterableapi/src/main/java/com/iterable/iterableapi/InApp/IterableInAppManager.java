@@ -56,7 +56,7 @@ public class IterableInAppManager {
         lp.width = WindowManager.LayoutParams.MATCH_PARENT;
         lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
         lp.dimAmount = .8f;
-        lp.gravity = getNotifcationLocation(dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_TYPE));
+        lp.gravity = getNotificationLocation(dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_TYPE));
         window.setAttributes(lp);
 
         LinearLayout verticalLayout = new LinearLayout(context);
@@ -251,7 +251,7 @@ public class IterableInAppManager {
         return backgroundColor;
     }
 
-    private static int getNotifcationLocation(String location){
+    private static int getNotificationLocation(String location){
         int locationValue;
         switch(location) {
             case IterableConstants.ITERABLE_IN_APP_TYPE_BOTTOM:
