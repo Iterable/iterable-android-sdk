@@ -254,7 +254,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_TRACKCONVERSION, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_CONVERSION, requestJSON);
     }
 
     public void sendPush(String email, int campaignId) {
@@ -299,7 +299,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_PUSHTARGET, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_PUSH_TARGET, requestJSON);
     }
 
     public void updateEmail(String newEmail) {
@@ -313,7 +313,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON);
 
         _email = newEmail;
     }
@@ -329,7 +329,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
     }
 
     public void registerForPush(String iterableAppId, String gcmProjectNumber) {
@@ -345,10 +345,12 @@ public class IterableApi {
             @Override
             public void execute(String payload) {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
-                //TODO: track dialog show for notification
-
-                JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-                IterableInAppManager.showNotification(context, dialogOptions, clickCallback);
+                if (dialogOptions != null) {
+                    JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
+                    IterableInAppManager.showNotification(context, message, clickCallback);
+                    //TODO: track display InApp
+                    trackInAppView(null);
+                }
             }
         });
     }
@@ -363,7 +365,33 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendGetRequest(IterableConstants.ENDPOINT_GETINAPPMESSAGES, requestJSON, onCallback);
+        sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
+    }
+
+    public void trackInAppView(JSONObject dataFields) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_VIEW, requestJSON);
+    }
+
+    public void trackInAppClick(JSONObject dataFields) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -411,7 +439,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
     }
 
     /**
@@ -427,7 +455,7 @@ public class IterableApi {
         catch (JSONException e) {
             e.printStackTrace();
         }
-        sendPostRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -479,7 +507,7 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_REGISTERDEVICETOKEN, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
     }
     /**
      * Sends the POST request to Iterable.

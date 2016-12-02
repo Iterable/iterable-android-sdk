@@ -82,7 +82,6 @@ public class IterableInAppManager {
         //Body
         JSONObject bodyJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_BODY);
         if (bodyJson != null) {
-            //Body Text
             TextView bodyText = new TextView(context);
             bodyText.setText(bodyJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
             bodyText.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 36);

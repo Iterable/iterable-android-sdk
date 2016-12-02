@@ -29,16 +29,18 @@ public final class IterableConstants {
     public static final String KEY_ITEMS               = "items";
     public static final String KEY_TOTAL               = "total";
 
-    public static final String ENDPOINT_DISABLEDEVICE       = "users/disableDevice";
-    public static final String ENDPOINT_GETINAPPMESSAGES    = "inApp/getMessages";
-    public static final String ENDPOINT_PUSHTARGET          = "push/target";
-    public static final String ENDPOINT_REGISTERDEVICETOKEN = "users/registerDeviceToken";
+    public static final String ENDPOINT_DISABLE_DEVICE = "users/disableDevice";
+    public static final String ENDPOINT_GET_INAPP_MESSAGES = "inApp/getMessages";
+    public static final String ENDPOINT_PUSH_TARGET = "push/target";
+    public static final String ENDPOINT_REGISTER_DEVICE_TOKEN = "users/registerDeviceToken";
     public static final String ENDPOINT_TRACK               = "events/track";
-    public static final String ENDPOINT_TRACKCONVERSION     = "events/trackConversion";
-    public static final String ENDPOINT_TRACKPURCHASE       = "commerce/trackPurchase";
-    public static final String ENDPOINT_TRACKPUSHOPEN       = "events/trackPushOpen";
-    public static final String ENDPOINT_UPDATEEMAIL         = "users/updateEmail";
-    public static final String ENDPOINT_UPDATEUSER          = "users/update";
+    public static final String ENDPOINT_TRACK_CONVERSION = "events/trackConversion";
+    public static final String ENDPOINT_TRACK_INAPP_CLICK     = "events/trackInAppClick";
+    public static final String ENDPOINT_TRACK_INAPP_VIEW     = "events/trackInAppView";
+    public static final String ENDPOINT_TRACK_PURCHASE       = "commerce/trackPurchase";
+    public static final String ENDPOINT_TRACK_PUSH_OPEN = "events/trackPushOpen";
+    public static final String ENDPOINT_UPDATE_EMAIL = "users/updateEmail";
+    public static final String ENDPOINT_UPDATE_USER = "users/update";
 
     public static final String PUSH_APP_ID = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER = "GCMProjectNumber";
