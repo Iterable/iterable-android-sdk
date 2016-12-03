@@ -29,7 +29,7 @@ import org.json.JSONObject;
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
 
-    public static void showNotification(Context context, JSONObject dialogOptions, IterableInAppActionListener.IterableOnClick clickCallback) {
+    public static void showNotification(Context context, JSONObject dialogOptions, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
         if(dialogOptions != null) {
             String type = dialogOptions.optString(IterableConstants.ITERABLE_IN_APP_TYPE);
             if (type.equalsIgnoreCase(IterableConstants.ITERABLE_IN_APP_TYPE_FULL)) {
@@ -42,7 +42,7 @@ public class IterableInAppManager {
         }
     }
 
-    public static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableInAppActionListener.IterableOnClick clickCallback) {
+    public static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar); //Theme_Material_NoActionBar_Overscan
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCanceledOnTouchOutside(true);
@@ -92,15 +92,14 @@ public class IterableInAppManager {
         //Buttons
         JSONArray buttonJson = dialogParameters.optJSONArray(IterableConstants.ITERABLE_IN_APP_BUTTONS);
         if (buttonJson != null) {
-            verticalLayout.addView(createButtons(context, buttonJson, null, clickCallback));
+            verticalLayout.addView(createButtons(context, dialog, buttonJson, null, clickCallback));
         }
 
         dialog.setContentView(verticalLayout);
         dialog.show();
     }
 
-    public static void showFullScreenDialog(Context context, JSONObject dialogParameters, IterableInAppActionListener.IterableOnClick clickCallback) {
-
+    public static void showFullScreenDialog(Context context, JSONObject dialogParameters, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Light);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -166,12 +165,12 @@ public class IterableInAppManager {
         //Buttons
         JSONArray buttonJson = dialogParameters.optJSONArray(IterableConstants.ITERABLE_IN_APP_BUTTONS);
         if (buttonJson != null) {
-            View bottomButtons = createButtons(context, buttonJson, dialogParameters, clickCallback);
+            View buttons = createButtons(context, dialog, buttonJson, dialogParameters, clickCallback);
             LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
             buttonParams.height = dialogHeight / 10;
-            verticalLayout.addView(bottomButtons, buttonParams);
+            verticalLayout.addView(buttons, buttonParams);
         }
 
         dialog.setContentView(verticalLayout);
@@ -195,7 +194,7 @@ public class IterableInAppManager {
         return returnObject;
     }
 
-    private static View createButtons(Context context, JSONArray buttons, JSONObject dataFields, IterableInAppActionListener.IterableOnClick clickCallback) {
+    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, JSONObject dataFields, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
         LinearLayout.LayoutParams equalParamWidth = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
@@ -206,12 +205,13 @@ public class IterableInAppManager {
         linearlayout.setOrientation(LinearLayout.HORIZONTAL);
 
         JSONObject trackParams = new JSONObject();
-        try {
-            trackParams.put(IterableConstants.KEY_CAMPAIGNID, dataFields.optString(IterableConstants.KEY_CAMPAIGNID, null));
-            trackParams.put(IterableConstants.KEY_TEMPLATE_ID, dataFields.optString(IterableConstants.KEY_TEMPLATE_ID, null));
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
+        if (dataFields != null) {
+            try {
+                trackParams.putOpt(IterableConstants.KEY_CAMPAIGNID, dataFields.optString(IterableConstants.KEY_CAMPAIGNID, null));
+                trackParams.putOpt(IterableConstants.KEY_TEMPLATE_ID, dataFields.optString(IterableConstants.KEY_TEMPLATE_ID, null));
+            } catch (JSONException e) {
+                IterableLogger.e(TAG, e.toString());
+            }
         }
 
         for (int i = 0; i < buttons.length(); i++) {
@@ -221,7 +221,7 @@ public class IterableInAppManager {
                 button.setBackgroundColor(getIntColorFromJson(buttonJson, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.LTGRAY));
                 String action = buttonJson.optString(IterableConstants.ITERABLE_IN_APP_BUTTON_ACTION);
                 if (!action.isEmpty()) {
-                    button.setOnClickListener(new IterableInAppActionListener(i, action, trackParams, clickCallback));
+                    button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, trackParams, clickCallback));
                 }
 
                 JSONObject textJson = buttonJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);

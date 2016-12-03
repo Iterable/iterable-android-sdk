@@ -337,7 +337,7 @@ public class IterableApi {
         registerForPush(iterableAppId, gcmProjectNumber, true);
     }
 
-    public void spawnInAppNotification(final Context context, final IterableInAppActionListener.IterableOnClick clickCallback) {
+    public void spawnInAppNotification(final Context context, final IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
         getInAppMessages(new IterableApiRequest.OnCallbackHandlerListener(){
             @Override
             public void execute(String payload) {
@@ -345,7 +345,6 @@ public class IterableApi {
                 if (dialogOptions != null) {
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
                     IterableInAppManager.showNotification(context, message, clickCallback);
-                    //TODO: track display InApp
                     trackInAppView(null);
                 }
             }
@@ -506,6 +505,7 @@ public class IterableApi {
 
         sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
     }
+
     /**
      * Sends the POST request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
