@@ -25,6 +25,8 @@ import org.json.JSONObject;
 
 /**
  * Created by David Truong dt@iterable.com.
+ *
+ * The IterableInAppManager handles creating and rendering different types of InApp Notifications received from the IterableApi
  */
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
@@ -260,7 +262,7 @@ public class IterableInAppManager {
 
     private static int getNotificationLocation(String location){
         int locationValue;
-        switch(location) {
+        switch(location.toUpperCase()) {
             case IterableConstants.ITERABLE_IN_APP_TYPE_BOTTOM:
                 locationValue = Gravity.BOTTOM;
                 break;

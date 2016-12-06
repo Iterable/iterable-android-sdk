@@ -79,7 +79,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TYPE = "displayType";
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM = "BOTTOM";
-    public static final String ITERABLE_IN_APP_TYPE_CENTER = "CENTER";
+    public static final String ITERABLE_IN_APP_TYPE_CENTER = "MIDDLE";
     public static final String ITERABLE_IN_APP_TYPE_FULL = "FULL";
     public static final String ITERABLE_IN_APP_TYPE_TOP = "TOP";
 }
