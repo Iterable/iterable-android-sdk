@@ -74,7 +74,7 @@ public class IterableInAppManager {
             title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 24);
             title.setGravity(Gravity.CENTER);
             //TODO: update padding to be orientation relative
-            title.setPadding(screenSize.x / 30, screenSize.y / 30, screenSize.x / 30, 0);
+            title.setPadding(10, 5, 10, 5);
             title.setTextColor(getIntColorFromJson(titleJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
             verticalLayout.addView(title);
         }
@@ -270,9 +270,7 @@ public class IterableInAppManager {
                 locationValue = Gravity.TOP;
                 break;
             case IterableConstants.ITERABLE_IN_APP_TYPE_CENTER:
-                locationValue = Gravity.CENTER;
-                break;
-            default: locationValue = Gravity.TOP;
+            default: locationValue = Gravity.CENTER;
         }
         return locationValue;
     }
