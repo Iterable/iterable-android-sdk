@@ -155,11 +155,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
 }
 
+/**
+ *  Iterable Request object
+ */
 class IterableApiRequest {
-
-    public interface OnCallbackHandlerListener{
-        void execute(String s);
-    }
     static String GET = "GET";
     static String POST = "POST";
 
@@ -168,9 +167,9 @@ class IterableApiRequest {
     JSONObject json;
     String requestType = "";
 
-    OnCallbackHandlerListener callback;
+    IterableHelper.IterableActionHandler callback;
 
-    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, OnCallbackHandlerListener callback){
+    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, IterableHelper.IterableActionHandler callback){
         this.apiKey = apiKey;
         this.resourcePath = resourcePath;
         this.json = json;

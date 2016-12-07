@@ -7,15 +7,25 @@ import org.json.JSONObject;
 
 /**
  * Created by David Truong dt@iterable.com.
+ *
+ *  IterableInAppActionListener is a custom OnClickListener
  */
 public class IterableInAppActionListener implements View.OnClickListener {
     Dialog dialog;
     int index;
     String actionName;
-    IterableInAppActionHandler onClickCallback;
+    IterableHelper.IterableActionHandler onClickCallback;
     JSONObject trackParams;
 
-    IterableInAppActionListener(Dialog dialog, int index, String actionName, JSONObject trackParams, IterableInAppActionHandler onClickCallback){
+    /**
+     * A custom onClickListener which stores data about the dialog context.
+     * @param dialog
+     * @param index
+     * @param actionName
+     * @param trackParams
+     * @param onClickCallback
+     */
+    IterableInAppActionListener(Dialog dialog, int index, String actionName, JSONObject trackParams, IterableHelper.IterableActionHandler onClickCallback){
         this.index = index;
         this.actionName  = actionName;
         this.onClickCallback = onClickCallback;
@@ -23,6 +33,10 @@ public class IterableInAppActionListener implements View.OnClickListener {
         this.trackParams = trackParams;
     }
 
+    /**
+     * Dismisses the dialog when a click is processed.
+     * @param v
+     */
     @Override
     public void onClick(View v) {
         IterableApi.sharedInstance.trackInAppClick(trackParams);
@@ -31,9 +45,5 @@ public class IterableInAppActionListener implements View.OnClickListener {
             onClickCallback.execute(actionName);
         }
         dialog.dismiss();
-    }
-
-    public interface IterableInAppActionHandler {
-        void execute(String data);
     }
 }

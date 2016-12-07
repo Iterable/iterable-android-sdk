@@ -31,7 +31,13 @@ import org.json.JSONObject;
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
 
-    public static void showNotification(Context context, JSONObject dialogOptions, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
+    /**
+     * Displays an InApp Notification from the dialogOptions; with a click callback handler.
+     * @param context
+     * @param dialogOptions
+     * @param clickCallback
+     */
+    public static void showNotification(Context context, JSONObject dialogOptions, IterableHelper.IterableActionHandler clickCallback) {
         if(dialogOptions != null) {
             String type = dialogOptions.optString(IterableConstants.ITERABLE_IN_APP_TYPE);
             if (type.equalsIgnoreCase(IterableConstants.ITERABLE_IN_APP_TYPE_FULL)) {
@@ -44,7 +50,13 @@ public class IterableInAppManager {
         }
     }
 
-    public static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
+    /**
+     * Creates and shows a pop-up InApp Notification; with a click callback handler.
+     * @param context
+     * @param dialogParameters
+     * @param clickCallback
+     */
+    static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableHelper.IterableActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar); //Theme_Material_NoActionBar_Overscan
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCanceledOnTouchOutside(true);
@@ -101,7 +113,13 @@ public class IterableInAppManager {
         dialog.show();
     }
 
-    public static void showFullScreenDialog(Context context, JSONObject dialogParameters, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
+    /**
+     * Creates and shows a Full Screen InApp Notification; with a click callback handler.
+     * @param context
+     * @param dialogParameters
+     * @param clickCallback
+     */
+    static void showFullScreenDialog(Context context, JSONObject dialogParameters, IterableHelper.IterableActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Light);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -180,6 +198,11 @@ public class IterableInAppManager {
         dialog.show();
     }
 
+    /**
+     * Gets the next message from the payload
+     * @param payload
+     * @return
+     */
     public static JSONObject getNextMessageFromPayload(String payload) {
         JSONObject returnObject = null;
         if (payload != null) {
@@ -196,7 +219,16 @@ public class IterableInAppManager {
         return returnObject;
     }
 
-    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, JSONObject dataFields, IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
+    /**
+     * Creates the button for an InApp Notification
+     * @param context
+     * @param dialog
+     * @param buttons
+     * @param dataFields
+     * @param clickCallback
+     * @return
+     */
+    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, JSONObject dataFields, IterableHelper.IterableActionHandler clickCallback) {
         LinearLayout.LayoutParams equalParamWidth = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
@@ -236,11 +268,21 @@ public class IterableInAppManager {
         return linearlayout;
     }
 
+    /**
+     * Returns the portrait height of the screen
+     * @param size
+     * @return
+     */
     private static int getFontConstant(Point size) {
         int fontConstant = (size.x > size.y) ? size.x : size.y;
         return fontConstant;
     }
 
+    /**
+     * Gets the dimensions of the device
+     * @param context
+     * @return
+     */
     private static Point getScreenSize(Context context) {
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
@@ -249,10 +291,17 @@ public class IterableInAppManager {
         return size;
     }
 
-    private static int getIntColorFromJson(JSONObject json, String key, int defaultColor) {
+    /**
+     * Gets the int value of the color from the payload
+     * @param payload
+     * @param key
+     * @param defaultColor
+     * @return
+     */
+    private static int getIntColorFromJson(JSONObject payload, String key, int defaultColor) {
         int backgroundColor = defaultColor;
-        if (json != null) {
-            String backgroundColorParam = json.optString(key);
+        if (payload != null) {
+            String backgroundColorParam = payload.optString(key);
             if (!backgroundColorParam.isEmpty()) {
                 backgroundColor = Color.parseColor(backgroundColorParam);
             }
@@ -260,6 +309,11 @@ public class IterableInAppManager {
         return backgroundColor;
     }
 
+    /**
+     * Returns the gravity for a given displayType location
+     * @param location
+     * @return
+     */
     private static int getNotificationLocation(String location){
         int locationValue;
         switch(location.toUpperCase()) {

@@ -333,12 +333,26 @@ public class IterableApi {
         registerForPush(iterableAppId, gcmProjectNumber, false);
     }
 
+    /**
+     * Disables the device from push notifications
+     *
+     * @discussion  The disablePush call first calls registerForPush to obtain the device's registration token.
+     *              Then it calls the disablePush api endpoint.
+     *
+     * @param iterableAppId
+     * @param gcmProjectNumber
+     */
     public void disablePush(String iterableAppId, String gcmProjectNumber) {
         registerForPush(iterableAppId, gcmProjectNumber, true);
     }
 
-    public void spawnInAppNotification(final Context context, final IterableInAppActionListener.IterableInAppActionHandler clickCallback) {
-        getInAppMessages(new IterableApiRequest.OnCallbackHandlerListener(){
+    /**
+     * Gets a notification from Iterable and displays it on device.
+     * @param context
+     * @param clickCallback
+     */
+    public void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
+        getInAppMessages(new IterableHelper.IterableActionHandler(){
             @Override
             public void execute(String payload) {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
@@ -351,7 +365,11 @@ public class IterableApi {
         });
     }
 
-    public void getInAppMessages(IterableApiRequest.OnCallbackHandlerListener onCallback) {
+    /**
+     * Gets a list of InAppNotifications from Iterable; passes the result to the callback
+     * @param onCallback
+     */
+    public void getInAppMessages(IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -408,6 +426,12 @@ public class IterableApi {
         return iconName;
     }
 
+    /**
+     * Register the device for push notifications.
+     * @param iterableAppId
+     * @param gcmProjectNumber
+     * @param disableAfterRegistration
+     */
     protected void registerForPush(String iterableAppId, String gcmProjectNumber, boolean disableAfterRegistration) {
         Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
@@ -465,6 +489,10 @@ public class IterableApi {
         this._email = email;
     }
 
+    /**
+     * Attempts to track a notifOpened event from the called Intent.
+     * @param calledIntent
+     */
     private void tryTrackNotifOpen(Intent calledIntent) {
         Bundle extras = calledIntent.getExtras();
         if (extras != null) {
@@ -523,7 +551,7 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    private void sendGetRequest(String resourcePath, JSONObject json, IterableApiRequest.OnCallbackHandlerListener onCallback) {
+    private void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
         new IterableRequest().execute(request);
     }

@@ -16,6 +16,11 @@ public class IterablePushReceiver extends BroadcastReceiver{
 
     private static final String ACTION_GCM_RECEIVE_INTENT = "com.google.android.c2dm.intent.RECEIVE";
 
+    /**
+     * Receives a new IterablePushIntent.
+     * @param context
+     * @param intent
+     */
     @Override
     public void onReceive(Context context, Intent intent) {
         String intentAction = intent.getAction();
@@ -27,6 +32,11 @@ public class IterablePushReceiver extends BroadcastReceiver{
         }
     }
 
+    /**
+     * Handles the push registration data from the intent.
+     * @param context
+     * @param intent
+     */
     private void handlePushRegistration(Context context, Intent intent) {
         String iterableAppId = intent.getStringExtra(IterableConstants.PUSH_APP_ID);
         String projectNumber = intent.getStringExtra(IterableConstants.PUSH_GCM_PROJECT_NUMBER);
@@ -35,6 +45,11 @@ public class IterablePushReceiver extends BroadcastReceiver{
         new IterablePushRegistrationGCM().execute(data);
     }
 
+    /**
+     * Handles receiving an incoming push notification from the intent.
+     * @param context
+     * @param intent
+     */
     private void handlePushReceived(Context context, Intent intent) {
         if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
             Context appContext = context.getApplicationContext();
