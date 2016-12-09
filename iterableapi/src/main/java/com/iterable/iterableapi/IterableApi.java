@@ -467,8 +467,12 @@ public class IterableApi {
             public void execute(String payload) {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
                 if (dialogOptions != null) {
+                    int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
+                    int templateId = dialogOptions.optInt(IterableConstants.KEY_TEMPLATE_ID);
+                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId);
+                    InAppTrackParams trackParams = new InAppTrackParams(campaignId, templateId);
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-                    IterableInAppManager.showNotification(context, message, clickCallback);
+                    IterableInAppManager.showNotification(context, message, trackParams, clickCallback);
                 }
             }
         });

@@ -37,16 +37,13 @@ public class IterableInAppManager {
      * @param dialogOptions
      * @param clickCallback
      */
-    public static void showNotification(Context context, JSONObject dialogOptions, IterableHelper.IterableActionHandler clickCallback) {
+    public static void showNotification(Context context, JSONObject dialogOptions, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
         if(dialogOptions != null) {
-            int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
-            int templateId = dialogOptions.optInt(IterableConstants.KEY_TEMPLATE_ID);
-            IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId);
             String type = dialogOptions.optString(IterableConstants.ITERABLE_IN_APP_TYPE);
             if (type.equalsIgnoreCase(IterableConstants.ITERABLE_IN_APP_TYPE_FULL)) {
-                showFullScreenDialog(context, dialogOptions, clickCallback);
+                showFullScreenDialog(context, dialogOptions, trackParams, clickCallback);
             } else {
-                showNotificationDialog(context, dialogOptions, clickCallback);
+                showNotificationDialog(context, dialogOptions, trackParams, clickCallback);
             }
         } else {
             IterableLogger.d(TAG, "In-App notification not displayed: showNotification must contain valid dialogOptions");
@@ -59,7 +56,7 @@ public class IterableInAppManager {
      * @param dialogParameters
      * @param clickCallback
      */
-    static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableHelper.IterableActionHandler clickCallback) {
+    static void showNotificationDialog(Context context, JSONObject dialogParameters, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCanceledOnTouchOutside(true);
@@ -121,7 +118,7 @@ public class IterableInAppManager {
      * @param dialogParameters
      * @param clickCallback
      */
-    static void showFullScreenDialog(Context context, JSONObject dialogParameters, IterableHelper.IterableActionHandler clickCallback) {
+    static void showFullScreenDialog(Context context, JSONObject dialogParameters, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Light);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -187,7 +184,7 @@ public class IterableInAppManager {
         //Buttons
         JSONArray buttonJson = dialogParameters.optJSONArray(IterableConstants.ITERABLE_IN_APP_BUTTONS);
         if (buttonJson != null) {
-            View buttons = createButtons(context, dialog, buttonJson, dialogParameters, clickCallback);
+            View buttons = createButtons(context, dialog, buttonJson, trackParams, clickCallback);
             LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -226,11 +223,11 @@ public class IterableInAppManager {
      * @param context
      * @param dialog
      * @param buttons
-     * @param dataFields
+     * @param trackParams
      * @param clickCallback
      * @return
      */
-    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, JSONObject dataFields, IterableHelper.IterableActionHandler clickCallback) {
+    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
         LinearLayout.LayoutParams equalParamWidth = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
@@ -247,9 +244,7 @@ public class IterableInAppManager {
                 button.setBackgroundColor(getIntColorFromJson(buttonJson, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.LTGRAY));
                 String action = buttonJson.optString(IterableConstants.ITERABLE_IN_APP_BUTTON_ACTION);
                 if (!action.isEmpty()) {
-                    int campaignId = dataFields.optInt(IterableConstants.KEY_CAMPAIGN_ID);
-                    int templateId = dataFields.optInt(IterableConstants.KEY_TEMPLATE_ID);
-                    button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, campaignId, templateId, clickCallback));
+                    button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, trackParams, clickCallback));
                 }
 
                 JSONObject textJson = buttonJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
@@ -321,5 +316,15 @@ public class IterableInAppManager {
             default: locationValue = Gravity.CENTER;
         }
         return locationValue;
+    }
+}
+
+class InAppTrackParams {
+    int campaignId;
+    int templateId;
+
+    public InAppTrackParams(int campaignId, int templateId) {
+        this.campaignId = campaignId;
+        this.templateId = templateId;
     }
 }

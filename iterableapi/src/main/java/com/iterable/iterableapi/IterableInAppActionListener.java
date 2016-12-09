@@ -13,25 +13,22 @@ public class IterableInAppActionListener implements View.OnClickListener {
     int index;
     String actionName;
     IterableHelper.IterableActionHandler onClickCallback;
-    int campaignId;
-    int templateId;
+    InAppTrackParams trackParams;
 
     /**
      * A custom onClickListener which stores data about the dialog context.
      * @param dialog
      * @param index
      * @param actionName
-     * @param campaignId
-     * @param templateId
+     * @param trackParams
      * @param onClickCallback
      */
-    IterableInAppActionListener(Dialog dialog, int index, String actionName, int campaignId, int templateId, IterableHelper.IterableActionHandler onClickCallback){
+    IterableInAppActionListener(Dialog dialog, int index, String actionName, InAppTrackParams trackParams, IterableHelper.IterableActionHandler onClickCallback){
         this.index = index;
         this.actionName  = actionName;
         this.onClickCallback = onClickCallback;
         this.dialog = dialog;
-        this.campaignId = campaignId;
-        this.templateId = templateId;
+        this.trackParams = trackParams;
     }
 
     /**
@@ -40,7 +37,9 @@ public class IterableInAppActionListener implements View.OnClickListener {
      */
     @Override
     public void onClick(View v) {
-        IterableApi.sharedInstance.trackInAppClick(campaignId, templateId, index);
+        if (trackParams != null) {
+            IterableApi.sharedInstance.trackInAppClick(trackParams.campaignId, trackParams.templateId, index);
+        }
         if (onClickCallback != null) {
             onClickCallback.execute(actionName);
         }
