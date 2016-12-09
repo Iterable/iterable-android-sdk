@@ -57,7 +57,7 @@ public class IterableInAppManager {
      * @param clickCallback
      */
     static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableHelper.IterableActionHandler clickCallback) {
-        Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar); //Theme_Material_NoActionBar_Overscan
+        Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCanceledOnTouchOutside(true);
         dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
@@ -85,7 +85,6 @@ public class IterableInAppManager {
             title.setText(titleJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
             title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 24);
             title.setGravity(Gravity.CENTER);
-            //TODO: update padding to be orientation relative
             title.setPadding(10, 5, 10, 5);
             title.setTextColor(getIntColorFromJson(titleJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
             verticalLayout.addView(title);
@@ -99,7 +98,7 @@ public class IterableInAppManager {
             bodyText.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 36);
             bodyText.setGravity(Gravity.CENTER);
             bodyText.setTextColor(getIntColorFromJson(bodyJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
-            bodyText.setPadding(screenSize.x/60,0,screenSize.x/60,screenSize.y/60);
+            bodyText.setPadding(10,0,10,10);
             verticalLayout.addView(bodyText);
         }
 
@@ -167,7 +166,7 @@ public class IterableInAppManager {
                         into(imageView);
             }
         } catch (ClassNotFoundException e) {
-            IterableLogger.e(TAG, "ClassNotFoundException: Check that picasso is added " +
+            IterableLogger.w(TAG, "ClassNotFoundException: Check that picasso is added " +
                     "to the build dependencies", e);
         }
 
@@ -269,7 +268,7 @@ public class IterableInAppManager {
     }
 
     /**
-     * Returns the portrait height of the screen
+     * Gets the portrait height of the screen to use as a constant
      * @param size
      * @return
      */

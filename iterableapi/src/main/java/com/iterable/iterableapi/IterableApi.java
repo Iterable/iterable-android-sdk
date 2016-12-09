@@ -67,18 +67,34 @@ public class IterableApi {
         return (_payloadData != null) ? _payloadData.getString(key, null): null;
     }
 
+    /**
+     * Returns the current context for the application.
+     * @return
+     */
     Context getMainActivityContext() {
         return _applicationContext;
     }
 
+    /**
+     * Sets debug mode.
+     * @param debugMode
+     */
     void setDebugMode(boolean debugMode) {
         _debugMode = debugMode;
     }
 
+    /**
+     * Gets the current state of the debug mode.
+     * @return
+     */
     boolean getDebugMode() {
         return _debugMode;
     }
 
+    /**
+     * Set the payload for a given intent if it is from Iterable.
+     * @param intent
+     */
     void setPayloadData(Intent intent) {
         Bundle extras = intent.getExtras();
         if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
@@ -86,10 +102,18 @@ public class IterableApi {
         }
     }
 
+    /**
+     * Sets the payload bundle.
+     * @param bundle
+     */
     void setPayloadData(Bundle bundle) {
         _payloadData = bundle;
     }
 
+    /**
+     * Sets the IterableNotification data
+     * @param data
+     */
     void setNotificationData(IterableNotificationData data) {
         _notificationData = data;
     }
@@ -164,6 +188,10 @@ public class IterableApi {
         return sharedInstance;
     }
 
+    /**
+     * Debugging function to send API calls to different url endpoints.
+     * @param url
+     */
     public static void overrideURLEndpointPath(String url) {
         IterableRequest.overrideUrl = url;
     }
@@ -202,18 +230,40 @@ public class IterableApi {
         registerDeviceToken(applicationName, token, null);
     }
 
+    /**
+     * Track an event.
+     * @param eventName
+     */
     public void track(String eventName) {
         track(eventName, null, null, null);
     }
 
+    /**
+     * Track an event.
+     * @param eventName
+     * @param dataFields
+     */
     public void track(String eventName, JSONObject dataFields) {
         track(eventName, null, null, dataFields);
     }
 
+    /**
+     * Track an event.
+     * @param eventName
+     * @param campaignId
+     * @param templateId
+     */
     public void track(String eventName, String campaignId, String templateId) {
         track(eventName, campaignId, templateId, null);
     }
 
+    /**
+     * Track an event.
+     * @param eventName
+     * @param campaignId
+     * @param templateId
+     * @param dataFields
+     */
     public void track(String eventName, String campaignId, String templateId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
@@ -231,10 +281,21 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
+    /**
+     * Tracks a campaign conversion.
+     * @param campaignId
+     * @param templateId
+     */
     public void trackConversion(int campaignId, int templateId) {
         trackConversion(campaignId, templateId, null);
     }
 
+    /**
+     * Tracks a campaign conversion.
+     * @param campaignId
+     * @param templateId
+     * @param dataFields
+     */
     public void trackConversion(int campaignId, int templateId, JSONObject dataFields) {
 
         JSONObject requestJSON = new JSONObject();
@@ -254,6 +315,11 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_TRACK_CONVERSION, requestJSON);
     }
 
+    /**
+     * Sends a push campaign to an email address.
+     * @param email
+     * @param campaignId
+     */
     public void sendPush(String email, int campaignId) {
     sendPush(email, campaignId, null, null);
 }
@@ -268,6 +334,12 @@ public class IterableApi {
         sendPush(email, campaignId, sendAt, null);
     }
 
+    /**
+     * Sends a push campaign to an email address.
+     * @param email
+     * @param campaignId
+     * @param dataFields
+     */
     public void sendPush(String email, int campaignId, JSONObject dataFields) {
         sendPush(email, campaignId, null, dataFields);
     }
@@ -299,6 +371,10 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_PUSH_TARGET, requestJSON);
     }
 
+    /**
+     * Updates the current user's email.
+     * @param newEmail
+     */
     public void updateEmail(String newEmail) {
         JSONObject requestJSON = new JSONObject();
 
@@ -315,6 +391,10 @@ public class IterableApi {
         _email = newEmail;
     }
 
+    /**
+     * Updates the current user.
+     * @param dataFields
+     */
     public void updateUser(JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
@@ -329,6 +409,11 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
     }
 
+    /**
+     * Registers for push notifications.
+     * @param iterableAppId
+     * @param gcmProjectNumber
+     */
     public void registerForPush(String iterableAppId, String gcmProjectNumber) {
         registerForPush(iterableAppId, gcmProjectNumber, false);
     }
@@ -359,14 +444,13 @@ public class IterableApi {
                 if (dialogOptions != null) {
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
                     IterableInAppManager.showNotification(context, message, clickCallback);
-                    trackInAppView(null);
                 }
             }
         });
     }
 
     /**
-     * Gets a list of InAppNotifications from Iterable; passes the result to the callback
+     * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
      * @param onCallback
      */
     public void getInAppMessages(IterableHelper.IterableActionHandler onCallback) {
@@ -382,11 +466,16 @@ public class IterableApi {
         sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
     }
 
+    /**
+     * Tracks an InApp view.
+     * @param dataFields
+     */
     public void trackInAppView(JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -395,11 +484,16 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_VIEW, requestJSON);
     }
 
+    /**
+     * Tracks an InApp click.
+     * @param dataFields
+     */
     public void trackInAppClick(JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -413,6 +507,12 @@ public class IterableApi {
 
 //region Protected Fuctions
 //---------------------------------------------------------------------------------------
+
+    /**
+     * Set the notification icon with the given iconName.
+     * @param context
+     * @param iconName
+     */
     static void setNotificationIcon(Context context, String iconName) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -420,6 +520,11 @@ public class IterableApi {
         editor.commit();
     }
 
+    /**
+     * Returns the stored notification icon.
+     * @param context
+     * @return
+     */
     static String getNotificationIcon(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
@@ -427,7 +532,7 @@ public class IterableApi {
     }
 
     /**
-     * Register the device for push notifications.
+     * Registers the device for push notifications.
      * @param iterableAppId
      * @param gcmProjectNumber
      * @param disableAfterRegistration
@@ -442,7 +547,7 @@ public class IterableApi {
     }
 
     /**
-     * Track when a push notification is opened on device.
+     * Tracks when a push notification is opened on device.
      * @param campaignId
      * @param templateId
      */
@@ -463,7 +568,7 @@ public class IterableApi {
     }
 
     /**
-     * Internal api call made from IterablePushRegistrationGCM after a registration is completed.
+     * Internal api call made from IterablePushRegistrationGCM after a registrationToken is obtained.
      * @param token
      */
     protected void disablePush(String token) {
@@ -483,6 +588,13 @@ public class IterableApi {
 
 //region Private Fuctions
 //---------------------------------------------------------------------------------------
+
+    /**
+     * Updates the data for the current user.
+     * @param context
+     * @param apiKey
+     * @param email
+     */
     private void updateData(Context context, String apiKey, String email) {
         this._applicationContext = context;
         this._apiKey = apiKey;

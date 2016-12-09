@@ -39,8 +39,6 @@ public class IterableInAppActionListener implements View.OnClickListener {
      */
     @Override
     public void onClick(View v) {
-        IterableApi.sharedInstance.trackInAppClick(trackParams);
-
         if (onClickCallback != null) {
             onClickCallback.execute(actionName);
         }
