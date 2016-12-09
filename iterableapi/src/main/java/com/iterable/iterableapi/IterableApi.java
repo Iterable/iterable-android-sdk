@@ -27,6 +27,7 @@ public class IterableApi {
     private Context _applicationContext;
     private String _apiKey;
     private String _email;
+    private String _userId;
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
@@ -39,9 +40,6 @@ public class IterableApi {
     IterableApi(){
     }
 
-    IterableApi(Context context, String apiKey, String email){
-        updateData(context, apiKey, email);
-    }
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -128,6 +126,60 @@ public class IterableApi {
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
      * Should be called whenever the app is opened.
      * @param currentActivity The current activity
+     * @param userId The current userId
+     * @return stored instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKeyWithUserId(Activity currentActivity, String apiKey,
+                                                                 String userId)
+    {
+        return sharedInstanceWithApiKeyWithUserId(currentActivity, apiKey, userId, false);
+    }
+
+    /**
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * Allows the IterableApi to be intialized with debugging enabled
+     * @param currentActivity The current activity
+     * @param userId
+     * The current userId@return stored instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKeyWithUserId(Activity currentActivity, String apiKey,
+                                                                 String userId, boolean debugMode)
+    {
+        return sharedInstanceWithApiKeyWithUserId((Context) currentActivity, apiKey, userId, debugMode);
+    }
+
+    /**
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * @param currentContext The current context
+     * @param userId The current userId
+     * @return stored instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKeyWithUserId(Context currentContext, String apiKey,
+                                                                 String userId)
+    {
+        return sharedInstanceWithApiKey(currentContext, apiKey, null, userId, false);
+    }
+
+    /**
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * Allows the IterableApi to be intialized with debugging enabled
+     * @param currentContext The current context
+     * @return stored instance of IterableApi
+     */
+    public static IterableApi sharedInstanceWithApiKeyWithUserId(Context currentContext, String apiKey,
+                                                                 String userId, boolean debugMode)
+    {
+        return sharedInstanceWithApiKey(currentContext, apiKey, null, userId, debugMode);
+    }
+
+    /**
+     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
+     * Should be called whenever the app is opened.
+     * @param currentActivity The current activity
+     * @param email The current email
      * @return stored instance of IterableApi
      */
     public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
@@ -141,6 +193,7 @@ public class IterableApi {
      * Should be called whenever the app is opened.
      * Allows the IterableApi to be intialized with debugging enabled
      * @param currentActivity The current activity
+     * @param email The current email
      * @return stored instance of IterableApi
      */
     public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
@@ -152,13 +205,14 @@ public class IterableApi {
     /**
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
      * Should be called whenever the app is opened.
-     * @param currentActivity The current activity
+     * @param currentContext The current context
+     * @param email The current email
      * @return stored instance of IterableApi
      */
-    public static IterableApi sharedInstanceWithApiKey(Context currentActivity, String apiKey,
+    public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
                                                        String email)
     {
-        return sharedInstanceWithApiKey(currentActivity, apiKey, email, false);
+        return sharedInstanceWithApiKey(currentContext, apiKey, email, false);
     }
 
     /**
@@ -166,12 +220,19 @@ public class IterableApi {
      * Should be called whenever the app is opened.
      * Allows the IterableApi to be intialized with debugging enabled
      * @param currentContext The current context
+     * @param email The current email
      * @return stored instance of IterableApi
      */
     public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
                                                        String email, boolean debugMode)
     {
-        sharedInstance.updateData(currentContext.getApplicationContext(), apiKey, email);
+        return sharedInstanceWithApiKey(currentContext, apiKey, email, null, debugMode);
+    }
+
+    private static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
+                                                       String email, String userId, boolean debugMode)
+    {
+        sharedInstance.updateData(currentContext.getApplicationContext(), apiKey, email, userId);
 
         if (currentContext instanceof Activity) {
             Activity currentActivity = (Activity) currentContext;
@@ -267,12 +328,12 @@ public class IterableApi {
     public void track(String eventName, String campaignId, String templateId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
 
             requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -281,48 +342,9 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
-    /**
-     * Tracks a campaign conversion.
-     * @param campaignId
-     * @param templateId
-     */
-    public void trackConversion(int campaignId, int templateId) {
-        trackConversion(campaignId, templateId, null);
-    }
-
-    /**
-     * Tracks a campaign conversion.
-     * @param campaignId
-     * @param templateId
-     * @param dataFields
-     */
-    public void trackConversion(int campaignId, int templateId, JSONObject dataFields) {
-
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            if (dataFields != null) {
-                requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
-            }
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendPostRequest(IterableConstants.ENDPOINT_TRACK_CONVERSION, requestJSON);
-    }
-
-    /**
-     * Sends a push campaign to an email address.
-     * @param email
-     * @param campaignId
-     */
     public void sendPush(String email, int campaignId) {
-    sendPush(email, campaignId, null, null);
-}
+        sendPush(email, campaignId, null, null);
+    }
 
     /**
      * Sends a push campaign to an email address at the given time.
@@ -376,19 +398,22 @@ public class IterableApi {
      * @param newEmail
      */
     public void updateEmail(String newEmail) {
-        JSONObject requestJSON = new JSONObject();
+        if (_email != null) {
+            JSONObject requestJSON = new JSONObject();
 
-        try {
-            requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
+            try {
+                requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
+                requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
+            }
+            catch (JSONException e) {
+                e.printStackTrace();
+            }
+            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON);
+            _email = newEmail;
+        } else {
+            IterableLogger.w(TAG, "updateEmail should not be called with a userId. " +
+                "Init SDK with sharedInstanceWithApiKey instead of sharedInstanceWithApiKeyWithUserId");
         }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON);
-
-        _email = newEmail;
     }
 
     /**
@@ -399,8 +424,8 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -475,13 +500,13 @@ public class IterableApi {
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_VIEW, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
     }
 
     /**
@@ -493,7 +518,7 @@ public class IterableApi {
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -555,7 +580,7 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
@@ -574,8 +599,7 @@ public class IterableApi {
     protected void disablePush(String token) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_TOKEN, token);addEmailOrUserIdToJson(requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -594,11 +618,14 @@ public class IterableApi {
      * @param context
      * @param apiKey
      * @param email
+     * @param userId
      */
-    private void updateData(Context context, String apiKey, String email) {
+    private void updateData(Context context, String apiKey, String email, String userId) {
+
         this._applicationContext = context;
         this._apiKey = apiKey;
         this._email = email;
+        this._userId = userId;
     }
 
     /**
@@ -627,7 +654,8 @@ public class IterableApi {
 
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            addEmailOrUserIdToJson(requestJSON);
+
             if (dataFields == null) {
                 dataFields = new JSONObject();
             }
@@ -635,8 +663,8 @@ public class IterableApi {
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);
             device.put(IterableConstants.KEY_PLATFORM, platform);
-            device.put(IterableConstants.KEY_APPLICATIONNAME, applicationName);
-            device.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
+            device.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
 
         } catch (JSONException e) {
@@ -666,6 +694,18 @@ public class IterableApi {
     private void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
         new IterableRequest().execute(request);
+    }
+
+    private void addEmailOrUserIdToJson(JSONObject requestJSON) {
+        try {
+            if (_email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 //---------------------------------------------------------------------------------------
