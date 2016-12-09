@@ -39,6 +39,9 @@ public class IterableInAppManager {
      */
     public static void showNotification(Context context, JSONObject dialogOptions, IterableHelper.IterableActionHandler clickCallback) {
         if(dialogOptions != null) {
+            int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
+            int templateId = dialogOptions.optInt(IterableConstants.KEY_TEMPLATE_ID);
+            IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId);
             String type = dialogOptions.optString(IterableConstants.ITERABLE_IN_APP_TYPE);
             if (type.equalsIgnoreCase(IterableConstants.ITERABLE_IN_APP_TYPE_FULL)) {
                 showFullScreenDialog(context, dialogOptions, clickCallback);
@@ -237,16 +240,6 @@ public class IterableInAppManager {
         LinearLayout linearlayout = new LinearLayout(context);
         linearlayout.setOrientation(LinearLayout.HORIZONTAL);
 
-        JSONObject trackParams = new JSONObject();
-        if (dataFields != null) {
-            try {
-                trackParams.putOpt(IterableConstants.KEY_CAMPAIGNID, dataFields.optString(IterableConstants.KEY_CAMPAIGNID, null));
-                trackParams.putOpt(IterableConstants.KEY_TEMPLATE_ID, dataFields.optString(IterableConstants.KEY_TEMPLATE_ID, null));
-            } catch (JSONException e) {
-                IterableLogger.e(TAG, e.toString());
-            }
-        }
-
         for (int i = 0; i < buttons.length(); i++) {
             JSONObject buttonJson = buttons.optJSONObject(i);
             if (buttonJson != null) {
@@ -254,7 +247,9 @@ public class IterableInAppManager {
                 button.setBackgroundColor(getIntColorFromJson(buttonJson, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.LTGRAY));
                 String action = buttonJson.optString(IterableConstants.ITERABLE_IN_APP_BUTTON_ACTION);
                 if (!action.isEmpty()) {
-                    button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, trackParams, clickCallback));
+                    int campaignId = dataFields.optInt(IterableConstants.KEY_CAMPAIGN_ID);
+                    int templateId = dataFields.optInt(IterableConstants.KEY_TEMPLATE_ID);
+                    button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, campaignId, templateId, clickCallback));
                 }
 
                 JSONObject textJson = buttonJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);

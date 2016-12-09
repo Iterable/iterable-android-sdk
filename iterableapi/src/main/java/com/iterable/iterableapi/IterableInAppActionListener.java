@@ -3,8 +3,6 @@ package com.iterable.iterableapi;
 import android.app.Dialog;
 import android.view.View;
 
-import org.json.JSONObject;
-
 /**
  * Created by David Truong dt@iterable.com.
  *
@@ -15,22 +13,25 @@ public class IterableInAppActionListener implements View.OnClickListener {
     int index;
     String actionName;
     IterableHelper.IterableActionHandler onClickCallback;
-    JSONObject trackParams;
+    int campaignId;
+    int templateId;
 
     /**
      * A custom onClickListener which stores data about the dialog context.
      * @param dialog
      * @param index
      * @param actionName
-     * @param trackParams
+     * @param campaignId
+     * @param templateId
      * @param onClickCallback
      */
-    IterableInAppActionListener(Dialog dialog, int index, String actionName, JSONObject trackParams, IterableHelper.IterableActionHandler onClickCallback){
+    IterableInAppActionListener(Dialog dialog, int index, String actionName, int campaignId, int templateId, IterableHelper.IterableActionHandler onClickCallback){
         this.index = index;
         this.actionName  = actionName;
         this.onClickCallback = onClickCallback;
         this.dialog = dialog;
-        this.trackParams = trackParams;
+        this.campaignId = campaignId;
+        this.templateId = templateId;
     }
 
     /**
@@ -39,6 +40,7 @@ public class IterableInAppActionListener implements View.OnClickListener {
      */
     @Override
     public void onClick(View v) {
+        IterableApi.sharedInstance.trackInAppClick(campaignId, templateId, index);
         if (onClickCallback != null) {
             onClickCallback.execute(actionName);
         }

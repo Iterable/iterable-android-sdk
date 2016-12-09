@@ -15,8 +15,8 @@ class IterableNotificationData {
     IterableNotificationData(String data){
         try {
             JSONObject iterableJson = new JSONObject(data);
-            if (iterableJson.has(IterableConstants.KEY_CAMPAIGNID)){
-                campaignId = iterableJson.getInt(IterableConstants.KEY_CAMPAIGNID);
+            if (iterableJson.has(IterableConstants.KEY_CAMPAIGN_ID)){
+                campaignId = iterableJson.getInt(IterableConstants.KEY_CAMPAIGN_ID);
             }
 
             if (iterableJson.has(IterableConstants.KEY_TEMPLATE_ID)) {

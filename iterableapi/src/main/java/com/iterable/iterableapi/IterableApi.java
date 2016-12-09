@@ -331,7 +331,7 @@ public class IterableApi {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
 
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
         }
@@ -377,7 +377,7 @@ public class IterableApi {
 
         try {
             requestJSON.put(IterableConstants.KEY_RECIPIENT_EMAIL, email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             if (sendAt != null){
                 String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
                 SimpleDateFormat sdf = new SimpleDateFormat(DATEFORMAT);
@@ -480,27 +480,22 @@ public class IterableApi {
      */
     public void getInAppMessages(IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
-
-        try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
+        addEmailOrUserIdToJson(requestJSON);
         sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
     }
 
     /**
-     * Tracks an InApp view.
-     * @param dataFields
+     * Tracks an InApp open.
+     * @param campaignId
+     * @param templateId
      */
-    public void trackInAppView(JSONObject dataFields) {
+    public void trackInAppOpen(int campaignId, int templateId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -511,14 +506,17 @@ public class IterableApi {
 
     /**
      * Tracks an InApp click.
-     * @param dataFields
+     * @param campaignId
+     * @param templateId
      */
-    public void trackInAppClick(JSONObject dataFields) {
+    public void trackInAppClick(int campaignId, int templateId, int buttonIndex) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -581,7 +579,7 @@ public class IterableApi {
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
         }
@@ -599,7 +597,8 @@ public class IterableApi {
     protected void disablePush(String token) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_TOKEN, token);
+            addEmailOrUserIdToJson(requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -696,6 +695,10 @@ public class IterableApi {
         new IterableRequest().execute(request);
     }
 
+    /**
+     * Adds the current email or userID to the json request.
+     * @param requestJSON
+     */
     private void addEmailOrUserIdToJson(JSONObject requestJSON) {
         try {
             if (_email != null) {
