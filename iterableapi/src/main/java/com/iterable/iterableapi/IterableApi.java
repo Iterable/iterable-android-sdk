@@ -462,7 +462,7 @@ public class IterableApi {
      * @param clickCallback
      */
     public void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
-        getInAppMessages(new IterableHelper.IterableActionHandler(){
+        getInAppMessages(1, new IterableHelper.IterableActionHandler(){
             @Override
             public void execute(String payload) {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
@@ -484,11 +484,19 @@ public class IterableApi {
 
     /**
      * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
+     * @param count the number of messages to fetch
      * @param onCallback
      */
-    public void getInAppMessages(IterableHelper.IterableActionHandler onCallback) {
+    public void getInAppMessages(int count, IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
         addEmailOrUserIdToJson(requestJSON);
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
         sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
     }
 
