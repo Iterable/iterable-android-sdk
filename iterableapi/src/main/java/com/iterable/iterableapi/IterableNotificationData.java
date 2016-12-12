@@ -35,6 +35,12 @@ class IterableNotificationData {
         }
     }
 
+    IterableNotificationData(int campaignId, int templateId, String messageId) {
+        this.campaignId = campaignId;
+        this.templateId = templateId;
+        this.messageId = messageId;
+    }
+
     public int getCampaignId()
     {
         return this.campaignId;

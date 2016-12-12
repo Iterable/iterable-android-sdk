@@ -467,12 +467,16 @@ public class IterableApi {
             public void execute(String payload) {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
                 if (dialogOptions != null) {
-                    int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
-                    int templateId = dialogOptions.optInt(IterableConstants.KEY_TEMPLATE_ID);
-                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId);
-                    InAppTrackParams trackParams = new InAppTrackParams(campaignId, templateId);
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
+                    int templateId = message.optInt(IterableConstants.KEY_TEMPLATE_ID);
+
+                    int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
+                    String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
+
+                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
+                    IterableNotificationData trackParams = new IterableNotificationData(campaignId, templateId, messageId);
                     IterableInAppManager.showNotification(context, message, trackParams, clickCallback);
+
                 }
             }
         });
@@ -492,14 +496,16 @@ public class IterableApi {
      * Tracks an InApp open.
      * @param campaignId
      * @param templateId
+     * @param messageId
      */
-    public void trackInAppOpen(int campaignId, int templateId) {
+    public void trackInAppOpen(int campaignId, int templateId, String messageId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -512,14 +518,17 @@ public class IterableApi {
      * Tracks an InApp click.
      * @param campaignId
      * @param templateId
+     * @param messageId
+     * @param buttonIndex
      */
-    public void trackInAppClick(int campaignId, int templateId, int buttonIndex) {
+    public void trackInAppClick(int campaignId, int templateId, String messageId, int buttonIndex) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
         }
         catch (JSONException e) {

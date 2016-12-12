@@ -37,7 +37,7 @@ public class IterableInAppManager {
      * @param dialogOptions
      * @param clickCallback
      */
-    public static void showNotification(Context context, JSONObject dialogOptions, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
+    public static void showNotification(Context context, JSONObject dialogOptions, IterableNotificationData trackParams, IterableHelper.IterableActionHandler clickCallback) {
         if(dialogOptions != null) {
             String type = dialogOptions.optString(IterableConstants.ITERABLE_IN_APP_TYPE);
             if (type.equalsIgnoreCase(IterableConstants.ITERABLE_IN_APP_TYPE_FULL)) {
@@ -56,7 +56,7 @@ public class IterableInAppManager {
      * @param dialogParameters
      * @param clickCallback
      */
-    static void showNotificationDialog(Context context, JSONObject dialogParameters, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
+    static void showNotificationDialog(Context context, JSONObject dialogParameters, IterableNotificationData trackParams, IterableHelper.IterableActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCanceledOnTouchOutside(true);
@@ -118,7 +118,7 @@ public class IterableInAppManager {
      * @param dialogParameters
      * @param clickCallback
      */
-    static void showFullScreenDialog(Context context, JSONObject dialogParameters, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
+    static void showFullScreenDialog(Context context, JSONObject dialogParameters, IterableNotificationData trackParams, IterableHelper.IterableActionHandler clickCallback) {
         Dialog dialog = new Dialog(context, android.R.style.Theme_Light);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -227,7 +227,7 @@ public class IterableInAppManager {
      * @param clickCallback
      * @return
      */
-    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, InAppTrackParams trackParams, IterableHelper.IterableActionHandler clickCallback) {
+    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, IterableNotificationData trackParams, IterableHelper.IterableActionHandler clickCallback) {
         LinearLayout.LayoutParams equalParamWidth = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
@@ -316,15 +316,5 @@ public class IterableInAppManager {
             default: locationValue = Gravity.CENTER;
         }
         return locationValue;
-    }
-}
-
-class InAppTrackParams {
-    int campaignId;
-    int templateId;
-
-    public InAppTrackParams(int campaignId, int templateId) {
-        this.campaignId = campaignId;
-        this.templateId = templateId;
     }
 }
