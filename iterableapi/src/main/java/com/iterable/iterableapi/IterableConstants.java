@@ -63,6 +63,7 @@ public final class IterableConstants {
     public static final String SOUND_FOLDER_IDENTIFIER  = "raw";
     public static final String ANDROID_RESOURCE_PATH    = "android.resource://";
 
+    public static final String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String PICASSO_CLASS = "com.squareup.picasso.Picasso";
 
     //In-App Constants

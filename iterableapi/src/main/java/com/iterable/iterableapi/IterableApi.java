@@ -4,11 +4,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
+
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -296,7 +302,7 @@ public class IterableApi {
      * @param eventName
      */
     public void track(String eventName) {
-        track(eventName, null, null, null);
+        track(eventName, 0, 0, null);
     }
 
     /**
@@ -305,7 +311,7 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(String eventName, JSONObject dataFields) {
-        track(eventName, null, null, dataFields);
+        track(eventName, 0, 0, dataFields);
     }
 
     /**
@@ -314,7 +320,7 @@ public class IterableApi {
      * @param campaignId
      * @param templateId
      */
-    public void track(String eventName, String campaignId, String templateId) {
+    public void track(String eventName, int campaignId, int templateId) {
         track(eventName, campaignId, templateId, null);
     }
 
@@ -325,7 +331,7 @@ public class IterableApi {
      * @param templateId
      * @param dataFields
      */
-    public void track(String eventName, String campaignId, String templateId, JSONObject dataFields) {
+    public void track(String eventName, int campaignId, int templateId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
             addEmailOrUserIdToJson(requestJSON);
@@ -379,8 +385,7 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_RECIPIENT_EMAIL, email);
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             if (sendAt != null){
-                String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
-                SimpleDateFormat sdf = new SimpleDateFormat(DATEFORMAT);
+                SimpleDateFormat sdf = new SimpleDateFormat(IterableConstants.DATEFORMAT);
                 sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                 String dateString = sdf.format(sendAt);
                 requestJSON.put(IterableConstants.KEY_SEND_AT, dateString);
@@ -678,13 +683,20 @@ public class IterableApi {
 
             if (dataFields == null) {
                 dataFields = new JSONObject();
+                dataFields.put("brand", Build.BRAND); //brand: google
+                dataFields.put("manufacturer", Build.MANUFACTURER); //manufacturer: samsung
+                dataFields.putOpt("advertisingId", getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                dataFields.put("systemName", Build.DEVICE); //device name: toro
+                dataFields.put("systemVersion", Build.VERSION.RELEASE); //version: 4.0.4
+                dataFields.put("model", Build.MODEL); //device model: Galaxy Nexus
+                dataFields.put("sdkVersion", Build.VERSION.SDK_INT); //sdk version/api level: 15
             }
 
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);
             device.put(IterableConstants.KEY_PLATFORM, platform);
             device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
-            device.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
 
         } catch (JSONException e) {
@@ -730,6 +742,33 @@ public class IterableApi {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Gets the advertisingId if available
+     * @return
+     */
+    private String getAdvertisingId() {
+        String advertisingId = null;
+        try {
+            Class adClass = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+            if (adClass != null) {
+                AdvertisingIdClient.Info advertisingIdInfo = AdvertisingIdClient.getAdvertisingIdInfo(_applicationContext);
+                if (advertisingIdInfo != null) {
+                    advertisingId = advertisingIdInfo.getId();
+                }
+            }
+        } catch (IOException e) {
+            IterableLogger.w(TAG, e.getMessage());
+        } catch (GooglePlayServicesNotAvailableException e) {
+            IterableLogger.w(TAG, e.getMessage());
+        } catch (GooglePlayServicesRepairableException e) {
+            IterableLogger.w(TAG, e.getMessage());
+        } catch (ClassNotFoundException e) {
+            IterableLogger.d(TAG, "ClassNotFoundException: Can't track ADID. " +
+                    "Check that play-services-ads is added to the dependencies.", e);
+        }
+        return advertisingId;
     }
 
 //---------------------------------------------------------------------------------------

@@ -12,6 +12,10 @@ class IterableNotificationData {
         private String messageId;
         private boolean isGhostPush;
 
+    /**
+     * Creates the notification data from a string
+     * @param data
+     */
     IterableNotificationData(String data){
         try {
             JSONObject iterableJson = new JSONObject(data);
@@ -35,24 +39,46 @@ class IterableNotificationData {
         }
     }
 
+    /**
+     * Creates the notification data
+     * @param campaignId
+     * @param templateId
+     * @param messageId
+     */
     IterableNotificationData(int campaignId, int templateId, String messageId) {
         this.campaignId = campaignId;
         this.templateId = templateId;
         this.messageId = messageId;
     }
 
+    /**
+     * Returns the campaignId
+     * @return
+     */
     public int getCampaignId()
     {
         return this.campaignId;
     }
 
+    /**
+     * Returns the templateId
+     * @return
+     */
     public int getTemplateId()
     {
         return this.templateId;
     }
 
+    /**
+     * Returns the messageId
+     * @return
+     */
     public String getMessageId() { return this.messageId; }
 
+    /**
+     * Returns if the notification is a ghost/silent push notification
+     * @return
+     */
     public boolean getIsGhostPush()
     {
         return this.isGhostPush;
