@@ -67,7 +67,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     while( keys.hasNext() ) {
                         String key = (String) keys.next();
-                        urlString = urlString + "&&" + key + "=" + iterableApiRequest.json.getString(key);
+                        urlString = urlString + "&" + key + "=" + iterableApiRequest.json.getString(key);
                     }
 
                     url = new URL(urlString);
