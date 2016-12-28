@@ -335,7 +335,7 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
+            requestJSON.put(IterableConstants.KEY_EVENT_NAME, eventName);
 
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
@@ -470,6 +470,7 @@ public class IterableApi {
         getInAppMessages(1, new IterableHelper.IterableActionHandler(){
             @Override
             public void execute(String payload) {
+
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
                 if (dialogOptions != null) {
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);

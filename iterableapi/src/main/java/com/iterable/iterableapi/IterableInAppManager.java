@@ -204,7 +204,7 @@ public class IterableInAppManager {
      */
     public static JSONObject getNextMessageFromPayload(String payload) {
         JSONObject returnObject = null;
-        if (payload != null) {
+        if (payload != null && payload != "") {
             try {
                 JSONObject mainObject = new JSONObject(payload);
                 JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);

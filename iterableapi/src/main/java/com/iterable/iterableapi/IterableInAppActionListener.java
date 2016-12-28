@@ -23,7 +23,7 @@ public class IterableInAppActionListener implements View.OnClickListener {
      * @param trackParams
      * @param onClickCallback
      */
-    IterableInAppActionListener(Dialog dialog, int index, String actionName, IterableNotificationData trackParams, IterableHelper.IterableActionHandler onClickCallback){
+    public IterableInAppActionListener(Dialog dialog, int index, String actionName, IterableNotificationData trackParams, IterableHelper.IterableActionHandler onClickCallback){
         this.index = index;
         this.actionName  = actionName;
         this.onClickCallback = onClickCallback;
@@ -43,6 +43,8 @@ public class IterableInAppActionListener implements View.OnClickListener {
         if (onClickCallback != null) {
             onClickCallback.execute(actionName);
         }
-        dialog.dismiss();
+        if (dialog != null) {
+            dialog.dismiss();
+        }
     }
 }
