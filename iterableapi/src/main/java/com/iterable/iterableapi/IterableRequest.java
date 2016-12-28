@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 
 import org.json.JSONObject;
@@ -25,6 +26,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String AUTHENTICATION_IO_EXCEPTION = "Received authentication challenge is null";
 
     static final String iterableBaseUrl = "https://api.iterable.com/api/";
+
     static String overrideUrl;
 
     static final int DEFAULT_TIMEOUT_MS = 10000;   //10 seconds
@@ -62,15 +64,16 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             try {
                 String baseUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : iterableBaseUrl;
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
-                    String urlString = baseUrl + iterableApiRequest.resourcePath + "?" + IterableConstants.KEY_API_KEY + "=" + iterableApiRequest.apiKey;
-                    Iterator<?> keys = iterableApiRequest.json.keys();
+                    Uri.Builder builder = Uri.parse(baseUrl+iterableApiRequest.resourcePath).buildUpon();
+                    builder.appendQueryParameter(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
 
+                    Iterator<?> keys = iterableApiRequest.json.keys();
                     while( keys.hasNext() ) {
                         String key = (String) keys.next();
-                        urlString = urlString + "&" + key + "=" + iterableApiRequest.json.getString(key);
+                        builder.appendQueryParameter(key, iterableApiRequest.json.getString(key));
                     }
 
-                    url = new URL(urlString);
+                    url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
 
                     BufferedReader in = new BufferedReader(
