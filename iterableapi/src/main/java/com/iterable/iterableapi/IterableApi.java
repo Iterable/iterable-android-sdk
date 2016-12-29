@@ -4,11 +4,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
+
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -65,18 +71,34 @@ public class IterableApi {
         return (_payloadData != null) ? _payloadData.getString(key, null): null;
     }
 
+    /**
+     * Returns the current context for the application.
+     * @return
+     */
     Context getMainActivityContext() {
         return _applicationContext;
     }
 
+    /**
+     * Sets debug mode.
+     * @param debugMode
+     */
     void setDebugMode(boolean debugMode) {
         _debugMode = debugMode;
     }
 
+    /**
+     * Gets the current state of the debug mode.
+     * @return
+     */
     boolean getDebugMode() {
         return _debugMode;
     }
 
+    /**
+     * Set the payload for a given intent if it is from Iterable.
+     * @param intent
+     */
     void setPayloadData(Intent intent) {
         Bundle extras = intent.getExtras();
         if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
@@ -84,10 +106,18 @@ public class IterableApi {
         }
     }
 
+    /**
+     * Sets the payload bundle.
+     * @param bundle
+     */
     void setPayloadData(Bundle bundle) {
         _payloadData = bundle;
     }
 
+    /**
+     * Sets the IterableNotification data
+     * @param data
+     */
     void setNotificationData(IterableNotificationData data) {
         _notificationData = data;
     }
@@ -225,6 +255,10 @@ public class IterableApi {
         return sharedInstance;
     }
 
+    /**
+     * Debugging function to send API calls to different url endpoints.
+     * @param url
+     */
     public static void overrideURLEndpointPath(String url) {
         IterableRequest.overrideUrl = url;
     }
@@ -263,33 +297,55 @@ public class IterableApi {
         registerDeviceToken(applicationName, token, null);
     }
 
+    /**
+     * Track an event.
+     * @param eventName
+     */
     public void track(String eventName) {
-        track(eventName, null, null, null);
+        track(eventName, 0, 0, null);
     }
 
+    /**
+     * Track an event.
+     * @param eventName
+     * @param dataFields
+     */
     public void track(String eventName, JSONObject dataFields) {
-        track(eventName, null, null, dataFields);
+        track(eventName, 0, 0, dataFields);
     }
 
-    public void track(String eventName, String campaignId, String templateId) {
+    /**
+     * Track an event.
+     * @param eventName
+     * @param campaignId
+     * @param templateId
+     */
+    public void track(String eventName, int campaignId, int templateId) {
         track(eventName, campaignId, templateId, null);
     }
 
-    public void track(String eventName, String campaignId, String templateId, JSONObject dataFields) {
+    /**
+     * Track an event.
+     * @param eventName
+     * @param campaignId
+     * @param templateId
+     * @param dataFields
+     */
+    public void track(String eventName, int campaignId, int templateId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_EVENTNAME, eventName);
+            requestJSON.put(IterableConstants.KEY_EVENT_NAME, eventName);
 
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
     public void sendPush(String email, int campaignId) {
@@ -306,6 +362,12 @@ public class IterableApi {
         sendPush(email, campaignId, sendAt, null);
     }
 
+    /**
+     * Sends a push campaign to an email address.
+     * @param email
+     * @param campaignId
+     * @param dataFields
+     */
     public void sendPush(String email, int campaignId, JSONObject dataFields) {
         sendPush(email, campaignId, null, dataFields);
     }
@@ -321,10 +383,9 @@ public class IterableApi {
 
         try {
             requestJSON.put(IterableConstants.KEY_RECIPIENT_EMAIL, email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             if (sendAt != null){
-                String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
-                SimpleDateFormat sdf = new SimpleDateFormat(DATEFORMAT);
+                SimpleDateFormat sdf = new SimpleDateFormat(IterableConstants.DATEFORMAT);
                 sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                 String dateString = sdf.format(sendAt);
                 requestJSON.put(IterableConstants.KEY_SEND_AT, dateString);
@@ -334,9 +395,13 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_PUSHTARGET, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_PUSH_TARGET, requestJSON);
     }
 
+    /**
+     * Updates the current user's email.
+     * @param newEmail
+     */
     public void updateEmail(String newEmail) {
         if (_email != null) {
             JSONObject requestJSON = new JSONObject();
@@ -348,9 +413,7 @@ public class IterableApi {
             catch (JSONException e) {
                 e.printStackTrace();
             }
-
-            sendRequest(IterableConstants.ENDPOINT_UPDATEEMAIL, requestJSON);
-
+            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON);
             _email = newEmail;
         } else {
             IterableLogger.w(TAG, "updateEmail should not be called with a userId. " +
@@ -358,26 +421,135 @@ public class IterableApi {
         }
     }
 
+    /**
+     * Updates the current user.
+     * @param dataFields
+     */
     public void updateUser(JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_UPDATEUSER, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
     }
 
+    /**
+     * Registers for push notifications.
+     * @param iterableAppId
+     * @param gcmProjectNumber
+     */
     public void registerForPush(String iterableAppId, String gcmProjectNumber) {
         registerForPush(iterableAppId, gcmProjectNumber, false);
     }
 
+    /**
+     * Disables the device from push notifications
+     *
+     * @discussion  The disablePush call first calls registerForPush to obtain the device's registration token.
+     *              Then it calls the disablePush api endpoint.
+     *
+     * @param iterableAppId
+     * @param gcmProjectNumber
+     */
     public void disablePush(String iterableAppId, String gcmProjectNumber) {
         registerForPush(iterableAppId, gcmProjectNumber, true);
+    }
+
+    /**
+     * Gets a notification from Iterable and displays it on device.
+     * @param context
+     * @param clickCallback
+     */
+    public void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
+        getInAppMessages(1, new IterableHelper.IterableActionHandler(){
+            @Override
+            public void execute(String payload) {
+
+                JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
+                if (dialogOptions != null) {
+                    JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
+                    int templateId = message.optInt(IterableConstants.KEY_TEMPLATE_ID);
+
+                    int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
+                    String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
+
+                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
+                    IterableNotificationData trackParams = new IterableNotificationData(campaignId, templateId, messageId);
+                    IterableInAppManager.showNotification(context, message, trackParams, clickCallback);
+
+                }
+            }
+        });
+    }
+
+    /**
+     * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
+     * @param count the number of messages to fetch
+     * @param onCallback
+     */
+    public void getInAppMessages(int count, IterableHelper.IterableActionHandler onCallback) {
+        JSONObject requestJSON = new JSONObject();
+        addEmailOrUserIdToJson(requestJSON);
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+        sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
+    }
+
+    /**
+     * Tracks an InApp open.
+     * @param campaignId
+     * @param templateId
+     * @param messageId
+     */
+    public void trackInAppOpen(int campaignId, int templateId, String messageId) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
+    }
+
+    /**
+     * Tracks an InApp click.
+     * @param campaignId
+     * @param templateId
+     * @param messageId
+     * @param buttonIndex
+     */
+    public void trackInAppClick(int campaignId, int templateId, String messageId, int buttonIndex) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -385,6 +557,12 @@ public class IterableApi {
 
 //region Protected Fuctions
 //---------------------------------------------------------------------------------------
+
+    /**
+     * Set the notification icon with the given iconName.
+     * @param context
+     * @param iconName
+     */
     static void setNotificationIcon(Context context, String iconName) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -392,12 +570,23 @@ public class IterableApi {
         editor.commit();
     }
 
+    /**
+     * Returns the stored notification icon.
+     * @param context
+     * @return
+     */
     static String getNotificationIcon(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
         return iconName;
     }
 
+    /**
+     * Registers the device for push notifications.
+     * @param iterableAppId
+     * @param gcmProjectNumber
+     * @param disableAfterRegistration
+     */
     protected void registerForPush(String iterableAppId, String gcmProjectNumber, boolean disableAfterRegistration) {
         Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
         pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
@@ -408,7 +597,7 @@ public class IterableApi {
     }
 
     /**
-     * Track when a push notification is opened on device.
+     * Tracks when a push notification is opened on device.
      * @param campaignId
      * @param templateId
      */
@@ -417,7 +606,7 @@ public class IterableApi {
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGNID, campaignId);
+            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
         }
@@ -425,22 +614,23 @@ public class IterableApi {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_TRACKPUSHOPEN, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
     }
 
     /**
-     * Internal api call made from IterablePushRegistrationGCM after a registration is completed.
+     * Internal api call made from IterablePushRegistrationGCM after a registrationToken is obtained.
      * @param token
      */
     protected void disablePush(String token) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_TOKEN, token);
+            addEmailOrUserIdToJson(requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-        sendRequest(IterableConstants.ENDPOINT_DISABLEDEVICE, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -448,13 +638,26 @@ public class IterableApi {
 
 //region Private Fuctions
 //---------------------------------------------------------------------------------------
+
+    /**
+     * Updates the data for the current user.
+     * @param context
+     * @param apiKey
+     * @param email
+     * @param userId
+     */
     private void updateData(Context context, String apiKey, String email, String userId) {
+
         this._applicationContext = context;
         this._apiKey = apiKey;
         this._email = email;
         this._userId = userId;
     }
 
+    /**
+     * Attempts to track a notifOpened event from the called Intent.
+     * @param calledIntent
+     */
     private void tryTrackNotifOpen(Intent calledIntent) {
         Bundle extras = calledIntent.getExtras();
         if (extras != null) {
@@ -481,32 +684,55 @@ public class IterableApi {
 
             if (dataFields == null) {
                 dataFields = new JSONObject();
+                dataFields.put("brand", Build.BRAND); //brand: google
+                dataFields.put("manufacturer", Build.MANUFACTURER); //manufacturer: samsung
+                dataFields.putOpt("advertisingId", getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                dataFields.put("systemName", Build.DEVICE); //device name: toro
+                dataFields.put("systemVersion", Build.VERSION.RELEASE); //version: 4.0.4
+                dataFields.put("model", Build.MODEL); //device model: Galaxy Nexus
+                dataFields.put("sdkVersion", Build.VERSION.SDK_INT); //sdk version/api level: 15
             }
 
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);
             device.put(IterableConstants.KEY_PLATFORM, platform);
-            device.put(IterableConstants.KEY_APPLICATIONNAME, applicationName);
-            device.put(IterableConstants.KEY_DATAFIELDS, dataFields);
+            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
+            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
 
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendRequest(IterableConstants.ENDPOINT_REGISTERDEVICETOKEN, requestJSON);
+        sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
     }
+
     /**
-     * Sends the request to Iterable.
+     * Sends the POST request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
      * @param resourcePath
      * @param json
      */
-    private void sendRequest(String resourcePath, JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json.toString());
+    private void sendPostRequest(String resourcePath, JSONObject json) {
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null);
         new IterableRequest().execute(request);
     }
 
+    /**
+     * Sends a GET request to Iterable.
+     * Performs network operations on an async thread instead of the main thread.
+     * @param resourcePath
+     * @param json
+     */
+    private void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
+        new IterableRequest().execute(request);
+    }
+
+    /**
+     * Adds the current email or userID to the json request.
+     * @param requestJSON
+     */
     private void addEmailOrUserIdToJson(JSONObject requestJSON) {
         try {
             if (_email != null) {
@@ -517,6 +743,33 @@ public class IterableApi {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Gets the advertisingId if available
+     * @return
+     */
+    private String getAdvertisingId() {
+        String advertisingId = null;
+        try {
+            Class adClass = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+            if (adClass != null) {
+                AdvertisingIdClient.Info advertisingIdInfo = AdvertisingIdClient.getAdvertisingIdInfo(_applicationContext);
+                if (advertisingIdInfo != null) {
+                    advertisingId = advertisingIdInfo.getId();
+                }
+            }
+        } catch (IOException e) {
+            IterableLogger.w(TAG, e.getMessage());
+        } catch (GooglePlayServicesNotAvailableException e) {
+            IterableLogger.w(TAG, e.getMessage());
+        } catch (GooglePlayServicesRepairableException e) {
+            IterableLogger.w(TAG, e.getMessage());
+        } catch (ClassNotFoundException e) {
+            IterableLogger.d(TAG, "ClassNotFoundException: Can't track ADID. " +
+                    "Check that play-services-ads is added to the dependencies.", e);
+        }
+        return advertisingId;
     }
 
 //---------------------------------------------------------------------------------------

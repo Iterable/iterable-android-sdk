@@ -17,6 +17,11 @@ class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData,
     private IterableGCMRegistrationData iterableGCMRegistrationData;
     private boolean disableAfterRegistration;
 
+    /**
+     * Generates a deviceRegistrationToken from GCM
+     * @param params
+     * @return registration token
+     */
     protected String doInBackground(IterableGCMRegistrationData... params) {
         String registrationToken = "";
 
@@ -52,6 +57,10 @@ class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData,
         return registrationToken;
     }
 
+    /**
+     * Executes the disable
+     * @param registrationToken
+     */
     @Override
     protected void onPostExecute(String registrationToken) {
         super.onPostExecute(registrationToken);
@@ -60,6 +69,10 @@ class IterablePushRegistrationGCM extends AsyncTask<IterableGCMRegistrationData,
         }
     }
 
+    /**
+     * Disables a device after
+     * @param registrationToken
+     */
     protected void disableOnRegistrationComplete(String registrationToken) {
         IterableApi.sharedInstance.disablePush(registrationToken);
     }

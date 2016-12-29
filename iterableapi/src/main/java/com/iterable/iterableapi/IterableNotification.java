@@ -25,13 +25,13 @@ public class IterableNotification extends NotificationCompat.Builder {
         super(context);
     }
 
-        /**
-         * Creates and returns an instance of IterableNotification.
-         * @param context
-         * @param extras
-         * @param classToOpen
-         * @return Returns null if the intent comes from an Iterable ghostPush
-         */
+    /**
+     * Creates and returns an instance of IterableNotification.
+     * @param context
+     * @param extras
+     * @param classToOpen
+     * @return Returns null if the intent comes from an Iterable ghostPush
+     */
     public static IterableNotification createNotification(Context context, Bundle extras, Class classToOpen) {
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName  = context.getString(stringId);
@@ -83,7 +83,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         }
 
         notificationBuilder.setContentIntent(notificationClickedIntent);
-        notificationBuilder.isGhostPush = IterableHelper.isGhostPush(extras);
+        notificationBuilder.isGhostPush = isGhostPush(extras);
 
         try {
             ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
@@ -160,5 +160,21 @@ public class IterableNotification extends NotificationCompat.Builder {
         }
 
         return iconId;
+    }
+
+    /**
+     * Returns if the given notification is a ghost/silent push notification
+     * @param extras
+     * @return
+     */
+    private static boolean isGhostPush(Bundle extras) {
+        boolean isGhostPush = false;
+        if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+            IterableNotificationData data = new IterableNotificationData(iterableData);
+            isGhostPush = data.getIsGhostPush();
+        }
+
+        return isGhostPush;
     }
 }

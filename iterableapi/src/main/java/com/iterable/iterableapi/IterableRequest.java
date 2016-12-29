@@ -1,15 +1,21 @@
 package com.iterable.iterableapi;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Iterator;
 
 /**
  * Async task to handle sending data to the Iterable server
@@ -20,6 +26,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String AUTHENTICATION_IO_EXCEPTION = "Received authentication challenge is null";
 
     static final String iterableBaseUrl = "https://api.iterable.com/api/";
+
     static String overrideUrl;
 
     static final int DEFAULT_TIMEOUT_MS = 10000;   //10 seconds
@@ -56,24 +63,51 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
             try {
                 String baseUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : iterableBaseUrl;
-                url = new URL(baseUrl + iterableApiRequest.resourcePath);
+                if (iterableApiRequest.requestType == IterableApiRequest.GET) {
+                    Uri.Builder builder = Uri.parse(baseUrl+iterableApiRequest.resourcePath).buildUpon();
+                    builder.appendQueryParameter(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
 
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setDoOutput(true);
-                urlConnection.setRequestMethod("POST");
+                    Iterator<?> keys = iterableApiRequest.json.keys();
+                    while( keys.hasNext() ) {
+                        String key = (String) keys.next();
+                        builder.appendQueryParameter(key, iterableApiRequest.json.getString(key));
+                    }
 
-                urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+                    url = new URL(builder.build().toString());
+                    urlConnection = (HttpURLConnection) url.openConnection();
 
-                urlConnection.setRequestProperty("Accept", "application/json");
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
+                    BufferedReader in = new BufferedReader(
+                            new InputStreamReader(urlConnection.getInputStream()));
+                    String inputLine;
+                    StringBuffer response = new StringBuffer();
 
-                OutputStream os = urlConnection.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-                writer.write(iterableApiRequest.json);
-                writer.close();
-                os.close();
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    in.close();
+
+                    requestResult = response.toString();
+
+                } else {
+                    url = new URL(baseUrl + iterableApiRequest.resourcePath);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setDoOutput(true);
+                    urlConnection.setRequestMethod(iterableApiRequest.requestType);
+
+                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+
+                    urlConnection.setRequestProperty("Accept", "application/json");
+                    urlConnection.setRequestProperty("Content-Type", "application/json");
+                    urlConnection.setRequestProperty(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
+
+                    OutputStream os = urlConnection.getOutputStream();
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                    writer.write(iterableApiRequest.json.toString());
+
+                    writer.close();
+                    os.close();
+                }
 
                 int responseCode = urlConnection.getResponseCode();
                 if (responseCode >= 400) {
@@ -112,6 +146,9 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             request.setRetryCount(retryCount + 1);
             request.execute(iterableApiRequest);
         }
+        if (iterableApiRequest.callback != null) {
+            iterableApiRequest.callback.execute(s);
+        }
         super.onPostExecute(s);
     }
 
@@ -121,14 +158,25 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
 }
 
+/**
+ *  Iterable Request object
+ */
 class IterableApiRequest {
+    static String GET = "GET";
+    static String POST = "POST";
+
     String apiKey = "";
     String resourcePath = "";
-    String json = "";
+    JSONObject json;
+    String requestType = "";
 
-    public IterableApiRequest(String apiKey, String resourcePath, String json){
+    IterableHelper.IterableActionHandler callback;
+
+    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, IterableHelper.IterableActionHandler callback){
         this.apiKey = apiKey;
         this.resourcePath = resourcePath;
         this.json = json;
+        this.requestType = requestType;
+        this.callback = callback;
     }
 }
