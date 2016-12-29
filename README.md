@@ -25,6 +25,10 @@ Congratulations, you've configured your mobile application to receive push notif
 
 See BinTray for the latest version of the Iterable Android SDK on [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK)
 
+#### InApp Notifications
+To display the user's InApp notifications call `spawnInAppNotification` with a defined `IterableActionHandler` callback handler. When a user clicks a button on the notification, the defined handler is called and passed the action name defined in the InApp template.
+
+InApp opens and button clicks are automatically tracked when the notification is called via `spawnInAppNotification`.
 
 # Additional Information
 
