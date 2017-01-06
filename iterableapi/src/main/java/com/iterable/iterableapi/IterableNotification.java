@@ -49,7 +49,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         mainIntentWithExtras.putExtras(extras);
         mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
-        PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, 0,
+        PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, (int) System.currentTimeMillis(),
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification notifPermissions = new Notification();
@@ -111,7 +111,7 @@ public class IterableNotification extends NotificationCompat.Builder {
      *                             if the IterableNotification passed in is null.
      */
     public static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
-        if ( !iterableNotification.isGhostPush) {
+        if (!iterableNotification.isGhostPush) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -167,7 +167,7 @@ public class IterableNotification extends NotificationCompat.Builder {
      * @param extras
      * @return
      */
-    private static boolean isGhostPush(Bundle extras) {
+    static boolean isGhostPush(Bundle extras) {
         boolean isGhostPush = false;
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
             String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);

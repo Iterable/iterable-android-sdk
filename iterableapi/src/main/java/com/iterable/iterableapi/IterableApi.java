@@ -101,7 +101,7 @@ public class IterableApi {
      */
     void setPayloadData(Intent intent) {
         Bundle extras = intent.getExtras();
-        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY) && !IterableNotification.isGhostPush(extras)) {
             setPayloadData(extras);
         }
     }

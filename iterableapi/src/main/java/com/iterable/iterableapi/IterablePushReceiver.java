@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 
 /**
  *
@@ -52,22 +53,25 @@ public class IterablePushReceiver extends BroadcastReceiver{
      */
     private void handlePushReceived(Context context, Intent intent) {
         if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
-            Context appContext = context.getApplicationContext();
-            PackageManager packageManager = appContext.getPackageManager();
-            Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
-            ComponentName componentPackageName = packageIntent.getComponent();
-            String mainClassName = componentPackageName.getClassName();
-            Class mainClass = null;
-            try {
-                mainClass = Class.forName(mainClassName);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+            Bundle extras =  intent.getExtras();
+            if (!IterableNotification.isGhostPush(extras)) {
+                Context appContext = context.getApplicationContext();
+                PackageManager packageManager = appContext.getPackageManager();
+                Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
+                ComponentName componentPackageName = packageIntent.getComponent();
+                String mainClassName = componentPackageName.getClassName();
+                Class mainClass = null;
+                try {
+                    mainClass = Class.forName(mainClassName);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                IterableNotification notificationBuilder = IterableNotification.createNotification(
+                        appContext, intent.getExtras(), mainClass);
+
+                IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
             }
-
-            IterableNotification notificationBuilder = IterableNotification.createNotification(
-                    appContext, intent.getExtras(), mainClass);
-
-            IterableNotification.postNotificationOnDevice(appContext, notificationBuilder);
         }
     }
 }
