@@ -451,7 +451,7 @@ public class IterableApi {
     /**
      * Disables the device from push notifications
      *
-     * @discussion  The disablePush call first calls registerForPush to obtain the device's registration token.
+     * The disablePush call first calls registerForPush to obtain the device's registration token.
      *              Then it calls the disablePush api endpoint.
      *
      * @param iterableAppId
