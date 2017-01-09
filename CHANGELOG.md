@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.1)
+ _Released on 2017-01-09_
+
+#### Fixed
+- fixed overwritten pushnotification metadata on subsequent notifications
+
 ## [2.1.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.0)
  _Released on 2016-12-28_
 
