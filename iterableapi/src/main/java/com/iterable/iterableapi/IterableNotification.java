@@ -20,6 +20,8 @@ import java.util.Date;
 public class IterableNotification extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
     private boolean isGhostPush;
+    int requestCode;
+    IterableNotificationData iterableNotificationData;
 
     protected IterableNotification(Context context) {
         super(context);
@@ -37,11 +39,18 @@ public class IterableNotification extends NotificationCompat.Builder {
         String applicationName  = context.getString(stringId);
         String notificationBody = null;
         String soundName = null;
+        String messageId = null;
+
+        IterableNotification notificationBuilder = new IterableNotification(context);
 
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-            notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY, notificationBody);
             applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
-            soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND, soundName);
+            notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
+            soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
+
+            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+            notificationBuilder.iterableNotificationData = new IterableNotificationData(iterableData);
+            messageId = notificationBuilder.iterableNotificationData.getMessageId();
         }
 
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
@@ -49,13 +58,9 @@ public class IterableNotification extends NotificationCompat.Builder {
         mainIntentWithExtras.putExtras(extras);
         mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
-        PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, (int) System.currentTimeMillis(),
-                mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
-
         Notification notifPermissions = new Notification();
         notifPermissions.defaults |= Notification.DEFAULT_LIGHTS;
 
-        IterableNotification notificationBuilder = new IterableNotification(context);
         notificationBuilder
             .setSmallIcon(getIconId(context))
             .setTicker(applicationName).setWhen(0)
@@ -82,6 +87,13 @@ public class IterableNotification extends NotificationCompat.Builder {
             notifPermissions.defaults |= Notification.DEFAULT_SOUND;
         }
 
+        notificationBuilder.requestCode = (int) System.currentTimeMillis();
+        if (messageId != null) {
+            notificationBuilder.requestCode = messageId.hashCode();
+        }
+        PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
+                mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
+
         notificationBuilder.setContentIntent(notificationClickedIntent);
         notificationBuilder.isGhostPush = isGhostPush(extras);
 
@@ -96,7 +108,6 @@ public class IterableNotification extends NotificationCompat.Builder {
         if (pm.checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
             notifPermissions.defaults |= Notification.DEFAULT_VIBRATE;
         }
-
 
         notificationBuilder.setDefaults(notifPermissions.defaults);
 
@@ -114,11 +125,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         if (!iterableNotification.isGhostPush) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-            long dateInMilli = new Date().getTime();
-            int notifID = (int) (dateInMilli % Integer.MAX_VALUE);
-
-            mNotificationManager.notify(notifID, iterableNotification.build());
+            mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
         }
     }
 
