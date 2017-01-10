@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.2)
+ _Released on 2017-01-09_
+
+#### Changed
+- Updated the PendingIntent request code to use the messageId instead of the current timestamp.
+
 ## [2.1.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.1)
  _Released on 2017-01-09_
 
