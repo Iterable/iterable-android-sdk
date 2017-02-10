@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -253,6 +254,15 @@ public class IterableApi {
         sharedInstance.setDebugMode(debugMode);
 
         return sharedInstance;
+    }
+
+    public static void getAndTrackDeeplink(String uri, IterableHelper.IterableActionHandler onCallback) {
+        if (!uri.isEmpty()) {
+            IterableApiRequest request = new IterableApiRequest(null, uri, null, IterableApiRequest.REDIRECT, onCallback);
+            new IterableRequest().execute(request);
+        } else {
+            onCallback.execute("");
+        }
     }
 
     /**

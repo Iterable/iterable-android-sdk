@@ -88,6 +88,32 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     requestResult = response.toString();
 
+                } else if (iterableApiRequest.requestType== IterableApiRequest.REDIRECT) {
+                    url = new URL(iterableApiRequest.resourcePath);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setReadTimeout(5000);
+                    urlConnection.setInstanceFollowRedirects(false);
+
+                    boolean redirect = false;
+
+                    // normally, 3xx is redirect
+                    int status = urlConnection.getResponseCode(); //TODO: does this get called twice after the case statements?
+                    if (status != HttpURLConnection.HTTP_OK) {
+                        if (status == HttpURLConnection.HTTP_MOVED_TEMP
+                                || status == HttpURLConnection.HTTP_MOVED_PERM
+                                || status == HttpURLConnection.HTTP_SEE_OTHER)
+                            redirect = true;
+                    }
+
+                    if (redirect) {
+                        // get redirect url from "location" header field
+                        String newUrl = urlConnection.getHeaderField("Location");
+                        requestResult = newUrl;
+
+                    } else {
+                        //pass back original url
+                        requestResult = url.toString();
+                    }
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -145,8 +171,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             IterableRequest request = new IterableRequest();
             request.setRetryCount(retryCount + 1);
             request.execute(iterableApiRequest);
-        }
-        if (iterableApiRequest.callback != null) {
+        } else if (iterableApiRequest.callback != null) {
             iterableApiRequest.callback.execute(s);
         }
         super.onPostExecute(s);
@@ -164,6 +189,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 class IterableApiRequest {
     static String GET = "GET";
     static String POST = "POST";
+    static String REDIRECT = "REDIRECT";
 
     String apiKey = "";
     String resourcePath = "";
