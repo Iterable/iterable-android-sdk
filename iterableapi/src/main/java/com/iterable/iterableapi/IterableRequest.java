@@ -126,12 +126,14 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     requestResult = scanner.hasNext() ? scanner.next() : "";
                     IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
                     IterableLogger.d(TAG, requestResult);
-                } else if (responseCode >= 300) {
-                    String newUrl = urlConnection.getHeaderField("Location");
-                    requestResult = newUrl;
                 } else if (iterableApiRequest.requestType== IterableApiRequest.REDIRECT) {
-                    //pass back original url
-                    requestResult = url.toString();
+                    if (responseCode >= 300) {
+                        String newUrl = urlConnection.getHeaderField("Location");
+                        requestResult = newUrl;
+                    } else {
+                        //pass back original url
+                        requestResult = url.toString();
+                    }
                 }
             } catch (JSONException e) {
                 IterableLogger.e(TAG, e.getMessage());
