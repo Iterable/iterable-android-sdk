@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -258,8 +260,14 @@ public class IterableApi {
 
     public static void getAndTrackDeeplink(String uri, IterableHelper.IterableActionHandler onCallback) {
         if (!uri.isEmpty()) {
-            IterableApiRequest request = new IterableApiRequest(null, uri, null, IterableApiRequest.REDIRECT, onCallback);
-            new IterableRequest().execute(request);
+            Pattern r = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
+            Matcher m = r.matcher(uri);
+            if (m.find( )) {
+                IterableApiRequest request = new IterableApiRequest(null, uri, null, IterableApiRequest.REDIRECT, onCallback);
+                new IterableRequest().execute(request);
+            } else {
+                onCallback.execute(uri);
+            }
         } else {
             onCallback.execute("");
         }

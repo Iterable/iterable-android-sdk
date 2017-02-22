@@ -93,25 +93,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection = (HttpURLConnection) url.openConnection();
                     urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
                     urlConnection.setInstanceFollowRedirects(false);
-
-                    boolean redirect = false;
-                    int status = urlConnection.getResponseCode(); //TODO: does this get called twice after the case statements?
-                    if (status != HttpURLConnection.HTTP_OK) {
-                        if (status == HttpURLConnection.HTTP_MOVED_TEMP
-                                || status == HttpURLConnection.HTTP_MOVED_PERM
-                                || status == HttpURLConnection.HTTP_SEE_OTHER)
-                            redirect = true;
-                    }
-
-                    if (redirect) {
-                        // get redirect url from "location" header field
-                        String newUrl = urlConnection.getHeaderField("Location");
-                        requestResult = newUrl;
-
-                    } else {
-                        //pass back original url
-                        requestResult = url.toString();
-                    }
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -145,6 +126,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     requestResult = scanner.hasNext() ? scanner.next() : "";
                     IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
                     IterableLogger.d(TAG, requestResult);
+                } else if (responseCode >= 300) {
+                    String newUrl = urlConnection.getHeaderField("Location");
+                    requestResult = newUrl;
+                } else if (iterableApiRequest.requestType== IterableApiRequest.REDIRECT) {
+                    //pass back original url
+                    requestResult = url.toString();
                 }
             } catch (JSONException e) {
                 IterableLogger.e(TAG, e.getMessage());
