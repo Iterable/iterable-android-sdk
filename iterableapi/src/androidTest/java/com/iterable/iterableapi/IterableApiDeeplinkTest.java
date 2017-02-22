@@ -14,7 +14,7 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
         super(Application.class);
     }
 
-    public final String ITERABLE_IN_APP_TYPE_TOP     = "bad uuid";
+    public final String ITERABLE_BAD_UUID_REQUEST     = "bad uuid";
 
     @Override
     public void setUp() {
@@ -172,13 +172,13 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
     public void testDNS() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
-            final String requestString = "http://links.iterable.com/a/xxx?_e=xx%40iterable.com&_m=xxx";
-            final String redirectString = "http://links.iterable.com/a/xxx?_e=xx%40iterable.com&_m=xxx";
-            final String badUuid = "bad uuid xxx";
+            final String userId = "xxx";
+            final String requestString = "http://links.iterable.com/a/"+userId+"?_e=email&_m=123";
+            final String badUuid = ITERABLE_BAD_UUID_REQUEST + " " + userId;
             IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String result) {
-                    assertFalse(redirectString.equalsIgnoreCase(result));
+                    assertFalse(requestString.equalsIgnoreCase(result));
                     assertEquals(badUuid, result);
                     signal.countDown();
                 }
