@@ -88,7 +88,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     requestResult = response.toString();
 
-                } else if (iterableApiRequest.requestType== IterableApiRequest.REDIRECT) {
+                } else if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
                     url = new URL(iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
                     urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
@@ -126,9 +126,9 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     requestResult = scanner.hasNext() ? scanner.next() : "";
                     IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
                     IterableLogger.d(TAG, requestResult);
-                } else if (iterableApiRequest.requestType== IterableApiRequest.REDIRECT) {
+                } else if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
                     if (responseCode >= 300) {
-                        String newUrl = urlConnection.getHeaderField("Location");
+                        String newUrl = urlConnection.getHeaderField(IterableConstants.LOCATION_HEADER_FIELD);
                         requestResult = newUrl;
                     } else {
                         //pass back original url

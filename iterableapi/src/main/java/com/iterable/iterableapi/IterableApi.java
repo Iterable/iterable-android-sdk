@@ -41,6 +41,8 @@ public class IterableApi {
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
 
+    private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
+
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -258,10 +260,15 @@ public class IterableApi {
         return sharedInstance;
     }
 
+    /**
+     * Tracks a click on the uri if it is an iterable link.
+     * @param uri the
+     * @param onCallback Calls the callback handler with the destination location
+     *                   or the original url if it is not a interable link.
+     */
     public static void getAndTrackDeeplink(String uri, IterableHelper.IterableActionHandler onCallback) {
-        if (!uri.isEmpty()) {
-            Pattern r = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
-            Matcher m = r.matcher(uri);
+        if (uri != null) {
+            Matcher m = deeplinkPattern.matcher(uri);
             if (m.find( )) {
                 IterableApiRequest request = new IterableApiRequest(null, uri, null, IterableApiRequest.REDIRECT, onCallback);
                 new IterableRequest().execute(request);
@@ -269,7 +276,7 @@ public class IterableApi {
                 onCallback.execute(uri);
             }
         } else {
-            onCallback.execute("");
+            onCallback.execute(null);
         }
     }
 

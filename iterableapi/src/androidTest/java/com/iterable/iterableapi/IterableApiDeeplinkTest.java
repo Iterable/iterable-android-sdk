@@ -105,6 +105,24 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
         }
     }
 
+    public void testNullRedirect() throws Exception {
+        final CountDownLatch signal = new CountDownLatch(1);
+        try {
+            final String requestString = null;
+            IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
+                @Override
+                public void execute(String result) {
+                    assertEquals(requestString, result);
+                    signal.countDown();
+                }
+            };
+            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            signal.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void testMultiRedirectNoRewrite() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
