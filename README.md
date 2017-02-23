@@ -40,6 +40,24 @@ Also see our [push notification setup FAQs](http://support.iterable.com/hc/en-us
 
 See our [Deeplinking Setup Guide] (https://support.iterable.com/hc/en-us/articles/211676923)
 
+From your application's [onCreate] (https://developer.android.com/reference/android/app/Activity.html#onCreate(android.os.Bundle)) call `getAndTrackDeeplink` along with a callback to handle the destination deeplink url.
+
+```java
+protected void onCreate(Bundle savedInstanceState) {
+	String dataUri = this.getIntent().getDataString();
+	IterableHelper.IterableActionHandler clickCallback = 
+		new IterableHelper.IterableActionHandler(){
+			@Override
+			public void execute(String result) {
+			    Log.d("HandleDeeplink", "Redirected to: "+ result);
+			    //handle deeplink here
+			}
+		};
+	
+	IterableApi.getAndTrackDeeplink(dataUri, clickCallback);
+}
+```
+
 # License
 
 The MIT License

@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.3)
+ _Released on 2017-02-22_
+
+#### Added
+- Added support for Android deeplink tracking
+- `getAndTrackDeeplink` tracks a click and returns the destination url.
+
 ## [2.1.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.2)
  _Released on 2017-01-09_
 
