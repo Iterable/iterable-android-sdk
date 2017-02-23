@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.net.Uri;
 import android.os.AsyncTask;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -23,15 +24,14 @@ import java.util.Iterator;
  */
 class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
-    static final String AUTHENTICATION_IO_EXCEPTION = "Received authentication challenge is null";
 
     static final String iterableBaseUrl = "https://api.iterable.com/api/";
 
     static String overrideUrl;
 
-    static final int DEFAULT_TIMEOUT_MS = 10000;   //10 seconds
-    static final long RETRY_DELAY_MS = 10000;      //10 seconds
-    static final int MAX_RETRY_COUNT = 3;
+    static final int DEFAULT_TIMEOUT_MS = 1000;   //1 seconds
+    static final long RETRY_DELAY_MS = 2000;      //2 seconds
+    static final int MAX_RETRY_COUNT = 5;
 
     int retryCount = 0;
     IterableApiRequest iterableApiRequest;
@@ -48,7 +48,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             iterableApiRequest = params[0];
         }
 
-        if (retryCount > 0) {
+        if (retryCount > 2) {
             try {
                 Thread.sleep(RETRY_DELAY_MS * retryCount);
             } catch (InterruptedException e) {
@@ -88,6 +88,11 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     requestResult = response.toString();
 
+                } else if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
+                    url = new URL(iterableApiRequest.resourcePath);
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setInstanceFollowRedirects(false);
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -111,25 +116,29 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                 int responseCode = urlConnection.getResponseCode();
                 if (responseCode >= 400) {
+                    if (responseCode >= 500) {
+                        retryRequest = true;
+                    } else if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
+                        IterableLogger.d(TAG, "Invalid API Key");
+                    }
                     InputStream errorStream = urlConnection.getErrorStream();
                     java.util.Scanner scanner = new java.util.Scanner(errorStream).useDelimiter("\\A");
                     requestResult = scanner.hasNext() ? scanner.next() : "";
                     IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
                     IterableLogger.d(TAG, requestResult);
+                } else if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
+                    if (responseCode >= 300) {
+                        String newUrl = urlConnection.getHeaderField(IterableConstants.LOCATION_HEADER_FIELD);
+                        requestResult = newUrl;
+                    } else {
+                        //pass back original url
+                        requestResult = url.toString();
+                    }
                 }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+            } catch (JSONException e) {
+                IterableLogger.e(TAG, e.getMessage());
             } catch (IOException e) {
-                String message = e.getMessage();
-                if (message.equals(AUTHENTICATION_IO_EXCEPTION)) {
-                    IterableLogger.d(TAG, "Invalid API Key");
-                } else {
-                    retryRequest = true;
-                }
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-                retryRequest = true;
+                IterableLogger.e(TAG, e.getMessage());
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -145,8 +154,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             IterableRequest request = new IterableRequest();
             request.setRetryCount(retryCount + 1);
             request.execute(iterableApiRequest);
-        }
-        if (iterableApiRequest.callback != null) {
+        } else if (iterableApiRequest.callback != null) {
             iterableApiRequest.callback.execute(s);
         }
         super.onPostExecute(s);
@@ -164,6 +172,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 class IterableApiRequest {
     static String GET = "GET";
     static String POST = "POST";
+    static String REDIRECT = "REDIRECT";
 
     String apiKey = "";
     String resourcePath = "";

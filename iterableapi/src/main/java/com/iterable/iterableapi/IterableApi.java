@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -18,6 +19,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -37,6 +40,8 @@ public class IterableApi {
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
+
+    private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
 
 //---------------------------------------------------------------------------------------
 //endregion
@@ -253,6 +258,26 @@ public class IterableApi {
         sharedInstance.setDebugMode(debugMode);
 
         return sharedInstance;
+    }
+
+    /**
+     * Tracks a click on the uri if it is an iterable link.
+     * @param uri the
+     * @param onCallback Calls the callback handler with the destination location
+     *                   or the original url if it is not a interable link.
+     */
+    public static void getAndTrackDeeplink(String uri, IterableHelper.IterableActionHandler onCallback) {
+        if (uri != null) {
+            Matcher m = deeplinkPattern.matcher(uri);
+            if (m.find( )) {
+                IterableApiRequest request = new IterableApiRequest(null, uri, null, IterableApiRequest.REDIRECT, onCallback);
+                new IterableRequest().execute(request);
+            } else {
+                onCallback.execute(uri);
+            }
+        } else {
+            onCallback.execute(null);
+        }
     }
 
     /**
