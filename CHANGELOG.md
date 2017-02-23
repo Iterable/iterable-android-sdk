@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.4)
+ _Released on 2017-02-23_
+
+#### Fixed
+- fixed uploaded pom file
+
 ## [2.1.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.3)
  _Released on 2017-02-22_
 

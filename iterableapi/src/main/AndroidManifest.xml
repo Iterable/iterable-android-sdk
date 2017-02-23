@@ -3,8 +3,7 @@
 
     <application
         android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:icon="@drawable/common_google_signin_btn_icon_dark">
+        android:supportsRtl="true">
 
     </application>
 
