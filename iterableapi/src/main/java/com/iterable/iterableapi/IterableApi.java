@@ -4,13 +4,16 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.google.android.gms.iid.InstanceID;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,7 +21,14 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -313,13 +323,17 @@ public class IterableApi {
     }
 
     /**
-     * Registers an existing GCM device token with Iterable.
+     * Registers an existing device token with Iterable.
      * Recommended to use registerForPush if you do not already have a deviceToken
      * @param applicationName
      * @param token
      */
-    public void registerDeviceToken(String applicationName, String token) {
-        registerDeviceToken(applicationName, token, null);
+    public void registerDeviceToken(final String applicationName, final String token) {
+        new Thread(new Runnable() {
+            public void run() {
+            registerDeviceToken(applicationName, token, null);
+            }
+        }).start();
     }
 
     /**
@@ -470,20 +484,45 @@ public class IterableApi {
      * @param gcmProjectNumber
      */
     public void registerForPush(String iterableAppId, String gcmProjectNumber) {
-        registerForPush(iterableAppId, gcmProjectNumber, false);
+        registerForPush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+    }
+
+    /**
+     * Registers for push notifications.
+     * @param iterableAppId
+     * @param projectNumber
+     * @param pushServicePlatform
+     */
+    public void registerForPush(String iterableAppId, String projectNumber, String pushServicePlatform) {
+        IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        new IterablePushRegistration().execute(data);
     }
 
     /**
      * Disables the device from push notifications
      *
-     * The disablePush call first calls registerForPush to obtain the device's registration token.
-     *              Then it calls the disablePush api endpoint.
+     * The disablePush call
      *
      * @param iterableAppId
      * @param gcmProjectNumber
      */
     public void disablePush(String iterableAppId, String gcmProjectNumber) {
-        registerForPush(iterableAppId, gcmProjectNumber, true);
+        disablePush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+    }
+
+    /**
+     * Disables the device from push notifications
+     *
+     * The disablePush call
+     *
+     * @param iterableAppId
+     * @param projectNumber
+     * @param pushServicePlatform
+     */
+    public void disablePush(String iterableAppId, String projectNumber, String pushServicePlatform) {
+
+        IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        new IterablePushRegistration().execute(data);
     }
 
     /**
@@ -607,21 +646,6 @@ public class IterableApi {
     }
 
     /**
-     * Registers the device for push notifications.
-     * @param iterableAppId
-     * @param gcmProjectNumber
-     * @param disableAfterRegistration
-     */
-    protected void registerForPush(String iterableAppId, String gcmProjectNumber, boolean disableAfterRegistration) {
-        Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
-        pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_APP_ID, iterableAppId);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_GCM_PROJECT_NUMBER, gcmProjectNumber);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
-        _applicationContext.sendBroadcast(pushRegistrationIntent);
-    }
-
-    /**
      * Tracks when a push notification is opened on device.
      * @param campaignId
      * @param templateId
@@ -643,7 +667,7 @@ public class IterableApi {
     }
 
     /**
-     * Internal api call made from IterablePushRegistrationGCM after a registrationToken is obtained.
+     * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
      * @param token
      */
     protected void disablePush(String token) {
