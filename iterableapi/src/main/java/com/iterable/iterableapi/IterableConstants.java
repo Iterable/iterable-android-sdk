@@ -47,7 +47,7 @@ public final class IterableConstants {
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
     public static final String PUSH_DISABLE_AFTER_REGISTRATION  = "DisableAfterRegistration";
 
-    public static final String MESSAGING_PUSH_SERVICE_PLATFORM = "PushServicePlatform";
+    public static final String MESSAGING_PUSH_SERVICE_PLATFORM  = "PushServicePlatform";
     public static final String MESSAGING_PLATFORM_GOOGLE        = "GCM";
     public static final String MESSAGING_PLATFORM_FIREBASE      = "FCM";
     public static final String MESSAGING_PLATFORM_AMAZON        = "ADM";
@@ -58,6 +58,7 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_TITLE  = "title";
     public static final String ITERABLE_DATA_SOUND  = "sound";
 
+    public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";
     public static final String INSTANCE_ID_CLASS        = "com.google.android.gms.iid.InstanceID";
     public static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
     public static final String ICON_FOLDER_IDENTIFIER   = "drawable";

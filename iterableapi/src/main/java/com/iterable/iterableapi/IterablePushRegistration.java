@@ -67,8 +67,8 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
 
         if (applicationContext != null) {
             try {
-                int fbUrl = applicationContext.getResources().getIdentifier("firebase_database_url", "string", applicationContext.getPackageName());
-                if (fbUrl != 0 && messagingPlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE)) {
+                int firebaseResourceId = applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, "string", applicationContext.getPackageName());
+                if (firebaseResourceId != 0 && messagingPlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE)) {
                     //FCM
                     Class fireBaseMessaging = Class.forName(IterableConstants.FIREBASE_MESSAGING_CLASS);
                     if (fireBaseMessaging != null) {

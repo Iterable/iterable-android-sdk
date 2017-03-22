@@ -511,7 +511,6 @@ public class IterableApi {
      * @param pushServicePlatform
      */
     public void disablePush(String iterableAppId, String projectNumber, String pushServicePlatform) {
-
         IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
