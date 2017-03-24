@@ -35,10 +35,6 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
      * @throws Exception
      */
     public void testGetGCMToken() throws Exception {
-        IterableApi iterableApi = IterableApi.sharedInstanceWithApiKey(appContext, "fake_key", "test_email");
-        iterableApi.getMainActivityContext();
-        iterableApi.registerForPush("","");
-
         IterablePushRegistration registration = new IterablePushRegistration();
         String token = registration.getDeviceToken(senderID, IterableConstants.MESSAGING_PLATFORM_GOOGLE, "test_application_GCM", false);
         assertNotNull(token);
