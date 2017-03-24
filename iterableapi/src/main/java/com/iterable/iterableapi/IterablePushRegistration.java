@@ -61,13 +61,13 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
      * @param applicationName
      * @return
      */
-    protected String getDeviceToken(String projectNumber, String messagingPlatform, String applicationName, boolean reRegisterOnTokenRefresh) {
+    String getDeviceToken(String projectNumber, String messagingPlatform, String applicationName, boolean reRegisterOnTokenRefresh) {
         String registrationToken = null;
         Context applicationContext = IterableApi.sharedInstance.getMainActivityContext();
 
         if (applicationContext != null) {
             try {
-                int firebaseResourceId = applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, "string", applicationContext.getPackageName());
+                int firebaseResourceId = getFirebaseResouceId(applicationContext);
                 if (firebaseResourceId != 0 && messagingPlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE)) {
                     //FCM
                     Class fireBaseMessaging = Class.forName(IterableConstants.FIREBASE_MESSAGING_CLASS);
@@ -108,6 +108,11 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
             IterableLogger.e(TAG, "MainActivity Context is null");
         }
         return registrationToken;
+    }
+
+    static int getFirebaseResouceId(Context applicationContext) {
+        return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+
     }
 }
 

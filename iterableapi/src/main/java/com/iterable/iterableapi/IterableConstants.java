@@ -67,6 +67,7 @@ public final class IterableConstants {
     public static final String DEFAULT_SOUND            = "default";
     public static final String SOUND_FOLDER_IDENTIFIER  = "raw";
     public static final String ANDROID_RESOURCE_PATH    = "android.resource://";
+    public static final String ANDROID_STRING    = "string";
 
     public static final String ITBL_DEEPLINK_IDENTIFIER = "/a/[A-Za-z0-9]+";
     public static final String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
