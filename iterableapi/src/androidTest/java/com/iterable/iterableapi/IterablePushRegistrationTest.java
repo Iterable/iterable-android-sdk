@@ -36,8 +36,8 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
      */
     public void testGetGCMToken() throws Exception {
         IterablePushRegistration registration = new IterablePushRegistration();
-        String token = registration.getDeviceToken(senderID, IterableConstants.MESSAGING_PLATFORM_GOOGLE, "test_application_GCM", false);
-        assertNotNull(token);
+        IterablePushRegistration.PushRegistrationObject registrationObject = registration.getDeviceToken(senderID, IterableConstants.MESSAGING_PLATFORM_GOOGLE, "test_application_GCM", false);
+        assertNotNull(registrationObject.token);
 
         SharedPreferences sharedPref = appContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
         String pushIdPref = sharedPref.getString(IterableConstants.PUSH_APP_ID, null);
@@ -53,8 +53,8 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
         IterablePushRegistration registration = new IterablePushRegistration();
         SharedPreferences sharedPref;
         String pushIdPref;
-        String token = registration.getDeviceToken(senderID, IterableConstants.MESSAGING_PLATFORM_FIREBASE, "test_application_FCM", false);
-        assertNotNull(token);
+        IterablePushRegistration.PushRegistrationObject registrationObject = registration.getDeviceToken(senderID, IterableConstants.MESSAGING_PLATFORM_FIREBASE, "test_application_FCM", false);
+        assertNotNull(registrationObject.token);
         if (IterablePushRegistration.getFirebaseResouceId(appContext) != 0) {
             //FCM registration
             sharedPref = appContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);

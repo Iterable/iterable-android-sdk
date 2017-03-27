@@ -26,20 +26,20 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
      * @return registration token
      */
     protected String doInBackground(IterablePushRegistrationData... params) {
-        String registrationToken = null;
+        PushRegistrationObject PushRegistrationObject = null;
         iterablePushRegistrationData = params[0];
         if (iterablePushRegistrationData.iterableAppId != null) {
             if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
-                registrationToken = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, true);
-                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, registrationToken);
+                PushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, true);
+                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, PushRegistrationObject.token, iterablePushRegistrationData.messagingPlatform);
             } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
-                registrationToken = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, false);
-                IterableApi.sharedInstance.disablePush(registrationToken);
+                PushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, false);
+                IterableApi.sharedInstance.disablePush(PushRegistrationObject.token);
             }
         } else {
             IterableLogger.e("IterablePush", "The IterableAppId has not been added");
         }
-        return registrationToken;
+        return PushRegistrationObject.token;
     }
 
     /**
@@ -59,10 +59,10 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
      * @param projectNumber
      * @param messagingPlatform
      * @param applicationName
-     * @return
+     * @return PushRegistrationObject
      */
-    String getDeviceToken(String projectNumber, String messagingPlatform, String applicationName, boolean reRegisterOnTokenRefresh) {
-        String registrationToken = null;
+    PushRegistrationObject getDeviceToken(String projectNumber, String messagingPlatform, String applicationName, boolean reRegisterOnTokenRefresh) {
+        PushRegistrationObject registrationObject = null;
         Context applicationContext = IterableApi.sharedInstance.getMainActivityContext();
 
         if (applicationContext != null) {
@@ -88,14 +88,14 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                             //IterableFirebaseInstanceIDService.onTokenRefresh gets called after delete
                             instanceID.deleteInstanceId();
                         }
-                        registrationToken = instanceID.getToken();
+                        registrationObject = new PushRegistrationObject(instanceID.getToken(), IterableConstants.MESSAGING_PLATFORM_FIREBASE);
                     }
                 } else {
                     //GCM
                     Class instanceIdClass = Class.forName(IterableConstants.INSTANCE_ID_CLASS);
                     if (instanceIdClass != null) {
                         InstanceID instanceID = InstanceID.getInstance(applicationContext);
-                        registrationToken = instanceID.getToken(projectNumber, GoogleCloudMessaging.INSTANCE_ID_SCOPE);
+                        registrationObject = new PushRegistrationObject(instanceID.getToken(projectNumber, GoogleCloudMessaging.INSTANCE_ID_SCOPE), IterableConstants.MESSAGING_PLATFORM_GOOGLE);
                     }
                 }
             } catch (ClassNotFoundException e) {
@@ -107,12 +107,21 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
         } else{
             IterableLogger.e(TAG, "MainActivity Context is null");
         }
-        return registrationToken;
+        return registrationObject;
     }
 
     static int getFirebaseResouceId(Context applicationContext) {
         return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+    }
 
+    class PushRegistrationObject {
+        String token;
+        String messagingPlatform;
+
+        public PushRegistrationObject(String token, String messagingPlatform){
+            this.token = token;
+            this.messagingPlatform = messagingPlatform;
+        }
     }
 }
 

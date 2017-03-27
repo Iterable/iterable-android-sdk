@@ -317,11 +317,22 @@ public class IterableApi {
      * @param applicationName
      * @param token
      */
-    public void registerDeviceToken(final String applicationName, final String token) {
+    public void registerDeviceToken(String applicationName, String token) {
+        registerDeviceToken(applicationName, token, null);
+    }
+
+    /**
+     * Registers an existing device token with Iterable.
+     * Recommended to use registerForPush if you do not already have a deviceToken
+     * @param applicationName
+     * @param token
+     * @param pushServicePlatform
+     */
+    public void registerDeviceToken(final String applicationName, final String token, final String pushServicePlatform) {
         if (token != null) {
             new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(applicationName, token, null);
+                    registerDeviceToken(applicationName, token, pushServicePlatform, null);
                 }
             }).start();
         }
@@ -712,9 +723,10 @@ public class IterableApi {
      * Registers the GCM registration ID with Iterable.
      * @param applicationName
      * @param token
+     * @param pushServicePlatform
      * @param dataFields
      */
-    private void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
+    private void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
         String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
 
         JSONObject requestJSON = new JSONObject();
@@ -723,14 +735,17 @@ public class IterableApi {
 
             if (dataFields == null) {
                 dataFields = new JSONObject();
-                dataFields.put("brand", Build.BRAND); //brand: google
-                dataFields.put("manufacturer", Build.MANUFACTURER); //manufacturer: samsung
-                dataFields.putOpt("advertisingId", getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-                dataFields.put("systemName", Build.DEVICE); //device name: toro
-                dataFields.put("systemVersion", Build.VERSION.RELEASE); //version: 4.0.4
-                dataFields.put("model", Build.MODEL); //device model: Galaxy Nexus
-                dataFields.put("sdkVersion", Build.VERSION.SDK_INT); //sdk version/api level: 15
             }
+            if (pushServicePlatform != null) {
+                dataFields.put("firebase", pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+            }
+            dataFields.put("brand", Build.BRAND); //brand: google
+            dataFields.put("manufacturer", Build.MANUFACTURER); //manufacturer: samsung
+            dataFields.putOpt("advertisingId", getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+            dataFields.put("systemName", Build.DEVICE); //device name: toro
+            dataFields.put("systemVersion", Build.VERSION.RELEASE); //version: 4.0.4
+            dataFields.put("model", Build.MODEL); //device model: Galaxy Nexus
+            dataFields.put("sdkVersion", Build.VERSION.SDK_INT); //sdk version/api level: 15
 
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);
