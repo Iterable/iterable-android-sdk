@@ -726,7 +726,7 @@ public class IterableApi {
      * @param pushServicePlatform
      * @param dataFields
      */
-    private void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
+    public void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
         String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
 
         JSONObject requestJSON = new JSONObject();

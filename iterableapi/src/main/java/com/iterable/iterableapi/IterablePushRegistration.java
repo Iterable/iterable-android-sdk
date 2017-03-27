@@ -8,6 +8,9 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.iid.InstanceID;
 import com.google.firebase.iid.FirebaseInstanceId;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 
 /**
@@ -26,20 +29,26 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
      * @return registration token
      */
     protected String doInBackground(IterablePushRegistrationData... params) {
-        PushRegistrationObject PushRegistrationObject = null;
+        PushRegistrationObject pushRegistrationObject = null;
         iterablePushRegistrationData = params[0];
         if (iterablePushRegistrationData.iterableAppId != null) {
             if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
-                PushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, true);
-                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, PushRegistrationObject.token, iterablePushRegistrationData.messagingPlatform);
+                pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, true);
+                JSONObject data = new JSONObject();
+                try {
+                    data.put("TokenPlatformType", pushRegistrationObject.messagingPlatform);
+                } catch (JSONException e) {
+                    IterableLogger.e(TAG, e.toString());
+                }
+                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, pushRegistrationObject.token, iterablePushRegistrationData.messagingPlatform, data);
             } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
-                PushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, false);
-                IterableApi.sharedInstance.disablePush(PushRegistrationObject.token);
+                pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, false);
+                IterableApi.sharedInstance.disablePush(pushRegistrationObject.token);
             }
         } else {
             IterableLogger.e("IterablePush", "The IterableAppId has not been added");
         }
-        return PushRegistrationObject.token;
+        return pushRegistrationObject.token;
     }
 
     /**

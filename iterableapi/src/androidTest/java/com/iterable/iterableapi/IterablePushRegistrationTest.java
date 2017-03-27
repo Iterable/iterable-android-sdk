@@ -38,6 +38,7 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
         IterablePushRegistration registration = new IterablePushRegistration();
         IterablePushRegistration.PushRegistrationObject registrationObject = registration.getDeviceToken(senderID, IterableConstants.MESSAGING_PLATFORM_GOOGLE, "test_application_GCM", false);
         assertNotNull(registrationObject.token);
+        assertEquals(IterableConstants.MESSAGING_PLATFORM_GOOGLE, registrationObject.messagingPlatform);
 
         SharedPreferences sharedPref = appContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
         String pushIdPref = sharedPref.getString(IterableConstants.PUSH_APP_ID, null);
@@ -60,12 +61,14 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
             sharedPref = appContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
             pushIdPref = sharedPref.getString(IterableConstants.PUSH_APP_ID, null);
             assertNotNull(pushIdPref);
+            assertEquals(IterableConstants.MESSAGING_PLATFORM_FIREBASE, registrationObject.messagingPlatform);
 
         } else {
             //GCM registration
             sharedPref = appContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
             pushIdPref = sharedPref.getString(IterableConstants.PUSH_APP_ID, null);
             assertNull(pushIdPref);
+            assertEquals(IterableConstants.MESSAGING_PLATFORM_GOOGLE, registrationObject.messagingPlatform);
         }
     }
 }
