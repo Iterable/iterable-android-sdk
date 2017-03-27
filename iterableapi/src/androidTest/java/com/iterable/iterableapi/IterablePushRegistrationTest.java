@@ -16,7 +16,7 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
 
     Context appContext;
     IterableApi iterableApi;
-    String senderID = "668868396391";
+    String senderID = "111111111111";
 
     public void setUp() throws Exception {
         super.setUp();
