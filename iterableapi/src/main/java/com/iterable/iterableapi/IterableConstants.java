@@ -58,9 +58,16 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_TITLE  = "title";
     public static final String ITERABLE_DATA_SOUND  = "sound";
 
-    public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";
+    //Device
+    public static final String DEVICE_BRAND             = "brand";
+    public static final String DEVICE_MANUFACTURER      = "manufacturer";
+    public static final String DEVICE_ADID              = "advertisingId";
+    public static final String DEVICE_SYSTEM_NAME       = "systemName";
+    public static final String DEVICE_SYSTEM_VERSION    = "systemVersion";
+    public static final String DEVICE_MODEL             = "model";
+    public static final String DEVICE_SDK_VERSION       = "sdkVersion";
+
     public static final String INSTANCE_ID_CLASS        = "com.google.android.gms.iid.InstanceID";
-    public static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
     public static final String ICON_FOLDER_IDENTIFIER   = "drawable";
     public static final String NOTIFICATION_ICON_NAME   = "iterable_notification_icon";
     public static final String NOTIFICATION_COLOR       = "iterable_notification_color";
@@ -68,6 +75,13 @@ public final class IterableConstants {
     public static final String SOUND_FOLDER_IDENTIFIER  = "raw";
     public static final String ANDROID_RESOURCE_PATH    = "android.resource://";
     public static final String ANDROID_STRING    = "string";
+
+    //Firebase
+    public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";
+    public static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
+    public static final String FIREBASE_COMPATIBLE      = "firebaseCompatible";
+    public static final String FIREBASE_TOKEN_TYPE      = "tokenRegistrationType";
+    public static final String FIREBASE_INITIAL_UPGRADE = "initialFirebaseUpgrade";
 
     public static final String ITBL_DEEPLINK_IDENTIFIER = "/a/[A-Za-z0-9]+";
     public static final String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";

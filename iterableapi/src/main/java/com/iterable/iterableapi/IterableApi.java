@@ -737,15 +737,15 @@ public class IterableApi {
                 dataFields = new JSONObject();
             }
             if (pushServicePlatform != null) {
-                dataFields.put("firebase", pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+                dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
             }
-            dataFields.put("brand", Build.BRAND); //brand: google
-            dataFields.put("manufacturer", Build.MANUFACTURER); //manufacturer: samsung
-            dataFields.putOpt("advertisingId", getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-            dataFields.put("systemName", Build.DEVICE); //device name: toro
-            dataFields.put("systemVersion", Build.VERSION.RELEASE); //version: 4.0.4
-            dataFields.put("model", Build.MODEL); //device model: Galaxy Nexus
-            dataFields.put("sdkVersion", Build.VERSION.SDK_INT); //sdk version/api level: 15
+            dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
+            dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
+            dataFields.putOpt(IterableConstants.DEVICE_ADID, getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+            dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
+            dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
+            dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
+            dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
 
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);

@@ -36,7 +36,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                 pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, true);
                 JSONObject data = new JSONObject();
                 try {
-                    data.put("TokenPlatformType", pushRegistrationObject.messagingPlatform);
+                    data.put("tokenRegistrationType", pushRegistrationObject.messagingPlatform);
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, e.toString());
                 }
@@ -94,7 +94,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                                 editor.commit();
                             }
 
-                            //IterableFirebaseInstanceIDService.onTokenRefresh gets called after delete
+                            //IterableFirebaseInstanceIDService.onTokenRefresh gets called after the current token is deleted
                             instanceID.deleteInstanceId();
                         }
                         registrationObject = new PushRegistrationObject(instanceID.getToken(), IterableConstants.MESSAGING_PLATFORM_FIREBASE);
