@@ -36,11 +36,11 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                 pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, true);
                 JSONObject data = new JSONObject();
                 try {
-                    data.put("tokenRegistrationType", pushRegistrationObject.messagingPlatform);
+                    data.put("tokenRegistrationType", iterablePushRegistrationData.messagingPlatform);
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, e.toString());
                 }
-                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, pushRegistrationObject.token, iterablePushRegistrationData.messagingPlatform, data);
+                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, pushRegistrationObject.token, pushRegistrationObject.messagingPlatform, data);
             } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                 pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, false);
                 IterableApi.sharedInstance.disablePush(pushRegistrationObject.token);
