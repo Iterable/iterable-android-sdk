@@ -54,7 +54,7 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             assertEquals(0, mNotificationManager.getActiveNotifications().length);
         }
-}
+    }
 
 
     public void testNotificationText() throws Exception {
