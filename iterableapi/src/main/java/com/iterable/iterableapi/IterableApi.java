@@ -544,6 +544,7 @@ public class IterableApi {
                     String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
 
                     IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
+                    IterableApi.sharedInstance.inAppConsume(messageId);
                     IterableNotificationData trackParams = new IterableNotificationData(campaignId, templateId, messageId);
                     IterableInAppManager.showNotification(context, message, trackParams, clickCallback);
 
@@ -614,6 +615,24 @@ public class IterableApi {
         }
 
         sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
+    }
+
+    /**
+     * Consumes an InApp message.
+     * @param messageId
+     */
+    public void inAppConsume(String messageId) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
