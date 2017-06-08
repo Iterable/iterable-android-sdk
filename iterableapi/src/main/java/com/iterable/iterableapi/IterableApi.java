@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -313,13 +312,28 @@ public class IterableApi {
     }
 
     /**
-     * Registers an existing GCM device token with Iterable.
-     * Recommended to use registerForPush if you do not already have a deviceToken
+     * Registers a device token with Iterable.
      * @param applicationName
      * @param token
      */
     public void registerDeviceToken(String applicationName, String token) {
         registerDeviceToken(applicationName, token, null);
+    }
+
+    /**
+     * Registers a device token with Iterable.
+     * @param applicationName
+     * @param token
+     * @param pushServicePlatform
+     */
+    public void registerDeviceToken(final String applicationName, final String token, final String pushServicePlatform) {
+        if (token != null) {
+            new Thread(new Runnable() {
+                public void run() {
+                    registerDeviceToken(applicationName, token, pushServicePlatform, null);
+                }
+            }).start();
+        }
     }
 
     /**
@@ -470,20 +484,40 @@ public class IterableApi {
      * @param gcmProjectNumber
      */
     public void registerForPush(String iterableAppId, String gcmProjectNumber) {
-        registerForPush(iterableAppId, gcmProjectNumber, false);
+        registerForPush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+    }
+
+    /**
+     * Registers for push notifications.
+     * @param iterableAppId
+     * @param projectNumber
+     * @param pushServicePlatform
+     */
+    public void registerForPush(String iterableAppId, String projectNumber, String pushServicePlatform) {
+        IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        new IterablePushRegistration().execute(data);
     }
 
     /**
      * Disables the device from push notifications
      *
-     * The disablePush call first calls registerForPush to obtain the device's registration token.
-     *              Then it calls the disablePush api endpoint.
-     *
      * @param iterableAppId
      * @param gcmProjectNumber
      */
     public void disablePush(String iterableAppId, String gcmProjectNumber) {
-        registerForPush(iterableAppId, gcmProjectNumber, true);
+        disablePush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+    }
+
+    /**
+     * Disables the device from push notifications
+     *
+     * @param iterableAppId
+     * @param projectNumber
+     * @param pushServicePlatform
+     */
+    public void disablePush(String iterableAppId, String projectNumber, String pushServicePlatform) {
+        IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        new IterablePushRegistration().execute(data);
     }
 
     /**
@@ -607,21 +641,6 @@ public class IterableApi {
     }
 
     /**
-     * Registers the device for push notifications.
-     * @param iterableAppId
-     * @param gcmProjectNumber
-     * @param disableAfterRegistration
-     */
-    protected void registerForPush(String iterableAppId, String gcmProjectNumber, boolean disableAfterRegistration) {
-        Intent pushRegistrationIntent = new Intent(_applicationContext, IterablePushReceiver.class);
-        pushRegistrationIntent.setAction(IterableConstants.ACTION_PUSH_REGISTRATION);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_APP_ID, iterableAppId);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_GCM_PROJECT_NUMBER, gcmProjectNumber);
-        pushRegistrationIntent.putExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, disableAfterRegistration);
-        _applicationContext.sendBroadcast(pushRegistrationIntent);
-    }
-
-    /**
      * Tracks when a push notification is opened on device.
      * @param campaignId
      * @param templateId
@@ -643,7 +662,7 @@ public class IterableApi {
     }
 
     /**
-     * Internal api call made from IterablePushRegistrationGCM after a registrationToken is obtained.
+     * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
      * @param token
      */
     protected void disablePush(String token) {
@@ -656,6 +675,48 @@ public class IterableApi {
             e.printStackTrace();
         }
         sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON);
+    }
+
+    /**
+     * Registers the GCM registration ID with Iterable.
+     * @param applicationName
+     * @param token
+     * @param pushServicePlatform
+     * @param dataFields
+     */
+    protected void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
+        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
+
+        JSONObject requestJSON = new JSONObject();
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+
+            if (dataFields == null) {
+                dataFields = new JSONObject();
+            }
+            if (pushServicePlatform != null) {
+                dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+            }
+            dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
+            dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
+            dataFields.putOpt(IterableConstants.DEVICE_ADID, getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+            dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
+            dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
+            dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
+            dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
+
+            JSONObject device = new JSONObject();
+            device.put(IterableConstants.KEY_TOKEN, token);
+            device.put(IterableConstants.KEY_PLATFORM, platform);
+            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
+            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DEVICE, device);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -692,44 +753,6 @@ public class IterableApi {
             intent.putExtras(extras);
             _applicationContext.sendBroadcast(intent);
         }
-    }
-
-    /**
-     * Registers the GCM registration ID with Iterable.
-     * @param applicationName
-     * @param token
-     * @param dataFields
-     */
-    private void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
-        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
-
-        JSONObject requestJSON = new JSONObject();
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-
-            if (dataFields == null) {
-                dataFields = new JSONObject();
-                dataFields.put("brand", Build.BRAND); //brand: google
-                dataFields.put("manufacturer", Build.MANUFACTURER); //manufacturer: samsung
-                dataFields.putOpt("advertisingId", getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-                dataFields.put("systemName", Build.DEVICE); //device name: toro
-                dataFields.put("systemVersion", Build.VERSION.RELEASE); //version: 4.0.4
-                dataFields.put("model", Build.MODEL); //device model: Galaxy Nexus
-                dataFields.put("sdkVersion", Build.VERSION.SDK_INT); //sdk version/api level: 15
-            }
-
-            JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, token);
-            device.put(IterableConstants.KEY_PLATFORM, platform);
-            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
-            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
-            requestJSON.put(IterableConstants.KEY_DEVICE, device);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
     }
 
     /**
