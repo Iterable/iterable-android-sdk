@@ -17,6 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [2.1.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.5)
  _Released on 2017-06-09_
+ 
 #### Added
 - Added full support for newly created Firebase applications
 - Added new functionality for `registerForPush` which takes in the optional pushServicePlatform
