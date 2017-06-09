@@ -58,6 +58,17 @@ protected void onCreate(Bundle savedInstanceState) {
 }
 ```
 
+# Firebase Messaging
+At this time there is no requirement to upgrade to FCM since Google will continue to support current versions of GCM android.
+
+If you want to use using Firebase Cloud Messaging (FCM) instead of Google Cloud Messaging (GCM) pass in `IterableConstants. MESSAGING_PLATFORM_FIREBASE` as the pushServicePlatform.
+
+```java
+public void registerForPush(String iterableAppId, String projectNumber, String pushServicePlatform) {
+```
+
+**Note**: If you are upgrading to FCM, do not downgrade back to GCM as this will cause devices to be registered for notifications twice and users will get duplicate notifications.
+
 # License
 
 The MIT License
