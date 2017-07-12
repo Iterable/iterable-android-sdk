@@ -545,8 +545,7 @@ public class IterableApi {
 
                     IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
                     IterableApi.sharedInstance.inAppConsume(messageId);
-                    IterableNotificationData trackParams = new IterableNotificationData(campaignId, templateId, messageId);
-                    IterableInAppManager.showNotification(context, message, trackParams, clickCallback);
+                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
 
                 }
             }
@@ -595,18 +594,14 @@ public class IterableApi {
 
     /**
      * Tracks an InApp click.
-     * @param campaignId
-     * @param templateId
      * @param messageId
      * @param buttonIndex
      */
-    public void trackInAppClick(int campaignId, int templateId, String messageId, int buttonIndex) {
+    public void trackInAppClick(String messageId, int buttonIndex) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
         }
