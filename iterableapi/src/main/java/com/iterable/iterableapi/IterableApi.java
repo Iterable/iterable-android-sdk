@@ -598,7 +598,7 @@ public class IterableApi {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
