@@ -10,17 +10,6 @@ public class IterableNotificationDataTest extends ApplicationTestCase<Applicatio
     public IterableNotificationDataTest() {
         super(Application.class);
     }
-    
-    public void testPayloadParams() throws Exception {
-        int campaignId = 1;
-        int templateId = 2;
-        String messageId = "abc123";
-        IterableNotificationData iterableNotificationData = new IterableNotificationData(campaignId, templateId, messageId);
-        assertEquals(1, iterableNotificationData.getCampaignId());
-        assertEquals(2, iterableNotificationData.getTemplateId());
-        assertEquals("abc123", iterableNotificationData.getMessageId());
-        assertEquals(false, iterableNotificationData.getIsGhostPush());
-    }
 
     public void testPayloadString() throws Exception {
         String userInfo = "{\"campaignId\": 1,\n" +

@@ -33,6 +33,7 @@ public final class IterableConstants {
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
     public static final String ENDPOINT_GET_INAPP_MESSAGES      = "inApp/getMessages";
+    public static final String ENDPOINT_INAPP_CONSUME           = "events/inAppConsume";
     public static final String ENDPOINT_PUSH_TARGET             = "push/target";
     public static final String ENDPOINT_REGISTER_DEVICE_TOKEN   = "users/registerDeviceToken";
     public static final String ENDPOINT_TRACK                   = "events/track";

@@ -539,8 +539,8 @@ public class IterableApi {
                     String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
 
                     IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
-                    IterableNotificationData trackParams = new IterableNotificationData(campaignId, templateId, messageId);
-                    IterableInAppManager.showNotification(context, message, trackParams, clickCallback);
+                    IterableApi.sharedInstance.inAppConsume(messageId);
+                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
 
                 }
             }
@@ -589,18 +589,14 @@ public class IterableApi {
 
     /**
      * Tracks an InApp click.
-     * @param campaignId
-     * @param templateId
      * @param messageId
      * @param buttonIndex
      */
-    public void trackInAppClick(int campaignId, int templateId, String messageId, int buttonIndex) {
+    public void trackInAppClick(String messageId, int buttonIndex) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
         }
@@ -609,6 +605,24 @@ public class IterableApi {
         }
 
         sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
+    }
+
+    /**
+     * Consumes an InApp message.
+     * @param messageId
+     */
+    public void inAppConsume(String messageId) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
