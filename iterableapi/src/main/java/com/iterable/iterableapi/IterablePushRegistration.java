@@ -39,41 +39,6 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                     IterableApi.sharedInstance.disablePush(registrationToken);
                 }
             }
-
-//                Context mainContext = IterableApi.sharedInstance.getMainActivityContext();
-//                if (mainContext != null) {
-//
-//                    int fbUrl = mainContext.getResources().getIdentifier("firebase_database_url", "string", mainContext.getPackageName());
-//                    if (fbUrl != 0 && iterablePushRegistrationData.messagingPlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE)) {
-//                        //FCM
-//                        Class fireBaseMessaging = Class.forName(IterableConstants.FIREBASE_MESSAGING_CLASS);
-//                        if (fireBaseMessaging != null) {
-//                            FirebaseInstanceId instanceID = FirebaseInstanceId.getInstance();
-//                            registrationToken = instanceID.getToken();
-//                            if (!registrationToken.isEmpty()) {
-//                                IterableLogger.e(TAG, "fcm token: " + registrationToken);
-//                                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, registrationToken);
-//                            }
-//                        }
-//                    } else {
-//                        //GCM
-//                        Class instanceIdClass = Class.forName(IterableConstants.INSTANCE_ID_CLASS);
-//                        if (instanceIdClass != null) {
-//                            InstanceID instanceID = InstanceID.getInstance(mainContext);
-//
-//                            String idInstance = instanceID.getId();
-//                            registrationToken = instanceID.getToken(iterablePushRegistrationData.projectNumber,
-//                                    GoogleCloudMessaging.INSTANCE_ID_SCOPE);
-//                            if (!registrationToken.isEmpty()) {
-//                                IterableLogger.e(TAG, "android projectNumber: " + iterablePushRegistrationData.projectNumber);
-//                                IterableLogger.e(TAG, "android token: " + registrationToken);
-//                                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, registrationToken);
-//                            }
-//                        }
-//                    }
-//                } else {
-//                    IterableLogger.e(TAG, "MainActivity Context is null");
-//                }
         } else {
             IterableLogger.e("IterablePush", "The IterableAppId has not been added");
         }

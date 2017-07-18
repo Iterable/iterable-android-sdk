@@ -53,10 +53,11 @@ public final class IterableConstants {
     public static final String MESSAGING_PLATFORM_AMAZON        = "ADM";
 
     public static final String IS_GHOST_PUSH        = "isGhostPush";
-    public static final String ITERABLE_DATA_KEY    = "itbl";
     public static final String ITERABLE_DATA_BODY   = "body";
-    public static final String ITERABLE_DATA_TITLE  = "title";
+    public static final String ITERABLE_DATA_KEY    = "itbl";
+    public static final String ITERABLE_DATA_PUSH_IMAGE  = "pushImage";
     public static final String ITERABLE_DATA_SOUND  = "sound";
+    public static final String ITERABLE_DATA_TITLE  = "title";
 
     public static final String INSTANCE_ID_CLASS        = "com.google.android.gms.iid.InstanceID";
     public static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
