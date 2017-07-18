@@ -11,7 +11,7 @@ class IterablePushRegistrationData {
         GET
     }
 
-    String iterableAppId = "";
+    String iterableAppId;
     String projectNumber = "";
     String messagingPlatform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
     PushRegistrationAction pushRegistrationAction;

@@ -15,6 +15,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.5)
+ _Released on 2017-06-09_
+ 
+#### Added
+- Added full support for newly created Firebase applications
+- Added new functionality for `registerForPush` which takes in the optional pushServicePlatform
+	- `IterableConstants.MESSAGING_PLATFORM_GOOGLE` (GCM)
+	- `IterableConstants. MESSAGING_PLATFORM_FIREBASE` (FCM)
+- `IterableFirebaseInstanceIDService` handles firebase token registrations automatically on install.
+- Added in default tracked device values for `registerDeviceToken`
+
+#### Changed
+- Changed IterablePushRegistrationGCM to IterablePushRegistration so the registration class is not GCM specific.
+- Changed the disable logic to no longer enable the deviceToken prior to disabling.
+
 ## [2.1.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.4)
  _Released on 2017-02-23_
 

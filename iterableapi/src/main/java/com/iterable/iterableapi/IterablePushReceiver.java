@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 
 /**
  *
@@ -36,24 +35,6 @@ public class IterablePushReceiver extends BroadcastReceiver{
             handlePushReceived(context, intent);
         }
     }
-
-//    /**
-//     * Handles the push registration data from the intent.
-//     * @param context
-//     * @param intent
-//     */
-//    private void handlePushRegistration(Context context, Intent intent) {
-//        String iterableAppId = intent.getStringExtra(IterableConstants.PUSH_APP_ID);
-//        String projectNumber = intent.getStringExtra(IterableConstants.PUSH_GCM_PROJECT_NUMBER);
-//        boolean disablePush = intent.getBooleanExtra(IterableConstants.PUSH_DISABLE_AFTER_REGISTRATION, false);
-//        String messagingPlatform = intent.getStringExtra(IterableConstants.MESSAGING_PUSH_SERVICE_PLATFORM);
-//
-////        IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, disablePush, messagingPlatform);
-////        new IterablePushRegistration().execute(data);
-//        IterableApi sharedInstance = IterableApi.sharedInstance;
-//        String token = sharedInstance.getDeviceToken(projectNumber, messagingPlatform);
-//        sharedInstance.registerDeviceToken(iterableAppId, token);
-//    }
 
     /**
      * Handles receiving an incoming push notification from the intent.
