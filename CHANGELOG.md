@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.6)
+ _Released on 2017-07-19_
+ 
+#### Added
+- Added the in-app consume logic to automatically remove the notification from list of in-app notifications.
+
+#### Fixed
+- Fixed the payloadfor trackInAppClick to contain the userId.
+
 ## [2.1.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.5)
  _Released on 2017-06-09_
  
