@@ -243,9 +243,7 @@ public class IterableInAppManager {
                 final Button button = new Button(context);
                 button.setBackgroundColor(getIntColorFromJson(buttonJson, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.LTGRAY));
                 String action = buttonJson.optString(IterableConstants.ITERABLE_IN_APP_BUTTON_ACTION);
-                if (!action.isEmpty()) {
-                    button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, messageId, clickCallback));
-                }
+                button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, messageId, clickCallback));
 
                 JSONObject textJson = buttonJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
                 button.setTextColor(getIntColorFromJson(textJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
