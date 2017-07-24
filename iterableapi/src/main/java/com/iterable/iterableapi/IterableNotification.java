@@ -45,10 +45,8 @@ public class IterableNotification extends NotificationCompat.Builder {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                final RemoteViews contentView = notification.contentView;
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
                     final RemoteViews bigContentView = notification.bigContentView;
-
                     try {
                         Class picassoClass = Class.forName(IterableConstants.PICASSO_CLASS);
                         if (picassoClass != null) {
