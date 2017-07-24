@@ -46,10 +46,18 @@ public class IterableNotification extends NotificationCompat.Builder {
             @Override
             public void run() {
                 final RemoteViews contentView = notification.contentView;
-                //Picasso.with(mContext).load(imageUrl).into(contentView, iconId, requestCode, notification);
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
                     final RemoteViews bigContentView = notification.bigContentView;
-                    Picasso.with(mContext).load(imageUrl).into(bigContentView, bigIconId, requestCode, notification);
+
+                    try {
+                        Class picassoClass = Class.forName(IterableConstants.PICASSO_CLASS);
+                        if (picassoClass != null) {
+                            Picasso.with(mContext).load(imageUrl).into(bigContentView, bigIconId, requestCode, notification);
+                        }
+                    } catch (ClassNotFoundException e) {
+                        IterableLogger.w(TAG, "ClassNotFoundException: Check that picasso is added " +
+                                "to the build dependencies", e);
+                    }
                 }
             }
         });
@@ -99,7 +107,7 @@ public class IterableNotification extends NotificationCompat.Builder {
             .setContentTitle(applicationName)
             .setPriority(Notification.PRIORITY_HIGH)
             .setContentText(notificationBody);
-
+        
         if (pushImage != null) {
             notificationBuilder.imageUrl = pushImage;
             notificationBuilder.setContentText(notificationBody)
