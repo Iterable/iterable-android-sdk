@@ -6,14 +6,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
-import com.google.android.gms.iid.InstanceID;
-import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,14 +17,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Objects;
-import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -323,17 +312,28 @@ public class IterableApi {
     }
 
     /**
-     * Registers an existing device token with Iterable.
-     * Recommended to use registerForPush if you do not already have a deviceToken
+     * Registers a device token with Iterable.
      * @param applicationName
      * @param token
      */
-    public void registerDeviceToken(final String applicationName, final String token) {
-        new Thread(new Runnable() {
-            public void run() {
-            registerDeviceToken(applicationName, token, null);
-            }
-        }).start();
+    public void registerDeviceToken(String applicationName, String token) {
+        registerDeviceToken(applicationName, token, null);
+    }
+
+    /**
+     * Registers a device token with Iterable.
+     * @param applicationName
+     * @param token
+     * @param pushServicePlatform
+     */
+    public void registerDeviceToken(final String applicationName, final String token, final String pushServicePlatform) {
+        if (token != null) {
+            new Thread(new Runnable() {
+                public void run() {
+                    registerDeviceToken(applicationName, token, pushServicePlatform, null);
+                }
+            }).start();
+        }
     }
 
     /**
@@ -501,8 +501,6 @@ public class IterableApi {
     /**
      * Disables the device from push notifications
      *
-     * The disablePush call
-     *
      * @param iterableAppId
      * @param gcmProjectNumber
      */
@@ -513,14 +511,11 @@ public class IterableApi {
     /**
      * Disables the device from push notifications
      *
-     * The disablePush call
-     *
      * @param iterableAppId
      * @param projectNumber
      * @param pushServicePlatform
      */
     public void disablePush(String iterableAppId, String projectNumber, String pushServicePlatform) {
-
         IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
@@ -544,8 +539,8 @@ public class IterableApi {
                     String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
 
                     IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
-                    IterableNotificationData trackParams = new IterableNotificationData(campaignId, templateId, messageId);
-                    IterableInAppManager.showNotification(context, message, trackParams, clickCallback);
+                    IterableApi.sharedInstance.inAppConsume(messageId);
+                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
 
                 }
             }
@@ -594,18 +589,14 @@ public class IterableApi {
 
     /**
      * Tracks an InApp click.
-     * @param campaignId
-     * @param templateId
      * @param messageId
      * @param buttonIndex
      */
-    public void trackInAppClick(int campaignId, int templateId, String messageId, int buttonIndex) {
+    public void trackInAppClick(String messageId, int buttonIndex) {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
         }
@@ -614,6 +605,24 @@ public class IterableApi {
         }
 
         sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
+    }
+
+    /**
+     * Consumes an InApp message.
+     * @param messageId
+     */
+    public void inAppConsume(String messageId) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -682,6 +691,48 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON);
     }
 
+    /**
+     * Registers the GCM registration ID with Iterable.
+     * @param applicationName
+     * @param token
+     * @param pushServicePlatform
+     * @param dataFields
+     */
+    protected void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
+        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
+
+        JSONObject requestJSON = new JSONObject();
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+
+            if (dataFields == null) {
+                dataFields = new JSONObject();
+            }
+            if (pushServicePlatform != null) {
+                dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+            }
+            dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
+            dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
+            dataFields.putOpt(IterableConstants.DEVICE_ADID, getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+            dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
+            dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
+            dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
+            dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
+
+            JSONObject device = new JSONObject();
+            device.put(IterableConstants.KEY_TOKEN, token);
+            device.put(IterableConstants.KEY_PLATFORM, platform);
+            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
+            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_DEVICE, device);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -716,44 +767,6 @@ public class IterableApi {
             intent.putExtras(extras);
             _applicationContext.sendBroadcast(intent);
         }
-    }
-
-    /**
-     * Registers the GCM registration ID with Iterable.
-     * @param applicationName
-     * @param token
-     * @param dataFields
-     */
-    private void registerDeviceToken(String applicationName, String token, JSONObject dataFields) {
-        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
-
-        JSONObject requestJSON = new JSONObject();
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-
-            if (dataFields == null) {
-                dataFields = new JSONObject();
-                dataFields.put("brand", Build.BRAND); //brand: google
-                dataFields.put("manufacturer", Build.MANUFACTURER); //manufacturer: samsung
-                dataFields.putOpt("advertisingId", getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-                dataFields.put("systemName", Build.DEVICE); //device name: toro
-                dataFields.put("systemVersion", Build.VERSION.RELEASE); //version: 4.0.4
-                dataFields.put("model", Build.MODEL); //device model: Galaxy Nexus
-                dataFields.put("sdkVersion", Build.VERSION.SDK_INT); //sdk version/api level: 15
-            }
-
-            JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, token);
-            device.put(IterableConstants.KEY_PLATFORM, platform);
-            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
-            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
-            requestJSON.put(IterableConstants.KEY_DEVICE, device);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
     }
 
     /**

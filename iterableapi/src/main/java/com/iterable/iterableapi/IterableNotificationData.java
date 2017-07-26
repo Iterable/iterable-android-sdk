@@ -7,10 +7,12 @@ import org.json.JSONObject;
  * Created by davidtruong on 5/23/16.
  */
 class IterableNotificationData {
-        private int campaignId;
-        private int templateId;
-        private String messageId;
-        private boolean isGhostPush;
+    static final String TAG = "IterableNoticationData";
+
+    private int campaignId;
+    private int templateId;
+    private String messageId;
+    private boolean isGhostPush;
 
     /**
      * Creates the notification data from a string
@@ -35,20 +37,8 @@ class IterableNotificationData {
                 isGhostPush = iterableJson.getBoolean(IterableConstants.IS_GHOST_PUSH);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            IterableLogger.e(TAG, e.toString());
         }
-    }
-
-    /**
-     * Creates the notification data
-     * @param campaignId
-     * @param templateId
-     * @param messageId
-     */
-    IterableNotificationData(int campaignId, int templateId, String messageId) {
-        this.campaignId = campaignId;
-        this.templateId = templateId;
-        this.messageId = messageId;
     }
 
     /**
