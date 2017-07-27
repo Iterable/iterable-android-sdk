@@ -156,10 +156,11 @@ public class IterableInAppManager {
         verticalLayout.addView(imageView);
         try {
             Class picassoClass = Class.forName(IterableConstants.PICASSO_CLASS);
-            if (picassoClass != null && dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_MAIN_IMAGE) != null) {
+            String imageUrl = dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_MAIN_IMAGE);
+            if (picassoClass != null && !imageUrl.isEmpty()) {
                 Picasso.
                         with(context.getApplicationContext()).
-                        load(dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_MAIN_IMAGE)).
+                        load(imageUrl).
                         resize(dialogWidth, dialogHeight/2).
                         centerInside().
                         into(imageView);
