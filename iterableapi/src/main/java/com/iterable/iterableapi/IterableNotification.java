@@ -45,7 +45,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN && imageUrl != null) {
                     final RemoteViews bigContentView = notification.bigContentView;
                     try {
                         Class picassoClass = Class.forName(IterableConstants.PICASSO_CLASS);
@@ -105,7 +105,7 @@ public class IterableNotification extends NotificationCompat.Builder {
             .setContentTitle(applicationName)
             .setPriority(Notification.PRIORITY_HIGH)
             .setContentText(notificationBody);
-        
+
         if (pushImage != null) {
             notificationBuilder.imageUrl = pushImage;
             notificationBuilder.setContentText(notificationBody)
