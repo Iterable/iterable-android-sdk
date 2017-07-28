@@ -54,10 +54,11 @@ public final class IterableConstants {
     public static final String MESSAGING_PLATFORM_AMAZON        = "ADM";
 
     public static final String IS_GHOST_PUSH        = "isGhostPush";
-    public static final String ITERABLE_DATA_KEY    = "itbl";
     public static final String ITERABLE_DATA_BODY   = "body";
-    public static final String ITERABLE_DATA_TITLE  = "title";
+    public static final String ITERABLE_DATA_KEY    = "itbl";
+    public static final String ITERABLE_DATA_PUSH_IMAGE  = "attachment_url";
     public static final String ITERABLE_DATA_SOUND  = "sound";
+    public static final String ITERABLE_DATA_TITLE  = "title";
 
     //Device
     public static final String DEVICE_BRAND             = "brand";
