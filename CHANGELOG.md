@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.8)
+ _Released on 2017-07-28_
+ 
+#### Added
+- Added support for android image notifications.
+ 
+#### Fixed
+- Fixed load error for empty image url.
+
 ## [2.1.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.7)
  _Released on 2017-07-19_
  
