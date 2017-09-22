@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 
@@ -30,6 +31,20 @@ import org.json.JSONObject;
  */
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
+
+
+    public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback) {
+        if (context instanceof Activity) {
+            Activity currentActivity = (Activity) context;
+            if (htmlString != null) {
+                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.instance(context, htmlString);
+                notification.setOwnerActivity(currentActivity);
+                notification.show();
+            }
+        } else {
+            IterableLogger.w(TAG, "To display in-app notifications, the context must be of an instance of: Activity");
+        }
+    }
 
     /**
      * Displays an InApp Notification from the dialogOptions; with a click callback handler.

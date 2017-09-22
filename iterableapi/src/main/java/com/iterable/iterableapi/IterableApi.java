@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -526,6 +527,7 @@ public class IterableApi {
      * @param clickCallback
      */
     public void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
+        String htmlString = "<a href=\"http://www.iterabe.com\" target=\"http://www.iterable.com\">test</a>";
         getInAppMessages(1, new IterableHelper.IterableActionHandler(){
             @Override
             public void execute(String payload) {
@@ -540,11 +542,16 @@ public class IterableApi {
 
                     IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
                     IterableApi.sharedInstance.inAppConsume(messageId);
-                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
+//                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
 
+                    //TODO: parse and pass into the notification for layout
+                    Rect rect = new Rect(1,2,3,4);
+
+                    IterableInAppManager.showIterableNotificationHTML(context, "", "", clickCallback);
                 }
             }
         });
+        IterableInAppManager.showIterableNotificationHTML(context, htmlString, "", clickCallback);
     }
 
     /**
