@@ -1,23 +1,21 @@
 package com.iterable.iterableapi;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -27,12 +25,6 @@ import android.webkit.WebViewClient;
 
 public class IterableInAppHTMLNotification extends Dialog {
 
-    static final String HTML_STRING = "html";
-
-    final String mimeType = "text/html";
-    final String encoding = "UTF-8";
-    final String resizeScript = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
-
     static IterableInAppHTMLNotification notification;
 
     Context context;
@@ -41,21 +33,12 @@ public class IterableInAppHTMLNotification extends Dialog {
 
     public static IterableInAppHTMLNotification instance(Context context, String htmlString)
     {
-        if (notification == null) {
-            notification = new IterableInAppHTMLNotification(context, htmlString);
-        }
-
-        //else update
-
-        return notification;
-    }
-
-    public static IterableInAppHTMLNotification getInstance() {
+        notification = new IterableInAppHTMLNotification(context, htmlString);
         return notification;
     }
 
     private IterableInAppHTMLNotification(Context context, String htmlString) {
-        super(context, android.R.style.Theme_NoTitleBar);
+        super(context, android.R.style.Theme_NoTitleBar_Fullscreen);
         this.context = context;
         this.htmlString = htmlString;
     }
@@ -64,9 +47,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     protected void onStart() {
         super.onStart();
 
-        this.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-
-//        webView = new WebView(context);
+        this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.GREEN));
         webView = new IterableWebView(context);
         webView.createWithHtml(this, htmlString);
         webView.addJavascriptInterface(this, "ITBL");
@@ -76,7 +57,6 @@ public class IterableInAppHTMLNotification extends Dialog {
 
     @JavascriptInterface
     public void resize(final float height) {
-        Activity ownerActivity = getOwnerActivity();
         getOwnerActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -85,22 +65,36 @@ public class IterableInAppHTMLNotification extends Dialog {
                 int webViewWidth = (int) displayMetrics.widthPixels;
 
                 Window window = notification.getWindow();
-                WindowManager.LayoutParams wlp = window.getAttributes();
 
                 Rect rect = new Rect(1,2,3,4);
 
+                //Check if statusbar is present
+                Rect rectangle = new Rect();
+                window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
+                int statusBarHeight = rectangle.top;
+                int contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
+                int titleBarHeight= contentViewTop - statusBarHeight;
 
                 if (true) {//bottom & top != auto)
 
                     //Configurable constants
                     float dimAmount = 0.5f;
-                    float widthPercentage = .8f;
+                    float widthPercentage = .8f; // left and right
                     int gravity = Gravity.CENTER; //Gravity.TOP, Gravity.CENTER, Gravity.BOTTOM;
 
+                    WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                    Display display = wm.getDefaultDisplay();
+                    Point size = new Point();
+                    display.getSize(size);
+                    int width = size.x;
+                    int heightScreen = size.y;
+
                     int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
+                    //int maxHeight = (int)(height * displayMetrics.scaledDensity);
                     int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
                     window.setLayout(maxWidth, maxHeight);
 
+                    WindowManager.LayoutParams wlp = window.getAttributes();
                     wlp.gravity = gravity;
                     wlp.dimAmount = dimAmount;
                     wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
@@ -145,6 +139,8 @@ class IterableWebView extends WebView {
 }
 
 class IterableWebViewClient extends WebViewClient {
+    final String resizeScript = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
+
     IterableInAppHTMLNotification inAppHTMLNotification;
     IterableInAppWebViewListener listener;
 
@@ -161,7 +157,7 @@ class IterableWebViewClient extends WebViewClient {
         Uri uri = Uri.parse(url);
         String authority = uri.getAuthority();
 
-        listener.close(inAppHTMLNotification);
+        listener.onClose(inAppHTMLNotification);
 
         return true;
     }
@@ -170,14 +166,22 @@ class IterableWebViewClient extends WebViewClient {
     public void onPageStarted (WebView view,
                                String url,
                                Bitmap favicon) {
-        System.out.println("urlClicked: "+ url);
         view.addJavascriptInterface(inAppHTMLNotification, "ITBL");
-        view.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
+        view.loadUrl(resizeScript);
+    }
+
+    @Override
+    public void onPageFinished(WebView view, String url) {
+//        view.loadUrl(resizeScript);
     }
 }
 
 class IterableInAppWebViewListener {
-    public void close(IterableInAppHTMLNotification inApp) {
+    public void onClose(IterableInAppHTMLNotification inApp) {
         inApp.dismiss();
+    }
+
+    public void onClick(IterableInAppHTMLNotification inApp) {
+
     }
 }
