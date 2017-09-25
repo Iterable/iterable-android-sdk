@@ -129,12 +129,9 @@ class IterableWebView extends WebView {
     }
 
     void createWithHtml(IterableInAppHTMLNotification notificationDialog, String html) {
-//        IterableWebViewClient webViewClient = new IterableWebViewClient();
         IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog, new IterableInAppWebViewListener());
         loadDataWithBaseURL("", html, mimeType, encoding, "");
         setWebViewClient(webViewClient);
-        getSettings().setJavaScriptEnabled(true);
-        getSettings().setDomStorageEnabled(true);
 
         //don't overscroll
         setOverScrollMode(WebView.OVER_SCROLL_NEVER);
@@ -144,12 +141,10 @@ class IterableWebView extends WebView {
 
         //resize:
         getSettings().setJavaScriptEnabled(true);
-//        addJavascriptInterface(webViewClient, "ITBL");
     }
 }
 
 class IterableWebViewClient extends WebViewClient {
-
     IterableInAppHTMLNotification inAppHTMLNotification;
     IterableInAppWebViewListener listener;
 
@@ -172,56 +167,12 @@ class IterableWebViewClient extends WebViewClient {
     }
 
     @Override
-    public WebResourceResponse shouldInterceptRequest (WebView view, WebResourceRequest request) {
-        WebResourceRequest wr = request;
-        //System.out.println("urlClicked: "+ request.getUrl().toString());
-        return null;
-    }
-
-    @Override
     public void onPageStarted (WebView view,
                                String url,
                                Bitmap favicon) {
         System.out.println("urlClicked: "+ url);
         view.addJavascriptInterface(inAppHTMLNotification, "ITBL");
-    }
-
-    @Override
-    public WebResourceResponse shouldInterceptRequest (WebView view, String url) {
-        String wr = url;
-        //System.out.println("urlClicked: "+ request.getUrl().toString());
-        return null;
-    }
-
-    @Override
-    public void onLoadResource(WebView  view, String  url){
-        if( url.equals("http://yoururl.com") ){
-            // do something
-        }
-    }
-
-    @Override
-    public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-        System.out.println("urlClicked: "+ failingUrl);
-    }
-
-    @Override
-    public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-        System.out.println("urlClicked: "+ error);
-    }
-
-    @Override
-    public void onReceivedHttpError(
-            WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-        System.out.println("urlClicked: "+ errorResponse);
-    }
-
-    @Override
-    public void onPageFinished(WebView view, String url) {
         view.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
-
-        //TODO: Do a check to see if a button was clicked
-        super.onPageFinished(view, url);
     }
 }
 
