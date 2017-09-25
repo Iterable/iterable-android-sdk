@@ -68,8 +68,8 @@ public class IterableInAppHTMLNotification extends Dialog {
 
 //        webView = new WebView(context);
         webView = new IterableWebView(context);
-        webView.createWithHtml(htmlString);
-        webView.setJavaScriptInterface(this, "ITBL");
+        webView.createWithHtml(this, htmlString);
+        webView.addJavascriptInterface(this, "ITBL");
 
         setContentView(webView);
     }
@@ -128,8 +128,9 @@ class IterableWebView extends WebView {
         super(context);
     }
 
-    void createWithHtml(String html) {
-        IterableWebViewClient webViewClient = new IterableWebViewClient();
+    void createWithHtml(IterableInAppHTMLNotification notificationDialog, String html) {
+//        IterableWebViewClient webViewClient = new IterableWebViewClient();
+        IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog, new IterableInAppWebViewListener());
         loadDataWithBaseURL("", html, mimeType, encoding, "");
         setWebViewClient(webViewClient);
         getSettings().setJavaScriptEnabled(true);
@@ -145,15 +146,16 @@ class IterableWebView extends WebView {
         getSettings().setJavaScriptEnabled(true);
 //        addJavascriptInterface(webViewClient, "ITBL");
     }
-
-    void setJavaScriptInterface(IterableInAppHTMLNotification dialog, String name){
-        addJavascriptInterface(dialog, "ITBL");
-    }
 }
 
 class IterableWebViewClient extends WebViewClient {
-    IterableWebViewClient() {
-        super();
+
+    IterableInAppHTMLNotification inAppHTMLNotification;
+    IterableInAppWebViewListener listener;
+
+    IterableWebViewClient(IterableInAppHTMLNotification inAppHTMLNotification, IterableInAppWebViewListener listener) {
+        this.inAppHTMLNotification = inAppHTMLNotification;
+        this.listener = listener;
     }
 
     @Override
@@ -163,6 +165,8 @@ class IterableWebViewClient extends WebViewClient {
 
         Uri uri = Uri.parse(url);
         String authority = uri.getAuthority();
+
+        listener.close(inAppHTMLNotification);
 
         return true;
     }
@@ -179,6 +183,7 @@ class IterableWebViewClient extends WebViewClient {
                                String url,
                                Bitmap favicon) {
         System.out.println("urlClicked: "+ url);
+        view.addJavascriptInterface(inAppHTMLNotification, "ITBL");
     }
 
     @Override
@@ -217,5 +222,11 @@ class IterableWebViewClient extends WebViewClient {
 
         //TODO: Do a check to see if a button was clicked
         super.onPageFinished(view, url);
+    }
+}
+
+class IterableInAppWebViewListener {
+    public void close(IterableInAppHTMLNotification inApp) {
+        inApp.dismiss();
     }
 }
