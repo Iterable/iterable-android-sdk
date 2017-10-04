@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -31,9 +30,18 @@ public class IterableInAppHTMLNotification extends Dialog {
     IterableWebView webView;
     String htmlString;
 
-    public static IterableInAppHTMLNotification instance(Context context, String htmlString)
-    {
+    String messageId;
+    double backgroundAlpha = 0;
+    IterableHelper.IterableActionHandler clickCallback;
+    Rect insetPadding;
+
+
+    public static IterableInAppHTMLNotification createInstance(Context context, String htmlString) {
         notification = new IterableInAppHTMLNotification(context, htmlString);
+        return notification;
+    }
+
+    public static IterableInAppHTMLNotification getInstance() {
         return notification;
     }
 
@@ -41,6 +49,18 @@ public class IterableInAppHTMLNotification extends Dialog {
         super(context, android.R.style.Theme_NoTitleBar_Fullscreen);
         this.context = context;
         this.htmlString = htmlString;
+    }
+
+    public void ITESetTrackParams(String messageId) {
+        this.messageId = messageId;
+    }
+
+    public void ITESetCallback(IterableHelper.IterableActionHandler clickCallback) {
+        this.clickCallback = clickCallback;
+    }
+
+    public void ITESetPadding(Rect insetPadding) {
+        this.insetPadding = insetPadding;
     }
 
     @Override
@@ -66,7 +86,7 @@ public class IterableInAppHTMLNotification extends Dialog {
 
                 Window window = notification.getWindow();
 
-                Rect rect = new Rect(1,2,3,4);
+                Rect rect = notification.insetPadding;
 
                 //Check if statusbar is present
                 Rect rectangle = new Rect();
@@ -79,7 +99,7 @@ public class IterableInAppHTMLNotification extends Dialog {
 
                     //Configurable constants
                     float dimAmount = 0.5f;
-                    float widthPercentage = .8f; // left and right
+                    float widthPercentage = 1f; // left and right
                     int gravity = Gravity.CENTER; //Gravity.TOP, Gravity.CENTER, Gravity.BOTTOM;
 
                     WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
@@ -112,6 +132,27 @@ public class IterableInAppHTMLNotification extends Dialog {
             }
         });
     }
+
+    int getLocation(Rect padding) {
+
+//        if (_insetPadding.top == 0 && _insetPadding.bottom == 0) {
+//            location = INAPP_FULL;
+//        } else if (_insetPadding.top == 0 && _insetPadding.bottom < 0) {
+//            location = INAPP_TOP;
+//        } else if (_insetPadding.top < 0 && _insetPadding.bottom == 0) {
+//            location = INAPP_BOTTOM;
+//        } else if (_insetPadding.top < 0 && _insetPadding.bottom < 0) {
+//            location = INAPP_MIDDLE;
+//        }
+
+        int gravity = Gravity.CENTER;
+        if (padding.top  == 0 && padding.bottom < 0) {
+            gravity = Gravity.TOP;
+        } else if (padding.top < 0 && padding.bottom == 0) {
+            gravity = Gravity.BOTTOM;
+        }
+        return gravity;
+    }
 }
 
 class IterableWebView extends WebView {
@@ -136,6 +177,8 @@ class IterableWebView extends WebView {
         //resize:
         getSettings().setJavaScriptEnabled(true);
     }
+
+
 }
 
 class IterableWebViewClient extends WebViewClient {
@@ -163,16 +206,8 @@ class IterableWebViewClient extends WebViewClient {
     }
 
     @Override
-    public void onPageStarted (WebView view,
-                               String url,
-                               Bitmap favicon) {
-        view.addJavascriptInterface(inAppHTMLNotification, "ITBL");
-        view.loadUrl(resizeScript);
-    }
-
-    @Override
     public void onPageFinished(WebView view, String url) {
-//        view.loadUrl(resizeScript);
+        view.loadUrl(resizeScript);
     }
 }
 
