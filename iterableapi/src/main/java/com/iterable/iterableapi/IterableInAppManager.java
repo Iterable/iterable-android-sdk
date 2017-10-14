@@ -32,11 +32,11 @@ import org.json.JSONObject;
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
 
-    public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, float backgroundAlpha) {
+    public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
-                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.instance(context, htmlString); //and data
+                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString); //and data
                 notification.setTrackParams(messageId);
                 notification.setCallback(clickCallback);
                 notification.setOwnerActivity(currentActivity);
