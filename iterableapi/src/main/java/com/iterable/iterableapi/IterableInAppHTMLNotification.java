@@ -29,13 +29,13 @@ public class IterableInAppHTMLNotification extends Dialog {
 
     Context context;
     IterableWebView webView;
+    Boolean loaded;
+
     String htmlString;
-
     String messageId;
-    double backgroundAlpha = 0;
-    IterableHelper.IterableActionHandler clickCallback;
+    double backgroundAlpha;
     Rect insetPadding;
-
+    IterableHelper.IterableActionHandler clickCallback;
 
     public static IterableInAppHTMLNotification createInstance(Context context, String htmlString) {
         notification = new IterableInAppHTMLNotification(context, htmlString);
@@ -47,11 +47,14 @@ public class IterableInAppHTMLNotification extends Dialog {
     }
 
     private IterableInAppHTMLNotification(Context context, String htmlString) {
-        super(context, android.R.style.Theme_NoTitleBar_Fullscreen);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        super(context, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
+
         this.context = context;
         this.htmlString = htmlString;
+        this.loaded = false;
+        this.backgroundAlpha = 0;
+        this.messageId = ""; // should this be null?
+        insetPadding = new Rect();
     }
 
     public void setTrackParams(String messageId) {
@@ -63,7 +66,11 @@ public class IterableInAppHTMLNotification extends Dialog {
     }
 
     public void setLoaded(Boolean loaded) {
+        this.loaded = loaded;
+    }
 
+    public void setBackgroundAlpha(double backgroundAlpha) {
+        this.backgroundAlpha = backgroundAlpha;
     }
 
     public void setPadding(Rect insetPadding) {
@@ -84,13 +91,15 @@ public class IterableInAppHTMLNotification extends Dialog {
                 System.out.print("changed Orientation");
                 // Re-layout the webview dialog.
                 // Figure out how to do this on an activity handler (rotation complete)
-                final Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        webView.loadUrl(IterableWebViewClient.resizeScript);
-                    }
-                }, 1000);
+                if (loaded) {
+                    final Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            webView.loadUrl(IterableWebViewClient.resizeScript);
+                        }
+                    }, 1000);
+                }
             }
         };
         orientationListener.enable();
@@ -98,29 +107,9 @@ public class IterableInAppHTMLNotification extends Dialog {
         RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.MATCH_PARENT);
 
-        //this.addView(relativeLayout, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-
         relativeLayout.addView(webView,layoutParams);
         setContentView(relativeLayout,layoutParams);
     }
-
-//    @Override
-//    public void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        //setContentView(R.layout.main);
-//
-//        //Add this
-//        if(webView == null){
-//            System.out.print("shouldn't get here");
-////            WebSettings webSettings =webView.getSettings();
-////            webSettings.setJavaScriptEnabled(true);
-////            webView.setWebViewClient (new HelloWebViewClient());
-////            webView.loadUrl("http://google.com");
-//        }
-//
-//        if (savedInstanceState != null)
-//            (webView).restoreState(savedInstanceState);
-//    }
 
     @JavascriptInterface
     public void resize(final float height) {
@@ -148,11 +137,11 @@ public class IterableInAppHTMLNotification extends Dialog {
 
 //                WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 //                Display display = wm.getDefaultDisplay();
-
+//
 //                Point size = new Point();
 //                display.getSize(size);
-//                int screenWidth = size.x;
-//                int screenHeight = size.y;
+//                webViewWidth = size.x;
+//                webViewHeight = size.y;
 
                 int orientation = getOwnerActivity().getResources().getConfiguration().orientation; //1 port / 2 land
 //                int requestedOrientation = getOwnerActivity().getRequestedOrientation(); //-1
@@ -176,6 +165,11 @@ public class IterableInAppHTMLNotification extends Dialog {
                 if (insetPadding.bottom == 0 && insetPadding.top == 0) {
                     window.setLayout(webViewWidth, webViewHeight);
 
+                    WindowManager.LayoutParams wlp = window.getAttributes();
+                    wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+
                     //TODO: Is this necessary?
 //                    webView.setOnTouchListener(new View.OnTouchListener() {
 //                        @Override
@@ -184,6 +178,7 @@ public class IterableInAppHTMLNotification extends Dialog {
 //                            return (event.getAction() == MotionEvent.ACTION_MOVE);
 //                        }
 //                    });
+
                 } else {
                     //Configurable constants
                     float dimAmount = 0.5f;
@@ -198,6 +193,7 @@ public class IterableInAppHTMLNotification extends Dialog {
                     wlp.gravity = gravity;
                     wlp.dimAmount = dimAmount;
                     wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+
                     window.setAttributes(wlp);
                 }
             }
@@ -280,6 +276,7 @@ class IterableWebViewClient extends WebViewClient {
 
     @Override
     public void onPageFinished(WebView view, String url) {
+        inAppHTMLNotification.setLoaded(true);
         view.loadUrl(resizeScript);
     }
 }

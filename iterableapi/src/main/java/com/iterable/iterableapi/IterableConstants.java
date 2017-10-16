@@ -76,7 +76,7 @@ public final class IterableConstants {
     public static final String DEFAULT_SOUND            = "default";
     public static final String SOUND_FOLDER_IDENTIFIER  = "raw";
     public static final String ANDROID_RESOURCE_PATH    = "android.resource://";
-    public static final String ANDROID_STRING    = "string";
+    public static final String ANDROID_STRING           = "string";
 
     //Firebase
     public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";
@@ -109,4 +109,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";
     public static final String ITERABLE_IN_APP_TYPE_FULL    = "FULL";
     public static final String ITERABLE_IN_APP_TYPE_TOP     = "TOP";
+
+    public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
+    public static final String ITBL_PLATFORM_ANDROID = "Android";
 }

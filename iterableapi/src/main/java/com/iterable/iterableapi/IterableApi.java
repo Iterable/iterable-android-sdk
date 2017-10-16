@@ -659,6 +659,7 @@ public class IterableApi {
                 "        content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0\" /><a href=\"http://www.iterabe.com\" target=\"http://www.iterable.com\">test</a></head>";
 
         final double backgroundAlpha = .5f;
+        final Rect padding = new Rect();//new Rect(0,-1,0, -1);
 
         getInAppMessages(1, new IterableHelper.IterableActionHandler(){
             @Override
@@ -672,18 +673,18 @@ public class IterableApi {
                     int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
                     String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
 
-                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
-                    IterableApi.sharedInstance.inAppConsume(messageId);
+//                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
+//                    IterableApi.sharedInstance.inAppConsume(messageId);
 //                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
 
                     //TODO: parse and pass into the notification for layout
                     Rect rect = new Rect(1,2,3,4);
 
-                    IterableInAppManager.showIterableNotificationHTML(context, "", "", clickCallback, backgroundAlpha);
+                    IterableInAppManager.showIterableNotificationHTML(context, "", messageId, clickCallback, backgroundAlpha, padding);
                 }
             }
         });
-        IterableInAppManager.showIterableNotificationHTML(context, htmlString, "", clickCallback, backgroundAlpha);
+        IterableInAppManager.showIterableNotificationHTML(context, htmlString, "", clickCallback, backgroundAlpha, padding);
     }
 
     /**
@@ -697,6 +698,8 @@ public class IterableApi {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
+            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, "0.0.0");
         }
         catch (JSONException e) {
             e.printStackTrace();

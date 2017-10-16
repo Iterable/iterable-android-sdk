@@ -7,6 +7,7 @@ import android.content.Context;
 import android.graphics.Color;
 
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
@@ -32,13 +33,15 @@ import org.json.JSONObject;
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
 
-    public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha) {
+    public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
                 IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString); //and data
                 notification.setTrackParams(messageId);
                 notification.setCallback(clickCallback);
+                notification.setBackgroundAlpha(backgroundAlpha);
+                notification.setPadding(padding);
                 notification.setOwnerActivity(currentActivity);
                 notification.show();
             }
