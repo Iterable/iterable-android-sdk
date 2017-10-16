@@ -30,6 +30,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     Context context;
     IterableWebView webView;
     Boolean loaded;
+    OrientationEventListener orientationListener;
 
     String htmlString;
     String messageId;
@@ -86,22 +87,24 @@ public class IterableInAppHTMLNotification extends Dialog {
         webView.createWithHtml(this, htmlString);
         webView.addJavascriptInterface(this, "ITBL");
 
-        OrientationEventListener orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
-            public void onOrientationChanged(int orientation) {
-                System.out.print("changed Orientation");
-                // Re-layout the webview dialog.
-                // Figure out how to do this on an activity handler (rotation complete)
-                if (loaded) {
-                    final Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            webView.loadUrl(IterableWebViewClient.resizeScript);
-                        }
-                    }, 1000);
+        if (orientationListener == null) {
+            orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
+                public void onOrientationChanged(int orientation) {
+                    System.out.print("changed Orientation");
+                    // Re-layout the webview dialog.
+                    // Figure out how to do this on an activity handler (rotation complete)
+                    if (loaded) {
+                        final Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                webView.loadUrl(IterableWebViewClient.resizeScript);
+                            }
+                        }, 1000);
+                    }
                 }
-            }
-        };
+            };
+        }
         orientationListener.enable();
 
         RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
@@ -109,6 +112,11 @@ public class IterableInAppHTMLNotification extends Dialog {
 
         relativeLayout.addView(webView,layoutParams);
         setContentView(relativeLayout,layoutParams);
+    }
+
+    @Override
+    protected void onStop() {
+        orientationListener.disable();
     }
 
     @JavascriptInterface
