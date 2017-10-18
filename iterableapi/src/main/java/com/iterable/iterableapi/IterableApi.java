@@ -658,9 +658,6 @@ public class IterableApi {
         htmlString = "<head><meta name=\"viewport\"\n" +
                 "        content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0\" /><a href=\"http://www.iterabe.com\" target=\"http://www.iterable.com\">test</a></head>";
 
-        final double backgroundAlpha = .5f;
-        final Rect padding = new Rect();//new Rect(0,-1,0, -1);
-
         getInAppMessages(1, new IterableHelper.IterableActionHandler(){
             @Override
             public void execute(String payload) {
@@ -668,22 +665,27 @@ public class IterableApi {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
                 if (dialogOptions != null) {
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-                    int templateId = message.optInt(IterableConstants.KEY_TEMPLATE_ID);
-
-                    int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
                     String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
+                    if (message != null) {
+                        try {
+                            String html = message.getString("html");
+                            if (html != null && html.contains("href")) {
+                                JSONObject paddingOptions = dialogOptions.optJSONObject("inAppDisplaySettings");
+                                Rect padding = IterableInAppManager.getPaddingFromPayload(paddingOptions);
 
-//                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
-//                    IterableApi.sharedInstance.inAppConsume(messageId);
-//                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
+                                double backgroundAlpha = message.getDouble("backgroundAlpha");
+                                IterableInAppManager.showIterableNotificationHTML(context, "", messageId, clickCallback, backgroundAlpha, padding);
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
 
-                    //TODO: parse and pass into the notification for layout
-                    Rect rect = new Rect(1,2,3,4);
-
-                    IterableInAppManager.showIterableNotificationHTML(context, "", messageId, clickCallback, backgroundAlpha, padding);
+                    }
                 }
             }
         });
+        final double backgroundAlpha = .5f;
+        final Rect padding = new Rect();//new Rect(0,-1,0, -1);
         IterableInAppManager.showIterableNotificationHTML(context, htmlString, "", clickCallback, backgroundAlpha, padding);
     }
 
@@ -709,17 +711,13 @@ public class IterableApi {
 
     /**
      * Tracks an InApp open.
-     * @param campaignId
-     * @param templateId
      * @param messageId
      */
-    public void trackInAppOpen(int campaignId, int templateId, String messageId) {
+    public void trackInAppOpen(String messageId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
         }
         catch (JSONException e) {

@@ -237,6 +237,28 @@ public class IterableInAppManager {
         return returnObject;
     }
 
+    public static Rect getPaddingFromPayload(JSONObject paddingOptions) {
+        Rect rect = new Rect();
+        rect.top = decodePadding(paddingOptions.optJSONObject("top"));
+        rect.left = decodePadding(paddingOptions.optJSONObject("left"));
+        rect.bottom = decodePadding(paddingOptions.optJSONObject("bottom"));
+        rect.right = decodePadding(paddingOptions.optJSONObject("right"));
+
+        return rect;
+    }
+
+    static int decodePadding(JSONObject jsonObject) {
+        int returnPadding = 0;
+        if (jsonObject != null) {
+            if ((jsonObject.optString("displayOption") == "AutoExpand")) {
+                returnPadding = -1;
+            } else {
+                returnPadding = jsonObject.optInt("percentage", 0);
+            }
+        }
+        return returnPadding;
+    }
+
     /**
      * Creates the button for an InApp Notification
      * @param context

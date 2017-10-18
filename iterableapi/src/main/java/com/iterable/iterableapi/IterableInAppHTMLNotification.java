@@ -112,6 +112,8 @@ public class IterableInAppHTMLNotification extends Dialog {
 
         relativeLayout.addView(webView,layoutParams);
         setContentView(relativeLayout,layoutParams);
+
+        IterableApi.sharedInstance.trackInAppOpen(messageId);
     }
 
     @Override
