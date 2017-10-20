@@ -16,6 +16,9 @@ import android.widget.RemoteViews;
 
 import com.squareup.picasso.Picasso;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  *
  * Created by David Truong dt@iterable.com
@@ -83,11 +86,19 @@ public class IterableNotification extends NotificationCompat.Builder {
             applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
             soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
-            pushImage = extras.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
 
             String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
             notificationBuilder.iterableNotificationData = new IterableNotificationData(iterableData);
             messageId = notificationBuilder.iterableNotificationData.getMessageId();
+
+            try {
+                JSONObject iterableJson = new JSONObject(iterableData);
+                if (iterableJson.has(IterableConstants.ITERABLE_DATA_PUSH_IMAGE)) {
+                    pushImage = iterableJson.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
+                }
+            } catch (JSONException e) {
+                IterableLogger.w(TAG, e.toString());
+            }
         }
 
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
