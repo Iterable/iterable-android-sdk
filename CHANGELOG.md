@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.1.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.9)
+ _Released on 2017-10-20_
+ 
+ 
+#### Fixed
+- Fixed payload path for image url.
+
 ## [2.1.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.8)
  _Released on 2017-07-28_
  
