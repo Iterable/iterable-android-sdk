@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -125,6 +126,12 @@ public class IterableApi {
     void setNotificationData(IterableNotificationData data) {
         _notificationData = data;
     }
+
+    @Nullable
+    public IterableNotificationData getNotificationData() {
+        return _notificationData;
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
