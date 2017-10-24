@@ -665,28 +665,25 @@ public class IterableApi {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
                 if (dialogOptions != null) {
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-                    String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
                     if (message != null) {
-                        try {
-                            String html = message.getString("html");
-                            if (html != null && html.contains("href")) {
-                                JSONObject paddingOptions = dialogOptions.optJSONObject("inAppDisplaySettings");
-                                Rect padding = IterableInAppManager.getPaddingFromPayload(paddingOptions);
+                        String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
+                        String html = message.optString("html");
+                        if (html.contains("href")) {
+                            JSONObject paddingOptions = message.optJSONObject("inAppDisplaySettings");
+                            Rect padding = IterableInAppManager.getPaddingFromPayload(paddingOptions);
 
-                                double backgroundAlpha = message.getDouble("backgroundAlpha");
-                                IterableInAppManager.showIterableNotificationHTML(context, "", messageId, clickCallback, backgroundAlpha, padding);
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+                            double backgroundAlpha = message.optDouble("backgroundAlpha", 0);
+                            IterableInAppManager.showIterableNotificationHTML(context, html, messageId, clickCallback, backgroundAlpha, padding);
+                        } else {
+                            IterableLogger.w(TAG, "No href tag in found in the in-app html payload: "+ html);
                         }
+
+                        IterableApi.sharedInstance.inAppConsume(messageId);
 
                     }
                 }
             }
         });
-        final double backgroundAlpha = .5f;
-        final Rect padding = new Rect();//new Rect(0,-1,0, -1);
-        IterableInAppManager.showIterableNotificationHTML(context, htmlString, "", clickCallback, backgroundAlpha, padding);
     }
 
     /**

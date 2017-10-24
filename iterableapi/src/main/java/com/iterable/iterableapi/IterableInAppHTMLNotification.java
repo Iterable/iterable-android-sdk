@@ -4,12 +4,15 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.SensorManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.OrientationEventListener;
 import android.view.Window;
@@ -82,7 +85,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     protected void onStart() {
         super.onStart();
 
-        this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.GREEN));
+        this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         webView = new IterableWebView(context);
         webView.createWithHtml(this, htmlString);
         webView.addJavascriptInterface(this, "ITBL");
@@ -127,49 +130,54 @@ public class IterableInAppHTMLNotification extends Dialog {
             @Override
             public void run() {
                 DisplayMetrics displayMetrics = getOwnerActivity().getResources().getDisplayMetrics();
-                int webViewHeight = (int) displayMetrics.heightPixels;
-                int webViewWidth = (int) displayMetrics.widthPixels;
+//                int webViewHeight = (int) displayMetrics.heightPixels;
+//                int webViewWidth = (int) displayMetrics.widthPixels;
 
                 Window window = notification.getWindow();
 
                 Rect insetPadding = notification.insetPadding;
 
-                Rect rectangle = new Rect();
-                window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
-//                int statusBarHeight = rectangle.top;
-//                int statusBarl = rectangle.left;
-//                int statusBarr = rectangle.right;
-//                int contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
-//                int titleBarHeight= contentViewTop - statusBarHeight;
+//                Rect rectangle = new Rect();
+//                window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
+//                int windowWidth = rectangle.width();
+//                int windowHeight = rectangle.height();
 
-                int windowWidth = rectangle.width();
-                int windowHeight = rectangle.height();
+                WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                Display display = wm.getDefaultDisplay();
 
-//                WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-//                Display display = wm.getDefaultDisplay();
-//
-//                Point size = new Point();
-//                display.getSize(size);
-//                webViewWidth = size.x;
-//                webViewHeight = size.y;
-
-                int orientation = getOwnerActivity().getResources().getConfiguration().orientation; //1 port / 2 land
-//                int requestedOrientation = getOwnerActivity().getRequestedOrientation(); //-1
-//                int rotation = display.getRotation(); //rotation from default?
-//                if (rotation == Surface.ROTATION_0) {
-//                    //figure out some rotations here
-//                }
-                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-                    if (windowHeight < windowWidth) {
-                        webViewHeight = (int) displayMetrics.widthPixels;
-                        webViewWidth = (int) displayMetrics.heightPixels;
-                    }
+                Point size = new Point();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    display.getRealSize(size);
                 } else {
-                    if (windowHeight > windowWidth) {
-                        webViewHeight = (int) displayMetrics.widthPixels;
-                        webViewWidth = (int) displayMetrics.heightPixels;
-                    }
+                    display.getSize(size);
                 }
+                int webViewWidth = size.x;
+                int webViewHeight = size.y;
+
+                int orientation = getOwnerActivity().getResources().getConfiguration().orientation;
+
+//                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+//                    if (windowHeight < windowWidth) {
+
+//                        webViewHeight = webViewHeightSwap;//(int) displayMetrics.widthPixels;
+//                        webViewWidth = webViewWidthSwap;//(int) displayMetrics.heightPixels;
+
+//                    } else {
+//
+//                    }
+//                } else {
+//                    if (windowHeight > windowWidth) {
+//                        webViewHeight = webViewHeightSwap;//(int) displayMetrics.widthPixels;
+//                        webViewWidth = webViewWidthSwap;//(int) displayMetrics.heightPixels;
+//                    } else {
+//
+//                    }
+//                }
+                //2464 , 1800
+                //2560, 1656 window height
+                //1800, 2465 display metrics
+
+                //2560, 1800 expected
 
                 int location = getLocation(insetPadding);
                 if (insetPadding.bottom == 0 && insetPadding.top == 0) {
@@ -193,6 +201,10 @@ public class IterableInAppHTMLNotification extends Dialog {
                     //Configurable constants
                     float dimAmount = 0.5f;
                     float widthPercentage = 1f;
+
+                    //should this be here as well?
+                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
 
                     int gravity = getLocation(insetPadding);
                     int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
@@ -249,7 +261,7 @@ class IterableWebView extends WebView {
         setOverScrollMode(WebView.OVER_SCROLL_NEVER);
 
         //transparent
-        setBackgroundColor(Color.TRANSPARENT);
+        setBackgroundColor(Color.GREEN);
 
         //Fixes the webView to be the size of the screen
         getSettings().setLoadWithOverviewMode(true);

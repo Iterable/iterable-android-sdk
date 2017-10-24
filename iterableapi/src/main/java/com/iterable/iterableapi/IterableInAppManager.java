@@ -250,7 +250,7 @@ public class IterableInAppManager {
     static int decodePadding(JSONObject jsonObject) {
         int returnPadding = 0;
         if (jsonObject != null) {
-            if ((jsonObject.optString("displayOption") == "AutoExpand")) {
+            if ("AutoExpand".equalsIgnoreCase(jsonObject.optString("displayOption"))) {
                 returnPadding = -1;
             } else {
                 returnPadding = jsonObject.optInt("percentage", 0);
