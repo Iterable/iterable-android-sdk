@@ -38,7 +38,7 @@ public class IterableInAppActionListener implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if (messageId != null) {
-            IterableApi.sharedInstance.trackInAppClick(messageId, index);
+//            IterableApi.sharedInstance.trackInAppClick(messageId, index);
         }
         if (onClickCallback != null) {
             onClickCallback.execute(actionName);

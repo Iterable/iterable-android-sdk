@@ -668,7 +668,7 @@ public class IterableApi {
                     if (message != null) {
                         String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
                         String html = message.optString("html");
-                        if (html.contains("href")) {
+                        if (html.toLowerCase().contains("href")) {
                             JSONObject paddingOptions = message.optJSONObject("inAppDisplaySettings");
                             Rect padding = IterableInAppManager.getPaddingFromPayload(paddingOptions);
 
@@ -727,15 +727,15 @@ public class IterableApi {
     /**
      * Tracks an InApp click.
      * @param messageId
-     * @param buttonIndex
+     * @param urlClick
      */
-    public void trackInAppClick(String messageId, int buttonIndex) {
+    public void trackInAppClick(String messageId, String urlClick) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_URL_CLICK, urlClick);
         }
         catch (JSONException e) {
             e.printStackTrace();
