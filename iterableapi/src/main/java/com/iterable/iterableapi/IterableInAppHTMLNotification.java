@@ -57,7 +57,7 @@ public class IterableInAppHTMLNotification extends Dialog {
         this.htmlString = htmlString;
         this.loaded = false;
         this.backgroundAlpha = 0;
-        this.messageId = ""; // should this be null?
+        this.messageId = "";
         insetPadding = new Rect();
     }
 
@@ -95,7 +95,7 @@ public class IterableInAppHTMLNotification extends Dialog {
                 public void onOrientationChanged(int orientation) {
                     System.out.print("changed Orientation");
                     // Re-layout the webview dialog.
-                    // Figure out how to do this on an activity handler (rotation complete)
+                    // TODO: Figure out how to do this on an activity handler (rotation complete)
                     if (loaded) {
                         final Handler handler = new Handler();
                         handler.postDelayed(new Runnable() {
@@ -130,21 +130,11 @@ public class IterableInAppHTMLNotification extends Dialog {
             @Override
             public void run() {
                 DisplayMetrics displayMetrics = getOwnerActivity().getResources().getDisplayMetrics();
-//                int webViewHeight = (int) displayMetrics.heightPixels;
-//                int webViewWidth = (int) displayMetrics.widthPixels;
-
                 Window window = notification.getWindow();
-
                 Rect insetPadding = notification.insetPadding;
-
-//                Rect rectangle = new Rect();
-//                window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
-//                int windowWidth = rectangle.width();
-//                int windowHeight = rectangle.height();
 
                 WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
                 Display display = wm.getDefaultDisplay();
-
                 Point size = new Point();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                     display.getRealSize(size);
@@ -154,30 +144,7 @@ public class IterableInAppHTMLNotification extends Dialog {
                 int webViewWidth = size.x;
                 int webViewHeight = size.y;
 
-                int orientation = getOwnerActivity().getResources().getConfiguration().orientation;
-
-//                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-//                    if (windowHeight < windowWidth) {
-
-//                        webViewHeight = webViewHeightSwap;//(int) displayMetrics.widthPixels;
-//                        webViewWidth = webViewWidthSwap;//(int) displayMetrics.heightPixels;
-
-//                    } else {
-//
-//                    }
-//                } else {
-//                    if (windowHeight > windowWidth) {
-//                        webViewHeight = webViewHeightSwap;//(int) displayMetrics.widthPixels;
-//                        webViewWidth = webViewWidthSwap;//(int) displayMetrics.heightPixels;
-//                    } else {
-//
-//                    }
-//                }
-                //2464 , 1800
-                //2560, 1656 window height
-                //1800, 2465 display metrics
-
-                //2560, 1800 expected
+                double notificationWidth = 100-(insetPadding.left +insetPadding.right);
 
                 int location = getLocation(insetPadding);
                 if (insetPadding.bottom == 0 && insetPadding.top == 0) {
@@ -185,34 +152,24 @@ public class IterableInAppHTMLNotification extends Dialog {
 
                     WindowManager.LayoutParams wlp = window.getAttributes();
                     wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+
                     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-
-                    //TODO: Is this necessary?
-//                    webView.setOnTouchListener(new View.OnTouchListener() {
-//                        @Override
-//                        public boolean onTouch(View v, MotionEvent event) {
-//                            //disables scrolling for full screen
-//                            return (event.getAction() == MotionEvent.ACTION_MOVE);
-//                        }
-//                    });
-
                 } else {
                     //Configurable constants
-                    float dimAmount = 0.5f;
-                    float widthPercentage = 1f;
+                    float dimAmount = (float) notification.backgroundAlpha;
+                    float widthPercentage = (float) notificationWidth/100;
 
-                    //should this be here as well?
-                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-
-                    int gravity = getLocation(insetPadding);
                     int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
                     int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
                     window.setLayout(maxWidth, maxHeight);
 
                     WindowManager.LayoutParams wlp = window.getAttributes();
-                    wlp.gravity = gravity;
+                    wlp.gravity = (location);
+
+                    double center = (100-insetPadding.right - notificationWidth/2f);
+                    int offset = (int) ((center - 50)/100f * webViewWidth);
+
+                    wlp.x = (int) (offset/100f*webViewWidth);
                     wlp.dimAmount = dimAmount;
                     wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
 
@@ -223,18 +180,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     }
 
     int getLocation(Rect padding) {
-
-//        if (_insetPadding.top == 0 && _insetPadding.bottom == 0) {
-//            location = INAPP_FULL;
-//        } else if (_insetPadding.top == 0 && _insetPadding.bottom < 0) {
-//            location = INAPP_TOP;
-//        } else if (_insetPadding.top < 0 && _insetPadding.bottom == 0) {
-//            location = INAPP_BOTTOM;
-//        } else if (_insetPadding.top < 0 && _insetPadding.bottom < 0) {
-//            location = INAPP_MIDDLE;
-//        }
-
-        int gravity = Gravity.CENTER;
+        int gravity = Gravity.CENTER_VERTICAL;
         if (padding.top  == 0 && padding.bottom < 0) {
             gravity = Gravity.TOP;
         } else if (padding.top < 0 && padding.bottom == 0) {
@@ -291,6 +237,8 @@ class IterableWebViewClient extends WebViewClient {
         Uri uri = Uri.parse(url);
         String authority = uri.getAuthority();
 
+        IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url);
+        inAppHTMLNotification.clickCallback.execute(url);
         listener.onClose(inAppHTMLNotification);
 
         return true;
