@@ -166,10 +166,10 @@ public class IterableInAppHTMLNotification extends Dialog {
                     WindowManager.LayoutParams wlp = window.getAttributes();
                     wlp.gravity = (location);
 
-                    double center = (100-insetPadding.right - notificationWidth/2f);
+                    double center = (insetPadding.left + notificationWidth/2f);
                     int offset = (int) ((center - 50)/100f * webViewWidth);
 
-                    wlp.x = (int) (offset/100f*webViewWidth);
+                    wlp.x = offset;
                     wlp.dimAmount = dimAmount;
                     wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
 
@@ -231,14 +231,16 @@ class IterableWebViewClient extends WebViewClient {
 
     @Override
     public boolean shouldOverrideUrlLoading(WebView  view, String  url) {
-        //TODO: handle the button click here
-        System.out.println("urlClicked: "+ url);
+        String callbackURL = url;
 
-        Uri uri = Uri.parse(url);
-        String authority = uri.getAuthority();
+        String itblUrlScheme = "itbl://";
+        if (url.startsWith(itblUrlScheme)) {
+            callbackURL = url.replace(itblUrlScheme, "");
+        }
 
         IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url);
-        inAppHTMLNotification.clickCallback.execute(url);
+
+        inAppHTMLNotification.clickCallback.execute(callbackURL);
         listener.onClose(inAppHTMLNotification);
 
         return true;
@@ -254,9 +256,5 @@ class IterableWebViewClient extends WebViewClient {
 class IterableInAppWebViewListener {
     public void onClose(IterableInAppHTMLNotification inApp) {
         inApp.dismiss();
-    }
-
-    public void onClick(IterableInAppHTMLNotification inApp) {
-
     }
 }
