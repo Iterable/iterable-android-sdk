@@ -33,11 +33,20 @@ import org.json.JSONObject;
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
 
+    /**
+     * Displays an html rendered InApp Notification
+     * @param context
+     * @param htmlString
+     * @param messageId
+     * @param clickCallback
+     * @param backgroundAlpha
+     * @param padding
+     */
     public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
-                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString); //and data
+                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString);
                 notification.setTrackParams(messageId);
                 notification.setCallback(clickCallback);
                 notification.setBackgroundAlpha(backgroundAlpha);
@@ -237,6 +246,11 @@ public class IterableInAppManager {
         return returnObject;
     }
 
+    /**
+     * Returns a Rect containing the paddingOptions
+     * @param paddingOptions
+     * @return
+     */
     public static Rect getPaddingFromPayload(JSONObject paddingOptions) {
         Rect rect = new Rect();
         rect.top = decodePadding(paddingOptions.optJSONObject("top"));
@@ -247,6 +261,11 @@ public class IterableInAppManager {
         return rect;
     }
 
+    /**
+     * Retrieves the padding percentage
+     * @param jsonObject
+     * @return
+     */
     static int decodePadding(JSONObject jsonObject) {
         int returnPadding = 0;
         if (jsonObject != null) {

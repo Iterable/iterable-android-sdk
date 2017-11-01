@@ -2,13 +2,11 @@ package com.iterable.iterableapi;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.SensorManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -28,28 +26,37 @@ import android.widget.RelativeLayout;
 
 public class IterableInAppHTMLNotification extends Dialog {
 
+    static final String BACK_BUTTON = "itbl://backButton";
+    static final String JAVASCRIPT_INTERFACE = "ITBL";
+
     static IterableInAppHTMLNotification notification;
 
     Context context;
     IterableWebView webView;
     Boolean loaded;
     OrientationEventListener orientationListener;
-
     String htmlString;
     String messageId;
     double backgroundAlpha;
     Rect insetPadding;
     IterableHelper.IterableActionHandler clickCallback;
 
+    /**
+     *
+     * @param context
+     * @param htmlString
+     * @return
+     */
     public static IterableInAppHTMLNotification createInstance(Context context, String htmlString) {
         notification = new IterableInAppHTMLNotification(context, htmlString);
         return notification;
     }
 
-    public static IterableInAppHTMLNotification getInstance() {
-        return notification;
-    }
-
+    /**
+     * HTML In-App Notification
+     * @param context
+     * @param htmlString
+     */
     private IterableInAppHTMLNotification(Context context, String htmlString) {
         super(context, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
 
@@ -61,26 +68,59 @@ public class IterableInAppHTMLNotification extends Dialog {
         insetPadding = new Rect();
     }
 
+    /**
+     * Sets the trackParams
+     * @param messageId
+     */
     public void setTrackParams(String messageId) {
         this.messageId = messageId;
     }
 
+    /**
+     * Sets the clickCallback
+     * @param clickCallback
+     */
     public void setCallback(IterableHelper.IterableActionHandler clickCallback) {
         this.clickCallback = clickCallback;
     }
 
+    /**
+     * Sets the loaded flag
+     * @param loaded
+     */
     public void setLoaded(Boolean loaded) {
         this.loaded = loaded;
     }
 
+    /**
+     * Sets the backgroundAlpha
+     * @param backgroundAlpha
+     */
     public void setBackgroundAlpha(double backgroundAlpha) {
         this.backgroundAlpha = backgroundAlpha;
     }
 
+    /**
+     * Sets the padding
+     * @param insetPadding
+     */
     public void setPadding(Rect insetPadding) {
         this.insetPadding = insetPadding;
     }
 
+    /**
+     * Tracks a button click when the back button is pressed
+     */
+    @Override
+    public void onBackPressed() {
+        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
+
+        super.onBackPressed();
+    }
+
+    /**
+     * Sets up the webview and the dialog layout
+     */
     @Override
     protected void onStart() {
         super.onStart();
@@ -88,14 +128,12 @@ public class IterableInAppHTMLNotification extends Dialog {
         this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         webView = new IterableWebView(context);
         webView.createWithHtml(this, htmlString);
-        webView.addJavascriptInterface(this, "ITBL");
+        webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
                 public void onOrientationChanged(int orientation) {
-                    System.out.print("changed Orientation");
                     // Re-layout the webview dialog.
-                    // TODO: Figure out how to do this on an activity handler (rotation complete)
                     if (loaded) {
                         final Handler handler = new Handler();
                         handler.postDelayed(new Runnable() {
@@ -119,11 +157,18 @@ public class IterableInAppHTMLNotification extends Dialog {
         IterableApi.sharedInstance.trackInAppOpen(messageId);
     }
 
+    /**
+     * On Stop of the dialog
+     */
     @Override
     protected void onStop() {
         orientationListener.disable();
     }
 
+    /**
+     * Resizes the dialog window based upon the size of its webview html content
+     * @param height
+     */
     @JavascriptInterface
     public void resize(final float height) {
         getOwnerActivity().runOnUiThread(new Runnable() {
@@ -155,7 +200,6 @@ public class IterableInAppHTMLNotification extends Dialog {
 
                     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
                 } else {
-                    //Configurable constants
                     float dimAmount = (float) notification.backgroundAlpha;
                     float widthPercentage = (float) notificationWidth/100;
 
@@ -179,6 +223,11 @@ public class IterableInAppHTMLNotification extends Dialog {
         });
     }
 
+    /**
+     * Returns the gravity for the given padding
+     * @param padding
+     * @return
+     */
     int getLocation(Rect padding) {
         int gravity = Gravity.CENTER_VERTICAL;
         if (padding.top  == 0 && padding.bottom < 0) {
@@ -190,16 +239,24 @@ public class IterableInAppHTMLNotification extends Dialog {
     }
 }
 
+/**
+ * The custom html webView
+ */
 class IterableWebView extends WebView {
-    final String mimeType = "text/html";
-    final String encoding = "UTF-8";
+    static final String mimeType = "text/html";
+    static final String encoding = "UTF-8";
 
     IterableWebView(Context context) {
         super(context);
     }
 
+    /**
+     * Loads the html into the webView
+     * @param notificationDialog
+     * @param html
+     */
     void createWithHtml(IterableInAppHTMLNotification notificationDialog, String html) {
-        IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog, new IterableInAppWebViewListener());
+        IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog);
         loadDataWithBaseURL("", html, mimeType, encoding, "");
         setWebViewClient(webViewClient);
 
@@ -207,7 +264,7 @@ class IterableWebView extends WebView {
         setOverScrollMode(WebView.OVER_SCROLL_NEVER);
 
         //transparent
-        setBackgroundColor(Color.GREEN);
+        setBackgroundColor(Color.TRANSPARENT);
 
         //Fixes the webView to be the size of the screen
         getSettings().setLoadWithOverviewMode(true);
@@ -218,43 +275,48 @@ class IterableWebView extends WebView {
     }
 }
 
+/**
+ * Custom webViewClient which handles url clicks
+ */
 class IterableWebViewClient extends WebViewClient {
     static final String resizeScript = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
+    static final String itblUrlScheme = "itbl://";
 
     IterableInAppHTMLNotification inAppHTMLNotification;
-    IterableInAppWebViewListener listener;
 
-    IterableWebViewClient(IterableInAppHTMLNotification inAppHTMLNotification, IterableInAppWebViewListener listener) {
+    IterableWebViewClient(IterableInAppHTMLNotification inAppHTMLNotification) {
         this.inAppHTMLNotification = inAppHTMLNotification;
-        this.listener = listener;
     }
 
+    /**
+     * Handles url clicks
+     * @param view
+     * @param url
+     * @return
+     */
     @Override
     public boolean shouldOverrideUrlLoading(WebView  view, String  url) {
         String callbackURL = url;
 
-        String itblUrlScheme = "itbl://";
         if (url.startsWith(itblUrlScheme)) {
             callbackURL = url.replace(itblUrlScheme, "");
         }
 
         IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url);
-
         inAppHTMLNotification.clickCallback.execute(callbackURL);
-        listener.onClose(inAppHTMLNotification);
+        inAppHTMLNotification.dismiss();
 
         return true;
     }
 
+    /**
+     * Resizes the view after the page has loaded
+     * @param view
+     * @param url
+     */
     @Override
     public void onPageFinished(WebView view, String url) {
         inAppHTMLNotification.setLoaded(true);
         view.loadUrl(resizeScript);
-    }
-}
-
-class IterableInAppWebViewListener {
-    public void onClose(IterableInAppHTMLNotification inApp) {
-        inApp.dismiss();
     }
 }
