@@ -113,4 +113,5 @@ public final class IterableConstants {
 
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
     public static final String ITBL_PLATFORM_ANDROID = "Android";
+    public static final String ITBL_KEY_SDK_VERSION_NUMBER = "0.0.0";
 }

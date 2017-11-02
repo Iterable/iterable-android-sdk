@@ -263,6 +263,7 @@ public class IterableInAppManager {
 
     /**
      * Retrieves the padding percentage
+     * @discussion -1 is returned when the padding percentage should be auto-sized
      * @param jsonObject
      * @return
      */

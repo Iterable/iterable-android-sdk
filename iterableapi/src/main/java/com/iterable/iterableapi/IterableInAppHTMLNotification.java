@@ -42,7 +42,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     IterableHelper.IterableActionHandler clickCallback;
 
     /**
-     *
+     * Creates a static instance of the notification
      * @param context
      * @param htmlString
      * @return
@@ -124,7 +124,6 @@ public class IterableInAppHTMLNotification extends Dialog {
     @Override
     protected void onStart() {
         super.onStart();
-
         this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         webView = new IterableWebView(context);
         webView.createWithHtml(this, htmlString);
@@ -133,7 +132,7 @@ public class IterableInAppHTMLNotification extends Dialog {
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
                 public void onOrientationChanged(int orientation) {
-                    // Re-layout the webview dialog.
+                    // Resize the webview on device rotation
                     if (loaded) {
                         final Handler handler = new Handler();
                         handler.postDelayed(new Runnable() {
@@ -150,7 +149,6 @@ public class IterableInAppHTMLNotification extends Dialog {
 
         RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.MATCH_PARENT);
-
         relativeLayout.addView(webView,layoutParams);
         setContentView(relativeLayout,layoutParams);
 
@@ -181,6 +179,9 @@ public class IterableInAppHTMLNotification extends Dialog {
                 WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
                 Display display = wm.getDefaultDisplay();
                 Point size = new Point();
+
+                // Get the correct screen size based on api level
+                // https://stackoverflow.com/questions/35780980/getting-the-actual-screen-height-android
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                     display.getRealSize(size);
                 } else {
@@ -189,34 +190,30 @@ public class IterableInAppHTMLNotification extends Dialog {
                 int webViewWidth = size.x;
                 int webViewHeight = size.y;
 
-                double notificationWidth = 100-(insetPadding.left +insetPadding.right);
-
-                int location = getLocation(insetPadding);
+                //Check if the dialog is full screen
                 if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+                    //Handle full screen
                     window.setLayout(webViewWidth, webViewHeight);
-
-                    WindowManager.LayoutParams wlp = window.getAttributes();
-                    wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
 
                     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
                 } else {
-                    float dimAmount = (float) notification.backgroundAlpha;
+                    // Calculates the dialog size
+                    double notificationWidth = 100-(insetPadding.left +insetPadding.right);
                     float widthPercentage = (float) notificationWidth/100;
-
                     int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
                     int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
                     window.setLayout(maxWidth, maxHeight);
 
-                    WindowManager.LayoutParams wlp = window.getAttributes();
-                    wlp.gravity = (location);
-
+                    //Calculates the horizontal position based on the dialog size
                     double center = (insetPadding.left + notificationWidth/2f);
                     int offset = (int) ((center - 50)/100f * webViewWidth);
 
+                    //Set the window properties
+                    WindowManager.LayoutParams wlp = window.getAttributes();
                     wlp.x = offset;
-                    wlp.dimAmount = dimAmount;
+                    wlp.gravity = getLocation(insetPadding);
+                    wlp.dimAmount = (float) notification.backgroundAlpha;
                     wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-
                     window.setAttributes(wlp);
                 }
             }
@@ -224,13 +221,13 @@ public class IterableInAppHTMLNotification extends Dialog {
     }
 
     /**
-     * Returns the gravity for the given padding
+     * Returns the vertical position of the dialog for the given padding
      * @param padding
      * @return
      */
     int getLocation(Rect padding) {
         int gravity = Gravity.CENTER_VERTICAL;
-        if (padding.top  == 0 && padding.bottom < 0) {
+        if (padding.top == 0 && padding.bottom < 0) {
             gravity = Gravity.TOP;
         } else if (padding.top < 0 && padding.bottom == 0) {
             gravity = Gravity.BOTTOM;
@@ -298,6 +295,7 @@ class IterableWebViewClient extends WebViewClient {
     public boolean shouldOverrideUrlLoading(WebView  view, String  url) {
         String callbackURL = url;
 
+        //Removes the itbl:// scheme from the callbackUrl
         if (url.startsWith(itblUrlScheme)) {
             callbackURL = url.replace(itblUrlScheme, "");
         }
