@@ -211,7 +211,7 @@ public class IterableInAppHTMLNotification extends Dialog {
                     //Set the window properties
                     WindowManager.LayoutParams wlp = window.getAttributes();
                     wlp.x = offset;
-                    wlp.gravity = getLocation(insetPadding);
+                    wlp.gravity = getVerticalLocation(insetPadding);
                     wlp.dimAmount = (float) notification.backgroundAlpha;
                     wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
                     window.setAttributes(wlp);
@@ -225,7 +225,7 @@ public class IterableInAppHTMLNotification extends Dialog {
      * @param padding
      * @return
      */
-    int getLocation(Rect padding) {
+    int getVerticalLocation(Rect padding) {
         int gravity = Gravity.CENTER_VERTICAL;
         if (padding.top == 0 && padding.bottom < 0) {
             gravity = Gravity.TOP;
