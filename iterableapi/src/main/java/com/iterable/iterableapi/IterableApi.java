@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -533,15 +534,22 @@ public class IterableApi {
                 JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
                 if (dialogOptions != null) {
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-                    int templateId = message.optInt(IterableConstants.KEY_TEMPLATE_ID);
+                    if (message != null) {
+                        String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
+                        String html = message.optString("html");
+                        if (html.toLowerCase().contains("href")) {
+                            JSONObject paddingOptions = message.optJSONObject("inAppDisplaySettings");
+                            Rect padding = IterableInAppManager.getPaddingFromPayload(paddingOptions);
 
-                    int campaignId = dialogOptions.optInt(IterableConstants.KEY_CAMPAIGN_ID);
-                    String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
+                            double backgroundAlpha = message.optDouble("backgroundAlpha", 0);
+                            IterableInAppManager.showIterableNotificationHTML(context, html, messageId, clickCallback, backgroundAlpha, padding);
+                        } else {
+                            IterableLogger.w(TAG, "No href tag in found in the in-app html payload: "+ html);
+                        }
 
-                    IterableApi.sharedInstance.trackInAppOpen(campaignId, templateId, messageId);
-                    IterableApi.sharedInstance.inAppConsume(messageId);
-                    IterableInAppManager.showNotification(context, message, messageId, clickCallback);
+                        IterableApi.sharedInstance.inAppConsume(messageId);
 
+                    }
                 }
             }
         });
@@ -558,6 +566,8 @@ public class IterableApi {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
+            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -567,17 +577,13 @@ public class IterableApi {
 
     /**
      * Tracks an InApp open.
-     * @param campaignId
-     * @param templateId
      * @param messageId
      */
-    public void trackInAppOpen(int campaignId, int templateId, String messageId) {
+    public void trackInAppOpen(String messageId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
         }
         catch (JSONException e) {
@@ -590,15 +596,15 @@ public class IterableApi {
     /**
      * Tracks an InApp click.
      * @param messageId
-     * @param buttonIndex
+     * @param urlClick
      */
-    public void trackInAppClick(String messageId, int buttonIndex) {
+    public void trackInAppClick(String messageId, String urlClick) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_BUTTON_INDEX, buttonIndex);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_URL_CLICK, urlClick);
         }
         catch (JSONException e) {
             e.printStackTrace();

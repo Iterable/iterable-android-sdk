@@ -1,11 +1,13 @@
 package com.iterable.iterableapi;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 
 import android.graphics.Color;
 
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
@@ -30,6 +32,32 @@ import org.json.JSONObject;
  */
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
+
+    /**
+     * Displays an html rendered InApp Notification
+     * @param context
+     * @param htmlString
+     * @param messageId
+     * @param clickCallback
+     * @param backgroundAlpha
+     * @param padding
+     */
+    public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
+        if (context instanceof Activity) {
+            Activity currentActivity = (Activity) context;
+            if (htmlString != null) {
+                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString);
+                notification.setTrackParams(messageId);
+                notification.setCallback(clickCallback);
+                notification.setBackgroundAlpha(backgroundAlpha);
+                notification.setPadding(padding);
+                notification.setOwnerActivity(currentActivity);
+                notification.show();
+            }
+        } else {
+            IterableLogger.w(TAG, "To display in-app notifications, the context must be of an instance of: Activity");
+        }
+    }
 
     /**
      * Displays an InApp Notification from the dialogOptions; with a click callback handler.
@@ -216,6 +244,39 @@ public class IterableInAppManager {
             }
         }
         return returnObject;
+    }
+
+    /**
+     * Returns a Rect containing the paddingOptions
+     * @param paddingOptions
+     * @return
+     */
+    public static Rect getPaddingFromPayload(JSONObject paddingOptions) {
+        Rect rect = new Rect();
+        rect.top = decodePadding(paddingOptions.optJSONObject("top"));
+        rect.left = decodePadding(paddingOptions.optJSONObject("left"));
+        rect.bottom = decodePadding(paddingOptions.optJSONObject("bottom"));
+        rect.right = decodePadding(paddingOptions.optJSONObject("right"));
+
+        return rect;
+    }
+
+    /**
+     * Retrieves the padding percentage
+     * @discussion -1 is returned when the padding percentage should be auto-sized
+     * @param jsonObject
+     * @return
+     */
+    static int decodePadding(JSONObject jsonObject) {
+        int returnPadding = 0;
+        if (jsonObject != null) {
+            if ("AutoExpand".equalsIgnoreCase(jsonObject.optString("displayOption"))) {
+                returnPadding = -1;
+            } else {
+                returnPadding = jsonObject.optInt("percentage", 0);
+            }
+        }
+        return returnPadding;
     }
 
     /**
