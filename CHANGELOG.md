@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.2.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.0)
+ _Released on 2017-11-03_
+ 
+#### Added
+- Added support for html based in-app notifications.
+
 ## [2.1.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.9)
  _Released on 2017-10-20_
  
