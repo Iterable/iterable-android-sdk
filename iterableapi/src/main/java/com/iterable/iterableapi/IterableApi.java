@@ -12,11 +12,13 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -519,6 +521,42 @@ public class IterableApi {
     public void disablePush(String iterableAppId, String projectNumber, String pushServicePlatform) {
         IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
+    }
+
+    /**
+     *
+     * @param emailListIds
+     * @param unsubscribedChannelIds
+     * @param unsubscribedMessageTypeIds
+     */
+    public void updateSubscriptions(Integer[] emailListIds, Integer[] unsubscribedChannelIds, Integer[] unsubscribedMessageTypeIds) {
+        JSONObject requestJSON = new JSONObject();
+        addEmailOrUserIdToJson(requestJSON);
+
+        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_EMAIL_LIST_IDS, emailListIds);
+        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_UNSUB_CHANNEL, unsubscribedChannelIds);
+        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_UNSUB_MESSAGE, unsubscribedMessageTypeIds);
+
+        sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER_SUBS, requestJSON);
+    }
+
+    void tryAddArrayToJSON(JSONObject requestJSON, String key, Object[] value) {
+        if (requestJSON != null && key != null && value != null)
+            try {
+                JSONArray mJSONArray = new JSONArray(Arrays.asList(value));
+                requestJSON.put(key, mJSONArray);
+            } catch (JSONException e) {
+                IterableLogger.e(TAG, e.toString());
+            }
+    }
+
+    void tryAddValueToJSON(JSONObject requestJSON, String key, Object value) {
+        try {
+            requestJSON.put(key, value);
+        }
+        catch (JSONException e) {
+            IterableLogger.e(TAG, e.toString());
+        }
     }
 
     /**

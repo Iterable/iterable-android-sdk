@@ -17,7 +17,8 @@ public final class IterableConstants {
     public static final String KEY_DATA_FIELDS          = "dataFields";
     public static final String KEY_DEVICE               = "device";
     public static final String KEY_EMAIL                = "email";
-    public static final String KEY_EVENT_NAME            = "eventName";
+    public static final String KEY_EMAIL_LIST_IDS       = "emailListIds";
+    public static final String KEY_EVENT_NAME           = "eventName";
     public static final String KEY_ITEMS                = "items";
     public static final String KEY_NEW_EMAIL            = "newEmail";
     public static final String KEY_PLATFORM             = "platform";
@@ -27,6 +28,8 @@ public final class IterableConstants {
     public static final String KEY_MESSAGE_ID           = "messageId";
     public static final String KEY_TOKEN                = "token";
     public static final String KEY_TOTAL                = "total";
+    public static final String KEY_UNSUB_CHANNEL        = "unsubscribedChannelIds";
+    public static final String KEY_UNSUB_MESSAGE        = "unsubscribedMessageTypeIds";
     public static final String KEY_USER_ID              = "userId";
     public static final String KEY_USER                 = "user";
 
@@ -41,8 +44,9 @@ public final class IterableConstants {
     public static final String ENDPOINT_TRACK_INAPP_OPEN        = "events/trackInAppOpen";
     public static final String ENDPOINT_TRACK_PURCHASE          = "commerce/trackPurchase";
     public static final String ENDPOINT_TRACK_PUSH_OPEN         = "events/trackPushOpen";
-    public static final String ENDPOINT_UPDATE_EMAIL            = "users/updateEmail";
     public static final String ENDPOINT_UPDATE_USER             = "users/update";
+    public static final String ENDPOINT_UPDATE_EMAIL            = "users/updateEmail";
+    public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
