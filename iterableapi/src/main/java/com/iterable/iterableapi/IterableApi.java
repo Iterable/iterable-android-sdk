@@ -503,7 +503,6 @@ public class IterableApi {
 
     /**
      * Disables the device from push notifications
-     *
      * @param iterableAppId
      * @param gcmProjectNumber
      */
@@ -513,7 +512,6 @@ public class IterableApi {
 
     /**
      * Disables the device from push notifications
-     *
      * @param iterableAppId
      * @param projectNumber
      * @param pushServicePlatform
@@ -524,7 +522,7 @@ public class IterableApi {
     }
 
     /**
-     *
+     * Updates the user subscription preferences
      * @param emailListIds
      * @param unsubscribedChannelIds
      * @param unsubscribedMessageTypeIds
@@ -540,6 +538,12 @@ public class IterableApi {
         sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER_SUBS, requestJSON);
     }
 
+    /**
+     * Attempts to add an array as a JSONArray to a JSONObject
+     * @param requestJSON
+     * @param key
+     * @param value
+     */
     void tryAddArrayToJSON(JSONObject requestJSON, String key, Object[] value) {
         if (requestJSON != null && key != null && value != null)
             try {
@@ -548,15 +552,6 @@ public class IterableApi {
             } catch (JSONException e) {
                 IterableLogger.e(TAG, e.toString());
             }
-    }
-
-    void tryAddValueToJSON(JSONObject requestJSON, String key, Object value) {
-        try {
-            requestJSON.put(key, value);
-        }
-        catch (JSONException e) {
-            IterableLogger.e(TAG, e.toString());
-        }
     }
 
     /**
@@ -797,6 +792,7 @@ public class IterableApi {
         this._email = email;
         this._userId = userId;
     }
+
 
     /**
      * Attempts to track a notifOpened event from the called Intent.
