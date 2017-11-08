@@ -526,6 +526,7 @@ public class IterableApi {
      * @param emailListIds
      * @param unsubscribedChannelIds
      * @param unsubscribedMessageTypeIds
+     * @discussion passing in an empty array will clear subscription list, passing in null will not modify the list
      */
     public void updateSubscriptions(Integer[] emailListIds, Integer[] unsubscribedChannelIds, Integer[] unsubscribedMessageTypeIds) {
         JSONObject requestJSON = new JSONObject();
@@ -792,7 +793,6 @@ public class IterableApi {
         this._email = email;
         this._userId = userId;
     }
-
 
     /**
      * Attempts to track a notifOpened event from the called Intent.
