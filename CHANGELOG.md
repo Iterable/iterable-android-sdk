@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.2.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.1)
+ _Released on 2017-11-10_
+ 
+#### Added
+- Added the `updateSubscriptions` function to create to modify channel, list, and message subscription preferences.
+
 ## [2.2.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.0)
  _Released on 2017-11-03_
  
