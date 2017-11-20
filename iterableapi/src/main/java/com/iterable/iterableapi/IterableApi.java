@@ -522,11 +522,10 @@ public class IterableApi {
     }
 
     /**
-     * Updates the user subscription preferences
+     * Updates the user subscription preferences. Passing in an empty array will clear the list, passing in null will not modify the list
      * @param emailListIds
      * @param unsubscribedChannelIds
      * @param unsubscribedMessageTypeIds
-     * @discussion passing in an empty array will clear subscription list, passing in null will not modify the list
      */
     public void updateSubscriptions(Integer[] emailListIds, Integer[] unsubscribedChannelIds, Integer[] unsubscribedMessageTypeIds) {
         JSONObject requestJSON = new JSONObject();
