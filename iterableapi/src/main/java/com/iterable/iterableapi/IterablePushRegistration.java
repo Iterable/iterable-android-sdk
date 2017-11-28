@@ -40,15 +40,25 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, e.toString());
                 }
-                IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, pushRegistrationObject.token, pushRegistrationObject.messagingPlatform, data);
+              if (pushRegistrationObject != null) {
+                  IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, pushRegistrationObject.token, pushRegistrationObject.messagingPlatform, data);
+              }
             } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                 pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, false);
-                IterableApi.sharedInstance.disablePush(pushRegistrationObject.token);
+                if (pushRegistrationObject != null) {
+                    IterableApi.sharedInstance.disablePush(pushRegistrationObject.token);
+                }
             }
         } else {
             IterableLogger.e("IterablePush", "The IterableAppId has not been added");
         }
-        return pushRegistrationObject.token;
+
+        String deviceToken = null;
+        if (pushRegistrationObject != null) {
+            deviceToken = pushRegistrationObject.token;
+        }
+
+        return deviceToken;
     }
 
     /**
