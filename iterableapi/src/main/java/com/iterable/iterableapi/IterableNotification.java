@@ -21,8 +21,6 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import iterable.com.iterableapi.R;
-
 /**
  * Created by David Truong dt@iterable.com
  */
@@ -90,7 +88,6 @@ public class IterableNotification extends NotificationCompat.Builder {
 
         registerChannelIfEmpty(context, channelId, channelName, channelDescription);
         IterableNotification notificationBuilder = new IterableNotification(context, context.getPackageName());
-        Log.d(TAG, "createNotificationChannel: " + context.getPackageName());
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
             applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
@@ -202,10 +199,9 @@ public class IterableNotification extends NotificationCompat.Builder {
      * Only creates the notification channel if application does not have notification channel created.
      *
      * @param context
-     * @param channelId Determines the channel Id. This distinguishes if the app has different channel or not.
-     * @param channelName Sets the channel name that is shown to the user.
+     * @param channelId          Determines the channel Id. This distinguishes if the app has different channel or not.
+     * @param channelName        Sets the channel name that is shown to the user.
      * @param channelDescription Sets the channel description that is shown to the user.
-     *
      */
     private static void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription) {
         NotificationManager mNotificationManager = (NotificationManager)
@@ -213,6 +209,8 @@ public class IterableNotification extends NotificationCompat.Builder {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                 && mNotificationManager != null
                 && mNotificationManager.getNotificationChannel(channelId) == null) {
+            IterableLogger.d(TAG, "Creating notification: channelId = " + channelId + " channelName = "
+                    + channelName + " channelDescription = " + channelDescription);
             mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription));
         }
     }
