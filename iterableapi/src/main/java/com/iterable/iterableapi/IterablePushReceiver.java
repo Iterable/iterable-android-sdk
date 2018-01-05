@@ -45,7 +45,7 @@ public class IterablePushReceiver extends BroadcastReceiver{
     private void handlePushReceived(Context context, Intent intent) {
         if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
             Bundle extras =  intent.getExtras();
-            if (!IterableNotification.isGhostPush(extras)) {
+            if (!IterableNotification.isGhostPush(extras) && !IterableNotification.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + extras);
                 Context appContext = context.getApplicationContext();
                 PackageManager packageManager = appContext.getPackageManager();

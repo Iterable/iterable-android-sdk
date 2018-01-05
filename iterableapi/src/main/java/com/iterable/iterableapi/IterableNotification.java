@@ -243,4 +243,19 @@ public class IterableNotification extends NotificationCompat.Builder {
 
         return isGhostPush;
     }
+
+    /**
+     * Returns if the given notification has an empty body
+     * @param extras
+     * @return
+     */
+    static boolean isEmptyBody(Bundle extras) {
+        String notificationBody = "";
+        if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+            notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY, "");
+        }
+
+        return notificationBody.isEmpty();
+    }
 }
