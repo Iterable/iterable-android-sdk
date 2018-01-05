@@ -83,10 +83,12 @@ public class IterableNotification extends NotificationCompat.Builder {
         String soundName = null;
         String messageId = null;
         String pushImage = null;
+        //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
         String channelName = "iterable channel";
         String channelId = context.getPackageName();
+        String channelDescription = "";
 
-        registerChannelIfEmpty(context, channelId, channelName);
+        registerChannelIfEmpty(context, channelId, channelName, channelDescription);
         IterableNotification notificationBuilder = new IterableNotification(context, context.getPackageName());
         Log.d(TAG, "createNotificationChannel: " + context.getPackageName());
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
@@ -195,21 +197,31 @@ public class IterableNotification extends NotificationCompat.Builder {
         }
     }
 
-    private static void registerChannelIfEmpty(Context context, String channelId, String channelName) {
+    /**
+     * Creates the notification channel on device.
+     * Only creates the notification channel if application does not have notification channel created.
+     *
+     * @param context
+     * @param channelId Determines the channel Id. This distinguishes if the app has different channel or not.
+     * @param channelName Sets the channel name that is shown to the user.
+     * @param channelDescription Sets the channel description that is shown to the user.
+     *
+     */
+    private static void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription) {
         NotificationManager mNotificationManager = (NotificationManager)
                 context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                 && mNotificationManager != null
                 && mNotificationManager.getNotificationChannel(channelId) == null) {
-            mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName));
+            mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription));
         }
     }
 
-    private static NotificationChannel createNotificationChannel(String channelId, String channelName) {
+    private static NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription) {
         NotificationChannel notificationChannel = null;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
-            notificationChannel.setDescription("Channel description");
+            notificationChannel.setDescription(channelDescription);
             notificationChannel.enableLights(true);
         }
         return notificationChannel;
