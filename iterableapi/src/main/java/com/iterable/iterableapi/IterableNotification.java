@@ -252,7 +252,6 @@ public class IterableNotification extends NotificationCompat.Builder {
     static boolean isEmptyBody(Bundle extras) {
         String notificationBody = "";
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY, "");
         }
 
