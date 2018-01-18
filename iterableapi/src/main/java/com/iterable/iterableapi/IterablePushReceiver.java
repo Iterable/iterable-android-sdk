@@ -46,22 +46,26 @@ public class IterablePushReceiver extends BroadcastReceiver{
         if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
             Bundle extras =  intent.getExtras();
             if (!IterableNotification.isGhostPush(extras)) {
-                IterableLogger.d(TAG, "Iterable push received " + extras);
-                Context appContext = context.getApplicationContext();
-                PackageManager packageManager = appContext.getPackageManager();
-                Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
-                ComponentName componentPackageName = packageIntent.getComponent();
-                String mainClassName = componentPackageName.getClassName();
-                Class mainClass = null;
-                try {
-                    mainClass = Class.forName(mainClassName);
-                } catch (ClassNotFoundException e) {
-                    IterableLogger.w(TAG, e.toString());
-                }
+                if (!IterableNotification.isEmptyBody(extras)) {
+                    IterableLogger.d(TAG, "Iterable push received " + extras);
+                    Context appContext = context.getApplicationContext();
+                    PackageManager packageManager = appContext.getPackageManager();
+                    Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
+                    ComponentName componentPackageName = packageIntent.getComponent();
+                    String mainClassName = componentPackageName.getClassName();
+                    Class mainClass = null;
+                    try {
+                        mainClass = Class.forName(mainClassName);
+                    } catch (ClassNotFoundException e) {
+                        IterableLogger.w(TAG, e.toString());
+                    }
 
-                IterableNotification notificationBuilder = IterableNotification.createNotification(
-                        appContext, intent.getExtras(), mainClass);
-                new IterableNotificationBuilder().execute(notificationBuilder);
+                    IterableNotification notificationBuilder = IterableNotification.createNotification(
+                            appContext, intent.getExtras(), mainClass);
+                    new IterableNotificationBuilder().execute(notificationBuilder);
+                } else {
+                    IterableLogger.d(TAG, "Iterable OS notification push received");
+                }
             } else {
                 IterableLogger.d(TAG, "Iterable ghost silent push received");
             }
