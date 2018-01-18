@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -20,18 +21,17 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- *
  * Created by David Truong dt@iterable.com
  */
 public class IterableNotification extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
     private boolean isGhostPush;
-    private  String imageUrl;
+    private String imageUrl;
     int requestCode;
     IterableNotificationData iterableNotificationData;
 
-    protected IterableNotification(Context context) {
-        super(context);
+    protected IterableNotification(Context context, String channelId) {
+        super(context, channelId);
     }
 
     /**
@@ -67,6 +67,7 @@ public class IterableNotification extends NotificationCompat.Builder {
 
     /**
      * Creates and returns an instance of IterableNotification.
+     *
      * @param context
      * @param extras
      * @param classToOpen
@@ -74,14 +75,18 @@ public class IterableNotification extends NotificationCompat.Builder {
      */
     public static IterableNotification createNotification(Context context, Bundle extras, Class classToOpen) {
         int stringId = context.getApplicationInfo().labelRes;
-        String applicationName  = context.getString(stringId);
+        String applicationName = context.getString(stringId);
         String notificationBody = null;
         String soundName = null;
         String messageId = null;
         String pushImage = null;
+        //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
+        String channelName = "iterable channel";
+        String channelId = context.getPackageName();
+        String channelDescription = "";
 
-        IterableNotification notificationBuilder = new IterableNotification(context);
-
+        registerChannelIfEmpty(context, channelId, channelName, channelDescription);
+        IterableNotification notificationBuilder = new IterableNotification(context, context.getPackageName());
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
             applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
@@ -110,20 +115,20 @@ public class IterableNotification extends NotificationCompat.Builder {
         notifPermissions.defaults |= Notification.DEFAULT_LIGHTS;
 
         notificationBuilder
-            .setSmallIcon(getIconId(context))
-            .setTicker(applicationName).setWhen(0)
-            .setAutoCancel(true)
-            .setContentTitle(applicationName)
-            .setPriority(Notification.PRIORITY_HIGH)
-            .setContentText(notificationBody);
+                .setSmallIcon(getIconId(context))
+                .setTicker(applicationName).setWhen(0)
+                .setAutoCancel(true)
+                .setContentTitle(applicationName)
+                .setPriority(Notification.PRIORITY_HIGH)
+                .setContentText(notificationBody);
 
         if (pushImage != null) {
             notificationBuilder.imageUrl = pushImage;
             notificationBuilder.setContentText(notificationBody)
-                .setStyle(new NotificationCompat.BigPictureStyle()
-                    .setBigContentTitle(applicationName)
-                    .setSummaryText(notificationBody)
-                );
+                    .setStyle(new NotificationCompat.BigPictureStyle()
+                            .setBigContentTitle(applicationName)
+                            .setSummaryText(notificationBody)
+                    );
         } else {
             notificationBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody));
         }
@@ -133,7 +138,7 @@ public class IterableNotification extends NotificationCompat.Builder {
             String[] soundFile = soundName.split("\\.");
             soundName = soundFile[0];
 
-            if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)){
+            if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)) {
                 int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
                 Uri soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
                 notificationBuilder.setSound(soundUri);
@@ -175,6 +180,7 @@ public class IterableNotification extends NotificationCompat.Builder {
     /**
      * Posts the notification on device.
      * Only sets the notification if it is not a ghostPush/null iterableNotification.
+     *
      * @param context
      * @param iterableNotification Function assumes that the iterableNotification is a ghostPush
      *                             if the IterableNotification passed in is null.
@@ -188,7 +194,39 @@ public class IterableNotification extends NotificationCompat.Builder {
     }
 
     /**
+     * Creates the notification channel on device.
+     * Only creates the notification channel if application does not have notification channel created.
+     *
+     * @param context
+     * @param channelId          Determines the channel Id. This distinguishes if the app has different channel or not.
+     * @param channelName        Sets the channel name that is shown to the user.
+     * @param channelDescription Sets the channel description that is shown to the user.
+     */
+    private static void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription) {
+        NotificationManager mNotificationManager = (NotificationManager)
+                context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
+                && mNotificationManager != null
+                && mNotificationManager.getNotificationChannel(channelId) == null) {
+            IterableLogger.d(TAG, "Creating notification: channelId = " + channelId + " channelName = "
+                    + channelName + " channelDescription = " + channelDescription);
+            mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription));
+        }
+    }
+
+    private static NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription) {
+        NotificationChannel notificationChannel = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
+            notificationChannel.setDescription(channelDescription);
+            notificationChannel.enableLights(true);
+        }
+        return notificationChannel;
+    }
+
+    /**
      * Returns the iconId from potential resource locations
+     *
      * @param context
      * @return
      */
@@ -200,7 +238,7 @@ public class IterableNotification extends NotificationCompat.Builder {
             try {
                 ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
                 iconId = info.metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
-                IterableLogger.d(TAG, "iconID: "+ info.metaData.get(IterableConstants.NOTIFICATION_ICON_NAME));
+                IterableLogger.d(TAG, "iconID: " + info.metaData.get(IterableConstants.NOTIFICATION_ICON_NAME));
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
@@ -209,9 +247,9 @@ public class IterableNotification extends NotificationCompat.Builder {
         //Get the iconId set in code
         if (iconId == 0) {
             iconId = context.getResources().getIdentifier(
-                IterableApi.getNotificationIcon(context),
-                IterableConstants.ICON_FOLDER_IDENTIFIER,
-                context.getPackageName());
+                    IterableApi.getNotificationIcon(context),
+                    IterableConstants.ICON_FOLDER_IDENTIFIER,
+                    context.getPackageName());
         }
 
         //Get id from the default app settings
@@ -219,8 +257,7 @@ public class IterableNotification extends NotificationCompat.Builder {
             if (context.getApplicationInfo().icon != 0) {
                 IterableLogger.d(TAG, "No Notification Icon defined - defaulting to app icon");
                 iconId = context.getApplicationInfo().icon;
-            }
-            else {
+            } else {
                 IterableLogger.w(TAG, "No Notification Icon defined - push notifications will not be displayed");
             }
         }
@@ -230,6 +267,7 @@ public class IterableNotification extends NotificationCompat.Builder {
 
     /**
      * Returns if the given notification is a ghost/silent push notification
+     *
      * @param extras
      * @return
      */

@@ -1,17 +1,11 @@
 package com.iterable.iterableapi;
 
-import android.annotation.TargetApi;
 import android.app.Application;
 import android.app.NotificationManager;
-import android.app.Service;
 import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.test.ApplicationTestCase;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * <a href="http://d.android.com/tools/testing/testing_android.html">Testing Fundamentals</a>
@@ -20,6 +14,7 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
     public IterableNotificationTest() {
         super(Application.class);
     }
+
     Context appContext;
     NotificationManager mNotificationManager;
 
@@ -63,9 +58,14 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
         notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
         notif.putString(IterableConstants.ITERABLE_DATA_SOUND, sound);
 
+        getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
+
         IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), notif, Application.class);
         IterableNotification.postNotificationOnDevice(appContext, iterableNotification);
         assertEquals("IterableAPI", iterableNotification.mContentTitle);
+//        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
+//        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
+        Thread.sleep(100);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             Bundle notificationExtras = mNotificationManager.getActiveNotifications()[0].getNotification().extras;
             assertEquals("IterableAPI", notificationExtras.get("android.title"));
@@ -76,9 +76,13 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
     public void testMessage() throws Exception {
         Bundle notif1 = new Bundle();
         notif1.putString(IterableConstants.ITERABLE_DATA_KEY, itbl1);
+        getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
 
         IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), notif1, Application.class);
         IterableNotification.postNotificationOnDevice(appContext, iterableNotification);
+//        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
+//        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
+        Thread.sleep(100);
         assertFalse(iterableNotification.iterableNotificationData.getIsGhostPush());
         assertEquals("11111111111111111111111111111111", iterableNotification.iterableNotificationData.getMessageId());
         assertEquals("11111111111111111111111111111111".hashCode(), iterableNotification.requestCode);
@@ -90,9 +94,13 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
 
         Bundle notif2 = new Bundle();
         notif2.putString(IterableConstants.ITERABLE_DATA_KEY, itbl2);
+        getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
 
         IterableNotification iterableNotification2 = IterableNotification.createNotification(getContext(), notif2, Application.class);
         IterableNotification.postNotificationOnDevice(appContext, iterableNotification2);
+//        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
+//        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
+        Thread.sleep(100);
         assertFalse(iterableNotification2.iterableNotificationData.getIsGhostPush());
         assertEquals("22222222222222222222222222222222", iterableNotification2.iterableNotificationData.getMessageId());
         assertEquals("22222222222222222222222222222222".hashCode(), iterableNotification2.requestCode);
