@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.2.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.3)
+ _Released on 2018-01-22_
+ 
+#### Added
+- Added non-empty data body for notification rendering.
+- Added default channel id support.
+
 ## [2.2.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.2)
  _Released on 2017-11-30_
  
