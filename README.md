@@ -27,7 +27,7 @@ See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
 
 ## Additional Information
 
-See our [setup guide](http://support.iterable.com/hc/en-us/articles/204780589-Push-Notification-Setup-iOS-and-Android-) for more information.
+See our [setup guide](https://support.iterable.com/hc/en-us/articles/115000331943-Setting-up-Android-Push-Notifications) for more information.
 
 Also see our [push notification setup FAQs](http://support.iterable.com/hc/en-us/articles/206791196-Push-Notification-Setup-FAQ-s).
 
