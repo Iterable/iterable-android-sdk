@@ -8,17 +8,20 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
-import android.widget.RemoteViews;
-
-import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -27,6 +30,8 @@ public class IterableNotification extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
     private boolean isGhostPush;
     private String imageUrl;
+    private String title;
+    private String content;
     int requestCode;
     IterableNotificationData iterableNotificationData;
 
@@ -37,32 +42,30 @@ public class IterableNotification extends NotificationCompat.Builder {
     /**
      * Combine all of the options that have been set and return a new {@link Notification}
      * object.
+     * Download any optional images
      */
     public Notification build() {
-        final Notification notification = super.build();
-
-        final int iconId = android.R.id.icon;
-        final int bigIconId = mContext.getResources().getIdentifier("android:id/big_picture", null, null);
-
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN && imageUrl != null) {
-                    final RemoteViews bigContentView = notification.bigContentView;
-                    try {
-                        Class picassoClass = Class.forName(IterableConstants.PICASSO_CLASS);
-                        if (picassoClass != null) {
-                            Picasso.with(mContext).load(imageUrl).into(bigContentView, bigIconId, requestCode, notification);
-                        }
-                    } catch (ClassNotFoundException e) {
-                        IterableLogger.w(TAG, "ClassNotFoundException: Check that picasso is added " +
-                                "to the build dependencies", e);
-                    }
-                }
+        InputStream in;
+        if (this.imageUrl != null) {
+            try {
+                URL url = new URL(this.imageUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                in = connection.getInputStream();
+                Bitmap myBitmap = BitmapFactory.decodeStream(in);
+                this.setStyle(new NotificationCompat.BigPictureStyle()
+                        .setBigContentTitle(this.title)
+                        .setSummaryText(this.content)
+                        .bigPicture(myBitmap));
+            } catch (MalformedURLException e) {
+                IterableLogger.e(TAG, e.toString());
+            } catch (IOException e) {
+                IterableLogger.e(TAG, e.toString());
             }
-        });
-        return notification;
+        }
+
+        return super.build();
     }
 
     /**
@@ -76,6 +79,7 @@ public class IterableNotification extends NotificationCompat.Builder {
     public static IterableNotification createNotification(Context context, Bundle extras, Class classToOpen) {
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName = context.getString(stringId);
+        String title = null;
         String notificationBody = null;
         String soundName = null;
         String messageId = null;
@@ -88,7 +92,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         registerChannelIfEmpty(context, channelId, channelName, channelDescription);
         IterableNotification notificationBuilder = new IterableNotification(context, context.getPackageName());
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-            applicationName = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
+            title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
             soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
 
@@ -118,17 +122,14 @@ public class IterableNotification extends NotificationCompat.Builder {
                 .setSmallIcon(getIconId(context))
                 .setTicker(applicationName).setWhen(0)
                 .setAutoCancel(true)
-                .setContentTitle(applicationName)
+                .setContentTitle(title)
                 .setPriority(Notification.PRIORITY_HIGH)
                 .setContentText(notificationBody);
 
         if (pushImage != null) {
             notificationBuilder.imageUrl = pushImage;
-            notificationBuilder.setContentText(notificationBody)
-                    .setStyle(new NotificationCompat.BigPictureStyle()
-                            .setBigContentTitle(applicationName)
-                            .setSummaryText(notificationBody)
-                    );
+            notificationBuilder.title = title;
+            notificationBuilder.content = notificationBody;
         } else {
             notificationBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody));
         }
