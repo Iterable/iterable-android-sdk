@@ -30,6 +30,9 @@ public class IterableNotification extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
     private boolean isGhostPush;
     private String imageUrl;
+
+    //This parameter necessary for backwards compatability < Android 23
+    private String expandedContent;
     int requestCode;
     IterableNotificationData iterableNotificationData;
 
@@ -53,7 +56,8 @@ public class IterableNotification extends NotificationCompat.Builder {
                 in = connection.getInputStream();
                 Bitmap myBitmap = BitmapFactory.decodeStream(in);
                 this.setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigPicture(myBitmap));
+                        .bigPicture(myBitmap)
+                        .setSummaryText(expandedContent));
             } catch (MalformedURLException e) {
                 IterableLogger.e(TAG, e.toString());
             } catch (IOException e) {
@@ -61,9 +65,9 @@ public class IterableNotification extends NotificationCompat.Builder {
             }
         }
 
-        //The default style if an bigPictureStyle isn't set
+        //The default style if the BigPictureStyle isn't set.
         if (this.mStyle == null) {
-            this.setStyle(new NotificationCompat.BigTextStyle());
+            this.setStyle(new NotificationCompat.BigTextStyle().bigText(expandedContent));
         }
 
         return super.build();
@@ -126,6 +130,7 @@ public class IterableNotification extends NotificationCompat.Builder {
                 .setContentTitle(title)
                 .setPriority(Notification.PRIORITY_HIGH)
                 .setContentText(notificationBody);
+        notificationBuilder.expandedContent = notificationBody;
 
         if (pushImage != null) {
             notificationBuilder.imageUrl = pushImage;
