@@ -37,15 +37,15 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
     }
 
     public void testEmptyBundle() throws Exception {
-        IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), new Bundle(), Application.class);
+        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), new Bundle(), Application.class);
         assertTrue(iterableNotification.requestCode < System.currentTimeMillis());
     }
 
     public void testGhostPush() throws Exception {
         Bundle notif1 = new Bundle();
         notif1.putString(IterableConstants.ITERABLE_DATA_KEY, itbl_ghost);
-        IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), notif1, Application.class);
-        IterableNotification.postNotificationOnDevice(appContext, iterableNotification);
+        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notif1, Application.class);
+        IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification);
         assertTrue(iterableNotification.iterableNotificationData.getIsGhostPush());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             assertEquals(0, mNotificationManager.getActiveNotifications().length);
@@ -63,8 +63,8 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
 
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
 
-        IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), notif, Application.class);
-        IterableNotification.postNotificationOnDevice(appContext, iterableNotification);
+        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notif, Application.class);
+        IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification);
         assertEquals("IterableAPI", iterableNotification.mContentTitle);
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
@@ -82,8 +82,8 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
 
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
 
-        IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), notif, Application.class);
-        IterableNotification.postNotificationOnDevice(appContext, iterableNotification);
+        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notif, Application.class);
+        IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification);
         assertEquals("IterableAPI", iterableNotification.mContentTitle);
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
@@ -100,8 +100,8 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
         notif1.putString(IterableConstants.ITERABLE_DATA_KEY, itbl1);
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
 
-        IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), notif1, Application.class);
-        IterableNotification.postNotificationOnDevice(appContext, iterableNotification);
+        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notif1, Application.class);
+        IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification);
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
         Thread.sleep(100);
@@ -118,8 +118,8 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
         notif2.putString(IterableConstants.ITERABLE_DATA_KEY, itbl2);
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
 
-        IterableNotification iterableNotification2 = IterableNotification.createNotification(getContext(), notif2, Application.class);
-        IterableNotification.postNotificationOnDevice(appContext, iterableNotification2);
+        IterableNotificationBuilder iterableNotification2 = IterableNotificationBuilder.createNotification(getContext(), notif2, Application.class);
+        IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification2);
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
         Thread.sleep(100);

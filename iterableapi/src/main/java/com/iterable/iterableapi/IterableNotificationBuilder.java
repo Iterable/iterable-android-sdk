@@ -26,18 +26,39 @@ import java.net.URL;
 /**
  * Created by David Truong dt@iterable.com
  */
-public class IterableNotification extends NotificationCompat.Builder {
+public class IterableNotificationBuilder extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
     private boolean isGhostPush;
     private String imageUrl;
-
-    //This parameter necessary for backwards compatability < Android 23
     private String expandedContent;
     int requestCode;
     IterableNotificationData iterableNotificationData;
 
-    protected IterableNotification(Context context, String channelId) {
+    /**
+     * Creates a custom Notification builder
+     * @param context
+     * @param channelId
+     */
+    protected IterableNotificationBuilder(Context context, String channelId) {
         super(context, channelId);
+    }
+
+    /**
+     * Sets the image url
+     * @param imageUrl
+     */
+    public void setImageUrl(String imageUrl) {
+        if (imageUrl != null) {
+            this.imageUrl = imageUrl;
+        }
+    }
+
+    /**
+     * Sets the expanded content used for backwards compatibility < Android API 23
+     * @param content
+     */
+    public void setExpandedContent(String content) {
+        this.expandedContent = content;
     }
 
     /**
@@ -81,7 +102,7 @@ public class IterableNotification extends NotificationCompat.Builder {
      * @param classToOpen
      * @return Returns null if the intent comes from an Iterable ghostPush
      */
-    public static IterableNotification createNotification(Context context, Bundle extras, Class classToOpen) {
+    public static IterableNotificationBuilder createNotification(Context context, Bundle extras, Class classToOpen) {
         int stringId = context.getApplicationInfo().labelRes;
         String applicationName = context.getString(stringId);
         String title = null;
@@ -95,7 +116,7 @@ public class IterableNotification extends NotificationCompat.Builder {
         String channelDescription = "";
 
         registerChannelIfEmpty(context, channelId, channelName, channelDescription);
-        IterableNotification notificationBuilder = new IterableNotification(context, context.getPackageName());
+        IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, context.getPackageName());
         if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
             title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
@@ -130,11 +151,8 @@ public class IterableNotification extends NotificationCompat.Builder {
                 .setContentTitle(title)
                 .setPriority(Notification.PRIORITY_HIGH)
                 .setContentText(notificationBody);
-        notificationBuilder.expandedContent = notificationBody;
-
-        if (pushImage != null) {
-            notificationBuilder.imageUrl = pushImage;
-        }
+        notificationBuilder.setImageUrl(pushImage);
+        notificationBuilder.setExpandedContent(notificationBody);
 
         if (soundName != null) {
             //Removes the file type from the name
@@ -185,14 +203,14 @@ public class IterableNotification extends NotificationCompat.Builder {
      * Only sets the notification if it is not a ghostPush/null iterableNotification.
      *
      * @param context
-     * @param iterableNotification Function assumes that the iterableNotification is a ghostPush
+     * @param iterableNotificationBuilder Function assumes that the iterableNotification is a ghostPush
      *                             if the IterableNotification passed in is null.
      */
-    public static void postNotificationOnDevice(Context context, IterableNotification iterableNotification) {
-        if (!iterableNotification.isGhostPush) {
+    public static void postNotificationOnDevice(Context context, IterableNotificationBuilder iterableNotificationBuilder) {
+        if (!iterableNotificationBuilder.isGhostPush) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
+            mNotificationManager.notify(iterableNotificationBuilder.requestCode, iterableNotificationBuilder.build());
         }
     }
 
