@@ -68,7 +68,7 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
         assertEquals("IterableAPI", iterableNotification.mContentTitle);
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
-        Thread.sleep(100);
+        Thread.sleep(1000);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             assertEquals(1, mNotificationManager.getActiveNotifications().length);
         }
