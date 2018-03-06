@@ -30,8 +30,6 @@ public class IterableNotification extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
     private boolean isGhostPush;
     private String imageUrl;
-    private String title;
-    private String content;
     int requestCode;
     IterableNotificationData iterableNotificationData;
 
@@ -55,14 +53,17 @@ public class IterableNotification extends NotificationCompat.Builder {
                 in = connection.getInputStream();
                 Bitmap myBitmap = BitmapFactory.decodeStream(in);
                 this.setStyle(new NotificationCompat.BigPictureStyle()
-                        .setBigContentTitle(this.title)
-                        .setSummaryText(this.content)
                         .bigPicture(myBitmap));
             } catch (MalformedURLException e) {
                 IterableLogger.e(TAG, e.toString());
             } catch (IOException e) {
                 IterableLogger.e(TAG, e.toString());
             }
+        }
+
+        //The default style if an bigPictureStyle isn't set
+        if (this.mStyle == null) {
+            this.setStyle(new NotificationCompat.BigTextStyle());
         }
 
         return super.build();
@@ -128,10 +129,6 @@ public class IterableNotification extends NotificationCompat.Builder {
 
         if (pushImage != null) {
             notificationBuilder.imageUrl = pushImage;
-            notificationBuilder.title = title;
-            notificationBuilder.content = notificationBody;
-        } else {
-            notificationBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(notificationBody));
         }
 
         if (soundName != null) {
