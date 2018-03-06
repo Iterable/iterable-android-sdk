@@ -25,6 +25,7 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
     String itbl_ghost = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":true}";
     String itbl1 = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false}";
     String itbl2 = "{\"templateId\":2,\"campaignId\":2,\"messageId\":\"22222222222222222222222222222222\",\"isGhostPush\":false}}";
+    String itbl_image = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false,\"attachment-url\":\"http://via.placeholder.com/350x150\"}";
 
     public void setUp() throws Exception {
         super.setUp();
@@ -51,6 +52,27 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
         }
     }
 
+    /**
+     * Tests loading a notification with an image.
+     * @throws Exception
+     */
+    public void testNotificationImage() throws Exception {
+        Bundle notif = new Bundle();
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itbl_image);
+        notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
+
+        getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
+
+        IterableNotification iterableNotification = IterableNotification.createNotification(getContext(), notif, Application.class);
+        IterableNotification.postNotificationOnDevice(appContext, iterableNotification);
+        assertEquals("IterableAPI", iterableNotification.mContentTitle);
+//        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
+//        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
+        Thread.sleep(100);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            assertEquals(1, mNotificationManager.getActiveNotifications().length);
+        }
+    }
 
     public void testNotificationText() throws Exception {
         Bundle notif = new Bundle();
