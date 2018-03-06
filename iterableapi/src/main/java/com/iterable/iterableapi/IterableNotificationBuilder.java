@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -54,7 +55,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
     }
 
     /**
-     * Sets the expanded content used for backwards compatibility < Android API 23
+     * Sets the expanded content used for backwards compatibility up to Android API 23
      * @param content
      */
     public void setExpandedContent(String content) {
@@ -67,15 +68,13 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      * Download any optional images
      */
     public Notification build() {
-        InputStream in;
         if (this.imageUrl != null) {
             try {
                 URL url = new URL(this.imageUrl);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                URLConnection connection = url.openConnection();
                 connection.setDoInput(true);
                 connection.connect();
-                in = connection.getInputStream();
-                Bitmap myBitmap = BitmapFactory.decodeStream(in);
+                Bitmap myBitmap = BitmapFactory.decodeStream(connection.getInputStream());
                 this.setStyle(new NotificationCompat.BigPictureStyle()
                         .bigPicture(myBitmap)
                         .setSummaryText(expandedContent));
