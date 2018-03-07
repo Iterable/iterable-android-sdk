@@ -70,10 +70,14 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 URLConnection connection = url.openConnection();
                 connection.setDoInput(true);
                 connection.connect();
-                Bitmap myBitmap = BitmapFactory.decodeStream(connection.getInputStream());
-                this.setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigPicture(myBitmap)
-                        .setSummaryText(expandedContent));
+                Bitmap notificationImage = BitmapFactory.decodeStream(connection.getInputStream());
+                if (notificationImage != null) {
+                    this.setStyle(new NotificationCompat.BigPictureStyle()
+                            .bigPicture(notificationImage)
+                            .setSummaryText(expandedContent));
+                } else {
+                    IterableLogger.e(TAG, "Notification image could not be loaded from url: " + this.imageUrl);
+                }
             } catch (MalformedURLException e) {
                 IterableLogger.e(TAG, e.toString());
             } catch (IOException e) {
