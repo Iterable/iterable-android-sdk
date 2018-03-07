@@ -85,7 +85,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             }
         }
 
-        //The default style if the BigPictureStyle isn't set.
+        //Sets the default BigTextStyle if the imageUrl isn't set or cannot be loaded.
         if (this.mStyle == null) {
             this.setStyle(new NotificationCompat.BigTextStyle().bigText(expandedContent));
         }
