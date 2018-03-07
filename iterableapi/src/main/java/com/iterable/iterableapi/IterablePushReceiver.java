@@ -45,8 +45,8 @@ public class IterablePushReceiver extends BroadcastReceiver{
     private void handlePushReceived(Context context, Intent intent) {
         if (intent.hasExtra(IterableConstants.ITERABLE_DATA_KEY)) {
             Bundle extras =  intent.getExtras();
-            if (!IterableNotification.isGhostPush(extras)) {
-                if (!IterableNotification.isEmptyBody(extras)) {
+            if (!IterableNotificationBuilder.isGhostPush(extras)) {
+                if (!IterableNotificationBuilder.isEmptyBody(extras)) {
                     IterableLogger.d(TAG, "Iterable push received " + extras);
                     Context appContext = context.getApplicationContext();
                     PackageManager packageManager = appContext.getPackageManager();
@@ -60,9 +60,9 @@ public class IterablePushReceiver extends BroadcastReceiver{
                         IterableLogger.w(TAG, e.toString());
                     }
 
-                    IterableNotification notificationBuilder = IterableNotification.createNotification(
+                    IterableNotificationBuilder notificationBuilder = IterableNotificationBuilder.createNotification(
                             appContext, intent.getExtras(), mainClass);
-                    new IterableNotificationBuilder().execute(notificationBuilder);
+                    new IterableNotificationManager().execute(notificationBuilder);
                 } else {
                     IterableLogger.d(TAG, "Iterable OS notification push received");
                 }
@@ -73,13 +73,13 @@ public class IterablePushReceiver extends BroadcastReceiver{
     }
 }
 
-class IterableNotificationBuilder extends AsyncTask<IterableNotification, Void, Void> {
+class IterableNotificationManager extends AsyncTask<IterableNotificationBuilder, Void, Void> {
 
     @Override
-    protected Void doInBackground(IterableNotification... params) {
+    protected Void doInBackground(IterableNotificationBuilder... params) {
         if ( params != null && params[0] != null) {
-            IterableNotification notificationBuilder = params[0];
-            IterableNotification.postNotificationOnDevice(notificationBuilder.mContext, notificationBuilder);
+            IterableNotificationBuilder notificationBuilder = params[0];
+            IterableNotificationBuilder.postNotificationOnDevice(notificationBuilder.mContext, notificationBuilder);
         }
         return null;
     }
