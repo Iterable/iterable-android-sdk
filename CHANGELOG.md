@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.4)
+ _Released on 2017-03-07_
+ 
+#### Fixed
+- Fixed the load sequence for retrieving a notification image.
+
 ## [2.2.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.3)
  _Released on 2018-01-22_
  
