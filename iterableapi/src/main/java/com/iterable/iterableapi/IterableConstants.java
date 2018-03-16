@@ -58,6 +58,7 @@ public final class IterableConstants {
     public static final String MESSAGING_PLATFORM_AMAZON        = "ADM";
 
     public static final String IS_GHOST_PUSH        = "isGhostPush";
+    public static final String ITERABLE_DATA_BADGE  = "badge";
     public static final String ITERABLE_DATA_BODY   = "body";
     public static final String ITERABLE_DATA_KEY    = "itbl";
     public static final String ITERABLE_DATA_PUSH_IMAGE  = "attachment-url";
@@ -81,6 +82,8 @@ public final class IterableConstants {
     public static final String SOUND_FOLDER_IDENTIFIER  = "raw";
     public static final String ANDROID_RESOURCE_PATH    = "android.resource://";
     public static final String ANDROID_STRING           = "string";
+    public static final String MAIN_CLASS       = "mainClass";
+    public static final String REQUEST_CODE             = "requestCode";
 
     //Firebase
     public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";

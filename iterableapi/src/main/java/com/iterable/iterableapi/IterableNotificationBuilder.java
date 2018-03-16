@@ -139,11 +139,6 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             }
         }
 
-        Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
-        mainIntentWithExtras.setClass(context, classToOpen);
-        mainIntentWithExtras.putExtras(extras);
-        mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
         Notification notifPermissions = new Notification();
         notifPermissions.defaults |= Notification.DEFAULT_LIGHTS;
 
@@ -178,6 +173,18 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         if (messageId != null) {
             notificationBuilder.requestCode = messageId.hashCode();
         }
+
+        Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
+        mainIntentWithExtras.setClass(context, IterableLaunchActivity.class);//classToOpen);
+        mainIntentWithExtras.putExtras(extras);
+        mainIntentWithExtras.putExtra(IterableConstants.MAIN_CLASS, classToOpen);
+        mainIntentWithExtras.putExtra(IterableConstants.REQUEST_CODE, notificationBuilder.requestCode);
+        mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        //TODO: should I create two separate intents here with information specific to each button?
+
+        //TODO: how do I specify if the app should not reload the main activity if the app is already opened
+
         PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
                 mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
