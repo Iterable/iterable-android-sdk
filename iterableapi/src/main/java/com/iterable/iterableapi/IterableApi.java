@@ -382,12 +382,12 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-
-        sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
     }
 
     public void sendPush(String email, int campaignId) {
@@ -432,12 +432,12 @@ public class IterableApi {
                 String dateString = sdf.format(sendAt);
                 requestJSON.put(IterableConstants.KEY_SEND_AT, dateString);
             }
+
+            sendPostRequest(IterableConstants.ENDPOINT_PUSH_TARGET, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-
-        sendPostRequest(IterableConstants.ENDPOINT_PUSH_TARGET, requestJSON);
     }
 
     /**
@@ -451,12 +451,13 @@ public class IterableApi {
             try {
                 requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
                 requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
+
+                sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON);
+                _email = newEmail;
             }
             catch (JSONException e) {
                 e.printStackTrace();
             }
-            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON);
-            _email = newEmail;
         } else {
             IterableLogger.w(TAG, "updateEmail should not be called with a userId. " +
                 "Init SDK with sharedInstanceWithApiKey instead of sharedInstanceWithApiKeyWithUserId");
@@ -473,12 +474,13 @@ public class IterableApi {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+
+            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
 
-        sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
     }
 
     /**
@@ -601,11 +603,12 @@ public class IterableApi {
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
             requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+
+            sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-        sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
     }
 
     /**
@@ -618,12 +621,12 @@ public class IterableApi {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-
-        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
     }
 
     /**
@@ -638,12 +641,12 @@ public class IterableApi {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_URL_CLICK, urlClick);
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-
-        sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
     }
 
     /**
@@ -656,12 +659,12 @@ public class IterableApi {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+
+            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-
-        sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
@@ -706,12 +709,12 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-
-        sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
     }
 
     /**
@@ -723,11 +726,12 @@ public class IterableApi {
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, token);
             addEmailOrUserIdToJson(requestJSON);
+
+            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
-        sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON);
     }
 
     /**
@@ -765,11 +769,10 @@ public class IterableApi {
             device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
 
+            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-        sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
     }
 
 //---------------------------------------------------------------------------------------
