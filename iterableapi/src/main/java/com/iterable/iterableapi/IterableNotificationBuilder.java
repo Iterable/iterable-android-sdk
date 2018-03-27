@@ -4,10 +4,13 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -21,6 +24,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.Array;
+import java.util.List;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -175,13 +180,39 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         }
 
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
-        mainIntentWithExtras.setClass(context, IterableLaunchActivity.class);//classToOpen);
+        mainIntentWithExtras.setClass(context, IterableLaunchActivity.class);
         mainIntentWithExtras.putExtras(extras);
-        mainIntentWithExtras.putExtra(IterableConstants.MAIN_CLASS, classToOpen);
-        mainIntentWithExtras.putExtra(IterableConstants.REQUEST_CODE, notificationBuilder.requestCode);
-        mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
-        //TODO: should I create two separate intents here with information specific to each button?
+//        //Todo: should I always clear the top? What if the app is already running?
+//        mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//        NEW_TASK_LAUNCH: could I use this to handle the non-reload use case? - possibly singleTop flag
+//        Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+        //Check if the IterableLaunchActivity is added to the AndroidManifest
+        PackageManager pm = context.getPackageManager();
+        List<ResolveInfo> list = pm.queryIntentActivities(mainIntentWithExtras, PackageManager.MATCH_DEFAULT_ONLY);
+        int sizeOfList = list.size();
+        if (sizeOfList == 0) {
+            //Fallback to open the main class
+            mainIntentWithExtras.setClass(context, classToOpen);
+        } else {
+            //TODO: should I create two separate intents here with information specific to each button?
+            //TOOD: iterate through the different action buttons
+            String[] actions = {"one","two","three"};
+            Intent customIntentWithExtras;
+            for (String action: actions) {
+                customIntentWithExtras = new Intent(action);
+                customIntentWithExtras.setClass(context, IterableLaunchActivity.class);
+                customIntentWithExtras.putExtras(extras);
+                customIntentWithExtras.putExtra(IterableConstants.MAIN_CLASS, classToOpen);
+                customIntentWithExtras.putExtra(IterableConstants.REQUEST_CODE, notificationBuilder.requestCode);
+
+                PendingIntent customClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
+                        mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                notificationBuilder.addAction(Notification.BADGE_ICON_NONE, action, customClickedIntent);
+            }
+        }
 
         //TODO: how do I specify if the app should not reload the main activity if the app is already opened
 
@@ -198,7 +229,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             e.printStackTrace();
         }
 
-        PackageManager pm = context.getPackageManager();
+
         if (pm.checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
             notifPermissions.defaults |= Notification.DEFAULT_VIBRATE;
         }
@@ -223,6 +254,8 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             mNotificationManager.notify(iterableNotificationBuilder.requestCode, iterableNotificationBuilder.build());
         }
     }
+
+
 
     /**
      * Creates the notification channel on device.

@@ -20,7 +20,7 @@ public class IterableLaunchActivity extends Activity {
         Bundle extras = intent.getExtras();
 
         //TOOD: might not need the extra requestCode since the messageId is always in the original payload.
-        int requestCode = extras.getInt(IterableConstants.REQUEST_CODE);
+        int requestCode = extras.getInt(IterableConstants.REQUEST_CODE, 0);
         System.out.print("requestCode: "+requestCode);
         NotificationManager mNotificationManager = (NotificationManager)
                 this.getBaseContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -29,10 +29,21 @@ public class IterableLaunchActivity extends Activity {
         Class mainClass = (Class) extras.get(IterableConstants.MAIN_CLASS);
 
         //get the notification action here
+        String actionName = intent.getAction();
 
+        if(IterableConstants.ACTION_NOTIF_OPENED.equalsIgnoreCase(actionName)) {
+            //Handles opens and deeplinks
+            Intent mainIntent = new Intent(this, mainClass);
+            mainIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            mainIntent.putExtras(extras);
+            startActivity(mainIntent);
+        }
+
+
+        //TODO: if custom event - open up main class with custom event as the action name.
 
         //Check if the action should not open the application
-        if (true) {
+        if (false) {
             //Don't open or foreground the app
             finish();
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com"));
