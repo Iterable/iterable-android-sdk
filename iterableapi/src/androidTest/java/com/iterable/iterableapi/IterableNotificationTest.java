@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.app.Application;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
@@ -65,7 +66,7 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
 
         IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notif, Application.class);
         IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification);
-        assertEquals("IterableAPI", iterableNotification.mContentTitle);
+        assertEquals("IterableAPI", iterableNotification.build().extras.getString(Notification.EXTRA_TITLE));
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
         Thread.sleep(1000);
@@ -84,7 +85,7 @@ public class IterableNotificationTest extends ApplicationTestCase<Application> {
 
         IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notif, Application.class);
         IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification);
-        assertEquals("IterableAPI", iterableNotification.mContentTitle);
+        assertEquals("IterableAPI", iterableNotification.build().extras.getString(Notification.EXTRA_TITLE));
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
         Thread.sleep(100);

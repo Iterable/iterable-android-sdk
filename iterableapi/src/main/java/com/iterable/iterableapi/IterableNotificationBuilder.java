@@ -64,6 +64,8 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      * Download any optional images
      */
     public Notification build() {
+        NotificationCompat.Style style = null;
+
         if (this.imageUrl != null) {
             try {
                 URL url = new URL(this.imageUrl);
@@ -72,9 +74,9 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 connection.connect();
                 Bitmap notificationImage = BitmapFactory.decodeStream(connection.getInputStream());
                 if (notificationImage != null) {
-                    this.setStyle(new NotificationCompat.BigPictureStyle()
+                    style = new NotificationCompat.BigPictureStyle()
                             .bigPicture(notificationImage)
-                            .setSummaryText(expandedContent));
+                            .setSummaryText(expandedContent);
                 } else {
                     IterableLogger.e(TAG, "Notification image could not be loaded from url: " + this.imageUrl);
                 }
@@ -86,9 +88,11 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         }
 
         //Sets the default BigTextStyle if the imageUrl isn't set or cannot be loaded.
-        if (this.mStyle == null) {
-            this.setStyle(new NotificationCompat.BigTextStyle().bigText(expandedContent));
+        if (style == null) {
+            style = new NotificationCompat.BigTextStyle().bigText(expandedContent);
         }
+
+        this.setStyle(style);
 
         return super.build();
     }
