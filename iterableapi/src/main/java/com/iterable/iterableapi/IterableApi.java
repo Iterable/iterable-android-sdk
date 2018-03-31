@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -384,6 +385,46 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Tracks a purchase.
+     * @param total total purchase amount
+     * @param items list of purchased items
+     */
+    public void trackPurchase(double total, List<CommerceItem> items) {
+        trackPurchase(total, items, null);
+    }
+
+    /**
+     * Tracks a purchase.
+     * @param total total purchase amount
+     * @param items list of purchased items
+     * @param dataFields a `JSONObject` containing any additional information to save along with the event
+     */
+    public void trackPurchase(double total, List<CommerceItem> items, JSONObject dataFields) {
+        JSONObject requestJSON = new JSONObject();
+        try {
+            JSONArray itemsArray = new JSONArray();
+            for (CommerceItem item : items) {
+                itemsArray.put(item.toJSONObject());
+            }
+
+            JSONObject userObject = new JSONObject();
+            addEmailOrUserIdToJson(userObject);
+            requestJSON.put(IterableConstants.KEY_USER, userObject);
+
+            requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+            requestJSON.put(IterableConstants.KEY_TOTAL, total);
+            if (dataFields != null) {
+                requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            }
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
