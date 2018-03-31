@@ -15,11 +15,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -56,25 +53,6 @@ public class IterableInAppManager {
             }
         } else {
             IterableLogger.w(TAG, "To display in-app notifications, the context must be of an instance of: Activity");
-        }
-    }
-
-    /**
-     * Displays an InApp Notification from the dialogOptions; with a click callback handler.
-     * @param context
-     * @param dialogOptions
-     * @param clickCallback
-     */
-    public static void showNotification(Context context, JSONObject dialogOptions, String messageId, IterableHelper.IterableActionHandler clickCallback) {
-        if(dialogOptions != null) {
-            String type = dialogOptions.optString(IterableConstants.ITERABLE_IN_APP_TYPE);
-            if (type.equalsIgnoreCase(IterableConstants.ITERABLE_IN_APP_TYPE_FULL)) {
-                showFullScreenDialog(context, dialogOptions, messageId, clickCallback);
-            } else {
-                showNotificationDialog(context, dialogOptions, messageId, clickCallback);
-            }
-        } else {
-            IterableLogger.d(TAG, "In-App notification not displayed: showNotification must contain valid dialogOptions");
         }
     }
 
@@ -137,91 +115,6 @@ public class IterableInAppManager {
         }
 
         dialog.setContentView(verticalLayout);
-        dialog.show();
-    }
-
-    /**
-     * Creates and shows a Full Screen InApp Notification; with a click callback handler.
-     * @param context
-     * @param dialogParameters
-     * @param clickCallback
-     */
-    static void showFullScreenDialog(Context context, JSONObject dialogParameters, String messageId, IterableHelper.IterableActionHandler clickCallback) {
-        Dialog dialog = new Dialog(context, android.R.style.Theme_Light);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        LinearLayout verticalLayout = new LinearLayout(context);
-        verticalLayout.setOrientation(LinearLayout.VERTICAL);
-
-        verticalLayout.setBackgroundColor(getIntColorFromJson(dialogParameters, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.WHITE));
-        LinearLayout.LayoutParams linearLayoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        verticalLayout.setLayoutParams(linearLayoutParams);
-
-        LinearLayout.LayoutParams equalParamHeight = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
-        equalParamHeight.weight = 1;
-        equalParamHeight.height = 0;
-
-        Point size = getScreenSize(context);
-        int dialogWidth = size.x;
-        int dialogHeight = size.y;
-        int fontConstant = getFontConstant(size);
-
-        //Title
-        JSONObject titleJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_TITLE);
-        if (titleJson != null) {
-            TextView title = new TextView(context);
-            title.setText(titleJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
-            title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 24);
-            title.setGravity(Gravity.CENTER);
-            title.setTextColor(getIntColorFromJson(titleJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
-            verticalLayout.addView(title, equalParamHeight);
-        }
-
-        //Image
-        ImageView imageView = new ImageView(context);
-        verticalLayout.addView(imageView);
-        try {
-            Class picassoClass = Class.forName(IterableConstants.PICASSO_CLASS);
-            String imageUrl = dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_MAIN_IMAGE);
-            if (picassoClass != null && !imageUrl.isEmpty()) {
-                Picasso.
-                        with(context.getApplicationContext()).
-                        load(imageUrl).
-                        resize(dialogWidth, dialogHeight/2).
-                        centerInside().
-                        into(imageView);
-            }
-        } catch (ClassNotFoundException e) {
-            IterableLogger.w(TAG, "ClassNotFoundException: Check that picasso is added " +
-                    "to the build dependencies", e);
-        }
-
-        //Body
-        JSONObject bodyJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_BODY);
-        if (bodyJson != null) {
-            TextView bodyText = new TextView(context);
-            bodyText.setText(bodyJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
-            bodyText.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 36);
-            bodyText.setGravity(Gravity.CENTER);
-            bodyText.setTextColor(getIntColorFromJson(bodyJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
-            verticalLayout.addView(bodyText, equalParamHeight);
-        }
-
-        //Buttons
-        JSONArray buttonJson = dialogParameters.optJSONArray(IterableConstants.ITERABLE_IN_APP_BUTTONS);
-        if (buttonJson != null) {
-            View buttons = createButtons(context, dialog, buttonJson, messageId, clickCallback);
-            LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            buttonParams.height = dialogHeight / 10;
-            verticalLayout.addView(buttons, buttonParams);
-        }
-
-        dialog.setContentView(verticalLayout);
-        //dialog.setCancelable(false);
         dialog.show();
     }
 
