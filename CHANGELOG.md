@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [2.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.5)
+ _Released on 2017-03-31_
+ 
+#### Changed
+- Updated requests to not send when there is an exception while constructing the JSON request body.
+ 
+#### Fixed
+- Fixed the reference to internal fields in NotificationCompat.Builder for buildVersion 27.
+
 ## [2.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.4)
  _Released on 2017-03-07_
  
