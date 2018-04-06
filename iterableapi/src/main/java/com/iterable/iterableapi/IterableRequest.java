@@ -2,15 +2,14 @@ package com.iterable.iterableapi;
 
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -51,14 +50,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     protected String doInBackground(IterableApiRequest... params) {
         if (params != null && params.length > 0) {
             iterableApiRequest = params[0];
-        }
-
-        if (retryCount > 2) {
-            try {
-                Thread.sleep(RETRY_DELAY_MS * retryCount);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
 
         requestResult = null;
@@ -216,9 +207,21 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     @Override
     protected void onPostExecute(String s) {
         if (retryRequest && retryCount <= MAX_RETRY_COUNT) {
-            IterableRequest request = new IterableRequest();
+            final IterableRequest request = new IterableRequest();
             request.setRetryCount(retryCount + 1);
-            request.execute(iterableApiRequest);
+
+            long delay = 0;
+            if (retryCount > 2) {
+                delay = RETRY_DELAY_MS * retryCount;
+            }
+
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    request.execute(iterableApiRequest);
+                }
+            }, delay);
             return;
         } else if (success) {
             if (iterableApiRequest.successCallback != null) {
