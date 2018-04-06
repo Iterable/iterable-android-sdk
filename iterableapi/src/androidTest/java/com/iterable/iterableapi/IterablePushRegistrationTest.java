@@ -1,27 +1,37 @@
 package com.iterable.iterableapi;
 
-import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.test.ApplicationTestCase;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.MediumTest;
+import android.support.test.runner.AndroidJUnit4;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Tests
  * Created by David Truong dt@iterable.com.
  */
-public class IterablePushRegistrationTest extends ApplicationTestCase<Application> {
-    public IterablePushRegistrationTest() {
-        super(Application.class);
-    }
-
+@RunWith(AndroidJUnit4.class)
+@MediumTest
+public class IterablePushRegistrationTest {
     Context appContext;
     IterableApi iterableApi;
     String senderID = "111111111111";
 
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
-
-        appContext = getContext().getApplicationContext();
+        appContext = InstrumentationRegistry.getContext().getApplicationContext();
         iterableApi = IterableApi.sharedInstanceWithApiKey(appContext, "fake_key", "test_email");
 
         SharedPreferences sharedPref = appContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
@@ -34,7 +44,9 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
      * Tests getting a token for GCM
      * @throws Exception
      */
+    @Test
     public void testGetGCMToken() throws Exception {
+        assumeTrue(GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(appContext) == ConnectionResult.SUCCESS);
         IterablePushRegistration registration = new IterablePushRegistration();
         IterablePushRegistration.PushRegistrationObject registrationObject = registration.getDeviceToken(senderID, IterableConstants.MESSAGING_PLATFORM_GOOGLE, "test_application_GCM", false);
         assertNotNull(registrationObject.token);
@@ -50,7 +62,9 @@ public class IterablePushRegistrationTest extends ApplicationTestCase<Applicatio
      * Checks the sharedPref flag that is set after upgrading to firebase.
      * @throws Exception
      */
+    @Test
     public void testGetFCMToken() throws Exception {
+        assumeTrue(GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(appContext) == ConnectionResult.SUCCESS);
         IterablePushRegistration registration = new IterablePushRegistration();
         SharedPreferences sharedPref;
         String pushIdPref;
