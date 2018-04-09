@@ -5,6 +5,13 @@
         android:label="@string/app_name"
         android:supportsRtl="true">
 
+        <!-- Action receiver for push interactions -->
+        <receiver android:name="com.iterable.iterableapi.IterableActionReceiver">
+            <intent-filter>
+                <action android:name="com.iterable.push.ACTION_NOTIF_OPENED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

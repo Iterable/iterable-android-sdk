@@ -180,7 +180,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         }
 
         Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
-        mainIntentWithExtras.setClass(context, IterableLaunchActivity.class);
+        mainIntentWithExtras.setClass(context, IterableActionReceiver.class);
         mainIntentWithExtras.putExtras(extras);
 
 //        //Todo: should I always clear the top? What if the app is already running?
@@ -188,9 +188,9 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
 //        NEW_TASK_LAUNCH: could I use this to handle the non-reload use case? - possibly singleTop flag
 //        Intent.FLAG_ACTIVITY_SINGLE_TOP
 
-        //Check if the IterableLaunchActivity is added to the AndroidManifest
+        //Check if the IterableActionReceiver is added to the AndroidManifest
         PackageManager pm = context.getPackageManager();
-        List<ResolveInfo> list = pm.queryIntentActivities(mainIntentWithExtras, PackageManager.MATCH_DEFAULT_ONLY);
+        List<ResolveInfo> list = pm.queryBroadcastReceivers(mainIntentWithExtras, PackageManager.MATCH_DEFAULT_ONLY);
         int sizeOfList = list.size();
         if (sizeOfList == 0) {
             //Fallback to open the main class
@@ -202,13 +202,13 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             Intent customIntentWithExtras;
             for (String action: actions) {
                 customIntentWithExtras = new Intent(action);
-                customIntentWithExtras.setClass(context, IterableLaunchActivity.class);
+                customIntentWithExtras.setClass(context, IterableActionReceiver.class);
                 customIntentWithExtras.putExtras(extras);
-                customIntentWithExtras.putExtra(IterableConstants.MAIN_CLASS, classToOpen);
+                customIntentWithExtras.putExtra(IterableConstants.MAIN_CLASS, classToOpen.getName());
                 customIntentWithExtras.putExtra(IterableConstants.REQUEST_CODE, notificationBuilder.requestCode);
 
-                PendingIntent customClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
-                        mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
+                PendingIntent customClickedIntent = PendingIntent.getBroadcast(context, notificationBuilder.requestCode,
+                        customIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
 
                 notificationBuilder.addAction(Notification.BADGE_ICON_NONE, action, customClickedIntent);
             }
