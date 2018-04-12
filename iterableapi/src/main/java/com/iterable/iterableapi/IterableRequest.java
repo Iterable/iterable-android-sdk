@@ -148,7 +148,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     handleFailure(errorMessage, jsonResponse);
                 } else if (responseCode == 200) {
-                    if (requestResult.length() > 0 && error == null) {
+                    if (error == null && requestResult.length() > 0) {
                         if (jsonError != null) {
                             handleFailure("Could not parse json: " + jsonError, null);
                         } else if (jsonResponse != null) {
@@ -156,7 +156,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                         } else {
                             handleFailure("Response is not a JSON object", jsonResponse);
                         }
-                    } else if (requestResult.length() == 0 && error == null) {
+                    } else if (error == null && requestResult.length() == 0) {
                         handleFailure("No data received", jsonResponse);
                     } else if (error != null) {
                         handleFailure(error, null);
