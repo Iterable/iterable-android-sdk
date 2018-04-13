@@ -2,15 +2,14 @@ package com.iterable.iterableapi;
 
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -37,6 +36,11 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     IterableApiRequest iterableApiRequest;
     boolean retryRequest;
 
+    private boolean success = false;
+    private String failureReason;
+    private String requestResult;
+    private JSONObject requestResultJson;
+
     /**
      * Sends the given request to Iterable using a HttpUserConnection
      * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
@@ -48,15 +52,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             iterableApiRequest = params[0];
         }
 
-        if (retryCount > 2) {
-            try {
-                Thread.sleep(RETRY_DELAY_MS * retryCount);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        String requestResult = null;
+        requestResult = null;
         if (iterableApiRequest != null) {
             URL url;
             HttpURLConnection urlConnection = null;
@@ -75,19 +71,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
-
-                    BufferedReader in = new BufferedReader(
-                            new InputStreamReader(urlConnection.getInputStream()));
-                    String inputLine;
-                    StringBuffer response = new StringBuffer();
-
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
-                    }
-                    in.close();
-
-                    requestResult = response.toString();
-
                 } else if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
                     url = new URL(iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -115,19 +98,79 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 }
 
                 int responseCode = urlConnection.getResponseCode();
-                if (responseCode >= 400) {
-                    if (responseCode >= 500) {
-                        retryRequest = true;
-                    } else if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
-                        IterableLogger.d(TAG, "Invalid API Key");
+
+                String error = null;
+
+                // Read the response body
+                try {
+                    BufferedReader in;
+                    if (responseCode < 400) {
+                        in = new BufferedReader(
+                                new InputStreamReader(urlConnection.getInputStream()));
+                    } else {
+                        in = new BufferedReader(
+                                new InputStreamReader(urlConnection.getErrorStream()));
                     }
-                    InputStream errorStream = urlConnection.getErrorStream();
-                    java.util.Scanner scanner = new java.util.Scanner(errorStream).useDelimiter("\\A");
-                    requestResult = scanner.hasNext() ? scanner.next() : "";
-                    IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
-                    IterableLogger.d(TAG, requestResult);
-                } else if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
-                    if (responseCode >= 300) {
+                    String inputLine;
+                    StringBuffer response = new StringBuffer();
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    in.close();
+                    requestResult = response.toString();
+                } catch (IOException e) {
+                    IterableLogger.e(TAG, e.getMessage());
+                    error = e.getMessage();
+                }
+
+                // Parse JSON
+                JSONObject jsonResponse = null;
+                String jsonError = null;
+                try {
+                    jsonResponse = new JSONObject(requestResult);
+                } catch (Exception e) {
+                    IterableLogger.e(TAG, e.getMessage());
+                    jsonError = e.getMessage();
+                }
+
+                // Handle HTTP status codes
+                if (responseCode == 401) {
+                    handleFailure("Invalid API Key", jsonResponse);
+                } else if (responseCode >= 400) {
+                    String errorMessage = "Invalid Request";
+
+                    if (jsonResponse != null && jsonResponse.has("msg")) {
+                        errorMessage = jsonResponse.getString("msg");
+                    } else if (responseCode >= 500) {
+                        errorMessage = "Internal Server Error";
+                        retryRequest = true;
+                    }
+
+                    handleFailure(errorMessage, jsonResponse);
+                } else if (responseCode == 200) {
+                    if (error == null && requestResult.length() > 0) {
+                        if (jsonError != null) {
+                            handleFailure("Could not parse json: " + jsonError, null);
+                        } else if (jsonResponse != null) {
+                            handleSuccess(jsonResponse);
+                        } else {
+                            handleFailure("Response is not a JSON object", jsonResponse);
+                        }
+                    } else if (error == null && requestResult.length() == 0) {
+                        handleFailure("No data received", jsonResponse);
+                    } else if (error != null) {
+                        handleFailure(error, null);
+                    }
+                } else {
+                    handleFailure("Received non-200 response: " + responseCode, jsonResponse);
+                }
+
+                if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
+                    if (responseCode >= 400) {
+                        // Return the response as it is
+                        IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
+                        IterableLogger.d(TAG, requestResult);
+                    } else if (responseCode >= 300) {
                         String newUrl = urlConnection.getHeaderField(IterableConstants.LOCATION_HEADER_FIELD);
                         requestResult = newUrl;
                     } else {
@@ -137,8 +180,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 }
             } catch (JSONException e) {
                 IterableLogger.e(TAG, e.getMessage());
+                handleFailure(e.getMessage(), null);
             } catch (IOException e) {
                 IterableLogger.e(TAG, e.getMessage());
+                handleFailure(e.getMessage(), null);
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -148,14 +193,48 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
         return requestResult;
     }
 
+    private void handleSuccess(JSONObject data) {
+        requestResultJson = data;
+        success = true;
+    }
+
+    private void handleFailure(String reason, JSONObject data) {
+        requestResultJson = data;
+        failureReason = reason;
+        success = false;
+    }
+
     @Override
     protected void onPostExecute(String s) {
         if (retryRequest && retryCount <= MAX_RETRY_COUNT) {
-            IterableRequest request = new IterableRequest();
+            final IterableRequest request = new IterableRequest();
             request.setRetryCount(retryCount + 1);
-            request.execute(iterableApiRequest);
-        } else if (iterableApiRequest.callback != null) {
-            iterableApiRequest.callback.execute(s);
+
+            long delay = 0;
+            if (retryCount > 2) {
+                delay = RETRY_DELAY_MS * retryCount;
+            }
+
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    request.execute(iterableApiRequest);
+                }
+            }, delay);
+            return;
+        } else if (success) {
+            if (iterableApiRequest.successCallback != null) {
+                iterableApiRequest.successCallback.onSuccess(requestResultJson);
+            }
+        }
+        else {
+            if (iterableApiRequest.failureCallback != null) {
+                iterableApiRequest.failureCallback.onFailure(failureReason, requestResultJson);
+            }
+        }
+        if (iterableApiRequest.legacyCallback != null) {
+            iterableApiRequest.legacyCallback.execute(s);
         }
         super.onPostExecute(s);
     }
@@ -179,13 +258,24 @@ class IterableApiRequest {
     JSONObject json;
     String requestType = "";
 
-    IterableHelper.IterableActionHandler callback;
+    IterableHelper.IterableActionHandler legacyCallback;
+    IterableHelper.SuccessHandler successCallback;
+    IterableHelper.FailureHandler failureCallback;
 
-    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, IterableHelper.IterableActionHandler callback){
+    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
         this.resourcePath = resourcePath;
         this.json = json;
         this.requestType = requestType;
-        this.callback = callback;
+        this.successCallback = onSuccess;
+        this.failureCallback = onFailure;
+    }
+
+    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, final IterableHelper.IterableActionHandler callback) {
+        this.apiKey = apiKey;
+        this.resourcePath = resourcePath;
+        this.json = json;
+        this.requestType = requestType;
+        this.legacyCallback = callback;
     }
 }
