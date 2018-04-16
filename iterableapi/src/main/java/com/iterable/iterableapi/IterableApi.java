@@ -483,9 +483,10 @@ public class IterableApi {
 
     /**
      * Updates the current user's email.
-     * @param newEmail
+     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
      */
-    public void updateEmail(String newEmail) {
+    public void updateEmail(final String newEmail) {
         if (_email != null) {
             JSONObject requestJSON = new JSONObject();
 
@@ -493,8 +494,12 @@ public class IterableApi {
                 requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
                 requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
 
-                sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON);
-                _email = newEmail;
+                sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON, new IterableHelper.SuccessHandler() {
+                    @Override
+                    public void onSuccess(JSONObject data) {
+                        _email = newEmail;
+                    }
+                }, null);
             }
             catch (JSONException e) {
                 e.printStackTrace();
