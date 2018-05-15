@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 
-import com.google.android.gms.gcm.GoogleCloudMessaging;
-import com.google.android.gms.iid.InstanceID;
+//import com.google.android.gms.gcm.GoogleCloudMessaging;
+//import com.google.android.gms.iid.InstanceID;
 import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONException;
@@ -105,24 +105,24 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                             }
 
                             //IterableFirebaseInstanceIDService.onTokenRefresh gets called after the current token is deleted
-                            instanceID.deleteInstanceId();
+//                            instanceID.deleteInstanceId();
                         }
                         registrationObject = new PushRegistrationObject(instanceID.getToken(), IterableConstants.MESSAGING_PLATFORM_FIREBASE);
                     }
                 } else {
                     //GCM
-                    Class instanceIdClass = Class.forName(IterableConstants.INSTANCE_ID_CLASS);
-                    if (instanceIdClass != null) {
-                        InstanceID instanceID = InstanceID.getInstance(applicationContext);
-                        registrationObject = new PushRegistrationObject(instanceID.getToken(projectNumber, GoogleCloudMessaging.INSTANCE_ID_SCOPE), IterableConstants.MESSAGING_PLATFORM_GOOGLE);
-                    }
+//                    Class instanceIdClass = Class.forName(IterableConstants.INSTANCE_ID_CLASS);
+//                    if (instanceIdClass != null) {
+//                        InstanceID instanceID = InstanceID.getInstance(applicationContext);
+//                        registrationObject = new PushRegistrationObject(instanceID.getToken(projectNumber, GoogleCloudMessaging.INSTANCE_ID_SCOPE), IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+//                    }
                 }
             } catch (ClassNotFoundException e) {
                 IterableLogger.e(TAG, "ClassNotFoundException: Check that play-services is added to the build dependencies", e);
             }
-            catch (IOException e) {
-                IterableLogger.e(TAG, "Invalid projectNumber", e);
-            }
+//            catch (IOException e) {
+//                IterableLogger.e(TAG, "Invalid projectNumber", e);
+//            }
         } else{
             IterableLogger.e(TAG, "MainActivity Context is null");
         }
