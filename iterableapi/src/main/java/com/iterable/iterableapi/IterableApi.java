@@ -11,6 +11,7 @@ import android.os.Bundle;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -535,6 +536,7 @@ public class IterableApi {
      * @param iterableAppId
      * @param gcmProjectNumber
      */
+    @Deprecated
     public void registerForPush(String iterableAppId, String gcmProjectNumber) {
         registerForPush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
     }
@@ -545,9 +547,18 @@ public class IterableApi {
      * @param projectNumber
      * @param pushServicePlatform
      */
+    @Deprecated
     public void registerForPush(String iterableAppId, String projectNumber, String pushServicePlatform) {
         IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
+    }
+
+    /**
+     * Registers for push notifications.
+     * @param iterableAppId
+     */
+    public void registerForPush(String iterableAppId) {
+        IterableApi.sharedInstance.registerDeviceToken(iterableAppId, FirebaseInstanceId.getInstance().getToken(), IterableConstants.MESSAGING_PLATFORM_FIREBASE);
     }
 
     /**
@@ -789,36 +800,36 @@ public class IterableApi {
      * @param dataFields
      */
     protected void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
-        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
+        if (token != null) {
+            JSONObject requestJSON = new JSONObject();
+            try {
+                addEmailOrUserIdToJson(requestJSON);
 
-        JSONObject requestJSON = new JSONObject();
-        try {
-            addEmailOrUserIdToJson(requestJSON);
+                if (dataFields == null) {
+                    dataFields = new JSONObject();
+                }
+                if (pushServicePlatform != null) {
+                    dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+                }
+                dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
+                dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
+                dataFields.putOpt(IterableConstants.DEVICE_ADID, getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
+                dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
+                dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
+                dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
 
-            if (dataFields == null) {
-                dataFields = new JSONObject();
+                JSONObject device = new JSONObject();
+                device.put(IterableConstants.KEY_TOKEN, token);
+                device.put(IterableConstants.KEY_PLATFORM, pushServicePlatform);
+                device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
+                device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
+                requestJSON.put(IterableConstants.KEY_DEVICE, device);
+
+                sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-            if (pushServicePlatform != null) {
-                dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
-            }
-            dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
-            dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
-            dataFields.putOpt(IterableConstants.DEVICE_ADID, getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-            dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
-            dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
-            dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
-            dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
-
-            JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, token);
-            device.put(IterableConstants.KEY_PLATFORM, platform);
-            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
-            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
-            requestJSON.put(IterableConstants.KEY_DEVICE, device);
-
-            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
     }
 
