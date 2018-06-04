@@ -6,9 +6,9 @@
         android:supportsRtl="true">
 
         <!-- Action receiver for push interactions -->
-        <receiver android:name="com.iterable.iterableapi.IterableActionReceiver">
+        <receiver android:name="com.iterable.iterableapi.IterablePushActionReceiver">
             <intent-filter>
-                <action android:name="com.iterable.push.ACTION_NOTIF_OPENED" />
+                <action android:name="com.iterable.push.ACTION_PUSH_ACTION" />
             </intent-filter>
         </receiver>
 

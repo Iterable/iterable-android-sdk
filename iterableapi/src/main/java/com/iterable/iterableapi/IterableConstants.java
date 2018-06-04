@@ -7,6 +7,7 @@ package com.iterable.iterableapi;
  */
 public final class IterableConstants {
     public static final String ACTION_NOTIF_OPENED = "com.iterable.push.ACTION_NOTIF_OPENED";
+    public static final String ACTION_PUSH_ACTION = "com.iterable.push.ACTION_PUSH_ACTION";
     public static final String ACTION_PUSH_REGISTRATION = "com.iterable.push.ACTION_PUSH_REGISTRATION";
 
     //API Fields
@@ -58,6 +59,8 @@ public final class IterableConstants {
     public static final String MESSAGING_PLATFORM_AMAZON        = "ADM";
 
     public static final String IS_GHOST_PUSH        = "isGhostPush";
+    public static final String ITERABLE_DATA_ACTION_IDENTIFIER = "actionIdentifier";
+    public static final String ITERABLE_ACTION_DEFAULT = "default";
     public static final String ITERABLE_DATA_BADGE  = "badge";
     public static final String ITERABLE_DATA_BODY   = "body";
     public static final String ITERABLE_DATA_KEY    = "itbl";
@@ -82,8 +85,9 @@ public final class IterableConstants {
     public static final String SOUND_FOLDER_IDENTIFIER  = "raw";
     public static final String ANDROID_RESOURCE_PATH    = "android.resource://";
     public static final String ANDROID_STRING           = "string";
-    public static final String MAIN_CLASS       = "mainClass";
+    public static final String MAIN_CLASS               = "mainClass";
     public static final String REQUEST_CODE             = "requestCode";
+    public static final String ACTION_IDENTIFIER        = "actionIdentifier";
 
     //Firebase
     public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";

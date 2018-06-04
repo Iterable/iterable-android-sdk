@@ -4,10 +4,8 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -16,7 +14,9 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.RemoteInput;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.sql.Array;
 import java.util.List;
 
 /**
@@ -123,26 +122,48 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         String channelId = context.getPackageName();
         String channelDescription = "";
 
+        if (!extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            IterableLogger.w(TAG, "Notification doesn't have an Iterable payload. Skipping.");
+            return null;
+        }
+
+        if (isGhostPush(extras)) {
+            IterableLogger.w(TAG, "Received a ghost push notification. Skipping.");
+            return null;
+        }
+
         registerChannelIfEmpty(context, channelId, channelName, channelDescription);
         IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, context.getPackageName());
-        if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-            title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
-            notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
-            soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
+        JSONObject iterableJson = null;
+        title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
+        notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
+        soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
 
-            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
-            notificationBuilder.iterableNotificationData = new IterableNotificationData(iterableData);
-            messageId = notificationBuilder.iterableNotificationData.getMessageId();
+        String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
 
-            try {
-                JSONObject iterableJson = new JSONObject(iterableData);
-                if (iterableJson.has(IterableConstants.ITERABLE_DATA_PUSH_IMAGE)) {
-                    pushImage = iterableJson.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
-                }
-            } catch (JSONException e) {
-                IterableLogger.w(TAG, e.toString());
+        try {
+            iterableJson = new JSONObject(iterableData);
+
+            // DEBUG ONLY: remove when backend is ready
+            if (!iterableJson.has("actionButtons") && extras.containsKey("actionButtons")) {
+                iterableJson.put("actionButtons", new JSONArray(extras.getString("actionButtons")));
             }
+            if (!iterableJson.has("defaultAction") && extras.containsKey("defaultAction")) {
+                iterableJson.put("defaultAction", new JSONObject(extras.getString("defaultAction")));
+            }
+            iterableData = iterableJson.toString();
+            extras.putString("itbl", iterableData);
+
+            if (iterableJson.has(IterableConstants.ITERABLE_DATA_PUSH_IMAGE)) {
+                pushImage = iterableJson.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
+            }
+        } catch (JSONException e) {
+            IterableLogger.w(TAG, e.toString());
         }
+
+        IterableNotificationData notificationData = new IterableNotificationData(iterableData);
+        notificationBuilder.iterableNotificationData = notificationData;
+        messageId = notificationBuilder.iterableNotificationData.getMessageId();
 
         Notification notifPermissions = new Notification();
         notifPermissions.defaults |= Notification.DEFAULT_LIGHTS;
@@ -152,7 +173,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 .setTicker(applicationName).setWhen(0)
                 .setAutoCancel(true)
                 .setContentTitle(title)
-                .setPriority(Notification.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentText(notificationBody);
         notificationBuilder.setImageUrl(pushImage);
         notificationBuilder.setExpandedContent(notificationBody);
@@ -174,50 +195,31 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             notifPermissions.defaults |= Notification.DEFAULT_SOUND;
         }
 
-        notificationBuilder.requestCode = (int) System.currentTimeMillis();
+        // The notification doesn't cancel properly if requestCode is negative
+        notificationBuilder.requestCode = Math.abs((int) System.currentTimeMillis());
+        IterableLogger.d("NotificationBuilder", "Request code = " + notificationBuilder.requestCode);
         if (messageId != null) {
-            notificationBuilder.requestCode = messageId.hashCode();
+            notificationBuilder.requestCode = Math.abs(messageId.hashCode());
+            IterableLogger.d("NotificationBuilder", "Request code = " + notificationBuilder.requestCode);
         }
 
-        Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
-        mainIntentWithExtras.setClass(context, IterableActionReceiver.class);
-        mainIntentWithExtras.putExtras(extras);
+        Intent pushContentIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        pushContentIntent.setClass(context, IterablePushActionReceiver.class);
+        pushContentIntent.putExtras(extras);
+        pushContentIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
 
-//        //Todo: should I always clear the top? What if the app is already running?
-//        mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        NEW_TASK_LAUNCH: could I use this to handle the non-reload use case? - possibly singleTop flag
-//        Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        //Check if the IterableActionReceiver is added to the AndroidManifest
-        PackageManager pm = context.getPackageManager();
-        List<ResolveInfo> list = pm.queryBroadcastReceivers(mainIntentWithExtras, PackageManager.MATCH_DEFAULT_ONLY);
-        int sizeOfList = list.size();
-        if (sizeOfList == 0) {
-            //Fallback to open the main class
-            mainIntentWithExtras.setClass(context, classToOpen);
-        } else {
-            //TODO: should I create two separate intents here with information specific to each button?
-            //TOOD: iterate through the different action buttons
-            String[] actions = {"one","two","three"};
-            Intent customIntentWithExtras;
-            for (String action: actions) {
-                customIntentWithExtras = new Intent(action);
-                customIntentWithExtras.setClass(context, IterableActionReceiver.class);
-                customIntentWithExtras.putExtras(extras);
-                customIntentWithExtras.putExtra(IterableConstants.MAIN_CLASS, classToOpen.getName());
-                customIntentWithExtras.putExtra(IterableConstants.REQUEST_CODE, notificationBuilder.requestCode);
-
-                PendingIntent customClickedIntent = PendingIntent.getBroadcast(context, notificationBuilder.requestCode,
-                        customIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
-
-                notificationBuilder.addAction(Notification.BADGE_ICON_NONE, action, customClickedIntent);
+        // Action buttons
+        if (notificationData.getActionButtons() != null) {
+            int buttonCount = 0;
+            for (IterableNotificationData.Button button : notificationData.getActionButtons()) {
+                notificationBuilder.createNotificationActionButton(context, button, extras);
+                if (++buttonCount == 3)
+                    break;
             }
         }
 
-        //TODO: how do I specify if the app should not reload the main activity if the app is already opened
-
-        PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
-                mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent notificationClickedIntent = PendingIntent.getBroadcast(context, notificationBuilder.requestCode,
+                pushContentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         notificationBuilder.setContentIntent(notificationClickedIntent);
         notificationBuilder.isGhostPush = isGhostPush(extras);
@@ -229,7 +231,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             e.printStackTrace();
         }
 
-
+        PackageManager pm = context.getPackageManager();
         if (pm.checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
             notifPermissions.defaults |= Notification.DEFAULT_VIBRATE;
         }
@@ -237,6 +239,44 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         notificationBuilder.setDefaults(notifPermissions.defaults);
 
         return notificationBuilder;
+    }
+
+    /**
+     * Creates a notification action button for a given JSON payload
+     * @param context    Context
+     * @param button     `IterableNotificationData.Button` object containing button information
+     * @param extras     Notification payload
+     */
+    public void createNotificationActionButton(Context context, IterableNotificationData.Button button, Bundle extras) {
+        Intent buttonIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        buttonIntent.setClass(context, IterablePushActionReceiver.class);
+        buttonIntent.putExtras(extras);
+        buttonIntent.putExtra(IterableConstants.REQUEST_CODE, requestCode);
+        buttonIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, button.identifier);
+        buttonIntent.putExtra(IterableConstants.ACTION_IDENTIFIER, button.identifier);
+
+        PendingIntent pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
+                buttonIntent, 0);
+
+        NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action
+                .Builder(NotificationCompat.BADGE_ICON_NONE,button.title, pendingButtonIntent);
+
+        if (button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT)) {
+            actionBuilder.addRemoteInput(new RemoteInput.Builder("userInput").setLabel(button.inputPlaceholder).build());
+        }
+
+        addAction(actionBuilder.build());
+    }
+
+    /**
+     * Gets the main activity intent - the same intent as the one used to launch the app from launcher.
+     * @param context Context
+     * @return Main launch intent
+     */
+    public static Intent getMainActivityIntent(Context context) {
+        Context appContext = context.getApplicationContext();
+        PackageManager packageManager = appContext.getPackageManager();
+        return packageManager.getLaunchIntentForPackage(appContext.getPackageName());
     }
 
     /**
