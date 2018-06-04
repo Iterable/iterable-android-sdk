@@ -34,7 +34,7 @@ public class IterableApi {
 //---------------------------------------------------------------------------------------
     static final String TAG = "IterableApi";
 
-    static volatile IterableApi sharedInstance = new IterableApi();
+    public static volatile IterableApi sharedInstance = new IterableApi();
 
     private Context _applicationContext;
     private String _apiKey;
@@ -863,12 +863,12 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    private void sendPostRequest(String resourcePath, JSONObject json) {
+    void sendPostRequest(String resourcePath, JSONObject json) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null);
         new IterableRequest().execute(request);
     }
 
-    private void sendPostRequest(String resourcePath, JSONObject json, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    void sendPostRequest(String resourcePath, JSONObject json, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
@@ -879,7 +879,7 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    private void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
+    void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
         new IterableRequest().execute(request);
     }
