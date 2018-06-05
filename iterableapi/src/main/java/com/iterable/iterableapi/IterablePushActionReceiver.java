@@ -14,6 +14,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * Handles incoming push actions built by {@link IterableNotificationBuilder}
+ * Action id is passed in the Intent extras under {@link IterableConstants#REQUEST_CODE}
+ */
 public class IterablePushActionReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {

@@ -10,7 +10,7 @@ import android.util.Log;
 
 import java.util.List;
 
-public class IterableActionRunner {
+class IterableActionRunner {
     static final String TAG = "IterableActionRunner";
 
     public static boolean executeAction(@NonNull Context context, @Nullable IterableAction action) {

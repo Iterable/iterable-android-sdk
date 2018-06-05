@@ -34,6 +34,9 @@ public class IterableApi {
 //---------------------------------------------------------------------------------------
     static final String TAG = "IterableApi";
 
+    /**
+     * {@link IterableApi} singleton instance
+     */
     public static volatile IterableApi sharedInstance = new IterableApi();
 
     private Context _applicationContext;
@@ -81,10 +84,18 @@ public class IterableApi {
         return (_payloadData != null) ? _payloadData.getString(key, null): null;
     }
 
+    /**
+     * Set a custom URL handler to override openUrl actions
+     * @param urlHandler Custom URL handler provided by the app
+     */
     public void setUrlHandler(IterableUrlHandler urlHandler) {
         this.urlHandler = urlHandler;
     }
 
+    /**
+     * Set an action handler for custom actions
+     * @param customActionHandler Custom action handler provided by the app
+     */
     public void setCustomActionHandler(IterableCustomActionHandler customActionHandler) {
         this.customActionHandler = customActionHandler;
     }
