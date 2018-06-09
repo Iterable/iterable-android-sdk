@@ -35,7 +35,7 @@ before_script:
 
 script:
   - touch local.properties
-  - ./gradlew build connectedCheck
+  - ./gradlew build test jacocoTestReport connectedCheck
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
