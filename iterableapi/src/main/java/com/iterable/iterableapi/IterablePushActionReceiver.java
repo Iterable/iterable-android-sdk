@@ -78,10 +78,11 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
 
         // Open the launcher activity if the action was not handled by anything, and openApp is true
         if (openApp && !handled) {
-            PackageManager pm = context.getPackageManager();
-            Intent launcherIntent = pm.getLaunchIntentForPackage(context.getPackageName());
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            context.startActivity(launcherIntent);
+            Intent launcherIntent = IterableNotificationBuilder.getMainActivityIntent(context);
+            launcherIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            if(launcherIntent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(launcherIntent);
+            }
         }
     }
 }

@@ -54,6 +54,6 @@ public class IterableAction {
      * @return Boolean indicating whether the action type matches the one passed to this method
      */
     public boolean isOfType(String type) {
-        return this.getType().equals(type);
+        return this.getType() != null && this.getType().equals(type);
     }
 }

@@ -226,7 +226,9 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
 
         try {
             ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            notificationBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+            if (info.metaData != null) {
+                notificationBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+            }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
@@ -276,7 +278,13 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
     public static Intent getMainActivityIntent(Context context) {
         Context appContext = context.getApplicationContext();
         PackageManager packageManager = appContext.getPackageManager();
-        return packageManager.getLaunchIntentForPackage(appContext.getPackageName());
+        Intent intent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
+        if (intent == null) {
+            intent = new Intent(Intent.ACTION_MAIN, null);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            intent.setPackage(appContext.getPackageName());
+        }
+        return intent;
     }
 
     /**
@@ -341,8 +349,10 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         if (iconId == 0) {
             try {
                 ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-                iconId = info.metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
-                IterableLogger.d(TAG, "iconID: " + info.metaData.get(IterableConstants.NOTIFICATION_ICON_NAME));
+                if (info.metaData != null) {
+                    iconId = info.metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
+                    IterableLogger.d(TAG, "iconID: " + info.metaData.get(IterableConstants.NOTIFICATION_ICON_NAME));
+                }
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
