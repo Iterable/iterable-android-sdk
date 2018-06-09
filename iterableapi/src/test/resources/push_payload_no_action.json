@@ -1,0 +1,13 @@
+{
+  "templateId": 1,
+  "campaignId": 1,
+  "actionButtons": [
+    {
+      "identifier": "button1",
+      "title": "No action"
+    }
+  ],
+  "defaultAction": {
+    "type": null
+  }
+}

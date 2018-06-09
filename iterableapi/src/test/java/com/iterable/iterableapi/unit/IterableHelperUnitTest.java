@@ -1,4 +1,4 @@
-package iterable.com.iterableapi;
+package com.iterable.iterableapi.unit;
 
 import com.iterable.iterableapi.IterableHelper;
 
