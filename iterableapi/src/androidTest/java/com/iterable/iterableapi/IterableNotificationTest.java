@@ -109,7 +109,6 @@ public class IterableNotificationTest {
     public void tearDown() {
         mNotificationManager.cancelAll();
         Intents.release();
-        IterableTestUtils.uninstallBroadcastReceivers();
     }
 
     @Test
@@ -202,44 +201,5 @@ public class IterableNotificationTest {
         assertEquals("Open Deeplink", notification.actions[0].title);
         assertEquals("Silent Action", notification.actions[1].title);
         assertEquals("Text input", notification.actions[2].title);
-    }
-
-    @Test
-    public void testNoAction() throws Exception {
-        Bundle notif = new Bundle();
-        notif.putString(IterableConstants.ITERABLE_DATA_KEY, getResourceString("push_payload_no_action.json"));
-
-        IterableNotificationBuilder iterableNotification = postNotification(notif);
-        StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
-        Notification notification = statusBarNotification.getNotification();
-        assertEquals(1, notification.actions.length);
-        assertEquals("No action", notification.actions[0].title);
-
-        final CountDownLatch signal = new CountDownLatch(1);
-        IterableTestUtils.installBroadcastReceiver(IterableConstants.ACTION_PUSH_ACTION, new IterableTestUtils.BroadcastReceiverCallback() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                signal.countDown();
-            }
-        });
-
-        notification.actions[0].actionIntent.send();
-        assertTrue("Broadcast Receiver is called", signal.await(1, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void testTextInputSilentButton() throws Exception {
-        Bundle notif = new Bundle();
-        notif.putString(IterableConstants.ITERABLE_DATA_KEY, getResourceString("push_payload_no_action.json"));
-
-        IterableNotificationBuilder iterableNotification = postNotification(notif);
-        StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
-        Notification notification = statusBarNotification.getNotification();
-        //assertEquals(1, notification.actions.length);
-        //assertEquals("No action", notification.actions[0].title);
-
-        intending(anyIntent()).respondWith(new Instrumentation.ActivityResult(0, null));
-        notification.actions[0].actionIntent.send();
-        intended(allOf(hasAction(IterableConstants.ACTION_PUSH_ACTION)));
     }
 }
