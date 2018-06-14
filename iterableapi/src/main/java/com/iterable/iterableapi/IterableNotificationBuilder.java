@@ -107,7 +107,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      * @param context
      * @param extras
      * @param classToOpen
-     * @return Returns null if the intent comes from an Iterable ghostPush
+     * @return Returns null if the intent comes from an Iterable ghostPush or it is not an Iterable notification
      */
     public static IterableNotificationBuilder createNotification(Context context, Bundle extras, Class classToOpen) {
         int stringId = context.getApplicationInfo().labelRes;
@@ -145,14 +145,14 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             iterableJson = new JSONObject(iterableData);
 
             // DEBUG ONLY: remove when backend is ready
-            if (!iterableJson.has("actionButtons") && extras.containsKey("actionButtons")) {
-                iterableJson.put("actionButtons", new JSONArray(extras.getString("actionButtons")));
+            if (!iterableJson.has(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS) && extras.containsKey(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS)) {
+                iterableJson.put(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS, new JSONArray(extras.getString(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS)));
             }
-            if (!iterableJson.has("defaultAction") && extras.containsKey("defaultAction")) {
-                iterableJson.put("defaultAction", new JSONObject(extras.getString("defaultAction")));
+            if (!iterableJson.has(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION) && extras.containsKey(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION)) {
+                iterableJson.put(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION, new JSONObject(extras.getString(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION)));
             }
             iterableData = iterableJson.toString();
-            extras.putString("itbl", iterableData);
+            extras.putString(IterableConstants.ITERABLE_DATA_KEY, iterableData);
 
             if (iterableJson.has(IterableConstants.ITERABLE_DATA_PUSH_IMAGE)) {
                 pushImage = iterableJson.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
@@ -197,10 +197,10 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
 
         // The notification doesn't cancel properly if requestCode is negative
         notificationBuilder.requestCode = Math.abs((int) System.currentTimeMillis());
-        IterableLogger.d("NotificationBuilder", "Request code = " + notificationBuilder.requestCode);
+        IterableLogger.d(TAG, "Request code = " + notificationBuilder.requestCode);
         if (messageId != null) {
             notificationBuilder.requestCode = Math.abs(messageId.hashCode());
-            IterableLogger.d("NotificationBuilder", "Request code = " + notificationBuilder.requestCode);
+            IterableLogger.d(TAG, "Request code = " + notificationBuilder.requestCode);
         }
 
         Intent pushContentIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
@@ -261,10 +261,10 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 buttonIntent, 0);
 
         NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action
-                .Builder(NotificationCompat.BADGE_ICON_NONE,button.title, pendingButtonIntent);
+                .Builder(NotificationCompat.BADGE_ICON_NONE, button.title, pendingButtonIntent);
 
         if (button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT)) {
-            actionBuilder.addRemoteInput(new RemoteInput.Builder("userInput").setLabel(button.inputPlaceholder).build());
+            actionBuilder.addRemoteInput(new RemoteInput.Builder(IterableConstants.USER_INPUT).setLabel(button.inputPlaceholder).build());
         }
 
         addAction(actionBuilder.build());
@@ -302,8 +302,6 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             mNotificationManager.notify(iterableNotificationBuilder.requestCode, iterableNotificationBuilder.build());
         }
     }
-
-
 
     /**
      * Creates the notification channel on device.

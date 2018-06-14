@@ -19,6 +19,8 @@ import org.json.JSONObject;
  * Action id is passed in the Intent extras under {@link IterableConstants#REQUEST_CODE}
  */
 public class IterablePushActionReceiver extends BroadcastReceiver {
+    private static final String TAG = "IterablePushActionReceiver";
+
     @Override
     public void onReceive(Context context, Intent intent) {
         Bundle extras = intent.getExtras();
@@ -59,15 +61,15 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
                     openApp = button.openApp;
 
                     if (button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT)) {
-                        String userInput = RemoteInput.getResultsFromIntent(intent).getString("userInput");
+                        String userInput = RemoteInput.getResultsFromIntent(intent).getString(IterableConstants.USER_INPUT);
                         if (userInput != null) {
-                            dataFields.putOpt("userText", userInput);
+                            dataFields.putOpt(IterableConstants.KEY_USER_TEXT, userInput);
                             action.userInput = userInput;
                         }
                     }
                 }
             } catch (JSONException e) {
-
+                IterableLogger.e(TAG, "Encountered an exception while trying to handle the push action", e);
             }
         }
 

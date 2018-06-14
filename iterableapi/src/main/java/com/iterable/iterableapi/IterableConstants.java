@@ -33,6 +33,7 @@ public final class IterableConstants {
     public static final String KEY_UNSUB_MESSAGE        = "unsubscribedMessageTypeIds";
     public static final String KEY_USER_ID              = "userId";
     public static final String KEY_USER                 = "user";
+    public static final String KEY_USER_TEXT            = "userText";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -67,6 +68,19 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_PUSH_IMAGE  = "attachment-url";
     public static final String ITERABLE_DATA_SOUND  = "sound";
     public static final String ITERABLE_DATA_TITLE  = "title";
+    public static final String ITERABLE_DATA_ACTION_BUTTONS  = "actionButtons";
+    public static final String ITERABLE_DATA_DEFAULT_ACTION  = "defaultAction";
+
+    //Action buttons
+    public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
+    public static final String ITBL_BUTTON_TYPE              = "buttonType";
+    public static final String ITBL_BUTTON_TITLE             = "title";
+    public static final String ITBL_BUTTON_OPEN_APP          = "openApp";
+    public static final String ITBL_BUTTON_REQUIRES_UNLOCK   = "requiresUnlock";
+    public static final String ITBL_BUTTON_ICON              = "icon";
+    public static final String ITBL_BUTTON_INPUT_TITLE       = "inputTitle";
+    public static final String ITBL_BUTTON_INPUT_PLACEHOLDER = "inputPlaceholder";
+    public static final String ITBL_BUTTON_ACTION            = "action";
 
     //Device
     public static final String DEVICE_BRAND             = "brand";
@@ -88,6 +102,7 @@ public final class IterableConstants {
     public static final String MAIN_CLASS               = "mainClass";
     public static final String REQUEST_CODE             = "requestCode";
     public static final String ACTION_IDENTIFIER        = "actionIdentifier";
+    public static final String USER_INPUT               = "userInput";
 
     //Firebase
     public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";

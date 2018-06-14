@@ -37,10 +37,10 @@ class IterableNotificationData {
             isGhostPush = iterableJson.optBoolean(IterableConstants.IS_GHOST_PUSH);
 
             // Default action
-            defaultAction = new IterableAction(iterableJson.optJSONObject("defaultAction"));
+            defaultAction = new IterableAction(iterableJson.optJSONObject(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION));
 
             // Action buttons
-            JSONArray actionButtonsJson = iterableJson.optJSONArray("actionButtons");
+            JSONArray actionButtonsJson = iterableJson.optJSONArray(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS);
             if (actionButtonsJson != null) {
                 actionButtons = new ArrayList<Button>();
                 for (int i = 0; i < actionButtonsJson.length(); i++) {
@@ -122,15 +122,15 @@ class IterableNotificationData {
         public final IterableAction action;
 
         public Button(@NonNull JSONObject buttonData) {
-            identifier = buttonData.optString("identifier");
-            title = buttonData.optString("title");
-            buttonType = buttonData.optString("buttonType", BUTTON_TYPE_DEFAULT);
-            openApp = buttonData.optBoolean("openApp", true);
-            requiresUnlock = buttonData.optBoolean("requiresUnlock", true);
-            buttonIcon = buttonData.optInt("buttonIcon", 0);
-            inputPlaceholder = buttonData.optString("inputPlaceholder");
-            inputTitle = buttonData.optString("inputTitle");
-            action = new IterableAction(buttonData.optJSONObject("action"));
+            identifier = buttonData.optString(IterableConstants.ITBL_BUTTON_IDENTIFIER);
+            title = buttonData.optString(IterableConstants.ITBL_BUTTON_TITLE);
+            buttonType = buttonData.optString(IterableConstants.ITBL_BUTTON_TYPE, BUTTON_TYPE_DEFAULT);
+            openApp = buttonData.optBoolean(IterableConstants.ITBL_BUTTON_OPEN_APP, true);
+            requiresUnlock = buttonData.optBoolean(IterableConstants.ITBL_BUTTON_REQUIRES_UNLOCK, true);
+            buttonIcon = buttonData.optInt(IterableConstants.ITBL_BUTTON_ICON, 0);
+            inputPlaceholder = buttonData.optString(IterableConstants.ITBL_BUTTON_INPUT_PLACEHOLDER);
+            inputTitle = buttonData.optString(IterableConstants.ITBL_BUTTON_INPUT_TITLE);
+            action = new IterableAction(buttonData.optJSONObject(IterableConstants.ITBL_BUTTON_ACTION));
         }
     }
 }
