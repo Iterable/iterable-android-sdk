@@ -37,7 +37,7 @@ public class IterableApi {
     /**
      * {@link IterableApi} singleton instance
      */
-    public static volatile IterableApi sharedInstance = new IterableApi();
+    public static final IterableApi sharedInstance = new IterableApi();
 
     private Context _applicationContext;
     private String _apiKey;
