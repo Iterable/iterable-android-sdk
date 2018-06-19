@@ -44,7 +44,7 @@ public class IterableActionRunnerTest {
         JSONObject actionData = new JSONObject();
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
-        IterableAction action = new IterableAction(actionData);
+        IterableAction action = IterableAction.from(actionData);
         IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
 
         intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.com")));
@@ -60,7 +60,7 @@ public class IterableActionRunnerTest {
         JSONObject actionData = new JSONObject();
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
-        IterableAction action = new IterableAction(actionData);
+        IterableAction action = IterableAction.from(actionData);
         IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
 
         Intents.assertNoUnverifiedIntents();
@@ -74,7 +74,7 @@ public class IterableActionRunnerTest {
 
         JSONObject actionData = new JSONObject();
         actionData.put("type", "customActionName");
-        IterableAction action = new IterableAction(actionData);
+        IterableAction action = IterableAction.from(actionData);
         IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
 
         verify(customActionHandlerMock).handleIterableCustomAction(action);

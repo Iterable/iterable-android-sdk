@@ -65,6 +65,7 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_BADGE  = "badge";
     public static final String ITERABLE_DATA_BODY   = "body";
     public static final String ITERABLE_DATA_KEY    = "itbl";
+    public static final String ITERABLE_DATA_DEEP_LINK_URL = "uri";
     public static final String ITERABLE_DATA_PUSH_IMAGE  = "attachment-url";
     public static final String ITERABLE_DATA_SOUND  = "sound";
     public static final String ITERABLE_DATA_TITLE  = "title";

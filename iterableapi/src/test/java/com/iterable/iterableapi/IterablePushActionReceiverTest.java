@@ -110,5 +110,23 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertNull(activityIntent);
     }
 
+    @Test
+    public void testLegacyDeepLinkPayload() throws Exception {
+        IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtras(IterableTestUtils.getBundleFromJsonResource("push_payload_legacy_deep_link.json"));
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+        PowerMockito.mockStatic(IterableActionRunner.class);
+
+        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+
+        // Verify that IterableActionRunner was called with openUrl action
+        PowerMockito.verifyStatic(IterableActionRunner.class);
+        ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
+        IterableActionRunner.executeAction(any(Context.class), capturedAction.capture());
+        assertEquals("openUrl", capturedAction.getValue().getType());
+        assertEquals("https://example.com", capturedAction.getValue().getData());
+    }
+
 
 }

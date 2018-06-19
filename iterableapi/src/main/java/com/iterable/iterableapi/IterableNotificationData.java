@@ -37,7 +37,7 @@ class IterableNotificationData {
             isGhostPush = iterableJson.optBoolean(IterableConstants.IS_GHOST_PUSH);
 
             // Default action
-            defaultAction = new IterableAction(iterableJson.optJSONObject(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION));
+            defaultAction = IterableAction.from(iterableJson.optJSONObject(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION));
 
             // Action buttons
             JSONArray actionButtonsJson = iterableJson.optJSONArray(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS);
@@ -90,11 +90,11 @@ class IterableNotificationData {
         return this.isGhostPush;
     }
 
-    public IterableAction getDefaultAction() {
+    public @Nullable IterableAction getDefaultAction() {
         return defaultAction;
     }
 
-    public List<Button> getActionButtons() {
+    public @Nullable List<Button> getActionButtons() {
         return actionButtons;
     }
 
@@ -130,7 +130,7 @@ class IterableNotificationData {
             buttonIcon = buttonData.optInt(IterableConstants.ITBL_BUTTON_ICON, 0);
             inputPlaceholder = buttonData.optString(IterableConstants.ITBL_BUTTON_INPUT_PLACEHOLDER);
             inputTitle = buttonData.optString(IterableConstants.ITBL_BUTTON_INPUT_TITLE);
-            action = new IterableAction(buttonData.optJSONObject(IterableConstants.ITBL_BUTTON_ACTION));
+            action = IterableAction.from(buttonData.optJSONObject(IterableConstants.ITBL_BUTTON_ACTION));
         }
     }
 }

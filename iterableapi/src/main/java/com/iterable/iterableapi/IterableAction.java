@@ -20,11 +20,19 @@ public class IterableAction {
      * Creates a new {@link IterableAction} from a JSON payload
      * @param config JSON containing action data
      */
-    IterableAction(JSONObject config) {
+    private IterableAction(JSONObject config) {
         if (config != null) {
             this.config = config;
         } else {
             this.config = new JSONObject();
+        }
+    }
+
+    static IterableAction from(JSONObject config) {
+        if (config != null) {
+            return new IterableAction(config);
+        } else {
+            return null;
         }
     }
 
