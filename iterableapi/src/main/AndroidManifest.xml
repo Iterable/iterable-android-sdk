@@ -1,9 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="iterable.com.iterableapi">
+    package="com.iterable.iterableapi">
 
     <application
         android:label="@string/app_name"
         android:supportsRtl="true">
+
+        <!-- Action receiver for push interactions -->
+        <receiver android:name="com.iterable.iterableapi.IterablePushActionReceiver">
+            <intent-filter>
+                <action android:name="com.iterable.push.ACTION_PUSH_ACTION" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

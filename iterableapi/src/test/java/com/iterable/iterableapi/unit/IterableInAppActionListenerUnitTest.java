@@ -1,4 +1,4 @@
-package iterable.com.iterableapi;
+package com.iterable.iterableapi.unit;
 
 import android.app.Dialog;
 import android.view.View;

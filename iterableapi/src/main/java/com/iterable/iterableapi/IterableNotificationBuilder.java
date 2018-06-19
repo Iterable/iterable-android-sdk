@@ -8,12 +8,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.RemoteInput;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,6 +24,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.List;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -103,7 +107,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      * @param context
      * @param extras
      * @param classToOpen
-     * @return Returns null if the intent comes from an Iterable ghostPush
+     * @return Returns null if the intent comes from an Iterable ghostPush or it is not an Iterable notification
      */
     public static IterableNotificationBuilder createNotification(Context context, Bundle extras, Class classToOpen) {
         int stringId = context.getApplicationInfo().labelRes;
@@ -118,31 +122,48 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         String channelId = context.getPackageName();
         String channelDescription = "";
 
-        registerChannelIfEmpty(context, channelId, channelName, channelDescription);
-        IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, context.getPackageName());
-        if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-            title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
-            notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
-            soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
-
-            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
-            notificationBuilder.iterableNotificationData = new IterableNotificationData(iterableData);
-            messageId = notificationBuilder.iterableNotificationData.getMessageId();
-
-            try {
-                JSONObject iterableJson = new JSONObject(iterableData);
-                if (iterableJson.has(IterableConstants.ITERABLE_DATA_PUSH_IMAGE)) {
-                    pushImage = iterableJson.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
-                }
-            } catch (JSONException e) {
-                IterableLogger.w(TAG, e.toString());
-            }
+        if (!extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            IterableLogger.w(TAG, "Notification doesn't have an Iterable payload. Skipping.");
+            return null;
         }
 
-        Intent mainIntentWithExtras = new Intent(IterableConstants.ACTION_NOTIF_OPENED);
-        mainIntentWithExtras.setClass(context, classToOpen);
-        mainIntentWithExtras.putExtras(extras);
-        mainIntentWithExtras.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        if (isGhostPush(extras)) {
+            IterableLogger.w(TAG, "Received a ghost push notification. Skipping.");
+            return null;
+        }
+
+        registerChannelIfEmpty(context, channelId, channelName, channelDescription);
+        IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, context.getPackageName());
+        JSONObject iterableJson = null;
+        title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
+        notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
+        soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
+
+        String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+
+        try {
+            iterableJson = new JSONObject(iterableData);
+
+            // DEBUG ONLY: remove when backend is ready
+            if (!iterableJson.has(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS) && extras.containsKey(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS)) {
+                iterableJson.put(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS, new JSONArray(extras.getString(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS)));
+            }
+            if (!iterableJson.has(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION) && extras.containsKey(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION)) {
+                iterableJson.put(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION, new JSONObject(extras.getString(IterableConstants.ITERABLE_DATA_DEFAULT_ACTION)));
+            }
+            iterableData = iterableJson.toString();
+            extras.putString(IterableConstants.ITERABLE_DATA_KEY, iterableData);
+
+            if (iterableJson.has(IterableConstants.ITERABLE_DATA_PUSH_IMAGE)) {
+                pushImage = iterableJson.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
+            }
+        } catch (JSONException e) {
+            IterableLogger.w(TAG, e.toString());
+        }
+
+        IterableNotificationData notificationData = new IterableNotificationData(iterableData);
+        notificationBuilder.iterableNotificationData = notificationData;
+        messageId = notificationBuilder.iterableNotificationData.getMessageId();
 
         Notification notifPermissions = new Notification();
         notifPermissions.defaults |= Notification.DEFAULT_LIGHTS;
@@ -152,7 +173,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 .setTicker(applicationName).setWhen(0)
                 .setAutoCancel(true)
                 .setContentTitle(title)
-                .setPriority(Notification.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentText(notificationBody);
         notificationBuilder.setImageUrl(pushImage);
         notificationBuilder.setExpandedContent(notificationBody);
@@ -174,19 +195,40 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             notifPermissions.defaults |= Notification.DEFAULT_SOUND;
         }
 
-        notificationBuilder.requestCode = (int) System.currentTimeMillis();
+        // The notification doesn't cancel properly if requestCode is negative
+        notificationBuilder.requestCode = Math.abs((int) System.currentTimeMillis());
+        IterableLogger.d(TAG, "Request code = " + notificationBuilder.requestCode);
         if (messageId != null) {
-            notificationBuilder.requestCode = messageId.hashCode();
+            notificationBuilder.requestCode = Math.abs(messageId.hashCode());
+            IterableLogger.d(TAG, "Request code = " + notificationBuilder.requestCode);
         }
-        PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
-                mainIntentWithExtras, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Intent pushContentIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        pushContentIntent.setClass(context, IterablePushActionReceiver.class);
+        pushContentIntent.putExtras(extras);
+        pushContentIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+
+        // Action buttons
+        if (notificationData.getActionButtons() != null) {
+            int buttonCount = 0;
+            for (IterableNotificationData.Button button : notificationData.getActionButtons()) {
+                notificationBuilder.createNotificationActionButton(context, button, extras);
+                if (++buttonCount == 3)
+                    break;
+            }
+        }
+
+        PendingIntent notificationClickedIntent = PendingIntent.getBroadcast(context, notificationBuilder.requestCode,
+                pushContentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         notificationBuilder.setContentIntent(notificationClickedIntent);
         notificationBuilder.isGhostPush = isGhostPush(extras);
 
         try {
             ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            notificationBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+            if (info.metaData != null) {
+                notificationBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+            }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
@@ -199,6 +241,50 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         notificationBuilder.setDefaults(notifPermissions.defaults);
 
         return notificationBuilder;
+    }
+
+    /**
+     * Creates a notification action button for a given JSON payload
+     * @param context    Context
+     * @param button     `IterableNotificationData.Button` object containing button information
+     * @param extras     Notification payload
+     */
+    public void createNotificationActionButton(Context context, IterableNotificationData.Button button, Bundle extras) {
+        Intent buttonIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        buttonIntent.setClass(context, IterablePushActionReceiver.class);
+        buttonIntent.putExtras(extras);
+        buttonIntent.putExtra(IterableConstants.REQUEST_CODE, requestCode);
+        buttonIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, button.identifier);
+        buttonIntent.putExtra(IterableConstants.ACTION_IDENTIFIER, button.identifier);
+
+        PendingIntent pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
+                buttonIntent, 0);
+
+        NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action
+                .Builder(NotificationCompat.BADGE_ICON_NONE, button.title, pendingButtonIntent);
+
+        if (button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT)) {
+            actionBuilder.addRemoteInput(new RemoteInput.Builder(IterableConstants.USER_INPUT).setLabel(button.inputPlaceholder).build());
+        }
+
+        addAction(actionBuilder.build());
+    }
+
+    /**
+     * Gets the main activity intent - the same intent as the one used to launch the app from launcher.
+     * @param context Context
+     * @return Main launch intent
+     */
+    public static Intent getMainActivityIntent(Context context) {
+        Context appContext = context.getApplicationContext();
+        PackageManager packageManager = appContext.getPackageManager();
+        Intent intent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
+        if (intent == null) {
+            intent = new Intent(Intent.ACTION_MAIN, null);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            intent.setPackage(appContext.getPackageName());
+        }
+        return intent;
     }
 
     /**
@@ -261,8 +347,10 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         if (iconId == 0) {
             try {
                 ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-                iconId = info.metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
-                IterableLogger.d(TAG, "iconID: " + info.metaData.get(IterableConstants.NOTIFICATION_ICON_NAME));
+                if (info.metaData != null) {
+                    iconId = info.metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
+                    IterableLogger.d(TAG, "iconID: " + info.metaData.get(IterableConstants.NOTIFICATION_ICON_NAME));
+                }
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }

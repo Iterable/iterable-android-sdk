@@ -34,7 +34,10 @@ public class IterableApi {
 //---------------------------------------------------------------------------------------
     static final String TAG = "IterableApi";
 
-    static volatile IterableApi sharedInstance = new IterableApi();
+    /**
+     * {@link IterableApi} singleton instance
+     */
+    public static final IterableApi sharedInstance = new IterableApi();
 
     private Context _applicationContext;
     private String _apiKey;
@@ -43,6 +46,8 @@ public class IterableApi {
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
+    IterableUrlHandler urlHandler;
+    IterableCustomActionHandler customActionHandler;
 
     private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
 
@@ -77,6 +82,22 @@ public class IterableApi {
      */
     public String getPayloadData(String key) {
         return (_payloadData != null) ? _payloadData.getString(key, null): null;
+    }
+
+    /**
+     * Set a custom URL handler to override openUrl actions
+     * @param urlHandler Custom URL handler provided by the app
+     */
+    public void setUrlHandler(IterableUrlHandler urlHandler) {
+        this.urlHandler = urlHandler;
+    }
+
+    /**
+     * Set an action handler for custom actions
+     * @param customActionHandler Custom action handler provided by the app
+     */
+    public void setCustomActionHandler(IterableCustomActionHandler customActionHandler) {
+        this.customActionHandler = customActionHandler;
     }
 
     /**
@@ -247,17 +268,6 @@ public class IterableApi {
                                                        String email, String userId, boolean debugMode)
     {
         sharedInstance.updateData(currentContext.getApplicationContext(), apiKey, email, userId);
-
-        if (currentContext instanceof Activity) {
-            Activity currentActivity = (Activity) currentContext;
-            sharedInstance.onNewIntent(currentActivity.getIntent());
-        } else {
-            IterableLogger.w(TAG, "Notification Opens will not be tracked: "+
-                    "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
-                    "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking" +
-                    "or call onNewIntent when a new Intent is received.");
-        }
-
         sharedInstance.setDebugMode(debugMode);
 
         return sharedInstance;
@@ -294,14 +304,11 @@ public class IterableApi {
     /**
      * Call onNewIntent to set the payload data and track pushOpens directly if
      * sharedInstanceWithApiKey was called with a Context rather than an Activity.
+     * DEPRECATED: Push opens are now tracked automatically.
      */
+    @Deprecated
     public void onNewIntent(Intent intent) {
-        if (isIterableIntent(intent)) {
-            setPayloadData(intent);
-            tryTrackNotifOpen(intent);
-        } else {
-            IterableLogger.d(TAG, "onNewIntent not triggered by an Iterable notification");
-        }
+
     }
 
     /**
@@ -742,19 +749,28 @@ public class IterableApi {
         return iconName;
     }
 
+    protected void trackPushOpen(int campaignId, int templateId, String messageId) {
+        trackPushOpen(campaignId, templateId, messageId, null);
+    }
+
     /**
      * Tracks when a push notification is opened on device.
      * @param campaignId
      * @param templateId
      */
-    protected void trackPushOpen(int campaignId, int templateId, String messageId) {
+    protected void trackPushOpen(int campaignId, int templateId, String messageId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
+            if (dataFields == null) {
+                dataFields = new JSONObject();
+            }
+
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+            requestJSON.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
         }
@@ -843,32 +859,17 @@ public class IterableApi {
     }
 
     /**
-     * Attempts to track a notifOpened event from the called Intent.
-     * @param calledIntent
-     */
-    private void tryTrackNotifOpen(Intent calledIntent) {
-        Bundle extras = calledIntent.getExtras();
-        if (extras != null) {
-            Intent intent = new Intent();
-            intent.setClass(_applicationContext, IterablePushOpenReceiver.class);
-            intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
-            intent.putExtras(extras);
-            _applicationContext.sendBroadcast(intent);
-        }
-    }
-
-    /**
      * Sends the POST request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
      * @param resourcePath
      * @param json
      */
-    private void sendPostRequest(String resourcePath, JSONObject json) {
+    void sendPostRequest(String resourcePath, JSONObject json) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null);
         new IterableRequest().execute(request);
     }
 
-    private void sendPostRequest(String resourcePath, JSONObject json, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    void sendPostRequest(String resourcePath, JSONObject json, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
@@ -879,7 +880,7 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    private void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
+    void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
         new IterableRequest().execute(request);
     }
