@@ -54,6 +54,9 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
                     // Default action (click on a push)
                     dataFields.put(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
                     action = notificationData.getDefaultAction();
+                    if (action == null) {
+                        action = getLegacyDefaultActionFromPayload(intent.getExtras());
+                    }
                 } else {
                     dataFields.put(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, actionIdentifier);
                     IterableNotificationData.Button button = notificationData.getActionButton(actionIdentifier);
@@ -87,4 +90,19 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
             }
         }
     }
+
+    private IterableAction getLegacyDefaultActionFromPayload(Bundle extras) {
+        try {
+            if (extras.containsKey(IterableConstants.ITERABLE_DATA_DEEP_LINK_URL)) {
+                JSONObject actionJson = new JSONObject();
+                actionJson.put("type", IterableAction.ACTION_TYPE_OPEN_URL);
+                actionJson.put("data", extras.getString(IterableConstants.ITERABLE_DATA_DEEP_LINK_URL));
+                return IterableAction.from(actionJson);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }
