@@ -38,7 +38,7 @@ public class IterableApi {
     /**
      * {@link IterableApi} singleton instance
      */
-    public static final IterableApi sharedInstance = new IterableApi();
+    static volatile IterableApi sharedInstance = new IterableApi();
 
     private Context _applicationContext;
     IterableConfig config;
@@ -57,7 +57,7 @@ public class IterableApi {
 
 //region Constructor
 //---------------------------------------------------------------------------------------
-    IterableApi(){
+    IterableApi() {
         config = new IterableConfig.Builder().build();
     }
 
@@ -145,6 +145,14 @@ public class IterableApi {
 //---------------------------------------------------------------------------------------
 
     /**
+     * Get {@link IterableApi} singleton instance
+     * @return {@link IterableApi} singleton instance
+     */
+    public static IterableApi getInstance() {
+        return sharedInstance;
+    }
+
+    /**
      * Initializes IterableApi
      * This method must be called from {@link Application#onCreate()}
      * Note: Make sure you also call {@link #setEmail(String)} or {@link #setUserId(String)} before calling other methods
@@ -174,6 +182,7 @@ public class IterableApi {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
         sharedInstance.sdkCompatEnabled = false;
+        sharedInstance.retrieveEmailAndUserId();
     }
 
     /**
@@ -860,6 +869,29 @@ public class IterableApi {
         catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+//---------------------------------------------------------------------------------------
+//endregion
+
+
+//region Package-Protected Fuctions
+//---------------------------------------------------------------------------------------
+
+    /**
+     * Get user email
+     * @return user email
+     */
+    String getEmail() {
+        return _email;
+    }
+
+    /**
+     * Get user ID
+     * @return user ID
+     */
+    String getUserId() {
+        return _userId;
     }
 
 //---------------------------------------------------------------------------------------
