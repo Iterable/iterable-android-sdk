@@ -24,6 +24,11 @@ class IterableActionRunner {
             return false;
         }
 
+        // Do not handle actions and try to open URLs unless the SDK is initialized with a new init method
+        if (IterableApi.sharedInstance.sdkCompatEnabled) {
+            return false;
+        }
+
         if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
             return openUri(context, Uri.parse(action.getData()), action);
         } else {
@@ -42,8 +47,8 @@ class IterableActionRunner {
      * `false` if the handler did not handle this URL and no activity was found to open it with
      */
     private static boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableAction action) {
-        if (IterableApi.sharedInstance.urlHandler != null) {
-            if (IterableApi.sharedInstance.urlHandler.handleIterableURL(uri, action)) {
+        if (IterableApi.sharedInstance.config.urlHandler != null) {
+            if (IterableApi.sharedInstance.config.urlHandler.handleIterableURL(uri, action)) {
                 return true;
             }
         }
@@ -83,8 +88,8 @@ class IterableActionRunner {
     private static boolean callCustomActionIfSpecified(@NonNull IterableAction action) {
         if (action.getType() != null && !action.getType().isEmpty()) {
             // Call custom action handler
-            if (IterableApi.sharedInstance.customActionHandler != null) {
-                return IterableApi.sharedInstance.customActionHandler.handleIterableCustomAction(action);
+            if (IterableApi.sharedInstance.config.customActionHandler != null) {
+                return IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action);
             }
         }
         return false;

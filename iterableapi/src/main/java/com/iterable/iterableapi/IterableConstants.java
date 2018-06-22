@@ -72,6 +72,11 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_ACTION_BUTTONS  = "actionButtons";
     public static final String ITERABLE_DATA_DEFAULT_ACTION  = "defaultAction";
 
+    //SharedPreferences keys
+    public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";
+    public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
+    public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
+
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
     public static final String ITBL_BUTTON_TYPE              = "buttonType";

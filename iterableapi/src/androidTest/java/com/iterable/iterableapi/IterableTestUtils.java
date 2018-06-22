@@ -11,7 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class IterableTestUtils {
-    public static void createIterableApi() {
+    public static void legacyInitIterableApi() {
         IterableApi.sharedInstanceWithApiKey(InstrumentationRegistry.getTargetContext(), "fake_key", "test_email");
+    }
+
+    public static void initIterableApi(IterableConfig config) {
+        IterableApi.initialize(InstrumentationRegistry.getTargetContext(), "fake_key", config);
     }
 }
