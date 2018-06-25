@@ -29,7 +29,6 @@ public class IterableActionRunnerTest {
 
     @Before
     public void setUp() {
-        IterableTestUtils.createIterableApi();
         Intents.init();
     }
 
@@ -39,7 +38,22 @@ public class IterableActionRunnerTest {
     }
 
     @Test
+    public void testLegacyApiInit() throws Exception {
+        IterableTestUtils.legacyInitIterableApi();
+        intending(anyIntent()).respondWith(new Instrumentation.ActivityResult(0, null));
+        JSONObject actionData = new JSONObject();
+        actionData.put("type", "openUrl");
+        actionData.put("data", "https://example.com");
+        IterableAction action = IterableAction.from(actionData);
+        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
+
+        // It should not attempt to open the URL unless it is initialized with a new method
+        Intents.assertNoUnverifiedIntents();
+    }
+
+    @Test
     public void testOpenUrlAction() throws Exception {
+        IterableTestUtils.initIterableApi(null);
         intending(anyIntent()).respondWith(new Instrumentation.ActivityResult(0, null));
         JSONObject actionData = new JSONObject();
         actionData.put("type", "openUrl");
@@ -55,7 +69,7 @@ public class IterableActionRunnerTest {
     public void testUrlHandlingOverride() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
         when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableAction.class))).thenReturn(true);
-        IterableApi.sharedInstance.setUrlHandler(urlHandlerMock);
+        IterableTestUtils.initIterableApi(new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
 
         JSONObject actionData = new JSONObject();
         actionData.put("type", "openUrl");
@@ -64,13 +78,13 @@ public class IterableActionRunnerTest {
         IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
 
         Intents.assertNoUnverifiedIntents();
-        IterableApi.sharedInstance.setUrlHandler(null);
+        IterableTestUtils.initIterableApi(null);
     }
 
     @Test
     public void testCustomAction() throws Exception {
         IterableCustomActionHandler customActionHandlerMock = mock(IterableCustomActionHandler.class);
-        IterableApi.sharedInstance.setCustomActionHandler(customActionHandlerMock);
+        IterableTestUtils.initIterableApi(new IterableConfig.Builder().setCustomActionHandler(customActionHandlerMock).build());
 
         JSONObject actionData = new JSONObject();
         actionData.put("type", "customActionName");
@@ -78,6 +92,6 @@ public class IterableActionRunnerTest {
         IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
 
         verify(customActionHandlerMock).handleIterableCustomAction(action);
-        IterableApi.sharedInstance.setCustomActionHandler(null);
+        IterableTestUtils.initIterableApi(null);
     }
 }
