@@ -235,24 +235,4 @@ public class IterableApiResponseTest {
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
     }
-
-    @Test
-    public void testRedirectRequest() throws Exception {
-        final CountDownLatch signal = new CountDownLatch(1);
-
-        MockResponse response = new MockResponse().setResponseCode(302).setHeader("Location", "https://www.example.com/testlink");
-        server.enqueue(response);
-
-        IterableApiRequest request = new IterableApiRequest("fake_key", server.url("").toString(), new JSONObject(), IterableApiRequest.REDIRECT, new IterableHelper.IterableActionHandler() {
-            @Override
-            public void execute(String data) {
-                assertEquals("https://www.example.com/testlink", data);
-                signal.countDown();
-            }
-        });
-        new IterableRequest().execute(request);
-
-        server.takeRequest(1, TimeUnit.SECONDS);
-        assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
-    }
 }
