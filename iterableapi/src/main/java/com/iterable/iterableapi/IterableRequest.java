@@ -71,11 +71,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
-                } else if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
-                    url = new URL(iterableApiRequest.resourcePath);
-                    urlConnection = (HttpURLConnection) url.openConnection();
-                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                    urlConnection.setInstanceFollowRedirects(false);
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -164,20 +159,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 } else {
                     handleFailure("Received non-200 response: " + responseCode, jsonResponse);
                 }
-
-                if (iterableApiRequest.requestType == IterableApiRequest.REDIRECT) {
-                    if (responseCode >= 400) {
-                        // Return the response as it is
-                        IterableLogger.d(TAG, "Invalid Request for: " + iterableApiRequest.resourcePath);
-                        IterableLogger.d(TAG, requestResult);
-                    } else if (responseCode >= 300) {
-                        String newUrl = urlConnection.getHeaderField(IterableConstants.LOCATION_HEADER_FIELD);
-                        requestResult = newUrl;
-                    } else {
-                        //pass back original url
-                        requestResult = url.toString();
-                    }
-                }
             } catch (JSONException e) {
                 IterableLogger.e(TAG, e.getMessage());
                 handleFailure(e.getMessage(), null);
@@ -251,7 +232,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 class IterableApiRequest {
     static String GET = "GET";
     static String POST = "POST";
-    static String REDIRECT = "REDIRECT";
 
     String apiKey = "";
     String resourcePath = "";
