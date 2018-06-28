@@ -19,7 +19,7 @@ class IterableActionRunner {
      * @param action The original action object
      * @return `true` if the action was handled, `false` if it was not
      */
-    public static boolean executeAction(@NonNull Context context, @Nullable IterableAction action) {
+    public static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
         if (action == null) {
             return false;
         }
@@ -29,10 +29,12 @@ class IterableActionRunner {
             return false;
         }
 
+        IterableActionContext actionContext = new IterableActionContext(action, source);
+
         if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
-            return openUri(context, Uri.parse(action.getData()), action);
+            return openUri(context, Uri.parse(action.getData()), actionContext);
         } else {
-            return callCustomActionIfSpecified(action);
+            return callCustomActionIfSpecified(action, actionContext);
         }
     }
 
@@ -42,13 +44,13 @@ class IterableActionRunner {
      * or returns `false`, the SDK tries to find an activity that can open this URL.
      * @param context Context
      * @param uri The URL to open
-     * @param action The original action object
+     * @param actionContext The original action object
      * @return `true` if the action was handled, or an activity was found for this URL
      * `false` if the handler did not handle this URL and no activity was found to open it with
      */
-    private static boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableAction action) {
+    private static boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableActionContext actionContext) {
         if (IterableApi.sharedInstance.config.urlHandler != null) {
-            if (IterableApi.sharedInstance.config.urlHandler.handleIterableURL(uri, action)) {
+            if (IterableApi.sharedInstance.config.urlHandler.handleIterableURL(uri, actionContext)) {
                 return true;
             }
         }
@@ -85,7 +87,7 @@ class IterableActionRunner {
      * @return `true` if the action is valid and was handled by the handler
      * `false` if the action is invalid or the handler returned `false`
      */
-    private static boolean callCustomActionIfSpecified(@NonNull IterableAction action) {
+    private static boolean callCustomActionIfSpecified(@NonNull IterableAction action, @NonNull IterableActionContext actionContext) {
         if (action.getType() != null && !action.getType().isEmpty()) {
             // Call custom action handler
             if (IterableApi.sharedInstance.config.customActionHandler != null) {

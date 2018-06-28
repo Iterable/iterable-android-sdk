@@ -45,7 +45,7 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
+        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
 
         // It should not attempt to open the URL unless it is initialized with a new method
         Intents.assertNoUnverifiedIntents();
@@ -59,7 +59,7 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
+        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
 
         intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.com")));
         Intents.assertNoUnverifiedIntents();
@@ -68,14 +68,14 @@ public class IterableActionRunnerTest {
     @Test
     public void testUrlHandlingOverride() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
-        when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableAction.class))).thenReturn(true);
+        when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableActionContext.class))).thenReturn(true);
         IterableTestUtils.initIterableApi(new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
 
         JSONObject actionData = new JSONObject();
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
+        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
 
         Intents.assertNoUnverifiedIntents();
         IterableTestUtils.initIterableApi(null);
@@ -89,7 +89,7 @@ public class IterableActionRunnerTest {
         JSONObject actionData = new JSONObject();
         actionData.put("type", "customActionName");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action);
+        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
 
         verify(customActionHandlerMock).handleIterableCustomAction(action);
         IterableTestUtils.initIterableApi(null);

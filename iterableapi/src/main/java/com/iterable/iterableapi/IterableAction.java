@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -34,6 +35,18 @@ public class IterableAction {
         } else {
             return null;
         }
+    }
+
+    static IterableAction actionOpenUrl(String url) {
+        if (url != null) {
+            try {
+                JSONObject config = new JSONObject();
+                config.put("type", ACTION_TYPE_OPEN_URL);
+                config.put("data", url);
+                return new IterableAction(config);
+            } catch (JSONException ignored) {}
+        }
+        return null;
     }
 
     /**

@@ -21,8 +21,7 @@ class IterableDeeplinkManager {
      */
     static void getAndTrackDeeplink(String url, IterableHelper.IterableActionHandler callback) {
         if (url != null) {
-            Matcher m = deeplinkPattern.matcher(url);
-            if (m.find()) {
+            if (isIterableDeeplink(url)) {
                 new RedirectTask(callback).execute(url);
             } else {
                 callback.execute(url);
@@ -30,6 +29,21 @@ class IterableDeeplinkManager {
         } else {
             callback.execute(null);
         }
+    }
+
+    /**
+     * Checks if the URL looks like a link rewritten by Iterable
+     * @param url The URL to check
+     * @return `true` if it looks like a link rewritten by Iterable, `false` otherwise
+     */
+    static boolean isIterableDeeplink(String url) {
+        if (url != null) {
+            Matcher m = deeplinkPattern.matcher(url);
+            if (m.find()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class RedirectTask extends AsyncTask<String, Void, String> {

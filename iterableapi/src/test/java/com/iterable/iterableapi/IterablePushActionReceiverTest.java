@@ -76,7 +76,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
         // Verify that IterableActionRunner was called with the proper action
         PowerMockito.verifyStatic(IterableActionRunner.class);
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        IterableActionRunner.executeAction(any(Context.class), capturedAction.capture());
+        IterableActionRunner.executeAction(any(Context.class), capturedAction.capture(), IterableActionSource.PUSH);
         assertEquals("customAction", capturedAction.getValue().getType());
 
         // Verify that the main app activity was launched
@@ -123,7 +123,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
         // Verify that IterableActionRunner was called with openUrl action
         PowerMockito.verifyStatic(IterableActionRunner.class);
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        IterableActionRunner.executeAction(any(Context.class), capturedAction.capture());
+        IterableActionRunner.executeAction(any(Context.class), capturedAction.capture(), IterableActionSource.PUSH);
         assertEquals("openUrl", capturedAction.getValue().getType());
         assertEquals("https://example.com", capturedAction.getValue().getData());
     }
