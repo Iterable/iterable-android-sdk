@@ -11,6 +11,11 @@ class IterableDeeplinkManager {
 
     private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
 
+    /**
+     * Tracks a link click and passes the redirected URL to the callback
+     * @param url The URL that was clicked
+     * @param callback The callback to execute the original URL is retrieved
+     */
     static void getAndTrackDeeplink(String url, IterableHelper.IterableActionHandler callback) {
         if (url != null) {
             Matcher m = deeplinkPattern.matcher(url);
