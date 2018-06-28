@@ -77,6 +77,7 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
         }
 
         // Automatic tracking
+        IterableApi.sharedInstance.setNotificationData(notificationData);
         IterableApi.sharedInstance.trackPushOpen(notificationData.getCampaignId(), notificationData.getTemplateId(), notificationData.getMessageId(), dataFields);
 
         boolean handled = IterableActionRunner.executeAction(context, action);
