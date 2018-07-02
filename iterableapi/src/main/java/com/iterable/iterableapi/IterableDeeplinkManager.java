@@ -2,8 +2,11 @@ package com.iterable.iterableapi;
 
 import android.os.AsyncTask;
 
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +38,10 @@ class IterableDeeplinkManager {
 
         private IterableHelper.IterableActionHandler callback;
 
+        public int campaignId;
+        public int templateId;
+        public String messageId;
+
         RedirectTask(IterableHelper.IterableActionHandler callback) {
             this.callback = callback;
         }
@@ -60,6 +67,29 @@ class IterableDeeplinkManager {
                     IterableLogger.d(TAG, "Invalid Request for: " + urlString + ", returned code " + responseCode);
                 } else if (responseCode >= 300) {
                     urlString = urlConnection.getHeaderField(IterableConstants.LOCATION_HEADER_FIELD);
+                    try {
+                        List<String> cookieHeaders = urlConnection.getHeaderFields().get("Set-Cookie");
+                        if (cookieHeaders != null) {
+                            ArrayList<HttpCookie> httpCookies = new ArrayList<>(cookieHeaders.size());
+                            for (String cookieString : cookieHeaders) {
+                                List<HttpCookie> cookies = HttpCookie.parse(cookieString);
+                                if (cookies != null) {
+                                    httpCookies.addAll(cookies);
+                                }
+                            }
+                            for (HttpCookie cookie : httpCookies) {
+                                if (cookie.getName().equals("iterableEmailCampaignId")) {
+                                    campaignId = Integer.parseInt(cookie.getValue());
+                                } else if (cookie.getName().equals("iterableTemplateId")) {
+                                    templateId = Integer.parseInt(cookie.getValue());
+                                } else if (cookie.getName().equals("iterableMessageId")) {
+                                    messageId = cookie.getValue();
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        IterableLogger.e(TAG, "Error while parsing cookies: " + e.getMessage());
+                    }
                 }
             } catch (Exception e) {
                 IterableLogger.e(TAG, e.getMessage());
@@ -75,6 +105,11 @@ class IterableDeeplinkManager {
         protected void onPostExecute(String s) {
             if (callback != null) {
                 callback.execute(s);
+            }
+
+            if (campaignId != 0) {
+                IterableAttributionInfo attributionInfo = new IterableAttributionInfo(campaignId, templateId, messageId);
+                IterableApi.sharedInstance.setAttributionInfo(attributionInfo);
             }
         }
     }

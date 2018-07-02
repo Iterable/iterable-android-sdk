@@ -1,13 +1,13 @@
 package com.iterable.iterableapi;
 
-import com.iterable.iterableapi.CommerceItem;
-import com.iterable.iterableapi.IterableApi;
 import com.iterable.iterableapi.unit.BaseTest;
 
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
@@ -18,8 +18,11 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static org.mockito.Mockito.when;
 
+@PrepareForTest(IterableUtil.class)
 public class IterableApiTest extends BaseTest {
 
     private MockWebServer server;
@@ -73,6 +76,31 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
         assertNull(IterableApi.getInstance().getEmail());
+    }
+
+    @Test
+    public void testAttributionInfoPersistence() throws Exception {
+        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+
+        IterableAttributionInfo attributionInfo = new IterableAttributionInfo(1234, 4321, "message");
+        IterableApi.getInstance().setAttributionInfo(attributionInfo);
+
+        PowerMockito.spy(IterableUtil.class);
+        // 23 hours, not expired, still present
+        when(IterableUtil.currentTimeMillis()).thenReturn(System.currentTimeMillis() + 3600 * 23 * 1000);
+        IterableAttributionInfo storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
+        assertNotNull(storedAttributionInfo);
+        assertEquals(attributionInfo.campaignId, storedAttributionInfo.campaignId);
+        assertEquals(attributionInfo.templateId, storedAttributionInfo.templateId);
+        assertEquals(attributionInfo.messageId, storedAttributionInfo.messageId);
+
+        // 24 hours, expired, attributionInfo should be null
+        when(IterableUtil.currentTimeMillis()).thenReturn(System.currentTimeMillis() + 3600 * 24 * 1000);
+        storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
+        assertNull(storedAttributionInfo);
+
+        PowerMockito.doCallRealMethod().when(IterableUtil.class, "currentTimeMillis");
     }
 
 }

@@ -85,6 +85,30 @@ public class IterableApi {
     }
 
     /**
+     * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
+     * or app link click from an email.
+     * @return {@link IterableAttributionInfo} Object containing
+     */
+    public IterableAttributionInfo getAttributionInfo() {
+        return IterableAttributionInfo.fromJSONObject(
+                IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
+        );
+    }
+
+    /**
+     * Stores attribution information.
+     * @param attributionInfo Attribution information object
+     */
+    void setAttributionInfo(IterableAttributionInfo attributionInfo) {
+        IterableUtil.saveExpirableJsonObject(
+                getPreferences(),
+                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
+                attributionInfo.toJSONObject(),
+                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+                );
+    }
+
+    /**
      * Returns the current context for the application.
      * @return
      */
@@ -133,6 +157,9 @@ public class IterableApi {
      */
     void setNotificationData(IterableNotificationData data) {
         _notificationData = data;
+        if (data != null) {
+            setAttributionInfo(new IterableAttributionInfo(data.getCampaignId(), data.getTemplateId(), data.getMessageId()));
+        }
     }
 //---------------------------------------------------------------------------------------
 //endregion

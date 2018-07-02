@@ -76,6 +76,12 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";
     public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
+    public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
+    public static final String SHARED_PREFS_OBJECT_SUFFIX = "_object";
+    public static final String SHARED_PREFS_PAYLOAD_KEY = "itbl_payload";
+    public static final int    SHARED_PREFS_PAYLOAD_EXPIRATION_HOURS = 24;
+    public static final String SHARED_PREFS_ATTRIBUTION_INFO_KEY = "itbl_attribution_info";
+    public static final int    SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS = 24;
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
