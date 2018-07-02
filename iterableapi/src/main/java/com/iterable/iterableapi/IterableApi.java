@@ -490,8 +490,12 @@ public class IterableApi {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_EVENT_NAME, eventName);
 
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            if (campaignId != 0) {
+                requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            }
+            if (templateId != 0) {
+                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            }
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
