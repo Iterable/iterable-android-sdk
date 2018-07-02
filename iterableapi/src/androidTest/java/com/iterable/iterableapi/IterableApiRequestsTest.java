@@ -17,6 +17,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 
 @RunWith(AndroidJUnit4.class)
 public class IterableApiRequestsTest {
@@ -98,5 +99,18 @@ public class IterableApiRequestsTest {
 
         RecordedRequest request3 = server.takeRequest();
         assertEquals("{\"currentEmail\":\"test@example.com\",\"newEmail\":\"another@email.com\"}", request3.getBody().readUtf8());
+    }
+
+    @Test
+    public void testTrackWithoutCampaignIdTemplateId() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.sharedInstance.track("testEvent");
+        RecordedRequest request = server.takeRequest();
+
+        JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
+        assertFalse("campaignId should not be set in the request", requestJson.has(IterableConstants.KEY_CAMPAIGN_ID));
+        assertFalse("templateId should not be set in the request", requestJson.has(IterableConstants.KEY_TEMPLATE_ID));
     }
 }
