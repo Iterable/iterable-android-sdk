@@ -18,9 +18,9 @@ public class IterableAttributionInfo {
     public JSONObject toJSONObject() {
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject.put("campaignId", campaignId);
-            jsonObject.put("templateId", templateId);
-            jsonObject.put("messageId", messageId);
+            jsonObject.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            jsonObject.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            jsonObject.put(IterableConstants.KEY_MESSAGE_ID, messageId);
         } catch (JSONException ignored) {}
         return jsonObject;
     }
@@ -28,9 +28,9 @@ public class IterableAttributionInfo {
     public static IterableAttributionInfo fromJSONObject(JSONObject jsonObject) {
         if (jsonObject != null) {
             return new IterableAttributionInfo(
-                    jsonObject.optInt("campaignId"),
-                    jsonObject.optInt("templateId"),
-                    jsonObject.optString("messageId")
+                    jsonObject.optInt(IterableConstants.KEY_CAMPAIGN_ID),
+                    jsonObject.optInt(IterableConstants.KEY_TEMPLATE_ID),
+                    jsonObject.optString(IterableConstants.KEY_MESSAGE_ID)
             );
         } else {
             return null;
