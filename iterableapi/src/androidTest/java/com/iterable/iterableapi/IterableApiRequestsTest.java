@@ -18,6 +18,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
 public class IterableApiRequestsTest {
@@ -104,7 +105,6 @@ public class IterableApiRequestsTest {
     @Test
     public void testTrackWithoutCampaignIdTemplateId() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-
         IterableApi.sharedInstance.track("testEvent");
         RecordedRequest request = server.takeRequest();
 
@@ -112,5 +112,16 @@ public class IterableApiRequestsTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
         assertFalse("campaignId should not be set in the request", requestJson.has(IterableConstants.KEY_CAMPAIGN_ID));
         assertFalse("templateId should not be set in the request", requestJson.has(IterableConstants.KEY_TEMPLATE_ID));
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.sharedInstance.track("testEvent", 1234, 4321);
+        request = server.takeRequest();
+        
+        requestJson = new JSONObject(request.getBody().readUtf8());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
+        assertTrue("campaignId should be set in the request", requestJson.has(IterableConstants.KEY_CAMPAIGN_ID));
+        assertTrue("templateId should be set in the request", requestJson.has(IterableConstants.KEY_TEMPLATE_ID));
+        assertEquals(1234, requestJson.getInt(IterableConstants.KEY_CAMPAIGN_ID));
+        assertEquals(4321, requestJson.getInt(IterableConstants.KEY_TEMPLATE_ID));
     }
 }
