@@ -406,6 +406,34 @@ public class IterableApi {
     }
 
     /**
+     * Handles an App Link
+     * For Iterable links, it will track the click and retrieve the original URL, pass it to
+     * {@link IterableUrlHandler} for handling
+     * If it's not an Iterable link, it just passes the same URL to {@link IterableUrlHandler}
+     *
+     * Call this from {@link Activity#onCreate(Bundle)} and {@link Activity#onNewIntent(Intent)}
+     * in your deep link handler activity
+     * @param uri the URL obtained from {@link Intent#getData()} in your deep link
+     *            handler activity
+     * @return
+     */
+    public static boolean handleAppLink(String uri) {
+        if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
+            IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
+                @Override
+                public void execute(String originalUrl) {
+                    IterableAction action = IterableAction.actionOpenUrl(originalUrl);
+                    IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
+                }
+            });
+            return true;
+        } else {
+            IterableAction action = IterableAction.actionOpenUrl(uri);
+            return IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
+        }
+    }
+
+    /**
      * Debugging function to send API calls to different url endpoints.
      * @param url
      */

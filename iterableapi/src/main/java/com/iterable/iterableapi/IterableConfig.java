@@ -34,6 +34,11 @@ public class IterableConfig {
 
         public Builder() {}
 
+        /**
+         * Push integration name – used for token registration
+         * Make sure the name of this integration matches the one set up in Iterable console
+         * @param pushIntegrationName Push integration name
+         */
         public Builder setPushIntegrationName(String pushIntegrationName) {
             this.pushIntegrationName = pushIntegrationName;
             return this;

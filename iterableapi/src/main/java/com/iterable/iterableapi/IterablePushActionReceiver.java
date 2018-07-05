@@ -80,7 +80,7 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
         IterableApi.sharedInstance.setNotificationData(notificationData);
         IterableApi.sharedInstance.trackPushOpen(notificationData.getCampaignId(), notificationData.getTemplateId(), notificationData.getMessageId(), dataFields);
 
-        boolean handled = IterableActionRunner.executeAction(context, action);
+        boolean handled = IterableActionRunner.executeAction(context, action, IterableActionSource.PUSH);
 
         // Open the launcher activity if the action was not handled by anything, and openApp is true
         if (openApp && !handled) {
