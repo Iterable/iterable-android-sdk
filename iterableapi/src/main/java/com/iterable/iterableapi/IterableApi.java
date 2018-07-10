@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -36,9 +37,14 @@ public class IterableApi {
 //---------------------------------------------------------------------------------------
     static final String TAG = "IterableApi";
 
+    /**
+     * {@link IterableApi} singleton instance
+     */
     static volatile IterableApi sharedInstance = new IterableApi();
 
     private Context _applicationContext;
+    IterableConfig config;
+    boolean sdkCompatEnabled;
     private String _apiKey;
     private String _email;
     private String _userId;
@@ -46,14 +52,13 @@ public class IterableApi {
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
 
-    private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
-
 //---------------------------------------------------------------------------------------
 //endregion
 
 //region Constructor
 //---------------------------------------------------------------------------------------
-    IterableApi(){
+    IterableApi() {
+        config = new IterableConfig.Builder().build();
     }
 
 //---------------------------------------------------------------------------------------
@@ -79,6 +84,30 @@ public class IterableApi {
      */
     public String getPayloadData(String key) {
         return (_payloadData != null) ? _payloadData.getString(key, null): null;
+    }
+
+    /**
+     * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
+     * or app link click from an email.
+     * @return {@link IterableAttributionInfo} Object containing
+     */
+    public IterableAttributionInfo getAttributionInfo() {
+        return IterableAttributionInfo.fromJSONObject(
+                IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
+        );
+    }
+
+    /**
+     * Stores attribution information.
+     * @param attributionInfo Attribution information object
+     */
+    void setAttributionInfo(IterableAttributionInfo attributionInfo) {
+        IterableUtil.saveExpirableJsonObject(
+                getPreferences(),
+                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
+                attributionInfo.toJSONObject(),
+                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+                );
     }
 
     /**
@@ -130,6 +159,9 @@ public class IterableApi {
      */
     void setNotificationData(IterableNotificationData data) {
         _notificationData = data;
+        if (data != null) {
+            setAttributionInfo(new IterableAttributionInfo(data.getCampaignId(), data.getTemplateId(), data.getMessageId()));
+        }
     }
 //---------------------------------------------------------------------------------------
 //endregion
@@ -138,13 +170,58 @@ public class IterableApi {
 
 //region Public Functions
 //---------------------------------------------------------------------------------------
+
+    /**
+     * Get {@link IterableApi} singleton instance
+     * @return {@link IterableApi} singleton instance
+     */
+    public static IterableApi getInstance() {
+        return sharedInstance;
+    }
+
+    /**
+     * Initializes IterableApi
+     * This method must be called from {@link Application#onCreate()}
+     * Note: Make sure you also call {@link #setEmail(String)} or {@link #setUserId(String)} before calling other methods
+     *
+     * @param context Application context
+     * @param apiKey Iterable Mobile API key
+     */
+    public static void initialize(Context context, String apiKey) {
+        initialize(context, apiKey, null);
+    }
+
+    /**
+     * Initializes IterableApi
+     * This method must be called from {@link Application#onCreate()}
+     * Note: Make sure you also call {@link #setEmail(String)} or {@link #setUserId(String)} before calling other methods
+     *
+     * @param context Application context
+     * @param apiKey Iterable Mobile API key
+     * @param config {@link IterableConfig} object holding SDK configuration options
+     */
+    public static void initialize(Context context, String apiKey, IterableConfig config) {
+        sharedInstance._applicationContext = context.getApplicationContext();
+        sharedInstance._apiKey = apiKey;
+        sharedInstance.config = config;
+
+        if (sharedInstance.config == null) {
+            sharedInstance.config = new IterableConfig.Builder().build();
+        }
+        sharedInstance.sdkCompatEnabled = false;
+        sharedInstance.retrieveEmailAndUserId();
+    }
+
     /**
      * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
      * Should be called whenever the app is opened.
      * @param currentActivity The current activity
      * @param userId The current userId
      * @return stored instance of IterableApi
+     *
+     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKeyWithUserId(Activity currentActivity, String apiKey,
                                                                  String userId)
     {
@@ -156,9 +233,11 @@ public class IterableApi {
      * Should be called whenever the app is opened.
      * Allows the IterableApi to be intialized with debugging enabled
      * @param currentActivity The current activity
-     * @param userId
-     * The current userId@return stored instance of IterableApi
+     * @param userId The current userId@return stored instance of IterableApi
+     *
+     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKeyWithUserId(Activity currentActivity, String apiKey,
                                                                  String userId, boolean debugMode)
     {
@@ -171,7 +250,10 @@ public class IterableApi {
      * @param currentContext The current context
      * @param userId The current userId
      * @return stored instance of IterableApi
+     *
+     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKeyWithUserId(Context currentContext, String apiKey,
                                                                  String userId)
     {
@@ -184,7 +266,10 @@ public class IterableApi {
      * Allows the IterableApi to be intialized with debugging enabled
      * @param currentContext The current context
      * @return stored instance of IterableApi
+     *
+     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKeyWithUserId(Context currentContext, String apiKey,
                                                                  String userId, boolean debugMode)
     {
@@ -197,7 +282,10 @@ public class IterableApi {
      * @param currentActivity The current activity
      * @param email The current email
      * @return stored instance of IterableApi
+     *
+     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
                                                        String email)
     {
@@ -212,6 +300,7 @@ public class IterableApi {
      * @param email The current email
      * @return stored instance of IterableApi
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
                                                        String email, boolean debugMode)
     {
@@ -224,7 +313,10 @@ public class IterableApi {
      * @param currentContext The current context
      * @param email The current email
      * @return stored instance of IterableApi
+     *
+     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
                                                        String email)
     {
@@ -238,7 +330,10 @@ public class IterableApi {
      * @param currentContext The current context
      * @param email The current email
      * @return stored instance of IterableApi
+     *
+     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
      */
+    @Deprecated
     public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
                                                        String email, boolean debugMode)
     {
@@ -249,20 +344,57 @@ public class IterableApi {
                                                        String email, String userId, boolean debugMode)
     {
         sharedInstance.updateData(currentContext.getApplicationContext(), apiKey, email, userId);
-
-        if (currentContext instanceof Activity) {
-            Activity currentActivity = (Activity) currentContext;
-            sharedInstance.onNewIntent(currentActivity.getIntent());
-        } else {
-            IterableLogger.w(TAG, "Notification Opens will not be tracked: "+
-                    "sharedInstanceWithApiKey called with a Context that is not an instance of Activity. " +
-                    "Pass in an Activity to IterableApi.sharedInstanceWithApiKey to enable open tracking" +
-                    "or call onNewIntent when a new Intent is received.");
-        }
-
         sharedInstance.setDebugMode(debugMode);
+        sharedInstance.sdkCompatEnabled = true;
 
         return sharedInstance;
+    }
+
+    /**
+     * Set user email used for API calls
+     * Calling this or `setUserId:` is required before making any API calls.
+     *
+     * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
+     * @param email User email
+     */
+    public void setEmail(String email) {
+        _email = email;
+        _userId = null;
+        storeEmailAndUserId();
+    }
+
+    /**
+     * Set user ID used for API calls
+     * Calling this or `setEmail:` is required before making any API calls.
+     *
+     * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
+     * @param userId User ID
+     */
+    public void setUserId(String userId) {
+        _email = null;
+        _userId = userId;
+        storeEmailAndUserId();
+    }
+
+    private void storeEmailAndUserId() {
+        try {
+            SharedPreferences.Editor editor = getPreferences().edit();
+            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
+            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
+            editor.commit();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while persisting email/userId", e);
+        }
+    }
+
+    private void retrieveEmailAndUserId() {
+        try {
+            SharedPreferences prefs = getPreferences();
+            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
+            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while retrieving email/userId", e);
+        }
     }
 
     /**
@@ -272,16 +404,34 @@ public class IterableApi {
      *                   or the original url if it is not a interable link.
      */
     public static void getAndTrackDeeplink(String uri, IterableHelper.IterableActionHandler onCallback) {
-        if (uri != null) {
-            Matcher m = deeplinkPattern.matcher(uri);
-            if (m.find( )) {
-                IterableApiRequest request = new IterableApiRequest(null, uri, null, IterableApiRequest.REDIRECT, onCallback);
-                new IterableRequest().execute(request);
-            } else {
-                onCallback.execute(uri);
-            }
+        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
+    }
+
+    /**
+     * Handles an App Link
+     * For Iterable links, it will track the click and retrieve the original URL, pass it to
+     * {@link IterableUrlHandler} for handling
+     * If it's not an Iterable link, it just passes the same URL to {@link IterableUrlHandler}
+     *
+     * Call this from {@link Activity#onCreate(Bundle)} and {@link Activity#onNewIntent(Intent)}
+     * in your deep link handler activity
+     * @param uri the URL obtained from {@link Intent#getData()} in your deep link
+     *            handler activity
+     * @return
+     */
+    public static boolean handleAppLink(String uri) {
+        if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
+            IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
+                @Override
+                public void execute(String originalUrl) {
+                    IterableAction action = IterableAction.actionOpenUrl(originalUrl);
+                    IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
+                }
+            });
+            return true;
         } else {
-            onCallback.execute(null);
+            IterableAction action = IterableAction.actionOpenUrl(uri);
+            return IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
         }
     }
 
@@ -296,14 +446,11 @@ public class IterableApi {
     /**
      * Call onNewIntent to set the payload data and track pushOpens directly if
      * sharedInstanceWithApiKey was called with a Context rather than an Activity.
+     * @deprecated Push opens are now tracked automatically.
      */
+    @Deprecated
     public void onNewIntent(Intent intent) {
-        if (isIterableIntent(intent)) {
-            setPayloadData(intent);
-            tryTrackNotifOpen(intent);
-        } else {
-            IterableLogger.d(TAG, "onNewIntent not triggered by an Iterable notification");
-        }
+
     }
 
     /**
@@ -319,9 +466,20 @@ public class IterableApi {
 
     /**
      * Registers a device token with Iterable.
+     * @param token Push token obtained from GCM or FCM
+     */
+    public void registerDeviceToken(String token) {
+        registerDeviceToken(config.pushIntegrationName, token);
+    }
+
+    /**
+     * Registers a device token with Iterable.
      * @param applicationName
      * @param token
+     * @deprecated Call {@link #registerDeviceToken(String)} instead and specify the push
+     * integration name in {@link IterableConfig#pushIntegrationName}
      */
+    @Deprecated
     public void registerDeviceToken(String applicationName, String token) {
         registerDeviceToken(applicationName, token, null);
     }
@@ -331,7 +489,10 @@ public class IterableApi {
      * @param applicationName
      * @param token
      * @param pushServicePlatform
+     * @deprecated Call {@link #registerDeviceToken(String)} instead and specify the push
+     * integration name in {@link IterableConfig#pushIntegrationName}
      */
+    @Deprecated
     public void registerDeviceToken(final String applicationName, final String token, final String pushServicePlatform) {
         if (token != null) {
             new Thread(new Runnable() {
@@ -377,13 +538,21 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(String eventName, int campaignId, int templateId, JSONObject dataFields) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_EVENT_NAME, eventName);
 
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            if (campaignId != 0) {
+                requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            }
+            if (templateId != 0) {
+                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            }
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
@@ -409,6 +578,10 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, List<CommerceItem> items, JSONObject dataFields) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
         try {
             JSONArray itemsArray = new JSONArray();
@@ -464,6 +637,10 @@ public class IterableApi {
      *               Format is YYYY-MM-DD HH:MM:SS in UTC
      */
     public void sendPush(String email, int campaignId, Date sendAt, JSONObject dataFields) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -508,7 +685,7 @@ public class IterableApi {
             }
         } else {
             IterableLogger.w(TAG, "updateEmail should not be called with a userId. " +
-                "Init SDK with sharedInstanceWithApiKey instead of sharedInstanceWithApiKeyWithUserId");
+                "Make sure you call setEmail(String) before trying to update it");
         }
     }
 
@@ -517,6 +694,10 @@ public class IterableApi {
      * @param dataFields
      */
     public void updateUser(JSONObject dataFields) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -588,6 +769,10 @@ public class IterableApi {
      * @param unsubscribedMessageTypeIds
      */
     public void updateSubscriptions(Integer[] emailListIds, Integer[] unsubscribedChannelIds, Integer[] unsubscribedMessageTypeIds) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
         addEmailOrUserIdToJson(requestJSON);
 
@@ -620,6 +805,10 @@ public class IterableApi {
      * @param clickCallback
      */
     public void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         getInAppMessages(1, new IterableHelper.IterableActionHandler(){
             @Override
             public void execute(String payload) {
@@ -654,6 +843,10 @@ public class IterableApi {
      * @param onCallback
      */
     public void getInAppMessages(int count, IterableHelper.IterableActionHandler onCallback) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
         addEmailOrUserIdToJson(requestJSON);
         try {
@@ -674,6 +867,10 @@ public class IterableApi {
      * @param messageId
      */
     public void trackInAppOpen(String messageId) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -693,6 +890,10 @@ public class IterableApi {
      * @param urlClick
      */
     public void trackInAppClick(String messageId, String urlClick) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -712,6 +913,10 @@ public class IterableApi {
      * @param messageId
      */
     public void inAppConsume(String messageId) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -723,6 +928,29 @@ public class IterableApi {
         catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+//---------------------------------------------------------------------------------------
+//endregion
+
+
+//region Package-Protected Fuctions
+//---------------------------------------------------------------------------------------
+
+    /**
+     * Get user email
+     * @return user email
+     */
+    String getEmail() {
+        return _email;
+    }
+
+    /**
+     * Get user ID
+     * @return user ID
+     */
+    String getUserId() {
+        return _userId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -754,19 +982,28 @@ public class IterableApi {
         return iconName;
     }
 
+    protected void trackPushOpen(int campaignId, int templateId, String messageId) {
+        trackPushOpen(campaignId, templateId, messageId, null);
+    }
+
     /**
      * Tracks when a push notification is opened on device.
      * @param campaignId
      * @param templateId
      */
-    protected void trackPushOpen(int campaignId, int templateId, String messageId) {
+    protected void trackPushOpen(int campaignId, int templateId, String messageId, JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
+            if (dataFields == null) {
+                dataFields = new JSONObject();
+            }
+
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+            requestJSON.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
         }
@@ -800,6 +1037,10 @@ public class IterableApi {
      * @param dataFields
      */
     protected void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         if (token != null) {
             JSONObject requestJSON = new JSONObject();
             try {
@@ -854,19 +1095,20 @@ public class IterableApi {
         this._userId = userId;
     }
 
-    /**
-     * Attempts to track a notifOpened event from the called Intent.
-     * @param calledIntent
-     */
-    private void tryTrackNotifOpen(Intent calledIntent) {
-        Bundle extras = calledIntent.getExtras();
-        if (extras != null) {
-            Intent intent = new Intent();
-            intent.setClass(_applicationContext, IterablePushOpenReceiver.class);
-            intent.setAction(IterableConstants.ACTION_NOTIF_OPENED);
-            intent.putExtras(extras);
-            _applicationContext.sendBroadcast(intent);
+    private boolean isInitialized() {
+        return _apiKey != null && (_email != null || _userId != null);
+    }
+
+    private boolean checkSDKInitialization() {
+        if (!isInitialized()) {
+            IterableLogger.e(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
+            return false;
         }
+        return true;
+    }
+
+    private SharedPreferences getPreferences() {
+        return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
     }
 
     /**
@@ -875,12 +1117,12 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    private void sendPostRequest(String resourcePath, JSONObject json) {
+    void sendPostRequest(String resourcePath, JSONObject json) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null);
         new IterableRequest().execute(request);
     }
 
-    private void sendPostRequest(String resourcePath, JSONObject json, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    void sendPostRequest(String resourcePath, JSONObject json, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
@@ -891,7 +1133,7 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    private void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
+    void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
         new IterableRequest().execute(request);
     }

@@ -1,0 +1,38 @@
+{
+  "templateId": 1,
+  "campaignId": 1,
+  "actionButtons": [
+    {
+      "identifier": "deeplinkButton",
+      "title": "Open Deeplink",
+      "buttonType": "default",
+      "openApp": true,
+      "action": {
+        "type": "openUrl",
+        "data": "http://maps.apple.com/?ll=37.7828,-122.3984"
+      }
+    },
+    {
+      "identifier": "silentActionButton",
+      "title": "Silent Action",
+      "buttonType": "default",
+      "openApp": false,
+      "action": {
+        "type": "customActionName"
+      }
+    },
+    {
+      "identifier": "textInputButton",
+      "title": "Text input",
+      "buttonType": "textInput",
+      "openApp": false,
+      "inputPlaceholder": "Type your message here",
+      "action": {
+        "type": "handleTextInput"
+      }
+    }
+  ],
+  "defaultAction": {
+    "type": "open"
+  }
+}

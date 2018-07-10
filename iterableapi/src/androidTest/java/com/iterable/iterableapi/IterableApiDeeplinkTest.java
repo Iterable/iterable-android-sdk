@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.app.Application;
+import android.os.Looper;
 import android.test.ApplicationTestCase;
 
 import java.util.concurrent.CountDownLatch;
@@ -13,8 +14,6 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
     public IterableApiDeeplinkTest() {
         super(Application.class);
     }
-
-    public final String ITERABLE_BAD_UUID_REQUEST     = "bad uuid";
 
     @Override
     public void setUp() {
@@ -55,6 +54,7 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
                 public void execute(String result) {
                     assertFalse(result.equalsIgnoreCase(requestString));
                     assertEquals(redirectString, result);
+                    assertTrue("Callback is called on the main thread", Looper.getMainLooper().getThread() == Thread.currentThread());
                     signal.countDown();
                 }
             };
@@ -192,12 +192,10 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
         try {
             final String userId = "xxx";
             final String requestString = "http://links.iterable.com/a/"+userId+"?_e=email&_m=123";
-            final String badUuid = ITERABLE_BAD_UUID_REQUEST + " " + userId;
             IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String result) {
-                    assertFalse(requestString.equalsIgnoreCase(result));
-                    assertEquals(badUuid, result);
+                    assertTrue(requestString.equalsIgnoreCase(result));
                     signal.countDown();
                 }
             };
@@ -216,7 +214,7 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
             IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String result) {
-                    assertFalse(requestString.equalsIgnoreCase(result));
+                    assertTrue(requestString.equalsIgnoreCase(result));
                     signal.countDown();
                 }
             };

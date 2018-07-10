@@ -1,0 +1,17 @@
+{
+  "templateId": 1,
+  "campaignId": 1,
+  "actionButtons": [
+    {
+      "identifier": "silentButton",
+      "title": "Unsubscribe",
+      "openApp": false,
+      "action": {
+
+      }
+    }
+  ],
+  "defaultAction": {
+    "type": null
+  }
+}
