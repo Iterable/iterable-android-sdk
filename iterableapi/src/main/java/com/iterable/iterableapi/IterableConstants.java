@@ -55,7 +55,7 @@ public final class IterableConstants {
     public static final String PUSH_DISABLE_AFTER_REGISTRATION  = "DisableAfterRegistration";
 
     public static final String MESSAGING_PUSH_SERVICE_PLATFORM  = "PushServicePlatform";
-    public static final String MESSAGING_PLATFORM_GOOGLE        = "GCM";
+    static final String MESSAGING_PLATFORM_GOOGLE               = "GCM"; // Deprecated, only used internally
     public static final String MESSAGING_PLATFORM_FIREBASE      = "FCM";
     public static final String MESSAGING_PLATFORM_AMAZON        = "ADM";
 
@@ -82,6 +82,7 @@ public final class IterableConstants {
     public static final int    SHARED_PREFS_PAYLOAD_EXPIRATION_HOURS = 24;
     public static final String SHARED_PREFS_ATTRIBUTION_INFO_KEY = "itbl_attribution_info";
     public static final int    SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS = 24;
+    public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -118,6 +119,7 @@ public final class IterableConstants {
 
     //Firebase
     public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";
+    public static final String FIREBASE_SENDER_ID       = "gcm_defaultSenderId";
     public static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
     public static final String FIREBASE_COMPATIBLE      = "firebaseCompatible";
     public static final String FIREBASE_TOKEN_TYPE      = "tokenRegistrationType";

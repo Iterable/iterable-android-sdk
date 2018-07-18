@@ -8,138 +8,113 @@ import android.os.AsyncTask;
 //import com.google.android.gms.iid.InstanceID;
 import com.google.firebase.iid.FirebaseInstanceId;
 
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.IOException;
 
 /**
  * Created by David Truong dt@iterable.com
  */
-class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, Void, String> {
+class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, Void, Void> {
     static final String TAG = "IterablePushRegistration";
 
-    private IterablePushRegistrationData iterablePushRegistrationData;
-
-    IterableHelper.IterableActionHandler onResponseReceived;
-
     /**
-     * Generates a deviceRegistrationToken from Google
-     * @param params
-     * @return registration token
+     * Registers or disables the device
+     *
+     * @param params Push registration request data
      */
-    protected String doInBackground(IterablePushRegistrationData... params) {
-        PushRegistrationObject pushRegistrationObject = null;
-        iterablePushRegistrationData = params[0];
-        if (iterablePushRegistrationData.iterableAppId != null) {
-            if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
-                pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, true);
-                JSONObject data = new JSONObject();
-                try {
-                    data.put("tokenRegistrationType", iterablePushRegistrationData.messagingPlatform);
-                } catch (JSONException e) {
-                    IterableLogger.e(TAG, e.toString());
-                }
-              if (pushRegistrationObject != null) {
-                  IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.iterableAppId, pushRegistrationObject.token, pushRegistrationObject.messagingPlatform, data);
-              }
-            } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
-                pushRegistrationObject = getDeviceToken(iterablePushRegistrationData.projectNumber, iterablePushRegistrationData.messagingPlatform, iterablePushRegistrationData.iterableAppId, false);
-                if (pushRegistrationObject != null) {
-                    IterableApi.sharedInstance.disablePush(pushRegistrationObject.token);
+    protected Void doInBackground(IterablePushRegistrationData... params) {
+        IterablePushRegistrationData iterablePushRegistrationData = params[0];
+        if (iterablePushRegistrationData.pushIntegrationName != null) {
+            PushRegistrationObject pushRegistrationObject = getDeviceToken();
+            if (pushRegistrationObject != null) {
+                if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
+                    disableOldDeviceIfNeeded();
+                    IterableApi.sharedInstance.registerDeviceToken(pushRegistrationObject.token);
+                } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
+                    IterableApi.sharedInstance.disableToken(pushRegistrationObject.token);
                 }
             }
         } else {
-            IterableLogger.e("IterablePush", "The IterableAppId has not been added");
+            IterableLogger.e("IterablePush", "iterablePushRegistrationData has not been specified");
         }
-
-        String deviceToken = null;
-        if (pushRegistrationObject != null) {
-            deviceToken = pushRegistrationObject.token;
-        }
-
-        return deviceToken;
+        return null;
     }
 
     /**
-     * Executes the disable
-     * @param registrationToken
-     */
-    @Override
-    protected void onPostExecute(String registrationToken) {
-        super.onPostExecute(registrationToken);
-        if (onResponseReceived != null) {
-            onResponseReceived.execute(registrationToken);
-        }
-    }
-
-    /**
-     *
-     * @param projectNumber
-     * @param messagingPlatform
-     * @param applicationName
      * @return PushRegistrationObject
      */
-    PushRegistrationObject getDeviceToken(String projectNumber, String messagingPlatform, String applicationName, boolean reRegisterOnTokenRefresh) {
-        PushRegistrationObject registrationObject = null;
-        Context applicationContext = IterableApi.sharedInstance.getMainActivityContext();
-
-        if (applicationContext != null) {
-            try {
-                int firebaseResourceId = getFirebaseResouceId(applicationContext);
-                if (firebaseResourceId != 0 && messagingPlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE)) {
-                    //FCM
-                    Class fireBaseMessaging = Class.forName(IterableConstants.FIREBASE_MESSAGING_CLASS);
-                    if (fireBaseMessaging != null) {
-                        FirebaseInstanceId instanceID = FirebaseInstanceId.getInstance();
-
-                        SharedPreferences sharedPref = applicationContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
-                        String pushIdPref = sharedPref.getString(IterableConstants.PUSH_APP_ID, null);
-                        // If this is the initial upgrade to FCM invalidate the GCM token by cycling the current device push tokens
-                        if (pushIdPref == null) {
-                            //Cache application name to attempt to re-register in IterableFirebaseInstanceIDService
-                            if (reRegisterOnTokenRefresh) {
-                                SharedPreferences.Editor editor = sharedPref.edit();
-                                editor.putString(IterableConstants.PUSH_APP_ID, applicationName);
-                                editor.commit();
-                            }
-
-                            //IterableFirebaseInstanceIDService.onTokenRefresh gets called after the current token is deleted
-//                            instanceID.deleteInstanceId();
-                        }
-                        registrationObject = new PushRegistrationObject(instanceID.getToken(), IterableConstants.MESSAGING_PLATFORM_FIREBASE);
-                    }
-                } else {
-                    //GCM
-//                    Class instanceIdClass = Class.forName(IterableConstants.INSTANCE_ID_CLASS);
-//                    if (instanceIdClass != null) {
-//                        InstanceID instanceID = InstanceID.getInstance(applicationContext);
-//                        registrationObject = new PushRegistrationObject(instanceID.getToken(projectNumber, GoogleCloudMessaging.INSTANCE_ID_SCOPE), IterableConstants.MESSAGING_PLATFORM_GOOGLE);
-//                    }
-                }
-            } catch (ClassNotFoundException e) {
-                IterableLogger.e(TAG, "ClassNotFoundException: Check that play-services is added to the build dependencies", e);
+    PushRegistrationObject getDeviceToken() {
+        try {
+            Context applicationContext = IterableApi.sharedInstance.getMainActivityContext();
+            if (applicationContext == null) {
+                IterableLogger.e(TAG, "MainActivity Context is null");
+                return null;
             }
-//            catch (IOException e) {
-//                IterableLogger.e(TAG, "Invalid projectNumber", e);
-//            }
-        } else{
-            IterableLogger.e(TAG, "MainActivity Context is null");
+
+            int firebaseResourceId = getFirebaseResouceId(applicationContext);
+            if (firebaseResourceId == 0) {
+                IterableLogger.e(TAG, "Could not find firebase_database_url, please check that Firebase SDK is set up properly");
+                return null;
+            }
+
+            FirebaseInstanceId instanceID = FirebaseInstanceId.getInstance();
+            return new PushRegistrationObject(instanceID.getToken());
+
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Exception while retrieving the device token: check that firebase is added to the build dependencies", e);
+            return null;
         }
-        return registrationObject;
+    }
+
+    /**
+     * If {@link IterableConfig#legacyGCMSenderId} is specified, this will attempt to retrieve the old token
+     * and disable it to avoid duplicate notifications
+     */
+    private void disableOldDeviceIfNeeded() {
+        try {
+            Context applicationContext = IterableApi.sharedInstance.getMainActivityContext();
+            String gcmSenderId = IterableApi.sharedInstance.config.legacyGCMSenderId;
+            if (gcmSenderId != null && gcmSenderId.length() > 0 && !gcmSenderId.equals(getSenderId(applicationContext))) {
+                final SharedPreferences sharedPref = applicationContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
+                boolean migrationDone = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, false);
+                if (!migrationDone) {
+                    String oldToken = FirebaseInstanceId.getInstance().getToken(gcmSenderId, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+
+                    // We disable the device on Iterable but keep the token
+                    if (oldToken != null) {
+                        IterableApi.sharedInstance.disableToken(oldToken, new IterableHelper.SuccessHandler() {
+                            @Override
+                            public void onSuccess(JSONObject data) {
+                                sharedPref.edit().putBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, true).apply();
+                            }
+                        }, null);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Exception while trying to disable the old device token", e);
+        }
     }
 
     static int getFirebaseResouceId(Context applicationContext) {
         return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
     }
 
+    static String getSenderId(Context applicationContext) {
+        int resId = applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_SENDER_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+        if (resId != 0) {
+            return applicationContext.getResources().getString(resId);
+        } else {
+            return null;
+        }
+    }
+
     class PushRegistrationObject {
         String token;
         String messagingPlatform;
 
-        public PushRegistrationObject(String token, String messagingPlatform){
+        public PushRegistrationObject(String token) {
             this.token = token;
-            this.messagingPlatform = messagingPlatform;
+            this.messagingPlatform = IterableConstants.MESSAGING_PLATFORM_FIREBASE;
         }
     }
 }

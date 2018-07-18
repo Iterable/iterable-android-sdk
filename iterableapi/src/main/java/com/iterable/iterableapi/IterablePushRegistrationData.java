@@ -7,20 +7,24 @@ class IterablePushRegistrationData {
 
     public enum PushRegistrationAction {
         ENABLE,
-        DISABLE,
-        GET
+        DISABLE
     }
 
-    String iterableAppId;
+    String pushIntegrationName;
     String projectNumber = "";
-    String messagingPlatform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
+    String messagingPlatform = IterableConstants.MESSAGING_PLATFORM_FIREBASE;
     PushRegistrationAction pushRegistrationAction;
 
 
-    public IterablePushRegistrationData(String iterableAppId, String projectNumber, String messagingPlatform, PushRegistrationAction pushRegistrationAction){
-        this.iterableAppId = iterableAppId;
+    public IterablePushRegistrationData(String pushIntegrationName, String projectNumber, String messagingPlatform, PushRegistrationAction pushRegistrationAction){
+        this.pushIntegrationName = pushIntegrationName;
         this.projectNumber = projectNumber;
         this.messagingPlatform = messagingPlatform;
+        this.pushRegistrationAction = pushRegistrationAction;
+    }
+
+    public IterablePushRegistrationData(String pushIntegrationName, PushRegistrationAction pushRegistrationAction) {
+        this.pushIntegrationName = pushIntegrationName;
         this.pushRegistrationAction = pushRegistrationAction;
     }
 }
