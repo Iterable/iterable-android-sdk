@@ -23,7 +23,9 @@
         </service>
 
         <!-- Action receiver for push interactions -->
-        <receiver android:name="com.iterable.iterableapi.IterablePushActionReceiver">
+        <receiver
+            android:name="com.iterable.iterableapi.IterablePushActionReceiver"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.iterable.push.ACTION_PUSH_ACTION" />
             </intent-filter>
