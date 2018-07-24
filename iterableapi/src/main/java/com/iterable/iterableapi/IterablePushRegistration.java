@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 
-//import com.google.android.gms.gcm.GoogleCloudMessaging;
-//import com.google.android.gms.iid.InstanceID;
 import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONObject;

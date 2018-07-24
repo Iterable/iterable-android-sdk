@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -22,12 +21,12 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         if (remoteMessage.getData().size() > 0) {
             Map<String,String> messageData = remoteMessage.getData();
             handlePushReceived(messageData);
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+            IterableLogger.d(TAG, "Message data payload: " + remoteMessage.getData());
         }
 
         // Check if message contains a notification payload.
         if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
+            IterableLogger.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
         }
     }
 

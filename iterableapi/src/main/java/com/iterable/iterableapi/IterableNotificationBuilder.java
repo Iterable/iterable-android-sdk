@@ -394,17 +394,6 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         return isGhostPush;
     }
 
-//    static boolean isGhostPush(Map<String, String> messageData) {
-//        boolean isGhostPush = false;
-//        if (messageData.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-//            String iterableData = messageData.get(IterableConstants.ITERABLE_DATA_KEY);
-//            IterableNotificationData data = new IterableNotificationData(iterableData);
-//            isGhostPush = data.getIsGhostPush();
-//        }
-//
-//        return isGhostPush;
-//    }
-
     /**
      * Returns if the given notification has an empty body
      * @param extras
