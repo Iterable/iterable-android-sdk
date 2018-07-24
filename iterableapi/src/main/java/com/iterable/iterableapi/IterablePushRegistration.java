@@ -26,7 +26,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
             if (pushRegistrationObject != null) {
                 if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
                     disableOldDeviceIfNeeded();
-                    IterableApi.sharedInstance.registerDeviceToken(pushRegistrationObject.token);
+                    IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.pushIntegrationName, pushRegistrationObject.token);
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                     IterableApi.sharedInstance.disableToken(pushRegistrationObject.token);
                 }
@@ -106,7 +106,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
         }
     }
 
-    class PushRegistrationObject {
+    static class PushRegistrationObject {
         String token;
         String messagingPlatform;
 

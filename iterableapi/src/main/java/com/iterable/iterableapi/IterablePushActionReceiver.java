@@ -64,10 +64,13 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
                     openApp = button.openApp;
 
                     if (button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT)) {
-                        String userInput = RemoteInput.getResultsFromIntent(intent).getString(IterableConstants.USER_INPUT);
-                        if (userInput != null) {
-                            dataFields.putOpt(IterableConstants.KEY_USER_TEXT, userInput);
-                            action.userInput = userInput;
+                        Bundle results = RemoteInput.getResultsFromIntent(intent);
+                        if (results != null) {
+                            String userInput = results.getString(IterableConstants.USER_INPUT);
+                            if (userInput != null) {
+                                dataFields.putOpt(IterableConstants.KEY_USER_TEXT, userInput);
+                                action.userInput = userInput;
+                            }
                         }
                     }
                 }

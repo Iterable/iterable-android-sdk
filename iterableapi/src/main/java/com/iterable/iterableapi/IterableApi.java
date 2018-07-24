@@ -487,7 +487,7 @@ public class IterableApi {
      */
     @Deprecated
     public void registerDeviceToken(String applicationName, String token) {
-        registerDeviceToken(applicationName, token, null);
+        registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
     }
 
     /**
