@@ -12,6 +12,7 @@ import android.os.Bundle;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -464,9 +466,15 @@ public class IterableApi {
 
     /**
      * Registers a device token with Iterable.
+     * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
      * @param token Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(String token) {
+        if (config.pushIntegrationName == null) {
+            IterableLogger.e(TAG, "registerDeviceToken: pushIntegrationName is not set");
+            return;
+        }
+
         registerDeviceToken(config.pushIntegrationName, token);
     }
 
@@ -479,7 +487,7 @@ public class IterableApi {
      */
     @Deprecated
     public void registerDeviceToken(String applicationName, String token) {
-        registerDeviceToken(applicationName, token, null);
+        registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
     }
 
     /**
@@ -492,10 +500,15 @@ public class IterableApi {
      */
     @Deprecated
     public void registerDeviceToken(final String applicationName, final String token, final String pushServicePlatform) {
+        if (!IterableConstants.MESSAGING_PLATFORM_FIREBASE.equals(pushServicePlatform)) {
+            IterableLogger.e(TAG, "registerDeviceToken: only MESSAGING_PLATFORM_FIREBASE is supported.");
+            return;
+        }
+
         if (token != null) {
             new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(applicationName, token, pushServicePlatform, null);
+                    registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
                 }
             }).start();
         }
@@ -712,21 +725,72 @@ public class IterableApi {
 
     /**
      * Registers for push notifications.
-     * @param iterableAppId
-     * @param gcmProjectNumber
+     * Make sure the API is initialized with {@link IterableConfig#pushIntegrationName} defined, and
+     * user email or user ID is set before calling this method.
      */
-    public void registerForPush(String iterableAppId, String gcmProjectNumber) {
-        registerForPush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+    public void registerForPush() {
+        if (config.pushIntegrationName == null) {
+            IterableLogger.e(TAG, "registerForPush: pushIntegrationName is not set");
+            return;
+        }
+
+        IterablePushRegistrationData data = new IterablePushRegistrationData(config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        new IterablePushRegistration().execute(data);
     }
 
     /**
      * Registers for push notifications.
-     * @param iterableAppId
+     * @param pushIntegrationName
+     * @param gcmProjectNumber
+     * @deprecated Call {@link #registerForPush()} instead and specify the push
+     * integration name in {@link IterableConfig#pushIntegrationName}
+     */
+    @Deprecated
+    public void registerForPush(String pushIntegrationName, String gcmProjectNumber) {
+        registerForPush(pushIntegrationName, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+    }
+
+    /**
+     * Registers for push notifications.
+     * @param pushIntegrationName
      * @param projectNumber
      * @param pushServicePlatform
+     * @deprecated Call {@link #registerForPush()} instead and specify the push
+     * integration name in {@link IterableConfig#pushIntegrationName}
      */
-    public void registerForPush(String iterableAppId, String projectNumber, String pushServicePlatform) {
-        IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+    @Deprecated
+    public void registerForPush(String pushIntegrationName, String projectNumber, String pushServicePlatform) {
+        if (!IterableConstants.MESSAGING_PLATFORM_FIREBASE.equals(pushServicePlatform)) {
+            IterableLogger.e(TAG, "registerDeviceToken: only MESSAGING_PLATFORM_FIREBASE is supported.");
+            return;
+        }
+
+        IterablePushRegistrationData data = new IterablePushRegistrationData(pushIntegrationName, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        new IterablePushRegistration().execute(data);
+    }
+
+    /**
+     * Registers for push notifications.
+     * @param pushIntegrationName
+     * @deprecated Call {@link #registerForPush()} instead and specify the push
+     * integration name in {@link IterableConfig#pushIntegrationName}
+     */
+    @Deprecated
+    public void registerForPush(String pushIntegrationName) {
+        IterablePushRegistrationData data = new IterablePushRegistrationData(pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        new IterablePushRegistration().execute(data);
+    }
+
+    /**
+     * Disables the device from push notifications
+     */
+    public void disablePush() {
+        if (config.pushIntegrationName == null) {
+            IterableLogger.e(TAG, "disablePush: pushIntegrationName is not set");
+            return;
+        }
+
+        IterablePushRegistrationData data = new IterablePushRegistrationData(config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -734,9 +798,12 @@ public class IterableApi {
      * Disables the device from push notifications
      * @param iterableAppId
      * @param gcmProjectNumber
+     * @deprecated Call {@link #disablePush()} instead and specify the push
+     * integration name in {@link IterableConfig#pushIntegrationName}
      */
+    @Deprecated
     public void disablePush(String iterableAppId, String gcmProjectNumber) {
-        disablePush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+        disablePush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
     }
 
     /**
@@ -744,8 +811,16 @@ public class IterableApi {
      * @param iterableAppId
      * @param projectNumber
      * @param pushServicePlatform
+     * @deprecated Call {@link #disablePush()} instead and specify the push
+     * integration name in {@link IterableConfig#pushIntegrationName}
      */
+    @Deprecated
     public void disablePush(String iterableAppId, String projectNumber, String pushServicePlatform) {
+        if (!IterableConstants.MESSAGING_PLATFORM_FIREBASE.equals(pushServicePlatform)) {
+            IterableLogger.e(TAG, "registerDeviceToken: only MESSAGING_PLATFORM_FIREBASE is supported.");
+            return;
+        }
+
         IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
@@ -1000,17 +1075,21 @@ public class IterableApi {
         }
     }
 
+    protected void disableToken(String token) {
+        disableToken(token, null, null);
+    }
+
     /**
      * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
      * @param token
      */
-    protected void disablePush(String token) {
+    protected void disableToken(String token, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, token);
             addEmailOrUserIdToJson(requestJSON);
 
-            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON);
+            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, onSuccess, onFailure);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -1029,7 +1108,14 @@ public class IterableApi {
             return;
         }
 
-        String platform = IterableConstants.MESSAGING_PLATFORM_GOOGLE;
+        if (token == null) {
+            IterableLogger.e(TAG, "registerDeviceToken: token is null");
+            return;
+        }
+
+        if (applicationName == null) {
+            IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
+        }
 
         JSONObject requestJSON = new JSONObject();
         try {
@@ -1038,9 +1124,8 @@ public class IterableApi {
             if (dataFields == null) {
                 dataFields = new JSONObject();
             }
-            if (pushServicePlatform != null) {
-                dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, pushServicePlatform.equalsIgnoreCase(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
-            }
+            dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+            dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true);
             dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
             dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
             dataFields.putOpt(IterableConstants.DEVICE_ADID, getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
@@ -1051,14 +1136,14 @@ public class IterableApi {
 
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);
-            device.put(IterableConstants.KEY_PLATFORM, platform);
+            device.put(IterableConstants.KEY_PLATFORM, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
             device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
             device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
 
             sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
         } catch (JSONException e) {
-            e.printStackTrace();
+            IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }
     }
 

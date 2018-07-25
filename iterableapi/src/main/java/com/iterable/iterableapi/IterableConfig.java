@@ -21,16 +21,24 @@ public class IterableConfig {
      */
     final IterableCustomActionHandler customActionHandler;
 
+    /**
+     * GCM sender ID for the previous integration
+     * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
+     */
+    final String legacyGCMSenderId;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
         customActionHandler = builder.customActionHandler;
+        legacyGCMSenderId = builder.legacyGCMSenderId;
     }
 
     public static class Builder {
         private String pushIntegrationName;
         private IterableUrlHandler urlHandler;
         private IterableCustomActionHandler customActionHandler;
+        private String legacyGCMSenderId;
 
         public Builder() {}
 
@@ -59,6 +67,16 @@ public class IterableConfig {
          */
         public Builder setCustomActionHandler(IterableCustomActionHandler customActionHandler) {
             this.customActionHandler = customActionHandler;
+            return this;
+        }
+
+        /**
+         * Set the GCM sender ID for the previous integration
+         * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
+         * @param legacyGCMSenderId legacy GCM sender ID
+         */
+        public Builder setLegacyGCMSenderId(String legacyGCMSenderId) {
+            this.legacyGCMSenderId = legacyGCMSenderId;
             return this;
         }
 
