@@ -43,20 +43,8 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         if (!IterableNotificationBuilder.isGhostPush(extras)) {
             if (!IterableNotificationBuilder.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
-                Context appContext = getApplicationContext();
-                PackageManager packageManager = appContext.getPackageManager();
-                Intent packageIntent = packageManager.getLaunchIntentForPackage(appContext.getPackageName());
-                ComponentName componentPackageName = packageIntent.getComponent();
-                String mainClassName = componentPackageName.getClassName();
-                Class mainClass = null;
-                try {
-                    mainClass = Class.forName(mainClassName);
-                } catch (ClassNotFoundException e) {
-                    IterableLogger.w(TAG, e.toString());
-                }
-
                 IterableNotificationBuilder notificationBuilder = IterableNotificationBuilder.createNotification(
-                        appContext, extras, mainClass);
+                        getApplicationContext(), extras);
                 new IterableNotificationManager().execute(notificationBuilder);
             } else {
                 IterableLogger.d(TAG, "Iterable OS notification push received");

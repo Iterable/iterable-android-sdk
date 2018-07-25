@@ -41,7 +41,7 @@ public class IterableNotificationTest {
 
     private IterableNotificationBuilder postNotification(Bundle notificationData) throws InterruptedException {
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
-        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notificationData, Application.class);
+        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notificationData);
         IterableNotificationBuilder.postNotificationOnDevice(getContext(), iterableNotification);
         return iterableNotification;
     }
