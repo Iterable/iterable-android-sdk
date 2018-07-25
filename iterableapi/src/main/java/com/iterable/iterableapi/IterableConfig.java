@@ -75,8 +75,9 @@ public class IterableConfig {
          * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
          * @param legacyGCMSenderId legacy GCM sender ID
          */
-        public void setLegacyGCMSenderId(String legacyGCMSenderId) {
+        public Builder setLegacyGCMSenderId(String legacyGCMSenderId) {
             this.legacyGCMSenderId = legacyGCMSenderId;
+            return this;
         }
 
         public IterableConfig build() {

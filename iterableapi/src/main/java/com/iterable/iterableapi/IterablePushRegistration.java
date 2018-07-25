@@ -48,7 +48,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                 return null;
             }
 
-            int firebaseResourceId = getFirebaseResouceId(applicationContext);
+            int firebaseResourceId = Util.getFirebaseResouceId(applicationContext);
             if (firebaseResourceId == 0) {
                 IterableLogger.e(TAG, "Could not find firebase_database_url, please check that Firebase SDK is set up properly");
                 return null;
@@ -71,7 +71,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
         try {
             Context applicationContext = IterableApi.sharedInstance.getMainActivityContext();
             String gcmSenderId = IterableApi.sharedInstance.config.legacyGCMSenderId;
-            if (gcmSenderId != null && gcmSenderId.length() > 0 && !gcmSenderId.equals(getSenderId(applicationContext))) {
+            if (gcmSenderId != null && gcmSenderId.length() > 0 && !gcmSenderId.equals(Util.getSenderId(applicationContext))) {
                 final SharedPreferences sharedPref = applicationContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
                 boolean migrationDone = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, false);
                 if (!migrationDone) {
@@ -93,18 +93,21 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
         }
     }
 
-    static int getFirebaseResouceId(Context applicationContext) {
-        return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
-    }
+    static class Util {
+        static int getFirebaseResouceId(Context applicationContext) {
+            return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+        }
 
-    static String getSenderId(Context applicationContext) {
-        int resId = applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_SENDER_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
-        if (resId != 0) {
-            return applicationContext.getResources().getString(resId);
-        } else {
-            return null;
+        static String getSenderId(Context applicationContext) {
+            int resId = applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_SENDER_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+            if (resId != 0) {
+                return applicationContext.getResources().getString(resId);
+            } else {
+                return null;
+            }
         }
     }
+
 
     static class PushRegistrationObject {
         String token;
