@@ -25,11 +25,11 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
             PushRegistrationObject pushRegistrationObject = getDeviceToken();
             if (pushRegistrationObject != null) {
                 if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
-                    disableOldDeviceIfNeeded();
                     IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.pushIntegrationName, pushRegistrationObject.token);
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                     IterableApi.sharedInstance.disableToken(pushRegistrationObject.token);
                 }
+                disableOldDeviceIfNeeded();
             }
         } else {
             IterableLogger.e("IterablePush", "iterablePushRegistrationData has not been specified");
