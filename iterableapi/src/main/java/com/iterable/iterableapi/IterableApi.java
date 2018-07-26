@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -84,6 +85,27 @@ public class IterableApi {
      */
     public String getPayloadData(String key) {
         return (_payloadData != null) ? _payloadData.getString(key, null): null;
+    }
+
+    /**
+     * Retrieves all of the payload as a single JSON Object
+     * @return JSONObject
+     */
+
+    public JSONObject getPayloadData() {
+        JSONObject json = new JSONObject();
+        if (_payloadData == null) {
+            return json;
+        }
+        Set<String> keys = _payloadData.keySet();
+        try {
+            for (String key : keys) {
+                 json.put(key, _payloadData.get(key));
+            }
+        } catch(JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 
     /**
