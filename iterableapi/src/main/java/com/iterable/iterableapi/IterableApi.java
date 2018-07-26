@@ -87,6 +87,15 @@ public class IterableApi {
     }
 
     /**
+     * Retrieves all of the payload as a single Bundle Object
+     * @return Bundle
+     */
+
+    public Bundle getPayloadData() {
+        return _payloadData;
+    }
+
+    /**
      * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
      * or app link click from an email.
      * @return {@link IterableAttributionInfo} Object containing
