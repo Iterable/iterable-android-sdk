@@ -15,8 +15,39 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.0.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.0)
+ _Released on 2018-07-26_
+#### Added
+- Full FCM support
+- Added support for push action buttons
+- Added a new SDK initialization method that takes `IterableConfig` object with configuration options
+- User ID/email is now decoupled from SDK initialization. It can be changed by calling `setEmail` or `setUserId` on the `IterableApi` instance.
+- The SDK now stores attribution data within 24 hours of opening the app from a push notififcation or from an App Link in an email
+- Added two handlers: `IterableUrlHandler` and `IterableCustomActionHandler` that can be used to customize URL and custom action handling for push notifications
+
+#### Removed
+- Removed GCM support
+
+#### Changed
+- Old initialization methods (`sharedInstanceWithApiKey`) are now deprecated
+- Old `registerForPush` and `registerDeviceToken` methods are now deprecated
+
+#### Migration Notes
+1. If you're using GCM, update your Android app to Firebase Cloud Messaging
+2. Replace `IterableAPI.sharedInstanceWithApiKey(...)` with the following:
+```java
+IterableConfig config = new IterableConfig.Builder()
+        .setPushIntegrationName("myPushIntegration")
+        .setUrlHandler(this)        // If you want to handle URLs coming from push notifications
+        .build();
+IterableApi.initialize(context, "YOUR API KEY", config);
+```
+3. Call `registerForPush()` to retrieve the push token and register the device.
+4. User email/userId is now persisted, so you'll only need to call `setEmail` or `setUserId` when the user logs in or logs out.
+5. The SDK now tracks push opens automatically, as long as the SDK is initialized in `Application`'s `onCreate`. See README for instructions. Once it is set up, remove all direct calls to `trackPushOpen`.
+
 ## [2.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.5)
- _Released on 2017-03-31_
+ _Released on 2018-03-31_
  
 #### Changed
 - Updated requests to not send when there is an exception while constructing the JSON request body.
@@ -25,7 +56,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed the reference to internal fields in NotificationCompat.Builder for buildVersion 27.
 
 ## [2.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.4)
- _Released on 2017-03-07_
+ _Released on 2018-03-07_
  
 #### Fixed
 - Fixed the load sequence for retrieving a notification image.
