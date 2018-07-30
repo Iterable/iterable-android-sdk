@@ -5,7 +5,7 @@ import org.json.JSONObject;
 
 /**
  *  {@link IterableAction} represents an action defined as a response to user events.
- *  It is currently used in push notification actions (open push & action buttons).
+ *  It is currently used in push notification actions (open push &amp; action buttons).
  */
 public class IterableAction {
 

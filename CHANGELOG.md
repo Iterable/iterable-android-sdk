@@ -16,7 +16,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - nothing yet
 
 ## [3.0.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.0)
- _Released on 2018-07-26_
+ _Released on 2018-07-30_
 #### Added
 - Full FCM support
 - Added support for push action buttons
@@ -24,6 +24,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - User ID/email is now decoupled from SDK initialization. It can be changed by calling `setEmail` or `setUserId` on the `IterableApi` instance.
 - The SDK now stores attribution data within 24 hours of opening the app from a push notififcation or from an App Link in an email
 - Added two handlers: `IterableUrlHandler` and `IterableCustomActionHandler` that can be used to customize URL and custom action handling for push notifications
+- Added `getPayloadData()` method to retrieve the entire notification payload for the notification that opened the app (thanks @steelbrain)
 
 #### Removed
 - Removed GCM support
