@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
@@ -108,6 +109,22 @@ public class IterableApiTest extends BaseTest {
         assertNull(storedAttributionInfo);
 
         PowerMockito.doCallRealMethod().when(IterableUtil.class, "currentTimeMillis");
+    }
+
+    @Test
+    public void testUpdateEmailPersistence() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.getInstance().setEmail("test@email.com");
+        assertEquals("test@email.com", IterableApi.getInstance().getEmail());
+
+        IterableApi.getInstance().updateEmail("new@email.com");
+        server.takeRequest(1, TimeUnit.SECONDS);
+        assertEquals("new@email.com", IterableApi.getInstance().getEmail());
+
+        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        assertEquals("new@email.com", IterableApi.getInstance().getEmail());
     }
 
     @Test

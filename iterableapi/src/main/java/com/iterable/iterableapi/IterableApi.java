@@ -697,6 +697,7 @@ public class IterableApi {
                     @Override
                     public void onSuccess(JSONObject data) {
                         _email = newEmail;
+                        storeEmailAndUserId();
                     }
                 }, null);
             }
