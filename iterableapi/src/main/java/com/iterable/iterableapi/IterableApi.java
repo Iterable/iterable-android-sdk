@@ -897,13 +897,13 @@ public class IterableApi {
                             Rect padding = IterableInAppManager.getPaddingFromPayload(paddingOptions);
 
                             double backgroundAlpha = message.optDouble("backgroundAlpha", 0);
-                            IterableInAppManager.showIterableNotificationHTML(context, html, messageId, clickCallback, backgroundAlpha, padding);
+                            if (IterableInAppManager.showIterableNotificationHTML(context, html, messageId, clickCallback, backgroundAlpha, padding)) {
+                                IterableApi.sharedInstance.inAppConsume(messageId);
+                            }
                         } else {
                             IterableLogger.w(TAG, "No href tag in found in the in-app html payload: "+ html);
+                            IterableApi.sharedInstance.inAppConsume(messageId);
                         }
-
-                        IterableApi.sharedInstance.inAppConsume(messageId);
-
                     }
                 }
             }
