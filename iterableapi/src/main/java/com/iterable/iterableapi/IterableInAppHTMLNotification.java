@@ -53,6 +53,14 @@ public class IterableInAppHTMLNotification extends Dialog {
     }
 
     /**
+     * Returns the notification instance currently being shown
+     * @return notification instance
+     */
+    public static IterableInAppHTMLNotification getInstance() {
+        return notification;
+    }
+
+    /**
      * HTML In-App Notification
      * @param context
      * @param htmlString
@@ -161,6 +169,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     @Override
     protected void onStop() {
         orientationListener.disable();
+        notification = null;
     }
 
     /**

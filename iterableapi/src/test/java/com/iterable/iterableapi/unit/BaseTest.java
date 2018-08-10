@@ -17,6 +17,8 @@ import org.robolectric.RuntimeEnvironment;
         "android.*",
         "okhttp3.*",
         "javax.net.ssl.*",
+        "javax.xml.parsers.*",
+        "com.sun.org.apache.xerces.internal.jaxp.*",
         "com.squareup.*",
         "okio.*"
 })

@@ -39,10 +39,15 @@ public class IterableInAppManager {
      * @param backgroundAlpha
      * @param padding
      */
-    public static void showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
+    public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
+                if (IterableInAppHTMLNotification.getInstance() != null) {
+                    IterableLogger.w(TAG, "Skipping the in-app notification: another notification is already being displayed");
+                    return false;
+                }
+
                 IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString);
                 notification.setTrackParams(messageId);
                 notification.setCallback(clickCallback);
@@ -50,10 +55,12 @@ public class IterableInAppManager {
                 notification.setPadding(padding);
                 notification.setOwnerActivity(currentActivity);
                 notification.show();
+                return true;
             }
         } else {
             IterableLogger.w(TAG, "To display in-app notifications, the context must be of an instance of: Activity");
         }
+        return false;
     }
 
     /**
