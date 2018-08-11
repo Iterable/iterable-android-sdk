@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.0.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.1)
+ _Released on 2018-08-10_
+
+#### Fixed
+- The new email is now persisted when `updateEmail` is called
+- SDK now ensures that only one in-app message can be shown at a time
+
 ## [3.0.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.0)
  _Released on 2018-07-30_
 #### Added
