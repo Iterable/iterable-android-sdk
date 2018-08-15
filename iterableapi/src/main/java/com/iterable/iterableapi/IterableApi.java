@@ -219,8 +219,7 @@ public class IterableApi {
         }
         sharedInstance.sdkCompatEnabled = false;
         sharedInstance.retrieveEmailAndUserId();
-        if (sharedInstance.config.autoPushRegistration &&
-                (sharedInstance._email != null || sharedInstance._userId != null)) {
+        if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
             sharedInstance.registerForPush();
         }
     }
@@ -1289,13 +1288,13 @@ public class IterableApi {
     }
 
     private void onLogOut() {
-        if (config.autoPushRegistration) {
+        if (config.autoPushRegistration && isInitialized()) {
             disablePush();
         }
     }
 
     private void onLogIn() {
-        if (config.autoPushRegistration) {
+        if (config.autoPushRegistration && isInitialized()) {
             registerForPush();
         }
     }

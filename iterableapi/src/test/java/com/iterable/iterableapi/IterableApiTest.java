@@ -168,7 +168,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.sharedInstance = Mockito.spy(new IterableApi());
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
 
-        // Check that setEmail calls registerForPush
+        // Check that setEmail doesn't call registerForPush or disablePush
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
         verify(IterableApi.sharedInstance, never()).registerForPush();
@@ -181,12 +181,12 @@ public class IterableApiTest extends BaseTest {
         IterableApi.sharedInstance = Mockito.spy(new IterableApi());
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
 
-        // Check that setEmail calls registerForPush
+        // Check that setUserId calls registerForPush
         IterableApi.getInstance().setUserId("userId");
         verify(IterableApi.sharedInstance).registerForPush();
         Mockito.reset(IterableApi.sharedInstance);
 
-        // Check that setEmail(null) disables the device
+        // Check that setUserId(null) disables the device
         IterableApi.getInstance().setUserId(null);
         verify(IterableApi.sharedInstance).disablePush();
         Mockito.reset(IterableApi.sharedInstance);
