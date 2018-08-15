@@ -22,6 +22,13 @@ public class IterableConfig {
     final IterableCustomActionHandler customActionHandler;
 
     /**
+     * If set to `true`, the SDK will automatically register the push token when you
+     * call {@link IterableApi#setUserId(String)} or {@link IterableApi#setEmail(String)}
+     * and disable the old device entry when the user logs out
+     */
+    final boolean autoPushRegistration;
+
+    /**
      * GCM sender ID for the previous integration
      * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
      */
@@ -31,6 +38,7 @@ public class IterableConfig {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
         customActionHandler = builder.customActionHandler;
+        autoPushRegistration = builder.autoPushRegistration;
         legacyGCMSenderId = builder.legacyGCMSenderId;
     }
 
@@ -38,6 +46,7 @@ public class IterableConfig {
         private String pushIntegrationName;
         private IterableUrlHandler urlHandler;
         private IterableCustomActionHandler customActionHandler;
+        private boolean autoPushRegistration = true;
         private String legacyGCMSenderId;
 
         public Builder() {}
@@ -67,6 +76,18 @@ public class IterableConfig {
          */
         public Builder setCustomActionHandler(IterableCustomActionHandler customActionHandler) {
             this.customActionHandler = customActionHandler;
+            return this;
+        }
+
+        /**
+         * Enable or disable automatic push token registration
+         * If set to `true`, the SDK will automatically register the push token when you
+         * call {@link IterableApi#setUserId(String)} or {@link IterableApi#setEmail(String)}
+         * and disable the old device entry when the user logs out
+         * @param enabled Enable automatic push token registration
+         */
+        public Builder setAutoPushRegistration(boolean enabled) {
+            this.autoPushRegistration = enabled;
             return this;
         }
 

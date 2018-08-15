@@ -9,6 +9,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.RuntimeEnvironment;
@@ -27,6 +28,7 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -143,6 +145,64 @@ public class IterableApiTest extends BaseTest {
         assertEquals(IterableActionSource.APP_LINK, capturedActionContext.getValue().source);
         assertTrue(capturedActionContext.getValue().action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL));
         assertEquals(url, capturedActionContext.getValue().action.getData());
+    }
+
+    @Test
+    public void testSetEmailWithAutomaticPushRegistration() throws Exception {
+        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+
+        // Check that setEmail calls registerForPush
+        IterableApi.getInstance().setEmail("test@email.com");
+        verify(IterableApi.sharedInstance).registerForPush();
+        Mockito.reset(IterableApi.sharedInstance);
+
+        // Check that setEmail(null) disables the device
+        IterableApi.getInstance().setEmail(null);
+        verify(IterableApi.sharedInstance).disablePush();
+        Mockito.reset(IterableApi.sharedInstance);
+    }
+
+    @Test
+    public void testSetEmailWithoutAutomaticPushRegistration() throws Exception {
+        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
+
+        // Check that setEmail calls registerForPush
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().setEmail(null);
+        verify(IterableApi.sharedInstance, never()).registerForPush();
+        verify(IterableApi.sharedInstance, never()).disablePush();
+        Mockito.reset(IterableApi.sharedInstance);
+    }
+
+    @Test
+    public void testSetUserIdWithAutomaticPushRegistration() throws Exception {
+        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+
+        // Check that setEmail calls registerForPush
+        IterableApi.getInstance().setUserId("userId");
+        verify(IterableApi.sharedInstance).registerForPush();
+        Mockito.reset(IterableApi.sharedInstance);
+
+        // Check that setEmail(null) disables the device
+        IterableApi.getInstance().setUserId(null);
+        verify(IterableApi.sharedInstance).disablePush();
+        Mockito.reset(IterableApi.sharedInstance);
+    }
+
+    @Test
+    public void testSetUserIdWithoutAutomaticPushRegistration() throws Exception {
+        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
+
+        // Check that setEmail calls registerForPush
+        IterableApi.getInstance().setUserId("userId");
+        IterableApi.getInstance().setUserId(null);
+        verify(IterableApi.sharedInstance, never()).registerForPush();
+        verify(IterableApi.sharedInstance, never()).disablePush();
+        Mockito.reset(IterableApi.sharedInstance);
     }
 
 }

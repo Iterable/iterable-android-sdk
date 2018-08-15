@@ -367,9 +367,19 @@ public class IterableApi {
      * @param email User email
      */
     public void setEmail(String email) {
+        if (_email != null && _email.equals(email)) {
+            return;
+        }
+
+        if (_email == null && _userId == null && email == null) {
+            return;
+        }
+
+        onLogOut();
         _email = email;
         _userId = null;
         storeEmailAndUserId();
+        onLogIn();
     }
 
     /**
@@ -380,30 +390,19 @@ public class IterableApi {
      * @param userId User ID
      */
     public void setUserId(String userId) {
+        if (_userId != null && _userId.equals(userId)) {
+            return;
+        }
+
+        if (_email == null && _userId == null && userId == null) {
+            return;
+        }
+
+        onLogOut();
         _email = null;
         _userId = userId;
         storeEmailAndUserId();
-    }
-
-    private void storeEmailAndUserId() {
-        try {
-            SharedPreferences.Editor editor = getPreferences().edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
-            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-            editor.commit();
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while persisting email/userId", e);
-        }
-    }
-
-    private void retrieveEmailAndUserId() {
-        try {
-            SharedPreferences prefs = getPreferences();
-            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while retrieving email/userId", e);
-        }
+        onLogIn();
     }
 
     /**
@@ -1262,6 +1261,39 @@ public class IterableApi {
                     "Check that play-services-ads is added to the dependencies.", e);
         }
         return advertisingId;
+    }
+
+    private void storeEmailAndUserId() {
+        try {
+            SharedPreferences.Editor editor = getPreferences().edit();
+            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
+            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
+            editor.commit();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while persisting email/userId", e);
+        }
+    }
+
+    private void retrieveEmailAndUserId() {
+        try {
+            SharedPreferences prefs = getPreferences();
+            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
+            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while retrieving email/userId", e);
+        }
+    }
+
+    private void onLogOut() {
+        if (config.autoPushRegistration) {
+            disablePush();
+        }
+    }
+
+    private void onLogIn() {
+        if (config.autoPushRegistration) {
+            registerForPush();
+        }
     }
 
 //---------------------------------------------------------------------------------------
