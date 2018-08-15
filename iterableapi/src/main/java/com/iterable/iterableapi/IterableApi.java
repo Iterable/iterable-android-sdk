@@ -219,6 +219,10 @@ public class IterableApi {
         }
         sharedInstance.sdkCompatEnabled = false;
         sharedInstance.retrieveEmailAndUserId();
+        if (sharedInstance.config.autoPushRegistration &&
+                (sharedInstance._email != null || sharedInstance._userId != null)) {
+            sharedInstance.registerForPush();
+        }
     }
 
     /**

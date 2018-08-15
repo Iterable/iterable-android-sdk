@@ -205,4 +205,15 @@ public class IterableApiTest extends BaseTest {
         Mockito.reset(IterableApi.sharedInstance);
     }
 
+    @Test
+    public void testAutomaticPushRegistrationOnInit() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+
+        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        verify(IterableApi.sharedInstance).registerForPush();
+        Mockito.reset(IterableApi.sharedInstance);
+    }
+
 }
