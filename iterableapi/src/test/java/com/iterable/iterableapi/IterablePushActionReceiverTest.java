@@ -62,6 +62,19 @@ public class IterablePushActionReceiverTest extends BaseTest {
     }
 
     @Test
+    public void testPushOpenWithNonInitializedSDK() throws Exception {
+        stubAnyRequestReturningStatusCode(200, "{}");
+        IterableApi.sharedInstance = new IterableApi();
+        IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "silentButton");
+        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_silent_action.json"));
+
+        // This must not crash
+        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+    }
+
+    @Test
     public void testTrackPushOpenWithCustomAction() throws Exception {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         stubAnyRequestReturningStatusCode(200, responseData);

@@ -111,6 +111,11 @@ public class IterableApi {
      * @param attributionInfo Attribution information object
      */
     void setAttributionInfo(IterableAttributionInfo attributionInfo) {
+        if (_applicationContext == null) {
+            IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.");
+            return;
+        }
+
         IterableUtil.saveExpirableJsonObject(
                 getPreferences(),
                 IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
