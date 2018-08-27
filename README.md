@@ -34,7 +34,7 @@ See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
 
 # Using the SDK
 
-1. On application launch (ideally, in `Application`'s `onCreate`), initialize the Iterable SDK:
+1. In `Application`'s `onCreate`, initialize the Iterable SDK:
 
 	```java
 	IterableConfig config = new IterableConfig.Builder()
@@ -44,7 +44,7 @@ See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
 	```
 
   * The `apiKey` should correspond to the API key of your project in Iterable. If you'd like, you can specify a different `apiKey` depending on whether you're building in `DEBUG` or `PRODUCTION`, and point the SDK to the relevant Iterable project.
-  * Ideally, you will call this from `Application`'s `onCreate`. This will let the SDK automatically track a push open for you if the application was launched from a remote Iterable push notification.
+  * It is possible to call this elsewhere but we strongly encourage initializing the SDK in `Application`'s `onCreate`. This will let the SDK automatically track a push open for you if the application was launched from a remote Iterable push notification.
 
 2. Once you know the email *(Preferred)* or userId of the user, call `setEmail` or `setUserId`
   * EMAIL: `IterableApi.getInstance().setEmail("email@example.com");`
