@@ -9,7 +9,9 @@ android {
         minSdkVersion 15
         targetSdkVersion 27
         versionCode 1
-        versionName "1.0"
+        versionName "3.0.2"
+
+        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.0.2\""
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }

@@ -76,6 +76,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";
     public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
+    public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
     public static final String SHARED_PREFS_OBJECT_SUFFIX = "_object";
     public static final String SHARED_PREFS_PAYLOAD_KEY = "itbl_payload";
@@ -103,6 +104,11 @@ public final class IterableConstants {
     public static final String DEVICE_SYSTEM_VERSION    = "systemVersion";
     public static final String DEVICE_MODEL             = "model";
     public static final String DEVICE_SDK_VERSION       = "sdkVersion";
+    public static final String DEVICE_ID                   = "deviceId";
+    public static final String DEVICE_APP_PACKAGE_NAME     = "appPackageName";
+    public static final String DEVICE_APP_VERSION          = "appVersion";
+    public static final String DEVICE_APP_BUILD            = "appBuild";
+    public static final String DEVICE_ITERABLE_SDK_VERSION = "iterableSdkVersion";
 
     public static final String INSTANCE_ID_CLASS        = "com.google.android.gms.iid.InstanceID";
     public static final String ICON_FOLDER_IDENTIFIER   = "drawable";
@@ -153,5 +159,5 @@ public final class IterableConstants {
 
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
     public static final String ITBL_PLATFORM_ANDROID = "Android";
-    public static final String ITBL_KEY_SDK_VERSION_NUMBER = "0.0.0";
+    public static final String ITBL_KEY_SDK_VERSION_NUMBER = BuildConfig.ITERABLE_SDK_VERSION;
 }
