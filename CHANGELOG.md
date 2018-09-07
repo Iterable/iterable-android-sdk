@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.0.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.2)
+#### Added
+- The SDK now registers the token when a new email/userId is set and disables the old device if email/userId was previously set and then changed. This can be disabled by setting `autoPushRegistration` to `false` in `IterableConfig`.
+
+#### Fixed
+- Fixed a NullPointerException when SDK isn't initialized in Application#onCreate and the app is opened from a push notification
+
 ## [3.0.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.1)
  _Released on 2018-08-10_
 
