@@ -6,7 +6,7 @@ package com.iterable.iterableapi;
 public class IterableConfig {
 
     /**
-     * Push integration name – used for token registration.
+     * Push integration name - used for token registration.
      * Make sure the name of this integration matches the one set up in Iterable console.
      */
     final String pushIntegrationName;
@@ -52,7 +52,7 @@ public class IterableConfig {
         public Builder() {}
 
         /**
-         * Push integration name – used for token registration
+         * Push integration name - used for token registration
          * Make sure the name of this integration matches the one set up in Iterable console
          * @param pushIntegrationName Push integration name
          */
