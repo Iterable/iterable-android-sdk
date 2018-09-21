@@ -12,10 +12,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.shadows.ShadowApplication;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -214,6 +217,27 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         verify(IterableApi.sharedInstance).registerForPush();
         Mockito.reset(IterableApi.sharedInstance);
+    }
+
+    @Test
+    public void testPushRegistrationDeviceFields() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().registerDeviceToken("pushIntegration", "token", IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+        Thread.sleep(100);  // Since the network request is queued from a background thread, we need to wait
+        Robolectric.flushBackgroundThreadScheduler();
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+
+        JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
+        JSONObject dataFields = requestJson.getJSONObject("device").getJSONObject("dataFields");
+        assertNotNull(dataFields.getString("deviceId"));
+        assertEquals(UUID.randomUUID().toString().length(), dataFields.getString("deviceId").length());
+        assertEquals("com.iterable.iterableapi", dataFields.getString("appPackageName"));
+        assertEquals("1.2.3", dataFields.getString("appVersion"));
+        assertEquals("321", dataFields.getString("appBuild"));
+        assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, dataFields.getString("iterableSdkVersion"));
     }
 
 }

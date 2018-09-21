@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,6 +52,7 @@ public class IterableApi {
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
+    private String _deviceId;
 
 //---------------------------------------------------------------------------------------
 //endregion
@@ -1151,6 +1153,12 @@ public class IterableApi {
             dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
             dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
 
+            dataFields.put(IterableConstants.DEVICE_ID, getDeviceId()); // Random UUID
+            dataFields.put(IterableConstants.DEVICE_APP_PACKAGE_NAME, _applicationContext.getPackageName());
+            dataFields.put(IterableConstants.DEVICE_APP_VERSION, IterableUtil.getAppVersion(_applicationContext));
+            dataFields.put(IterableConstants.DEVICE_APP_BUILD, IterableUtil.getAppVersionCode(_applicationContext));
+            dataFields.put(IterableConstants.DEVICE_ITERABLE_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);
             device.put(IterableConstants.KEY_PLATFORM, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
@@ -1269,6 +1277,17 @@ public class IterableApi {
                     "Check that play-services-ads is added to the dependencies.", e);
         }
         return advertisingId;
+    }
+
+    private String getDeviceId() {
+        if (_deviceId == null) {
+            _deviceId = getPreferences().getString(IterableConstants.SHARED_PREFS_DEVICEID_KEY, null);
+            if (_deviceId == null) {
+                _deviceId = UUID.randomUUID().toString();
+                getPreferences().edit().putString(IterableConstants.SHARED_PREFS_DEVICEID_KEY, _deviceId).apply();
+            }
+        }
+        return _deviceId;
     }
 
     private void storeEmailAndUserId() {
