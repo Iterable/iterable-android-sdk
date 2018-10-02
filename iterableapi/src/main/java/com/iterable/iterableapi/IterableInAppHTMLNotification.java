@@ -181,6 +181,11 @@ public class IterableInAppHTMLNotification extends Dialog {
         getOwnerActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                // Since this is run asynchronously, notification might've been dismissed already
+                if (notification == null) {
+                    return;
+                }
+
                 DisplayMetrics displayMetrics = getOwnerActivity().getResources().getDisplayMetrics();
                 Window window = notification.getWindow();
                 Rect insetPadding = notification.insetPadding;
