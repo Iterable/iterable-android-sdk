@@ -6,13 +6,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.iterable.iterableapi.ddl.DeviceInfo;
+import com.iterable.iterableapi.ddl.MatchFpResponse;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,11 +25,8 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -226,6 +225,8 @@ public class IterableApi {
         }
         sharedInstance.sdkCompatEnabled = false;
         sharedInstance.retrieveEmailAndUserId();
+        sharedInstance.checkForDeferredDeeplink();
+
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
             sharedInstance.registerForPush();
         }
@@ -1321,6 +1322,57 @@ public class IterableApi {
         if (config.autoPushRegistration && isInitialized()) {
             registerForPush();
         }
+    }
+
+    private boolean getDDLChecked() {
+        return getPreferences().getBoolean(IterableConstants.SHARED_PREFS_DDL_CHECKED_KEY, false);
+    }
+
+    private void setDDLChecked(boolean value) {
+        getPreferences().edit().putBoolean(IterableConstants.SHARED_PREFS_DDL_CHECKED_KEY, value).apply();
+    }
+
+    private void checkForDeferredDeeplink() {
+        if (!config.checkForDeferredDeeplink) {
+            return;
+        }
+
+        try {
+            if (getDDLChecked()) {
+                return;
+            }
+
+            JSONObject requestJSON = DeviceInfo.createDeviceInfo(_applicationContext).toJSONObject();
+
+            IterableApiRequest request = new IterableApiRequest(_apiKey, IterableConstants.BASE_URL_LINKS,
+                    IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(JSONObject data) {
+                    handleDDL(data);
+                }
+            }, new IterableHelper.FailureHandler() {
+                @Override
+                public void onFailure(String reason, JSONObject data) {
+                    IterableLogger.e(TAG, "Error while checking deferred deep link: " + reason + ", response: " + data);
+                }
+            });
+            new IterableRequest().execute(request);
+
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while checking deferred deep link", e);
+        }
+    }
+
+    private void handleDDL(JSONObject response) {
+        IterableLogger.d(TAG, "handleDDL: " + response);
+        try {
+            MatchFpResponse matchFpResponse = MatchFpResponse.fromJSONObject(response);
+            IterableAction action = IterableAction.actionOpenUrl(matchFpResponse.destinationUrl);
+            IterableActionRunner.executeAction(getMainActivityContext(), action, IterableActionSource.APP_LINK);
+        } catch (JSONException e) {
+            IterableLogger.e(TAG, "Error while handling deferred deep link", e);
+        }
+        setDDLChecked(true);
     }
 
 //---------------------------------------------------------------------------------------
