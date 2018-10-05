@@ -1367,8 +1367,11 @@ public class IterableApi {
         IterableLogger.d(TAG, "handleDDL: " + response);
         try {
             MatchFpResponse matchFpResponse = MatchFpResponse.fromJSONObject(response);
-            IterableAction action = IterableAction.actionOpenUrl(matchFpResponse.destinationUrl);
-            IterableActionRunner.executeAction(getMainActivityContext(), action, IterableActionSource.APP_LINK);
+
+            if (matchFpResponse.isMatch) {
+                IterableAction action = IterableAction.actionOpenUrl(matchFpResponse.destinationUrl);
+                IterableActionRunner.executeAction(getMainActivityContext(), action, IterableActionSource.APP_LINK);
+            }
         } catch (JSONException e) {
             IterableLogger.e(TAG, "Error while handling deferred deep link", e);
         }
