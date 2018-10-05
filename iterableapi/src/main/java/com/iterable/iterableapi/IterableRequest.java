@@ -58,10 +58,11 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             HttpURLConnection urlConnection = null;
 
             try {
-                String baseUrl = (overrideUrl != null && !overrideUrl.isEmpty()) ? overrideUrl : iterableBaseUrl;
-                if (iterableApiRequest.baseUrl != null) {
-                    baseUrl = iterableApiRequest.baseUrl;
+                String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl : iterableBaseUrl;
+                if (overrideUrl != null && !overrideUrl.isEmpty()) {
+                    baseUrl = overrideUrl;
                 }
+
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
                     Uri.Builder builder = Uri.parse(baseUrl+iterableApiRequest.resourcePath).buildUpon();
                     builder.appendQueryParameter(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
