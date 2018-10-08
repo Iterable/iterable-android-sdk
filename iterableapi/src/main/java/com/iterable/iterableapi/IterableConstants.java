@@ -10,6 +10,10 @@ public final class IterableConstants {
     public static final String ACTION_PUSH_ACTION = "com.iterable.push.ACTION_PUSH_ACTION";
     public static final String ACTION_PUSH_REGISTRATION = "com.iterable.push.ACTION_PUSH_REGISTRATION";
 
+    //Hosts
+    public static final String BASE_URL_API = "https://api.iterable.com/api/";
+    public static final String BASE_URL_LINKS = "https://links.iterable.com/";
+
     //API Fields
     public static final String KEY_API_KEY              = "api_key";
     public static final String KEY_APPLICATION_NAME     = "applicationName";
@@ -49,6 +53,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER             = "users/update";
     public static final String ENDPOINT_UPDATE_EMAIL            = "users/updateEmail";
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
+    public static final String ENDPOINT_DDL_MATCH               = "a/matchFp";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -77,6 +82,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
     public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
+    public static final String SHARED_PREFS_DDL_CHECKED_KEY = "itbl_ddl_checked";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
     public static final String SHARED_PREFS_OBJECT_SUFFIX = "_object";
     public static final String SHARED_PREFS_PAYLOAD_KEY = "itbl_payload";

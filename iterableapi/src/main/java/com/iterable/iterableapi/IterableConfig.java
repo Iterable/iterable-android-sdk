@@ -34,12 +34,19 @@ public class IterableConfig {
      */
     final String legacyGCMSenderId;
 
+    /**
+     * When set to true, it will check for deferred deep links on first time app launch
+     * after installation.
+     */
+    final boolean checkForDeferredDeeplink;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
         customActionHandler = builder.customActionHandler;
         autoPushRegistration = builder.autoPushRegistration;
         legacyGCMSenderId = builder.legacyGCMSenderId;
+        checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
     }
 
     public static class Builder {
@@ -48,6 +55,7 @@ public class IterableConfig {
         private IterableCustomActionHandler customActionHandler;
         private boolean autoPushRegistration = true;
         private String legacyGCMSenderId;
+        private boolean checkForDeferredDeeplink;
 
         public Builder() {}
 
@@ -98,6 +106,16 @@ public class IterableConfig {
          */
         public Builder setLegacyGCMSenderId(String legacyGCMSenderId) {
             this.legacyGCMSenderId = legacyGCMSenderId;
+            return this;
+        }
+
+        /**
+         * When set to true, it will check for deferred deep links on first time app launch
+         * after installation.
+         * @param checkForDeferredDeeplink Enable deferred deep link checks on first launch
+         */
+        public Builder setCheckForDeferredDeeplink(boolean checkForDeferredDeeplink) {
+            this.checkForDeferredDeeplink = checkForDeferredDeeplink;
             return this;
         }
 
