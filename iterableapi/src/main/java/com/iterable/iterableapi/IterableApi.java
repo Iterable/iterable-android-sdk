@@ -412,8 +412,29 @@ public class IterableApi {
         onLogOut();
         _email = null;
         _userId = userId;
+        createUserForUserId();
         storeEmailAndUserId();
         onLogIn();
+    }
+
+    /**
+     * Creates a user profile for a userId if it does not yet exist.
+     */
+    public void createUserForUserId() {
+        if (!checkSDKInitialization() || _userId == null) {
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
+
+            sendPostRequest(IterableConstants.ENDPOINT_CREATE_USERID, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
