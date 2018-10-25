@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.0.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.4)
+#### Added
+- Added support for user registration with userId. The SDK will now create a new user for userId if it does not exist before registering the device on the user's profile.
+
 ## [3.0.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.3)
 #### Added
 - Added new device fields (Iterable SDK version, app version, app package name) to `registerDeviceToken` call
