@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/Iterable/iterable-android-sdk.svg)](https://travis-ci.org/Iterable/iterable-android-sdk)
+[![codecov](https://codecov.io/gh/Iterable/iterable-android-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/Iterable/iterable-android-sdk)
+[![Download](https://api.bintray.com/packages/davidtruong/maven/Iterable-SDK/images/download.svg)](https://bintray.com/davidtruong/maven/Iterable-SDK/_latestVersion)
+
 # Iterable Android SDK
 
 The `iterable-android-sdk` is a Java implementation of an Android client for Iterable, supporting Android API versions 15 and higher.
