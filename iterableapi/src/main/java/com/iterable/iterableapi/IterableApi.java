@@ -525,11 +525,27 @@ public class IterableApi {
         }
 
         if (token != null) {
-            new Thread(new Runnable() {
+            final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
                     registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
                 }
-            }).start();
+            });
+
+            if (getUserId() != null) {
+                createUserForUserId(new IterableHelper.SuccessHandler() {
+                    @Override
+                    public void onSuccess(JSONObject data) {
+                        registrationThread.start();
+                    }
+                }, new IterableHelper.FailureHandler() {
+                    @Override
+                    public void onFailure(String reason, JSONObject data) {
+                        IterableLogger.e(TAG, "Could not create user: " + reason);
+                    }
+                });
+            } else {
+                registrationThread.start();
+            }
         }
     }
 
@@ -1376,6 +1392,25 @@ public class IterableApi {
             IterableLogger.e(TAG, "Error while handling deferred deep link", e);
         }
         setDDLChecked(true);
+    }
+
+    /**
+     * Creates a user profile for a userId if it does not yet exist.
+     */
+    private void createUserForUserId(IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization() || _userId == null) {
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+        try {
+            requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
+
+            sendPostRequest(IterableConstants.ENDPOINT_CREATE_USERID, requestJSON, onSuccess, onFailure);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 //---------------------------------------------------------------------------------------

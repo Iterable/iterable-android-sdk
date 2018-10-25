@@ -118,7 +118,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     in.close();
                     requestResult = response.toString();
                 } catch (IOException e) {
-                    IterableLogger.e(TAG, e.getMessage());
+                    IterableLogger.e(TAG, e.getMessage(), e);
                     error = e.getMessage();
                 }
 
@@ -128,7 +128,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 try {
                     jsonResponse = new JSONObject(requestResult);
                 } catch (Exception e) {
-                    IterableLogger.e(TAG, e.getMessage());
+                    IterableLogger.e(TAG, e.getMessage(), e);
                     jsonError = e.getMessage();
                 }
 
@@ -164,10 +164,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     handleFailure("Received non-200 response: " + responseCode, jsonResponse);
                 }
             } catch (JSONException e) {
-                IterableLogger.e(TAG, e.getMessage());
+                IterableLogger.e(TAG, e.getMessage(), e);
                 handleFailure(e.getMessage(), null);
             } catch (IOException e) {
-                IterableLogger.e(TAG, e.getMessage());
+                IterableLogger.e(TAG, e.getMessage(), e);
                 handleFailure(e.getMessage(), null);
             } finally {
                 if (urlConnection != null) {
