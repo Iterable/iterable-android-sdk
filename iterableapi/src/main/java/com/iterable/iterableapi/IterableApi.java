@@ -525,25 +525,27 @@ public class IterableApi {
         }
 
         if (token != null) {
-            new Thread(new Runnable() {
+            final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
-                    if (getUserId() != null) {
-                        createUserForUserId(new IterableHelper.SuccessHandler() {
-                            @Override
-                            public void onSuccess(JSONObject data) {
-                                registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
-                            }
-                        }, new IterableHelper.FailureHandler() {
-                            @Override
-                            public void onFailure(String reason, JSONObject data) {
-                                IterableLogger.e(TAG, "Could not create user: " + reason);
-                            }
-                        });
-                    } else {
-                        registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
-                    }
+                    registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
                 }
-            }).start();
+            });
+
+            if (getUserId() != null) {
+                createUserForUserId(new IterableHelper.SuccessHandler() {
+                    @Override
+                    public void onSuccess(JSONObject data) {
+                        registrationThread.start();
+                    }
+                }, new IterableHelper.FailureHandler() {
+                    @Override
+                    public void onFailure(String reason, JSONObject data) {
+                        IterableLogger.e(TAG, "Could not create user: " + reason);
+                    }
+                });
+            } else {
+                registrationThread.start();
+            }
         }
     }
 

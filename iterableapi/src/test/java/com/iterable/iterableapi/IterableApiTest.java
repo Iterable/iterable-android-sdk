@@ -240,4 +240,23 @@ public class IterableApiTest extends BaseTest {
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, dataFields.getString("iterableSdkVersion"));
     }
 
+    @Test
+    public void testPushRegistrationWithUserId() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setUserId("testUserId");
+        IterableApi.getInstance().registerDeviceToken("pushIntegration", "token", IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+        Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
+        Robolectric.flushBackgroundThreadScheduler();
+        RecordedRequest createUserRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(createUserRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_CREATE_USERID, createUserRequest.getPath());
+
+        RecordedRequest registerDeviceRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(registerDeviceRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, registerDeviceRequest.getPath());
+    }
+
 }
