@@ -1402,7 +1402,6 @@ public class IterableApi {
 
         JSONObject requestJSON = new JSONObject();
         try {
-            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
 
             sendPostRequest(IterableConstants.ENDPOINT_CREATE_USERID, requestJSON, onSuccess, onFailure);
