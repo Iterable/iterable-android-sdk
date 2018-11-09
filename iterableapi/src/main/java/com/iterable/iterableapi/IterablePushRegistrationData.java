@@ -10,20 +10,26 @@ class IterablePushRegistrationData {
         DISABLE
     }
 
+    String email;
+    String userId;
     String pushIntegrationName;
     String projectNumber = "";
     String messagingPlatform = IterableConstants.MESSAGING_PLATFORM_FIREBASE;
     PushRegistrationAction pushRegistrationAction;
 
 
-    public IterablePushRegistrationData(String pushIntegrationName, String projectNumber, String messagingPlatform, PushRegistrationAction pushRegistrationAction){
+    public IterablePushRegistrationData(String email, String userId, String pushIntegrationName, String projectNumber, String messagingPlatform, PushRegistrationAction pushRegistrationAction){
+        this.email = email;
+        this.userId = userId;
         this.pushIntegrationName = pushIntegrationName;
         this.projectNumber = projectNumber;
         this.messagingPlatform = messagingPlatform;
         this.pushRegistrationAction = pushRegistrationAction;
     }
 
-    public IterablePushRegistrationData(String pushIntegrationName, PushRegistrationAction pushRegistrationAction) {
+    public IterablePushRegistrationData(String email, String userId, String pushIntegrationName, PushRegistrationAction pushRegistrationAction) {
+        this.email = email;
+        this.userId = userId;
         this.pushIntegrationName = pushIntegrationName;
         this.pushRegistrationAction = pushRegistrationAction;
     }

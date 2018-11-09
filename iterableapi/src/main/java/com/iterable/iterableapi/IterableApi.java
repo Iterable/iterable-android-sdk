@@ -519,6 +519,10 @@ public class IterableApi {
      */
     @Deprecated
     public void registerDeviceToken(final String applicationName, final String token, final String pushServicePlatform) {
+        registerDeviceToken(_email, _userId, applicationName, token, pushServicePlatform);
+    }
+
+    protected void registerDeviceToken(final String email, final String userId, final String applicationName, final String token, final String pushServicePlatform) {
         if (!IterableConstants.MESSAGING_PLATFORM_FIREBASE.equals(pushServicePlatform)) {
             IterableLogger.e(TAG, "registerDeviceToken: only MESSAGING_PLATFORM_FIREBASE is supported.");
             return;
@@ -527,7 +531,7 @@ public class IterableApi {
         if (token != null) {
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
+                    registerDeviceToken(email, userId, applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
                 }
             });
 
@@ -770,7 +774,7 @@ public class IterableApi {
             return;
         }
 
-        IterablePushRegistrationData data = new IterablePushRegistrationData(config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -801,7 +805,7 @@ public class IterableApi {
             return;
         }
 
-        IterablePushRegistrationData data = new IterablePushRegistrationData(pushIntegrationName, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, pushIntegrationName, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -813,7 +817,7 @@ public class IterableApi {
      */
     @Deprecated
     public void registerForPush(String pushIntegrationName) {
-        IterablePushRegistrationData data = new IterablePushRegistrationData(pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -826,7 +830,7 @@ public class IterableApi {
             return;
         }
 
-        IterablePushRegistrationData data = new IterablePushRegistrationData(config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -857,7 +861,7 @@ public class IterableApi {
             return;
         }
 
-        IterablePushRegistrationData data = new IterablePushRegistrationData(iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -1111,19 +1115,23 @@ public class IterableApi {
         }
     }
 
-    protected void disableToken(String token) {
-        disableToken(token, null, null);
+    protected void disableToken(String email, String userId, String token) {
+        disableToken(email, userId, token, null, null);
     }
 
     /**
      * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
      * @param token
      */
-    protected void disableToken(String token, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(String email, String userId, String token, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, token);
-            addEmailOrUserIdToJson(requestJSON);
+            if (email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, email);
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_ID, userId);
+            }
 
             sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, onSuccess, onFailure);
         }
@@ -1139,7 +1147,7 @@ public class IterableApi {
      * @param pushServicePlatform
      * @param dataFields
      */
-    protected void registerDeviceToken(String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
+    protected void registerDeviceToken(String email, String userId, String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
         if (!checkSDKInitialization()) {
             return;
         }

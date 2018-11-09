@@ -17,8 +17,12 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class IterableTestUtils {
+    public static final String apiKey = "fake_key";
+    public static final String userEmail = "test_email";
+
+
     public static void createIterableApi() {
-        IterableApi.sharedInstanceWithApiKey(RuntimeEnvironment.application, "fake_key", "test_email");
+        IterableApi.sharedInstanceWithApiKey(RuntimeEnvironment.application, apiKey, userEmail);
     }
 
     public static String getResourceString(String fileName) throws IOException {
