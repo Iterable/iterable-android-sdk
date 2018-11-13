@@ -13,6 +13,7 @@ import org.json.JSONObject;
  */
 class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, Void, Void> {
     static final String TAG = "IterablePushRegistration";
+    IterablePushRegistrationData iterablePushRegistrationData;
 
     /**
      * Registers or disables the device
@@ -20,14 +21,23 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
      * @param params Push registration request data
      */
     protected Void doInBackground(IterablePushRegistrationData... params) {
-        IterablePushRegistrationData iterablePushRegistrationData = params[0];
+        iterablePushRegistrationData = params[0];
         if (iterablePushRegistrationData.pushIntegrationName != null) {
             PushRegistrationObject pushRegistrationObject = getDeviceToken();
             if (pushRegistrationObject != null) {
                 if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
-                    IterableApi.sharedInstance.registerDeviceToken(iterablePushRegistrationData.pushIntegrationName, pushRegistrationObject.token);
+                    IterableApi.sharedInstance.registerDeviceToken(
+                            iterablePushRegistrationData.email,
+                            iterablePushRegistrationData.userId,
+                            iterablePushRegistrationData.pushIntegrationName,
+                            pushRegistrationObject.token,
+                            IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
-                    IterableApi.sharedInstance.disableToken(pushRegistrationObject.token);
+                    IterableApi.sharedInstance.disableToken(
+                            iterablePushRegistrationData.email,
+                            iterablePushRegistrationData.userId,
+                            pushRegistrationObject.token);
                 }
                 disableOldDeviceIfNeeded();
             }
@@ -79,7 +89,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
 
                     // We disable the device on Iterable but keep the token
                     if (oldToken != null) {
-                        IterableApi.sharedInstance.disableToken(oldToken, new IterableHelper.SuccessHandler() {
+                        IterableApi.sharedInstance.disableToken(iterablePushRegistrationData.email, iterablePushRegistrationData.userId, oldToken, new IterableHelper.SuccessHandler() {
                             @Override
                             public void onSuccess(JSONObject data) {
                                 sharedPref.edit().putBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, true).apply();
