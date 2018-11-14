@@ -49,6 +49,15 @@ public class IterableAction {
         return null;
     }
 
+    static IterableAction actionCustomAction(String customActionName) {
+        try {
+            JSONObject config = new JSONObject();
+            config.put("type", customActionName);
+            return new IterableAction(config);
+        } catch (JSONException ignored) {}
+        return null;
+    }
+
     /**
      * If {@link #ACTION_TYPE_OPEN_URL}, the SDK will call {@link IterableUrlHandler} and then try to
      * open the URL if the delegate returned `false` or was not set.

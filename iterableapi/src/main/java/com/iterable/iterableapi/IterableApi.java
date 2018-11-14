@@ -48,10 +48,12 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
     private String _userId;
-    private boolean _debugMode;
+    private boolean _debugMode = true;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
     private String _deviceId;
+
+    private IterableInAppManager inAppManager;
 
 //---------------------------------------------------------------------------------------
 //endregion
@@ -94,6 +96,13 @@ public class IterableApi {
 
     public Bundle getPayloadData() {
         return _payloadData;
+    }
+
+    public IterableInAppManager getInAppManager() {
+        if (inAppManager == null) {
+            inAppManager = new IterableInAppManager(config.inAppHandler);
+        }
+        return inAppManager;
     }
 
     /**
@@ -226,6 +235,7 @@ public class IterableApi {
         sharedInstance.sdkCompatEnabled = false;
         sharedInstance.retrieveEmailAndUserId();
         sharedInstance.checkForDeferredDeeplink();
+        IterableActivityMonitor.init(context);
 
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
             sharedInstance.registerForPush();

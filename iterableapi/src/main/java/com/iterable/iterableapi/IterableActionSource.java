@@ -8,5 +8,8 @@ public enum IterableActionSource {
     PUSH,
 
     /** App Link */
-    APP_LINK
+    APP_LINK,
+
+    /** In-App Message */
+    IN_APP
 }
