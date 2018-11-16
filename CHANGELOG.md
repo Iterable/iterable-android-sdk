@@ -15,6 +15,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.0.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.5)
+#### Added
+- Added a new field to `IterableConfig` - `logLevel` - to specify the log level for Iterable SDK log messages
+
+#### Changed
+- The SDK now uses `preferUserId` flag to create a user by userId instead of the deprecated `createUserForUserId` API
+
+#### Fixed
+- The SDK now catches any RuntimeExceptions that may sometimes happen when calling `getAdvertisingIdInfo`
+- `registerDeviceToken` and `disableToken` now use the email/userId that was set at the time of the call, to handle login/logout correctly
+
 ## [3.0.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.4)
 #### Added
 - Added support for user registration with userId. The SDK will now create a new user for userId if it does not exist before registering the device on the user's profile.
