@@ -27,6 +27,7 @@ public final class IterableConstants {
     public static final String KEY_ITEMS                = "items";
     public static final String KEY_NEW_EMAIL            = "newEmail";
     public static final String KEY_PLATFORM             = "platform";
+    public static final String KEY_PREFER_USER_ID       = "preferUserId";
     public static final String KEY_RECIPIENT_EMAIL      = "recipientEmail";
     public static final String KEY_SEND_AT              = "sendAt";
     public static final String KEY_TEMPLATE_ID          = "templateId";
@@ -40,7 +41,6 @@ public final class IterableConstants {
     public static final String KEY_USER_TEXT            = "userText";
 
     //API Endpoint Key Constants
-    public static final String ENDPOINT_CREATE_USERID           = "users/createUserForUserId";
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
     public static final String ENDPOINT_GET_INAPP_MESSAGES      = "inApp/getMessages";
     public static final String ENDPOINT_INAPP_CONSUME           = "events/inAppConsume";
