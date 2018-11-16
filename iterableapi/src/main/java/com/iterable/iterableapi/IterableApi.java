@@ -1291,15 +1291,11 @@ public class IterableApi {
                     advertisingId = advertisingIdInfo.getId();
                 }
             }
-        } catch (IOException e) {
-            IterableLogger.w(TAG, e.getMessage());
-        } catch (GooglePlayServicesNotAvailableException e) {
-            IterableLogger.w(TAG, e.getMessage());
-        } catch (GooglePlayServicesRepairableException e) {
-            IterableLogger.w(TAG, e.getMessage());
         } catch (ClassNotFoundException e) {
             IterableLogger.d(TAG, "ClassNotFoundException: Can't track ADID. " +
                     "Check that play-services-ads is added to the dependencies.", e);
+        } catch (Exception e) {
+            IterableLogger.w(TAG, e.getMessage());
         }
         return advertisingId;
     }
