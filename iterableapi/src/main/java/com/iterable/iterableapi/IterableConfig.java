@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import android.util.Log;
+
 /**
  *
  */
@@ -40,6 +42,11 @@ public class IterableConfig {
      */
     final boolean checkForDeferredDeeplink;
 
+    /**
+     * Log level for Iterable SDK log messages
+     */
+    final int logLevel;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -47,6 +54,7 @@ public class IterableConfig {
         autoPushRegistration = builder.autoPushRegistration;
         legacyGCMSenderId = builder.legacyGCMSenderId;
         checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
+        logLevel = builder.logLevel;
     }
 
     public static class Builder {
@@ -56,6 +64,7 @@ public class IterableConfig {
         private boolean autoPushRegistration = true;
         private String legacyGCMSenderId;
         private boolean checkForDeferredDeeplink;
+        private int logLevel = Log.ERROR;
 
         public Builder() {}
 
@@ -116,6 +125,15 @@ public class IterableConfig {
          */
         public Builder setCheckForDeferredDeeplink(boolean checkForDeferredDeeplink) {
             this.checkForDeferredDeeplink = checkForDeferredDeeplink;
+            return this;
+        }
+
+        /**
+         * Set the log level for Iterable SDK log messages
+         * @param logLevel Log level, defaults to {@link Log#ERROR}
+         */
+        public Builder setLogLevel(int logLevel) {
+            this.logLevel = logLevel;
             return this;
         }
 
