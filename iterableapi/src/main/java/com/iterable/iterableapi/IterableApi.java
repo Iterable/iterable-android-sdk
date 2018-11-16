@@ -534,22 +534,7 @@ public class IterableApi {
                     registerDeviceToken(email, userId, applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
                 }
             });
-
-            if (getUserId() != null) {
-                createUserForUserId(new IterableHelper.SuccessHandler() {
-                    @Override
-                    public void onSuccess(JSONObject data) {
-                        registrationThread.start();
-                    }
-                }, new IterableHelper.FailureHandler() {
-                    @Override
-                    public void onFailure(String reason, JSONObject data) {
-                        IterableLogger.e(TAG, "Could not create user: " + reason);
-                    }
-                });
-            } else {
-                registrationThread.start();
-            }
+            registrationThread.start();
         }
     }
 
@@ -1191,6 +1176,11 @@ public class IterableApi {
             device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
 
+            // Create the user by userId if it doesn't exist
+            if (email == null && userId != null) {
+                requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
+            }
+
             sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
@@ -1400,25 +1390,6 @@ public class IterableApi {
             IterableLogger.e(TAG, "Error while handling deferred deep link", e);
         }
         setDDLChecked(true);
-    }
-
-    /**
-     * Creates a user profile for a userId if it does not yet exist.
-     */
-    private void createUserForUserId(IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
-        if (!checkSDKInitialization() || _userId == null) {
-            return;
-        }
-
-        JSONObject requestJSON = new JSONObject();
-        try {
-            requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
-
-            sendPostRequest(IterableConstants.ENDPOINT_CREATE_USERID, requestJSON, onSuccess, onFailure);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 
 //---------------------------------------------------------------------------------------
