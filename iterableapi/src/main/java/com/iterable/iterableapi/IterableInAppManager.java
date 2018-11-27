@@ -9,8 +9,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by David Truong dt@iterable.com.
@@ -27,7 +31,11 @@ public class IterableInAppManager {
         this.handler = handler;
     }
 
-    public List<IterableInAppMessage> getAllMessages() {
+    /**
+     *
+     * @return
+     */
+    public List<IterableInAppMessage> getMessages() {
         return storage.getMessages();
     }
 
@@ -43,7 +51,7 @@ public class IterableInAppManager {
                         if (jsonArray != null) {
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject messageJson = jsonArray.optJSONObject(i);
-                                IterableInAppMessage message = IterableInAppMessage.fromJSON(messageJson);
+                                IterableInAppMessage message = IterableInAppMessage.fromJSON(storage, messageJson);
                                 if (message != null) {
                                     messages.add(message);
                                 }
@@ -58,13 +66,13 @@ public class IterableInAppManager {
         });
     }
 
-    private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
-        storage.putMessages(remoteQueue);
-        handler.onNewBatch(getAllMessages());
+    public void showMessage(IterableInAppMessage message) {
+        showMessage(message, true, null);
     }
 
-    public void showMessage(IterableInAppMessage message) {
+    public void showMessage(IterableInAppMessage message, boolean consume, IterableHelper.IterableActionHandler clickCallback) {
         Activity currentActivity = IterableActivityMonitor.getCurrentActivity();
+        // Prevent double display
         if (currentActivity != null) {
             if (IterableInAppManager.showIterableNotificationHTML(currentActivity, message.getContent().html, message.getMessageId(), new IterableHelper.IterableActionHandler() {
                 @Override
@@ -79,6 +87,44 @@ public class IterableInAppManager {
                 IterableApi.sharedInstance.inAppConsume(message.getMessageId());
             }
         }
+    }
+
+    private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
+        Map<String, IterableInAppMessage> remoteQueueMap = new HashMap<>();
+        for (IterableInAppMessage message : remoteQueue) {
+            remoteQueueMap.put(message.getMessageId(), message);
+            if (storage.getMessage(message.getMessageId()) == null) {
+                storage.addMessage(message);
+            }
+        }
+        for (IterableInAppMessage localMessage : storage.getMessages()) {
+            if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
+                storage.removeMessage(localMessage);
+            }
+        }
+        processMessages();
+    }
+
+    private void processMessages() {
+        if (!IterableActivityMonitor.isInForeground() || isShowingInApp()) {
+            return;
+        }
+
+        List<IterableInAppMessage> messages = getMessages();
+        for (IterableInAppMessage message : messages) {
+            if (!message.isProcessed()) {
+                InAppResponse response = handler.onNewInApp(message);
+                message.setProcessed(true);
+                if (response == InAppResponse.SHOW) {
+                    showMessage(message);
+                    return;
+                }
+            }
+        }
+    }
+
+    private boolean isShowingInApp() {
+        return IterableInAppHTMLNotification.getInstance() != null;
     }
 
     /**

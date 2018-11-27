@@ -1,8 +1,8 @@
 package com.iterable.iterableapi;
 
-public class IterableDefaultInAppHandler extends IterableInAppHandler {
+public class IterableDefaultInAppHandler implements IterableInAppHandler {
     @Override
-    InAppResponse onNewInApp(IterableInAppMessage message) {
+    public InAppResponse onNewInApp(IterableInAppMessage message) {
         return InAppResponse.SHOW;
     }
 }

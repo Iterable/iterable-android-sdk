@@ -15,6 +15,10 @@ public class IterableActivityMonitor {
         return currentActivity != null ? currentActivity.get() : null;
     }
 
+    public static boolean isInForeground() {
+        return getCurrentActivity() != null;
+    }
+
     public static void init(Context context) {
         ((Application) context.getApplicationContext()).registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override

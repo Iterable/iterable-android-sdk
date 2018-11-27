@@ -4,6 +4,7 @@ import java.util.List;
 
 interface IterableInAppStorage {
     List<IterableInAppMessage> getMessages();
-    void putMessages(List<IterableInAppMessage> messages);
+    IterableInAppMessage getMessage(String messageId);
+    void addMessage(IterableInAppMessage message);
     void removeMessage(IterableInAppMessage message);
 }

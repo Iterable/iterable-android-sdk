@@ -7,12 +7,62 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class IterableInAppMessage {
+    private final IterableInAppStorage storage;
     private final String messageId;
     private final Content content;
 
-    IterableInAppMessage(String messageId, Content content) {
+    // todo: remove
+    private boolean processed = false;
+    private boolean consumed = false;
+
+    IterableInAppMessage(IterableInAppStorage storage, String messageId, Content content) {
+        this.storage = storage;
         this.messageId = messageId;
         this.content = content;
+    }
+
+    public static class Content {
+         public final String html;
+         public final JSONObject payload;
+         public final Rect padding;
+
+        Content(String html, JSONObject payload, Rect padding) {
+            this.html = html;
+            this.payload = payload;
+            this.padding = padding;
+        }
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public Content getContent() {
+         return content;
+    }
+
+    boolean isProcessed() {
+        return processed;
+    }
+
+    void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
+
+    public static IterableInAppMessage fromJSON(IterableInAppStorage storage, JSONObject messageJson) {
+        if (messageJson != null) {
+            JSONObject contentJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
+            if (contentJson != null) {
+                String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
+                String html = contentJson.optString("html");
+                JSONObject paddingOptions = contentJson.optJSONObject("inAppDisplaySettings");
+                Rect padding = getPaddingFromPayload(paddingOptions);
+                double backgroundAlpha = contentJson.optDouble("backgroundAlpha", 0);
+
+                return new IterableInAppMessage(storage, messageId, new Content(html, null, padding));
+            }
+        }
+        return null;
     }
 
     /**
@@ -67,41 +117,5 @@ public class IterableInAppMessage {
             }
         }
         return returnObject;
-    }
-
-    public static class Content {
-         public final String html;
-         public final JSONObject payload;
-         public final Rect padding;
-
-        Content(String html, JSONObject payload, Rect padding) {
-            this.html = html;
-            this.payload = payload;
-            this.padding = padding;
-        }
-    }
-
-    public String getMessageId() {
-        return messageId;
-    }
-
-    public Content getContent() {
-         return content;
-    }
-
-    public static IterableInAppMessage fromJSON(JSONObject messageJson) {
-        if (messageJson != null) {
-            JSONObject contentJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-            if (contentJson != null) {
-                String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
-                String html = contentJson.optString("html");
-                JSONObject paddingOptions = contentJson.optJSONObject("inAppDisplaySettings");
-                Rect padding = getPaddingFromPayload(paddingOptions);
-                double backgroundAlpha = contentJson.optDouble("backgroundAlpha", 0);
-
-                return new IterableInAppMessage(messageId, new Content(html, null, padding));
-            }
-        }
-        return null;
     }
 }

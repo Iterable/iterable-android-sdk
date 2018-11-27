@@ -1,9 +1,10 @@
 package com.iterable.iterableapi;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class IterableInAppMemoryStorage implements IterableInAppStorage {
-    private List<IterableInAppMessage> messages;
+    private List<IterableInAppMessage> messages = new ArrayList<>();
 
     IterableInAppMemoryStorage() {
 
@@ -11,12 +12,22 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
 
     @Override
     public List<IterableInAppMessage> getMessages() {
-        return messages;
+        return new ArrayList<>(messages);
     }
 
     @Override
-    public void putMessages(List<IterableInAppMessage> messages) {
-        this.messages = messages;
+    public IterableInAppMessage getMessage(String messageId) {
+        for (IterableInAppMessage message : messages) {
+            if (message.getMessageId().equals(messageId)) {
+                return message;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void addMessage(IterableInAppMessage message) {
+        messages.add(message);
     }
 
     @Override
