@@ -3,8 +3,6 @@ package com.iterable.iterableapi;
 import android.app.Application;
 import android.test.ApplicationTestCase;
 
-import com.iterable.iterableapi.IterableInAppManager;
-
 import org.json.JSONObject;
 
 /**
@@ -26,13 +24,13 @@ public class IterableInAppManagerUnitTest extends ApplicationTestCase<Applicatio
     }
 
     public void testGetNextMessageNull() throws Exception {
-        JSONObject message = IterableInAppManager.getNextMessageFromPayload(null);
+        JSONObject message = IterableInAppMessage.getNextMessageFromPayload(null);
         assertEquals(null, message);
     }
 
     public void testGetNextMessageEmptyString() throws Exception {
         String payload = "";
-        JSONObject message = IterableInAppManager.getNextMessageFromPayload("");
+        JSONObject message = IterableInAppMessage.getNextMessageFromPayload("");
         assertEquals(null, message);
     }
 
@@ -40,14 +38,14 @@ public class IterableInAppManagerUnitTest extends ApplicationTestCase<Applicatio
         String payload =
                 "{ \"inAppMessages\": [] }";
         String p = "{\"inAppMessages\":[]}";
-        JSONObject message = IterableInAppManager.getNextMessageFromPayload(p);
+        JSONObject message = IterableInAppMessage.getNextMessageFromPayload(p);
         assertEquals(null, message);
     }
 
     public void testGetNextMessageEmptyPayload() throws Exception {
         String payload =
                 "{ \"inAppMessages\": [] }";
-        JSONObject message = IterableInAppManager.getNextMessageFromPayload(payload);
+        JSONObject message = IterableInAppMessage.getNextMessageFromPayload(payload);
         assertEquals(null, message);
     }
 
@@ -144,7 +142,7 @@ public class IterableInAppManagerUnitTest extends ApplicationTestCase<Applicatio
                         "  ]\n" +
                         "}";
 
-        JSONObject result = IterableInAppManager.getNextMessageFromPayload(payload);
+        JSONObject result = IterableInAppMessage.getNextMessageFromPayload(payload);
 
         String expectedPayloadString =
                     "{\n" +
