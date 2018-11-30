@@ -11,12 +11,12 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
     }
 
     @Override
-    public List<IterableInAppMessage> getMessages() {
+    public synchronized List<IterableInAppMessage> getMessages() {
         return new ArrayList<>(messages);
     }
 
     @Override
-    public IterableInAppMessage getMessage(String messageId) {
+    public synchronized IterableInAppMessage getMessage(String messageId) {
         for (IterableInAppMessage message : messages) {
             if (message.getMessageId().equals(messageId)) {
                 return message;
@@ -26,12 +26,12 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
     }
 
     @Override
-    public void addMessage(IterableInAppMessage message) {
+    public synchronized void addMessage(IterableInAppMessage message) {
         messages.add(message);
     }
 
     @Override
-    public void removeMessage(IterableInAppMessage message) {
+    public synchronized void removeMessage(IterableInAppMessage message) {
         messages.remove(message);
     }
 }

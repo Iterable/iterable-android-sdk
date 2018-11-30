@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,6 +14,7 @@ import org.json.JSONObject;
 import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +26,12 @@ import java.util.Map;
  */
 public class IterableInAppManager {
     static final String TAG = "IterableInAppManager";
+    static final int IN_APP_DELAY_SECONDS = 30;
 
     private final IterableInAppStorage storage = new IterableInAppMemoryStorage();
     private final IterableInAppHandler handler;
+
+    private long lastInAppShown = 0;
 
     IterableInAppManager(IterableInAppHandler handler) {
         this.handler = handler;
@@ -35,8 +41,14 @@ public class IterableInAppManager {
      *
      * @return
      */
-    public List<IterableInAppMessage> getMessages() {
-        return storage.getMessages();
+    public synchronized List<IterableInAppMessage> getMessages() {
+        List<IterableInAppMessage> filteredList = new ArrayList<>();
+        for (IterableInAppMessage message : storage.getMessages()) {
+            if (!message.isConsumed()) {
+                filteredList.add(message);
+            }
+        }
+        return filteredList;
     }
 
     public void syncInApp() {
@@ -70,13 +82,16 @@ public class IterableInAppManager {
         showMessage(message, true, null);
     }
 
-    public void showMessage(IterableInAppMessage message, boolean consume, IterableHelper.IterableActionHandler clickCallback) {
+    public void showMessage(IterableInAppMessage message, boolean consume, final IterableHelper.IterableActionHandler clickCallback) {
         Activity currentActivity = IterableActivityMonitor.getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
             if (IterableInAppManager.showIterableNotificationHTML(currentActivity, message.getContent().html, message.getMessageId(), new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String data) {
+                    if (clickCallback != null) {
+                        clickCallback.execute(data);
+                    }
                     if (data != null && data.startsWith("itbl://")) {
                         IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
                     } else {
@@ -84,9 +99,18 @@ public class IterableInAppManager {
                     }
                 }
             }, 0.0, message.getContent().padding)) {
-                IterableApi.sharedInstance.inAppConsume(message.getMessageId());
+                lastInAppShown = System.currentTimeMillis();
+                if (consume) {
+                    removeMessage(message);
+                }
+                scheduleProcessing();
             }
         }
+    }
+
+    public synchronized void removeMessage(IterableInAppMessage message) {
+        message.setConsumed(true);
+        IterableApi.getInstance().inAppConsume(message.getMessageId());
     }
 
     private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
@@ -102,17 +126,17 @@ public class IterableInAppManager {
                 storage.removeMessage(localMessage);
             }
         }
-        processMessages();
+        scheduleProcessing();
     }
 
     private void processMessages() {
-        if (!IterableActivityMonitor.isInForeground() || isShowingInApp()) {
+        if (!IterableActivityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
             return;
         }
 
         List<IterableInAppMessage> messages = getMessages();
         for (IterableInAppMessage message : messages) {
-            if (!message.isProcessed()) {
+            if (!message.isProcessed() && !message.isConsumed()) {
                 InAppResponse response = handler.onNewInApp(message);
                 message.setProcessed(true);
                 if (response == InAppResponse.SHOW) {
@@ -123,8 +147,29 @@ public class IterableInAppManager {
         }
     }
 
+    void scheduleProcessing() {
+        if (canShowInAppAfterPrevious()) {
+            processMessages();
+        } else {
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    processMessages();
+                }
+            }, (getSecondsSinceLastInApp() + 2) * 1000);
+        }
+    }
+
     private boolean isShowingInApp() {
         return IterableInAppHTMLNotification.getInstance() != null;
+    }
+
+    private int getSecondsSinceLastInApp() {
+        return (int) ((System.currentTimeMillis() - lastInAppShown) / 1000);
+    }
+
+    private boolean canShowInAppAfterPrevious() {
+        return getSecondsSinceLastInApp() >= IN_APP_DELAY_SECONDS;
     }
 
     /**

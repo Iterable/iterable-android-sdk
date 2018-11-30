@@ -49,6 +49,14 @@ public class IterableInAppMessage {
         this.processed = processed;
     }
 
+    boolean isConsumed() {
+        return consumed;
+    }
+
+    void setConsumed(boolean consumed) {
+        this.consumed = consumed;
+    }
+
     public static IterableInAppMessage fromJSON(IterableInAppStorage storage, JSONObject messageJson) {
         if (messageJson != null) {
             JSONObject contentJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
