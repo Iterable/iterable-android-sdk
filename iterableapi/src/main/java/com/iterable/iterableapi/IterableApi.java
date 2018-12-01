@@ -44,7 +44,7 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
     private String _userId;
-    private boolean _debugMode = true;
+    private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
     private String _deviceId;
