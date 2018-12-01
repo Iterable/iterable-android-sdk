@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.content.Context;
 
+import android.content.DialogInterface;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,7 +15,6 @@ import org.json.JSONObject;
 import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,13 +97,13 @@ public class IterableInAppManager {
                     } else {
                         IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
                     }
+                    lastInAppShown = System.currentTimeMillis();
+                    scheduleProcessing();
                 }
-            }, 0.0, message.getContent().padding)) {
-                lastInAppShown = System.currentTimeMillis();
+            }, 0.0, message.getContent().padding, true)) {
                 if (consume) {
                     removeMessage(message);
                 }
-                scheduleProcessing();
             }
         }
     }
@@ -134,10 +134,14 @@ public class IterableInAppManager {
             return;
         }
 
+        IterableLogger.d(TAG, "processMessages");
+
         List<IterableInAppMessage> messages = getMessages();
         for (IterableInAppMessage message : messages) {
             if (!message.isProcessed() && !message.isConsumed()) {
+                IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
                 InAppResponse response = handler.onNewInApp(message);
+                IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
                 if (response == InAppResponse.SHOW) {
                     showMessage(message);
@@ -182,6 +186,10 @@ public class IterableInAppManager {
      * @param padding
      */
     public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
+        return showIterableNotificationHTML(context, htmlString, messageId, clickCallback, backgroundAlpha, padding, false);
+    }
+
+    public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, final IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
@@ -196,6 +204,16 @@ public class IterableInAppManager {
                 notification.setBackgroundAlpha(backgroundAlpha);
                 notification.setPadding(padding);
                 notification.setOwnerActivity(currentActivity);
+
+                if (callbackOnCancel) {
+                    notification.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            clickCallback.execute(null);
+                        }
+                    });
+                }
+
                 notification.show();
                 return true;
             }
