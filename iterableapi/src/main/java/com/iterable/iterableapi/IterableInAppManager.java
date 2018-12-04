@@ -24,7 +24,7 @@ import java.util.Map;
  *
  * The IterableInAppManager handles creating and rendering different types of InApp Notifications received from the IterableApi
  */
-public class IterableInAppManager {
+public class IterableInAppManager implements IterableActivityMonitor.AppStateCallback {
     static final String TAG = "IterableInAppManager";
     static final int IN_APP_DELAY_SECONDS = 30;
 
@@ -35,11 +35,13 @@ public class IterableInAppManager {
 
     IterableInAppManager(IterableInAppHandler handler) {
         this.handler = handler;
+        IterableActivityMonitor.addCallback(this);
     }
 
     /**
-     *
-     * @return
+     * Get the list of available in-app messages
+     * This list is synchronized with the server by the SDK
+     * @return A {@link List} of {@link IterableInAppMessage} objects
      */
     public synchronized List<IterableInAppMessage> getMessages() {
         List<IterableInAppMessage> filteredList = new ArrayList<>();
@@ -51,6 +53,9 @@ public class IterableInAppManager {
         return filteredList;
     }
 
+    /**
+     * Trigger a manual sync. This won't be necessary once we add silent push support.
+     */
     public void syncInApp() {
         IterableApi.getInstance().getInAppMessages(10, new IterableHelper.IterableActionHandler() {
             @Override
@@ -78,10 +83,20 @@ public class IterableInAppManager {
         });
     }
 
+    /**
+     * Display the in-app message on the screen
+     * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
+     */
     public void showMessage(IterableInAppMessage message) {
         showMessage(message, true, null);
     }
 
+    /**
+     * Display the in-app message on the screen
+     * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
+     * @param consume A boolean indicating whether to remove the message from the list after showing
+     * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
+     */
     public void showMessage(IterableInAppMessage message, boolean consume, final IterableHelper.IterableActionHandler clickCallback) {
         Activity currentActivity = IterableActivityMonitor.getCurrentActivity();
         // Prevent double display
@@ -108,6 +123,10 @@ public class IterableInAppManager {
         }
     }
 
+    /**
+     * Remove message from the list
+     * @param message The message to be removed
+     */
     public synchronized void removeMessage(IterableInAppMessage message) {
         message.setConsumed(true);
         IterableApi.getInstance().inAppConsume(message.getMessageId());
@@ -223,4 +242,13 @@ public class IterableInAppManager {
         return false;
     }
 
+    @Override
+    public void onSwitchToForeground() {
+        scheduleProcessing();
+    }
+
+    @Override
+    public void onSwitchToBackground() {
+
+    }
 }

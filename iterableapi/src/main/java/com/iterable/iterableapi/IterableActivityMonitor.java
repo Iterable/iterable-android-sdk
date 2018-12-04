@@ -4,12 +4,30 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 
 public class IterableActivityMonitor {
 
+    private static final Handler handler = new Handler(Looper.getMainLooper());
     private static WeakReference<Activity> currentActivity;
+    private static int numStartedActivities = 0;
+    private static boolean inForeground = false;
+    private static List<AppStateCallback> callbacks = new ArrayList<>();
+    private static Runnable backgroundTransitionRunnable = new Runnable() {
+        @Override
+        public void run() {
+            inForeground = false;
+            for (AppStateCallback callback : callbacks) {
+                callback.onSwitchToBackground();
+            }
+        }
+    };
+    private static final int BACKGROUND_DELAY_MS = 1000;
 
     public static Activity getCurrentActivity() {
         return currentActivity != null ? currentActivity.get() : null;
@@ -28,7 +46,14 @@ public class IterableActivityMonitor {
 
             @Override
             public void onActivityStarted(Activity activity) {
-
+                handler.removeCallbacks(backgroundTransitionRunnable);
+                numStartedActivities++;
+                if (!inForeground) {
+                    inForeground = true;
+                    for (AppStateCallback callback : callbacks) {
+                        callback.onSwitchToForeground();
+                    }
+                }
             }
 
             @Override
@@ -43,7 +68,13 @@ public class IterableActivityMonitor {
 
             @Override
             public void onActivityStopped(Activity activity) {
+                if (numStartedActivities > 0) {
+                    numStartedActivities--;
+                }
 
+                if (numStartedActivities == 0 && inForeground) {
+                    handler.postDelayed(backgroundTransitionRunnable, BACKGROUND_DELAY_MS);
+                }
             }
 
             @Override
@@ -56,6 +87,19 @@ public class IterableActivityMonitor {
 
             }
         });
+    }
+
+    public static void addCallback(AppStateCallback callback) {
+        callbacks.add(callback);
+    }
+
+    public static void removeCallback(AppStateCallback callback) {
+        callbacks.remove(callback);
+    }
+
+    public interface AppStateCallback {
+        void onSwitchToForeground();
+        void onSwitchToBackground();
     }
 
 }
