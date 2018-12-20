@@ -35,7 +35,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     IterableInAppManager(IterableInAppHandler handler) {
         this.handler = handler;
-        IterableActivityMonitor.addCallback(this);
+        IterableActivityMonitor.getInstance().addCallback(this);
     }
 
     /**
@@ -98,7 +98,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
      */
     public void showMessage(IterableInAppMessage message, boolean consume, final IterableHelper.IterableActionHandler clickCallback) {
-        Activity currentActivity = IterableActivityMonitor.getCurrentActivity();
+        Activity currentActivity = IterableActivityMonitor.getInstance().getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
             if (IterableInAppManager.showIterableNotificationHTML(currentActivity, message.getContent().html, message.getMessageId(), new IterableHelper.IterableActionHandler() {
@@ -149,7 +149,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void processMessages() {
-        if (!IterableActivityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
+        if (!IterableActivityMonitor.getInstance().isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
             return;
         }
 

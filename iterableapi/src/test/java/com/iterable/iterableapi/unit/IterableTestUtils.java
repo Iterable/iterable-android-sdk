@@ -1,8 +1,10 @@
 package com.iterable.iterableapi.unit;
 
 import android.os.Bundle;
+import android.util.Log;
 
 import com.iterable.iterableapi.IterableApi;
+import com.iterable.iterableapi.IterableConfig;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,9 +22,29 @@ public class IterableTestUtils {
     public static final String apiKey = "fake_key";
     public static final String userEmail = "test_email";
 
+    public interface ConfigBuilderExtender {
+        IterableConfig.Builder run(IterableConfig.Builder builder);
+    }
+
 
     public static void createIterableApi() {
         IterableApi.sharedInstanceWithApiKey(RuntimeEnvironment.application, apiKey, userEmail);
+    }
+
+    public static void createIterableApiNew() {
+        createIterableApiNew(null);
+    }
+
+    public static void createIterableApiNew(ConfigBuilderExtender extender) {
+        IterableConfig.Builder builder = new IterableConfig.Builder()
+                .setAutoPushRegistration(false);
+
+        if (extender != null) {
+            builder = extender.run(builder);
+        }
+
+        IterableApi.initialize(RuntimeEnvironment.application, apiKey, builder.build());
+        IterableApi.getInstance().setEmail(userEmail);
     }
 
     public static String getResourceString(String fileName) throws IOException {

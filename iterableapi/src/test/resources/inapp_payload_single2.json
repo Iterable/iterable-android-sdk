@@ -1,0 +1,25 @@
+{
+  "inAppMessages": [
+    {
+      "messageId": "Q19mD2NlQUnxnmSGuQu9ujzkKR6c12TogeaGA29",
+      "content": {
+        "html": "<html><head></head><body>Test</body></html>",
+        "payload": {},
+        "inAppDisplaySettings": {
+          "top": {
+            "percentage": 0
+          },
+          "right": {
+            "percentage": 0
+          },
+          "bottom": {
+            "percentage": 0
+          },
+          "left": {
+            "percentage": 0
+          }
+        }
+      }
+    }
+  ]
+}

@@ -231,7 +231,7 @@ public class IterableApi {
         sharedInstance.sdkCompatEnabled = false;
         sharedInstance.retrieveEmailAndUserId();
         sharedInstance.checkForDeferredDeeplink();
-        IterableActivityMonitor.init(context);
+        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
 
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
             sharedInstance.registerForPush();
