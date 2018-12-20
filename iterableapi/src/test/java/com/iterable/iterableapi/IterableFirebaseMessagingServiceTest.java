@@ -13,6 +13,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.MockRepository;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -20,11 +21,16 @@ import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ServiceController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import okhttp3.mockwebserver.MockWebServer;
 
 import static com.iterable.iterableapi.unit.IterableTestUtils.bundleToMap;
 import static com.iterable.iterableapi.unit.IterableTestUtils.getMapFromJsonResource;
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -72,15 +78,18 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     @Test
     public void testOnMessageReceived() throws Exception {
         PowerMockito.mockStatic(IterableNotificationBuilder.class);
+        Mockito.when(IterableNotificationBuilder.isIterablePush(any(Bundle.class))).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
-        builder.setData(getMapFromJsonResource("push_payload_custom_action.json"));
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         controller.get().onMessageReceived(builder.build());
 
         PowerMockito.verifyStatic(IterableNotificationBuilder.class);
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         IterableNotificationBuilder.createNotification(eq(RuntimeEnvironment.application), bundleCaptor.capture());
-        assertTrue(bundleToMap(bundleCaptor.getValue()).equals(getMapFromJsonResource("push_payload_custom_action.json")));
+        Map<String, String> expectedPayload = new HashMap<>();
+        expectedPayload.put(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+        assertEquals(expectedPayload, bundleToMap(bundleCaptor.getValue()));
     }
 
 }
