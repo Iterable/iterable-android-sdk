@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.0.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.6)
+#### Added
+- Added public methods to `IterableFirebaseMessagingService` and `IterableFirebaseInstanceIDService` that can be called from a custom `FirebaseMessagingService` subclass
+
 ## [3.0.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.5)
 #### Added
 - Added a new field to `IterableConfig` - `logLevel` - to specify the log level for Iterable SDK log messages
