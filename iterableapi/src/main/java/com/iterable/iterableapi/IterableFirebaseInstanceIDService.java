@@ -18,6 +18,14 @@ public class IterableFirebaseInstanceIDService extends FirebaseInstanceIdService
 
     @Override
     public void onTokenRefresh() {
+        handleTokenRefresh();
+    }
+
+    /**
+     * Handles token refresh
+     * Call this from a custom {@link FirebaseInstanceIdService} to register the new token with Iterable
+     */
+    public static void handleTokenRefresh() {
         String registrationToken = FirebaseInstanceId.getInstance().getToken();
         IterableLogger.d(TAG, "New Firebase Token generated: " + registrationToken);
         IterableApi.getInstance().registerForPush();

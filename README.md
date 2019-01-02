@@ -34,7 +34,29 @@ compile 'com.iterable:iterableapi:3.0.5'
 compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 9.0.0
 ```
 
-See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest version of the Iterable Android SDK. 
+See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest version of the Iterable Android SDK.
+
+#### Handling Firebase push messages and tokens
+
+The SDK adds a FirebaseMessagingService and FirebaseInstanceIdService to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
+If your application implements its own FirebaseMessagingService, make sure you forward `onMessageReceived` and `onNewToken` calls to `IterableFirebaseMessagingService.handleMessageReceived` and `IterableFirebaseInstanceIDService.handleTokenRefresh`, respectively:
+
+```java
+public class MyFirebaseMessagingService extends FirebaseMessagingService {
+
+    @Override
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        IterableFirebaseMessagingService.handleMessageReceived(this, remoteMessage);
+    }
+
+    @Override
+    public void onNewToken(String s) {
+        IterableFirebaseInstanceIDService.handleTokenRefresh();
+    }
+}
+```
+
+Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToken` in recent versions of Firebase.
 
 # Using the SDK
 

@@ -376,6 +376,10 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         return iconId;
     }
 
+    static boolean isIterablePush(Bundle extras) {
+        return extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY);
+    }
+
     /**
      * Returns if the given notification is a ghost/silent push notification
      *

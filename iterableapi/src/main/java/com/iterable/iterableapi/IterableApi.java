@@ -754,6 +754,10 @@ public class IterableApi {
      * user email or user ID is set before calling this method.
      */
     public void registerForPush() {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
         if (config.pushIntegrationName == null) {
             IterableLogger.e(TAG, "registerForPush: pushIntegrationName is not set");
             return;
