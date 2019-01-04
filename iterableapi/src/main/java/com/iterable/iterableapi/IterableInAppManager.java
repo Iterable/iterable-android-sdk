@@ -107,10 +107,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                     if (clickCallback != null) {
                         clickCallback.execute(data);
                     }
-                    if (data != null && data.startsWith("itbl://")) {
-                        IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
-                    } else {
-                        IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
+                    if (data != null && !data.isEmpty()) {
+                        if (!data.contains("://")) {
+                            // This is an itbl:// URL, pass that to the custom action handler
+                            IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
+                        } else {
+                            IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
+                        }
                     }
                     lastInAppShown = System.currentTimeMillis();
                     scheduleProcessing();
@@ -179,7 +182,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 public void run() {
                     processMessages();
                 }
-            }, (getSecondsSinceLastInApp() + 2) * 1000);
+            }, (IN_APP_DELAY_SECONDS - getSecondsSinceLastInApp() + 2) * 1000);
         }
     }
 
