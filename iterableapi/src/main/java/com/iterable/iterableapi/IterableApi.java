@@ -6,13 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.iterable.iterableapi.ddl.DeviceInfo;
 import com.iterable.iterableapi.ddl.MatchFpResponse;
 
@@ -20,7 +17,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -52,6 +48,8 @@ public class IterableApi {
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
     private String _deviceId;
+
+    private IterableInAppManager inAppManager;
 
 //---------------------------------------------------------------------------------------
 //endregion
@@ -94,6 +92,13 @@ public class IterableApi {
 
     public Bundle getPayloadData() {
         return _payloadData;
+    }
+
+    public IterableInAppManager getInAppManager() {
+        if (inAppManager == null) {
+            inAppManager = new IterableInAppManager(config.inAppHandler);
+        }
+        return inAppManager;
     }
 
     /**
@@ -226,6 +231,7 @@ public class IterableApi {
         sharedInstance.sdkCompatEnabled = false;
         sharedInstance.retrieveEmailAndUserId();
         sharedInstance.checkForDeferredDeeplink();
+        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
 
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
             sharedInstance.registerForPush();
@@ -905,7 +911,7 @@ public class IterableApi {
             @Override
             public void execute(String payload) {
 
-                JSONObject dialogOptions = IterableInAppManager.getNextMessageFromPayload(payload);
+                JSONObject dialogOptions = IterableInAppMessage.getNextMessageFromPayload(payload);
                 if (dialogOptions != null) {
                     JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
                     if (message != null) {
@@ -913,7 +919,7 @@ public class IterableApi {
                         String html = message.optString("html");
                         if (html.toLowerCase().contains("href")) {
                             JSONObject paddingOptions = message.optJSONObject("inAppDisplaySettings");
-                            Rect padding = IterableInAppManager.getPaddingFromPayload(paddingOptions);
+                            Rect padding = IterableInAppMessage.getPaddingFromPayload(paddingOptions);
 
                             double backgroundAlpha = message.optDouble("backgroundAlpha", 0);
                             if (IterableInAppManager.showIterableNotificationHTML(context, html, messageId, clickCallback, backgroundAlpha, padding)) {

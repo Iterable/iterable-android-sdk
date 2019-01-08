@@ -1,34 +1,202 @@
 package com.iterable.iterableapi;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.Context;
 
-import android.graphics.Color;
-
-import android.graphics.Point;
+import android.content.DialogInterface;
 import android.graphics.Rect;
-import android.util.TypedValue;
-import android.view.Display;
-import android.view.Gravity;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by David Truong dt@iterable.com.
  *
  * The IterableInAppManager handles creating and rendering different types of InApp Notifications received from the IterableApi
  */
-public class IterableInAppManager {
+public class IterableInAppManager implements IterableActivityMonitor.AppStateCallback {
     static final String TAG = "IterableInAppManager";
+    static final int IN_APP_DELAY_SECONDS = 30;
+
+    private final IterableInAppStorage storage = new IterableInAppMemoryStorage();
+    private final IterableInAppHandler handler;
+
+    private long lastInAppShown = 0;
+
+    IterableInAppManager(IterableInAppHandler handler) {
+        this.handler = handler;
+        IterableActivityMonitor.getInstance().addCallback(this);
+    }
+
+    /**
+     * Get the list of available in-app messages
+     * This list is synchronized with the server by the SDK
+     * @return A {@link List} of {@link IterableInAppMessage} objects
+     */
+    public synchronized List<IterableInAppMessage> getMessages() {
+        List<IterableInAppMessage> filteredList = new ArrayList<>();
+        for (IterableInAppMessage message : storage.getMessages()) {
+            if (!message.isConsumed()) {
+                filteredList.add(message);
+            }
+        }
+        return filteredList;
+    }
+
+    /**
+     * Trigger a manual sync. This won't be necessary once we add silent push support.
+     */
+    public void syncInApp() {
+        IterableApi.getInstance().getInAppMessages(10, new IterableHelper.IterableActionHandler() {
+            @Override
+            public void execute(String payload) {
+                if (payload != null && !payload.isEmpty()) {
+                    try {
+                        List<IterableInAppMessage> messages = new ArrayList<>();
+                        JSONObject mainObject = new JSONObject(payload);
+                        JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
+                        if (jsonArray != null) {
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject messageJson = jsonArray.optJSONObject(i);
+                                IterableInAppMessage message = IterableInAppMessage.fromJSON(storage, messageJson);
+                                if (message != null) {
+                                    messages.add(message);
+                                }
+                            }
+                        }
+                        syncWithRemoteQueue(messages);
+                    } catch (JSONException e) {
+                        IterableLogger.e(TAG, e.toString());
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Display the in-app message on the screen
+     * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
+     */
+    public void showMessage(IterableInAppMessage message) {
+        showMessage(message, true, null);
+    }
+
+    /**
+     * Display the in-app message on the screen
+     * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
+     * @param consume A boolean indicating whether to remove the message from the list after showing
+     * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
+     */
+    public void showMessage(IterableInAppMessage message, boolean consume, final IterableHelper.IterableActionHandler clickCallback) {
+        Activity currentActivity = IterableActivityMonitor.getInstance().getCurrentActivity();
+        // Prevent double display
+        if (currentActivity != null) {
+            if (IterableInAppManager.showIterableNotificationHTML(currentActivity, message.getContent().html, message.getMessageId(), new IterableHelper.IterableActionHandler() {
+                @Override
+                public void execute(String data) {
+                    if (clickCallback != null) {
+                        clickCallback.execute(data);
+                    }
+                    if (data != null && !data.isEmpty()) {
+                        if (!data.contains("://")) {
+                            // This is an itbl:// URL, pass that to the custom action handler
+                            IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
+                        } else {
+                            IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
+                        }
+                    }
+                    lastInAppShown = System.currentTimeMillis();
+                    scheduleProcessing();
+                }
+            }, 0.0, message.getContent().padding, true)) {
+                if (consume) {
+                    removeMessage(message);
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove message from the list
+     * @param message The message to be removed
+     */
+    public synchronized void removeMessage(IterableInAppMessage message) {
+        message.setConsumed(true);
+        IterableApi.getInstance().inAppConsume(message.getMessageId());
+    }
+
+    private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
+        Map<String, IterableInAppMessage> remoteQueueMap = new HashMap<>();
+        for (IterableInAppMessage message : remoteQueue) {
+            remoteQueueMap.put(message.getMessageId(), message);
+            if (storage.getMessage(message.getMessageId()) == null) {
+                storage.addMessage(message);
+            }
+        }
+        for (IterableInAppMessage localMessage : storage.getMessages()) {
+            if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
+                storage.removeMessage(localMessage);
+            }
+        }
+        scheduleProcessing();
+    }
+
+    private void processMessages() {
+        if (!IterableActivityMonitor.getInstance().isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
+            return;
+        }
+
+        IterableLogger.d(TAG, "processMessages");
+
+        List<IterableInAppMessage> messages = getMessages();
+        for (IterableInAppMessage message : messages) {
+            if (!message.isProcessed() && !message.isConsumed()) {
+                IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
+                InAppResponse response = handler.onNewInApp(message);
+                IterableLogger.d(TAG, "Response: " + response);
+                message.setProcessed(true);
+                if (response == InAppResponse.SHOW) {
+                    showMessage(message);
+                    return;
+                }
+            }
+        }
+    }
+
+    void scheduleProcessing() {
+        if (canShowInAppAfterPrevious()) {
+            processMessages();
+        } else {
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    processMessages();
+                }
+            }, (IN_APP_DELAY_SECONDS - getSecondsSinceLastInApp() + 2) * 1000);
+        }
+    }
+
+    private boolean isShowingInApp() {
+        return IterableInAppHTMLNotification.getInstance() != null;
+    }
+
+    private int getSecondsSinceLastInApp() {
+        return (int) ((System.currentTimeMillis() - lastInAppShown) / 1000);
+    }
+
+    private boolean canShowInAppAfterPrevious() {
+        return getSecondsSinceLastInApp() >= IN_APP_DELAY_SECONDS;
+    }
 
     /**
      * Displays an html rendered InApp Notification
@@ -40,6 +208,10 @@ public class IterableInAppManager {
      * @param padding
      */
     public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
+        return showIterableNotificationHTML(context, htmlString, messageId, clickCallback, backgroundAlpha, padding, false);
+    }
+
+    public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, final IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
@@ -54,6 +226,16 @@ public class IterableInAppManager {
                 notification.setBackgroundAlpha(backgroundAlpha);
                 notification.setPadding(padding);
                 notification.setOwnerActivity(currentActivity);
+
+                if (callbackOnCancel) {
+                    notification.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            clickCallback.execute(null);
+                        }
+                    });
+                }
+
                 notification.show();
                 return true;
             }
@@ -63,217 +245,13 @@ public class IterableInAppManager {
         return false;
     }
 
-    /**
-     * Creates and shows a pop-up InApp Notification; with a click callback handler.
-     * @param context
-     * @param dialogParameters
-     * @param clickCallback
-     */
-    static void showNotificationDialog(Context context, JSONObject dialogParameters, String messageId, IterableHelper.IterableActionHandler clickCallback) {
-        Dialog dialog = new Dialog(context, android.R.style.Theme_Material_NoActionBar);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCanceledOnTouchOutside(true);
-        dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-        Window window = dialog.getWindow();
-        lp.copyFrom(window.getAttributes());
-        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-        lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        lp.dimAmount = .8f;
-        lp.gravity = getNotificationLocation(dialogParameters.optString(IterableConstants.ITERABLE_IN_APP_TYPE));
-        window.setAttributes(lp);
-
-        LinearLayout verticalLayout = new LinearLayout(context);
-        verticalLayout.setOrientation(LinearLayout.VERTICAL);
-        verticalLayout.setBackgroundColor(getIntColorFromJson(dialogParameters, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.WHITE));
-
-        Point screenSize = getScreenSize(context);
-        int fontConstant = getFontConstant(screenSize);
-
-        //Title
-        JSONObject titleJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_TITLE);
-        if (titleJson != null) {
-            TextView title = new TextView(context);
-            title.setText(titleJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
-            title.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 24);
-            title.setGravity(Gravity.CENTER);
-            title.setPadding(10, 5, 10, 5);
-            title.setTextColor(getIntColorFromJson(titleJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
-            verticalLayout.addView(title);
-        }
-
-        //Body
-        JSONObject bodyJson = dialogParameters.optJSONObject(IterableConstants.ITERABLE_IN_APP_BODY);
-        if (bodyJson != null) {
-            TextView bodyText = new TextView(context);
-            bodyText.setText(bodyJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
-            bodyText.setTextSize(TypedValue.COMPLEX_UNIT_PX, fontConstant / 36);
-            bodyText.setGravity(Gravity.CENTER);
-            bodyText.setTextColor(getIntColorFromJson(bodyJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
-            bodyText.setPadding(10,0,10,10);
-            verticalLayout.addView(bodyText);
-        }
-
-        //Buttons
-        JSONArray buttonJson = dialogParameters.optJSONArray(IterableConstants.ITERABLE_IN_APP_BUTTONS);
-        if (buttonJson != null) {
-            verticalLayout.addView(createButtons(context, dialog, buttonJson, messageId, clickCallback));
-        }
-
-        dialog.setContentView(verticalLayout);
-        dialog.show();
+    @Override
+    public void onSwitchToForeground() {
+        scheduleProcessing();
     }
 
-    /**
-     * Gets the next message from the payload
-     * @param payload
-     * @return
-     */
-    public static JSONObject getNextMessageFromPayload(String payload) {
-        JSONObject returnObject = null;
-        if (payload != null && payload != "") {
-            try {
-                JSONObject mainObject = new JSONObject(payload);
-                JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
-                if (jsonArray != null) {
-                    returnObject = jsonArray.optJSONObject(0);
-                }
-            } catch (JSONException e) {
-                IterableLogger.e(TAG, e.toString());
-            }
-        }
-        return returnObject;
-    }
+    @Override
+    public void onSwitchToBackground() {
 
-    /**
-     * Returns a Rect containing the paddingOptions
-     * @param paddingOptions
-     * @return
-     */
-    public static Rect getPaddingFromPayload(JSONObject paddingOptions) {
-        Rect rect = new Rect();
-        rect.top = decodePadding(paddingOptions.optJSONObject("top"));
-        rect.left = decodePadding(paddingOptions.optJSONObject("left"));
-        rect.bottom = decodePadding(paddingOptions.optJSONObject("bottom"));
-        rect.right = decodePadding(paddingOptions.optJSONObject("right"));
-
-        return rect;
-    }
-
-    /**
-     * Retrieves the padding percentage
-     * @discussion -1 is returned when the padding percentage should be auto-sized
-     * @param jsonObject
-     * @return
-     */
-    static int decodePadding(JSONObject jsonObject) {
-        int returnPadding = 0;
-        if (jsonObject != null) {
-            if ("AutoExpand".equalsIgnoreCase(jsonObject.optString("displayOption"))) {
-                returnPadding = -1;
-            } else {
-                returnPadding = jsonObject.optInt("percentage", 0);
-            }
-        }
-        return returnPadding;
-    }
-
-    /**
-     * Creates the button for an InApp Notification
-     * @param context
-     * @param dialog
-     * @param buttons
-     * @param messageId
-     * @param clickCallback
-     * @return
-     */
-    private static View createButtons(Context context, Dialog dialog, JSONArray buttons, String messageId, IterableHelper.IterableActionHandler clickCallback) {
-        LinearLayout.LayoutParams equalParamWidth = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
-        equalParamWidth.weight = 1;
-        equalParamWidth.width = 0;
-
-        LinearLayout linearlayout = new LinearLayout(context);
-        linearlayout.setOrientation(LinearLayout.HORIZONTAL);
-
-        for (int i = 0; i < buttons.length(); i++) {
-            JSONObject buttonJson = buttons.optJSONObject(i);
-            if (buttonJson != null) {
-                final Button button = new Button(context);
-                button.setBackgroundColor(getIntColorFromJson(buttonJson, IterableConstants.ITERABLE_IN_APP_BACKGROUND_COLOR, Color.LTGRAY));
-                String action = buttonJson.optString(IterableConstants.ITERABLE_IN_APP_BUTTON_ACTION);
-                button.setOnClickListener(new IterableInAppActionListener(dialog, i, action, messageId, clickCallback));
-
-                JSONObject textJson = buttonJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-                button.setTextColor(getIntColorFromJson(textJson, IterableConstants.ITERABLE_IN_APP_COLOR, Color.BLACK));
-                button.setText(textJson.optString(IterableConstants.ITERABLE_IN_APP_TEXT));
-
-                linearlayout.addView(button, equalParamWidth);
-            }
-        }
-        return linearlayout;
-    }
-
-    /**
-     * Gets the portrait height of the screen to use as a constant
-     * @param size
-     * @return
-     */
-    private static int getFontConstant(Point size) {
-        int fontConstant = (size.x > size.y) ? size.x : size.y;
-        return fontConstant;
-    }
-
-    /**
-     * Gets the dimensions of the device
-     * @param context
-     * @return
-     */
-    private static Point getScreenSize(Context context) {
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Display display = wm.getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        return size;
-    }
-
-    /**
-     * Gets the int value of the color from the payload
-     * @param payload
-     * @param key
-     * @param defaultColor
-     * @return
-     */
-    private static int getIntColorFromJson(JSONObject payload, String key, int defaultColor) {
-        int backgroundColor = defaultColor;
-        if (payload != null) {
-            String backgroundColorParam = payload.optString(key);
-            if (!backgroundColorParam.isEmpty()) {
-                backgroundColor = Color.parseColor(backgroundColorParam);
-            }
-        }
-        return backgroundColor;
-    }
-
-    /**
-     * Returns the gravity for a given displayType location
-     * @param location
-     * @return
-     */
-    private static int getNotificationLocation(String location){
-        int locationValue;
-        switch(location.toUpperCase()) {
-            case IterableConstants.ITERABLE_IN_APP_TYPE_BOTTOM:
-                locationValue = Gravity.BOTTOM;
-                break;
-            case IterableConstants.ITERABLE_IN_APP_TYPE_TOP:
-                locationValue = Gravity.TOP;
-                break;
-            case IterableConstants.ITERABLE_IN_APP_TYPE_CENTER:
-            default: locationValue = Gravity.CENTER;
-        }
-        return locationValue;
     }
 }

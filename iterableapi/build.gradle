@@ -44,10 +44,10 @@ dependencies {
     testImplementation 'org.robolectric:shadows-supportv4:3.8'
     testImplementation 'org.robolectric:shadows-playservices:3.8'
     testImplementation 'org.khronos:opengl-api:gl1.1-android-2.1_r1'
-    testImplementation "org.powermock:powermock-module-junit4:2.0.0-beta.5"
-    testImplementation "org.powermock:powermock-module-junit4-rule:2.0.0-beta.5"
-    testImplementation "org.powermock:powermock-api-mockito2:2.0.0-beta.5"
-    testImplementation "org.powermock:powermock-classloading-xstream:2.0.0-beta.5"
+    testImplementation "org.powermock:powermock-module-junit4:2.0.0-RC.4"
+    testImplementation "org.powermock:powermock-module-junit4-rule:2.0.0-RC.4"
+    testImplementation "org.powermock:powermock-api-mockito2:2.0.0-RC.4"
+    testImplementation "org.powermock:powermock-classloading-xstream:2.0.0-RC.4"
     testImplementation 'com.squareup.okhttp3:mockwebserver:3.10.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'

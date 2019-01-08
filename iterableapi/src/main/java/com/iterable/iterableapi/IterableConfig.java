@@ -47,6 +47,8 @@ public class IterableConfig {
      */
     final int logLevel;
 
+    final IterableInAppHandler inAppHandler;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -55,6 +57,7 @@ public class IterableConfig {
         legacyGCMSenderId = builder.legacyGCMSenderId;
         checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
         logLevel = builder.logLevel;
+        inAppHandler = builder.inAppHandler;
     }
 
     public static class Builder {
@@ -65,6 +68,7 @@ public class IterableConfig {
         private String legacyGCMSenderId;
         private boolean checkForDeferredDeeplink;
         private int logLevel = Log.ERROR;
+        private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
 
         public Builder() {}
 
@@ -134,6 +138,11 @@ public class IterableConfig {
          */
         public Builder setLogLevel(int logLevel) {
             this.logLevel = logLevel;
+            return this;
+        }
+
+        public Builder setInAppHandler(IterableInAppHandler inAppHandler) {
+            this.inAppHandler = inAppHandler;
             return this;
         }
 
