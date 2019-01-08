@@ -1,0 +1,8 @@
+{
+  "itbl": {
+    "messageId": "BACKGROUND_NOTIFICATION",
+    "isGhostPush": true
+  },
+  "notificationType": "InAppRemove",
+  "messageId": "1234567890abcdef"
+}

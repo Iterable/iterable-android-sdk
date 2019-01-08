@@ -61,6 +61,18 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             }
         } else {
             IterableLogger.d(TAG, "Iterable ghost silent push received");
+
+            String notificationType = extras.getString("notificationType");
+            if (notificationType != null) {
+                if (notificationType.equals("InAppUpdate")) {
+                    IterableApi.getInstance().getInAppManager().syncInApp();
+                } else if (notificationType.equals("InAppRemove")) {
+                    String messageId = extras.getString("messageId");
+                    if (messageId != null) {
+                        IterableApi.getInstance().getInAppManager().removeMessage(messageId);
+                    }
+                }
+            }
         }
         return true;
     }

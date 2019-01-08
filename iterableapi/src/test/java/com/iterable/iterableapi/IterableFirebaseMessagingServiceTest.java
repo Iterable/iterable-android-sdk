@@ -13,7 +13,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.MockRepository;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -32,8 +31,11 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @PrepareForTest({IterableNotificationBuilder.class, NotificationCompat.class})
 public class IterableFirebaseMessagingServiceTest extends BaseTest {
@@ -78,7 +80,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     @Test
     public void testOnMessageReceived() throws Exception {
         PowerMockito.mockStatic(IterableNotificationBuilder.class);
-        Mockito.when(IterableNotificationBuilder.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(IterableNotificationBuilder.isIterablePush(any(Bundle.class))).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
@@ -90,6 +92,30 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         Map<String, String> expectedPayload = new HashMap<>();
         expectedPayload.put(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         assertEquals(expectedPayload, bundleToMap(bundleCaptor.getValue()));
+    }
+
+    @Test
+    public void testSilentPushInAppUpdated() throws Exception {
+        IterableInAppManager inAppManagerSpy = spy(IterableApi.getInstance().getInAppManager());
+        when(apiMock.getInAppManager()).thenReturn(inAppManagerSpy);
+        doNothing().when(inAppManagerSpy).syncInApp();
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_inapp_update.json"));
+        controller.get().onMessageReceived(builder.build());
+        verify(inAppManagerSpy).syncInApp();
+    }
+
+    @Test
+    public void testSilentPushInAppRemoved() throws Exception {
+        IterableInAppManager inAppManagerSpy = spy(IterableApi.getInstance().getInAppManager());
+        when(apiMock.getInAppManager()).thenReturn(inAppManagerSpy);
+        doNothing().when(inAppManagerSpy).syncInApp();
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_inapp_remove.json"));
+        controller.get().onMessageReceived(builder.build());
+        verify(inAppManagerSpy).removeMessage("1234567890abcdef");
     }
 
 }
