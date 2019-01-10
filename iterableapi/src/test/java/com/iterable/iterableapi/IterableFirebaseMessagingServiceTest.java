@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.MockRepository;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.reflect.Whitebox;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ServiceController;
@@ -26,9 +27,7 @@ import java.util.Map;
 import okhttp3.mockwebserver.MockWebServer;
 
 import static com.iterable.iterableapi.unit.IterableTestUtils.bundleToMap;
-import static com.iterable.iterableapi.unit.IterableTestUtils.getMapFromJsonResource;
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -37,7 +36,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@PrepareForTest({IterableNotificationBuilder.class, NotificationCompat.class})
+@PrepareForTest({IterableNotificationBuilder.class, NotificationCompat.class,
+        IterableInAppMemoryStorage.class, IterableInAppManager.class})
 public class IterableFirebaseMessagingServiceTest extends BaseTest {
 
     private MockWebServer server;
@@ -49,7 +49,8 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        IterableTestUtils.createIterableApi();
+        IterableApi.sharedInstance = new IterableApi();
+        IterableTestUtils.createIterableApiNew();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
@@ -108,14 +109,15 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
 
     @Test
     public void testSilentPushInAppRemoved() throws Exception {
-        IterableInAppManager inAppManagerSpy = spy(IterableApi.getInstance().getInAppManager());
+        IterableInAppManager inAppManagerSpy = PowerMockito.spy(IterableApi.getInstance().getInAppManager());
         when(apiMock.getInAppManager()).thenReturn(inAppManagerSpy);
-        doNothing().when(inAppManagerSpy).syncInApp();
+        PowerMockito.doNothing().when(inAppManagerSpy).syncInApp();
+        PowerMockito.doNothing().when(inAppManagerSpy).removeMessage(any(String.class));
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_inapp_remove.json"));
         controller.get().onMessageReceived(builder.build());
-        verify(inAppManagerSpy).removeMessage("1234567890abcdef");
+        PowerMockito.verifyPrivate(inAppManagerSpy).invoke("removeMessage", "1234567890abcdef");
     }
 
 }
