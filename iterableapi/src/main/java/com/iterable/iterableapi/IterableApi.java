@@ -707,6 +707,17 @@ public class IterableApi {
      * @param newEmail New email
      */
     public void updateEmail(final String newEmail) {
+        updateEmail(newEmail, null, null);
+    }
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param successHandler Success handler. Called when the server returns a success code.
+     * @param failureHandler Failure handler. Called when the server call failed.
+     */
+    public void updateEmail(final String newEmail, final IterableHelper.SuccessHandler successHandler, IterableHelper.FailureHandler failureHandler) {
         if (_email != null) {
             JSONObject requestJSON = new JSONObject();
 
@@ -719,8 +730,11 @@ public class IterableApi {
                     public void onSuccess(JSONObject data) {
                         _email = newEmail;
                         storeEmailAndUserId();
+                        if (successHandler != null) {
+                            successHandler.onSuccess(data);
+                        }
                     }
-                }, null);
+                }, failureHandler);
             }
             catch (JSONException e) {
                 e.printStackTrace();
