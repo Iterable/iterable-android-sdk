@@ -68,7 +68,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                         if (jsonArray != null) {
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject messageJson = jsonArray.optJSONObject(i);
-                                IterableInAppMessage message = IterableInAppMessage.fromJSON(storage, messageJson);
+                                IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson);
                                 if (message != null) {
                                     messages.add(message);
                                 }
@@ -118,7 +118,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                     lastInAppShown = System.currentTimeMillis();
                     scheduleProcessing();
                 }
-            }, 0.0, message.getContent().padding, true)) {
+            }, message.getContent().backgroundAlpha, message.getContent().padding, true)) {
                 if (consume) {
                     removeMessage(message);
                 }

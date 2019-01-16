@@ -7,7 +7,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class IterableInAppMessage {
-    private final IterableInAppStorage storage;
     private final String messageId;
     private final Content content;
 
@@ -15,8 +14,7 @@ public class IterableInAppMessage {
     private boolean processed = false;
     private boolean consumed = false;
 
-    IterableInAppMessage(IterableInAppStorage storage, String messageId, Content content) {
-        this.storage = storage;
+    IterableInAppMessage(String messageId, Content content) {
         this.messageId = messageId;
         this.content = content;
     }
@@ -25,11 +23,13 @@ public class IterableInAppMessage {
          public final String html;
          public final JSONObject payload;
          public final Rect padding;
+         public final double backgroundAlpha;
 
-        Content(String html, JSONObject payload, Rect padding) {
+        Content(String html, JSONObject payload, Rect padding, double backgroundAlpha) {
             this.html = html;
             this.payload = payload;
             this.padding = padding;
+            this.backgroundAlpha = backgroundAlpha;
         }
     }
 
@@ -57,20 +57,39 @@ public class IterableInAppMessage {
         this.consumed = consumed;
     }
 
-    public static IterableInAppMessage fromJSON(IterableInAppStorage storage, JSONObject messageJson) {
+    static IterableInAppMessage fromJSONObject(JSONObject messageJson) {
         if (messageJson != null) {
             JSONObject contentJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
             if (contentJson != null) {
                 String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
                 String html = contentJson.optString("html");
+                JSONObject payload = contentJson.optJSONObject("payload");
                 JSONObject paddingOptions = contentJson.optJSONObject("inAppDisplaySettings");
                 Rect padding = getPaddingFromPayload(paddingOptions);
                 double backgroundAlpha = contentJson.optDouble("backgroundAlpha", 0);
 
-                return new IterableInAppMessage(storage, messageId, new Content(html, null, padding));
+                return new IterableInAppMessage(messageId, new Content(html, payload, padding, backgroundAlpha));
             }
         }
         return null;
+    }
+
+    JSONObject toJSONObject() {
+        JSONObject messageJson = new JSONObject();
+        JSONObject contentJson = new JSONObject();
+        try {
+            messageJson.putOpt(IterableConstants.KEY_MESSAGE_ID, messageId);
+
+            contentJson.putOpt("html", content.html);
+            contentJson.putOpt("payload", content.payload);
+            contentJson.putOpt("inAppDisplaySettings", encodePaddingRectToJson(content.padding));
+            if (content.backgroundAlpha != 0) {
+                contentJson.putOpt("backgroundAlpha", content.backgroundAlpha);
+            }
+
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
+        } catch (JSONException ignored) {}
+        return messageJson;
     }
 
     /**
@@ -78,7 +97,7 @@ public class IterableInAppMessage {
      * @param paddingOptions
      * @return
      */
-    public static Rect getPaddingFromPayload(JSONObject paddingOptions) {
+    static Rect getPaddingFromPayload(JSONObject paddingOptions) {
         Rect rect = new Rect();
         rect.top = decodePadding(paddingOptions.optJSONObject("top"));
         rect.left = decodePadding(paddingOptions.optJSONObject("left"));
@@ -86,6 +105,21 @@ public class IterableInAppMessage {
         rect.right = decodePadding(paddingOptions.optJSONObject("right"));
 
         return rect;
+    }
+
+    /**
+     * Returns a JSONObject containing the encoded padding options
+     * @param rect Rect representing the padding options
+     * @return JSON object with encoded padding values
+     * @throws JSONException
+     */
+    static JSONObject encodePaddingRectToJson(Rect rect) throws JSONException {
+        JSONObject paddingJson = new JSONObject();
+        paddingJson.putOpt("top", encodePadding(rect.top));
+        paddingJson.putOpt("left", encodePadding(rect.left));
+        paddingJson.putOpt("bottom", encodePadding(rect.bottom));
+        paddingJson.putOpt("right", encodePadding(rect.right));
+        return paddingJson;
     }
 
     /**
@@ -104,6 +138,22 @@ public class IterableInAppMessage {
             }
         }
         return returnPadding;
+    }
+
+    /**
+     * Encodes the padding percentage to JSON
+     * @param padding integer representation of the padding value
+     * @return JSON object containing encoded padding data
+     * @throws JSONException
+     */
+    static JSONObject encodePadding(int padding) throws JSONException {
+        JSONObject paddingJson = new JSONObject();
+        if (padding == -1) {
+            paddingJson.putOpt("displayOption", "AutoExpand");
+        } else {
+            paddingJson.putOpt("percentage", padding);
+        }
+        return paddingJson;
     }
 
     /**
