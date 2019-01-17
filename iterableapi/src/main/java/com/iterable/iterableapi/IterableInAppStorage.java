@@ -7,4 +7,5 @@ interface IterableInAppStorage {
     IterableInAppMessage getMessage(String messageId);
     void addMessage(IterableInAppMessage message);
     void removeMessage(IterableInAppMessage message);
+    void save();
 }

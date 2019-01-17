@@ -28,13 +28,16 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     static final String TAG = "IterableInAppManager";
     static final int IN_APP_DELAY_SECONDS = 30;
 
-    private final IterableInAppStorage storage = new IterableInAppMemoryStorage();
+    private final Context context;
+    private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
 
     private long lastInAppShown = 0;
 
-    IterableInAppManager(IterableInAppHandler handler) {
+    IterableInAppManager(Context context, IterableInAppHandler handler) {
+        this.context = context;
         this.handler = handler;
+        storage = new IterableInAppFileStorage(context);
         IterableActivityMonitor.getInstance().addCallback(this);
     }
 
