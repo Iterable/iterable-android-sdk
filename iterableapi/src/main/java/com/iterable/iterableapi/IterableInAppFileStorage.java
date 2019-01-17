@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class IterableInAppFileStorage implements IterableInAppStorage {
+public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
@@ -36,12 +36,19 @@ public class IterableInAppFileStorage implements IterableInAppStorage {
     @Override
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
+        message.setOnChangeListener(this);
         save();
     }
 
     @Override
     public synchronized void removeMessage(IterableInAppMessage message) {
+        message.setOnChangeListener(null);
         messages.remove(message.getMessageId());
+        save();
+    }
+
+    @Override
+    public void onInAppMessageChanged(IterableInAppMessage message) {
         save();
     }
 

@@ -10,7 +10,6 @@ public class IterableInAppMessage {
     private final String messageId;
     private final Content content;
 
-    // todo: remove
     private boolean processed = false;
     private boolean consumed = false;
 
@@ -47,6 +46,7 @@ public class IterableInAppMessage {
 
     void setProcessed(boolean processed) {
         this.processed = processed;
+        onChanged();
     }
 
     boolean isConsumed() {
@@ -55,6 +55,7 @@ public class IterableInAppMessage {
 
     void setConsumed(boolean consumed) {
         this.consumed = consumed;
+        onChanged();
     }
 
     static IterableInAppMessage fromJSONObject(JSONObject messageJson) {
@@ -68,7 +69,11 @@ public class IterableInAppMessage {
                 Rect padding = getPaddingFromPayload(paddingOptions);
                 double backgroundAlpha = contentJson.optDouble("backgroundAlpha", 0);
 
-                return new IterableInAppMessage(messageId, new Content(html, payload, padding, backgroundAlpha));
+                IterableInAppMessage message = new IterableInAppMessage(messageId,
+                        new Content(html, payload, padding, backgroundAlpha));
+                message.processed = messageJson.optBoolean("processed", false);
+                message.consumed = messageJson.optBoolean("consumed", false);
+                return message;
             }
         }
         return null;
@@ -88,8 +93,25 @@ public class IterableInAppMessage {
             }
 
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
+            messageJson.putOpt("processed", processed);
+            messageJson.putOpt("consumed", consumed);
         } catch (JSONException ignored) {}
         return messageJson;
+    }
+
+    interface OnChangeListener {
+        void onInAppMessageChanged(IterableInAppMessage message);
+    }
+    private OnChangeListener onChangeListener;
+
+    void setOnChangeListener(OnChangeListener listener) {
+        onChangeListener = listener;
+    }
+
+    private void onChanged() {
+        if (onChangeListener != null) {
+            onChangeListener.onInAppMessageChanged(this);
+        }
     }
 
     /**
