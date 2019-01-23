@@ -28,7 +28,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
     static String overrideUrl;
 
-    static final int DEFAULT_TIMEOUT_MS = 1000;   //1 seconds
+    static final int DEFAULT_TIMEOUT_MS = 3000;   //3 seconds
     static final long RETRY_DELAY_MS = 2000;      //2 seconds
     static final int MAX_RETRY_COUNT = 5;
 
