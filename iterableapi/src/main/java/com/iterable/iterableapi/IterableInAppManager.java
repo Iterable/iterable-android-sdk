@@ -135,6 +135,19 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         IterableApi.getInstance().inAppConsume(message.getMessageId());
     }
 
+    /**
+     * Remove message from the queue
+     * This will actually remove it from the local queue
+     * This should only be called when a silent push is received
+     * @param messageId messageId of the message to be removed
+     */
+    synchronized void removeMessage(String messageId) {
+        IterableInAppMessage message = storage.getMessage(messageId);
+        if (message != null) {
+            storage.removeMessage(message);
+        }
+    }
+
     private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
         Map<String, IterableInAppMessage> remoteQueueMap = new HashMap<>();
         for (IterableInAppMessage message : remoteQueue) {
