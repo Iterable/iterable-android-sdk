@@ -109,8 +109,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      * @return Returns null if the intent comes from an Iterable ghostPush or it is not an Iterable notification
      */
     public static IterableNotificationBuilder createNotification(Context context, Bundle extras) {
-        int stringId = context.getApplicationInfo().labelRes;
-        String applicationName = context.getString(stringId);
+        String applicationName = context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
         String title = null;
         String notificationBody = null;
         String soundName = null;
