@@ -7,6 +7,15 @@ import android.content.pm.PackageManager;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+
 public class IterableUtil {
 
     private static final String TAG = "IterableUtil";
@@ -82,6 +91,44 @@ public class IterableUtil {
             IterableLogger.e(TAG, "Error while parsing an expirable object for key: " + key, e);
         }
         return null;
+    }
+
+    static File getSdkCacheDir(Context context) {
+        File sdkCacheDir = new File(context.getCacheDir(), "com.iterable.sdk");
+        if (!sdkCacheDir.exists()) {
+            sdkCacheDir.mkdirs();
+        }
+        return sdkCacheDir;
+    }
+
+    static String readFile(File file) {
+        try {
+            FileInputStream inputStream = new FileInputStream(file);
+            InputStreamReader streamReader = new InputStreamReader(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(streamReader);
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            return stringBuilder.toString();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while reading file: " + file.toString(), e);
+        }
+        return null;
+    }
+
+    static boolean writeFile(File file, String content) {
+        try {
+            FileOutputStream outputStream = new FileOutputStream(file);
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+            outputStreamWriter.write(content);
+            outputStreamWriter.close();
+            return true;
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while writing to file: " + file.toString(), e);
+        }
+        return false;
     }
 
 }

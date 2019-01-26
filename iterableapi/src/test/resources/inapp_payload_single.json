@@ -4,7 +4,9 @@
       "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
-        "payload": {},
+        "payload": {
+          "intValue": 123
+        },
         "inAppDisplaySettings": {
           "top": {
             "percentage": 0

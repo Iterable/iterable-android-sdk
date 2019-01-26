@@ -34,4 +34,9 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
     public synchronized void removeMessage(IterableInAppMessage message) {
         messages.remove(message);
     }
+
+    @Override
+    public void save() {
+
+    }
 }

@@ -96,7 +96,7 @@ public class IterableApi {
 
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
-            inAppManager = new IterableInAppManager(config.inAppHandler);
+            inAppManager = new IterableInAppManager(_applicationContext, config.inAppHandler);
         }
         return inAppManager;
     }
