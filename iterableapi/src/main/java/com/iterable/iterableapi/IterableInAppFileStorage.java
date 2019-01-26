@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
+    private static final String TAG = "IterableInAppFileStorage";
+
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
@@ -62,7 +64,9 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
                 messagesJson.put(message.toJSONObject());
             }
             jsonData.putOpt("inAppMessages", messagesJson);
-        } catch (JSONException ignored) {}
+        } catch (JSONException e) {
+            IterableLogger.e(TAG, "Error while serializing messages", e);
+        }
 
         return jsonData;
     }

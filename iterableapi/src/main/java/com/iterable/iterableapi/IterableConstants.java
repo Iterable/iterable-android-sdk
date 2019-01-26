@@ -145,6 +145,7 @@ public final class IterableConstants {
 
     //In-App Constants
     public static final String ITERABLE_IN_APP_BACKGROUND_COLOR = "backgroundColor";
+    public static final String ITERABLE_IN_APP_BACKGROUND_ALPHA = "backgroundAlpha";
     public static final String ITERABLE_IN_APP_BODY             = "body";
     public static final String ITERABLE_IN_APP_BUTTON_ACTION    = "action";
     public static final String ITERABLE_IN_APP_BUTTON_INDEX     = "buttonIndex";
@@ -158,6 +159,11 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TITLE            = "title";
     public static final String ITERABLE_IN_APP_TYPE             = "displayType";
     public static final String ITERABLE_IN_APP_URL_CLICK        = "urlClick";
+    public static final String ITERABLE_IN_APP_HTML             = "html";
+    public static final String ITERABLE_IN_APP_PAYLOAD          = "payload";
+    public static final String ITERABLE_IN_APP_DISPLAY_SETTINGS = "inAppDisplaySettings";
+    public static final String ITERABLE_IN_APP_PROCESSED        = "processed";
+    public static final String ITERABLE_IN_APP_CONSUMED         = "consumed";
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";

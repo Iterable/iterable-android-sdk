@@ -113,7 +113,7 @@ public class IterableUtil {
             }
             return stringBuilder.toString();
         } catch (Exception e) {
-            IterableLogger.e("IterableUtil", "Error while reading file: " + file.toString(), e);
+            IterableLogger.e(TAG, "Error while reading file: " + file.toString(), e);
         }
         return null;
     }
@@ -126,7 +126,7 @@ public class IterableUtil {
             outputStreamWriter.close();
             return true;
         } catch (Exception e) {
-            IterableLogger.e("IterableUtil", "Error while writing to file: " + file.toString(), e);
+            IterableLogger.e(TAG, "Error while writing to file: " + file.toString(), e);
         }
         return false;
     }

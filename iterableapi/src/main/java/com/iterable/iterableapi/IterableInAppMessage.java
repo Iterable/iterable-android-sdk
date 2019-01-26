@@ -7,6 +7,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class IterableInAppMessage {
+    private static final String TAG = "IterableInAppMessage";
+
     private final String messageId;
     private final Content content;
 
@@ -59,24 +61,27 @@ public class IterableInAppMessage {
     }
 
     static IterableInAppMessage fromJSONObject(JSONObject messageJson) {
-        if (messageJson != null) {
-            JSONObject contentJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-            if (contentJson != null) {
-                String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
-                String html = contentJson.optString("html");
-                JSONObject payload = contentJson.optJSONObject("payload");
-                JSONObject paddingOptions = contentJson.optJSONObject("inAppDisplaySettings");
-                Rect padding = getPaddingFromPayload(paddingOptions);
-                double backgroundAlpha = contentJson.optDouble("backgroundAlpha", 0);
-
-                IterableInAppMessage message = new IterableInAppMessage(messageId,
-                        new Content(html, payload, padding, backgroundAlpha));
-                message.processed = messageJson.optBoolean("processed", false);
-                message.consumed = messageJson.optBoolean("consumed", false);
-                return message;
-            }
+        if (messageJson == null) {
+            return null;
         }
-        return null;
+
+        JSONObject contentJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
+        if (contentJson == null) {
+            return null;
+        }
+
+        String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
+        String html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
+        JSONObject payload = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_PAYLOAD);
+        JSONObject paddingOptions = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
+        Rect padding = getPaddingFromPayload(paddingOptions);
+        double backgroundAlpha = contentJson.optDouble(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, 0);
+
+        IterableInAppMessage message = new IterableInAppMessage(messageId,
+                new Content(html, payload, padding, backgroundAlpha));
+        message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
+        message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
+        return message;
     }
 
     JSONObject toJSONObject() {
@@ -85,17 +90,19 @@ public class IterableInAppMessage {
         try {
             messageJson.putOpt(IterableConstants.KEY_MESSAGE_ID, messageId);
 
-            contentJson.putOpt("html", content.html);
-            contentJson.putOpt("payload", content.payload);
-            contentJson.putOpt("inAppDisplaySettings", encodePaddingRectToJson(content.padding));
+            contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML, content.html);
+            contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_PAYLOAD, content.payload);
+            contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS, encodePaddingRectToJson(content.padding));
             if (content.backgroundAlpha != 0) {
-                contentJson.putOpt("backgroundAlpha", content.backgroundAlpha);
+                contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, content.backgroundAlpha);
             }
 
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
-            messageJson.putOpt("processed", processed);
-            messageJson.putOpt("consumed", consumed);
-        } catch (JSONException ignored) {}
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PROCESSED, processed);
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONSUMED, consumed);
+        } catch (JSONException e) {
+            IterableLogger.e(TAG, "Error while serializing an in-app message", e);
+        }
         return messageJson;
     }
 
