@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.VisibleForTesting;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.iterable.iterableapi.ddl.DeviceInfo;
@@ -60,6 +61,12 @@ public class IterableApi {
         config = new IterableConfig.Builder().build();
     }
 
+    @VisibleForTesting
+    IterableApi(IterableInAppManager inAppManager) {
+        config = new IterableConfig.Builder().build();
+        this.inAppManager = inAppManager;
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -96,7 +103,7 @@ public class IterableApi {
 
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
-            inAppManager = new IterableInAppManager(_applicationContext, config.inAppHandler);
+            inAppManager = new IterableInAppManager(this, config.inAppHandler);
         }
         return inAppManager;
     }
@@ -1356,6 +1363,7 @@ public class IterableApi {
         if (config.autoPushRegistration && isInitialized()) {
             registerForPush();
         }
+        getInAppManager().syncInApp();
     }
 
     private boolean getDDLChecked() {

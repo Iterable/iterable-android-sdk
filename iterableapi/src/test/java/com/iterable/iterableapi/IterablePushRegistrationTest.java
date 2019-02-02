@@ -1,8 +1,6 @@
 package com.iterable.iterableapi;
 
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.iterable.iterableapi.unit.BaseTest;
-import com.iterable.iterableapi.unit.IterableTestUtils;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -31,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @PrepareForTest({IterablePushRegistration.Util.class, FirebaseInstanceId.class})
-public class IterablePushRegistrationTest extends BaseTest {
+public class IterablePushRegistrationTest extends BasePowerMockTest {
 
     private static final String TEST_TOKEN = "testToken";
     private static final String NEW_TOKEN = "newToken";

@@ -3,8 +3,6 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.graphics.Rect;
 
-import com.iterable.iterableapi.unit.BaseTest;
-import com.iterable.iterableapi.unit.IterableTestUtils;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.junit.After;
@@ -15,7 +13,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
-import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowDialog;
 
 import java.io.IOException;
@@ -30,7 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @PrepareForTest(IterableUtil.class)
-public class IterableInAppManagerTest extends BaseTest {
+public class IterableInAppManagerTest extends BasePowerMockTest {
 
     private MockWebServer server;
     private PathBasedQueueDispatcher dispatcher;
@@ -39,6 +36,9 @@ public class IterableInAppManagerTest extends BaseTest {
     @Before
     public void setUp() throws IOException {
         server = new MockWebServer();
+        dispatcher = new PathBasedQueueDispatcher();
+        server.setDispatcher(dispatcher);
+
         inAppHandler = mock(IterableInAppHandler.class);
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         IterableApi.sharedInstance = new IterableApi();
@@ -48,9 +48,6 @@ public class IterableInAppManagerTest extends BaseTest {
                 return builder.setInAppHandler(inAppHandler);
             }
         });
-
-        dispatcher = new PathBasedQueueDispatcher();
-        server.setDispatcher(dispatcher);
     }
 
     @After

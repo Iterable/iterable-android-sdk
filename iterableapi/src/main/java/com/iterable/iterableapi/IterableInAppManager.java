@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,18 +28,31 @@ import java.util.Map;
 public class IterableInAppManager implements IterableActivityMonitor.AppStateCallback {
     static final String TAG = "IterableInAppManager";
     static final int IN_APP_DELAY_SECONDS = 30;
+    static final long MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS = 60 * 1000;
 
+    private final IterableApi api;
     private final Context context;
     private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
 
+    private long lastSyncTime = 0;
     private long lastInAppShown = 0;
 
-    IterableInAppManager(Context context, IterableInAppHandler handler) {
-        this.context = context;
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler) {
+        this.api = iterableApi;
+        this.context = iterableApi.getMainActivityContext();
         this.handler = handler;
         storage = new IterableInAppFileStorage(context);
         IterableActivityMonitor.getInstance().addCallback(this);
+    }
+
+    @VisibleForTesting
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, IterableInAppStorage storage, IterableActivityMonitor activityMonitor) {
+        this.api = iterableApi;
+        this.context = iterableApi.getMainActivityContext();
+        this.handler = handler;
+        this.storage = storage;
+        activityMonitor.addCallback(this);
     }
 
     /**
@@ -60,7 +74,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Trigger a manual sync. This won't be necessary once we add silent push support.
      */
     public void syncInApp() {
-        IterableApi.getInstance().getInAppMessages(10, new IterableHelper.IterableActionHandler() {
+        this.api.getInAppMessages(10, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(String payload) {
                 if (payload != null && !payload.isEmpty()) {
@@ -78,6 +92,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                             }
                         }
                         syncWithRemoteQueue(messages);
+                        lastSyncTime = IterableUtil.currentTimeMillis();
                     } catch (JSONException e) {
                         IterableLogger.e(TAG, e.toString());
                     }
@@ -113,12 +128,12 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                     if (data != null && !data.isEmpty()) {
                         if (!data.contains("://")) {
                             // This is an itbl:// URL, pass that to the custom action handler
-                            IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
+                            IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
                         } else {
-                            IterableActionRunner.executeAction(IterableApi.getInstance().getMainActivityContext(), IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
+                            IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
                         }
                     }
-                    lastInAppShown = System.currentTimeMillis();
+                    lastInAppShown = IterableUtil.currentTimeMillis();
                     scheduleProcessing();
                 }
             }, message.getContent().backgroundAlpha, message.getContent().padding, true)) {
@@ -135,7 +150,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      */
     public synchronized void removeMessage(IterableInAppMessage message) {
         message.setConsumed(true);
-        IterableApi.getInstance().inAppConsume(message.getMessageId());
+        api.inAppConsume(message.getMessageId());
     }
 
     /**
@@ -207,7 +222,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private int getSecondsSinceLastInApp() {
-        return (int) ((System.currentTimeMillis() - lastInAppShown) / 1000);
+        return (int) ((IterableUtil.currentTimeMillis() - lastInAppShown) / 1000);
     }
 
     private boolean canShowInAppAfterPrevious() {
@@ -264,6 +279,9 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     @Override
     public void onSwitchToForeground() {
         scheduleProcessing();
+        if (IterableUtil.currentTimeMillis() - lastSyncTime > MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS) {
+            syncInApp();
+        }
     }
 
     @Override

@@ -1,10 +1,6 @@
-package com.iterable.iterableapi.unit;
+package com.iterable.iterableapi;
 
 import android.os.Bundle;
-import android.util.Log;
-
-import com.iterable.iterableapi.IterableApi;
-import com.iterable.iterableapi.IterableConfig;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,6 +13,8 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
 
 public class IterableTestUtils {
     public static final String apiKey = "fake_key";
@@ -45,6 +43,10 @@ public class IterableTestUtils {
 
         IterableApi.initialize(RuntimeEnvironment.application, apiKey, builder.build());
         IterableApi.getInstance().setEmail(userEmail);
+    }
+
+    public static void resetIterableApi() {
+        IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class));
     }
 
     public static String getResourceString(String fileName) throws IOException {
