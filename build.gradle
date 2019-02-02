@@ -5,9 +5,11 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.3'
+        classpath 'com.android.tools.build:gradle:3.2.1'
         classpath 'com.google.gms:google-services:3.2.0'
-        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.3'
+        classpath ('com.dicedmelon.gradle:jacoco-android:0.1.3') {
+            exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+        }
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0'
         classpath "com.github.dcendents:android-maven-gradle-plugin:2.1"
         // NOTE: Do not place your application dependencies here; they belong

@@ -3,9 +3,6 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.Intent;
 
-import com.iterable.iterableapi.unit.BaseTest;
-import com.iterable.iterableapi.unit.IterableTestUtils;
-
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -29,7 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.robolectric.Shadows.shadowOf;
 
 @PrepareForTest(IterableActionRunner.class)
-public class IterablePushActionReceiverTest extends BaseTest {
+public class IterablePushActionReceiverTest extends BasePowerMockTest {
 
     private MockWebServer server;
 
@@ -64,7 +61,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
     @Test
     public void testPushOpenWithNonInitializedSDK() throws Exception {
         stubAnyRequestReturningStatusCode(200, "{}");
-        IterableApi.sharedInstance = new IterableApi();
+        IterableTestUtils.resetIterableApi();
         IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
         intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "silentButton");

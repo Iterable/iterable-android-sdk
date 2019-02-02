@@ -1,14 +1,16 @@
-package com.iterable.iterableapi.unit;
+package com.iterable.iterableapi;
 
-import android.content.Context;
+import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.Rule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.rule.PowerMockRule;
-import org.robolectric.RuntimeEnvironment;
 
-@RunWith(TestRunner.class)
+import static org.powermock.api.mockito.PowerMockito.spy;
+
 @PowerMockIgnore({
         "org.mockito.*",
         "org.robolectric.*",
@@ -22,13 +24,10 @@ import org.robolectric.RuntimeEnvironment;
         "com.squareup.*",
         "okio.*"
 })
-public abstract class BaseTest {
+@RunWith(TestRunner.class)
+public abstract class BasePowerMockTest {
 
     @Rule
     public PowerMockRule rule = new PowerMockRule();
-
-    protected Context getContext() {
-        return RuntimeEnvironment.application;
-    }
 
 }

@@ -2,8 +2,6 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 
-import com.iterable.iterableapi.unit.BaseTest;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,7 +16,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
-public class IterableActivityMonitorTest extends BaseTest {
+public class IterableActivityMonitorTest extends BasePowerMockTest {
 
     @Before
     public void setUp() {

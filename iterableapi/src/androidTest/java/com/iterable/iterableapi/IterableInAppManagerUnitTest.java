@@ -1,39 +1,42 @@
 package com.iterable.iterableapi;
 
-import android.app.Application;
-import android.test.ApplicationTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-/**
- * <a href="http://d.android.com/tools/testing/testing_android.html">Testing Fundamentals</a>
- */
-public class IterableInAppManagerUnitTest extends ApplicationTestCase<Application> {
-    public IterableInAppManagerUnitTest() {
-        super(Application.class);
-    }
+import static org.junit.Assert.assertEquals;
 
-    @Override
+@RunWith(AndroidJUnit4.class)
+public class IterableInAppManagerUnitTest {
+
+    @Before
     public void setUp() {
-        createApplication();
+
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
 
     }
 
+    @Test
     public void testGetNextMessageNull() throws Exception {
         JSONObject message = IterableInAppMessage.getNextMessageFromPayload(null);
         assertEquals(null, message);
     }
 
+    @Test
     public void testGetNextMessageEmptyString() throws Exception {
         String payload = "";
         JSONObject message = IterableInAppMessage.getNextMessageFromPayload("");
         assertEquals(null, message);
     }
 
+    @Test
     public void testTestGetNextMessageEmptyPayload() throws Exception {
         String payload =
                 "{ \"inAppMessages\": [] }";
@@ -42,6 +45,7 @@ public class IterableInAppManagerUnitTest extends ApplicationTestCase<Applicatio
         assertEquals(null, message);
     }
 
+    @Test
     public void testGetNextMessageEmptyPayload() throws Exception {
         String payload =
                 "{ \"inAppMessages\": [] }";
@@ -49,6 +53,7 @@ public class IterableInAppManagerUnitTest extends ApplicationTestCase<Applicatio
         assertEquals(null, message);
     }
 
+    @Test
     public void testGetNextMessage() throws Exception {
         String payload =
                 "{\n" +

@@ -1,11 +1,9 @@
 package com.iterable.iterableapi.unit;
 
-import android.app.Application;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
 
@@ -22,7 +20,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowPendingIntent;
 
-import static com.iterable.iterableapi.unit.IterableTestUtils.getResourceString;
+import static com.iterable.iterableapi.IterableTestUtils.getResourceString;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;

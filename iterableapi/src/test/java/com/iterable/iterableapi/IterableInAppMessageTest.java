@@ -1,7 +1,5 @@
 package com.iterable.iterableapi;
 
-import com.iterable.iterableapi.unit.BaseTest;
-import com.iterable.iterableapi.unit.IterableTestUtils;
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.json.JSONArray;

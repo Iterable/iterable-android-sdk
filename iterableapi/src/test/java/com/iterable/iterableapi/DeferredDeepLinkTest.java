@@ -2,14 +2,10 @@ package com.iterable.iterableapi;
 
 import android.net.Uri;
 
-import com.iterable.iterableapi.unit.BaseTest;
-import com.iterable.iterableapi.unit.IterableTestUtils;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
@@ -27,7 +23,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class DeferredDeepLinkTest extends BaseTest {
+public class DeferredDeepLinkTest extends BasePowerMockTest {
 
     private MockWebServer server;
 
@@ -35,7 +31,7 @@ public class DeferredDeepLinkTest extends BaseTest {
     public void setUp() {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableApi.sharedInstance = new IterableApi();
+        IterableTestUtils.resetIterableApi();
     }
 
     @After
@@ -68,7 +64,7 @@ public class DeferredDeepLinkTest extends BaseTest {
         // Verify that the deferred deep link is only handled once per app install
         server.enqueue(new MockResponse().setBody(IterableTestUtils.getResourceString("fp_match_success.json")));
         reset(urlHandlerMock);
-        IterableApi.sharedInstance = new IterableApi();
+        IterableTestUtils.resetIterableApi();
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", config);
         verify(urlHandlerMock, after(100).never()).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
     }

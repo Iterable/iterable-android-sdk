@@ -6,8 +6,6 @@ import android.support.v4.app.NotificationCompat;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.RemoteMessage;
-import com.iterable.iterableapi.unit.BaseTest;
-import com.iterable.iterableapi.unit.IterableTestUtils;
 
 import org.junit.After;
 import org.junit.Before;
@@ -16,7 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.MockRepository;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.reflect.Whitebox;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ServiceController;
@@ -26,7 +23,7 @@ import java.util.Map;
 
 import okhttp3.mockwebserver.MockWebServer;
 
-import static com.iterable.iterableapi.unit.IterableTestUtils.bundleToMap;
+import static com.iterable.iterableapi.IterableTestUtils.bundleToMap;
 import static junit.framework.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,7 +35,7 @@ import static org.mockito.Mockito.when;
 
 @PrepareForTest({IterableNotificationBuilder.class, NotificationCompat.class,
         IterableInAppMemoryStorage.class, IterableInAppManager.class})
-public class IterableFirebaseMessagingServiceTest extends BaseTest {
+public class IterableFirebaseMessagingServiceTest extends BasePowerMockTest {
 
     private MockWebServer server;
     private IterableApi originalApi;
@@ -49,7 +46,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableTestUtils.resetIterableApi();
         IterableTestUtils.createIterableApiNew();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());

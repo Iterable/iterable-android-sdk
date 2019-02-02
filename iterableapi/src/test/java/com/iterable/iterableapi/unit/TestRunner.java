@@ -18,12 +18,4 @@ public class TestRunner extends RobolectricTestRunner {
         super(testClass);
     }
 
-    @Override
-    protected AndroidManifest getAppManifest(Config config) {
-        return new AndroidManifest(
-                FileFsFile.from("src/test/AndroidManifest.xml"),
-                FileFsFile.from("src/main/resources"),
-                FileFsFile.from("src/test/assets"),
-                "com.iterable.iterableapi");
-    }
 }

@@ -3,13 +3,11 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.graphics.Rect;
 
-import com.iterable.iterableapi.unit.BaseTest;
-
 import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 
-public class IterableInAppHTMLNotificationTest extends BaseTest {
+public class IterableInAppHTMLNotificationTest extends BasePowerMockTest {
 
     @Test
     public void testDoNotCrashOnResizeAfterDismiss() {

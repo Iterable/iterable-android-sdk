@@ -2,19 +2,15 @@ package com.iterable.iterableapi;
 
 import android.net.Uri;
 
-import com.iterable.iterableapi.unit.BaseTest;
-
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.shadows.ShadowApplication;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,28 +26,44 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.spy;
 
-@PrepareForTest(IterableUtil.class)
-public class IterableApiTest extends BaseTest {
+@PrepareForTest({IterableUtil.class, IterableUtil.IterableUtilImpl.class})
+public class IterableApiTest extends BasePowerMockTest {
 
     private MockWebServer server;
+    private IterableUtil.IterableUtilImpl originalIterableUtil;
+    private IterableUtil.IterableUtilImpl iterableUtilSpy;
 
     @Before
     public void setUp() {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableApi.sharedInstance = new IterableApi();
+        reInitIterableApi();
+
+        originalIterableUtil = IterableUtil.instance;
+        iterableUtilSpy = spy(originalIterableUtil);
+        IterableUtil.instance = iterableUtilSpy;
     }
 
     @After
     public void tearDown() throws IOException {
+        IterableUtil.instance = originalIterableUtil;
+        iterableUtilSpy = null;
         server.shutdown();
         server = null;
+    }
+
+    private void reInitIterableApi() {
+        IterableApi.sharedInstance = spy(new IterableApi());
+        IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
+        doReturn(inAppManagerMock).when(IterableApi.sharedInstance).getInAppManager();
     }
 
     @Test
@@ -79,13 +91,13 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
         IterableApi.getInstance().setEmail("test@email.com");
 
-        IterableApi.sharedInstance = new IterableApi();
+        reInitIterableApi();
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
         assertEquals("test@email.com", IterableApi.getInstance().getEmail());
         assertNull(IterableApi.getInstance().getUserId());
 
         IterableApi.getInstance().setUserId("testUserId");
-        IterableApi.sharedInstance = new IterableApi();
+        reInitIterableApi();
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
         assertNull(IterableApi.getInstance().getEmail());
@@ -98,10 +110,8 @@ public class IterableApiTest extends BaseTest {
         IterableAttributionInfo attributionInfo = new IterableAttributionInfo(1234, 4321, "message");
         IterableApi.getInstance().setAttributionInfo(attributionInfo);
 
-        PowerMockito.spy(IterableUtil.class);
-
         // 23 hours, not expired, still present
-        when(IterableUtil.currentTimeMillis()).thenReturn(System.currentTimeMillis() + 3600 * 23 * 1000);
+        doReturn(System.currentTimeMillis() + 3600 * 23 * 1000).when(iterableUtilSpy).currentTimeMillis();
         IterableAttributionInfo storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
         assertNotNull(storedAttributionInfo);
         assertEquals(attributionInfo.campaignId, storedAttributionInfo.campaignId);
@@ -109,11 +119,9 @@ public class IterableApiTest extends BaseTest {
         assertEquals(attributionInfo.messageId, storedAttributionInfo.messageId);
 
         // 24 hours, expired, attributionInfo should be null
-        when(IterableUtil.currentTimeMillis()).thenReturn(System.currentTimeMillis() + 3600 * 24 * 1000);
+        doReturn(System.currentTimeMillis() + 3600 * 24 * 1000).when(iterableUtilSpy).currentTimeMillis();
         storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
         assertNull(storedAttributionInfo);
-
-        PowerMockito.doCallRealMethod().when(IterableUtil.class, "currentTimeMillis");
     }
 
     @Test
@@ -127,7 +135,7 @@ public class IterableApiTest extends BaseTest {
         server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
 
-        IterableApi.sharedInstance = new IterableApi();
+        reInitIterableApi();
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
     }
@@ -152,7 +160,6 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testSetEmailWithAutomaticPushRegistration() throws Exception {
-        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
 
         // Check that setEmail calls registerForPush
@@ -168,7 +175,6 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testSetEmailWithoutAutomaticPushRegistration() throws Exception {
-        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
 
         // Check that setEmail doesn't call registerForPush or disablePush
@@ -181,7 +187,6 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testSetUserIdWithAutomaticPushRegistration() throws Exception {
-        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
 
         // Check that setUserId calls registerForPush
@@ -197,7 +202,6 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testSetUserIdWithoutAutomaticPushRegistration() throws Exception {
-        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
 
         // Check that setEmail calls registerForPush
@@ -213,7 +217,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
-        IterableApi.sharedInstance = Mockito.spy(new IterableApi());
+        reInitIterableApi();
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         verify(IterableApi.sharedInstance).registerForPush();
         Mockito.reset(IterableApi.sharedInstance);
@@ -234,7 +238,7 @@ public class IterableApiTest extends BaseTest {
         JSONObject dataFields = requestJson.getJSONObject("device").getJSONObject("dataFields");
         assertNotNull(dataFields.getString("deviceId"));
         assertEquals(UUID.randomUUID().toString().length(), dataFields.getString("deviceId").length());
-        assertEquals("com.iterable.iterableapi", dataFields.getString("appPackageName"));
+        assertEquals("com.iterable.iterableapi.test", dataFields.getString("appPackageName"));
         assertEquals("1.2.3", dataFields.getString("appVersion"));
         assertEquals("321", dataFields.getString("appBuild"));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, dataFields.getString("iterableSdkVersion"));
