@@ -193,7 +193,7 @@ public class IterableApiResponseTest {
         IterableRequest task = new IterableRequest();
         task.execute(request);
 
-        RecordedRequest request1 = server.takeRequest();
+        RecordedRequest request1 = server.takeRequest(1, TimeUnit.SECONDS);
         RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull("Retries after 500 status code", request2);
     }

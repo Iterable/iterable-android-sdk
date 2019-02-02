@@ -1,30 +1,36 @@
 package com.iterable.iterableapi;
 
-import android.app.Application;
 import android.os.Looper;
-import android.test.ApplicationTestCase;
+import android.support.test.annotation.UiThreadTest;
+import android.support.test.runner.AndroidJUnit4;
+
+import junit.framework.Assert;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Created by David Truong dt@iterable.com.
- */
-public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-    public IterableApiDeeplinkTest() {
-        super(Application.class);
-    }
+@RunWith(AndroidJUnit4.class)
+public class IterableApiDeeplinkTest {
 
-    @Override
+    @Before
     public void setUp() {
-        createApplication();
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
 
     }
 
+    @Test
     public void testUniversalDeepLinkNoRewrite() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -38,12 +44,13 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
             };
 
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
+    @Test
     public void testUniversalDeepLinkRewrite() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -60,12 +67,13 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
             };
 
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
+    @Test
     public void testNoURLRedirect() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -81,12 +89,13 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
             };
 
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
+    @Test
     public void testEmptyRedirect() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -105,6 +114,7 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
         }
     }
 
+    @Test
     public void testNullRedirect() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -117,12 +127,13 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
+    @Test
     public void testMultiRedirectNoRewrite() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -143,6 +154,7 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
     }
 
     //Check re-written link that is a redirected link: links.iterable -> http -> https.
+    @Test
     public void testMultiRedirectRewrite() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -158,13 +170,14 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     //Check 404 after Redirect
+    @Test
     public void testDNSRedirect() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -180,13 +193,14 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     //Check 404
+    @Test
     public void testDNS() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -200,13 +214,14 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     //Check 400
+    @Test
     public void testDNS400() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
@@ -219,7 +234,7 @@ public class IterableApiDeeplinkTest extends ApplicationTestCase<Application> {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            signal.await();
+            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
