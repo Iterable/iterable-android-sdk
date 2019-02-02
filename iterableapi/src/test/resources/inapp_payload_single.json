@@ -2,6 +2,7 @@
   "inAppMessages": [
     {
       "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
+      "expiresAt": 1549157312395,
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "payload": {

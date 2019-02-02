@@ -5,6 +5,8 @@ import android.graphics.Rect;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,8 +25,10 @@ import okhttp3.mockwebserver.MockWebServer;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.spy;
 
 @PrepareForTest(IterableUtil.class)
 public class IterableInAppManagerTest extends BasePowerMockTest {
@@ -32,6 +36,8 @@ public class IterableInAppManagerTest extends BasePowerMockTest {
     private MockWebServer server;
     private PathBasedQueueDispatcher dispatcher;
     private IterableInAppHandler inAppHandler;
+    private IterableUtil.IterableUtilImpl originalIterableUtil;
+    private IterableUtil.IterableUtilImpl iterableUtilSpy;
 
     @Before
     public void setUp() throws IOException {
@@ -48,10 +54,17 @@ public class IterableInAppManagerTest extends BasePowerMockTest {
                 return builder.setInAppHandler(inAppHandler);
             }
         });
+
+        originalIterableUtil = IterableUtil.instance;
+        iterableUtilSpy = spy(originalIterableUtil);
+        IterableUtil.instance = iterableUtilSpy;
     }
 
     @After
     public void tearDown() throws IOException {
+        IterableUtil.instance = originalIterableUtil;
+        iterableUtilSpy = null;
+
         server.shutdown();
         server = null;
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
@@ -109,6 +122,23 @@ public class IterableInAppManagerTest extends BasePowerMockTest {
         ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(inAppMessageCaptor.capture());
         assertEquals("7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV", inAppMessageCaptor.getValue().getMessageId());
+    }
+
+    @Test
+    public void testInAppMessageExpiration() throws Exception {
+        JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
+        JSONArray jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
+        JSONObject jsonMessage = jsonArray.getJSONObject(0).put(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, System.currentTimeMillis() + 60 * 1000);
+        JSONObject expiredJsonMessage = new JSONObject(jsonMessage.toString()).put(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, System.currentTimeMillis() - 60 * 1000);
+        jsonArray.put(expiredJsonMessage);
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        assertEquals(1, inAppManager.getMessages().size());
+
+        doReturn(System.currentTimeMillis() + 120 * 1000).when(iterableUtilSpy).currentTimeMillis();
+        assertEquals(0, inAppManager.getMessages().size());
     }
 
 }
