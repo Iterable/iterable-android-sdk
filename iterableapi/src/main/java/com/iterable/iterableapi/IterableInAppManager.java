@@ -39,11 +39,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastInAppShown = 0;
 
     IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler) {
-        this.api = iterableApi;
-        this.context = iterableApi.getMainActivityContext();
-        this.handler = handler;
-        storage = new IterableInAppFileStorage(context);
-        IterableActivityMonitor.getInstance().addCallback(this);
+        this(iterableApi,
+                handler,
+                new IterableInAppFileStorage(iterableApi.getMainActivityContext()),
+                IterableActivityMonitor.getInstance());
     }
 
     @VisibleForTesting
