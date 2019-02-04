@@ -6,18 +6,22 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Date;
+
 public class IterableInAppMessage {
     private static final String TAG = "IterableInAppMessage";
 
     private final String messageId;
     private final Content content;
+    private final Date expiresAt;
 
     private boolean processed = false;
     private boolean consumed = false;
 
-    IterableInAppMessage(String messageId, Content content) {
+    IterableInAppMessage(String messageId, Content content, Date expiresAt) {
         this.messageId = messageId;
         this.content = content;
+        this.expiresAt = expiresAt;
     }
 
     public static class Content {
@@ -36,6 +40,10 @@ public class IterableInAppMessage {
 
     public String getMessageId() {
         return messageId;
+    }
+
+    Date getExpiresAt() {
+        return expiresAt;
     }
 
     public Content getContent() {
@@ -71,6 +79,9 @@ public class IterableInAppMessage {
         }
 
         String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
+        long expiresAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT);
+        Date expiresAt = expiresAtLong != 0 ? new Date(expiresAtLong) : null;
+
         String html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
         JSONObject payload = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_PAYLOAD);
         JSONObject paddingOptions = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
@@ -78,7 +89,7 @@ public class IterableInAppMessage {
         double backgroundAlpha = contentJson.optDouble(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, 0);
 
         IterableInAppMessage message = new IterableInAppMessage(messageId,
-                new Content(html, payload, padding, backgroundAlpha));
+                new Content(html, payload, padding, backgroundAlpha), expiresAt);
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         return message;
@@ -89,6 +100,9 @@ public class IterableInAppMessage {
         JSONObject contentJson = new JSONObject();
         try {
             messageJson.putOpt(IterableConstants.KEY_MESSAGE_ID, messageId);
+            if (expiresAt != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, expiresAt.getTime());
+            }
 
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML, content.html);
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_PAYLOAD, content.payload);

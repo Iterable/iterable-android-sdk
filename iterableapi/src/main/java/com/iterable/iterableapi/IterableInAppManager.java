@@ -62,7 +62,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     public synchronized List<IterableInAppMessage> getMessages() {
         List<IterableInAppMessage> filteredList = new ArrayList<>();
         for (IterableInAppMessage message : storage.getMessages()) {
-            if (!message.isConsumed()) {
+            if (!message.isConsumed() && !isMessageExpired(message)) {
                 filteredList.add(message);
             }
         }
@@ -162,6 +162,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         IterableInAppMessage message = storage.getMessage(messageId);
         if (message != null) {
             storage.removeMessage(message);
+        }
+    }
+
+    private boolean isMessageExpired(IterableInAppMessage message) {
+        if (message.getExpiresAt() != null) {
+            return IterableUtil.currentTimeMillis() > message.getExpiresAt().getTime();
+        } else {
+            return false;
         }
     }
 
