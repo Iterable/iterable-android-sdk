@@ -242,6 +242,7 @@ public class IterableApiTest extends BasePowerMockTest {
         assertEquals("1.2.3", dataFields.getString("appVersion"));
         assertEquals("321", dataFields.getString("appBuild"));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, dataFields.getString("iterableSdkVersion"));
+        assertEquals(true, dataFields.getBoolean("notificationsEnabled"));
     }
 
     @Test

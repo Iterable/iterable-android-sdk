@@ -9,6 +9,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.VisibleForTesting;
+import android.support.v4.app.NotificationManagerCompat;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.iterable.iterableapi.ddl.DeviceInfo;
@@ -1199,6 +1200,7 @@ public class IterableApi {
             dataFields.put(IterableConstants.DEVICE_APP_VERSION, IterableUtil.getAppVersion(_applicationContext));
             dataFields.put(IterableConstants.DEVICE_APP_BUILD, IterableUtil.getAppVersionCode(_applicationContext));
             dataFields.put(IterableConstants.DEVICE_ITERABLE_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+            dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled());
 
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, token);
