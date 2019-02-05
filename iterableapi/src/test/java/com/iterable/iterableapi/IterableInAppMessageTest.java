@@ -23,7 +23,7 @@ public class IterableInAppMessageTest {
 
     @Test
     public void testInAppMessageSerialization() throws Exception {
-        JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
+        JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_multiple.json"));
         JSONArray jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
         if (jsonArray != null) {
             for (int i = 0; i < jsonArray.length(); i++) {

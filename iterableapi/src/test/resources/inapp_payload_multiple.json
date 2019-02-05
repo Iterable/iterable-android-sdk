@@ -1,0 +1,76 @@
+{
+  "inAppMessages": [
+    {
+      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
+      "expiresAt": 1549157312395,
+      "trigger": {
+        "type": "immediate"
+      },
+      "content": {
+        "html": "<html><head></head><body>Test</body></html>",
+        "payload": {
+          "intValue": 123
+        },
+        "inAppDisplaySettings": {
+          "top": {
+            "percentage": 0
+          },
+          "right": {
+            "percentage": 0
+          },
+          "bottom": {
+            "percentage": 0
+          },
+          "left": {
+            "percentage": 0
+          }
+        }
+      }
+    },{
+      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
+      "content": {
+        "html": "<html><head></head><body>Test</body></html>",
+        "payload": {
+          "intValue": 123
+        },
+        "inAppDisplaySettings": {
+          "top": {
+            "percentage": 0
+          },
+          "right": {
+            "percentage": 0
+          },
+          "bottom": {
+            "percentage": 0
+          },
+          "left": {
+            "percentage": 0
+          }
+        }
+      }
+    },{
+      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
+      "expiresAt": 1549157312395,
+      "content": {
+        "html": "<html><head></head><body>Test</body></html>",
+        "payload": {
+          "intValue": 123
+        },
+        "inAppDisplaySettings": {
+          "top": {
+            "percentage": 0
+          },
+          "right": {
+            "percentage": 0
+          },
+          "bottom": {
+            "percentage": 0
+          },
+          "left": {
+            "percentage": 0
+          }
+        }
+      }
+    }
+  ]
+}

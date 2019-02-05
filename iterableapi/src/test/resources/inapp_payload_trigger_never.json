@@ -2,9 +2,9 @@
   "inAppMessages": [
     {
       "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
-      "expiresAt": 1949157312395,
+      "expiresAt": 1549157312395,
       "trigger": {
-        "type": "immediate"
+        "type": "never"
       },
       "content": {
         "html": "<html><head></head><body>Test</body></html>",

@@ -6,6 +6,7 @@ import android.graphics.Rect;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +28,8 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.spy;
 
@@ -139,6 +142,36 @@ public class IterableInAppManagerTest extends BasePowerMockTest {
 
         doReturn(System.currentTimeMillis() + 120 * 1000).when(iterableUtilSpy).currentTimeMillis();
         assertEquals(0, inAppManager.getMessages().size());
+    }
+
+    @Test
+    public void testNotProcessingNeverTriggerType() throws Exception {
+        // Test on a message with trigger = immediate
+        JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
+        JSONArray jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
+        jsonArray.getJSONObject(0).put(IterableConstants.ITERABLE_IN_APP_TRIGGER, triggerWithType("immediate")).put(IterableConstants.KEY_MESSAGE_ID, "messageId1");
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        Robolectric.flushForegroundThreadScheduler();
+
+        ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler).onNewInApp(inAppMessageCaptor.capture());
+        assertEquals("messageId1", inAppMessageCaptor.getValue().getMessageId());
+        reset(inAppHandler);
+
+        // Test on a message with trigger = never
+        jsonArray.getJSONObject(0).put(IterableConstants.ITERABLE_IN_APP_TRIGGER, triggerWithType("never")).put(IterableConstants.KEY_MESSAGE_ID, "messageId2");
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+
+        inAppManager.syncInApp();
+        verify(inAppHandler, never()).onNewInApp(inAppMessageCaptor.capture());
+    }
+
+    private JSONObject triggerWithType(String triggerType) throws JSONException {
+        return new JSONObject().putOpt("type", triggerType);
     }
 
 }
