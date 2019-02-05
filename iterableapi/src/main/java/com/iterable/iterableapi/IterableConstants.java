@@ -115,6 +115,7 @@ public final class IterableConstants {
     public static final String DEVICE_APP_PACKAGE_NAME     = "appPackageName";
     public static final String DEVICE_APP_VERSION          = "appVersion";
     public static final String DEVICE_APP_BUILD            = "appBuild";
+    public static final String DEVICE_NOTIFICATIONS_ENABLED = "notificationsEnabled";
     public static final String DEVICE_ITERABLE_SDK_VERSION = "iterableSdkVersion";
 
     public static final String INSTANCE_ID_CLASS        = "com.google.android.gms.iid.InstanceID";
