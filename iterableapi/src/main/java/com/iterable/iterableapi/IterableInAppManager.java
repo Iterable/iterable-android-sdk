@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
+import com.iterable.iterableapi.IterableInAppMessage.Trigger.TriggerType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -198,7 +199,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
         List<IterableInAppMessage> messages = getMessages();
         for (IterableInAppMessage message : messages) {
-            if (!message.isProcessed() && !message.isConsumed()) {
+            if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE) {
                 IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);

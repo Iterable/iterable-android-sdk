@@ -14,14 +14,65 @@ public class IterableInAppMessage {
     private final String messageId;
     private final Content content;
     private final Date expiresAt;
+    private final Trigger trigger;
 
     private boolean processed = false;
     private boolean consumed = false;
 
-    IterableInAppMessage(String messageId, Content content, Date expiresAt) {
+    IterableInAppMessage(String messageId, Content content, Date expiresAt, Trigger trigger) {
         this.messageId = messageId;
         this.content = content;
         this.expiresAt = expiresAt;
+        this.trigger = trigger;
+    }
+
+    static class Trigger {
+        enum TriggerType { IMMEDIATE, EVENT, NEVER }
+        final String typeString;
+        final TriggerType type;
+
+        Trigger(String typeString) {
+            this.typeString = typeString;
+            switch(typeString) {
+                case "immediate":
+                    type = TriggerType.IMMEDIATE;
+                    break;
+                case "never":
+                    type = TriggerType.NEVER;
+                    break;
+                default:
+                    type = TriggerType.NEVER;
+            }
+        }
+
+        Trigger(TriggerType triggerType) {
+            typeString = null;
+            this.type = triggerType;
+        }
+
+        static Trigger fromJSONObject(JSONObject triggerJson) {
+            if (triggerJson == null) {
+                // Default to 'immediate' if there is no trigger in the payload
+                return new Trigger(TriggerType.IMMEDIATE);
+            } else {
+                String type = triggerJson.optString(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE);
+                return new Trigger(type);
+            }
+        }
+
+        JSONObject toJSONObject() {
+            if (typeString == null) {
+                return null;
+            }
+
+            JSONObject triggerJson = new JSONObject();
+            try {
+                triggerJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE, typeString);
+            } catch (JSONException e) {
+                IterableLogger.e(TAG, "Error while serializing an in-app trigger", e);
+            }
+            return triggerJson;
+        }
     }
 
     public static class Content {
@@ -68,6 +119,10 @@ public class IterableInAppMessage {
         onChanged();
     }
 
+    Trigger.TriggerType getTriggerType() {
+        return trigger.type;
+    }
+
     static IterableInAppMessage fromJSONObject(JSONObject messageJson) {
         if (messageJson == null) {
             return null;
@@ -88,8 +143,11 @@ public class IterableInAppMessage {
         Rect padding = getPaddingFromPayload(paddingOptions);
         double backgroundAlpha = contentJson.optDouble(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, 0);
 
+        JSONObject triggerJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_TRIGGER);
+        Trigger trigger = Trigger.fromJSONObject(triggerJson);
+
         IterableInAppMessage message = new IterableInAppMessage(messageId,
-                new Content(html, payload, padding, backgroundAlpha), expiresAt);
+                new Content(html, payload, padding, backgroundAlpha), expiresAt, trigger);
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         return message;
@@ -103,6 +161,7 @@ public class IterableInAppMessage {
             if (expiresAt != null) {
                 messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, expiresAt.getTime());
             }
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
 
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML, content.html);
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_PAYLOAD, content.payload);
