@@ -920,48 +920,24 @@ public class IterableApi {
     }
 
     /**
-     * Gets a notification from Iterable and displays it on device.
-     * @param context
-     * @param clickCallback
+     * In-app messages are now shown automatically, and you can customize it via {@link IterableInAppHandler}
+     * If you need to show messages manually, see {@link IterableInAppManager#getMessages()} and
+     * {@link IterableInAppManager#showMessage(IterableInAppMessage)}
+     *
+     * @deprecated Please check our migration guide here:
+     * https://github.com/iterable/iterable-android-sdk/#migrating-in-app-messages-from-the-previous-version-of-the-sdk
      */
-    public void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        getInAppMessages(1, new IterableHelper.IterableActionHandler(){
-            @Override
-            public void execute(String payload) {
-
-                JSONObject dialogOptions = IterableInAppMessage.getNextMessageFromPayload(payload);
-                if (dialogOptions != null) {
-                    JSONObject message = dialogOptions.optJSONObject(IterableConstants.ITERABLE_IN_APP_CONTENT);
-                    if (message != null) {
-                        String messageId = dialogOptions.optString(IterableConstants.KEY_MESSAGE_ID);
-                        String html = message.optString("html");
-                        if (html.toLowerCase().contains("href")) {
-                            JSONObject paddingOptions = message.optJSONObject("inAppDisplaySettings");
-                            Rect padding = IterableInAppMessage.getPaddingFromPayload(paddingOptions);
-
-                            double backgroundAlpha = message.optDouble("backgroundAlpha", 0);
-                            if (IterableInAppManager.showIterableNotificationHTML(context, html, messageId, clickCallback, backgroundAlpha, padding)) {
-                                IterableApi.sharedInstance.inAppConsume(messageId);
-                            }
-                        } else {
-                            IterableLogger.w(TAG, "No href tag in found in the in-app html payload: "+ html);
-                            IterableApi.sharedInstance.inAppConsume(messageId);
-                        }
-                    }
-                }
-            }
-        });
+    @Deprecated
+    void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
     }
 
     /**
      * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
+     * @deprecated Use {@link IterableInAppManager#getMessages()} instead
      * @param count the number of messages to fetch
      * @param onCallback
      */
+    @Deprecated
     public void getInAppMessages(int count, IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
