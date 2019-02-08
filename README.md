@@ -99,7 +99,7 @@ In order to re-enable push notifcations to that device, simply call `registerFor
 
 ## In-app messages
 
-If you are already using in-app messages with IterableSDK, please check out the [migration section](#Migrating-in-app-messages-from-previous-version-of-SDK).
+If you are already using in-app messages with IterableSDK, please check out the [migration section](#migrating-in-app-messages-from-the-previous-version-of-the-sdk).
 
 ### Default behavior
 
@@ -113,20 +113,20 @@ An incoming in-app message triggers a call to the `onNewInApp` method of `Iterab
 class MyInAppHandler implements IterableInAppHandler {
     @Override
     public InAppResponse onNewInApp(IterableInAppMessage message) {
-    	if (/* add conditions here */) {
-    		return InAppResponse.SHOW;
-		} else {
-			return InAppResponse.SKIP;
-		}
+        if (/* add conditions here */) {
+            return InAppResponse.SHOW;
+        } else {
+            return InAppResponse.SKIP;
+        }
     }
 }
-	
+
 // ...
-	
+
 IterableConfig config = new IterableConfig.Builder()
-		.setPushIntegrationName("myPushIntegration")
-		..setInAppHandler(new MyInAppHandler())
-		.build();
+                .setPushIntegrationName("myPushIntegration")
+                .setInAppHandler(new MyInAppHandler())
+                .build();
 IterableApi.initialize(context, "<your-api-key>", config);
 ```
 
@@ -140,10 +140,10 @@ IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
 List<IterableInAppMessage> messages = inAppManager.getMessages();
 	
 // Show an in-app message 
-inAppManager.showMessage(message)
+inAppManager.showMessage(message);
 	
 // Show an in-app message without consuming (not removing it from the queue)
-inAppManager.showMessage(message, false, null)
+inAppManager.showMessage(message, false, null);
 	
 ```	
 
