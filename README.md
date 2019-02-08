@@ -133,26 +133,26 @@ IterableApi.initialize(context, "<your-api-key>", config);
 ### Getting the local queue of in-app messages
 The SDK keeps the local in-app message queue in sync by checking the server queue every time the app goes into foreground, and via silent push messages that arrive from Iterable servers to notify the app whenever a new in-app message is added to the queue.
 To access the in-app message queue, call `IterableApi.getInstance().getInAppManager().getMessages()`. To show a message, call `IterableApi.getInstance().getInAppManager().showMessage(message)`.
-	
+
 ```java
 // Get the in-app messages list
 IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
 List<IterableInAppMessage> messages = inAppManager.getMessages();
-	
+
 // Show an in-app message 
 inAppManager.showMessage(message);
-	
+
 // Show an in-app message without consuming (not removing it from the queue)
 inAppManager.showMessage(message, false, null);
-	
-```	
+
+```
 
 ### Handling user clicks in in-app messages
 
 Button/link clicks from in-app messages are handled similarly to deep links from push notifications and emails. Please refer to the [Deep Linking](#Deep-Linking) section. Normally, the URL of the link (`href` property) will be passed to your app's `IterableUrlHandler`, if one is set. If this handler is not set or it returns `false` for that URL, tapping a link will open a browser with the URL of the link.
-	
+
 Custom actions can be specified by using `itbl` scheme in the URL: `itbl://customActionName`. If the URL of the link starts with `itbl://`, tapping the link will call your app's `IterableCustomActionHandler`. If `customActionHandler` is not set, nothing will happen by default.
-	
+
 ### Changing the display interval between in-app messages
 
 To customize the time delay between successive in-app messages, set `inAppDisplayInterval` on `IterableConfig` to an appropriate value in seconds. The default value is 30 seconds.
@@ -235,20 +235,20 @@ IterableApi.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() 
 ```
 
 ### Deferred deep linking
-	
+
 [Deferred deep linking](https://en.wikipedia.org/wiki/Deferred_deep_linking) allows a user who does not have a specific app installed to:
-	
+
  - Click on a deep link that would normally open content in that app.
  - Install the app from the App Store.
  - Open the app and immediately see the content referenced by the link.
  
 As the name implies, the deep link is _deferred_ until the app has been installed. 
-	
+
 After tapping a deep link in an email from an Iterable campaign, users without the associated app will be directed to Play Store to install it. If the app uses the Iterable SDK and has deferred deep linking enabled, the content associated with the deep link will load on first launch.
-	
+
 #### Enabling deferred deep linking
-	
-Set `checkForDeferredDeeplink` to `true` on `IterableConfig` when initializing the SDK to enable deferred deep linking for IterableSDK. Make sure a `urlHandler` is also set up to handle deep links to open the right content within your app on first launch (see above for details).
+
+Set `checkForDeferredDeeplink` to `true` on `IterableConfig` when initializing the SDK to enable deferred deep linking for Iterable SDK. Make sure a `urlHandler` is also set up to handle deep links to open the right content within your app on first launch (see above for details).
 
 ## Additional Information
 
