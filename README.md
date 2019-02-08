@@ -131,7 +131,7 @@ IterableApi.initialize(context, "<your-api-key>", config);
 ```
 
 ### Getting the local queue of in-app messages
-The SDK keeps the local in-app message queue in sync by polling the server every time the app goes into foreground, and via silent push messages that arrive from Iterable servers to notify the app whenever a new in-app message is added to the queue.
+The SDK keeps the local in-app message queue in sync by checking the server queue every time the app goes into foreground, and via silent push messages that arrive from Iterable servers to notify the app whenever a new in-app message is added to the queue.
 To access the in-app message queue, call `IterableApi.getInstance().getInAppManager().getMessages()`. To show a message, call `IterableApi.getInstance().getInAppManager().showMessage(message)`.
 	
 ```java
@@ -166,7 +166,7 @@ If you are already using in-app messages, you will have to make the following ch
 
 
 ## Deep Linking
-#### Handling links from push notifications
+### Handling links from push notifications
 Push notifications and action buttons may have `openUrl` actions attached to them. When a URL is specified, the SDK first calls `urlDelegate` specified in your `IterableConfig` object. You can use this delegate to handle `openUrl` actions the same way as you handle normal deep links. If the delegate is not set or returns NO, the SDK will open Safari with that URL.
 
 ```java
@@ -190,7 +190,7 @@ public boolean handleIterableURL(Uri uri, IterableActionContext actionContext) {
 }
 ```
 
-#### Handling email links
+### Handling email links
 For App Links to work with link rewriting in emails, you need to set up apple-assetlinks.json file in the Iterable project. More instructions here: [Setting up Android App Links](https://support.iterable.com/hc/en-us/articles/115001021063-Setting-up-Android-App-Links)
 
 If you already have a `urlDelegate` (see *Handling links from push notifications* section above), the same handler can be used for email deep links by calling `handleAppLink` in the activity that handles all app links in your app:
