@@ -71,7 +71,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     /**
-     * Trigger a manual sync. This won't be necessary once we add silent push support.
+     * Trigger a manual sync. This method is called automatically by the SDK, so there should be no
+     * need to call this method from your app.
      */
     public void syncInApp() {
         this.api.getInAppMessages(10, new IterableHelper.IterableActionHandler() {

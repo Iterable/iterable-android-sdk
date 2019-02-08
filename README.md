@@ -149,7 +149,7 @@ inAppManager.showMessage(message, false, null);
 
 ### Handling user clicks in in-app messages
 
-Button/link clicks from in-app messages are handled similarly to deep links from push notifications and emails. Please refer to the [Deep Linking](#Deep-Linking) section. Normally, the URL of the link (`href` property) will be passed to your app's `IterableUrlHandler`, if one is set. If this delegate is not set or it returns `false` for that URL, tapping a link will open a browser with the URL of the link.
+Button/link clicks from in-app messages are handled similarly to deep links from push notifications and emails. Please refer to the [Deep Linking](#Deep-Linking) section. Normally, the URL of the link (`href` property) will be passed to your app's `IterableUrlHandler`, if one is set. If this handler is not set or it returns `false` for that URL, tapping a link will open a browser with the URL of the link.
 	
 Custom actions can be specified by using `itbl` scheme in the URL: `itbl://customActionName`. If the URL of the link starts with `itbl://`, tapping the link will call your app's `IterableCustomActionHandler`. If `customActionHandler` is not set, nothing will happen by default.
 	
@@ -167,7 +167,7 @@ If you are already using in-app messages, you will have to make the following ch
 
 ## Deep Linking
 ### Handling links from push notifications
-Push notifications and action buttons may have `openUrl` actions attached to them. When a URL is specified, the SDK first calls `urlDelegate` specified in your `IterableConfig` object. You can use this delegate to handle `openUrl` actions the same way as you handle normal deep links. If the delegate is not set or returns NO, the SDK will open Safari with that URL.
+Push notifications and action buttons may have `openUrl` actions attached to them. When a URL is specified, the SDK first calls `urlHandler` specified in your `IterableConfig` object. You can use this class to handle `openUrl` actions the same way as you handle normal deep links. If the handler is not set or returns NO, the SDK will open a browser with that URL.
 
 ```java
 // MyApplication.java
@@ -191,9 +191,9 @@ public boolean handleIterableURL(Uri uri, IterableActionContext actionContext) {
 ```
 
 ### Handling email links
-For App Links to work with link rewriting in emails, you need to set up apple-assetlinks.json file in the Iterable project. More instructions here: [Setting up Android App Links](https://support.iterable.com/hc/en-us/articles/115001021063-Setting-up-Android-App-Links)
+For App Links to work with link rewriting in emails, you need to set up assetlinks.json file in the Iterable project. More instructions here: [Setting up Android App Links](https://support.iterable.com/hc/en-us/articles/115001021063-Setting-up-Android-App-Links)
 
-If you already have a `urlDelegate` (see *Handling links from push notifications* section above), the same handler can be used for email deep links by calling `handleAppLink` in the activity that handles all app links in your app:
+If you already have a `urlHandler` (see *Handling links from push notifications* section above), the same handler can be used for email deep links by calling `handleAppLink` in the activity that handles all app links in your app:
 
 ```java
 // MainActivity.java
@@ -234,6 +234,21 @@ IterableApi.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() 
 });
 ```
 
+### Deferred deep linking
+	
+[Deferred deep linking](https://en.wikipedia.org/wiki/Deferred_deep_linking) allows a user who does not have a specific app installed to:
+	
+ - Click on a deep link that would normally open content in that app.
+ - Install the app from the App Store.
+ - Open the app and immediately see the content referenced by the link.
+ 
+As the name implies, the deep link is _deferred_ until the app has been installed. 
+	
+After tapping a deep link in an email from an Iterable campaign, users without the associated app will be directed to Play Store to install it. If the app uses the Iterable SDK and has deferred deep linking enabled, the content associated with the deep link will load on first launch.
+	
+#### Enabling deferred deep linking
+	
+Set `checkForDeferredDeeplink` to `true` on `IterableConfig` when initializing the SDK to enable deferred deep linking for IterableSDK. Make sure a `urlHandler` is also set up to handle deep links to open the right content within your app on first launch (see above for details).
 
 ## Additional Information
 
