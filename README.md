@@ -91,24 +91,82 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 Congratulations! You can now send remote push notifications to your device from Iterable!
 
 
-#### Disabling push notifications to a device
+### Disabling push notifications to a device
 
 When a user logs out, you typically want to disable push notifications to that user/device. This can be accomplished by calling `disablePush()`. Please note that it will only attempt to disable the device if you have previously called `registerForPush()`.
 
 In order to re-enable push notifcations to that device, simply call `registerForPush()` as usual when the user logs back in.
 
-#### InApp Notifications
-To display the user's InApp notifications call `spawnInAppNotification` with a `IterableActionHandler` callback handler. When a user clicks a link in the notification, the handler is called and passed the URL defined in the InApp template.
+## In-app messages
 
-InApp opens and button clicks are automatically tracked when the notification is called via `spawnInAppNotification`. Using `spawnInAppNotification` the notification is consumed and removed from the user's in-app messages queue. If you want to retain the messages on the queue, look at using `getInAppMessages` directly. If you use `getInAppMessages` you will need to manage the in-app opens manually in the callback handler.
+If you are already using in-app messages with IterableSDK, please check out the [migration section](#Migrating-in-app-messages-from-previous-version-of-SDK).
 
-#### Tracking and Updating User Fields
+### Default behavior
 
-Custom events can be tracked using the `track` function and user fields can be modified using the `updateUser` function.
+By default, when an in-app message arrives from the server, the SDK automatically shows it if the app is in the foreground. If an in-app message is already showing when the new message arrives, the new in-app message will be shown 30 seconds after the currently displayed in-app message closes ([see how to change this default value below](#Changing-the-display-interval-between-in-app-messages)). Once an in-app message is shown, it will be "consumed" from the server queue and removed from the local queue as well. There is no need to write any code to get this default behavior.
+
+### Overriding whether to show or skip a particular in-app message
+
+An incoming in-app message triggers a call to the `onNewInApp` method of `IterableConfig.inAppHandler` (an object of type `IterableInAppHandler`). To override the default behavior, set `inAppHandler` in `IterableConfig` to a custom class that overrides the `onNewInApp` method. `onNewInApp` should return `InAppResponse.SHOW` to show the incoming in-app message or `InAppResponse.SKIP` to skip showing it.
+
+```java
+class MyInAppHandler implements IterableInAppHandler {
+    @Override
+    public InAppResponse onNewInApp(IterableInAppMessage message) {
+    	if (/* add conditions here */) {
+    		return InAppResponse.SHOW;
+		} else {
+			return InAppResponse.SKIP;
+		}
+    }
+}
+	
+// ...
+	
+IterableConfig config = new IterableConfig.Builder()
+		.setPushIntegrationName("myPushIntegration")
+		..setInAppHandler(new MyInAppHandler())
+		.build();
+IterableApi.initialize(context, "<your-api-key>", config);
+```
+
+### Getting the local queue of in-app messages
+The SDK keeps the local in-app message queue in sync by checking the server queue every time the app goes into foreground, and via silent push messages that arrive from Iterable servers to notify the app whenever a new in-app message is added to the queue.
+To access the in-app message queue, call `IterableApi.getInstance().getInAppManager().getMessages()`. To show a message, call `IterableApi.getInstance().getInAppManager().showMessage(message)`.
+	
+```java
+// Get the in-app messages list
+IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+List<IterableInAppMessage> messages = inAppManager.getMessages();
+	
+// Show an in-app message 
+inAppManager.showMessage(message)
+	
+// Show an in-app message without consuming (not removing it from the queue)
+inAppManager.showMessage(message, false, null)
+	
+```	
+
+### Handling user clicks in in-app messages
+
+Button/link clicks from in-app messages are handled similarly to deep links from push notifications and emails. Please refer to the [Deep Linking](#Deep-Linking) section. Normally, the URL of the link (`href` property) will be passed to your app's `IterableUrlHandler`, if one is set. If this delegate is not set or it returns `false` for that URL, tapping a link will open a browser with the URL of the link.
+	
+Custom actions can be specified by using `itbl` scheme in the URL: `itbl://customActionName`. If the URL of the link starts with `itbl://`, tapping the link will call your app's `IterableCustomActionHandler`. If `customActionHandler` is not set, nothing will happen by default.
+	
+### Changing the display interval between in-app messages
+
+To customize the time delay between successive in-app messages, set `inAppDisplayInterval` on `IterableConfig` to an appropriate value in seconds. The default value is 30 seconds.
+
+### Migrating in-app messages from the previous version of the SDK
+
+If you are already using in-app messages, you will have to make the following changes to your code:
+
+1. `spawnInAppNotification` is no longer needed and will fail to compile. In-app messages are now displayed automatically. If you need to customize the process, please refer to the sections above. To handle clicks on links in in-app messages, define `urlHandler` on `IterableConfig`.
+2. If you want to handle all in-app messages manually, as before these changes, define an `inAppHandler` on `IterableConfig` that always returns `InAppResponse.SKIP` to never show in-app messages automatically, and use `getInAppManager().getMessages()` to get the messages and `getInAppManager().showMessage(message)` to show a specific message.
 
 
-# Deep Linking
-#### Handling links from push notifications
+## Deep Linking
+### Handling links from push notifications
 Push notifications and action buttons may have `openUrl` actions attached to them. When a URL is specified, the SDK first calls `urlDelegate` specified in your `IterableConfig` object. You can use this delegate to handle `openUrl` actions the same way as you handle normal deep links. If the delegate is not set or returns NO, the SDK will open Safari with that URL.
 
 ```java
@@ -132,7 +190,7 @@ public boolean handleIterableURL(Uri uri, IterableActionContext actionContext) {
 }
 ```
 
-#### Handling email links
+### Handling email links
 For App Links to work with link rewriting in emails, you need to set up apple-assetlinks.json file in the Iterable project. More instructions here: [Setting up Android App Links](https://support.iterable.com/hc/en-us/articles/115001021063-Setting-up-Android-App-Links)
 
 If you already have a `urlDelegate` (see *Handling links from push notifications* section above), the same handler can be used for email deep links by calling `handleAppLink` in the activity that handles all app links in your app:

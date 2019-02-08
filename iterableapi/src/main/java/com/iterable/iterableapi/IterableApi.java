@@ -102,6 +102,11 @@ public class IterableApi {
         return _payloadData;
     }
 
+    /**
+     * Returns an {@link IterableInAppManager} that can be used to manage in-app messages.
+     * Make sure the Iterable API is initialized before calling this method.
+     * @return {@link IterableInAppManager} instance
+     */
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
             inAppManager = new IterableInAppManager(this, config.inAppHandler);

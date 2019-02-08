@@ -47,6 +47,10 @@ public class IterableConfig {
      */
     final int logLevel;
 
+    /**
+     * Custom in-app handler that can be used to control whether an incoming in-app message should
+     * be shown immediately or not
+     */
     final IterableInAppHandler inAppHandler;
 
     private IterableConfig(Builder builder) {
@@ -141,6 +145,11 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set a custom in-app handler that can be used to control whether an incoming in-app message
+         * should be shown immediately or not
+         * @param inAppHandler In-app handler provided by the app
+         */
         public Builder setInAppHandler(IterableInAppHandler inAppHandler) {
             this.inAppHandler = inAppHandler;
             return this;
