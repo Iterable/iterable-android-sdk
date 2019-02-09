@@ -27,7 +27,7 @@
         }
       }
     },{
-      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
+      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVY",
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "payload": {
@@ -49,8 +49,15 @@
         }
       }
     },{
-      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
+      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVZ",
       "expiresAt": 1549157312395,
+      "trigger": {
+        "type": "event",
+        "eventType": "screenView",
+        "eventParams": {
+          "screenName": "Main"
+        }
+      },
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "payload": {

@@ -28,11 +28,13 @@ public class IterableInAppMessage {
 
     static class Trigger {
         enum TriggerType { IMMEDIATE, EVENT, NEVER }
-        final String typeString;
+        final JSONObject triggerJson;
         final TriggerType type;
 
-        Trigger(String typeString) {
-            this.typeString = typeString;
+        private Trigger(JSONObject triggerJson) {
+            this.triggerJson = triggerJson;
+            String typeString = triggerJson.optString(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE);
+
             switch(typeString) {
                 case "immediate":
                     type = TriggerType.IMMEDIATE;
@@ -46,7 +48,7 @@ public class IterableInAppMessage {
         }
 
         Trigger(TriggerType triggerType) {
-            typeString = null;
+            triggerJson = null;
             this.type = triggerType;
         }
 
@@ -55,22 +57,11 @@ public class IterableInAppMessage {
                 // Default to 'immediate' if there is no trigger in the payload
                 return new Trigger(TriggerType.IMMEDIATE);
             } else {
-                String type = triggerJson.optString(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE);
-                return new Trigger(type);
+                return new Trigger(triggerJson);
             }
         }
 
         JSONObject toJSONObject() {
-            if (typeString == null) {
-                return null;
-            }
-
-            JSONObject triggerJson = new JSONObject();
-            try {
-                triggerJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE, typeString);
-            } catch (JSONException e) {
-                IterableLogger.e(TAG, "Error while serializing an in-app trigger", e);
-            }
             return triggerJson;
         }
     }
