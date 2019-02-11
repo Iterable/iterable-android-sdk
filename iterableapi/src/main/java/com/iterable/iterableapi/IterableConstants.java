@@ -19,6 +19,7 @@ public final class IterableConstants {
     public static final String KEY_APPLICATION_NAME     = "applicationName";
     public static final String KEY_CAMPAIGN_ID          = "campaignId";
     public static final String KEY_CURRENT_EMAIL        = "currentEmail";
+    public static final String KEY_CURRENT_USERID       = "currentUserId";
     public static final String KEY_DATA_FIELDS          = "dataFields";
     public static final String KEY_DEVICE               = "device";
     public static final String KEY_EMAIL                = "email";

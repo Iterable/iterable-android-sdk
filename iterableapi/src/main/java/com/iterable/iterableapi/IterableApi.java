@@ -712,30 +712,38 @@ public class IterableApi {
      * @param failureHandler Failure handler. Called when the server call failed.
      */
     public void updateEmail(final String newEmail, final IterableHelper.SuccessHandler successHandler, IterableHelper.FailureHandler failureHandler) {
-        if (_email != null) {
-            JSONObject requestJSON = new JSONObject();
+        if (!checkSDKInitialization()) {
+            IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before "+
+                    "calling updateEmail");
+            if (failureHandler != null) {
+                failureHandler.onFailure("The Iterable SDK must be initialized with email or "+
+                        "userId before calling updateEmail", null);
+            }
+            return;
+        }
+        JSONObject requestJSON = new JSONObject();
 
-            try {
+        try {
+            if (_email != null) {
                 requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
-                requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
+            } else {
+                requestJSON.put(IterableConstants.KEY_CURRENT_USERID, _userId);
+            }
+            requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
 
-                sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON, new IterableHelper.SuccessHandler() {
-                    @Override
-                    public void onSuccess(JSONObject data) {
-                        _email = newEmail;
-                        storeEmailAndUserId();
-                        if (successHandler != null) {
-                            successHandler.onSuccess(data);
-                        }
+            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON, new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(JSONObject data) {
+                    _email = newEmail;
+                    storeEmailAndUserId();
+                    if (successHandler != null) {
+                        successHandler.onSuccess(data);
                     }
-                }, failureHandler);
-            }
-            catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } else {
-            IterableLogger.w(TAG, "updateEmail should not be called with a userId. " +
-                "Make sure you call setEmail(String) before trying to update it");
+                }
+            }, failureHandler);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
