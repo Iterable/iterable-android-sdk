@@ -35,7 +35,7 @@ public class IterableInAppManagerSyncTest extends BaseTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        inAppManager = spy(new IterableInAppManager(iterableApiMock, handlerMock, storageMock, activityMonitorMock));
+        inAppManager = spy(new IterableInAppManager(iterableApiMock, handlerMock, 30.0, storageMock, activityMonitorMock));
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {

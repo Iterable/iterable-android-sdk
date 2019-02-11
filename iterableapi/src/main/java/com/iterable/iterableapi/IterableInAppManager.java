@@ -28,29 +28,31 @@ import java.util.Map;
  */
 public class IterableInAppManager implements IterableActivityMonitor.AppStateCallback {
     static final String TAG = "IterableInAppManager";
-    static final int IN_APP_DELAY_SECONDS = 30;
     static final long MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS = 60 * 1000;
 
     private final IterableApi api;
     private final Context context;
     private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
+    private final double inAppDisplayInterval;
 
     private long lastSyncTime = 0;
     private long lastInAppShown = 0;
 
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval) {
         this(iterableApi,
                 handler,
+                inAppDisplayInterval,
                 new IterableInAppFileStorage(iterableApi.getMainActivityContext()),
                 IterableActivityMonitor.getInstance());
     }
 
     @VisibleForTesting
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, IterableInAppStorage storage, IterableActivityMonitor activityMonitor) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, IterableInAppStorage storage, IterableActivityMonitor activityMonitor) {
         this.api = iterableApi;
         this.context = iterableApi.getMainActivityContext();
         this.handler = handler;
+        this.inAppDisplayInterval = inAppDisplayInterval;
         this.storage = storage;
         activityMonitor.addCallback(this);
     }
@@ -222,7 +224,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 public void run() {
                     processMessages();
                 }
-            }, (IN_APP_DELAY_SECONDS - getSecondsSinceLastInApp() + 2) * 1000);
+            }, (long) ((inAppDisplayInterval - getSecondsSinceLastInApp() + 2.0) * 1000));
         }
     }
 
@@ -230,12 +232,12 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         return IterableInAppHTMLNotification.getInstance() != null;
     }
 
-    private int getSecondsSinceLastInApp() {
-        return (int) ((IterableUtil.currentTimeMillis() - lastInAppShown) / 1000);
+    private double getSecondsSinceLastInApp() {
+        return (IterableUtil.currentTimeMillis() - lastInAppShown) / 1000.0;
     }
 
     private boolean canShowInAppAfterPrevious() {
-        return getSecondsSinceLastInApp() >= IN_APP_DELAY_SECONDS;
+        return getSecondsSinceLastInApp() >= inAppDisplayInterval;
     }
 
     /**
