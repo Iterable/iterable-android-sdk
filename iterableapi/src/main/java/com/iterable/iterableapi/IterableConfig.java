@@ -53,6 +53,12 @@ public class IterableConfig {
      */
     final IterableInAppHandler inAppHandler;
 
+    /**
+     * The number of seconds to wait before showing the next in-app message, if there are multiple
+     * messages in the queue
+     */
+    final double inAppDisplayInterval;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -62,6 +68,7 @@ public class IterableConfig {
         checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
         logLevel = builder.logLevel;
         inAppHandler = builder.inAppHandler;
+        inAppDisplayInterval = builder.inAppDisplayInterval;
     }
 
     public static class Builder {
@@ -73,6 +80,7 @@ public class IterableConfig {
         private boolean checkForDeferredDeeplink;
         private int logLevel = Log.ERROR;
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
+        private double inAppDisplayInterval = 30.0;
 
         public Builder() {}
 
@@ -152,6 +160,16 @@ public class IterableConfig {
          */
         public Builder setInAppHandler(IterableInAppHandler inAppHandler) {
             this.inAppHandler = inAppHandler;
+            return this;
+        }
+
+        /**
+         * Set the in-app message display interval: the number of seconds to wait before showing
+         * the next in-app message, if there are multiple messages in the queue
+         * @param inAppDisplayInterval display interval in seconds
+         */
+        public Builder setInAppDisplayInterval(double inAppDisplayInterval) {
+            this.inAppDisplayInterval = inAppDisplayInterval;
             return this;
         }
 

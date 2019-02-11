@@ -109,7 +109,7 @@ public class IterableApi {
      */
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
-            inAppManager = new IterableInAppManager(this, config.inAppHandler);
+            inAppManager = new IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval);
         }
         return inAppManager;
     }
