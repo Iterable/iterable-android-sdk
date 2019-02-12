@@ -141,6 +141,36 @@ public class IterableApiTest extends BasePowerMockTest {
     }
 
     @Test
+    public void testUpdateEmailWithOldEmail() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().updateEmail("new@email.com");
+
+        RecordedRequest updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(updateEmailRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL, updateEmailRequest.getPath());
+        JSONObject requestJson = new JSONObject(updateEmailRequest.getBody().readUtf8());
+        assertEquals("test@email.com", requestJson.getString(IterableConstants.KEY_CURRENT_EMAIL));
+        assertEquals("new@email.com", requestJson.getString(IterableConstants.KEY_NEW_EMAIL));
+    }
+
+    @Test
+    public void testUpdateEmailWithUserId() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.getInstance().setUserId("testUserId");
+        IterableApi.getInstance().updateEmail("new@email.com");
+
+        RecordedRequest updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(updateEmailRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL, updateEmailRequest.getPath());
+        JSONObject requestJson = new JSONObject(updateEmailRequest.getBody().readUtf8());
+        assertEquals("testUserId", requestJson.getString(IterableConstants.KEY_CURRENT_USERID));
+        assertEquals("new@email.com", requestJson.getString(IterableConstants.KEY_NEW_EMAIL));
+    }
+
+    @Test
     public void testHandleUniversalLinkRewrite() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
         when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableActionContext.class))).thenReturn(true);
