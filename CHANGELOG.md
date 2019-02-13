@@ -15,6 +15,32 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta1)
+
+#### Added
+**BREAKING CHANGES**
+
+The in-app messaging implementation has been significantly improved:
+
+* The SDK now maintains a local queue and keep it in sync with the server-side queue automatically
+* Iterable servers now notify apps via silent push messages whenever the in-app message queue is updated
+* In-app messages are shown by default whenever they arrive
+
+Check the [In-app messages documentation](https://github.com/Iterable/iterable-android-sdk#in-app-messages) for more details.
+
+Please refer to the [Migration guide](https://github.com/Iterable/iterable-android-sdk#migrating-in-app-messages-from-the-previous-version-of-the-sdk) if you've been using in-app messages in your app and updating a newer version of the SDK.
+
+#### Removed
+- `spawnInAppNotification` has been removed. Please refer to the in-app migration guide (above)
+
+#### Changed
+- `updateEmail` can now be used if the user is identified with userId
+- Connection timeout is now 3 seconds
+- The SDK now sets `notificationsEnabled` flag on the device to indicate whether notifications are enabled for the app
+
+#### Fixed
+- Fixed a NullPointerException when the app has a plain-text label in `AndroidManifest.xml` instead of a string resource reference
+
 ## [3.0.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.7)
 #### Added
 - Added `updateEmail` method with success & failure callbacks
