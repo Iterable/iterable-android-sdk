@@ -160,6 +160,8 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(updateEmailRequest.getBody().readUtf8());
         assertEquals("testUserId", requestJson.getString(IterableConstants.KEY_CURRENT_USERID));
         assertEquals("new@email.com", requestJson.getString(IterableConstants.KEY_NEW_EMAIL));
+        assertNull(IterableApi.getInstance().getEmail());
+        assertEquals("testUserId", IterableApi.getInstance().getUserId());
     }
 
     @Test

@@ -734,7 +734,9 @@ public class IterableApi {
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON, new IterableHelper.SuccessHandler() {
                 @Override
                 public void onSuccess(JSONObject data) {
-                    _email = newEmail;
+                    if (_email != null) {
+                        _email = newEmail;
+                    }
                     storeEmailAndUserId();
                     if (successHandler != null) {
                         successHandler.onSuccess(data);
