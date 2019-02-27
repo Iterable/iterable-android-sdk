@@ -8,9 +8,6 @@
       },
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
-        "payload": {
-          "intValue": 123
-        },
         "inAppDisplaySettings": {
           "top": {
             "percentage": 0
@@ -25,6 +22,9 @@
             "percentage": 0
           }
         }
+      },
+      "customPayload": {
+        "intValue": 123
       }
     }
   ]

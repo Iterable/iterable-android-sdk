@@ -13,15 +13,17 @@ public class IterableInAppMessage {
 
     private final String messageId;
     private final Content content;
+    private final JSONObject customPayload;
     private final Date expiresAt;
     private final Trigger trigger;
 
     private boolean processed = false;
     private boolean consumed = false;
 
-    IterableInAppMessage(String messageId, Content content, Date expiresAt, Trigger trigger) {
+    IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date expiresAt, Trigger trigger) {
         this.messageId = messageId;
         this.content = content;
+        this.customPayload = customPayload;
         this.expiresAt = expiresAt;
         this.trigger = trigger;
     }
@@ -68,13 +70,11 @@ public class IterableInAppMessage {
 
     public static class Content {
          public final String html;
-         public final JSONObject payload;
          public final Rect padding;
          public final double backgroundAlpha;
 
-        Content(String html, JSONObject payload, Rect padding, double backgroundAlpha) {
+        Content(String html, Rect padding, double backgroundAlpha) {
             this.html = html;
-            this.payload = payload;
             this.padding = padding;
             this.backgroundAlpha = backgroundAlpha;
         }
@@ -90,6 +90,10 @@ public class IterableInAppMessage {
 
     public Content getContent() {
          return content;
+    }
+
+    public JSONObject getCustomPayload() {
+        return customPayload;
     }
 
     boolean isProcessed() {
@@ -129,16 +133,16 @@ public class IterableInAppMessage {
         Date expiresAt = expiresAtLong != 0 ? new Date(expiresAtLong) : null;
 
         String html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
-        JSONObject payload = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_PAYLOAD);
         JSONObject paddingOptions = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
         Rect padding = getPaddingFromPayload(paddingOptions);
         double backgroundAlpha = contentJson.optDouble(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, 0);
 
         JSONObject triggerJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_TRIGGER);
         Trigger trigger = Trigger.fromJSONObject(triggerJson);
+        JSONObject customPayload = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD);
 
         IterableInAppMessage message = new IterableInAppMessage(messageId,
-                new Content(html, payload, padding, backgroundAlpha), expiresAt, trigger);
+                new Content(html, padding, backgroundAlpha), customPayload, expiresAt, trigger);
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         return message;
@@ -155,13 +159,13 @@ public class IterableInAppMessage {
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
 
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML, content.html);
-            contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_PAYLOAD, content.payload);
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS, encodePaddingRectToJson(content.padding));
             if (content.backgroundAlpha != 0) {
                 contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, content.backgroundAlpha);
             }
 
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD, customPayload);
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PROCESSED, processed);
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONSUMED, consumed);
         } catch (JSONException e) {
