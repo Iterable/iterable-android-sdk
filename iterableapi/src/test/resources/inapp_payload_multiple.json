@@ -8,9 +8,6 @@
       },
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
-        "payload": {
-          "intValue": 123
-        },
         "inAppDisplaySettings": {
           "top": {
             "percentage": 0
@@ -25,14 +22,14 @@
             "percentage": 0
           }
         }
+      },
+      "customPayload": {
+        "intValue": 123
       }
     },{
       "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVY",
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
-        "payload": {
-          "intValue": 123
-        },
         "inAppDisplaySettings": {
           "top": {
             "percentage": 0
@@ -47,6 +44,9 @@
             "percentage": 0
           }
         }
+      },
+      "customPayload": {
+        "intValue": 123
       }
     },{
       "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVZ",
@@ -60,9 +60,6 @@
       },
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
-        "payload": {
-          "intValue": 123
-        },
         "inAppDisplaySettings": {
           "top": {
             "percentage": 0
@@ -77,6 +74,9 @@
             "percentage": 0
           }
         }
+      },
+      "customPayload": {
+        "intValue": 123
       }
     }
   ]
