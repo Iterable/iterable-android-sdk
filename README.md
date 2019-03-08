@@ -176,6 +176,34 @@ IterableApi.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() 
 });
 ```
 
+## Customizing push notifications
+
+#### Notification icon
+
+Notifications are rendered with the app launcher icon by default. To specify a custom icon for notifications, add this line to `AndroidManifest.xml`:
+```xml
+<meta-data android:name="iterable_notification_icon" android:resource="@drawable/ic_notification_icon"/>
+```
+where `ic_notification_icon` is the name of the notification icon.
+
+#### Notification color
+
+Add this line to `AndroidManifest.xml` to specify the notification color:
+```xml
+<meta-data android:name="iterable_notification_color" android:value='#FFFFFF'/>
+```
+where `#FFFFFF` can be replaced with a hex representation of a color of your choice. In stock Android, the notification icon and action buttons will be tinted with this color.
+
+#### Notification channel name
+
+Since Android 8.0, Android requires apps to specify a channel for every notification. Iterable uses one channel for all notification; to customize the name of this channel, add this to `AndroidManifest.xml`:
+```xml
+<meta-data android:name="iterable_notification_channel_name" android:value="Notifications"/>
+```
+You can also use a string resource to localize the channel name:
+```xml
+<meta-data android:name="iterable_notification_channel_name" android:resource="@string/notification_channel_name"/>
+```
 
 ## Additional Information
 
