@@ -30,13 +30,20 @@ Check the [In-app messages documentation](https://github.com/Iterable/iterable-a
 
 Please refer to the [Migration guide](https://github.com/Iterable/iterable-android-sdk#migrating-in-app-messages-from-the-previous-version-of-the-sdk) if you've been using in-app messages in your app and updating a newer version of the SDK.
 
+#### Changed
+- The SDK now sets `notificationsEnabled` flag on the device to indicate whether notifications are enabled for the app
+
 #### Removed
 - `spawnInAppNotification` has been removed. Please refer to the in-app migration guide (above)
+
+## [3.0.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.8)
+#### Added
+- Added an option to specify notification channel name via manifest metadata (`iterable_notification_channel_name`)
+- Added support for color resource references in `iterable_notification_color` manifest metadata parameter
 
 #### Changed
 - `updateEmail` can now be used if the user is identified with userId
 - Connection timeout is now 3 seconds
-- The SDK now sets `notificationsEnabled` flag on the device to indicate whether notifications are enabled for the app
 
 #### Fixed
 - Fixed a NullPointerException when the app has a plain-text label in `AndroidManifest.xml` instead of a string resource reference

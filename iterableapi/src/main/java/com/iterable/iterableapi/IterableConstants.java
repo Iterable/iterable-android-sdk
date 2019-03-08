@@ -123,6 +123,7 @@ public final class IterableConstants {
     public static final String ICON_FOLDER_IDENTIFIER   = "drawable";
     public static final String NOTIFICATION_ICON_NAME   = "iterable_notification_icon";
     public static final String NOTIFICATION_COLOR       = "iterable_notification_color";
+    public static final String NOTIFICATION_CHANNEL_NAME = "iterable_notification_channel_name";
     public static final String DEFAULT_SOUND            = "default";
     public static final String SOUND_FOLDER_IDENTIFIER  = "raw";
     public static final String ANDROID_RESOURCE_PATH    = "android.resource://";

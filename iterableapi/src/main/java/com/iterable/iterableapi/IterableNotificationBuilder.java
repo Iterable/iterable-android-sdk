@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -36,6 +37,8 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
     private String expandedContent;
     int requestCode;
     IterableNotificationData iterableNotificationData;
+
+    private static final String DEFAULT_CHANNEL_NAME = "iterable channel";
 
     /**
      * Creates a custom Notification builder
@@ -116,7 +119,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         String messageId = null;
         String pushImage = null;
         //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
-        String channelName = "iterable channel";
+        String channelName = getChannelName(context);
         String channelId = context.getPackageName();
         String channelDescription = "";
 
@@ -225,7 +228,11 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         try {
             ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
             if (info.metaData != null) {
-                notificationBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+                int color = info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR);
+                try {
+                    color = context.getResources().getColor(color);
+                } catch (Resources.NotFoundException ignored) {}
+                notificationBuilder.setColor(color);
             }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -314,11 +321,13 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         NotificationManager mNotificationManager = (NotificationManager)
                 context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
-                && mNotificationManager != null
-                && mNotificationManager.getNotificationChannel(channelId) == null) {
-            IterableLogger.d(TAG, "Creating notification: channelId = " + channelId + " channelName = "
-                    + channelName + " channelDescription = " + channelDescription);
-            mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription));
+                && mNotificationManager != null) {
+            NotificationChannel existingChannel = mNotificationManager.getNotificationChannel(channelId);
+            if (existingChannel == null || !existingChannel.getName().equals(channelName)) {
+                IterableLogger.d(TAG, "Creating notification: channelId = " + channelId + " channelName = "
+                        + channelName + " channelDescription = " + channelDescription);
+                mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription));
+            }
         }
     }
 
@@ -330,6 +339,32 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             notificationChannel.enableLights(true);
         }
         return notificationChannel;
+    }
+
+    private static String getChannelName(Context context) {
+        String channelName = null;
+        try {
+            ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            if (info.metaData != null) {
+                // Literal string value
+                channelName = info.metaData.getString(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+
+                // Try to read from a string resource
+                if (channelName == null) {
+                    int stringId = info.metaData.getInt(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+                    channelName = context.getString(stringId);
+                }
+                IterableLogger.d(TAG, "channel name: " + channelName);
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while retrieving channel name", e);
+        }
+
+        if (channelName != null) {
+            return channelName;
+        } else {
+            return DEFAULT_CHANNEL_NAME;
+        }
     }
 
     /**
