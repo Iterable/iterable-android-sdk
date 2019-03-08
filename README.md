@@ -194,6 +194,11 @@ Add this line to `AndroidManifest.xml` to specify the notification color:
 ```
 where `#FFFFFF` can be replaced with a hex representation of a color of your choice. In stock Android, the notification icon and action buttons will be tinted with this color.
 
+You can also use a color resource:
+```xml
+<meta-data android:name="iterable_notification_color" android:resource="@color/notification_color"/>
+```
+
 #### Notification channel name
 
 Since Android 8.0, Android requires apps to specify a channel for every notification. Iterable uses one channel for all notification; to customize the name of this channel, add this to `AndroidManifest.xml`:
