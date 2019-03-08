@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -227,7 +228,11 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         try {
             ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
             if (info.metaData != null) {
-                notificationBuilder.setColor(info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR));
+                int color = info.metaData.getInt(IterableConstants.NOTIFICATION_COLOR);
+                try {
+                    color = context.getResources().getColor(color);
+                } catch (Resources.NotFoundException ignored) {}
+                notificationBuilder.setColor(color);
             }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
