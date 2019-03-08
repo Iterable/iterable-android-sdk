@@ -15,6 +15,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.0.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.8)
+#### Added
+- Added an option to specify notification channel name via manifest metadata (`iterable_notification_channel_name`)
+- Added support for color resource references in `iterable_notification_color` manifest metadata parameter
+
+#### Changed
+- `updateEmail` can now be used if the user is identified with userId
+- Connection timeout is now 3 seconds
+
+#### Fixed
+- Fixed a NullPointerException when the app has a plain-text label in `AndroidManifest.xml` instead of a string resource reference
+
 ## [3.0.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.7)
 #### Added
 - Added `updateEmail` method with success & failure callbacks
