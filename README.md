@@ -190,7 +190,7 @@ where `ic_notification_icon` is the name of the notification icon.
 
 Add this line to `AndroidManifest.xml` to specify the notification color:
 ```xml
-<meta-data android:name="iterable_notification_color" android:value='#FFFFFF'/>
+<meta-data android:name="iterable_notification_color" android:value="#FFFFFF"/>
 ```
 where `#FFFFFF` can be replaced with a hex representation of a color of your choice. In stock Android, the notification icon and action buttons will be tinted with this color.
 
