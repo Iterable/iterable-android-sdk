@@ -1003,9 +1003,9 @@ public class IterableApi {
     /**
      * Tracks an InApp click.
      * @param messageId
-     * @param urlClick
+     * @param clickedUrl
      */
-    public void trackInAppClick(String messageId, String urlClick) {
+    public void trackInAppClick(String messageId, String clickedUrl) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1015,7 +1015,7 @@ public class IterableApi {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_URL_CLICK, urlClick);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
         }
