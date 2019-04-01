@@ -29,6 +29,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     static final long MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS = 60 * 1000;
     static final int MESSAGES_TO_FETCH = 100;
 
+    public interface Listener {
+        void onInboxUpdated();
+    }
+
     private final IterableApi api;
     private final Context context;
     private final IterableInAppStorage storage;
@@ -37,6 +41,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final IterableActivityMonitor activityMonitor;
     private final double inAppDisplayInterval;
 
+    private final List<Listener> listeners = new ArrayList<>();
     private long lastSyncTime = 0;
     private long lastInAppShown = 0;
 
@@ -82,6 +87,43 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     /**
+     * Get the list of inbox messages
+     * @return A {@link List} of {@link IterableInAppMessage} objects stored in inbox
+     */
+    public synchronized List<IterableInAppMessage> getInboxMessages() {
+        List<IterableInAppMessage> filteredList = new ArrayList<>();
+        for (IterableInAppMessage message : storage.getMessages()) {
+            if (!message.isConsumed() && !isMessageExpired(message) && message.isInboxMessage()) {
+                filteredList.add(message);
+            }
+        }
+        return filteredList;
+    }
+
+    /**
+     * Get the count of unread inbox messages
+     * @return Unread inbox messages count
+     */
+    public synchronized int getUnreadInboxMessagesCount() {
+        int unreadInboxMessageCount = 0;
+        for (IterableInAppMessage message : getInboxMessages()) {
+            if (!message.isRead()) {
+                unreadInboxMessageCount++;
+            }
+        }
+        return unreadInboxMessageCount;
+    }
+
+    /**
+     * Set the read flag on an inbox message
+     * @param message Inbox message object retrieved from {@link IterableInAppManager#getInboxMessages()}
+     * @param read Read state flag. true = read, false = unread
+     */
+    public synchronized void setRead(IterableInAppMessage message, boolean read) {
+        message.setRead(read);
+    }
+
+    /**
      * Trigger a manual sync. This method is called automatically by the SDK, so there should be no
      * need to call this method from your app.
      */
@@ -102,9 +144,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                                     messages.add(message);
                                 }
                             }
+
+                            syncWithRemoteQueue(messages);
+                            lastSyncTime = IterableUtil.currentTimeMillis();
                         }
-                        syncWithRemoteQueue(messages);
-                        lastSyncTime = IterableUtil.currentTimeMillis();
                     } catch (JSONException e) {
                         IterableLogger.e(TAG, e.toString());
                     }
@@ -151,6 +194,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 scheduleProcessing();
             }
         })) {
+            setRead(message, true);
             if (consume) {
                 removeMessage(message);
             }
@@ -201,6 +245,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             }
         }
         scheduleProcessing();
+        notifyOnChange();
     }
 
     private void processMessages() {
@@ -218,7 +263,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
                 if (response == InAppResponse.SHOW) {
-                    showMessage(message);
+                    boolean consume = !message.isInboxMessage();
+                    showMessage(message, consume, null);
                     return;
                 }
             }
@@ -265,5 +311,25 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     @Override
     public void onSwitchToBackground() {
 
+    }
+
+    public void addListener(Listener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(Listener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    public void notifyOnChange() {
+        synchronized (listeners) {
+            for (Listener listener : listeners) {
+                listener.onInboxUpdated();
+            }
+        }
     }
 }

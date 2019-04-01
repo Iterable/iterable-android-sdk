@@ -16,16 +16,21 @@ public class IterableInAppMessage {
     private final JSONObject customPayload;
     private final Date expiresAt;
     private final Trigger trigger;
+    private final Boolean saveToInbox;
+    private final InboxMetadata inboxMetadata;
 
     private boolean processed = false;
     private boolean consumed = false;
+    private boolean read = false;
 
-    IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date expiresAt, Trigger trigger) {
+    IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date expiresAt, Trigger trigger, Boolean saveToInbox, InboxMetadata inboxMetadata) {
         this.messageId = messageId;
         this.content = content;
         this.customPayload = customPayload;
         this.expiresAt = expiresAt;
         this.trigger = trigger;
+        this.saveToInbox = saveToInbox;
+        this.inboxMetadata = inboxMetadata;
     }
 
     static class Trigger {
@@ -80,6 +85,41 @@ public class IterableInAppMessage {
         }
     }
 
+    public static class InboxMetadata {
+        public final String title;
+        public final String subtitle;
+        public final String icon;
+
+        public InboxMetadata(String title, String subtitle, String icon) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.icon = icon;
+        }
+
+        static InboxMetadata fromJSONObject(JSONObject inboxMetadataJson) {
+            if (inboxMetadataJson == null) {
+                return null;
+            }
+
+            String title = inboxMetadataJson.optString(IterableConstants.ITERABLE_IN_APP_INBOX_TITLE);
+            String subtitle = inboxMetadataJson.optString(IterableConstants.ITERABLE_IN_APP_INBOX_SUBTITLE);
+            String icon = inboxMetadataJson.optString(IterableConstants.ITERABLE_IN_APP_INBOX_ICON);
+            return new InboxMetadata(title, subtitle, icon);
+        }
+
+        JSONObject toJSONObject() {
+            JSONObject inboxMetadataJson = new JSONObject();
+            try {
+                inboxMetadataJson.putOpt(IterableConstants.ITERABLE_IN_APP_INBOX_TITLE, title);
+                inboxMetadataJson.putOpt(IterableConstants.ITERABLE_IN_APP_INBOX_SUBTITLE, subtitle);
+                inboxMetadataJson.putOpt(IterableConstants.ITERABLE_IN_APP_INBOX_ICON, icon);
+            } catch (JSONException e) {
+                IterableLogger.e(TAG, "Error while serializing inbox metadata", e);
+            }
+            return inboxMetadataJson;
+        }
+    }
+
     public String getMessageId() {
         return messageId;
     }
@@ -118,6 +158,23 @@ public class IterableInAppMessage {
         return trigger.type;
     }
 
+    public boolean isInboxMessage() {
+        return saveToInbox != null ? saveToInbox : false;
+    }
+
+    public InboxMetadata getInboxMetadata() {
+        return inboxMetadata;
+    }
+
+    public boolean isRead() {
+        return read;
+    }
+
+    void setRead(boolean read) {
+        this.read = read;
+        onChanged();
+    }
+
     static IterableInAppMessage fromJSONObject(JSONObject messageJson) {
         if (messageJson == null) {
             return null;
@@ -141,8 +198,12 @@ public class IterableInAppMessage {
         Trigger trigger = Trigger.fromJSONObject(triggerJson);
         JSONObject customPayload = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD);
 
+        Boolean saveToInbox = messageJson.has(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX) ? messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX) : null;
+        JSONObject inboxPayloadJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA);
+        InboxMetadata inboxMetadata = InboxMetadata.fromJSONObject(inboxPayloadJson);
+
         IterableInAppMessage message = new IterableInAppMessage(messageId,
-                new Content(html, padding, backgroundAlpha), customPayload, expiresAt, trigger);
+                new Content(html, padding, backgroundAlpha), customPayload, expiresAt, trigger, saveToInbox, inboxMetadata);
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         return message;
@@ -166,6 +227,14 @@ public class IterableInAppMessage {
 
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD, customPayload);
+
+            if (saveToInbox != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX, saveToInbox);
+            }
+            if (inboxMetadata != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA, inboxMetadata.toJSONObject());
+            }
+
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PROCESSED, processed);
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONSUMED, consumed);
         } catch (JSONException e) {

@@ -167,6 +167,8 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_CUSTOM_PAYLOAD   = "customPayload";
     public static final String ITERABLE_IN_APP_TRIGGER          = "trigger";
     public static final String ITERABLE_IN_APP_TRIGGER_TYPE     = "type";
+    public static final String ITERABLE_IN_APP_SAVE_TO_INBOX    = "saveToInbox";
+    public static final String ITERABLE_IN_APP_INBOX_METADATA   = "inboxMetadata";
     public static final String ITERABLE_IN_APP_DISPLAY_SETTINGS = "inAppDisplaySettings";
     public static final String ITERABLE_IN_APP_PROCESSED        = "processed";
     public static final String ITERABLE_IN_APP_CONSUMED         = "consumed";
@@ -175,6 +177,10 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";
     public static final String ITERABLE_IN_APP_TYPE_FULL    = "FULL";
     public static final String ITERABLE_IN_APP_TYPE_TOP     = "TOP";
+
+    public static final String ITERABLE_IN_APP_INBOX_TITLE      = "title";
+    public static final String ITERABLE_IN_APP_INBOX_SUBTITLE   = "subtitle";
+    public static final String ITERABLE_IN_APP_INBOX_ICON       = "icon";
 
     // URL schemes
     public static final String URL_SCHEME_ITBL = "itbl://";

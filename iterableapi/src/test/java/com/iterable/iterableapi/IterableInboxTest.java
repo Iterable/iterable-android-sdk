@@ -1,0 +1,162 @@
+package com.iterable.iterableapi;
+
+import android.app.Activity;
+import android.net.Uri;
+
+import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.robolectric.Robolectric;
+import org.robolectric.RuntimeEnvironment;
+
+import java.io.IOException;
+import java.util.List;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+public class IterableInboxTest extends BaseTest {
+
+    private MockWebServer server;
+    private PathBasedQueueDispatcher dispatcher;
+    private IterableInAppHandler inAppHandler;
+    private IterableCustomActionHandler customActionHandler;
+    private IterableUrlHandler urlHandler;
+    private IterableUtil.IterableUtilImpl originalIterableUtil;
+    private IterableUtil.IterableUtilImpl iterableUtilSpy;
+
+    @Before
+    public void setUp() throws IOException {
+        server = new MockWebServer();
+        dispatcher = new PathBasedQueueDispatcher();
+        server.setDispatcher(dispatcher);
+
+        inAppHandler = mock(IterableInAppHandler.class);
+        customActionHandler = mock(IterableCustomActionHandler.class);
+        urlHandler = mock(IterableUrlHandler.class);
+        IterableApi.overrideURLEndpointPath(server.url("").toString());
+        IterableApi.sharedInstance = new IterableApi();
+        IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
+            @Override
+            public IterableConfig.Builder run(IterableConfig.Builder builder) {
+                return builder
+                        .setInAppHandler(inAppHandler)
+                        .setCustomActionHandler(customActionHandler)
+                        .setUrlHandler(urlHandler);
+            }
+        });
+
+        originalIterableUtil = IterableUtil.instance;
+        iterableUtilSpy = spy(originalIterableUtil);
+        IterableUtil.instance = iterableUtilSpy;
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        IterableUtil.instance = originalIterableUtil;
+        iterableUtilSpy = null;
+
+        server.shutdown();
+        server = null;
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
+
+    @Test
+    public void testInboxMessageOrdering() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertEquals(2, inboxMessages.size());
+        assertEquals("message2", inboxMessages.get(0).getMessageId());
+        assertEquals("message4", inboxMessages.get(1).getMessageId());
+    }
+
+    @Test
+    public void testSetRead() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertEquals(2, inAppManager.getUnreadInboxMessagesCount());
+        assertEquals(2, inboxMessages.size());
+        assertFalse(inboxMessages.get(0).isRead());
+        assertFalse(inboxMessages.get(1).isRead());
+
+        inAppManager.setRead(inboxMessages.get(1), true);
+
+        assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
+        assertEquals(2, inAppManager.getInboxMessages().size());
+        assertFalse(inboxMessages.get(0).isRead());
+        assertTrue(inboxMessages.get(1).isRead());
+    }
+
+    @Test
+    public void testShowInboxMessageImmediate() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_show.json")));
+
+        // Reset the existing IterableApi
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+        IterableApi.sharedInstance = spy(new IterableApi());
+
+        IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
+        when(inAppDisplayerMock.showMessage(any(IterableInAppMessage.class), any(IterableHelper.IterableUrlCallback.class))).thenReturn(true);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        doReturn(inAppManager).when(IterableApi.sharedInstance).getInAppManager();
+        IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
+            @Override
+            public IterableConfig.Builder run(IterableConfig.Builder builder) {
+                return builder.setInAppHandler(inAppHandler).setCustomActionHandler(customActionHandler).setUrlHandler(urlHandler);
+            }
+        });
+        inAppManager.syncInApp();
+
+        assertEquals(2, inAppManager.getInboxMessages().size());
+        assertEquals(2, inAppManager.getUnreadInboxMessagesCount());
+
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        Robolectric.flushForegroundThreadScheduler();
+
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), any(IterableHelper.IterableUrlCallback.class));
+
+        assertEquals(2, inAppManager.getInboxMessages().size());
+        assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
+    }
+
+    @Test
+    public void testInboxNewMessagesCallback() throws Exception {
+        IterableInAppManager.Listener listenerMock = mock(IterableInAppManager.Listener.class);
+
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.addListener(listenerMock);
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_update.json")));
+        inAppManager.syncInApp();
+        assertEquals(1, inAppManager.getInboxMessages().size());
+        assertEquals("message1", inAppManager.getInboxMessages().get(0).getMessageId());
+        verify(listenerMock).onInboxUpdated();
+        reset(listenerMock);
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_update2.json")));
+        inAppManager.syncInApp();
+        assertEquals(2, inAppManager.getInboxMessages().size());
+        assertEquals("message1", inAppManager.getInboxMessages().get(0).getMessageId());
+        assertEquals("message2", inAppManager.getInboxMessages().get(1).getMessageId());
+        verify(listenerMock).onInboxUpdated();
+    }
+}
