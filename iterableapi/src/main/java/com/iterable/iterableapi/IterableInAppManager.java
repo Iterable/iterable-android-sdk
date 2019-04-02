@@ -129,9 +129,12 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                         clickCallback.execute(data);
                     }
                     if (data != null && !data.isEmpty()) {
-                        if (!data.contains("://")) {
-                            // This is an itbl:// URL, pass that to the custom action handler
+                        if (data.startsWith("action://")) {
+                            // This is an action:// URL, pass that to the custom action handler
                             IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
+                        } else if (data.startsWith("itbl://")) {
+                            // Handle itbl:// URLs
+                            handleInternalAction(data);
                         } else {
                             IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
                         }
@@ -238,6 +241,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private boolean canShowInAppAfterPrevious() {
         return getSecondsSinceLastInApp() >= inAppDisplayInterval;
+    }
+
+    private void handleInternalAction(String url) {
+
     }
 
     /**

@@ -291,7 +291,6 @@ class IterableWebView extends WebView {
  */
 class IterableWebViewClient extends WebViewClient {
     static final String resizeScript = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
-    static final String itblUrlScheme = "itbl://";
 
     IterableInAppHTMLNotification inAppHTMLNotification;
 
@@ -307,15 +306,8 @@ class IterableWebViewClient extends WebViewClient {
      */
     @Override
     public boolean shouldOverrideUrlLoading(WebView  view, String  url) {
-        String callbackURL = url;
-
-        //Removes the itbl:// scheme from the callbackUrl
-        if (url.startsWith(itblUrlScheme)) {
-            callbackURL = url.replace(itblUrlScheme, "");
-        }
-
         IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url);
-        inAppHTMLNotification.clickCallback.execute(callbackURL);
+        inAppHTMLNotification.clickCallback.execute(url);
         inAppHTMLNotification.dismiss();
 
         return true;
