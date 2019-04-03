@@ -129,12 +129,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                         clickCallback.execute(data);
                     }
                     if (data != null && !data.isEmpty()) {
-                        if (data.startsWith("action://")) {
+                        if (data.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
                             // This is an action:// URL, pass that to the custom action handler
-                            IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(data), IterableActionSource.IN_APP);
-                        } else if (data.startsWith("itbl://")) {
+                            String actionName = data.replace(IterableConstants.URL_SCHEME_ACTION, "");
+                            IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP);
+                        } else if (data.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
                             // Handle itbl:// URLs
-                            handleInternalAction(data);
+                            handleIterableCustomAction(data.replace(IterableConstants.URL_SCHEME_ITBL, ""));
                         } else {
                             IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
                         }
@@ -243,7 +244,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         return getSecondsSinceLastInApp() >= inAppDisplayInterval;
     }
 
-    private void handleInternalAction(String url) {
+    private void handleIterableCustomAction(String url) {
 
     }
 

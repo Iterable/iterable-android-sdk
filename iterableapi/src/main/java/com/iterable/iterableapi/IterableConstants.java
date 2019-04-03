@@ -176,6 +176,10 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TYPE_FULL    = "FULL";
     public static final String ITERABLE_IN_APP_TYPE_TOP     = "TOP";
 
+    // URL schemes
+    public static final String URL_SCHEME_ITBL = "itbl://";
+    public static final String URL_SCHEME_ACTION = "action://";
+
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
     public static final String ITBL_PLATFORM_ANDROID = "Android";
     public static final String ITBL_KEY_SDK_VERSION_NUMBER = BuildConfig.ITERABLE_SDK_VERSION;
