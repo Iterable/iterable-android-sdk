@@ -23,6 +23,8 @@ The platform will be `GCM` (This also includes FCM since it runs off of the same
 
 ![Creating an integration in Iterable](https://support.iterable.com/hc/en-us/article_attachments/211841066/2016-12-08_1442.png)
 
+For more details, see our [setup guide](https://support.iterable.com/hc/en-us/articles/115000331943-Setting-up-Android-Push-Notifications) on Iterable support website.
+
 Congratulations, you've configured your mobile application to receive push notifications! Now, let's set up the Iterable SDK...
 
 # Installing the SDK
