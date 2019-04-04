@@ -72,7 +72,7 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 	```
 
   * The `apiKey` should correspond to the API key of your project in Iterable. If you'd like, you can specify a different `apiKey` depending on whether you're building in `DEBUG` or `PRODUCTION`, and point the SDK to the relevant Iterable project.
-  * It is possible to call this elsewhere but we strongly encourage initializing the SDK in `Application`'s `onCreate`. This will let the SDK automatically track a push open for you if the application was launched from a remote Iterable push notification.
+  > &#x26A0; Don't call `IterableApi.initialize` from `Activity#onCreate`; it is necessary for Iterable SDK to be initialized when the application is starting, to make sure everything is set up regardless of whether the app is launched to open an activity or is woken up in background as a result of an incoming push message.
 
 2. Once you know the email *(Preferred)* or userId of the user, call `setEmail` or `setUserId`
   * EMAIL: `IterableApi.getInstance().setEmail("email@example.com");`
