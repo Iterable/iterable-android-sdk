@@ -48,7 +48,7 @@ class IterableDeeplinkManager {
 
     private static class RedirectTask extends AsyncTask<String, Void, String> {
         static final String TAG = "RedirectTask";
-        static final int DEFAULT_TIMEOUT_MS = 1000;   //1 seconds
+        static final int DEFAULT_TIMEOUT_MS = 3000;   //3 seconds
 
         private IterableHelper.IterableActionHandler callback;
 
