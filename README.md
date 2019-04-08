@@ -77,8 +77,7 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 2. Once you know the email *(Preferred)* or userId of the user, call `setEmail` or `setUserId`
   * EMAIL: `IterableApi.getInstance().setEmail("email@example.com");`
   * USERID: `IterableApi.getInstance().setUserId("userId");`
-      * If you are setting a userId, an existing user must already exist for that userId
-      * It is preferred that you use Email since that doesn't require an additional lookup by userId call on the backend.
+   > &#x26A0; Don't specify both email and userId in the same session, as they will be treated as different users by the SDK. Only use one type of identifier, email or userId, to identify the user.
 
 3. **Register for remote notifications**  
     On application launch (or whenever you want to register the token), call `registerForPush`:
