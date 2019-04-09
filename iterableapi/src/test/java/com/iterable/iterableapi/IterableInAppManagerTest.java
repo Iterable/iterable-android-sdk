@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 import android.graphics.Rect;
+import android.net.Uri;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
@@ -12,7 +13,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
@@ -26,19 +26,21 @@ import okhttp3.mockwebserver.MockWebServer;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.spy;
 
-@PrepareForTest(IterableUtil.class)
-public class IterableInAppManagerTest extends BasePowerMockTest {
+public class IterableInAppManagerTest extends BaseTest {
 
     private MockWebServer server;
     private PathBasedQueueDispatcher dispatcher;
     private IterableInAppHandler inAppHandler;
+    private IterableCustomActionHandler customActionHandler;
+    private IterableUrlHandler urlHandler;
     private IterableUtil.IterableUtilImpl originalIterableUtil;
     private IterableUtil.IterableUtilImpl iterableUtilSpy;
 
@@ -49,12 +51,17 @@ public class IterableInAppManagerTest extends BasePowerMockTest {
         server.setDispatcher(dispatcher);
 
         inAppHandler = mock(IterableInAppHandler.class);
+        customActionHandler = mock(IterableCustomActionHandler.class);
+        urlHandler = mock(IterableUrlHandler.class);
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         IterableApi.sharedInstance = new IterableApi();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
-                return builder.setInAppHandler(inAppHandler);
+                return builder
+                        .setInAppHandler(inAppHandler)
+                        .setCustomActionHandler(customActionHandler)
+                        .setUrlHandler(urlHandler);
             }
         });
 
@@ -79,8 +86,8 @@ public class IterableInAppManagerTest extends BasePowerMockTest {
         ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start().resume();
         Activity activity = controller.get();
 
-        boolean shownFirstTime = IterableInAppManager.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
-        boolean shownSecondTime = IterableInAppManager.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
+        boolean shownFirstTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
+        boolean shownSecondTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
         assertTrue(shownFirstTime);
         assertFalse(shownSecondTime);
         ShadowDialog.getLatestDialog().dismiss();
@@ -172,6 +179,48 @@ public class IterableInAppManagerTest extends BasePowerMockTest {
 
     private JSONObject triggerWithType(String triggerType) throws JSONException {
         return new JSONObject().putOpt("type", triggerType);
+    }
+
+    @Test
+    public void testHandleActionLink() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+
+        // Reset the existing IterableApi
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+        IterableApi.sharedInstance = spy(new IterableApi());
+
+        IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        doReturn(inAppManager).when(IterableApi.sharedInstance).getInAppManager();
+        IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
+            @Override
+            public IterableConfig.Builder run(IterableConfig.Builder builder) {
+                return builder.setInAppHandler(inAppHandler).setCustomActionHandler(customActionHandler).setUrlHandler(urlHandler);
+            }
+        });
+        doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
+
+        // Bring the app into foreground to trigger in-app display
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        Robolectric.flushForegroundThreadScheduler();
+        ArgumentCaptor<IterableHelper.IterableUrlCallback> callbackCaptor = ArgumentCaptor.forClass(IterableHelper.IterableUrlCallback.class);
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        IterableInAppMessage message = inAppManager.getMessages().get(0);
+        callbackCaptor.getValue().execute(Uri.parse("action://actionName"));
+
+        // Verify that the action handler was called with the correct action
+        ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
+        verify(customActionHandler).handleIterableCustomAction(actionCaptor.capture());
+        assertEquals("actionName", actionCaptor.getValue().getType());
+
+        reset(inAppDisplayerMock);
+        inAppManager.showMessage(message);
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        callbackCaptor.getValue().execute(Uri.parse("https://www.google.com"));
+        ArgumentCaptor<Uri> urlCaptor = ArgumentCaptor.forClass(Uri.class);
+        verify(urlHandler).handleIterableURL(urlCaptor.capture(), any(IterableActionContext.class));
+        assertEquals("https://www.google.com", urlCaptor.getValue().toString());
     }
 
 }

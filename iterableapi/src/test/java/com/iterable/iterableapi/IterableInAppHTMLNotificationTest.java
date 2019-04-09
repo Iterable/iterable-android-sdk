@@ -14,7 +14,7 @@ public class IterableInAppHTMLNotificationTest extends BasePowerMockTest {
         ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start();
         Activity activity = controller.get();
 
-        IterableInAppManager.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
+        IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
 
         IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.getInstance();
         notification.dismiss();

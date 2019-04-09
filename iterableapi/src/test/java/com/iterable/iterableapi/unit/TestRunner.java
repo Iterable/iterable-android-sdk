@@ -3,8 +3,6 @@ package com.iterable.iterableapi.unit;
 import org.junit.runners.model.InitializationError;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.manifest.AndroidManifest;
-import org.robolectric.res.FileFsFile;
 
 public class TestRunner extends RobolectricTestRunner {
     /**

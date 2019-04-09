@@ -1,10 +1,8 @@
 package com.iterable.iterableapi;
 
-import android.app.Activity;
 import android.content.Context;
 
-import android.content.DialogInterface;
-import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.VisibleForTesting;
@@ -34,6 +32,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final Context context;
     private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
+    private final IterableInAppDisplayer displayer;
+    private final IterableActivityMonitor activityMonitor;
     private final double inAppDisplayInterval;
 
     private long lastSyncTime = 0;
@@ -44,17 +44,25 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 handler,
                 inAppDisplayInterval,
                 new IterableInAppFileStorage(iterableApi.getMainActivityContext()),
-                IterableActivityMonitor.getInstance());
+                IterableActivityMonitor.getInstance(),
+                new IterableInAppDisplayer(IterableActivityMonitor.getInstance()));
     }
 
     @VisibleForTesting
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, IterableInAppStorage storage, IterableActivityMonitor activityMonitor) {
+    IterableInAppManager(IterableApi iterableApi,
+                         IterableInAppHandler handler,
+                         double inAppDisplayInterval,
+                         IterableInAppStorage storage,
+                         IterableActivityMonitor activityMonitor,
+                         IterableInAppDisplayer displayer) {
         this.api = iterableApi;
         this.context = iterableApi.getMainActivityContext();
         this.handler = handler;
         this.inAppDisplayInterval = inAppDisplayInterval;
         this.storage = storage;
-        activityMonitor.addCallback(this);
+        this.displayer = displayer;
+        this.activityMonitor = activityMonitor;
+        this.activityMonitor.addCallback(this);
     }
 
     /**
@@ -118,35 +126,32 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param consume A boolean indicating whether to remove the message from the list after showing
      * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
      */
-    public void showMessage(IterableInAppMessage message, boolean consume, final IterableHelper.IterableActionHandler clickCallback) {
-        Activity currentActivity = IterableActivityMonitor.getInstance().getCurrentActivity();
-        // Prevent double display
-        if (currentActivity != null) {
-            if (IterableInAppManager.showIterableNotificationHTML(currentActivity, message.getContent().html, message.getMessageId(), new IterableHelper.IterableActionHandler() {
-                @Override
-                public void execute(String data) {
-                    if (clickCallback != null) {
-                        clickCallback.execute(data);
-                    }
-                    if (data != null && !data.isEmpty()) {
-                        if (data.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
-                            // This is an action:// URL, pass that to the custom action handler
-                            String actionName = data.replace(IterableConstants.URL_SCHEME_ACTION, "");
-                            IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP);
-                        } else if (data.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
-                            // Handle itbl:// URLs
-                            handleIterableCustomAction(data.replace(IterableConstants.URL_SCHEME_ITBL, ""));
-                        } else {
-                            IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(data), IterableActionSource.IN_APP);
-                        }
-                    }
-                    lastInAppShown = IterableUtil.currentTimeMillis();
-                    scheduleProcessing();
+    public void showMessage(final IterableInAppMessage message, boolean consume, final IterableHelper.IterableUrlCallback clickCallback) {
+        if (displayer.showMessage(message, new IterableHelper.IterableUrlCallback() {
+            @Override
+            public void execute(Uri url) {
+                if (clickCallback != null) {
+                    clickCallback.execute(url);
                 }
-            }, message.getContent().backgroundAlpha, message.getContent().padding, true)) {
-                if (consume) {
-                    removeMessage(message);
+                if (url != null && !url.toString().isEmpty()) {
+                    String urlString = url.toString();
+                    if (urlString.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
+                        // This is an action:// URL, pass that to the custom action handler
+                        String actionName = urlString.replace(IterableConstants.URL_SCHEME_ACTION, "");
+                        IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP);
+                    } else if (urlString.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
+                        // Handle itbl:// URLs
+                        handleIterableCustomAction(urlString.replace(IterableConstants.URL_SCHEME_ITBL, ""), message);
+                    } else {
+                        IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(urlString), IterableActionSource.IN_APP);
+                    }
                 }
+                lastInAppShown = IterableUtil.currentTimeMillis();
+                scheduleProcessing();
+            }
+        })) {
+            if (consume) {
+                removeMessage(message);
             }
         }
     }
@@ -198,7 +203,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void processMessages() {
-        if (!IterableActivityMonitor.getInstance().isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
+        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
             return;
         }
 
@@ -233,7 +238,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private boolean isShowingInApp() {
-        return IterableInAppHTMLNotification.getInstance() != null;
+        return displayer.isShowingInApp();
     }
 
     private double getSecondsSinceLastInApp() {
@@ -244,55 +249,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         return getSecondsSinceLastInApp() >= inAppDisplayInterval;
     }
 
-    private void handleIterableCustomAction(String url) {
+    private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
 
-    }
-
-    /**
-     * Displays an html rendered InApp Notification
-     * @param context
-     * @param htmlString
-     * @param messageId
-     * @param clickCallback
-     * @param backgroundAlpha
-     * @param padding
-     */
-    public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding) {
-        return showIterableNotificationHTML(context, htmlString, messageId, clickCallback, backgroundAlpha, padding, false);
-    }
-
-    public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, final IterableHelper.IterableActionHandler clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel) {
-        if (context instanceof Activity) {
-            Activity currentActivity = (Activity) context;
-            if (htmlString != null) {
-                if (IterableInAppHTMLNotification.getInstance() != null) {
-                    IterableLogger.w(TAG, "Skipping the in-app notification: another notification is already being displayed");
-                    return false;
-                }
-
-                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString);
-                notification.setTrackParams(messageId);
-                notification.setCallback(clickCallback);
-                notification.setBackgroundAlpha(backgroundAlpha);
-                notification.setPadding(padding);
-                notification.setOwnerActivity(currentActivity);
-
-                if (callbackOnCancel) {
-                    notification.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(DialogInterface dialog) {
-                            clickCallback.execute(null);
-                        }
-                    });
-                }
-
-                notification.show();
-                return true;
-            }
-        } else {
-            IterableLogger.w(TAG, "To display in-app notifications, the context must be of an instance of: Activity");
-        }
-        return false;
     }
 
     @Override
