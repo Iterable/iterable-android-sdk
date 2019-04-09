@@ -7,6 +7,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -39,7 +40,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     String messageId;
     double backgroundAlpha;
     Rect insetPadding;
-    IterableHelper.IterableActionHandler clickCallback;
+    IterableHelper.IterableUrlCallback clickCallback;
 
     /**
      * Creates a static instance of the notification
@@ -88,7 +89,7 @@ public class IterableInAppHTMLNotification extends Dialog {
      * Sets the clickCallback
      * @param clickCallback
      */
-    public void setCallback(IterableHelper.IterableActionHandler clickCallback) {
+    public void setCallback(IterableHelper.IterableUrlCallback clickCallback) {
         this.clickCallback = clickCallback;
     }
 
@@ -291,7 +292,6 @@ class IterableWebView extends WebView {
  */
 class IterableWebViewClient extends WebViewClient {
     static final String resizeScript = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
-    static final String itblUrlScheme = "itbl://";
 
     IterableInAppHTMLNotification inAppHTMLNotification;
 
@@ -306,16 +306,9 @@ class IterableWebViewClient extends WebViewClient {
      * @return
      */
     @Override
-    public boolean shouldOverrideUrlLoading(WebView  view, String  url) {
-        String callbackURL = url;
-
-        //Removes the itbl:// scheme from the callbackUrl
-        if (url.startsWith(itblUrlScheme)) {
-            callbackURL = url.replace(itblUrlScheme, "");
-        }
-
+    public boolean shouldOverrideUrlLoading(WebView view, String url) {
         IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url);
-        inAppHTMLNotification.clickCallback.execute(callbackURL);
+        inAppHTMLNotification.clickCallback.execute(Uri.parse(url));
         inAppHTMLNotification.dismiss();
 
         return true;

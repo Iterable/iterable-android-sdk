@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import android.net.Uri;
+
 import org.json.JSONObject;
 
 /**
@@ -12,6 +14,10 @@ public class IterableHelper {
      */
     public interface IterableActionHandler {
         void execute(String data);
+    }
+
+    public interface IterableUrlCallback {
+        void execute(Uri url);
     }
 
     public interface SuccessHandler {
