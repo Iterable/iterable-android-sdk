@@ -211,16 +211,19 @@ public class IterableInAppManagerTest extends BaseTest {
 
         // Verify that the action handler was called with the correct action
         ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
-        verify(customActionHandler).handleIterableCustomAction(actionCaptor.capture());
+        ArgumentCaptor<IterableActionContext> contextCaptor = ArgumentCaptor.forClass(IterableActionContext.class);
+        verify(customActionHandler).handleIterableCustomAction(actionCaptor.capture(), contextCaptor.capture());
         assertEquals("actionName", actionCaptor.getValue().getType());
+        assertEquals(IterableActionSource.IN_APP, contextCaptor.getValue().source);
 
         reset(inAppDisplayerMock);
         inAppManager.showMessage(message);
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("https://www.google.com"));
         ArgumentCaptor<Uri> urlCaptor = ArgumentCaptor.forClass(Uri.class);
-        verify(urlHandler).handleIterableURL(urlCaptor.capture(), any(IterableActionContext.class));
+        verify(urlHandler).handleIterableURL(urlCaptor.capture(), contextCaptor.capture());
         assertEquals("https://www.google.com", urlCaptor.getValue().toString());
+        assertEquals(IterableActionSource.IN_APP, contextCaptor.getValue().source);
     }
 
 }
