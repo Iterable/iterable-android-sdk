@@ -91,7 +91,7 @@ class IterableActionRunner {
         if (action.getType() != null && !action.getType().isEmpty()) {
             // Call custom action handler
             if (IterableApi.sharedInstance.config.customActionHandler != null) {
-                return IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action);
+                return IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action, actionContext);
             }
         }
         return false;

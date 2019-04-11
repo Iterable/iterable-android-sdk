@@ -12,6 +12,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 
 import static android.support.test.espresso.intent.Intents.intended;
 import static android.support.test.espresso.intent.Intents.intending;
@@ -19,7 +20,9 @@ import static android.support.test.espresso.intent.matcher.IntentMatchers.anyInt
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,7 +94,9 @@ public class IterableActionRunnerTest {
         IterableAction action = IterableAction.from(actionData);
         IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
 
-        verify(customActionHandlerMock).handleIterableCustomAction(action);
+        ArgumentCaptor<IterableActionContext> contextCaptor = ArgumentCaptor.forClass(IterableActionContext.class);
+        verify(customActionHandlerMock).handleIterableCustomAction(eq(action), contextCaptor.capture());
+        assertEquals(IterableActionSource.PUSH, contextCaptor.getValue().source);
         IterableTestUtils.initIterableApi(null);
     }
 }
