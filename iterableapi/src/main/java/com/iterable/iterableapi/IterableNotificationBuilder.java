@@ -32,6 +32,7 @@ import java.util.List;
  */
 public class IterableNotificationBuilder extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
+    final Context context;
     private boolean isGhostPush;
     private String imageUrl;
     private String expandedContent;
@@ -47,6 +48,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      */
     protected IterableNotificationBuilder(Context context, String channelId) {
         super(context, channelId);
+        this.context = context;
     }
 
     /**
