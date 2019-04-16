@@ -85,7 +85,7 @@ class IterableNotificationManager extends AsyncTask<IterableNotificationBuilder,
     protected Void doInBackground(IterableNotificationBuilder... params) {
         if ( params != null && params[0] != null) {
             IterableNotificationBuilder notificationBuilder = params[0];
-            IterableNotificationBuilder.postNotificationOnDevice(notificationBuilder.mContext, notificationBuilder);
+            IterableNotificationBuilder.postNotificationOnDevice(notificationBuilder.context, notificationBuilder);
         }
         return null;
     }
