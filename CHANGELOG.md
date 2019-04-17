@@ -15,6 +15,27 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.0-beta2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta2)
+
+#### Changed
+- **BREAKING CHANGE:** Added `IterableContext` argument to `IterableCustomActionHandler`
+  
+  The new method signature is:
+  ```java
+  boolean handleIterableCustomAction(IterableAction action, IterableActionContext actionContext)
+  ```
+  `actionContext` can be used to determine where the call is calling from - push message, in-app message, or a deep link.
+- Custom in-app JSON payload has been moved from `IterableInAppMessage.Content.payload` to `IterableInAppMessage.customPayload`
+- Changes to in-app links:
+  - `action://` URL scheme is now reserved for app-specific custom actions.
+  When a user clicks on a link with `href` = `action://myCustomAction`, the SDK calls `IterableCustomActionHandler.handleIterableCustomAction` with action type set to `myCustomAction`.
+  - `itbl://` URL scheme is now reserved for actions handled by the SDK (i.e. future versions of the SDK may define `itbl://delete` as an action to delete the in-app message)
+  - **Migration:** if you've been using `itbl://` links in the past, please update your templates with `action://` instead
+  - Connect timeout for deeplink resolution is now 3 seconds
+  
+#### Fixed
+- Fixed the URL parameter in `inAppClick` event
+
 ## [3.1.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta1)
 
 #### Added
