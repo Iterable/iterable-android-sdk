@@ -23,6 +23,8 @@ The platform will be `GCM` (This also includes FCM since it runs off of the same
 
 ![Creating an integration in Iterable](https://support.iterable.com/hc/en-us/article_attachments/211841066/2016-12-08_1442.png)
 
+For more details, see our [setup guide](https://support.iterable.com/hc/en-us/articles/115000331943-Setting-up-Android-Push-Notifications) on Iterable support website.
+
 Congratulations, you've configured your mobile application to receive push notifications! Now, let's set up the Iterable SDK...
 
 # Installing the SDK
@@ -70,13 +72,12 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 	```
 
   * The `apiKey` should correspond to the API key of your project in Iterable. If you'd like, you can specify a different `apiKey` depending on whether you're building in `DEBUG` or `PRODUCTION`, and point the SDK to the relevant Iterable project.
-  * It is possible to call this elsewhere but we strongly encourage initializing the SDK in `Application`'s `onCreate`. This will let the SDK automatically track a push open for you if the application was launched from a remote Iterable push notification.
+  > &#x26A0; Don't call `IterableApi.initialize` from `Activity#onCreate`; it is necessary for Iterable SDK to be initialized when the application is starting, to make sure everything is set up regardless of whether the app is launched to open an activity or is woken up in background as a result of an incoming push message.
 
 2. Once you know the email *(Preferred)* or userId of the user, call `setEmail` or `setUserId`
   * EMAIL: `IterableApi.getInstance().setEmail("email@example.com");`
   * USERID: `IterableApi.getInstance().setUserId("userId");`
-      * If you are setting a userId, an existing user must already exist for that userId
-      * It is preferred that you use Email since that doesn't require an additional lookup by userId call on the backend.
+   > &#x26A0; Don't specify both email and userId in the same session, as they will be treated as different users by the SDK. Only use one type of identifier, email or userId, to identify the user.
 
 3. **Register for remote notifications**  
     On application launch (or whenever you want to register the token), call `registerForPush`:

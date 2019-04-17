@@ -161,7 +161,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TEXT             = "text";
     public static final String ITERABLE_IN_APP_TITLE            = "title";
     public static final String ITERABLE_IN_APP_TYPE             = "displayType";
-    public static final String ITERABLE_IN_APP_URL_CLICK        = "urlClick";
+    public static final String ITERABLE_IN_APP_CLICKED_URL      = "clickedUrl";
     public static final String ITERABLE_IN_APP_HTML             = "html";
     public static final String ITERABLE_IN_APP_EXPIRES_AT       = "expiresAt";
     public static final String ITERABLE_IN_APP_CUSTOM_PAYLOAD   = "customPayload";
