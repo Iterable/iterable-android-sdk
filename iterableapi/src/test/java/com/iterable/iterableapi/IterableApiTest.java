@@ -289,4 +289,22 @@ public class IterableApiTest extends BaseTest {
         assertEquals(requestJson.getBoolean(IterableConstants.KEY_PREFER_USER_ID), true);
     }
 
+    @Test
+    public void testUpdateUserWithUserId() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setUserId("testUserId");
+        IterableApi.getInstance().updateUser(new JSONObject("{\"key\": \"value\"}"));
+        Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest updateUserRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(updateUserRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_USER, updateUserRequest.getPath());
+        JSONObject requestJson = new JSONObject(updateUserRequest.getBody().readUtf8());
+        assertEquals(true, requestJson.getBoolean(IterableConstants.KEY_PREFER_USER_ID));
+        assertEquals("value", requestJson.getJSONObject(IterableConstants.KEY_DATA_FIELDS).getString("key"));
+    }
+
 }
