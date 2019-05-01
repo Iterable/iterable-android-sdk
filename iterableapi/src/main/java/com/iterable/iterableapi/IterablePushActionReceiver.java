@@ -4,13 +4,9 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.DrawableRes;
 import android.support.v4.app.RemoteInput;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -88,7 +84,7 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
 
         // Open the launcher activity if the action was not handled by anything, and openApp is true
         if (openApp && !handled) {
-            Intent launcherIntent = IterableNotificationBuilder.getMainActivityIntent(context);
+            Intent launcherIntent = IterableNotificationHelper.getMainActivityIntent(context);
             launcherIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             if(launcherIntent.resolveActivity(context.getPackageManager()) != null) {
                 context.startActivity(launcherIntent);

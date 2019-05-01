@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.RemoteMessage;
@@ -11,9 +10,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.MockRepository;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ServiceController;
@@ -28,21 +24,19 @@ import static junit.framework.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@PrepareForTest({IterableNotificationBuilder.class, NotificationCompat.class,
-        IterableInAppMemoryStorage.class, IterableInAppManager.class})
-public class IterableFirebaseMessagingServiceTest extends BasePowerMockTest {
+public class IterableFirebaseMessagingServiceTest extends BaseTest {
 
     private MockWebServer server;
     private IterableApi originalApi;
     private IterableApi apiMock;
-    private FirebaseInstanceId mockInstanceId;
 
     private ServiceController<IterableFirebaseMessagingService> controller;
+    private IterableNotificationHelper.IterableNotificationHelperImpl originalNotificationHelper;
+    private IterableNotificationHelper.IterableNotificationHelperImpl notificationHelperSpy;
 
     @Before
     public void setUp() throws Exception {
@@ -59,17 +53,18 @@ public class IterableFirebaseMessagingServiceTest extends BasePowerMockTest {
         apiMock = spy(IterableApi.sharedInstance);
         IterableApi.sharedInstance = apiMock;
 
-        mockInstanceId = mock(FirebaseInstanceId.class);
-        PowerMockito.stub(PowerMockito.method(FirebaseInstanceId.class, "getInstance")).toReturn(mockInstanceId);
-        PowerMockito.stub(PowerMockito.method(IterablePushRegistration.Util.class, "getFirebaseResouceId")).toReturn(1);
+        originalNotificationHelper = IterableNotificationHelper.instance;
+        notificationHelperSpy = spy(originalNotificationHelper);
+        IterableNotificationHelper.instance = notificationHelperSpy;
     }
 
     @After
     public void tearDown() throws Exception {
+        IterableNotificationHelper.instance = originalNotificationHelper;
+        notificationHelperSpy = null;
+
         controller.destroy();
         IterableApi.sharedInstance = originalApi;
-        MockRepository.remove(FirebaseInstanceId.class);
-        MockRepository.remove(IterablePushRegistration.Util.class);
 
         server.shutdown();
         server = null;
@@ -77,17 +72,17 @@ public class IterableFirebaseMessagingServiceTest extends BasePowerMockTest {
 
     @Test
     public void testOnMessageReceived() throws Exception {
-        PowerMockito.mockStatic(IterableNotificationBuilder.class);
-        when(IterableNotificationBuilder.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Message body");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         controller.get().onMessageReceived(builder.build());
 
-        PowerMockito.verifyStatic(IterableNotificationBuilder.class);
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
-        IterableNotificationBuilder.createNotification(eq(RuntimeEnvironment.application), bundleCaptor.capture());
+        verify(notificationHelperSpy).createNotification(eq(RuntimeEnvironment.application), bundleCaptor.capture());
         Map<String, String> expectedPayload = new HashMap<>();
+        expectedPayload.put(IterableConstants.ITERABLE_DATA_BODY, "Message body");
         expectedPayload.put(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         assertEquals(expectedPayload, bundleToMap(bundleCaptor.getValue()));
     }
@@ -106,15 +101,15 @@ public class IterableFirebaseMessagingServiceTest extends BasePowerMockTest {
 
     @Test
     public void testSilentPushInAppRemoved() throws Exception {
-        IterableInAppManager inAppManagerSpy = PowerMockito.spy(IterableApi.getInstance().getInAppManager());
+        IterableInAppManager inAppManagerSpy = spy(IterableApi.getInstance().getInAppManager());
         when(apiMock.getInAppManager()).thenReturn(inAppManagerSpy);
-        PowerMockito.doNothing().when(inAppManagerSpy).syncInApp();
-        PowerMockito.doNothing().when(inAppManagerSpy).removeMessage(any(String.class));
+        doNothing().when(inAppManagerSpy).syncInApp();
+        doNothing().when(inAppManagerSpy).removeMessage(any(String.class));
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_inapp_remove.json"));
         controller.get().onMessageReceived(builder.build());
-        PowerMockito.verifyPrivate(inAppManagerSpy).invoke("removeMessage", "1234567890abcdef");
+        verify(inAppManagerSpy).removeMessage("1234567890abcdef");
     }
 
 }

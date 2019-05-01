@@ -45,8 +45,8 @@ public class IterableNotificationTest {
 
     private IterableNotificationBuilder postNotification(Bundle notificationData) throws InterruptedException {
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
-        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notificationData);
-        IterableNotificationBuilder.postNotificationOnDevice(appContext, iterableNotification);
+        IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notificationData);
+        IterableNotificationHelper.postNotificationOnDevice(appContext, iterableNotification);
 //        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
 //        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
         Thread.sleep(1000);
@@ -85,7 +85,7 @@ public class IterableNotificationTest {
 
     @Test
     public void testEmptyBundle() throws Exception {
-        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), new Bundle());
+        IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), new Bundle());
         assertNull(iterableNotification);
     }
 
@@ -93,7 +93,7 @@ public class IterableNotificationTest {
     public void testGhostPush() throws Exception {
         Bundle notif1 = new Bundle();
         notif1.putString(IterableConstants.ITERABLE_DATA_KEY, itbl_ghost);
-        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notif1);
+        IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notif1);
         assertNull(iterableNotification);
     }
 

@@ -8,7 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 
@@ -29,13 +28,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.spy;
 
-@PrepareForTest({IterableUtil.class, IterableUtil.IterableUtilImpl.class})
-public class IterableApiTest extends BasePowerMockTest {
+public class IterableApiTest extends BaseTest {
 
     private MockWebServer server;
     private IterableUtil.IterableUtilImpl originalIterableUtil;

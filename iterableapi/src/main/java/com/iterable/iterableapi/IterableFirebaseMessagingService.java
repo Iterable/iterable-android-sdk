@@ -45,15 +45,15 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             extras.putString(entry.getKey(), entry.getValue());
         }
 
-        if (!IterableNotificationBuilder.isIterablePush(extras)) {
+        if (!IterableNotificationHelper.isIterablePush(extras)) {
             IterableLogger.d(TAG, "Not an Iterable push message");
             return false;
         }
 
-        if (!IterableNotificationBuilder.isGhostPush(extras)) {
-            if (!IterableNotificationBuilder.isEmptyBody(extras)) {
+        if (!IterableNotificationHelper.isGhostPush(extras)) {
+            if (!IterableNotificationHelper.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
-                IterableNotificationBuilder notificationBuilder = IterableNotificationBuilder.createNotification(
+                IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
                         context.getApplicationContext(), extras);
                 new IterableNotificationManager().execute(notificationBuilder);
             } else {
@@ -85,7 +85,7 @@ class IterableNotificationManager extends AsyncTask<IterableNotificationBuilder,
     protected Void doInBackground(IterableNotificationBuilder... params) {
         if ( params != null && params[0] != null) {
             IterableNotificationBuilder notificationBuilder = params[0];
-            IterableNotificationBuilder.postNotificationOnDevice(notificationBuilder.context, notificationBuilder);
+            IterableNotificationHelper.postNotificationOnDevice(notificationBuilder.context, notificationBuilder);
         }
         return null;
     }
