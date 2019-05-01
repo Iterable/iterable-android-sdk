@@ -121,6 +121,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      */
     public synchronized void setRead(IterableInAppMessage message, boolean read) {
         message.setRead(read);
+        notifyOnChange();
     }
 
     /**
@@ -208,6 +209,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     public synchronized void removeMessage(IterableInAppMessage message) {
         message.setConsumed(true);
         api.inAppConsume(message.getMessageId());
+        notifyOnChange();
     }
 
     /**
@@ -221,6 +223,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         if (message != null) {
             storage.removeMessage(message);
         }
+        notifyOnChange();
     }
 
     private boolean isMessageExpired(IterableInAppMessage message) {
