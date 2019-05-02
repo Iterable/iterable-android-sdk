@@ -1,15 +1,13 @@
 package com.iterable.iterableapi;
 
-import com.google.firebase.iid.FirebaseInstanceId;
+import android.content.Context;
 
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.MockRepository;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowApplication;
 
@@ -28,8 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@PrepareForTest({IterablePushRegistration.Util.class, FirebaseInstanceId.class})
-public class IterablePushRegistrationTest extends BasePowerMockTest {
+public class IterablePushRegistrationTest extends BaseTest {
 
     private static final String TEST_TOKEN = "testToken";
     private static final String NEW_TOKEN = "newToken";
@@ -40,7 +37,8 @@ public class IterablePushRegistrationTest extends BasePowerMockTest {
     private MockWebServer server;
     private IterableApi originalApi;
     private IterableApi apiMock;
-    private FirebaseInstanceId mockInstanceId;
+    private IterablePushRegistration.Util.UtilImpl originalPushRegistrationUtil;
+    private IterablePushRegistration.Util.UtilImpl pushRegistrationUtilMock;
 
     @Before
     public void setUp() throws Exception {
@@ -52,16 +50,17 @@ public class IterablePushRegistrationTest extends BasePowerMockTest {
         apiMock = spy(IterableApi.sharedInstance);
         IterableApi.sharedInstance = apiMock;
 
-        mockInstanceId = mock(FirebaseInstanceId.class);
-        PowerMockito.stub(PowerMockito.method(FirebaseInstanceId.class, "getInstance")).toReturn(mockInstanceId);
-        PowerMockito.stub(PowerMockito.method(IterablePushRegistration.Util.class, "getFirebaseResouceId")).toReturn(1);
+        originalPushRegistrationUtil = IterablePushRegistration.Util.instance;
+        pushRegistrationUtilMock = mock(IterablePushRegistration.Util.UtilImpl.class);
+        IterablePushRegistration.Util.instance = pushRegistrationUtilMock;
+
+        when(pushRegistrationUtilMock.getFirebaseResouceId(any(Context.class))).thenReturn(1);
     }
 
     @After
     public void tearDown() throws Exception {
+        IterablePushRegistration.Util.instance = originalPushRegistrationUtil;
         IterableApi.sharedInstance = originalApi;
-        MockRepository.remove(FirebaseInstanceId.class);
-        MockRepository.remove(IterablePushRegistration.Util.class);
 
         server.shutdown();
         server = null;
@@ -69,7 +68,7 @@ public class IterablePushRegistrationTest extends BasePowerMockTest {
 
     @Test
     public void testEnableDevice() throws Exception {
-        when(mockInstanceId.getToken()).thenReturn(TEST_TOKEN);
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
@@ -80,7 +79,7 @@ public class IterablePushRegistrationTest extends BasePowerMockTest {
 
     @Test
     public void testDisableDevice() throws Exception {
-        when(mockInstanceId.getToken()).thenReturn("testToken");
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn("testToken");
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
@@ -93,12 +92,11 @@ public class IterablePushRegistrationTest extends BasePowerMockTest {
     public void testDisableOldGcmToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setLegacyGCMSenderId(GCM_SENDER_ID).build());
 
-        when(mockInstanceId.getToken()).thenReturn(NEW_TOKEN);
-        when(mockInstanceId.getToken(eq(GCM_SENDER_ID), eq(IterableConstants.MESSAGING_PLATFORM_GOOGLE))).thenReturn(OLD_TOKEN);
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(NEW_TOKEN);
+        when(pushRegistrationUtilMock.getFirebaseToken(eq(GCM_SENDER_ID), eq(IterableConstants.MESSAGING_PLATFORM_GOOGLE))).thenReturn(OLD_TOKEN);
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
-        ShadowApplication.runBackgroundTasks();
 
         ArgumentCaptor<IterableHelper.SuccessHandler> successHandlerCaptor = ArgumentCaptor.forClass(IterableHelper.SuccessHandler.class);
         verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN), eq(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
@@ -108,6 +106,7 @@ public class IterablePushRegistrationTest extends BasePowerMockTest {
         reset(apiMock);
 
         new IterablePushRegistration().execute(data);
+
         verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN), eq(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
         verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }

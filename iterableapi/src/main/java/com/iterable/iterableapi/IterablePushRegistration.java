@@ -8,6 +8,8 @@ import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 /**
  * Created by David Truong dt@iterable.com
  */
@@ -64,8 +66,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                 return null;
             }
 
-            FirebaseInstanceId instanceID = FirebaseInstanceId.getInstance();
-            return new PushRegistrationObject(instanceID.getToken());
+            return new PushRegistrationObject(Util.getFirebaseToken());
 
         } catch (Exception e) {
             IterableLogger.e(TAG, "Exception while retrieving the device token: check that firebase is added to the build dependencies", e);
@@ -85,7 +86,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                 final SharedPreferences sharedPref = applicationContext.getSharedPreferences(IterableConstants.PUSH_APP_ID, Context.MODE_PRIVATE);
                 boolean migrationDone = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, false);
                 if (!migrationDone) {
-                    String oldToken = FirebaseInstanceId.getInstance().getToken(gcmSenderId, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
+                    String oldToken = Util.getFirebaseToken(gcmSenderId, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
 
                     // We disable the device on Iterable but keep the token
                     if (oldToken != null) {
@@ -104,16 +105,46 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
     }
 
     static class Util {
+        static UtilImpl instance = new UtilImpl();
+
         static int getFirebaseResouceId(Context applicationContext) {
-            return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+            return instance.getFirebaseResouceId(applicationContext);
+        }
+
+        static String getFirebaseToken() {
+            return instance.getFirebaseToken();
+        }
+
+        static String getFirebaseToken(String senderId, String platform) throws IOException {
+            return instance.getFirebaseToken(senderId, platform);
         }
 
         static String getSenderId(Context applicationContext) {
-            int resId = applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_SENDER_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
-            if (resId != 0) {
-                return applicationContext.getResources().getString(resId);
-            } else {
-                return null;
+            return instance.getSenderId(applicationContext);
+        }
+
+        static class UtilImpl {
+            int getFirebaseResouceId(Context applicationContext) {
+                return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+            }
+
+            String getFirebaseToken() {
+                FirebaseInstanceId instanceID = FirebaseInstanceId.getInstance();
+                return instanceID.getToken();
+            }
+
+            String getFirebaseToken(String senderId, String platform) throws IOException {
+                FirebaseInstanceId instanceId = FirebaseInstanceId.getInstance();
+                return instanceId.getToken(senderId, platform);
+            }
+
+            String getSenderId(Context applicationContext) {
+                int resId = applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_SENDER_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
+                if (resId != 0) {
+                    return applicationContext.getResources().getString(resId);
+                } else {
+                    return null;
+                }
             }
         }
     }
