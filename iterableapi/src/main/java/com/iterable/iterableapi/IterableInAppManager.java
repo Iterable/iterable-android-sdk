@@ -27,6 +27,7 @@ import java.util.Map;
 public class IterableInAppManager implements IterableActivityMonitor.AppStateCallback {
     static final String TAG = "IterableInAppManager";
     static final long MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS = 60 * 1000;
+    static final int MESSAGES_TO_FETCH = 100;
 
     private final IterableApi api;
     private final Context context;
@@ -85,7 +86,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * need to call this method from your app.
      */
     public void syncInApp() {
-        this.api.getInAppMessages(10, new IterableHelper.IterableActionHandler() {
+        this.api.getInAppMessages(MESSAGES_TO_FETCH, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(String payload) {
                 if (payload != null && !payload.isEmpty()) {
