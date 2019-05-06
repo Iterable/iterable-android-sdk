@@ -59,7 +59,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
 Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToken` in recent versions of Firebase.
 
-## Migrating from an older (before 6.1.0) version of the SDK
+## Migrating from a version prior to 3.1.0
 
 - In-app messages: `spawnInAppNotification`
     - `spawnInAppNotification` is no longer needed and will fail to compile. In-app messages are now displayed automatically. If you need to customize the process, please refer to the sections above. To handle clicks on links in in-app messages, define `urlHandler` on `IterableConfig`.
