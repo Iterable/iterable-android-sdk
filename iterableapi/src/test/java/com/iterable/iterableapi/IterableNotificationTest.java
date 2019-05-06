@@ -1,4 +1,4 @@
-package com.iterable.iterableapi.unit;
+package com.iterable.iterableapi;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -6,9 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
-
-import com.iterable.iterableapi.IterableConstants;
-import com.iterable.iterableapi.IterableNotificationBuilder;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,10 +19,7 @@ import org.robolectric.shadows.ShadowPendingIntent;
 
 import static com.iterable.iterableapi.IterableTestUtils.getResourceString;
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
@@ -39,8 +33,8 @@ public class IterableNotificationTest {
 
     private IterableNotificationBuilder postNotification(Bundle notificationData) throws InterruptedException {
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
-        IterableNotificationBuilder iterableNotification = IterableNotificationBuilder.createNotification(getContext(), notificationData);
-        IterableNotificationBuilder.postNotificationOnDevice(getContext(), iterableNotification);
+        IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notificationData);
+        IterableNotificationHelper.postNotificationOnDevice(getContext(), iterableNotification);
         return iterableNotification;
     }
 

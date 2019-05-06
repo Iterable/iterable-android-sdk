@@ -5,7 +5,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.VisibleForTesting;
@@ -173,7 +172,7 @@ public class IterableApi {
      */
     void setPayloadData(Intent intent) {
         Bundle extras = intent.getExtras();
-        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY) && !IterableNotificationBuilder.isGhostPush(extras)) {
+        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY) && !IterableNotificationHelper.isGhostPush(extras)) {
             setPayloadData(extras);
         }
     }
