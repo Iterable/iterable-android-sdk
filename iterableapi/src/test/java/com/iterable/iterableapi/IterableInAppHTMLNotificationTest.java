@@ -7,7 +7,7 @@ import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 
-public class IterableInAppHTMLNotificationTest extends BasePowerMockTest {
+public class IterableInAppHTMLNotificationTest extends BaseTest {
 
     @Test
     public void testDoNotCrashOnResizeAfterDismiss() {

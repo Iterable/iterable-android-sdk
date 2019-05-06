@@ -16,7 +16,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
-public class IterableActivityMonitorTest extends BasePowerMockTest {
+public class IterableActivityMonitorTest extends BaseTest {
 
     @Before
     public void setUp() {
