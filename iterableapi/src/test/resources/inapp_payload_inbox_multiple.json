@@ -1,11 +1,7 @@
 {
   "inAppMessages": [
     {
-      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
-      "expiresAt": 1549157312395,
-      "trigger": {
-        "type": "immediate"
-      },
+      "messageId": "message1",
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "inAppDisplaySettings": {
@@ -27,7 +23,30 @@
         "intValue": 123
       }
     },{
-      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVY",
+      "messageId": "message2",
+      "content": {
+        "html": "<html><head></head><body>Test</body></html>",
+        "inAppDisplaySettings": {
+          "top": {
+            "percentage": 0
+          },
+          "right": {
+            "percentage": 0
+          },
+          "bottom": {
+            "percentage": 0
+          },
+          "left": {
+            "percentage": 0
+          }
+        }
+      },
+      "saveToInbox": true,
+      "customPayload": {
+        "intValue": 123
+      }
+    },{
+      "messageId": "message3",
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "inAppDisplaySettings": {
@@ -49,41 +68,7 @@
         "intValue": 123
       }
     },{
-      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVZ",
-      "expiresAt": 1549157312395,
-      "trigger": {
-        "type": "event",
-        "eventType": "screenView",
-        "eventParams": {
-          "screenName": "Main"
-        }
-      },
-      "content": {
-        "html": "<html><head></head><body>Test</body></html>",
-        "inAppDisplaySettings": {
-          "top": {
-            "percentage": 0
-          },
-          "right": {
-            "percentage": 0
-          },
-          "bottom": {
-            "percentage": 0
-          },
-          "left": {
-            "percentage": 0
-          }
-        }
-      },
-      "customPayload": {
-        "intValue": 123
-      }
-    },{
-      "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaV0",
-      "expiresAt": 1549157312395,
-      "trigger": {
-        "type": "immediate"
-      },
+      "messageId": "message4",
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "inAppDisplaySettings": {
