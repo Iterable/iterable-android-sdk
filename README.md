@@ -4,7 +4,7 @@
 
 # Iterable Android SDK
 
-The `iterable-android-sdk` is a Java implementation of an Android client for Iterable, supporting Android API versions 15 and higher.
+The Iterable Android SDK is a Java implementation of an Android client for Iterable, supporting Android API versions 15 and higher.
 
 ## Setting up a push integration in Iterable
 
@@ -27,7 +27,7 @@ Congratulations, you've configured your mobile application to receive push notif
 
 ## Installing the SDK
 
-Add the following dependencies to your application's `build.gradle`:
+Add the following dependencies to your application's **build.gradle**:
 
 ```groovy
 compile 'com.iterable:iterableapi:3.0.8'
@@ -38,7 +38,7 @@ See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
 
 ### Handling Firebase push messages and tokens
 
-The SDK adds a FirebaseMessagingService and FirebaseInstanceIdService to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
+The SDK adds a `FirebaseMessagingService` and `FirebaseInstanceIdService` to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
 
 If your application implements its own FirebaseMessagingService, make sure you forward `onMessageReceived` and `onNewToken` calls to `IterableFirebaseMessagingService.handleMessageReceived` and `IterableFirebaseInstanceIDService.handleTokenRefresh`, respectively:
 
@@ -65,14 +65,14 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
     - `spawnInAppNotification` is no longer needed and will fail to compile. In-app messages are now displayed automatically. If you need to customize the process, please refer to the sections above. To handle clicks on links in in-app messages, define `urlHandler` on `IterableConfig`.
 - In-app messages: handling manually
     - If you want to handle all in-app messages manually, as before these changes, define an `inAppHandler` on `IterableConfig` that always returns `InAppResponse.SKIP` to never show in-app messages automatically, and use `getInAppManager().getMessages()` to get the messages and `getInAppManager().showMessage(message)` to show a specific message.
-- In-app messages: custom actions
 - Consolidated deep link URL handling
+	- By default, the beta SDK handles deep links with the the URL handler assigned to `IterableConfig`. Follow the instructions in [Deep Linking](#deep-linking) to migrate any existing URL handling code to this new API.
 
 ## Using the SDK
 
 ### Push notifications
 
-1. In `Application`'s `onCreate`, initialize the Iterable SDK:
+1. In the `onCreate` method of the `Application`, initialize the Iterable SDK:
 
 	```java
 	IterableConfig config = new IterableConfig.Builder()
@@ -201,9 +201,9 @@ inAppManager.showMessage(message, false, null);
 
 #### Handling user clicks in in-app messages
 
-Button/link clicks from in-app messages are handled similarly to deep links from push notifications and emails. Please refer to the [Deep Linking](#Deep-Linking) section. Normally, the URL of the link (`href` property) will be passed to your app's `IterableUrlHandler`, if one is set. If this handler is not set or it returns `false` for that URL, tapping a link will open a browser with the URL of the link.
+Button/link clicks from in-app messages are handled similarly to [deep links](#deep-linking) from push notifications and emails. Normally, the URL of the link (`href` property) will be passed to your app's `IterableUrlHandler`, if one is set. If this handler is not set or it returns `false` for that URL, tapping a link will open a browser with the URL of the link.
 
-Custom actions can be specified by using `itbl` scheme in the URL: `itbl://customActionName`. If the URL of the link starts with `itbl://`, tapping the link will call your app's `IterableCustomActionHandler`. If `customActionHandler` is not set, nothing will happen by default.
+Custom actions can be specified by using `action://` scheme in the URL: `action://customActionName`. If the URL of the link starts with `action://`, tapping the link will call your app's `IterableCustomActionHandler`. If the custom action handler is not set, nothing, by default nothing will happen.
 
 #### Changing the display interval between in-app messages
 
@@ -213,7 +213,7 @@ To customize the time delay between successive in-app messages, set `inAppDispla
 
 #### Handling links from push notifications
 
-Push notifications and action buttons may have `openUrl` actions attached to them. When a URL is specified, the SDK first calls `urlHandler` specified in your `IterableConfig` object. You can use this class to handle `openUrl` actions the same way as you handle normal deep links. If the handler is not set or returns NO, the SDK will open a browser with that URL.
+Push notifications and action buttons may have `openUrl` actions attached to them. When a URL is specified, the SDK first calls the `urlHandler` specified in your `IterableConfig` object. You can use this class to handle `openUrl` actions the same way as you handle normal deep links. If the handler is not set or returns NO, the SDK will open a browser with that URL.
 
 ```java
 // MyApplication.java
@@ -238,9 +238,9 @@ public boolean handleIterableURL(Uri uri, IterableActionContext actionContext) {
 
 #### Handling email links
 
-For App Links to work with link rewriting in emails, you need to set up assetlinks.json file in the Iterable project. More instructions here: [Setting up Android App Links](https://support.iterable.com/hc/articles/115001021063-Setting-up-Android-App-Links)
+For App Links to work with link rewriting in emails, you need to set up an **assetlinks.json** file in the Iterable project. For more information, read [Setting up Android App Links](https://support.iterable.com/hc/articles/115001021063-Setting-up-Android-App-Links).
 
-If you already have a `urlHandler` (see *Handling links from push notifications* section above), the same handler can be used for email deep links by calling `handleAppLink` in the activity that handles all app links in your app:
+If you already have a `urlHandler` (see [Handling links from push notifications](#handling-links-from-push-notifications)), the same handler can be used for email deep links by calling `handleAppLink` in the activity that handles all app links in your app:
 
 ```java
 // MainActivity.java
@@ -269,7 +269,7 @@ private void handleIntent(Intent intent) {
 }
 ```
 
-Alternatively, call `getAndTrackDeeplink` along with a callback to handle the original deeplink url. You can use this method for any incoming URLs, as it will execute the callback without changing the URL for non-Iterable URLs.
+Alternatively, call `getAndTrackDeeplink` along with a callback to handle the original deep link URL. You can use this method for any incoming URLs, as it will execute the callback without changing the URL for non-Iterable URLs.
 
 ```java
 IterableApi.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
