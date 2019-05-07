@@ -15,6 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.0-beta3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta3)
+
+#### Changed
+- Increased the number of in-app messages fetched from the server to 100
+- Changed the visibility of `syncInApp` to package-private
+
 ## [3.1.0-beta2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta2)
 
 #### Changed
