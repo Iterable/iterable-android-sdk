@@ -14,6 +14,7 @@ public class IterableInAppMessage {
     private final String messageId;
     private final Content content;
     private final JSONObject customPayload;
+    private final Date createdAt;
     private final Date expiresAt;
     private final Trigger trigger;
     private final Boolean saveToInbox;
@@ -23,10 +24,11 @@ public class IterableInAppMessage {
     private boolean consumed = false;
     private boolean read = false;
 
-    IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date expiresAt, Trigger trigger, Boolean saveToInbox, InboxMetadata inboxMetadata) {
+    IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date createdAt, Date expiresAt, Trigger trigger, Boolean saveToInbox, InboxMetadata inboxMetadata) {
         this.messageId = messageId;
         this.content = content;
         this.customPayload = customPayload;
+        this.createdAt = createdAt;
         this.expiresAt = expiresAt;
         this.trigger = trigger;
         this.saveToInbox = saveToInbox;
@@ -186,6 +188,8 @@ public class IterableInAppMessage {
         }
 
         String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
+        long createdAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_CREATED_AT);
+        Date createdAt = createdAtLong != 0 ? new Date(createdAtLong) : null;
         long expiresAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT);
         Date expiresAt = expiresAtLong != 0 ? new Date(expiresAtLong) : null;
 
@@ -203,7 +207,7 @@ public class IterableInAppMessage {
         InboxMetadata inboxMetadata = InboxMetadata.fromJSONObject(inboxPayloadJson);
 
         IterableInAppMessage message = new IterableInAppMessage(messageId,
-                new Content(html, padding, backgroundAlpha), customPayload, expiresAt, trigger, saveToInbox, inboxMetadata);
+                new Content(html, padding, backgroundAlpha), customPayload, createdAt, expiresAt, trigger, saveToInbox, inboxMetadata);
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         return message;
@@ -214,6 +218,9 @@ public class IterableInAppMessage {
         JSONObject contentJson = new JSONObject();
         try {
             messageJson.putOpt(IterableConstants.KEY_MESSAGE_ID, messageId);
+            if (createdAt != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CREATED_AT, createdAt.getTime());
+            }
             if (expiresAt != null) {
                 messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, expiresAt.getTime());
             }
