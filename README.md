@@ -72,9 +72,9 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 - In-app messages: handling manually
 
     - To control when in-app messages display (rather than displaying them
-    automatically), set an `inAppHandler` (an object of type
-    `IterableInAppHandler`) on `IterableConfig`. From the `onNewInApp`
-    method, return `InAppResponse.SKIP`.
+    automatically), set `IterableConfig.inAppHandler` (an 
+    `IterableInAppHandler` object). From its `onNewInApp` method, return 
+    `InAppResponse.SKIP`.
 
     - To get the queue of available in-app messages, call 
     `IterableApi.getInstance().getInAppManager().getMessages()`. Then, call 
@@ -89,7 +89,7 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
     Iterable-defined actions handled by the SDK and the `action://` URL
     scheme for custom actions handled by the mobile application's custom
     action handler. For more details, see 
-	[Handling user clicks in in-app messages](#handling-user-clicks-in-in-app-messages).
+	[Handling in-app message buttons and links](#handling-in-app-message-buttons-and-links).
 
     - If you are currently using the `itbl://` URL scheme for custom actions,
     the SDK will still pass these actions to the custom action handler.
@@ -99,7 +99,7 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 
 - Consolidated deep link URL handling
 
-    - By default, the beta SDK handles deep links with the the URL handler
+    - By default, the SDK handles deep links with the the URL handler
     assigned to `IterableConfig`. Follow the instructions in 
     [Deep linking](#deep-linking) to migrate any existing URL handling code
     to this new API.
@@ -235,27 +235,29 @@ inAppManager.showMessage(message, false, null);
 
 ```
 
-#### Handling user clicks in in-app messages
+#### Handling in-app message buttons and links
 
-The SDK handles button and link clicks from in-app messages similarly to
-[deep links](#deep-linking) from push notifications and emails:
+The SDK handles in-app message buttons and links as follows:
 
 - If the URL of the button or link uses the `action://` URL scheme, the SDK
-passes the action to the `handleIterableCustomAction` method of the
-`customActionHandler` property (an `IterableCustomActionHandler` object) on
-the application's `IterableConfig`. If no `customActionHandler` has been set,
-the action will not be handled.
+passes the action to `IterableConfig.customActionHandler.handleIterableCustomAction()`. 
+If `customActionHandler` (an `IterableCustomActionHandler` object) has not 
+been set, the action will not be handled.
 
-- If the URL of the button or link uses the `iterable://` URL scheme, the SDK
-passes the URL to the `handleIterableURL` method of the `urlHandler`
-property (an `IterableUrlHandler` object) on the application's
-`IterableConfig`. If this handler is not set, or if it returns `false` for
-the provided URL, the URL will be opened by a web browser.
+    - For the time being, the SDK will treat `itbl://` URLs the same way as
+    `action://` URLs. However, this behavior will eventually be deprecated
+    (timeline TBD), so it's best to migrate to the `action://` URL scheme
+    as it's possible to do so.
 
-- For the time being, the SDK will treat `itbl://` URLs the same way as
-`iterable://` URLs. However, this behavior will eventually be deprecated
-(timeline TBD), so it's best to migrate to the `iterable://` URL scheme as
-it's possible to do so.
+- The `iterable://` URL scheme is reserved for action names predefined by
+the SDK. If the URL of the button or link uses an `iterable://` URL known
+to the SDK, it will be handled automatically and will not be passed to the
+custom action handler.
+
+- The SDK passes all other URLs to `IterableConfig.urlHandler.handleIterableURL()`. 
+If `urlHandler` (an `IterableUrlHandler` object) has not been set, or if it
+returns `false` for the provided URL, the URL will be opened by the system
+(using a web browser or other application, as applicable).
 
 #### Changing the display interval between in-app messages
 
