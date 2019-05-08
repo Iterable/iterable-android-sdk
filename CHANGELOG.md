@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.0-beta4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta4)
+
+#### Changed
+- The scheme for actions handled by the SDK is now `iterable://`. `itbl://` links will keep working as custom actions (similar to `action://` URLs) for backwards compatibility, but `itbl://` namespace is deprecated in favor of `action://`.
+
 ## [3.1.0-beta3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta3)
 
 #### Changed
