@@ -62,11 +62,45 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 ## Migrating from a version prior to 3.1.0
 
 - In-app messages: `spawnInAppNotification`
-    - `spawnInAppNotification` is no longer needed and will fail to compile. In-app messages are now displayed automatically. If you need to customize the process, please refer to the sections above. To handle clicks on links in in-app messages, define `urlHandler` on `IterableConfig`.
+
+    - `spawnInAppNotification` is no longer needed and will fail to compile.
+    The SDK now displays in-app messages automatically. For more information,
+	see [In-app messages](#in-app-messages).
+
 - In-app messages: handling manually
-    - If you want to handle all in-app messages manually, as before these changes, define an `inAppHandler` on `IterableConfig` that always returns `InAppResponse.SKIP` to never show in-app messages automatically, and use `getInAppManager().getMessages()` to get the messages and `getInAppManager().showMessage(message)` to show a specific message.
+
+	- To prevent in-app messages from showing automatically (as with
+	previous versions of the SDK), set an `inAppHandler` (an object of type
+	`IterableInAppHandler`) on `IterableConfig`. From the `onNewInApp` 
+	method, return `InAppResponse.SKIP`.
+
+	- To get the queue of available in-app messages, call 
+	`IterableApi.getInstance().getInAppManager().getMessages()`. Then, call 
+	`IterableApi.getInstance().getInAppManager().showMessage(message)`
+	to show a specific message.
+
+	- For more details, see [Deep linking](#deep-linking).
+
+- In-app messages: custom actions
+
+    - This version of the SDK reserves the `iterable://` URL scheme for
+    Iterable-defined actions handled by the SDK and the `action://` URL
+    scheme for custom actions handled by the mobile application's custom
+    action handler. For more details, see 
+	[Handling user clicks in in-app messages](#handling-user-clicks-in-in-app-messages).
+
+    - If you are currently using the `itbl://` URL scheme for custom actions,
+    the SDK will still pass these actions to the custom action handler.
+    However, support for this URL scheme will eventually be removed (timeline
+    TBD), so it is best to move templates to the `action://` URL scheme as
+    it's possible to do so.
+
 - Consolidated deep link URL handling
-	- By default, the beta SDK handles deep links with the the URL handler assigned to `IterableConfig`. Follow the instructions in [Deep Linking](#deep-linking) to migrate any existing URL handling code to this new API.
+
+    - By default, the beta SDK handles deep links with the the URL handler
+    assigned to `IterableConfig`. Follow the instructions in [Deep
+    linking](#deep-linking) to migrate any existing URL handling code to this
+    new API.
 
 ## Using the SDK
 
@@ -201,9 +235,25 @@ inAppManager.showMessage(message, false, null);
 
 #### Handling user clicks in in-app messages
 
-Button/link clicks from in-app messages are handled similarly to [deep links](#deep-linking) from push notifications and emails. Normally, the URL of the link (`href` property) will be passed to your app's `IterableUrlHandler`, if one is set. If this handler is not set or it returns `false` for that URL, tapping a link will open a browser with the URL of the link.
+The SDK handles button and link clicks from in-app messages similarly to
+[deep links](#deep-linking) from push notifications and emails:
 
-Custom actions can be specified by using `action://` scheme in the URL: `action://customActionName`. If the URL of the link starts with `action://`, tapping the link will call your app's `IterableCustomActionHandler`. If the custom action handler is not set, nothing, by default nothing will happen.
+- If the URL of the button or link uses the `action://` URL scheme, the SDK
+passes the action to the `handleIterableCustomAction` method of the
+`customActionHandler` property (an `IterableCustomActionHandler` object) on
+the application's `IterableConfig`. If no `customActionHandler` has been set,
+the action will not be handled.
+
+- If the URL of the button or link uses the `iterable://` URL scheme, the SDK
+passes the URL to the `handleIterableURL` method of the `urlHandler`
+property (an `IterableUrlHandler` object) on the application's
+`IterableConfig`. If this handler is not set, or if it returns `false` for
+the provided URL, the URL will be opened by a web browser.
+
+- For the time being, the SDK will treat `itbl://` URLs the same way as
+`iterable://` URLs. However, this behavior will eventually be deprecated
+(timeline TBD), so it's best to migrate to the `iterable://` URL scheme as
+it's possible to do so.
 
 #### Changing the display interval between in-app messages
 
