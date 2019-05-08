@@ -216,6 +216,16 @@ public class IterableInAppManagerTest extends BaseTest {
         assertEquals("actionName", actionCaptor.getValue().getType());
         assertEquals(IterableActionSource.IN_APP, contextCaptor.getValue().source);
 
+        // Verify that legacy itbl:// links are also routed to the custom action handler
+        reset(inAppDisplayerMock);
+        reset(customActionHandler);
+        inAppManager.showMessage(message);
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        callbackCaptor.getValue().execute(Uri.parse("itbl://legacyCustomAction"));
+        verify(customActionHandler).handleIterableCustomAction(actionCaptor.capture(), contextCaptor.capture());
+        assertEquals("legacyCustomAction", actionCaptor.getValue().getType());
+        assertEquals(IterableActionSource.IN_APP, contextCaptor.getValue().source);
+
         reset(inAppDisplayerMock);
         inAppManager.showMessage(message);
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
@@ -224,6 +234,16 @@ public class IterableInAppManagerTest extends BaseTest {
         verify(urlHandler).handleIterableURL(urlCaptor.capture(), contextCaptor.capture());
         assertEquals("https://www.google.com", urlCaptor.getValue().toString());
         assertEquals(IterableActionSource.IN_APP, contextCaptor.getValue().source);
+
+        // Verify that iterable:// links are not routed to either custom action handler or url handler
+        reset(inAppDisplayerMock);
+        reset(customActionHandler);
+        reset(urlHandler);
+        inAppManager.showMessage(message);
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        callbackCaptor.getValue().execute(Uri.parse("iterable://someInternalAction"));
+        verify(customActionHandler, never()).handleIterableCustomAction(any(IterableAction.class), any(IterableActionContext.class));
+        verify(urlHandler, never()).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
     }
 
 }
