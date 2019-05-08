@@ -126,6 +126,10 @@ public class IterableInAppMessage {
         return messageId;
     }
 
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
     Date getExpiresAt() {
         return expiresAt;
     }
