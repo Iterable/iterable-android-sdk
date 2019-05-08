@@ -89,7 +89,7 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
     Iterable-defined actions handled by the SDK and the `action://` URL
     scheme for custom actions handled by the mobile application's custom
     action handler. For more details, see 
-	[Handling in-app message buttons and links](#handling-in-app-message-buttons-and-links).
+    [Handling in-app message buttons and links](#handling-in-app-message-buttons-and-links).
 
     - If you are currently using the `itbl://` URL scheme for custom actions,
     the SDK will still pass these actions to the custom action handler.
@@ -110,12 +110,12 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 
 1. In the `onCreate` method of the `Application`, initialize the Iterable SDK:
 
-	```java
-	IterableConfig config = new IterableConfig.Builder()
-			.setPushIntegrationName("myPushIntegration")
-			.build();
-	IterableApi.initialize(context, "<your-api-key>", config);
-	```
+    ```java
+    IterableConfig config = new IterableConfig.Builder()
+            .setPushIntegrationName("myPushIntegration")
+            .build();
+    IterableApi.initialize(context, "<your-api-key>", config);
+    ```
 
     * The `apiKey` should correspond to the API key of your project in Iterable. If you'd like, you can specify a different `apiKey` depending on whether you're building in `DEBUG` or `PRODUCTION`, and point the SDK to the relevant Iterable project.
 
@@ -274,19 +274,19 @@ Push notifications and action buttons may have `openUrl` actions attached to the
 
 @Override
 public void onCreate() {
-	super.onCreate();
-	...
-	IterableConfig config = new IterableConfig.Builder()
-		.setPushIntegrationName("myPushIntegration")
-		.setUrlHandler(this)
-		.build();
-	IterableApi.initialize(context, "YOUR API KEY", config);
+    super.onCreate();
+    ...
+    IterableConfig config = new IterableConfig.Builder()
+        .setPushIntegrationName("myPushIntegration")
+        .setUrlHandler(this)
+        .build();
+    IterableApi.initialize(context, "YOUR API KEY", config);
 }
 
 @Override
 public boolean handleIterableURL(Uri uri, IterableActionContext actionContext) {
-	// Assuming you have a DeeplinkHandler class that handles all deep link URLs and navigates to the right place in the app
-	return DeeplinkHandler.handle(this, uri);
+    // Assuming you have a DeeplinkHandler class that handles all deep link URLs and navigates to the right place in the app
+    return DeeplinkHandler.handle(this, uri);
 }
 ```
 
@@ -300,26 +300,26 @@ If you already have a `urlHandler` (see [Handling links from push notifications]
 // MainActivity.java
 @Override
 public void onCreate() {
-	super.onCreate();
-	...
-	handleIntent(getIntent());
+    super.onCreate();
+    ...
+    handleIntent(getIntent());
 }
 
 @Override
 public void onNewIntent(Intent intent) {
-	super.onNewIntent(intent);
-	if (intent != null) {
-		handleIntent(intent);
-	}
+    super.onNewIntent(intent);
+    if (intent != null) {
+        handleIntent(intent);
+    }
 }
 
 private void handleIntent(Intent intent) {
-	if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
-		IterableApi.handleAppLink(intent.getDataString());
-		// Overwrite the intent to make sure we don't open the deep link
-		// again when the user opens our app later from the task manager
-		setIntent(new Intent(Intent.ACTION_MAIN));
-	}
+    if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
+        IterableApi.handleAppLink(intent.getDataString());
+        // Overwrite the intent to make sure we don't open the deep link
+        // again when the user opens our app later from the task manager
+        setIntent(new Intent(Intent.ACTION_MAIN));
+    }
 }
 ```
 
@@ -327,11 +327,11 @@ Alternatively, call `getAndTrackDeeplink` along with a callback to handle the or
 
 ```java
 IterableApi.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
-	@Override
-	public void execute(String result) {
-		Log.d("HandleDeeplink", "Redirected to: "+ result);
-		// Handle the original deep link URL here
-	}
+    @Override
+    public void execute(String result) {
+        Log.d("HandleDeeplink", "Redirected to: "+ result);
+        // Handle the original deep link URL here
+    }
 });
 ```
 
