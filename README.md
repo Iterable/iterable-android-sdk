@@ -65,21 +65,23 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 
     - `spawnInAppNotification` is no longer needed and will fail to compile.
     The SDK now displays in-app messages automatically. For more information,
-	see [In-app messages](#in-app-messages).
+    see [In-app messages](#in-app-messages).
+
+    - There is no need to poll the server for new messages.
 
 - In-app messages: handling manually
 
-	- To prevent in-app messages from showing automatically (as with
-	previous versions of the SDK), set an `inAppHandler` (an object of type
-	`IterableInAppHandler`) on `IterableConfig`. From the `onNewInApp` 
-	method, return `InAppResponse.SKIP`.
+    - To control when in-app messages display (rather than displaying them
+    automatically), set an `inAppHandler` (an object of type
+    `IterableInAppHandler`) on `IterableConfig`. From the `onNewInApp`
+    method, return `InAppResponse.SKIP`.
 
-	- To get the queue of available in-app messages, call 
-	`IterableApi.getInstance().getInAppManager().getMessages()`. Then, call 
-	`IterableApi.getInstance().getInAppManager().showMessage(message)`
-	to show a specific message.
+    - To get the queue of available in-app messages, call 
+    `IterableApi.getInstance().getInAppManager().getMessages()`. Then, call 
+    `IterableApi.getInstance().getInAppManager().showMessage(message)`
+    to show a specific message.
 
-	- For more details, see [Deep linking](#deep-linking).
+    - For more details, see [In-app messages](#in-app-messages).
 
 - In-app messages: custom actions
 
@@ -98,9 +100,9 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
 - Consolidated deep link URL handling
 
     - By default, the beta SDK handles deep links with the the URL handler
-    assigned to `IterableConfig`. Follow the instructions in [Deep
-    linking](#deep-linking) to migrate any existing URL handling code to this
-    new API.
+    assigned to `IterableConfig`. Follow the instructions in 
+    [Deep linking](#deep-linking) to migrate any existing URL handling code
+    to this new API.
 
 ## Using the SDK
 
