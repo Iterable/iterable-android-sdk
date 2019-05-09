@@ -366,8 +366,23 @@ If you're using a different project for FCM and have existing devices on a GCM p
 
 For more information, take a look at:
 
+- Iterable's [Android SDK Release Notes](https://support.iterable.com/hc/articles/360027543332)
 - Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943-Setting-up-Android-Push-Notifications) guide
 - Iterable's [Push Notification Setup FAQs](http://support.iterable.com/hc/articles/206791196-Push-Notification-Setup-FAQ-s)
+
+## Beta SDK terms of service
+
+Beta versions of Iterable’s iOS and Android SDKs should be used only for
+internal testing in a sandbox environment. Beta SDKs should not be used in
+production. Iterable may change, fix bugs or vulnerabilities in, remove
+features from, add features to, or otherwise improve or modify beta SDKs
+before removing their beta designation. Beta SDKs are provided "as is," and
+Iterable does not guarantee their functionality or provide support for their
+use in production.
+
+Iterable attempts to move beta SDKs out of beta (to general availability)
+four weeks after the start of the beta period. However, this timeline is not
+guaranteed
 
 ## License
 
