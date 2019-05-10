@@ -366,6 +366,7 @@ If you're using a different project for FCM and have existing devices on a GCM p
 
 For more information, take a look at:
 
+- Iterable's [Android SDK Release Notes](https://support.iterable.com/hc/articles/360027543332)
 - Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943-Setting-up-Android-Push-Notifications) guide
 - Iterable's [Push Notification Setup FAQs](http://support.iterable.com/hc/articles/206791196-Push-Notification-Setup-FAQ-s)
 
