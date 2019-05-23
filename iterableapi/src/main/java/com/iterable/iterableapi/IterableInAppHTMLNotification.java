@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
@@ -178,15 +179,20 @@ public class IterableInAppHTMLNotification extends Dialog {
      */
     @JavascriptInterface
     public void resize(final float height) {
-        getOwnerActivity().runOnUiThread(new Runnable() {
+        final Activity activity = getOwnerActivity();
+        if (activity == null) {
+            return;
+        }
+
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 // Since this is run asynchronously, notification might've been dismissed already
-                if (notification == null) {
+                if (notification == null || notification.getWindow() == null) {
                     return;
                 }
 
-                DisplayMetrics displayMetrics = getOwnerActivity().getResources().getDisplayMetrics();
+                DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
                 Window window = notification.getWindow();
                 Rect insetPadding = notification.insetPadding;
 
