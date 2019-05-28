@@ -68,6 +68,15 @@ Please refer to the [Migration guide](https://github.com/Iterable/iterable-andro
 #### Removed
 - `spawnInAppNotification` has been removed. Please refer to the in-app migration guide (above)
 
+## [3.0.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.9)
+#### Changed
+- The SDK now passes `preferUserId` flag to create a user by userId if it does not exist when using userId to identify the user
+- Incresed the deep link timeout to 3 seconds
+
+#### Fixed
+- Fixed InAppClick event parameter to properly track the URL that was clicked
+- Fixed a NullPointerException when an in-app message was being shown while the app was in background
+
 ## [3.0.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.8)
 #### Added
 - Added an option to specify notification channel name via manifest metadata (`iterable_notification_channel_name`)

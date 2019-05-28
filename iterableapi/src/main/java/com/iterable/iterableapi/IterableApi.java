@@ -780,6 +780,12 @@ public class IterableApi {
 
         try {
             addEmailOrUserIdToJson(requestJSON);
+
+            // Create the user by userId if it doesn't exist
+            if (_email == null && _userId != null) {
+                requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
+            }
+
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
