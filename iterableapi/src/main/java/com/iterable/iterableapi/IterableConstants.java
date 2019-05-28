@@ -185,6 +185,7 @@ public final class IterableConstants {
 
     // URL schemes
     public static final String URL_SCHEME_ITBL = "itbl://";
+    public static final String URL_SCHEME_ITERABLE = "iterable://";
     public static final String URL_SCHEME_ACTION = "action://";
 
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";

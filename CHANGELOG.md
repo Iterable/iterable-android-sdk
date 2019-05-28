@@ -15,6 +15,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.0-beta4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta4)
+
+#### Changed
+- The scheme for actions handled by the SDK is now `iterable://`. `itbl://` links will keep working as custom actions (similar to `action://` URLs) for backwards compatibility, but `itbl://` namespace is deprecated in favor of `action://`.
+
+## [3.1.0-beta3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta3)
+
+#### Changed
+- Increased the number of in-app messages fetched from the server to 100
+- Changed the visibility of `syncInApp` to package-private
+
 ## [3.1.0-beta2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0-beta2)
 
 #### Changed
@@ -56,6 +67,15 @@ Please refer to the [Migration guide](https://github.com/Iterable/iterable-andro
 
 #### Removed
 - `spawnInAppNotification` has been removed. Please refer to the in-app migration guide (above)
+
+## [3.0.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.9)
+#### Changed
+- The SDK now passes `preferUserId` flag to create a user by userId if it does not exist when using userId to identify the user
+- Incresed the deep link timeout to 3 seconds
+
+#### Fixed
+- Fixed InAppClick event parameter to properly track the URL that was clicked
+- Fixed a NullPointerException when an in-app message was being shown while the app was in background
 
 ## [3.0.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.0.8)
 #### Added
