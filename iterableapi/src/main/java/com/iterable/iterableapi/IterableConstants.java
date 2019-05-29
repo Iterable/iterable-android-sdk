@@ -27,6 +27,7 @@ public final class IterableConstants {
     public static final String KEY_EVENT_NAME           = "eventName";
     public static final String KEY_ITEMS                = "items";
     public static final String KEY_NEW_EMAIL            = "newEmail";
+    public static final String KEY_PACKAGE_NAME         = "packageName";
     public static final String KEY_PLATFORM             = "platform";
     public static final String KEY_PREFER_USER_ID       = "preferUserId";
     public static final String KEY_RECIPIENT_EMAIL      = "recipientEmail";
