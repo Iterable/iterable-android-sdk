@@ -30,7 +30,8 @@ public class BitmapLoader {
             public Bitmap call() throws Exception {
                 return fetchBitmap(imageView.getContext(), uri);
             }
-        }).onSuccess(new Future.SuccessCallback<Bitmap>() {
+        })
+        .onSuccess(new Future.SuccessCallback<Bitmap>() {
             @Override
             public void onSuccess(Bitmap result) {
                 imageView.setImageBitmap(result);
@@ -46,7 +47,7 @@ public class BitmapLoader {
 
     static Bitmap fetchBitmap(Context context, Uri uri) throws IOException {
         File imageFile = File.createTempFile("itbl_", ".temp", context.getCacheDir());
-        if(!downloadFile(uri, imageFile)) {
+        if (!downloadFile(uri, imageFile)) {
             throw new RuntimeException("Failed to download image file");
         }
         return BitmapFactory.decodeFile(imageFile.getAbsolutePath());
@@ -79,9 +80,6 @@ public class BitmapLoader {
                     outputStream.write(buffer, 0, readLength);
                 }
 
-                outputStream.close();
-                inputStream.close();
-
                 return true;
             }
 
@@ -100,6 +98,4 @@ public class BitmapLoader {
             }
         }
     }
-
-
 }

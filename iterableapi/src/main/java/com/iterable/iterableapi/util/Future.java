@@ -24,8 +24,9 @@ public class Future<T> {
     private Future(final Callable<T> callable) {
         // Set up a Handler for the callback based on the current thread
         Looper looper = Looper.myLooper();
-        if (looper == null)
+        if (looper == null) {
             looper = Looper.getMainLooper();
+        }
         callbackHandler = new Handler(looper);
 
         EXECUTOR.submit(new Runnable() {
