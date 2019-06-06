@@ -44,7 +44,7 @@ public class IterableApiDeeplinkTest {
             };
 
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -67,7 +67,7 @@ public class IterableApiDeeplinkTest {
             };
 
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -89,7 +89,7 @@ public class IterableApiDeeplinkTest {
             };
 
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -127,7 +127,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -170,7 +170,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -193,7 +193,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -214,7 +214,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -234,7 +234,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
             IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-            assertTrue("callback is called", signal.await(1, TimeUnit.SECONDS));
+            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
