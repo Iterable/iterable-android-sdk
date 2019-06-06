@@ -1,1 +1,1 @@
-include ':app', ':iterableapi'
+include ':app', ':iterableapi', ':iterableapi-ui'
