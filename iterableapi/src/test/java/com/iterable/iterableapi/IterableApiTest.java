@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -25,6 +26,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -308,6 +310,30 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(updateUserRequest.getBody().readUtf8());
         assertEquals(true, requestJson.getBoolean(IterableConstants.KEY_PREFER_USER_ID));
         assertEquals("value", requestJson.getJSONObject(IterableConstants.KEY_DATA_FIELDS).getString("key"));
+    }
+
+    @Test
+    public void testGetInAppMessages() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableHelper.IterableActionHandler handlerMock = mock(IterableHelper.IterableActionHandler.class);
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().getInAppMessages(10, handlerMock);
+        Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
+        Robolectric.flushBackgroundThreadScheduler();
+
+        verify(handlerMock).execute(eq("{}"));
+
+        RecordedRequest getInAppMessagesRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(getInAppMessagesRequest);
+        Uri uri = Uri.parse(getInAppMessagesRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, uri.getPath());
+        assertEquals("10", uri.getQueryParameter(IterableConstants.ITERABLE_IN_APP_COUNT));
+        assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
+        assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, uri.getQueryParameter(IterableConstants.ITBL_KEY_SDK_VERSION));
+        assertEquals(RuntimeEnvironment.application.getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
     }
 
 }
