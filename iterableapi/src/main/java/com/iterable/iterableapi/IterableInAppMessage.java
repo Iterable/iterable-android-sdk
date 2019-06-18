@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.graphics.Rect;
+import android.support.v4.util.ObjectsCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -73,6 +74,23 @@ public class IterableInAppMessage {
         JSONObject toJSONObject() {
             return triggerJson;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof Trigger)) {
+                return false;
+            }
+            Trigger trigger = (Trigger) obj;
+            return ObjectsCompat.equals(triggerJson, trigger.triggerJson);
+        }
+
+        @Override
+        public int hashCode() {
+            return ObjectsCompat.hash(triggerJson);
+        }
     }
 
     public static class Content {
@@ -84,6 +102,25 @@ public class IterableInAppMessage {
             this.html = html;
             this.padding = padding;
             this.backgroundAlpha = backgroundAlpha;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof Content)) {
+                return false;
+            }
+            Content content = (Content) obj;
+            return ObjectsCompat.equals(html, content.html) &&
+                    ObjectsCompat.equals(padding, content.padding) &&
+                    backgroundAlpha == backgroundAlpha;
+        }
+
+        @Override
+        public int hashCode() {
+            return ObjectsCompat.hash(html, padding, backgroundAlpha);
         }
     }
 
@@ -119,6 +156,25 @@ public class IterableInAppMessage {
                 IterableLogger.e(TAG, "Error while serializing inbox metadata", e);
             }
             return inboxMetadataJson;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof InboxMetadata)) {
+                return false;
+            }
+            InboxMetadata inboxMetadata = (InboxMetadata) obj;
+            return ObjectsCompat.equals(title, inboxMetadata.title) &&
+                    ObjectsCompat.equals(subtitle, inboxMetadata.subtitle) &&
+                    ObjectsCompat.equals(icon, inboxMetadata.icon);
+        }
+
+        @Override
+        public int hashCode() {
+            return ObjectsCompat.hash(title, subtitle, icon);
         }
     }
 
@@ -214,6 +270,7 @@ public class IterableInAppMessage {
                 new Content(html, padding, backgroundAlpha), customPayload, createdAt, expiresAt, trigger, saveToInbox, inboxMetadata);
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
+        message.read = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_READ, false);
         return message;
     }
 
@@ -248,6 +305,7 @@ public class IterableInAppMessage {
 
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PROCESSED, processed);
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONSUMED, consumed);
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_READ, read);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "Error while serializing an in-app message", e);
         }
@@ -352,5 +410,29 @@ public class IterableInAppMessage {
             }
         }
         return returnObject;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof IterableInAppMessage)) {
+            return false;
+        }
+        IterableInAppMessage message = (IterableInAppMessage) obj;
+        return ObjectsCompat.equals(messageId, message.messageId) &&
+                ObjectsCompat.equals(content, message.content) &&
+                ObjectsCompat.equals(customPayload, message.customPayload) &&
+                ObjectsCompat.equals(createdAt, message.createdAt) &&
+                ObjectsCompat.equals(expiresAt, message.expiresAt) &&
+                ObjectsCompat.equals(trigger, message.trigger) &&
+                ObjectsCompat.equals(saveToInbox, message.saveToInbox) &&
+                ObjectsCompat.equals(inboxMetadata, message.inboxMetadata);
+    }
+
+    @Override
+    public int hashCode() {
+        return ObjectsCompat.hash(messageId, content, customPayload, createdAt, expiresAt, trigger, saveToInbox, inboxMetadata);
     }
 }

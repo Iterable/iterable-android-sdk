@@ -174,6 +174,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_DISPLAY_SETTINGS = "inAppDisplaySettings";
     public static final String ITERABLE_IN_APP_PROCESSED        = "processed";
     public static final String ITERABLE_IN_APP_CONSUMED         = "consumed";
+    public static final String ITERABLE_IN_APP_READ             = "read";
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";
