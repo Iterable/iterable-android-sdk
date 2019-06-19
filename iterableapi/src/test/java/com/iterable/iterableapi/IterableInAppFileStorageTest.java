@@ -42,10 +42,12 @@ public class IterableInAppFileStorageTest {
 
     @Test
     public void testInAppImplicitSave() throws Exception {
+        // Persist a message
         IterableInAppFileStorage storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         IterableInAppMessage testInAppMessage = InAppTestUtils.getTestInAppMessage();
         storage.addMessage(testInAppMessage);
 
+        // Test that the message attributes are stored properly without an explicit save call
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertEquals(1, storage.getMessages().size());
         testInAppMessage = storage.getMessages().get(0);
