@@ -67,7 +67,7 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     public void setValues(List<IterableInAppMessage> newValues) {
         InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(values, newValues);
-        final DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
         values.clear();
         values.addAll(newValues);
         diffResult.dispatchUpdatesTo(this);
@@ -133,13 +133,15 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
         @Override
         public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-            return oldList.get(oldItemPosition).getMessageId().equals(newList.get(newItemPosition).getMessageId());
+            IterableInAppMessage oldItem = oldList.get(oldItemPosition);
+            IterableInAppMessage newItem = newList.get(newItemPosition);
+            return oldItem.getMessageId().equals(newItem.getMessageId());
         }
 
         @Override
         public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-            final IterableInAppMessage oldItem = oldList.get(oldItemPosition);
-            final IterableInAppMessage newItem = newList.get(newItemPosition);
+            IterableInAppMessage oldItem = oldList.get(oldItemPosition);
+            IterableInAppMessage newItem = newList.get(newItemPosition);
             return oldItem.equals(newItem);
         }
     }
