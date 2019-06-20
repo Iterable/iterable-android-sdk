@@ -86,7 +86,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     urlConnection.setRequestProperty("Accept", "application/json");
                     urlConnection.setRequestProperty("Content-Type", "application/json");
-                    urlConnection.setRequestProperty(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
 
                     OutputStream os = urlConnection.getOutputStream();
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));

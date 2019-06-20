@@ -57,6 +57,7 @@ public class IterableApiRequestsTest {
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
         assertEquals(expectedRequest, request.getBody().readUtf8());
+        assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
     }
 
     @Test
