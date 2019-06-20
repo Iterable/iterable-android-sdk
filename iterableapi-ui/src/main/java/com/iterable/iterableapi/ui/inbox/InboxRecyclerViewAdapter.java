@@ -2,6 +2,7 @@ package com.iterable.iterableapi.ui.inbox;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,8 +66,18 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
     }
 
     public void setValues(List<IterableInAppMessage> newValues) {
-        values = newValues;
-        notifyDataSetChanged();
+        InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(values, newValues);
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
+        values.clear();
+        values.addAll(newValues);
+        diffResult.dispatchUpdatesTo(this);
+    }
+
+    public void deleteItem(int position) {
+        IterableInAppMessage deletedItem = values.get(position);
+        values.remove(position);
+        listener.onListItemDeleted(deletedItem);
+        notifyItemRemoved(position);
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -88,6 +99,7 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     interface OnListInteractionListener {
         void onListItemTapped(IterableInAppMessage message);
+        void onListItemDeleted(IterableInAppMessage message);
     }
 
     private String formatDate(Date date) {
@@ -96,6 +108,41 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
             return formatter.format(date);
         } else {
             return "";
+        }
+    }
+
+    private static class InAppMessageDiffCallback extends DiffUtil.Callback {
+
+        private final List<IterableInAppMessage> oldList;
+        private final List<IterableInAppMessage> newList;
+
+        private InAppMessageDiffCallback(List<IterableInAppMessage> oldList, List<IterableInAppMessage> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            IterableInAppMessage oldItem = oldList.get(oldItemPosition);
+            IterableInAppMessage newItem = newList.get(newItemPosition);
+            return oldItem.getMessageId().equals(newItem.getMessageId());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            IterableInAppMessage oldItem = oldList.get(oldItemPosition);
+            IterableInAppMessage newItem = newList.get(newItemPosition);
+            return oldItem.equals(newItem);
         }
     }
 

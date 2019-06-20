@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,7 +28,10 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
-        view.setAdapter(new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), InboxFragment.this));
+        InboxRecyclerViewAdapter adapter = new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), InboxFragment.this);
+        view.setAdapter(adapter);
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new InboxRecyclerViewTouchHelper(getContext(), adapter));
+        itemTouchHelper.attachToRecyclerView(view);
         return view;
     }
 
@@ -59,5 +63,10 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     public void onListItemTapped(IterableInAppMessage message) {
         IterableApi.getInstance().getInAppManager().setRead(message, true);
         startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra(InboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));
+    }
+
+    @Override
+    public void onListItemDeleted(IterableInAppMessage message) {
+        IterableApi.getInstance().getInAppManager().removeMessage(message);
     }
 }
