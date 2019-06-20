@@ -109,6 +109,7 @@ public class IterableApi {
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
             inAppManager = new IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval);
+            inAppManager.syncInApp();
         }
         return inAppManager;
     }
