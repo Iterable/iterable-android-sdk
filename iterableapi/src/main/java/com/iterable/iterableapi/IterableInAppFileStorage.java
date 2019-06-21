@@ -54,6 +54,14 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         save();
     }
 
+    private synchronized void clearMessages() {
+        for (Map.Entry<String, IterableInAppMessage> entry : messages.entrySet()) {
+            IterableInAppMessage message = entry.getValue();
+            message.setOnChangeListener(null);
+        }
+        messages.clear();
+    }
+
     private JSONObject serializeMessages() {
         JSONObject jsonData = new JSONObject();
         JSONArray messagesJson = new JSONArray();
@@ -72,7 +80,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
     private void loadMessagesFromJson(JSONObject jsonData) {
-        messages.clear();
+        clearMessages();
         JSONArray messagesJson = jsonData.optJSONArray("inAppMessages");
         if (messagesJson != null) {
             for (int i = 0; i < messagesJson.length(); i++) {
@@ -80,6 +88,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
                 if (messageJson != null) {
                     IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson);
                     if (message != null) {
+                        message.setOnChangeListener(this);
                         messages.put(message.getMessageId(), message);
                     }
                 }

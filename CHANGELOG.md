@@ -15,6 +15,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.1)
+#### Added
+- SDK platform and version is now sent with every API request via headers
+
+#### Changed
+- `Api-Key` header name is now used for the API key instead of `api_key`, for consistency with HTTP header naming conventions
+
+#### Fixed
+- Fixed an issue that could cause the SDK not to persist in-app message properties (processed/consumed)
+- Fixed a NullPointerException that could occur in IterableActivityMonitor if it was initialized after application start
+
 ## [3.1.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.0)
 
 #### Added

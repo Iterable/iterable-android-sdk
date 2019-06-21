@@ -45,6 +45,24 @@ public class IterableApiRequestsTest {
     }
 
     @Test
+    public void testPostRequestHeaders() throws Exception {
+        IterableApi.sharedInstance.track("customEvent");
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
+        assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
+        assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
+    }
+
+    @Test
+    public void testGetRequestHeaders() throws Exception {
+        IterableApi.sharedInstance.getInAppMessages(1, null);
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertTrue(request.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
+        assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
+        assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
+    }
+
+    @Test
     public void testTrackPurchase() throws Exception {
         String expectedRequest = "{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100}";
 
@@ -57,6 +75,7 @@ public class IterableApiRequestsTest {
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
         assertEquals(expectedRequest, request.getBody().readUtf8());
+        assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
     }
 
     @Test
