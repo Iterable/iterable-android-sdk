@@ -76,7 +76,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
-                    urlConnection.setRequestProperty(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -90,7 +90,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setRequestProperty("Content-Type", "application/json");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
-                    urlConnection.setRequestProperty(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
 
                     OutputStream os = urlConnection.getOutputStream();
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
