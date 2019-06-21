@@ -65,7 +65,7 @@ public class IterableActivityMonitor {
 
         @Override
         public void onActivityPaused(Activity activity) {
-            if (currentActivity.get() == activity) {
+            if (getCurrentActivity() == activity) {
                 currentActivity = null;
             }
         }
