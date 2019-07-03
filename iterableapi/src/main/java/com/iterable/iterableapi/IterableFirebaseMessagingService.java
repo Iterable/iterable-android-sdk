@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -16,6 +17,11 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         handleMessageReceived(this, remoteMessage);
+    }
+
+    @Override
+    public void onNewToken(String s) {
+        handleTokenRefresh();
     }
 
     /**
@@ -75,6 +81,16 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             }
         }
         return true;
+    }
+
+    /**
+     * Handles token refresh
+     * Call this from a custom {@link FirebaseMessagingService} to register the new token with Iterable
+     */
+    public static void handleTokenRefresh() {
+        String registrationToken = FirebaseInstanceId.getInstance().getToken();
+        IterableLogger.d(TAG, "New Firebase Token generated: " + registrationToken);
+        IterableApi.getInstance().registerForPush();
     }
 }
 

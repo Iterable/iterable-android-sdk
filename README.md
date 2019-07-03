@@ -38,9 +38,9 @@ See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
 
 ### Handling Firebase push messages and tokens
 
-The SDK adds a `FirebaseMessagingService` and `FirebaseInstanceIdService` to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
+The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
 
-If your application implements its own FirebaseMessagingService, make sure you forward `onMessageReceived` and `onNewToken` calls to `IterableFirebaseMessagingService.handleMessageReceived` and `IterableFirebaseInstanceIDService.handleTokenRefresh`, respectively:
+If your application implements its own FirebaseMessagingService, make sure you forward `onMessageReceived` and `onNewToken` calls to `IterableFirebaseMessagingService.handleMessageReceived` and `IterableFirebaseMessagingService.handleTokenRefresh`, respectively:
 
 ```java
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
@@ -52,7 +52,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onNewToken(String s) {
-        IterableFirebaseInstanceIDService.handleTokenRefresh();
+        IterableFirebaseMessagingService.handleTokenRefresh();
     }
 }
 ```

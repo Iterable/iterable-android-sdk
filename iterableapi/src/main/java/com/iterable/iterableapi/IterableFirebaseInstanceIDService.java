@@ -1,33 +1,14 @@
 package com.iterable.iterableapi;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.FirebaseInstanceIdService;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 /**
- * Created by David Truong dt@iterable.com.
+ * Deprecated. Please use {@link IterableFirebaseMessagingService} instead.
  */
-public class IterableFirebaseInstanceIDService extends FirebaseInstanceIdService {
-
-    static final String TAG = "itblFCMInstanceService";
-
-    @Override
-    public void onTokenRefresh() {
-        handleTokenRefresh();
-    }
-
+@Deprecated
+public class IterableFirebaseInstanceIDService {
     /**
-     * Handles token refresh
-     * Call this from a custom {@link FirebaseInstanceIdService} to register the new token with Iterable
+     * Deprecated. Use {@link IterableFirebaseMessagingService#handleTokenRefresh()} instead.
      */
     public static void handleTokenRefresh() {
-        String registrationToken = FirebaseInstanceId.getInstance().getToken();
-        IterableLogger.d(TAG, "New Firebase Token generated: " + registrationToken);
-        IterableApi.getInstance().registerForPush();
+        IterableFirebaseMessagingService.handleTokenRefresh();
     }
 }
