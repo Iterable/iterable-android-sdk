@@ -188,6 +188,9 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_INBOX_SUBTITLE   = "subtitle";
     public static final String ITERABLE_IN_APP_INBOX_ICON       = "icon";
 
+    // Custom actions handled by the SDK
+    public static final String ITERABLE_IN_APP_ACTION_DELETE    = "delete";
+
     // URL schemes
     public static final String URL_SCHEME_ITBL = "itbl://";
     public static final String URL_SCHEME_ITERABLE = "iterable://";

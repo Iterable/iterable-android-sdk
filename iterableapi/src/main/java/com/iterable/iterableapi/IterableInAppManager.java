@@ -1,19 +1,18 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
-
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 
+import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
+import com.iterable.iterableapi.IterableInAppMessage.Trigger.TriggerType;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
-import com.iterable.iterableapi.IterableInAppMessage.Trigger.TriggerType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -316,7 +315,9 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
-
+        if (IterableConstants.ITERABLE_IN_APP_ACTION_DELETE.equals(actionName)) {
+            removeMessage(message);
+        }
     }
 
     @Override
