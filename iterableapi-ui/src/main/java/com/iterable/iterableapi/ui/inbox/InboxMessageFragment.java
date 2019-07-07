@@ -19,10 +19,12 @@ import java.util.List;
 
 public class InboxMessageFragment extends Fragment {
     public static final String ARG_MESSAGE_ID = "messageId";
+    public static final String LOADED_ONCE = "loadedOnce";
 
     private String messageId;
     private WebView webView;
     private IterableInAppMessage message;
+    private boolean loadedOnce = false;
 
     public static InboxMessageFragment newInstance(String messageId) {
         InboxMessageFragment fragment = new InboxMessageFragment();
@@ -40,6 +42,15 @@ public class InboxMessageFragment extends Fragment {
         if (getArguments() != null) {
             messageId = getArguments().getString(ARG_MESSAGE_ID);
         }
+        if (savedInstanceState != null) {
+            loadedOnce = savedInstanceState.getBoolean(LOADED_ONCE, false);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(LOADED_ONCE, true);
     }
 
     @Nullable
@@ -66,6 +77,10 @@ public class InboxMessageFragment extends Fragment {
         if (message != null) {
             webView.loadDataWithBaseURL("", message.getContent().html, "text/html", "UTF-8", "");
             webView.setWebViewClient(webViewClient);
+            if (!loadedOnce) {
+                IterableApi.getInstance().trackInAppOpen(messageId);
+                loadedOnce = true;
+            }
         }
     }
 
