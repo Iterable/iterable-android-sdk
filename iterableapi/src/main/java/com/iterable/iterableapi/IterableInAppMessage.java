@@ -140,6 +140,12 @@ public class IterableInAppMessage {
         JSONObject triggerJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_TRIGGER);
         Trigger trigger = Trigger.fromJSONObject(triggerJson);
         JSONObject customPayload = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD);
+        if (customPayload == null) {
+            customPayload = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_LEGACY_PAYLOAD);
+        }
+        if (customPayload == null) {
+            customPayload = new JSONObject();
+        }
 
         IterableInAppMessage message = new IterableInAppMessage(messageId,
                 new Content(html, padding, backgroundAlpha), customPayload, expiresAt, trigger);
