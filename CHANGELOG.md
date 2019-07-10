@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.2)
+#### Changed
+- Removed FirebaseInstanceIDService dependency to support newer versions of `firebase-messaging` library. This bumps the minimum required version of `firebase-messaging` to 17.4.0.
+
+#### Fixed
+- Fixed deserialization of in-app messages stored with beta versions of the SDK
+
 ## [3.1.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.1)
 #### Added
 - SDK platform and version is now sent with every API request via headers
