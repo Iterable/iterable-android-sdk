@@ -12,14 +12,6 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name="com.iterable.iterableapi.IterableFirebaseInstanceIDService"
-            android:exported="false">
-            <intent-filter android:priority="-1">
-                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
-            </intent-filter>
-        </service>
-
         <!-- Action receiver for push interactions -->
         <receiver
             android:name="com.iterable.iterableapi.IterablePushActionReceiver"
