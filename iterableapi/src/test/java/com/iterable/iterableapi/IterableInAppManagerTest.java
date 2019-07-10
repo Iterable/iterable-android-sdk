@@ -246,4 +246,56 @@ public class IterableInAppManagerTest extends BaseTest {
         verify(urlHandler, never()).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
     }
 
+    @Test
+    public void testHandleCustomActionDelete() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+
+        // Reset the existing IterableApi
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+        IterableApi.sharedInstance = spy(new IterableApi());
+
+        IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        doReturn(inAppManager).when(IterableApi.sharedInstance).getInAppManager();
+        IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
+            @Override
+            public IterableConfig.Builder run(IterableConfig.Builder builder) {
+                return builder.setInAppHandler(inAppHandler).setCustomActionHandler(customActionHandler).setUrlHandler(urlHandler);
+            }
+        });
+        doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
+
+        // Bring the app into foreground
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        Robolectric.flushForegroundThreadScheduler();
+        IterableInAppMessage message = inAppManager.getMessages().get(0);
+
+        // Verify that message is not consumed by default if consume = false and iterable://dismiss is clicked
+        reset(inAppDisplayerMock);
+        reset(customActionHandler);
+        reset(urlHandler);
+        inAppManager.showMessage(message, false, null);
+        ArgumentCaptor<IterableHelper.IterableUrlCallback> callbackCaptor = ArgumentCaptor.forClass(IterableHelper.IterableUrlCallback.class);
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        callbackCaptor.getValue().execute(Uri.parse("iterable://dismiss"));
+        assertFalse(message.isConsumed());
+
+        // Verify that message is consumed if iterable://delete is called
+        reset(inAppDisplayerMock);
+        reset(customActionHandler);
+        reset(urlHandler);
+        inAppManager.showMessage(message, false, null);
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        callbackCaptor.getValue().execute(Uri.parse("iterable://delete"));
+        assertTrue(message.isConsumed());
+    }
+
+    private static class IterableSkipInAppHandler implements IterableInAppHandler {
+        @Override
+        public InAppResponse onNewInApp(IterableInAppMessage message) {
+            return InAppResponse.SKIP;
+        }
+    }
+
 }
