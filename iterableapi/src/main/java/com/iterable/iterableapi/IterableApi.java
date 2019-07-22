@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.NotificationManagerCompat;
 
-import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.iterable.iterableapi.ddl.DeviceInfo;
 import com.iterable.iterableapi.ddl.MatchFpResponse;
 
@@ -1307,9 +1306,9 @@ public class IterableApi {
         try {
             Class adClass = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
             if (adClass != null) {
-                AdvertisingIdClient.Info advertisingIdInfo = AdvertisingIdClient.getAdvertisingIdInfo(_applicationContext);
+                Object advertisingIdInfo = adClass.getMethod("getAdvertisingIdInfo", Context.class).invoke(null, _applicationContext);
                 if (advertisingIdInfo != null) {
-                    advertisingId = advertisingIdInfo.getId();
+                    advertisingId = (String) advertisingIdInfo.getClass().getMethod("getId").invoke(advertisingIdInfo);
                 }
             }
         } catch (ClassNotFoundException e) {

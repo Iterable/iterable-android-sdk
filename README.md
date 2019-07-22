@@ -30,17 +30,17 @@ Congratulations, you've configured your mobile application to receive push notif
 Add the following dependencies to your application's **build.gradle**:
 
 ```groovy
-compile 'com.iterable:iterableapi:3.1.1'
-compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 9.0.0
+compile 'com.iterable:iterableapi:3.1.2'
+compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0
 ```
 
 See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest version of the Iterable Android SDK.
 
 ### Handling Firebase push messages and tokens
 
-The SDK adds a `FirebaseMessagingService` and `FirebaseInstanceIdService` to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
+The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
 
-If your application implements its own FirebaseMessagingService, make sure you forward `onMessageReceived` and `onNewToken` calls to `IterableFirebaseMessagingService.handleMessageReceived` and `IterableFirebaseInstanceIDService.handleTokenRefresh`, respectively:
+If your application implements its own FirebaseMessagingService, make sure you forward `onMessageReceived` and `onNewToken` calls to `IterableFirebaseMessagingService.handleMessageReceived` and `IterableFirebaseMessagingService.handleTokenRefresh`, respectively:
 
 ```java
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
@@ -52,7 +52,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     @Override
     public void onNewToken(String s) {
-        IterableFirebaseInstanceIDService.handleTokenRefresh();
+        IterableFirebaseMessagingService.handleTokenRefresh();
     }
 }
 ```
