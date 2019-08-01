@@ -25,6 +25,7 @@ public final class IterableConstants {
     public static final String KEY_CURRENT_USERID       = "currentUserId";
     public static final String KEY_DATA_FIELDS          = "dataFields";
     public static final String KEY_DEVICE               = "device";
+    public static final String KEY_DEVICE_INFO          = "deviceInfo";
     public static final String KEY_EMAIL                = "email";
     public static final String KEY_EMAIL_LIST_IDS       = "emailListIds";
     public static final String KEY_EVENT_NAME           = "eventName";
@@ -36,6 +37,7 @@ public final class IterableConstants {
     public static final String KEY_RECIPIENT_EMAIL      = "recipientEmail";
     public static final String KEY_SEND_AT              = "sendAt";
     public static final String KEY_TEMPLATE_ID          = "templateId";
+    public static final String KEY_MESSAGE_CONTEXT      = "messageContext";
     public static final String KEY_MESSAGE_ID           = "messageId";
     public static final String KEY_TOKEN                = "token";
     public static final String KEY_TOTAL                = "total";
@@ -174,11 +176,13 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TRIGGER          = "trigger";
     public static final String ITERABLE_IN_APP_TRIGGER_TYPE     = "type";
     public static final String ITERABLE_IN_APP_SAVE_TO_INBOX    = "saveToInbox";
+    public static final String ITERABLE_IN_APP_SILENT_INBOX     = "silentInbox";
     public static final String ITERABLE_IN_APP_INBOX_METADATA   = "inboxMetadata";
     public static final String ITERABLE_IN_APP_DISPLAY_SETTINGS = "inAppDisplaySettings";
     public static final String ITERABLE_IN_APP_PROCESSED        = "processed";
     public static final String ITERABLE_IN_APP_CONSUMED         = "consumed";
     public static final String ITERABLE_IN_APP_READ             = "read";
+    public static final String ITERABLE_IN_APP_LOCATION         = "location";
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";
