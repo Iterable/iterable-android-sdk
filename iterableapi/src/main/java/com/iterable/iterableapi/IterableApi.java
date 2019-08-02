@@ -1101,6 +1101,30 @@ public class IterableApi {
         }
     }
 
+    void trackInAppDelivery(IterableInAppMessage message) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppDelivery: message is null");
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, null));
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Consumes an InApp message.
      * @param messageId
