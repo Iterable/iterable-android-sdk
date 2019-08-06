@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.net.Uri;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 
 public class IterableApiTest extends BaseTest {
 
+    public static final String PACKAGE_NAME = "com.iterable.iterableapi.test";
     private MockWebServer server;
     private IterableUtil.IterableUtilImpl originalIterableUtil;
     private IterableUtil.IterableUtilImpl iterableUtilSpy;
@@ -270,7 +271,7 @@ public class IterableApiTest extends BaseTest {
         JSONObject dataFields = requestJson.getJSONObject("device").getJSONObject("dataFields");
         assertNotNull(dataFields.getString("deviceId"));
         assertEquals(UUID.randomUUID().toString().length(), dataFields.getString("deviceId").length());
-        assertEquals("com.iterable.iterableapi.test", dataFields.getString("appPackageName"));
+        assertEquals(PACKAGE_NAME, dataFields.getString("appPackageName"));
         assertEquals("1.2.3", dataFields.getString("appVersion"));
         assertEquals("321", dataFields.getString("appBuild"));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, dataFields.getString("iterableSdkVersion"));
@@ -334,6 +335,95 @@ public class IterableApiTest extends BaseTest {
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, uri.getQueryParameter(IterableConstants.ITBL_KEY_SDK_VERSION));
         assertEquals(RuntimeEnvironment.application.getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
+    }
+
+    @Test
+    public void testInAppOpen() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackInAppOpen("testMessageId");
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppOpenRequest);
+        Uri uri = Uri.parse(trackInAppOpenRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppOpenRequest.getBody().readUtf8());
+        assertEquals("testMessageId", requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+    }
+
+    @Test
+    public void testInAppOpenExtended() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.IN_APP);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppOpenRequest);
+        Uri uri = Uri.parse(trackInAppOpenRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppOpenRequest.getBody().readUtf8());
+        assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        verifyMessageContext(requestJson);
+    }
+
+    @Test
+    public void testInAppClick() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackInAppClick("testMessageId", "https://www.google.com");
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppClickRequest);
+        Uri uri = Uri.parse(trackInAppClickRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
+        assertEquals("testMessageId", requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
+    }
+
+    @Test
+    public void testInAppClickExtended() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackInAppClick(message, "https://www.google.com", IterableInAppLocation.IN_APP);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppClickRequest);
+        Uri uri = Uri.parse(trackInAppClickRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
+        assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
+        verifyMessageContext(requestJson);
+    }
+
+    private void verifyMessageContext(JSONObject requestJson) throws JSONException {
+        JSONObject messageContext = requestJson.getJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT);
+        assertNotNull(messageContext);
+        assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX));
+        assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX));
+        assertEquals("in-app", messageContext.getString(IterableConstants.ITERABLE_IN_APP_LOCATION));
+        JSONObject deviceInfo = messageContext.getJSONObject(IterableConstants.KEY_DEVICE_INFO);
+        assertNotNull(deviceInfo);
+        assertNotNull(deviceInfo.getString(IterableConstants.DEVICE_ID));
+        assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, deviceInfo.getString(IterableConstants.KEY_PLATFORM));
+        assertEquals(PACKAGE_NAME, deviceInfo.getString(IterableConstants.DEVICE_APP_PACKAGE_NAME));
     }
 
 }

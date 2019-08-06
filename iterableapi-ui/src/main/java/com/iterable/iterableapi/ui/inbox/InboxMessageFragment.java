@@ -12,6 +12,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.iterable.iterableapi.IterableApi;
+import com.iterable.iterableapi.IterableInAppLocation;
 import com.iterable.iterableapi.IterableInAppMessage;
 import com.iterable.iterableapi.ui.R;
 
@@ -78,7 +79,7 @@ public class InboxMessageFragment extends Fragment {
             webView.loadDataWithBaseURL("", message.getContent().html, "text/html", "UTF-8", "");
             webView.setWebViewClient(webViewClient);
             if (!loaded) {
-                IterableApi.getInstance().trackInAppOpen(messageId);
+                IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.INBOX);
                 loaded = true;
             }
         }
@@ -87,7 +88,7 @@ public class InboxMessageFragment extends Fragment {
     private WebViewClient webViewClient = new WebViewClient() {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            IterableApi.getInstance().trackInAppClick(messageId, url);
+            IterableApi.getInstance().trackInAppClick(message, url, IterableInAppLocation.INBOX);
             IterableApi.getInstance().getInAppManager().handleInAppClick(message, Uri.parse(url));
             if (getActivity() != null) {
                 getActivity().finish();

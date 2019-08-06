@@ -86,6 +86,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         return filteredList;
     }
 
+    synchronized IterableInAppMessage getMessageById(String messageId) {
+        return storage.getMessage(messageId);
+    }
+
     /**
      * Get the list of inbox messages
      * @return A {@link List} of {@link IterableInAppMessage} objects stored in inbox

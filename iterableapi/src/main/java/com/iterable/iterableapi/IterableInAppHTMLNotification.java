@@ -162,7 +162,7 @@ public class IterableInAppHTMLNotification extends Dialog {
         relativeLayout.addView(webView,layoutParams);
         setContentView(relativeLayout,layoutParams);
 
-        IterableApi.sharedInstance.trackInAppOpen(messageId);
+        IterableApi.sharedInstance.trackInAppOpen(messageId, IterableInAppLocation.IN_APP);
     }
 
     /**
@@ -313,7 +313,7 @@ class IterableWebViewClient extends WebViewClient {
      */
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url);
+        IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url, IterableInAppLocation.IN_APP);
         inAppHTMLNotification.clickCallback.execute(Uri.parse(url));
         inAppHTMLNotification.dismiss();
 

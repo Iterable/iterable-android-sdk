@@ -980,7 +980,7 @@ public class IterableApi {
     }
 
     /**
-     * Tracks an InApp open.
+     * Tracks an in-app open.
      * @param messageId
      */
     public void trackInAppOpen(String messageId) {
@@ -1001,6 +1001,52 @@ public class IterableApi {
         }
     }
 
+    void trackInAppOpen(String messageId, IterableInAppLocation location) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppOpen(message, location);
+        } else {
+            IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
+        }
+    }
+
+    /**
+     * Tracks an in-app open.
+     * @param message in-app message
+     */
+    public void trackInAppOpen(IterableInAppMessage message, IterableInAppLocation location) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppOpen: message is null");
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, location));
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void trackInAppClick(String messageId, String clickedUrl, IterableInAppLocation location) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClick(message, clickedUrl, location);
+        } else {
+            IterableLogger.w(TAG, "trackInAppClick: could not find an in-app message with ID: " + messageId);
+        }
+    }
+
     /**
      * Tracks an InApp click.
      * @param messageId
@@ -1017,6 +1063,36 @@ public class IterableApi {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Tracks an InApp click.
+     * @param message in-app message
+     * @param clickedUrl
+     */
+    public void trackInAppClick(IterableInAppMessage message, String clickedUrl, IterableInAppLocation clickLocation) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppClick: message is null");
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
         }
@@ -1417,6 +1493,36 @@ public class IterableApi {
             IterableLogger.e(TAG, "Error while handling deferred deep link", e);
         }
         setDDLChecked(true);
+    }
+
+    private JSONObject getInAppMessageContext(IterableInAppMessage message, IterableInAppLocation location) {
+        JSONObject messageContext = new JSONObject();
+        try {
+            boolean isSilentInbox = message.isInboxMessage() &&
+                    message.getTriggerType() == IterableInAppMessage.Trigger.TriggerType.NEVER;
+
+            messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX, message.isInboxMessage());
+            messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX, isSilentInbox);
+            messageContext.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            if (location != null) {
+                messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_LOCATION, location.toString());
+            }
+        } catch(Exception e) {
+            IterableLogger.e(TAG, "Could not populate messageContext JSON", e);
+        }
+        return messageContext;
+    }
+
+    private JSONObject getDeviceInfoJson() {
+        JSONObject deviceInfo = new JSONObject();
+        try {
+            deviceInfo.putOpt(IterableConstants.DEVICE_ID, getDeviceId());
+            deviceInfo.putOpt(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            deviceInfo.putOpt(IterableConstants.DEVICE_APP_PACKAGE_NAME, _applicationContext.getPackageName());
+        } catch(Exception e) {
+            IterableLogger.e(TAG, "Could not populate deviceInfo JSON", e);
+        }
+        return deviceInfo;
     }
 
 //---------------------------------------------------------------------------------------
