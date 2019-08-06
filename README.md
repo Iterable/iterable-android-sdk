@@ -30,7 +30,7 @@ Congratulations, you've configured your mobile application to receive push notif
 Add the following dependencies to your application's **build.gradle**:
 
 ```groovy
-compile 'com.iterable:iterableapi:3.1.2'
+compile 'com.iterable:iterableapi:3.1.3'
 compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0
 ```
 
