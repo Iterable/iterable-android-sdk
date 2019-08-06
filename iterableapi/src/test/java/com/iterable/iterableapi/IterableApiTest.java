@@ -413,12 +413,31 @@ public class IterableApiTest extends BaseTest {
         verifyMessageContext(requestJson);
     }
 
+    @Test
+    public void testInAppDelivery() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackInAppDelivery(message);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppClickRequest);
+        Uri uri = Uri.parse(trackInAppClickRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
+        assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        verifyMessageContext(requestJson);
+    }
+
     private void verifyMessageContext(JSONObject requestJson) throws JSONException {
         JSONObject messageContext = requestJson.getJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT);
         assertNotNull(messageContext);
         assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX));
         assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX));
-        assertEquals("in-app", messageContext.getString(IterableConstants.ITERABLE_IN_APP_LOCATION));
         JSONObject deviceInfo = messageContext.getJSONObject(IterableConstants.KEY_DEVICE_INFO);
         assertNotNull(deviceInfo);
         assertNotNull(deviceInfo.getString(IterableConstants.DEVICE_ID));

@@ -255,6 +255,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             remoteQueueMap.put(message.getMessageId(), message);
             if (storage.getMessage(message.getMessageId()) == null) {
                 storage.addMessage(message);
+                onMessageAdded(message);
                 changed = true;
             }
         }
@@ -304,6 +305,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 }
             }, (long) ((inAppDisplayInterval - getSecondsSinceLastInApp() + 2.0) * 1000));
         }
+    }
+
+    private void onMessageAdded(IterableInAppMessage message) {
+        api.trackInAppDelivery(message);
     }
 
     private boolean isShowingInApp() {
