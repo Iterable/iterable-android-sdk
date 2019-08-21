@@ -467,6 +467,4 @@ public class IterableApiTest extends BaseTest {
         assertEquals(PACKAGE_NAME, deviceInfo.getString(IterableConstants.DEVICE_APP_PACKAGE_NAME));
     }
 
-
-
 }

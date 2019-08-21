@@ -1102,7 +1102,7 @@ public class IterableApi {
     }
 
 
-    void trackInAppClose(String messageId, String clickedURL, IterableInAppLocation clickLocation ){
+    void trackInAppClose(String messageId, String clickedURL, IterableInAppLocation clickLocation) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
             trackInAppClose(message, clickedURL, clickLocation);
@@ -1117,7 +1117,7 @@ public class IterableApi {
      * @param clickedURL clicked Url if available
      * @param clickLocation location of the click
      */
-    void trackInAppClose(IterableInAppMessage message, String clickedURL, IterableInAppLocation clickLocation){
+    void trackInAppClose(IterableInAppMessage message, String clickedURL, IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
