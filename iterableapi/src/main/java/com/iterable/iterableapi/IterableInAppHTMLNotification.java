@@ -124,7 +124,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     @Override
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
-
+        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppLocation.IN_APP);
         super.onBackPressed();
     }
 
@@ -314,9 +314,9 @@ class IterableWebViewClient extends WebViewClient {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
         IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url, IterableInAppLocation.IN_APP);
+        IterableApi.sharedInstance.trackInAppClose(inAppHTMLNotification.messageId,url,IterableInAppLocation.IN_APP);
         inAppHTMLNotification.clickCallback.execute(Uri.parse(url));
         inAppHTMLNotification.dismiss();
-
         return true;
     }
 

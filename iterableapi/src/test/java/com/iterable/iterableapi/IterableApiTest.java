@@ -393,6 +393,28 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
+    public void testInAppClose() throws Exception{
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+
+        IterableApi.getInstance().trackInAppClose(message,"https://www.google.com", null);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppCloseRequest);
+        Uri uri = Uri.parse(trackInAppCloseRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
+        assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
+
+    }
+
+    @Test
     public void testInAppClickExtended() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
@@ -444,5 +466,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, deviceInfo.getString(IterableConstants.KEY_PLATFORM));
         assertEquals(PACKAGE_NAME, deviceInfo.getString(IterableConstants.DEVICE_APP_PACKAGE_NAME));
     }
+
+
 
 }
