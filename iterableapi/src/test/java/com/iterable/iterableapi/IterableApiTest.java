@@ -400,8 +400,8 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
-
-        IterableApi.getInstance().trackInAppClose(message,"https://www.google.com", null);
+        IterableInAppCloseAction action = IterableInAppCloseAction.BACK;
+        IterableApi.getInstance().trackInAppClose(message,"https://www.google.com", action, null);
         Robolectric.flushBackgroundThreadScheduler();
 
         RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -411,7 +411,7 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
-
+        assertEquals("back", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLOSE_SOURCE));
     }
 
     @Test

@@ -42,6 +42,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     double backgroundAlpha;
     Rect insetPadding;
     IterableHelper.IterableUrlCallback clickCallback;
+    IterableInAppCloseAction inAppCloseSource = IterableInAppCloseAction.UNKNOWN;
 
     /**
      * Creates a static instance of the notification
@@ -124,7 +125,8 @@ public class IterableInAppHTMLNotification extends Dialog {
     @Override
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppLocation.IN_APP);
+        inAppCloseSource = IterableInAppCloseAction.BACK;
+        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, inAppCloseSource, IterableInAppLocation.IN_APP);
         super.onBackPressed();
     }
 
@@ -314,7 +316,7 @@ class IterableWebViewClient extends WebViewClient {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
         IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url, IterableInAppLocation.IN_APP);
-        IterableApi.sharedInstance.trackInAppClose(inAppHTMLNotification.messageId,url,IterableInAppLocation.IN_APP);
+        IterableApi.sharedInstance.trackInAppClose(inAppHTMLNotification.messageId, url, IterableInAppCloseAction.LINK, IterableInAppLocation.IN_APP);
         inAppHTMLNotification.clickCallback.execute(Uri.parse(url));
         inAppHTMLNotification.dismiss();
         return true;
