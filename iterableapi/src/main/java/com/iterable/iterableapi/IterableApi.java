@@ -1191,11 +1191,42 @@ public class IterableApi {
         }
     }
 
+    /**
+     * Tracks InApp delete.
+     * This method from informs Iterable about inApp messages deleted with additional paramters.
+     * Call this method from places where inApp deletion are invoked by user. The messages can be swiped to delete or can be deleted using the link to delete button.
+     *
+     * @param message message object
+     * @param source An enum describing how the in App delete was triggered
+     * @param clickLocation The module in which the action happened
+     */
+    void trackInAppDelete(IterableInAppMessage message, IterableInAppDeleteSource source, IterableInAppLocation clickLocation) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_USER_ID,getUserId());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION, source.toString());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+
+            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
 
-//region Package-Protected Fuctions
+//region Package-Protected Functions
 //---------------------------------------------------------------------------------------
 
     /**
