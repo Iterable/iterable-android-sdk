@@ -42,7 +42,6 @@ public class IterableInAppHTMLNotification extends Dialog {
     double backgroundAlpha;
     Rect insetPadding;
     IterableHelper.IterableUrlCallback clickCallback;
-    IterableInAppCloseAction inAppCloseSource = IterableInAppCloseAction.UNKNOWN;
 
     /**
      * Creates a static instance of the notification
@@ -125,8 +124,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     @Override
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
-        inAppCloseSource = IterableInAppCloseAction.BACK;
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, inAppCloseSource, IterableInAppLocation.IN_APP);
+        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, IterableInAppLocation.IN_APP);
         super.onBackPressed();
     }
 

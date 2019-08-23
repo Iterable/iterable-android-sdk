@@ -400,8 +400,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
-        IterableInAppCloseAction action = IterableInAppCloseAction.BACK;
-        IterableApi.getInstance().trackInAppClose(message,"https://www.google.com", action, null);
+        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, null);
         Robolectric.flushBackgroundThreadScheduler();
 
         RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
