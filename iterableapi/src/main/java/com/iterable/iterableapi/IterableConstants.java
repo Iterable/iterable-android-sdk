@@ -57,6 +57,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_TRACK_INAPP_CLICK       = "events/trackInAppClick";
     public static final String ENDPOINT_TRACK_INAPP_OPEN        = "events/trackInAppOpen";
     public static final String ENDPOINT_TRACK_INAPP_DELIVERY    = "events/trackInAppDelivery";
+    public static final String ENDPOINT_TRACK_INBOX_SESSION     = "events/trackInboxSession";
     public static final String ENDPOINT_TRACK_PURCHASE          = "commerce/trackPurchase";
     public static final String ENDPOINT_TRACK_PUSH_OPEN         = "events/trackPushOpen";
     public static final String ENDPOINT_UPDATE_USER             = "users/update";
@@ -187,6 +188,14 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_LOCATION         = "location";
     public static final String ITERABLE_IN_APP_CLOSE_ACTION     = "closeAction";
     public static final String ITERABLE_IN_APP_DELETE_ACTION    = "deleteAction";
+    public static final String ITERABLE_INBOX_SESSION_START              = "inboxSessionStart";
+    public static final String ITERABLE_INBOX_SESSION_END                = "inboxSessionEnd";
+    public static final String ITERABLE_INBOX_START_TOTAL_MESSAGE_COUNT  = "startTotalMessageCount";
+    public static final String ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT = "startUnreadMessageCount";
+    public static final String ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT    = "endTotalMessageCount";
+    public static final String ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT   = "endUnreadMessageCount";
+    public static final String ITERABLE_INBOX_START_ACTION               = "startAction";
+    public static final String ITERABLE_INBOX_END_ACTION                 = "endAction";
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";

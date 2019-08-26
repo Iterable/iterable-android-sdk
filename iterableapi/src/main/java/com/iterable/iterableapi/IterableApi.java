@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.NotificationManagerCompat;
 
@@ -1215,6 +1216,41 @@ public class IterableApi {
             e.printStackTrace();
         }
 
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void trackInboxSession(IterableInboxSession session) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (session == null) {
+            IterableLogger.e(TAG, "trackInboxSession: session is null");
+            return;
+        }
+
+        if (session.sessionStartTime == null || session.sessionEndTime == null) {
+            IterableLogger.e(TAG, "trackInboxSession: sessionStartTime and sessionEndTime must be set");
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_START, session.sessionStartTime.getTime());
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_END, session.sessionEndTime.getTime());
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_START_TOTAL_MESSAGE_COUNT, session.startTotalMessageCount);
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT, session.startUnreadMessageCount);
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT, session.endTotalMessageCount);
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT, session.endUnreadMessageCount);
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 //---------------------------------------------------------------------------------------

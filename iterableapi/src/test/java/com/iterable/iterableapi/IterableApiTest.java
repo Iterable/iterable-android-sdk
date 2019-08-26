@@ -15,6 +15,7 @@ import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -453,6 +454,39 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         verifyMessageContext(requestJson);
+    }
+
+    @Test
+    public void testInboxSession() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        Date sessionStartTime = new Date();
+        IterableInboxSession session = new IterableInboxSession(
+                sessionStartTime,
+                new Date(sessionStartTime.getTime() + 3600),
+                10,
+                5,
+                8,
+                3
+        );
+        IterableApi.getInstance().trackInboxSession(session);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppClickRequest);
+        Uri uri = Uri.parse(trackInAppClickRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
+        assertEquals(sessionStartTime.getTime(), requestJson.getLong(IterableConstants.ITERABLE_INBOX_SESSION_START));
+        assertEquals(sessionStartTime.getTime() + 3600, requestJson.getLong(IterableConstants.ITERABLE_INBOX_SESSION_END));
+        assertEquals(10, requestJson.getInt(IterableConstants.ITERABLE_INBOX_START_TOTAL_MESSAGE_COUNT));
+        assertEquals(5, requestJson.getInt(IterableConstants.ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT));
+        assertEquals(8, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT));
+        assertEquals(3, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT));
     }
 
     private void verifyMessageContext(JSONObject requestJson) throws JSONException {
