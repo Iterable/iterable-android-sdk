@@ -75,6 +75,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                     url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
+
+                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
                 } else {
