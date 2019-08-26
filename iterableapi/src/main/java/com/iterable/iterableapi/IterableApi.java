@@ -1135,7 +1135,7 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_USER_ID,getUserId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_SOURCE, closeAction.toString());
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
         }
