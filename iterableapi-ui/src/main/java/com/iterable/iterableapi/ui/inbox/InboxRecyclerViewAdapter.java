@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.iterable.iterableapi.IterableInAppDeleteSource;
 import com.iterable.iterableapi.IterableInAppMessage;
 import com.iterable.iterableapi.ui.BitmapLoader;
 import com.iterable.iterableapi.ui.R;
@@ -73,10 +74,10 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
         diffResult.dispatchUpdatesTo(this);
     }
 
-    public void deleteItem(int position) {
+    public void deleteItem(int position, IterableInAppDeleteSource source) {
         IterableInAppMessage deletedItem = values.get(position);
         values.remove(position);
-        listener.onListItemDeleted(deletedItem);
+        listener.onListItemDeleted(deletedItem, source);
         notifyItemRemoved(position);
     }
 
@@ -99,7 +100,7 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     interface OnListInteractionListener {
         void onListItemTapped(IterableInAppMessage message);
-        void onListItemDeleted(IterableInAppMessage message);
+        void onListItemDeleted(IterableInAppMessage message, IterableInAppDeleteSource source);
     }
 
     private String formatDate(Date date) {
