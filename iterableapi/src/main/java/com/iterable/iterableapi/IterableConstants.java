@@ -63,6 +63,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_EMAIL            = "users/updateEmail";
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_DDL_MATCH               = "a/matchFp";
+    public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -184,6 +185,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_CONSUMED         = "consumed";
     public static final String ITERABLE_IN_APP_READ             = "read";
     public static final String ITERABLE_IN_APP_LOCATION         = "location";
+    public static final String ITERABLE_IN_APP_CLOSE_ACTION     = "closeAction";
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";

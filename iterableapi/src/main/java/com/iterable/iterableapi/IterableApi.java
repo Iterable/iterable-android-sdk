@@ -1101,6 +1101,50 @@ public class IterableApi {
         }
     }
 
+
+    void trackInAppClose(String messageId, String clickedURL, IterableInAppCloseAction closeAction, IterableInAppLocation clickLocation) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClose(message, clickedURL, closeAction, clickLocation);
+        } else {
+            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
+        }
+    }
+
+    /**
+     *Tracks InApp Close events.
+     * @param message in-app message
+     * @param clickedURL clicked Url if available
+     * @param clickLocation location of the click
+     */
+    void trackInAppClose(IterableInAppMessage message, String clickedURL, IterableInAppCloseAction closeAction, IterableInAppLocation clickLocation) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppClose: message is null");
+            return;
+        }
+
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_EMAIL,getEmail());
+            requestJSON.put(IterableConstants.KEY_USER_ID,getUserId());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
+            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     void trackInAppDelivery(IterableInAppMessage message) {
         if (!checkSDKInitialization()) {
             return;
