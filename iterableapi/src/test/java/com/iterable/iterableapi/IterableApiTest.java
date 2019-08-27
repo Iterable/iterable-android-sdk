@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
+import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -334,6 +336,25 @@ public class IterableApiTest extends BaseTest {
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, uri.getQueryParameter(IterableConstants.ITBL_KEY_SDK_VERSION));
         assertEquals(RuntimeEnvironment.application.getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
+    }
+
+    @Test
+    public void testGetPayloadData() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        Intent testIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        testIntent.putExtra("uri", "www.google.com");
+        testIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "letsGo");
+
+        IterableApi.getInstance().setPayloadData(testIntent.getExtras());
+
+        Bundle bundleRetrieved = IterableApi.getInstance().getPayloadData();
+        assertNotNull(bundleRetrieved);
+
+        String bundleUri = IterableApi.getInstance().getPayloadData("uri");
+        assertEquals("www.google.com", bundleUri);
+
+        String bundleAction = IterableApi.getInstance().getPayloadData(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER);
+        assertEquals("letsGo", bundleAction);
     }
 
 }
