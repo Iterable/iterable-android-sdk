@@ -35,7 +35,7 @@ before_script:
 
 script:
   - touch local.properties
-  - ./gradlew :iterableapi:build :iterableapi:jacocoTestReport :iterableapi:connectedCheck
+  - ./gradlew :iterableapi:build :app:build :iterableapi:jacocoTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

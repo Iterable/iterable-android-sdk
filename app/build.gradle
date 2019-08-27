@@ -1,16 +1,17 @@
 apply plugin: 'com.android.application'
-apply plugin: 'jacoco-android'
+apply plugin: 'jacoco'
 
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
 
     defaultConfig {
-        applicationId "iterable.com.androidsdk"
+        applicationId "com.iterable.iterableapi.testapp"
         minSdkVersion 15
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -21,12 +22,68 @@ android {
             testCoverageEnabled true
         }
     }
+
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    testImplementation 'junit:junit:4.12'
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
     implementation project(':iterableapi')
+    implementation project(':iterableapi-ui')
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'androidx.test:runner:1.2.0'
+    testImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    testImplementation 'androidx.test.ext:junit:1.1.1'
+    testImplementation 'androidx.test:rules:1.2.0'
+    testImplementation 'org.robolectric:robolectric:4.2.1'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test:rules:1.2.0'
+}
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+}
+task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
+    group = "reporting"
+    description = "Generate unified Jacoco code coverage report"
+    reports {
+        xml.enabled = true
+        html.enabled = true
+        csv.enabled = false
+    }
+    def fileFilter = [
+            '**/*Test*.*',
+            '**/AutoValue_*.*',
+            '**/*JavascriptBridge.class',
+            '**/R.class',
+            '**/R$*.class',
+            '**/Manifest*.*',
+            'android/**/*.*',
+            '**/BuildConfig.*',
+            '**/*$ViewBinder*.*',
+            '**/*$ViewInjector*.*',
+            '**/Lambda$*.class',
+            '**/Lambda.class',
+            '**/*Lambda.class',
+            '**/*Lambda*.class',
+            '**/*$InjectAdapter.class',
+            '**/*$ModuleAdapter.class',
+            '**/*$ViewInjector*.class',
+    ]
+    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
+    def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
+    def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
+    def mainSrc = "${project.projectDir}/src/main/java"
+    def sdkSrc = "${project.projectDir}/../iterableapi/src/main/java"
+    def sdkUiSrc = "${project.projectDir}/../iterableapi-ui/src/main/java"
+    sourceDirectories = files([mainSrc])
+    classDirectories = files([debugTree])
+    additionalSourceDirs = files([sdkSrc, sdkUiSrc])
+    additionalClassDirs = files([sdkTree, sdkUiTree])
+    executionData = fileTree(dir: "$buildDir", includes: [
+            "jacoco/testDebugUnitTest.exec"
+    ])
 }
