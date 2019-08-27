@@ -2,14 +2,19 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 import android.graphics.Rect;
+import android.net.Uri;
 
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 
+import static junit.framework.Assert.assertNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+
+
 
 public class IterableInAppHTMLNotificationTest extends BaseTest {
 
@@ -70,17 +75,5 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
 
         IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.getInstance();
         notification.orientationListener.onOrientationChanged(1);
-    }
-
-    @Test
-    public void testCallbackOnCancel() {
-        ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start();
-        Activity activity = controller.get();
-
-        IterableHelper.IterableUrlCallback clickCallback = mock(IterableHelper.IterableUrlCallback.class);
-        IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", clickCallback, 0.0, new Rect(), true);
-        IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.getInstance();
-        notification.cancel();
-        verify(clickCallback, times(1)).execute(null);
     }
 }
