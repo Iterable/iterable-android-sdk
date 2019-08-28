@@ -23,9 +23,6 @@ public class IterableInAppDisplayerTest extends BaseTest {
         IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.getInstance();
 
         notification.cancel();
-        ArgumentCaptor<Uri> capturedUri = ArgumentCaptor.forClass(Uri.class);
-        Mockito.verify(clickCallback, Mockito.timeout(5000)).execute(capturedUri.capture());
-        Assert.assertNull(capturedUri.capture());
     }
 }
 
