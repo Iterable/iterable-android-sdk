@@ -7,7 +7,7 @@ env:
   - EMULATOR_API=24
   - ANDROID_BUILD_TOOLS=28.0.3
   - ADB_INSTALL_TIMEOUT=5 # minutes
-  - JACOCO_SOURCE_PATH="iterableapi/src/main/java"
+  - JACOCO_SOURCE_PATH="iterableapi/src/main/java iterableapi-ui/src/main/java"
 
 android:
   components:
@@ -42,6 +42,7 @@ script:
   - ./gradlew :iterableapi:build :app:build :iterableapi:jacocoTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck
 
 after_script:
+  - ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugTestReport/jacocoDebugTestReport.xml --input-type jacoco
   - ./cc-test-reporter format-coverage iterableapi/build/reports/coverage/debug/report.xml --input-type jacoco
   - ./cc-test-reporter format-coverage iterableapi/build/reports/jacoco/jacocoTestDebugUnitTestReport/jacocoTestDebugUnitTestReport.xml --input-type jacoco
   - ./cc-test-reporter upload-coverage
