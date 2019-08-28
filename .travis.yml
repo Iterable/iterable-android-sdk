@@ -7,6 +7,7 @@ env:
   - EMULATOR_API=24
   - ANDROID_BUILD_TOOLS=28.0.3
   - ADB_INSTALL_TIMEOUT=5 # minutes
+  - JACOCO_SOURCE_PATH="iterableapi/src/main/java"
 
 android:
   components:
@@ -28,6 +29,9 @@ android:
   - google-gdk-license-.+
 
 before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
   - echo no | android create avd --force -n test -t android-24 --abi armeabi-v7a
   - emulator -avd test -no-skin -no-window &
   - android-wait-for-emulator
@@ -36,6 +40,11 @@ before_script:
 script:
   - touch local.properties
   - ./gradlew :iterableapi:build :app:build :iterableapi:jacocoTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck
+
+after_script:
+  - ./cc-test-reporter format-coverage iterableapi/build/reports/coverage/debug/report.xml --input-type jacoco
+  - ./cc-test-reporter format-coverage iterableapi/build/reports/jacoco/jacocoTestDebugUnitTestReport/jacocoTestDebugUnitTestReport.xml --input-type jacoco
+  - ./cc-test-reporter upload-coverage
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

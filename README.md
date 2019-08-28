@@ -13,24 +13,16 @@ Before you even start with the SDK, you will need to:
 1. Set your application up to receive push notifications
 2. Set up a push integration in Iterable. This allows Iterable to communicate on your behalf with Firebase Cloud Messaging.
 
-For information on setting up your Firebase Project, see [Add Firebase to Your Android Project](https://firebase.google.com/docs/android/setup).
-
-To set up your push integration with Iterable in the web dashboard go to **Integrations > Mobile Push**. When creating an integration, you will need to pick a name and a platform. The name is entirely up to you; it will be the `pushIntegrationName` in `IterableConfig` when you initialize our SDK. 
-
-The platform will be `GCM` (This also includes FCM since it runs off of the same infrastructure). Add the Firebase Cloud Messaging Server Key obtained from the Firebase console.
-
-![Creating an integration in Iterable](https://support.iterable.com/hc/article_attachments/211841066/2016-12-08_1442.png)
-
 For more details, read Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943-Setting-up-Android-Push-Notifications) guide.
 
-Congratulations, you've configured your mobile application to receive push notifications! Now, let's set up the Iterable SDK.
+Congratulations, you've configured your Iterable project to send push notifications to your app! Now, let's set up the Iterable SDK.
 
 ## Installing the SDK
 
 Add the following dependencies to your application's **build.gradle**:
 
 ```groovy
-compile 'com.iterable:iterableapi:3.1.2'
+compile 'com.iterable:iterableapi:3.1.3'
 compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0
 ```
 

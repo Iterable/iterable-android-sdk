@@ -1459,7 +1459,7 @@ public class IterableApi {
             IterableLogger.d(TAG, "ClassNotFoundException: Can't track ADID. " +
                     "Check that play-services-ads is added to the dependencies.", e);
         } catch (Exception e) {
-            IterableLogger.w(TAG, e.getMessage());
+            IterableLogger.w(TAG, "Error while fetching advertising ID", e);
         }
         return advertisingId;
     }

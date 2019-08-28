@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.3)
+#### Fixed
+- Fixed a NullPointerException that could occur in some cases when trying to get Advertising ID
+
 ## [3.1.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.2)
 #### Changed
 - Removed FirebaseInstanceIDService dependency to support newer versions of `firebase-messaging` library. This bumps the minimum required version of `firebase-messaging` to 17.4.0.
