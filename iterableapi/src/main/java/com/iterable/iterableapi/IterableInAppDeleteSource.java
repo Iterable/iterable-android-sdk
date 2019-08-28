@@ -16,7 +16,7 @@ public enum IterableInAppDeleteSource {
         }
     },
 
-    UKNOWN {
+    UNKOWN {
         @Override
         public String toString() {
             return "unknown";
