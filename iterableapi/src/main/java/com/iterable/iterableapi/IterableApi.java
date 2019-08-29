@@ -1175,9 +1175,11 @@ public class IterableApi {
      */
     public void inAppConsume(String messageId) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null){
-            inAppConsume(message,null,null);
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            return;
         }
+        inAppConsume(message,null,null);
     }
 
     /**
