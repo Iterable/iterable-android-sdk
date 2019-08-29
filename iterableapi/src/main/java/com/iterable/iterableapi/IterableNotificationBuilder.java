@@ -93,7 +93,9 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 if (notificationImage != null) {
                     style = new NotificationCompat.BigPictureStyle()
                             .bigPicture(notificationImage)
+                            .bigLargeIcon(null)
                             .setSummaryText(expandedContent);
+                    this.setLargeIcon(notificationImage);
                 } else {
                     IterableLogger.e(TAG, "Notification image could not be loaded from url: " + this.imageUrl);
                 }
