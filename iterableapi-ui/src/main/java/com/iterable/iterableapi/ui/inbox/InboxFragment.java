@@ -13,7 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.iterable.iterableapi.IterableApi;
-import com.iterable.iterableapi.IterableInAppDeleteSource;
+import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppLocation;
 import com.iterable.iterableapi.IterableInAppManager;
 import com.iterable.iterableapi.IterableInAppMessage;
@@ -68,7 +68,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     }
 
     @Override
-    public void onListItemDeleted(IterableInAppMessage message, IterableInAppDeleteSource source) {
+    public void onListItemDeleted(IterableInAppMessage message, IterableInAppDeleteActionType source) {
         IterableApi.getInstance().getInAppManager().removeMessage(message, source, IterableInAppLocation.INBOX);
     }
 }

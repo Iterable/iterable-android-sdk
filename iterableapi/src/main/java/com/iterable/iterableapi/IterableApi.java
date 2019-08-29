@@ -1174,20 +1174,9 @@ public class IterableApi {
      * @param messageId
      */
     public void inAppConsume(String messageId) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
-
-            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null){
+            inAppConsume(message,null,null);
         }
     }
 
@@ -1200,7 +1189,7 @@ public class IterableApi {
      * @param source An enum describing how the in App delete was triggered
      * @param clickLocation The module in which the action happened
      */
-    void trackInAppDelete(IterableInAppMessage message, IterableInAppDeleteSource source, IterableInAppLocation clickLocation) {
+    public void inAppConsume(IterableInAppMessage message, IterableInAppDeleteActionType source, IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1211,9 +1200,13 @@ public class IterableApi {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_USER_ID,getUserId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION, source.toString());
-            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+            if (source != null) {
+                requestJSON.put(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION, source.toString());
+            }
 
+            if (clickLocation != null) {
+                requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+            }
             sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
         }
         catch (JSONException e) {

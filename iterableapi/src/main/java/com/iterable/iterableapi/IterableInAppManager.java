@@ -189,7 +189,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         })) {
             setRead(message, true);
             if (consume) {
-                removeMessage(message, IterableInAppDeleteSource.UKNOWN, IterableInAppLocation.IN_APP);
+                removeMessage(message, IterableInAppDeleteActionType.UNKOWN, IterableInAppLocation.IN_APP);
             }
         }
     }
@@ -198,9 +198,15 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Remove message from the list
      * @param message The message to be removed
      */
-    public synchronized void removeMessage(IterableInAppMessage message, IterableInAppDeleteSource source, IterableInAppLocation clickLocation) {
+    public synchronized void removeMessage(IterableInAppMessage message) {
         message.setConsumed(true);
-        api.trackInAppDelete(message, source, clickLocation);
+        api.inAppConsume(message.getMessageId());
+        notifyOnChange();
+    }
+
+    public synchronized void removeMessage(IterableInAppMessage message, IterableInAppDeleteActionType source, IterableInAppLocation clickLocation) {
+        message.setConsumed(true);
+        api.inAppConsume(message, source, clickLocation);
         notifyOnChange();
     }
 
@@ -325,7 +331,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
         if (IterableConstants.ITERABLE_IN_APP_ACTION_DELETE.equals(actionName)) {
-            removeMessage(message, IterableInAppDeleteSource.DELETE_BUTTON, IterableInAppLocation.IN_APP);
+            removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP);
         }
     }
 

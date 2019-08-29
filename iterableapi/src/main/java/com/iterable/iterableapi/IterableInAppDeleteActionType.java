@@ -1,6 +1,6 @@
 package com.iterable.iterableapi;
 
-public enum IterableInAppDeleteSource {
+public enum IterableInAppDeleteActionType {
 
     INBOX_SWIPE_LEFT {
         @Override
