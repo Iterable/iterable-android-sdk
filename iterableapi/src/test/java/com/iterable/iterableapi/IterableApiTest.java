@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.net.Uri;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -464,6 +465,48 @@ public class IterableApiTest extends BaseTest {
         assertNotNull(deviceInfo.getString(IterableConstants.DEVICE_ID));
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, deviceInfo.getString(IterableConstants.KEY_PLATFORM));
         assertEquals(PACKAGE_NAME, deviceInfo.getString(IterableConstants.DEVICE_APP_PACKAGE_NAME));
+    }
+
+    @Test
+    public void testTrackInAppDelete() throws Exception {
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
+
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().inAppConsume(message, IterableInAppDeleteActionType.INBOX_SWIPE_LEFT, null);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppCloseRequest);
+        Uri uri = Uri.parse(trackInAppCloseRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_INAPP_CONSUME, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
+        assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals("inbox-swipe-left", requestJson.getString(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION));
+
+    }
+
+    @Test
+    public void testTrackInAppDeleteWithNullParameters() throws Exception {
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().inAppConsume(message, null, null);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppCloseRequest);
+        Uri uri = Uri.parse(trackInAppCloseRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_INAPP_CONSUME, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
+        assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        Log.d("msg", requestJson.toString());
     }
 
 }

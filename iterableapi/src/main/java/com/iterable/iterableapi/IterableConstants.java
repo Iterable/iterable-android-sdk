@@ -186,6 +186,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_READ             = "read";
     public static final String ITERABLE_IN_APP_LOCATION         = "location";
     public static final String ITERABLE_IN_APP_CLOSE_ACTION     = "closeAction";
+    public static final String ITERABLE_IN_APP_DELETE_ACTION    = "deleteAction";
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";

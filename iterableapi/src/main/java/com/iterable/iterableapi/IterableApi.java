@@ -1174,6 +1174,24 @@ public class IterableApi {
      * @param messageId
      */
     public void inAppConsume(String messageId) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            return;
+        }
+        inAppConsume(message,null,null);
+    }
+
+    /**
+     * Tracks InApp delete.
+     * This method from informs Iterable about inApp messages deleted with additional paramters.
+     * Call this method from places where inApp deletion are invoked by user. The messages can be swiped to delete or can be deleted using the link to delete button.
+     *
+     * @param message message object
+     * @param source An enum describing how the in App delete was triggered
+     * @param clickLocation The module in which the action happened
+     */
+    public void inAppConsume(IterableInAppMessage message, IterableInAppDeleteActionType source, IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1182,20 +1200,28 @@ public class IterableApi {
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+            requestJSON.put(IterableConstants.KEY_USER_ID,getUserId());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
+            if (source != null) {
+                requestJSON.put(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION, source.toString());
+            }
 
+            if (clickLocation != null) {
+                requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+            }
             sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
+
     }
 
 //---------------------------------------------------------------------------------------
 //endregion
 
 
-//region Package-Protected Fuctions
+//region Package-Protected Functions
 //---------------------------------------------------------------------------------------
 
     /**

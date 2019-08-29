@@ -189,7 +189,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         })) {
             setRead(message, true);
             if (consume) {
-                removeMessage(message);
+                removeMessage(message, IterableInAppDeleteActionType.UNKOWN, IterableInAppLocation.IN_APP);
             }
         }
     }
@@ -201,6 +201,12 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     public synchronized void removeMessage(IterableInAppMessage message) {
         message.setConsumed(true);
         api.inAppConsume(message.getMessageId());
+        notifyOnChange();
+    }
+
+    public synchronized void removeMessage(IterableInAppMessage message, IterableInAppDeleteActionType source, IterableInAppLocation clickLocation) {
+        message.setConsumed(true);
+        api.inAppConsume(message, source, clickLocation);
         notifyOnChange();
     }
 
@@ -325,7 +331,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
         if (IterableConstants.ITERABLE_IN_APP_ACTION_DELETE.equals(actionName)) {
-            removeMessage(message);
+            removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP);
         }
     }
 
