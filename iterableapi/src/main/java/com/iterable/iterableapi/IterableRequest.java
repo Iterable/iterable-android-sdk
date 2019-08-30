@@ -64,8 +64,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 }
 
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
-                    Uri.Builder builder = Uri.parse(baseUrl+iterableApiRequest.resourcePath).buildUpon();
-                    builder.appendQueryParameter(IterableConstants.KEY_API_KEY, iterableApiRequest.apiKey);
+                    Uri.Builder builder = Uri.parse(baseUrl + iterableApiRequest.resourcePath).buildUpon();
 
                     Iterator<?> keys = iterableApiRequest.json.keys();
                     while( keys.hasNext() ) {
@@ -79,6 +78,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
                     urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
 
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
                 } else {
