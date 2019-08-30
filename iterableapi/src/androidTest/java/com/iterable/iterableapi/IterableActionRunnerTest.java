@@ -3,9 +3,9 @@ package com.iterable.iterableapi;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.net.Uri;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.espresso.intent.Intents;
-import android.support.test.runner.AndroidJUnit4;
+
+import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -14,11 +14,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-import static android.support.test.espresso.intent.Intents.intended;
-import static android.support.test.espresso.intent.Intents.intending;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.anyIntent;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasData;
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static androidx.test.espresso.intent.Intents.intended;
+import static androidx.test.espresso.intent.Intents.intending;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.anyIntent;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasData;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,7 +49,7 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
+        IterableActionRunner.executeAction(getApplicationContext(), action, IterableActionSource.PUSH);
 
         // It should not attempt to open the URL unless it is initialized with a new method
         Intents.assertNoUnverifiedIntents();
@@ -62,7 +63,7 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
+        IterableActionRunner.executeAction(getApplicationContext(), action, IterableActionSource.PUSH);
 
         intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.com")));
         Intents.assertNoUnverifiedIntents();
@@ -78,7 +79,7 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
+        IterableActionRunner.executeAction(getApplicationContext(), action, IterableActionSource.PUSH);
 
         Intents.assertNoUnverifiedIntents();
         IterableTestUtils.initIterableApi(null);
@@ -92,7 +93,7 @@ public class IterableActionRunnerTest {
         JSONObject actionData = new JSONObject();
         actionData.put("type", "customActionName");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(InstrumentationRegistry.getTargetContext(), action, IterableActionSource.PUSH);
+        IterableActionRunner.executeAction(getApplicationContext(), action, IterableActionSource.PUSH);
 
         ArgumentCaptor<IterableActionContext> contextCaptor = ArgumentCaptor.forClass(IterableActionContext.class);
         verify(customActionHandlerMock).handleIterableCustomAction(eq(action), contextCaptor.capture());

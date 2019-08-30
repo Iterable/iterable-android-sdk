@@ -6,9 +6,9 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.espresso.intent.Intents;
-import android.support.test.runner.AndroidJUnit4;
+
+import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;
@@ -40,7 +41,7 @@ public class IterableNotificationTest {
     String itbl_image = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false,\"attachment-url\":\"http://via.placeholder.com/350x150\"}";
 
     private Context getContext() {
-        return InstrumentationRegistry.getTargetContext();
+        return getApplicationContext();
     }
 
     private IterableNotificationBuilder postNotification(Bundle notificationData) throws InterruptedException {

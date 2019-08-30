@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -17,6 +16,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -41,7 +41,7 @@ public class IterableApiRequestsTest {
     }
 
     private void createIterableApi() {
-        IterableApi.sharedInstanceWithApiKey(InstrumentationRegistry.getTargetContext(), "fake_key", "test_email");
+        IterableApi.sharedInstanceWithApiKey(getApplicationContext(), "fake_key", "test_email");
     }
 
     @Test
@@ -51,6 +51,7 @@ public class IterableApiRequestsTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
         assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
+        assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
     }
 
     @Test
@@ -58,8 +59,10 @@ public class IterableApiRequestsTest {
         IterableApi.sharedInstance.getInAppMessages(1, null);
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue(request.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
+        assertFalse(request.getPath().contains("api_key"));
         assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
+        assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
     }
 
     @Test
@@ -75,7 +78,6 @@ public class IterableApiRequestsTest {
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
         assertEquals(expectedRequest, request.getBody().readUtf8());
-        assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
     }
 
     @Test

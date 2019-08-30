@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.shadows.ShadowApplication;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -304,7 +305,6 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setUserId("testUserId");
         IterableApi.getInstance().updateUser(new JSONObject("{\"key\": \"value\"}"));
-        Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
         Robolectric.flushBackgroundThreadScheduler();
 
         RecordedRequest updateUserRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -324,7 +324,6 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().getInAppMessages(10, handlerMock);
-        Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
         Robolectric.flushBackgroundThreadScheduler();
 
         verify(handlerMock).execute(eq("{}"));
