@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.net.Uri;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -17,6 +18,7 @@ import org.robolectric.shadows.ShadowApplication;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -463,15 +465,30 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
+
+        // Set up test data
         Date sessionStartTime = new Date();
+        List<IterableInboxSession.Impression> impressions = new ArrayList<>();
+        impressions.add(new IterableInboxSession.Impression(
+                "messageId1",
+                true,
+                2,
+                5.5f
+        ));
+        impressions.add(new IterableInboxSession.Impression(
+                "messageId2",
+                false,
+                1,
+                2.0f
+        ));
         IterableInboxSession session = new IterableInboxSession(
                 sessionStartTime,
                 new Date(sessionStartTime.getTime() + 3600),
                 10,
                 5,
                 8,
-                3
-        );
+                3,
+                impressions);
         IterableApi.getInstance().trackInboxSession(session);
         Robolectric.flushBackgroundThreadScheduler();
 
@@ -480,12 +497,22 @@ public class IterableApiTest extends BaseTest {
         Uri uri = Uri.parse(trackInAppClickRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, uri.getPath());
         JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
+
+        // Check top-level fields
         assertEquals(sessionStartTime.getTime(), requestJson.getLong(IterableConstants.ITERABLE_INBOX_SESSION_START));
         assertEquals(sessionStartTime.getTime() + 3600, requestJson.getLong(IterableConstants.ITERABLE_INBOX_SESSION_END));
         assertEquals(10, requestJson.getInt(IterableConstants.ITERABLE_INBOX_START_TOTAL_MESSAGE_COUNT));
         assertEquals(5, requestJson.getInt(IterableConstants.ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT));
         assertEquals(8, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT));
         assertEquals(3, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT));
+
+        // Check impression data
+        JSONArray impressionsJsonArray = requestJson.getJSONArray(IterableConstants.ITERABLE_INBOX_IMPRESSIONS);
+        assertEquals(2, impressionsJsonArray.length());
+        assertEquals("messageId1", impressionsJsonArray.getJSONObject(0).getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(true, impressionsJsonArray.getJSONObject(0).getBoolean(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX));
+        assertEquals(2, impressionsJsonArray.getJSONObject(0).getInt(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_COUNT));
+        assertEquals(5.5, impressionsJsonArray.getJSONObject(0).getDouble(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_DURATION));
     }
 
     private void verifyMessageContext(JSONObject requestJson) throws JSONException {
