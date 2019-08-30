@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -17,6 +16,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -41,7 +41,7 @@ public class IterableApiRequestsTest {
     }
 
     private void createIterableApi() {
-        IterableApi.sharedInstanceWithApiKey(InstrumentationRegistry.getTargetContext(), "fake_key", "test_email");
+        IterableApi.sharedInstanceWithApiKey(getApplicationContext(), "fake_key", "test_email");
     }
 
     @Test

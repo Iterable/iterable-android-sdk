@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+
 import static org.mockito.Mockito.mock;
 
 public class IterableTestUtils {
@@ -90,5 +93,20 @@ public class IterableTestUtils {
             map.put(key, bundle.get(key).toString());
         }
         return map;
+    }
+
+    public static void stubAnyRequestReturningStatusCode(MockWebServer server, int statusCode, JSONObject data) {
+        String body = null;
+        if (data != null)
+            body = data.toString();
+        stubAnyRequestReturningStatusCode(server, statusCode, body);
+    }
+
+    public static void stubAnyRequestReturningStatusCode(MockWebServer server, int statusCode, String body) {
+        MockResponse response = new MockResponse().setResponseCode(statusCode);
+        if (body != null) {
+            response.setBody(body);
+        }
+        server.enqueue(response);
     }
 }

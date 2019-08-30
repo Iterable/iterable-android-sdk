@@ -1,16 +1,17 @@
 package com.iterable.iterableapi;
 
 import android.graphics.Rect;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.annotation.UiThreadTest;
-import android.support.test.filters.MediumTest;
-import android.support.test.runner.AndroidJUnit4;
 import android.view.Gravity;
+
+import androidx.test.annotation.UiThreadTest;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.MediumTest;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 
 /**
@@ -26,7 +27,7 @@ public class IterableInAppTest {
     @Before
     @UiThreadTest
     public void setUp() throws Exception {
-        notification = IterableInAppHTMLNotification.createInstance(InstrumentationRegistry.getContext().getApplicationContext(), "");
+        notification = IterableInAppHTMLNotification.createInstance(getApplicationContext(), "");
     }
 
     @Test
