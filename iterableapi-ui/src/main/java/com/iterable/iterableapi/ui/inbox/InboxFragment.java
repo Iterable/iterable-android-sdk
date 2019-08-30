@@ -17,9 +17,17 @@ import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppLocation;
 import com.iterable.iterableapi.IterableInAppManager;
 import com.iterable.iterableapi.IterableInAppMessage;
+import com.iterable.iterableapi.IterableInboxSession;
+import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
+import java.util.Date;
+
 public class InboxFragment extends Fragment implements IterableInAppManager.Listener, InboxRecyclerViewAdapter.OnListInteractionListener {
+
+    private static final String TAG = "InboxFragment";
+
+    private final SessionManager sessionManager = new SessionManager();
 
     public static InboxFragment newInstance() {
         return new InboxFragment();
@@ -42,11 +50,13 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         super.onResume();
         updateList();
         IterableApi.getInstance().getInAppManager().addListener(this);
+        sessionManager.onAppDidEnterForeground();
     }
 
     @Override
     public void onPause() {
         IterableApi.getInstance().getInAppManager().removeListener(this);
+        sessionManager.onAppDidEnterBackground();
         super.onPause();
     }
 
@@ -70,5 +80,41 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Override
     public void onListItemDeleted(IterableInAppMessage message, IterableInAppDeleteActionType source) {
         IterableApi.getInstance().getInAppManager().removeMessage(message, source, IterableInAppLocation.INBOX);
+    }
+
+    private static class SessionManager {
+        IterableInboxSession session = new IterableInboxSession();
+
+        private void onAppDidEnterForeground() {
+            if (session.sessionStartTime != null) {
+                IterableLogger.e(TAG, "Inbox session started twice");
+                return;
+            }
+            session = new IterableInboxSession(
+                    new Date(),
+                    null,
+                    IterableApi.getInstance().getInAppManager().getInboxMessages().size(),
+                    IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
+                    0,
+                    0
+            );
+        }
+
+        private void onAppDidEnterBackground() {
+            if (session.sessionStartTime == null) {
+                IterableLogger.e(TAG, "Inbox Session ended without start");
+                return;
+            }
+            IterableInboxSession sessionToTrack = new IterableInboxSession(
+                    session.sessionStartTime,
+                    new Date(),
+                    session.startTotalMessageCount,
+                    session.startUnreadMessageCount,
+                    IterableApi.getInstance().getInAppManager().getInboxMessages().size(),
+                    IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount()
+            );
+            IterableApi.getInstance().trackInboxSession(sessionToTrack);
+            session = new IterableInboxSession();
+        }
     }
 }
