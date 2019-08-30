@@ -13,6 +13,7 @@ import org.robolectric.shadows.ShadowApplication;
 
 import okhttp3.mockwebserver.MockWebServer;
 
+import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -79,6 +80,7 @@ public class IterablePushRegistrationTest extends BaseTest {
 
     @Test
     public void testDisableDevice() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn("testToken");
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
@@ -90,6 +92,7 @@ public class IterablePushRegistrationTest extends BaseTest {
 
     @Test
     public void testDisableOldGcmToken() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setLegacyGCMSenderId(GCM_SENDER_ID).build());
 
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(NEW_TOKEN);

@@ -14,10 +14,10 @@ import org.robolectric.RuntimeEnvironment;
 
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -43,24 +43,9 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
         server = null;
     }
 
-    private void stubAnyRequestReturningStatusCode(int statusCode, JSONObject data) {
-        String body = null;
-        if (data != null)
-            body = data.toString();
-        stubAnyRequestReturningStatusCode(statusCode, body);
-    }
-
-    private void stubAnyRequestReturningStatusCode(int statusCode, String body) {
-        MockResponse response = new MockResponse().setResponseCode(statusCode);
-        if (body != null) {
-            response.setBody(body);
-        }
-        server.enqueue(response);
-    }
-
     @Test
     public void testPushOpenWithNonInitializedSDK() throws Exception {
-        stubAnyRequestReturningStatusCode(200, "{}");
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
         IterableTestUtils.resetIterableApi();
         IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
@@ -74,7 +59,7 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
     @Test
     public void testTrackPushOpenWithCustomAction() throws Exception {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
-        stubAnyRequestReturningStatusCode(200, responseData);
+        stubAnyRequestReturningStatusCode(server, 200, responseData);
 
         IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
@@ -109,6 +94,7 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
 
     @Test
     public void testPushActionWithSilentAction() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
         IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
         intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "silentButton");
@@ -123,6 +109,7 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
 
     @Test
     public void testLegacyDeepLinkPayload() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
         IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
         intent.putExtras(IterableTestUtils.getBundleFromJsonResource("push_payload_legacy_deep_link.json"));
