@@ -1246,6 +1246,19 @@ public class IterableApi {
             requestJSON.put(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT, session.endTotalMessageCount);
             requestJSON.put(IterableConstants.ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT, session.endUnreadMessageCount);
 
+            if (session.impressions != null) {
+                JSONArray impressionsJsonArray = new JSONArray();
+                for (IterableInboxSession.Impression impression : session.impressions) {
+                    JSONObject impressionJson = new JSONObject();
+                    impressionJson.put(IterableConstants.KEY_MESSAGE_ID, impression.messageId);
+                    impressionJson.put(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX, impression.silentInbox);
+                    impressionJson.put(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_COUNT, impression.displayCount);
+                    impressionJson.put(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_DURATION, impression.duration);
+                    impressionsJsonArray.put(impressionJson);
+                }
+                requestJSON.put(IterableConstants.ITERABLE_INBOX_IMPRESSIONS, impressionsJsonArray);
+            }
+
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
         }
         catch (JSONException e) {
@@ -1628,8 +1641,7 @@ public class IterableApi {
     private JSONObject getInAppMessageContext(IterableInAppMessage message, IterableInAppLocation location) {
         JSONObject messageContext = new JSONObject();
         try {
-            boolean isSilentInbox = message.isInboxMessage() &&
-                    message.getTriggerType() == IterableInAppMessage.Trigger.TriggerType.NEVER;
+            boolean isSilentInbox = message.isSilentInboxMessage();
 
             messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX, message.isInboxMessage());
             messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX, isSilentInbox);

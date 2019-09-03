@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.graphics.Rect;
+import android.support.annotation.RestrictTo;
 import android.support.v4.util.ObjectsCompat;
 
 import org.json.JSONArray;
@@ -222,6 +223,11 @@ public class IterableInAppMessage {
 
     public boolean isInboxMessage() {
         return saveToInbox != null ? saveToInbox : false;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public boolean isSilentInboxMessage() {
+        return isInboxMessage() && getTriggerType() == IterableInAppMessage.Trigger.TriggerType.NEVER;
     }
 
     public InboxMetadata getInboxMetadata() {

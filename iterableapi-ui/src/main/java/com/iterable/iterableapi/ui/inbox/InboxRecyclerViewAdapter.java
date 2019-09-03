@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppMessage;
+import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.BitmapLoader;
 import com.iterable.iterableapi.ui.R;
 
@@ -20,6 +21,8 @@ import java.util.Date;
 import java.util.List;
 
 public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecyclerViewAdapter.ViewHolder> {
+
+    private static final String TAG = "InboxRecyclerViewAdapter";
 
     private List<IterableInAppMessage> values;
     private OnListInteractionListener listener;
@@ -66,6 +69,20 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
         return values.size();
     }
 
+    @Override
+    public void onViewAttachedToWindow(@NonNull ViewHolder holder) {
+        super.onViewAttachedToWindow(holder);
+        IterableInAppMessage message = (IterableInAppMessage) holder.itemView.getTag();
+        listener.onListItemImpressionStarted(message);
+    }
+
+    @Override
+    public void onViewDetachedFromWindow(@NonNull ViewHolder holder) {
+        super.onViewDetachedFromWindow(holder);
+        IterableInAppMessage message = (IterableInAppMessage) holder.itemView.getTag();
+        listener.onListItemImpressionEnded(message);
+    }
+
     public void setValues(List<IterableInAppMessage> newValues) {
         InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(values, newValues);
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
@@ -101,6 +118,8 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
     interface OnListInteractionListener {
         void onListItemTapped(IterableInAppMessage message);
         void onListItemDeleted(IterableInAppMessage message, IterableInAppDeleteActionType source);
+        void onListItemImpressionStarted(IterableInAppMessage message);
+        void onListItemImpressionEnded(IterableInAppMessage message);
     }
 
     private String formatDate(Date date) {
