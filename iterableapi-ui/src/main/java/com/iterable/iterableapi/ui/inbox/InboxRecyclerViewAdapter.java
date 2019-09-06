@@ -2,6 +2,7 @@ package com.iterable.iterableapi.ui.inbox;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.v4.util.ObjectsCompat;
 import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -17,6 +18,7 @@ import com.iterable.iterableapi.ui.BitmapLoader;
 import com.iterable.iterableapi.ui.R;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -24,11 +26,11 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     private static final String TAG = "InboxRecyclerViewAdapter";
 
-    private List<IterableInAppMessage> values;
+    private List<InboxRow> values;
     private OnListInteractionListener listener;
 
     public InboxRecyclerViewAdapter(List<IterableInAppMessage> values, OnListInteractionListener listener) {
-        this.values = values;
+        this.values = inboxRowListFromInboxMessages(values);
         this.listener = listener;
     }
 
@@ -49,18 +51,18 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        IterableInAppMessage inboxMessage = values.get(position);
-        IterableInAppMessage.InboxMetadata inboxMetadata = inboxMessage.getInboxMetadata();
+        InboxRow inboxRow = values.get(position);
+        IterableInAppMessage.InboxMetadata inboxMetadata = inboxRow.inboxMetadata;
         holder.title.setText(inboxMetadata.title);
         holder.subtitle.setText(inboxMetadata.subtitle);
         BitmapLoader.loadBitmap(holder.icon, Uri.parse(inboxMetadata.icon));
-        if (inboxMessage.isRead()) {
+        if (inboxRow.isRead) {
             holder.unreadIndicator.setVisibility(View.INVISIBLE);
         } else {
             holder.unreadIndicator.setVisibility(View.VISIBLE);
         }
-        holder.date.setText(formatDate(inboxMessage.getCreatedAt()));
-        holder.itemView.setTag(inboxMessage);
+        holder.date.setText(formatDate(inboxRow.createdAt));
+        holder.itemView.setTag(inboxRow.message);
         holder.itemView.setOnClickListener(onClickListener);
     }
 
@@ -84,15 +86,16 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
     }
 
     public void setValues(List<IterableInAppMessage> newValues) {
-        InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(values, newValues);
+        List<InboxRow> newRowValues = inboxRowListFromInboxMessages(newValues);
+        InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(values, newRowValues);
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
         values.clear();
-        values.addAll(newValues);
+        values.addAll(newRowValues);
         diffResult.dispatchUpdatesTo(this);
     }
 
     public void deleteItem(int position, IterableInAppDeleteActionType source) {
-        IterableInAppMessage deletedItem = values.get(position);
+        IterableInAppMessage deletedItem = values.get(position).message;
         values.remove(position);
         listener.onListItemDeleted(deletedItem, source);
         notifyItemRemoved(position);
@@ -131,12 +134,59 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
         }
     }
 
+    /**
+     * Since {@link IterableInAppMessage} is a mutable object, we transform it into a separate
+     * immutable object to be able to run DiffUtil on it. Otherwise, we wouldn't be able to figure
+     * out if an inbox message was changed.
+     */
+    private static class InboxRow {
+        private final IterableInAppMessage message;
+        private final IterableInAppMessage.InboxMetadata inboxMetadata;
+        private final boolean isRead;
+        private final Date createdAt;
+
+        private InboxRow(IterableInAppMessage inboxMessage) {
+            this.message = inboxMessage;
+            this.inboxMetadata = inboxMessage.getInboxMetadata();
+            this.isRead = inboxMessage.isRead();
+            this.createdAt = inboxMessage.getCreatedAt();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof InboxRow)) {
+                return false;
+            }
+            InboxRow inboxRow = (InboxRow) obj;
+            return message == inboxRow.message &&
+                    ObjectsCompat.equals(inboxMetadata, inboxRow.inboxMetadata) &&
+                    ObjectsCompat.equals(isRead, inboxRow.isRead) &&
+                    ObjectsCompat.equals(createdAt, inboxRow.createdAt);
+        }
+
+        @Override
+        public int hashCode() {
+            return ObjectsCompat.hash(message, inboxMetadata, isRead, createdAt);
+        }
+    }
+
+    private List<InboxRow> inboxRowListFromInboxMessages(List<IterableInAppMessage> messages) {
+        ArrayList<InboxRow> inboxRows = new ArrayList<>(messages.size());
+        for (IterableInAppMessage message : messages) {
+            inboxRows.add(new InboxRow(message));
+        }
+        return inboxRows;
+    }
+
     private static class InAppMessageDiffCallback extends DiffUtil.Callback {
 
-        private final List<IterableInAppMessage> oldList;
-        private final List<IterableInAppMessage> newList;
+        private final List<InboxRow> oldList;
+        private final List<InboxRow> newList;
 
-        private InAppMessageDiffCallback(List<IterableInAppMessage> oldList, List<IterableInAppMessage> newList) {
+        private InAppMessageDiffCallback(List<InboxRow> oldList, List<InboxRow> newList) {
             this.oldList = oldList;
             this.newList = newList;
         }
@@ -153,15 +203,15 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
         @Override
         public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-            IterableInAppMessage oldItem = oldList.get(oldItemPosition);
-            IterableInAppMessage newItem = newList.get(newItemPosition);
-            return oldItem.getMessageId().equals(newItem.getMessageId());
+            InboxRow oldItem = oldList.get(oldItemPosition);
+            InboxRow newItem = newList.get(newItemPosition);
+            return oldItem.message.getMessageId().equals(newItem.message.getMessageId());
         }
 
         @Override
         public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-            IterableInAppMessage oldItem = oldList.get(oldItemPosition);
-            IterableInAppMessage newItem = newList.get(newItemPosition);
+            InboxRow oldItem = oldList.get(oldItemPosition);
+            InboxRow newItem = newList.get(newItemPosition);
             return oldItem.equals(newItem);
         }
     }
