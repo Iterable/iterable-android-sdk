@@ -18,8 +18,8 @@ public class Future<T> {
     }
 
     private Handler callbackHandler;
-    private final List<WeakReference<SuccessCallback<T>>> successCallbacks = new ArrayList<>();
-    private final List<WeakReference<FailureCallback>> failureCallbacks = new ArrayList<>();
+    private final List<SuccessCallback<T>> successCallbacks = new ArrayList<>();
+    private final List<FailureCallback> failureCallbacks = new ArrayList<>();
 
     private Future(final Callable<T> callable) {
         // Set up a Handler for the callback based on the current thread
@@ -46,12 +46,11 @@ public class Future<T> {
         callbackHandler.post(new Runnable() {
             @Override
             public void run() {
-                List<WeakReference<SuccessCallback<T>>> callbacks;
+                List<SuccessCallback<T>> callbacks;
                 synchronized (successCallbacks) {
                     callbacks = new ArrayList<>(successCallbacks);
                 }
-                for (WeakReference<SuccessCallback<T>> weakCallback : callbacks) {
-                    SuccessCallback<T> callback = weakCallback.get();
+                for (SuccessCallback<T> callback : callbacks) {
                     if (callback != null) {
                         callback.onSuccess(result);
                     }
@@ -64,12 +63,11 @@ public class Future<T> {
         callbackHandler.post(new Runnable() {
             @Override
             public void run() {
-                List<WeakReference<FailureCallback>> callbacks;
+                List<FailureCallback> callbacks;
                 synchronized (failureCallbacks) {
                     callbacks = new ArrayList<>(failureCallbacks);
                 }
-                for (WeakReference<FailureCallback> weakCallback : callbacks) {
-                    FailureCallback callback = weakCallback.get();
+                for (FailureCallback callback : callbacks) {
                     if (callback != null) {
                         callback.onFailure(t);
                     }
@@ -80,14 +78,14 @@ public class Future<T> {
 
     public Future<T> onSuccess(SuccessCallback<T> successCallback) {
         synchronized (successCallbacks) {
-            successCallbacks.add(new WeakReference<>(successCallback));
+            successCallbacks.add(successCallback);
         }
         return this;
     }
 
     public Future<T> onFailure(FailureCallback failureCallback) {
         synchronized (failureCallbacks) {
-            failureCallbacks.add(new WeakReference<>(failureCallback));
+            failureCallbacks.add(failureCallback);
         }
         return this;
     }
