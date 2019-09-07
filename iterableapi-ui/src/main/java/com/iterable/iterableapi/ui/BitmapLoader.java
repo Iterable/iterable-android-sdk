@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.annotation.RestrictTo;
+import android.support.v4.view.ViewCompat;
 import android.widget.ImageView;
 
 import com.iterable.iterableapi.IterableLogger;
@@ -34,7 +35,9 @@ public class BitmapLoader {
         .onSuccess(new Future.SuccessCallback<Bitmap>() {
             @Override
             public void onSuccess(Bitmap result) {
-                imageView.setImageBitmap(result);
+                if (ViewCompat.isAttachedToWindow(imageView)) {
+                    imageView.setImageBitmap(result);
+                }
             }
         })
         .onFailure(new Future.FailureCallback() {
