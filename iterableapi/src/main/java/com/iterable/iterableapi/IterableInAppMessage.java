@@ -423,28 +423,4 @@ public class IterableInAppMessage {
         }
         return returnObject;
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (!(obj instanceof IterableInAppMessage)) {
-            return false;
-        }
-        IterableInAppMessage message = (IterableInAppMessage) obj;
-        return ObjectsCompat.equals(messageId, message.messageId) &&
-                ObjectsCompat.equals(content, message.content) &&
-                ObjectsCompat.equals(customPayload, message.customPayload) &&
-                ObjectsCompat.equals(createdAt, message.createdAt) &&
-                ObjectsCompat.equals(expiresAt, message.expiresAt) &&
-                ObjectsCompat.equals(trigger, message.trigger) &&
-                ObjectsCompat.equals(saveToInbox, message.saveToInbox) &&
-                ObjectsCompat.equals(inboxMetadata, message.inboxMetadata);
-    }
-
-    @Override
-    public int hashCode() {
-        return ObjectsCompat.hash(messageId, content, customPayload, createdAt, expiresAt, trigger, saveToInbox, inboxMetadata);
-    }
 }
