@@ -67,7 +67,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     private void updateList() {
         RecyclerView recyclerView = (RecyclerView) getView();
         InboxRecyclerViewAdapter adapter = (InboxRecyclerViewAdapter) recyclerView.getAdapter();
-        adapter.setValues(IterableApi.getInstance().getInAppManager().getInboxMessages());
+        adapter.setInboxItems(IterableApi.getInstance().getInAppManager().getInboxMessages());
     }
 
     @Override

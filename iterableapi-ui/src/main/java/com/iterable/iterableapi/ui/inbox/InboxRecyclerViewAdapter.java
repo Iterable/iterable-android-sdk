@@ -13,7 +13,6 @@ import android.widget.TextView;
 
 import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppMessage;
-import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.BitmapLoader;
 import com.iterable.iterableapi.ui.R;
 
@@ -26,11 +25,11 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     private static final String TAG = "InboxRecyclerViewAdapter";
 
-    private List<InboxRow> values;
+    private List<InboxRow> inboxItems;
     private OnListInteractionListener listener;
 
     public InboxRecyclerViewAdapter(List<IterableInAppMessage> values, OnListInteractionListener listener) {
-        this.values = inboxRowListFromInboxMessages(values);
+        this.inboxItems = inboxRowListFromInboxMessages(values);
         this.listener = listener;
     }
 
@@ -51,7 +50,7 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        InboxRow inboxRow = values.get(position);
+        InboxRow inboxRow = inboxItems.get(position);
         IterableInAppMessage.InboxMetadata inboxMetadata = inboxRow.inboxMetadata;
         holder.title.setText(inboxMetadata.title);
         holder.subtitle.setText(inboxMetadata.subtitle);
@@ -68,7 +67,7 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
 
     @Override
     public int getItemCount() {
-        return values.size();
+        return inboxItems.size();
     }
 
     @Override
@@ -85,18 +84,18 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
         listener.onListItemImpressionEnded(message);
     }
 
-    public void setValues(List<IterableInAppMessage> newValues) {
+    public void setInboxItems(List<IterableInAppMessage> newValues) {
         List<InboxRow> newRowValues = inboxRowListFromInboxMessages(newValues);
-        InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(values, newRowValues);
+        InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(inboxItems, newRowValues);
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
-        values.clear();
-        values.addAll(newRowValues);
+        inboxItems.clear();
+        inboxItems.addAll(newRowValues);
         diffResult.dispatchUpdatesTo(this);
     }
 
     public void deleteItem(int position, IterableInAppDeleteActionType source) {
-        IterableInAppMessage deletedItem = values.get(position).message;
-        values.remove(position);
+        IterableInAppMessage deletedItem = inboxItems.get(position).message;
+        inboxItems.remove(position);
         listener.onListItemDeleted(deletedItem, source);
         notifyItemRemoved(position);
     }
