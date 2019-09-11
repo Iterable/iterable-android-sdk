@@ -13,7 +13,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.shadows.ShadowApplication;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -536,7 +535,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
-        IterableApi.getInstance().inAppConsume(message, IterableInAppDeleteActionType.INBOX_SWIPE_LEFT, null);
+        IterableApi.getInstance().inAppConsume(message, IterableInAppDeleteActionType.INBOX_SWIPE, null);
         Robolectric.flushBackgroundThreadScheduler();
 
         RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -545,7 +544,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_INAPP_CONSUME, uri.getPath());
         JSONObject requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
-        assertEquals("inbox-swipe-left", requestJson.getString(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION));
+        assertEquals("inbox-swipe", requestJson.getString(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION));
 
     }
 
