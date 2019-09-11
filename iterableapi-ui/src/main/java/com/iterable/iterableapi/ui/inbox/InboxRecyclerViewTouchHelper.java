@@ -33,7 +33,7 @@ public class InboxRecyclerViewTouchHelper extends ItemTouchHelper.SimpleCallback
     @Override
     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
         int position = viewHolder.getAdapterPosition();
-        adapter.deleteItem(position, IterableInAppDeleteActionType.INBOX_SWIPE_LEFT);
+        adapter.deleteItem(position, IterableInAppDeleteActionType.INBOX_SWIPE);
     }
 
     @Override

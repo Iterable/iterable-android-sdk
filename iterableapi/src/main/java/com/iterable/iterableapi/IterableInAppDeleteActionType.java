@@ -2,10 +2,10 @@ package com.iterable.iterableapi;
 
 public enum IterableInAppDeleteActionType {
 
-    INBOX_SWIPE_LEFT {
+    INBOX_SWIPE {
         @Override
         public String toString() {
-            return "inbox-swipe-left";
+            return "inbox-swipe";
         }
     },
 
