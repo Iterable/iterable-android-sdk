@@ -37,6 +37,8 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         return new InboxFragment();
     }
 
+    private InboxMode inboxMode = InboxMode.POPUP;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -78,7 +80,12 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Override
     public void onListItemTapped(IterableInAppMessage message) {
         IterableApi.getInstance().getInAppManager().setRead(message, true);
-        startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra(InboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));
+
+        if (inboxMode == InboxMode.ACTIVITY) {
+            startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra(InboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));
+        } else {
+            IterableApi.getInstance().getInAppManager().showMessage(message, IterableInAppLocation.INBOX);
+        }
     }
 
     @Override
@@ -94,6 +101,14 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Override
     public void onListItemImpressionEnded(IterableInAppMessage message) {
         sessionManager.onMessageImpressionEnded(message);
+    }
+
+    public InboxMode getInboxMode() {
+        return inboxMode;
+    }
+
+    public void setInboxMode(InboxMode inboxMode) {
+        this.inboxMode = inboxMode;
     }
 
     private static class SessionManager {
