@@ -458,6 +458,7 @@ public class IterableApi {
      * @return
      */
     public static boolean handleAppLink(String uri) {
+        IterableLogger.printInfo();
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
             IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
                 @Override
@@ -592,6 +593,7 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(String eventName, int campaignId, int templateId, JSONObject dataFields) {
+        IterableLogger.printInfo();
         if (!checkSDKInitialization()) {
             return;
         }
@@ -985,6 +987,7 @@ public class IterableApi {
      * @param messageId
      */
     public void trackInAppOpen(String messageId) {
+        IterableLogger.printInfo();
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1003,6 +1006,7 @@ public class IterableApi {
     }
 
     void trackInAppOpen(String messageId, IterableInAppLocation location) {
+        IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
             trackInAppOpen(message, location);
@@ -1040,6 +1044,7 @@ public class IterableApi {
     }
 
     void trackInAppClick(String messageId, String clickedUrl, IterableInAppLocation location) {
+        IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
             trackInAppClick(message, clickedUrl, location);
@@ -1107,6 +1112,7 @@ public class IterableApi {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
             trackInAppClose(message, clickedURL, closeAction, clickLocation);
+            IterableLogger.printInfo();
         } else {
             IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
         }
@@ -1181,6 +1187,7 @@ public class IterableApi {
             return;
         }
         inAppConsume(message,null,null);
+        IterableLogger.printInfo();
     }
 
     /**

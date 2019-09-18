@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
+import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
 public class InboxActivity extends AppCompatActivity {
@@ -12,6 +13,7 @@ public class InboxActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inbox_activity);
+        IterableLogger.printInfo();
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.container, InboxFragment.newInstance())

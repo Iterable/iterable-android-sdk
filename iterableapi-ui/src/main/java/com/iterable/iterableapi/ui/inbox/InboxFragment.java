@@ -40,6 +40,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        IterableLogger.printInfo();
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
         InboxRecyclerViewAdapter adapter = new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), InboxFragment.this);
@@ -135,6 +136,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         }
 
         private void onMessageImpressionStarted(IterableInAppMessage message) {
+            IterableLogger.printInfo();
             String messageId = message.getMessageId();
             ImpressionData impressionData = impressions.get(messageId);
             if (impressionData == null) {
@@ -145,6 +147,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         }
 
         private void onMessageImpressionEnded(IterableInAppMessage message) {
+            IterableLogger.printInfo();
             String messageId = message.getMessageId();
             ImpressionData impressionData = impressions.get(messageId);
             if (impressionData == null) {
