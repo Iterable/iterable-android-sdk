@@ -1,6 +1,5 @@
-package com.iterable.iterableapi.unit;
+package com.iterable.iterableapi.testapp;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import okhttp3.mockwebserver.Dispatcher;
