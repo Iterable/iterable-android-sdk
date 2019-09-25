@@ -169,13 +169,22 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         showMessage(message, true, null);
     }
 
+    public void showMessage(IterableInAppMessage message, IterableInAppLocation location) {
+        showMessage(message, true, null, location);
+    }
+
     /**
-     * Display the in-app message on the screen
+     * Display the in-app message on the screen. This method, by default, assumes the current location of activity as InApp. To pass
+     * different inAppLocation as paramter, use showMessage method which takes in IterableAppLocation as a parameter.
      * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
      * @param consume A boolean indicating whether to remove the message from the list after showing
      * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
      */
     public void showMessage(final IterableInAppMessage message, boolean consume, final IterableHelper.IterableUrlCallback clickCallback) {
+        showMessage(message,consume,clickCallback, IterableInAppLocation.IN_APP);
+    }
+
+    public void showMessage(final IterableInAppMessage message, boolean consume, final IterableHelper.IterableUrlCallback clickCallback, IterableInAppLocation inAppLocation) {
         if (displayer.showMessage(message, new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
@@ -189,7 +198,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         })) {
             setRead(message, true);
             if (consume) {
-                removeMessage(message, IterableInAppDeleteActionType.UNKOWN, IterableInAppLocation.IN_APP);
+                removeMessage(message, IterableInAppDeleteActionType.UNKNOWN, inAppLocation);
             }
         }
     }
