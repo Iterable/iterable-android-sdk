@@ -1259,6 +1259,8 @@ public class IterableApi {
                 requestJSON.put(IterableConstants.ITERABLE_INBOX_IMPRESSIONS, impressionsJsonArray);
             }
 
+            requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
         }
         catch (JSONException e) {
