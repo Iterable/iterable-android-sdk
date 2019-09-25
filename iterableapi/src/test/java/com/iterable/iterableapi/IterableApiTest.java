@@ -504,6 +504,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals(5, requestJson.getInt(IterableConstants.ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT));
         assertEquals(8, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT));
         assertEquals(3, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT));
+        verifyDeviceInfo(requestJson.getJSONObject(IterableConstants.KEY_DEVICE_INFO));
 
         // Check impression data
         JSONArray impressionsJsonArray = requestJson.getJSONArray(IterableConstants.ITERABLE_INBOX_IMPRESSIONS);
@@ -520,6 +521,10 @@ public class IterableApiTest extends BaseTest {
         assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX));
         assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX));
         JSONObject deviceInfo = messageContext.getJSONObject(IterableConstants.KEY_DEVICE_INFO);
+        verifyDeviceInfo(deviceInfo);
+    }
+
+    private void verifyDeviceInfo(JSONObject deviceInfo) throws JSONException {
         assertNotNull(deviceInfo);
         assertNotNull(deviceInfo.getString(IterableConstants.DEVICE_ID));
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, deviceInfo.getString(IterableConstants.KEY_PLATFORM));
