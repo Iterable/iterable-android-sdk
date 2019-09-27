@@ -1,6 +1,7 @@
 package com.iterable.iterableapi.ui.inbox;
 
 import android.net.Uri;
+import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.v4.util.ObjectsCompat;
 import android.support.v7.util.DiffUtil;
@@ -24,12 +25,14 @@ import java.util.List;
 public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecyclerViewAdapter.ViewHolder> {
 
     private static final String TAG = "InboxRecyclerViewAdapter";
+    private final @LayoutRes int itemLayoutId;
 
     private List<InboxRow> inboxItems;
     private OnListInteractionListener listener;
 
-    public InboxRecyclerViewAdapter(List<IterableInAppMessage> values, OnListInteractionListener listener) {
+    public InboxRecyclerViewAdapter(List<IterableInAppMessage> values, @LayoutRes int itemLayoutId, OnListInteractionListener listener) {
         this.inboxItems = inboxRowListFromInboxMessages(values);
+        this.itemLayoutId = itemLayoutId;
         this.listener = listener;
     }
 
@@ -44,7 +47,7 @@ public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecycler
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.fragment_inbox_item, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(itemLayoutId, parent, false);
         return new ViewHolder(view);
     }
 
