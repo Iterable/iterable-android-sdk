@@ -57,12 +57,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             URL url;
             HttpURLConnection urlConnection = null;
 
+            IterableLogger.v(TAG,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+            String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl : iterableBaseUrl;
             try {
-                String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl : iterableBaseUrl;
                 if (overrideUrl != null && !overrideUrl.isEmpty()) {
                     baseUrl = overrideUrl;
                 }
-
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
                     Uri.Builder builder = Uri.parse(baseUrl + iterableApiRequest.resourcePath).buildUpon();
 
@@ -81,6 +81,9 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+
+                    IterableLogger.v(TAG, "GET Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) +"\n body : \n"+ iterableApiRequest.json.toString(2));
+
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -96,6 +99,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
 
+                    IterableLogger.v(TAG, "POST Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) +"\n body : \n"+ iterableApiRequest.json.toString(2));
+
                     OutputStream os = urlConnection.getOutputStream();
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
                     writer.write(iterableApiRequest.json.toString());
@@ -104,6 +109,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     os.close();
                 }
 
+                IterableLogger.v(TAG, "======================================");
                 int responseCode = urlConnection.getResponseCode();
 
                 String error = null;
@@ -126,17 +132,21 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     in.close();
                     requestResult = response.toString();
                 } catch (IOException e) {
-                    IterableLogger.e(TAG, e.getMessage(), e);
+                    logError(baseUrl, e);
                     error = e.getMessage();
                 }
 
                 // Parse JSON
                 JSONObject jsonResponse = null;
                 String jsonError = null;
+
                 try {
                     jsonResponse = new JSONObject(requestResult);
+                    IterableLogger.v(TAG,"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
+                            "Response from : " + baseUrl + iterableApiRequest.resourcePath);
+                    IterableLogger.v(TAG, jsonResponse.toString(2));
                 } catch (Exception e) {
-                    IterableLogger.e(TAG, e.getMessage(), e);
+                    logError(baseUrl, e);
                     jsonError = e.getMessage();
                 }
 
@@ -172,18 +182,37 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     handleFailure("Received non-200 response: " + responseCode, jsonResponse);
                 }
             } catch (JSONException e) {
-                IterableLogger.e(TAG, e.getMessage(), e);
+                logError(baseUrl, e);
                 handleFailure(e.getMessage(), null);
             } catch (IOException e) {
-                IterableLogger.e(TAG, e.getMessage(), e);
+                logError(baseUrl, e);
                 handleFailure(e.getMessage(), null);
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
             }
+            IterableLogger.v(TAG, "======================================");
         }
         return requestResult;
+    }
+
+    private void logError(String baseUrl, Exception e) {
+        IterableLogger.e(TAG,"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
+                "Exception occurred for : " + baseUrl + iterableApiRequest.resourcePath);
+        IterableLogger.e(TAG, e.getMessage(), e);
+    }
+
+    private String buildHeaderString(HttpURLConnection urlConnection) {
+        StringBuilder headerString = new StringBuilder();
+        headerString.append("\nHeaders { \n");
+        Iterator<?> headerKeys = urlConnection.getRequestProperties().keySet().iterator();
+        while (headerKeys.hasNext()) {
+            String key = (String) headerKeys.next();
+            headerString.append(key + " : " + urlConnection.getRequestProperties().get(key) + "\n");
+        }
+        headerString.append("}");
+        return headerString.toString();
     }
 
     private void handleSuccess(JSONObject data) {

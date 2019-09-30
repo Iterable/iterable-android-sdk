@@ -133,6 +133,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * need to call this method from your app.
      */
     void syncInApp() {
+        IterableLogger.printInfo();
         this.api.getInAppMessages(MESSAGES_TO_FETCH, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(String payload) {
@@ -214,6 +215,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public synchronized void removeMessage(IterableInAppMessage message, IterableInAppDeleteActionType source, IterableInAppLocation clickLocation) {
+        IterableLogger.printInfo();
         message.setConsumed(true);
         api.inAppConsume(message, source, clickLocation);
         notifyOnChange();
@@ -221,6 +223,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void handleInAppClick(IterableInAppMessage message, Uri url) {
+        IterableLogger.printInfo();
         if (url != null && !url.toString().isEmpty()) {
             String urlString = url.toString();
             if (urlString.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
@@ -291,7 +294,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             return;
         }
 
-        IterableLogger.d(TAG, "processMessages");
+        IterableLogger.printInfo();
 
         List<IterableInAppMessage> messages = getMessages();
         for (IterableInAppMessage message : messages) {
@@ -310,6 +313,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     void scheduleProcessing() {
+        IterableLogger.printInfo();
         if (canShowInAppAfterPrevious()) {
             processMessages();
         } else {
