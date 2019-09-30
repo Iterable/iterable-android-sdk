@@ -374,6 +374,7 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(trackInAppOpenRequest.getBody().readUtf8());
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         verifyMessageContext(requestJson);
+        verifyDeviceInfo(requestJson);
     }
 
     @Test
@@ -413,6 +414,8 @@ public class IterableApiTest extends BaseTest {
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
         assertEquals("back", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION));
+        verifyMessageContext(requestJson);
+        verifyDeviceInfo(requestJson);
     }
 
     @Test
@@ -434,6 +437,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
         verifyMessageContext(requestJson);
+        verifyDeviceInfo(requestJson);
     }
 
     @Test
@@ -454,6 +458,7 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         verifyMessageContext(requestJson);
+        verifyDeviceInfo(requestJson);
     }
 
     @Test
@@ -504,7 +509,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals(5, requestJson.getInt(IterableConstants.ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT));
         assertEquals(8, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT));
         assertEquals(3, requestJson.getInt(IterableConstants.ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT));
-        verifyDeviceInfo(requestJson.getJSONObject(IterableConstants.KEY_DEVICE_INFO));
+        verifyDeviceInfo(requestJson);
 
         // Check impression data
         JSONArray impressionsJsonArray = requestJson.getJSONArray(IterableConstants.ITERABLE_INBOX_IMPRESSIONS);
@@ -520,11 +525,10 @@ public class IterableApiTest extends BaseTest {
         assertNotNull(messageContext);
         assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX));
         assertEquals(false, messageContext.getBoolean(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX));
-        JSONObject deviceInfo = messageContext.getJSONObject(IterableConstants.KEY_DEVICE_INFO);
-        verifyDeviceInfo(deviceInfo);
     }
 
-    private void verifyDeviceInfo(JSONObject deviceInfo) throws JSONException {
+    private void verifyDeviceInfo(JSONObject requestJson) throws JSONException {
+        JSONObject deviceInfo = requestJson.getJSONObject(IterableConstants.KEY_DEVICE_INFO);
         assertNotNull(deviceInfo);
         assertNotNull(deviceInfo.getString(IterableConstants.DEVICE_ID));
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, deviceInfo.getString(IterableConstants.KEY_PLATFORM));
@@ -540,17 +544,18 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
-        IterableApi.getInstance().inAppConsume(message, IterableInAppDeleteActionType.INBOX_SWIPE, null);
+        IterableApi.getInstance().inAppConsume(message, IterableInAppDeleteActionType.INBOX_SWIPE, IterableInAppLocation.INBOX);
         Robolectric.flushBackgroundThreadScheduler();
 
-        RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(trackInAppCloseRequest);
-        Uri uri = Uri.parse(trackInAppCloseRequest.getRequestUrl().toString());
+        RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppConsumeRequest);
+        Uri uri = Uri.parse(trackInAppConsumeRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_INAPP_CONSUME, uri.getPath());
-        JSONObject requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
+        JSONObject requestJson = new JSONObject(trackInAppConsumeRequest.getBody().readUtf8());
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         assertEquals("inbox-swipe", requestJson.getString(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION));
-
+        verifyMessageContext(requestJson);
+        verifyDeviceInfo(requestJson);
     }
 
     @Test
@@ -564,13 +569,12 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().inAppConsume(message, null, null);
         Robolectric.flushBackgroundThreadScheduler();
 
-        RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(trackInAppCloseRequest);
-        Uri uri = Uri.parse(trackInAppCloseRequest.getRequestUrl().toString());
+        RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppConsumeRequest);
+        Uri uri = Uri.parse(trackInAppConsumeRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_INAPP_CONSUME, uri.getPath());
-        JSONObject requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
+        JSONObject requestJson = new JSONObject(trackInAppConsumeRequest.getBody().readUtf8());
         assertEquals(message.getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
-        Log.d("msg", requestJson.toString());
     }
 
 }

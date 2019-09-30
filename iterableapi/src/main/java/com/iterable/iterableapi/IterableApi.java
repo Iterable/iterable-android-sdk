@@ -1035,6 +1035,7 @@ public class IterableApi {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, location));
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
         }
@@ -1099,6 +1100,7 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
         }
@@ -1144,6 +1146,8 @@ public class IterableApi {
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
         }
         catch (JSONException e) {
@@ -1168,6 +1172,7 @@ public class IterableApi {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, null));
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY, requestJSON);
         }
@@ -1186,7 +1191,7 @@ public class IterableApi {
             IterableLogger.e(TAG, "inAppConsume: message is null");
             return;
         }
-        inAppConsume(message,null,null);
+        inAppConsume(message, null, null);
         IterableLogger.printInfo();
     }
 
@@ -1216,6 +1221,7 @@ public class IterableApi {
 
             if (clickLocation != null) {
                 requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
+                requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
             }
             sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
         }
@@ -1654,7 +1660,6 @@ public class IterableApi {
 
             messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX, message.isInboxMessage());
             messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX, isSilentInbox);
-            messageContext.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
             if (location != null) {
                 messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_LOCATION, location.toString());
             }
