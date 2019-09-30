@@ -171,7 +171,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public void showMessage(IterableInAppMessage message, IterableInAppLocation location) {
-        showMessage(message, true, null, location);
+        showMessage(message, location == IterableInAppLocation.IN_APP, null, location);
     }
 
     /**
