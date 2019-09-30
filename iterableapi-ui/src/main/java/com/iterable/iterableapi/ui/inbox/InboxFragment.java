@@ -2,6 +2,7 @@ package com.iterable.iterableapi.ui.inbox;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -32,6 +33,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     private static final String TAG = "InboxFragment";
 
     private final SessionManager sessionManager = new SessionManager();
+    private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
 
     public static InboxFragment newInstance() {
         return new InboxFragment();
@@ -45,7 +47,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         IterableLogger.printInfo();
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
-        InboxRecyclerViewAdapter adapter = new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), InboxFragment.this);
+        InboxRecyclerViewAdapter adapter = new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), itemLayoutId, InboxFragment.this);
         view.setAdapter(adapter);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new InboxRecyclerViewTouchHelper(getContext(), adapter));
         itemTouchHelper.attachToRecyclerView(view);
@@ -110,6 +112,14 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
 
     public void setInboxMode(InboxMode inboxMode) {
         this.inboxMode = inboxMode;
+    }
+
+    /**
+     * Specify a custom layout ID for inbox items
+     * @param itemLayoutId Layout resouce ID for an inbox item
+     */
+    public void setItemLayoutId(@LayoutRes int itemLayoutId) {
+        this.itemLayoutId = itemLayoutId;
     }
 
     private static class SessionManager {
