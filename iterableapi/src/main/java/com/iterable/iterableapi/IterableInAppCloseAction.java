@@ -1,24 +1,24 @@
 package com.iterable.iterableapi;
 
 public enum IterableInAppCloseAction {
-    BACK{
+    BACK {
         @Override
         public String toString() {
             return "back";
         }
     },
 
-    LINK{
+    LINK {
         @Override
         public String toString() {
             return "link";
         }
     },
 
-    UNKNOWN{
+    OTHER {
         @Override
         public String toString() {
-            return "unknown";
+            return "other";
         }
     }
 }

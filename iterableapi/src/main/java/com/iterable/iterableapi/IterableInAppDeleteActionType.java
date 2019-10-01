@@ -16,10 +16,10 @@ public enum IterableInAppDeleteActionType {
         }
     },
 
-    UNKNOWN {
+    OTHER {
         @Override
         public String toString() {
-            return "unknown";
+            return "other";
         }
     }
 
