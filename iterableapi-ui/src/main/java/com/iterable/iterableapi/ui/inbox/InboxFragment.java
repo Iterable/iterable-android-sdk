@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.iterable.iterableapi.IterableActivityMonitor;
 import com.iterable.iterableapi.IterableApi;
 import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppLocation;
@@ -34,12 +35,19 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
 
     private final SessionManager sessionManager = new SessionManager();
     private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
+    private boolean sessionStarted = false;
 
     public static InboxFragment newInstance() {
         return new InboxFragment();
     }
 
     private InboxMode inboxMode = InboxMode.POPUP;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        IterableActivityMonitor.getInstance().addCallback(appStateCallback);
+    }
 
     @Nullable
     @Override
@@ -59,14 +67,45 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         super.onResume();
         updateList();
         IterableApi.getInstance().getInAppManager().addListener(this);
-        sessionManager.onAppDidEnterForeground();
+        startSession();
     }
 
     @Override
     public void onPause() {
         IterableApi.getInstance().getInAppManager().removeListener(this);
-        sessionManager.onAppDidEnterBackground();
         super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stopSession();
+        IterableActivityMonitor.getInstance().removeCallback(appStateCallback);
+    }
+
+    private final IterableActivityMonitor.AppStateCallback appStateCallback = new IterableActivityMonitor.AppStateCallback() {
+        @Override
+        public void onSwitchToForeground() {
+        }
+
+        @Override
+        public void onSwitchToBackground() {
+            stopSession();
+        }
+    };
+
+    private void startSession() {
+        if (!sessionStarted) {
+            sessionStarted = true;
+            sessionManager.onAppDidEnterForeground();
+        }
+    }
+
+    private void stopSession() {
+        if (sessionStarted) {
+            sessionStarted = false;
+            sessionManager.onAppDidEnterBackground();
+        }
     }
 
     private void updateList() {
