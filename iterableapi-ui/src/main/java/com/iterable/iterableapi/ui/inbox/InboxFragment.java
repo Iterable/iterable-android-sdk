@@ -37,11 +37,12 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
     private boolean sessionStarted = false;
 
+    //TODO: Get the arguments here
     public static InboxFragment newInstance() {
         return new InboxFragment();
     }
 
-    private InboxMode inboxMode = InboxMode.POPUP;
+    private InboxMode inboxMode;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -53,6 +54,12 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         IterableLogger.printInfo();
+        try{
+            inboxMode = (InboxMode) savedInstanceState.get("InboxMode");
+        }catch (Exception e){
+            inboxMode = InboxMode.POPUP;
+        }
+
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
         InboxRecyclerViewAdapter adapter = new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), itemLayoutId, InboxFragment.this);
@@ -124,7 +131,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         IterableApi.getInstance().getInAppManager().setRead(message, true);
 
         if (inboxMode == InboxMode.ACTIVITY) {
-            startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra(InboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));
+            startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra("messageId", message.getMessageId()));
         } else {
             IterableApi.getInstance().getInAppManager().showMessage(message, IterableInAppLocation.INBOX);
         }
@@ -143,14 +150,6 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Override
     public void onListItemImpressionEnded(IterableInAppMessage message) {
         sessionManager.onMessageImpressionEnded(message);
-    }
-
-    public InboxMode getInboxMode() {
-        return inboxMode;
-    }
-
-    public void setInboxMode(InboxMode inboxMode) {
-        this.inboxMode = inboxMode;
     }
 
     /**
