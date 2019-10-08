@@ -9,15 +9,34 @@ import com.iterable.iterableapi.ui.R;
 
 public class InboxActivity extends AppCompatActivity {
 
+    private InboxMode mode = InboxMode.POPUP;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inbox_activity);
         IterableLogger.printInfo();
+
+
+        //Setting necessary parameters
+        InboxFragment inboxFragment = new InboxFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("InboxMode", mode);
+        inboxFragment.setArguments(bundle);
+
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, InboxFragment.newInstance())
+                    .replace(R.id.container, inboxFragment)
                     .commitNow();
         }
     }
+
+    public InboxMode getMode() {
+        return mode;
+    }
+
+    public void setMode(InboxMode mode) {
+        this.mode = mode;
+    }
+
 }
