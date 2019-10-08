@@ -509,12 +509,7 @@ public class IterableApi {
      * @param token Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(String token) {
-        if (config.pushIntegrationName == null) {
-            IterableLogger.e(TAG, "registerDeviceToken: pushIntegrationName is not set");
-            return;
-        }
-
-        registerDeviceToken(config.pushIntegrationName, token);
+        registerDeviceToken(getPushIntegrationName(), token);
     }
 
     /**
@@ -799,6 +794,14 @@ public class IterableApi {
 
     }
 
+    private String getPushIntegrationName() {
+        if (config.pushIntegrationName != null) {
+            return config.pushIntegrationName;
+        } else {
+            return _applicationContext.getPackageName();
+        }
+    }
+
     /**
      * Registers for push notifications.
      * Make sure the API is initialized with {@link IterableConfig#pushIntegrationName} defined, and
@@ -809,12 +812,7 @@ public class IterableApi {
             return;
         }
 
-        if (config.pushIntegrationName == null) {
-            IterableLogger.e(TAG, "registerForPush: pushIntegrationName is not set");
-            return;
-        }
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -865,12 +863,7 @@ public class IterableApi {
      * Disables the device from push notifications
      */
     public void disablePush() {
-        if (config.pushIntegrationName == null) {
-            IterableLogger.e(TAG, "disablePush: pushIntegrationName is not set");
-            return;
-        }
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, config.pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
 

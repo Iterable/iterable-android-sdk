@@ -87,6 +87,7 @@ public class IterableConfig {
         /**
          * Push integration name - used for token registration
          * Make sure the name of this integration matches the one set up in Iterable console
+         * If this field is not set, Iterable SDK defaults it to the app's package name
          * @param pushIntegrationName Push integration name
          */
         public Builder setPushIntegrationName(String pushIntegrationName) {
