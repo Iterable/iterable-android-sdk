@@ -41,7 +41,6 @@ public class IterableApi {
 
     private Context _applicationContext;
     IterableConfig config;
-    boolean sdkCompatEnabled;
     private String _apiKey;
     private String _email;
     private String _userId;
@@ -241,7 +240,6 @@ public class IterableApi {
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
-        sharedInstance.sdkCompatEnabled = false;
         sharedInstance.retrieveEmailAndUserId();
         sharedInstance.checkForDeferredDeeplink();
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
@@ -249,144 +247,6 @@ public class IterableApi {
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
             sharedInstance.registerForPush();
         }
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * @param currentActivity The current activity
-     * @param userId The current userId
-     * @return stored instance of IterableApi
-     *
-     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKeyWithUserId(Activity currentActivity, String apiKey,
-                                                                 String userId)
-    {
-        return sharedInstanceWithApiKeyWithUserId(currentActivity, apiKey, userId, false);
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * Allows the IterableApi to be intialized with debugging enabled
-     * @param currentActivity The current activity
-     * @param userId The current userId@return stored instance of IterableApi
-     *
-     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKeyWithUserId(Activity currentActivity, String apiKey,
-                                                                 String userId, boolean debugMode)
-    {
-        return sharedInstanceWithApiKeyWithUserId((Context) currentActivity, apiKey, userId, debugMode);
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * @param currentContext The current context
-     * @param userId The current userId
-     * @return stored instance of IterableApi
-     *
-     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKeyWithUserId(Context currentContext, String apiKey,
-                                                                 String userId)
-    {
-        return sharedInstanceWithApiKey(currentContext, apiKey, null, userId, false);
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * Allows the IterableApi to be intialized with debugging enabled
-     * @param currentContext The current context
-     * @return stored instance of IterableApi
-     *
-     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKeyWithUserId(Context currentContext, String apiKey,
-                                                                 String userId, boolean debugMode)
-    {
-        return sharedInstanceWithApiKey(currentContext, apiKey, null, userId, debugMode);
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * @param currentActivity The current activity
-     * @param email The current email
-     * @return stored instance of IterableApi
-     *
-     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
-                                                       String email)
-    {
-        return sharedInstanceWithApiKey(currentActivity, apiKey, email, false);
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * Allows the IterableApi to be intialized with debugging enabled
-     * @param currentActivity The current activity
-     * @param email The current email
-     * @return stored instance of IterableApi
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKey(Activity currentActivity, String apiKey,
-                                                       String email, boolean debugMode)
-    {
-        return sharedInstanceWithApiKey((Context) currentActivity, apiKey, email, debugMode);
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * @param currentContext The current context
-     * @param email The current email
-     * @return stored instance of IterableApi
-     *
-     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
-                                                       String email)
-    {
-        return sharedInstanceWithApiKey(currentContext, apiKey, email, false);
-    }
-
-    /**
-     * Returns a shared instance of IterableApi. Updates the client data if an instance already exists.
-     * Should be called whenever the app is opened.
-     * Allows the IterableApi to be intialized with debugging enabled
-     * @param currentContext The current context
-     * @param email The current email
-     * @return stored instance of IterableApi
-     *
-     * @deprecated Initialize the SDK with {@link #initialize(Context, String, IterableConfig)} instead
-     */
-    @Deprecated
-    public static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
-                                                       String email, boolean debugMode)
-    {
-        return sharedInstanceWithApiKey(currentContext, apiKey, email, null, debugMode);
-    }
-
-    private static IterableApi sharedInstanceWithApiKey(Context currentContext, String apiKey,
-                                                       String email, String userId, boolean debugMode)
-    {
-        sharedInstance.updateData(currentContext.getApplicationContext(), apiKey, email, userId);
-        sharedInstance.setDebugMode(debugMode);
-        sharedInstance.sdkCompatEnabled = true;
-
-        return sharedInstance;
     }
 
     /**
