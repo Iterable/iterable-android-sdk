@@ -30,6 +30,7 @@ public class IterableInAppHTMLNotification extends Dialog {
 
     static final String BACK_BUTTON = "itbl://backButton";
     static final String JAVASCRIPT_INTERFACE = "ITBL";
+    private static final String TAG = "IterableInAppHTMLNotification";
 
     static IterableInAppHTMLNotification notification;
 
@@ -188,54 +189,58 @@ public class IterableInAppHTMLNotification extends Dialog {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                // Since this is run asynchronously, notification might've been dismissed already
-                if (notification == null || notification.getWindow() == null) {
-                    return;
-                }
+                try {
+                    // Since this is run asynchronously, notification might've been dismissed already
+                    if (notification == null || notification.getWindow() == null || !notification.isShowing()) {
+                        return;
+                    }
 
-                DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
-                Window window = notification.getWindow();
-                Rect insetPadding = notification.insetPadding;
+                    DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
+                    Window window = notification.getWindow();
+                    Rect insetPadding = notification.insetPadding;
 
-                WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-                Display display = wm.getDefaultDisplay();
-                Point size = new Point();
+                    WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                    Display display = wm.getDefaultDisplay();
+                    Point size = new Point();
 
-                // Get the correct screen size based on api level
-                // https://stackoverflow.com/questions/35780980/getting-the-actual-screen-height-android
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    display.getRealSize(size);
-                } else {
-                    display.getSize(size);
-                }
-                int webViewWidth = size.x;
-                int webViewHeight = size.y;
+                    // Get the correct screen size based on api level
+                    // https://stackoverflow.com/questions/35780980/getting-the-actual-screen-height-android
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        display.getRealSize(size);
+                    } else {
+                        display.getSize(size);
+                    }
+                    int webViewWidth = size.x;
+                    int webViewHeight = size.y;
 
-                //Check if the dialog is full screen
-                if (insetPadding.bottom == 0 && insetPadding.top == 0) {
-                    //Handle full screen
-                    window.setLayout(webViewWidth, webViewHeight);
+                    //Check if the dialog is full screen
+                    if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+                        //Handle full screen
+                        window.setLayout(webViewWidth, webViewHeight);
 
-                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
-                } else {
-                    // Calculates the dialog size
-                    double notificationWidth = 100-(insetPadding.left +insetPadding.right);
-                    float widthPercentage = (float) notificationWidth/100;
-                    int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
-                    int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
-                    window.setLayout(maxWidth, maxHeight);
+                        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                    } else {
+                        // Calculates the dialog size
+                        double notificationWidth = 100 - (insetPadding.left + insetPadding.right);
+                        float widthPercentage = (float) notificationWidth / 100;
+                        int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
+                        int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
+                        window.setLayout(maxWidth, maxHeight);
 
-                    //Calculates the horizontal position based on the dialog size
-                    double center = (insetPadding.left + notificationWidth/2f);
-                    int offset = (int) ((center - 50)/100f * webViewWidth);
+                        //Calculates the horizontal position based on the dialog size
+                        double center = (insetPadding.left + notificationWidth / 2f);
+                        int offset = (int) ((center - 50) / 100f * webViewWidth);
 
-                    //Set the window properties
-                    WindowManager.LayoutParams wlp = window.getAttributes();
-                    wlp.x = offset;
-                    wlp.gravity = getVerticalLocation(insetPadding);
-                    wlp.dimAmount = (float) notification.backgroundAlpha;
-                    wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-                    window.setAttributes(wlp);
+                        //Set the window properties
+                        WindowManager.LayoutParams wlp = window.getAttributes();
+                        wlp.x = offset;
+                        wlp.gravity = getVerticalLocation(insetPadding);
+                        wlp.dimAmount = (float) notification.backgroundAlpha;
+                        wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+                        window.setAttributes(wlp);
+                    }
+                } catch (IllegalArgumentException e) {
+                    IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);
                 }
             }
         });
