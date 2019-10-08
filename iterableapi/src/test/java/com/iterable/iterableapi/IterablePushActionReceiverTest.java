@@ -1,7 +1,10 @@
 package com.iterable.iterableapi;
 
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
+import android.support.v4.app.RemoteInput;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -17,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static android.support.v4.app.RemoteInput.RESULTS_CLIP_LABEL;
 import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -105,6 +109,33 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
         // Verify that the main app activity was NOT launched
         Intent activityIntent = shadowOf(RuntimeEnvironment.application).peekNextStartedActivity();
         assertNull(activityIntent);
+    }
+
+    @Test
+    public void testPushActionWithTextInput() throws Exception {
+        IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "textInputButton");
+        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_action_buttons.json"));
+
+        // Inject input text
+        Bundle resultsBundle = new Bundle();
+        Intent clipDataIntent = new Intent();
+        resultsBundle.putString(IterableConstants.USER_INPUT, "input text");
+        clipDataIntent.putExtra(RemoteInput.EXTRA_RESULTS_DATA, resultsBundle);
+        intent.setClipData(ClipData.newIntent(RESULTS_CLIP_LABEL, clipDataIntent));
+
+        PowerMockito.mockStatic(IterableActionRunner.class);
+
+        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+
+        // Verify that IterableActionRunner was called with the proper action
+        PowerMockito.verifyStatic(IterableActionRunner.class);
+        ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
+        IterableActionRunner.executeAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
+        IterableAction capturedAction = actionCaptor.getValue();
+        assertEquals("handleTextInput", capturedAction.getType());
+        assertEquals("input text", capturedAction.userInput);
     }
 
     @Test
