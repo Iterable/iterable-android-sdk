@@ -136,6 +136,7 @@ public class IterableInAppHTMLNotification extends Dialog {
         super.onStart();
         this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         webView = new IterableWebView(context);
+        webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
         webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
 

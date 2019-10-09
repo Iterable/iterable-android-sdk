@@ -31,18 +31,26 @@ import java.util.Map;
 
 public class InboxFragment extends Fragment implements IterableInAppManager.Listener, InboxRecyclerViewAdapter.OnListInteractionListener {
 
+    //Default mode
+    private InboxMode inboxMode = InboxMode.POPUP;
     private static final String TAG = "InboxFragment";
 
     private final SessionManager sessionManager = new SessionManager();
     private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
     private boolean sessionStarted = false;
 
-    //TODO: Get the arguments here
     public static InboxFragment newInstance() {
         return new InboxFragment();
     }
 
-    private InboxMode inboxMode;
+    public static InboxFragment newInstance(InboxMode inboxMode) {
+        InboxFragment inboxFragment = new InboxFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(InboxActivity.INBOX_MODE, inboxMode);
+        inboxFragment.setArguments(bundle);
+
+        return inboxFragment;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,10 +62,11 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         IterableLogger.printInfo();
-        try{
-            inboxMode = (InboxMode) savedInstanceState.get("InboxMode");
-        }catch (Exception e){
-            inboxMode = InboxMode.POPUP;
+
+        if (getArguments() != null) {
+            if (getArguments().get(InboxActivity.INBOX_MODE) instanceof InboxMode) {
+                inboxMode = (InboxMode) getArguments().get(InboxActivity.INBOX_MODE);
+            }
         }
 
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
@@ -131,7 +140,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         IterableApi.getInstance().getInAppManager().setRead(message, true);
 
         if (inboxMode == InboxMode.ACTIVITY) {
-            startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra("messageId", message.getMessageId()));
+            startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra(InboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));
         } else {
             IterableApi.getInstance().getInAppManager().showMessage(message, IterableInAppLocation.INBOX);
         }
@@ -152,8 +161,17 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         sessionManager.onMessageImpressionEnded(message);
     }
 
+    public InboxMode getInboxMode() {
+        return inboxMode;
+    }
+
+    public void setInboxMode(InboxMode inboxMode) {
+        this.inboxMode = inboxMode;
+    }
+
     /**
      * Specify a custom layout ID for inbox items
+     *
      * @param itemLayoutId Layout resouce ID for an inbox item
      */
     public void setItemLayoutId(@LayoutRes int itemLayoutId) {
@@ -264,7 +282,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         private void endImpression() {
             if (this.impressionStarted != null) {
                 this.displayCount += 1;
-                this.duration += (float)(new Date().getTime() - this.impressionStarted.getTime()) / 1000;
+                this.duration += (float) (new Date().getTime() - this.impressionStarted.getTime()) / 1000;
                 this.impressionStarted = null;
             }
         }
