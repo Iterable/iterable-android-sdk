@@ -30,25 +30,34 @@ import java.util.Map;
 
 public class InboxFragment extends Fragment implements IterableInAppManager.Listener, InboxRecyclerViewAdapter.OnListInteractionListener {
 
+    //Default mode
+    private InboxMode inboxMode = InboxMode.POPUP;
     private static final String TAG = "InboxFragment";
 
     private final SessionManager sessionManager = new SessionManager();
     private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
 
-    //TODO: Get the arguments here
     public static InboxFragment newInstance() {
         return new InboxFragment();
     }
 
-    private InboxMode inboxMode;
+    public static InboxFragment newInstance (InboxMode inboxMode) {
+        InboxFragment inboxFragment = new InboxFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(InboxActivity.INBOX_MODE, inboxMode);
+        inboxFragment.setArguments(bundle);
+
+        return inboxFragment;
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         IterableLogger.printInfo();
         try{
-            inboxMode = (InboxMode) savedInstanceState.get("InboxMode");
+            inboxMode = (InboxMode) getArguments().get(InboxActivity.INBOX_MODE);
         }catch (Exception e){
+            IterableLogger.e(TAG,"Inbox mode could not be set. Setting it to POP UP by default");
             inboxMode = InboxMode.POPUP;
         }
 

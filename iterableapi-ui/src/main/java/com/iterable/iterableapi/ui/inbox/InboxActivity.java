@@ -1,5 +1,6 @@
 package com.iterable.iterableapi.ui.inbox;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -9,20 +10,22 @@ import com.iterable.iterableapi.ui.R;
 
 public class InboxActivity extends AppCompatActivity {
 
-    private InboxMode mode = InboxMode.POPUP;
-
+    static final String TAG = "InboxActivity";
+    public static String INBOX_MODE = "inboxMode";
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        IterableLogger.printInfo();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inbox_activity);
-        IterableLogger.printInfo();
+        InboxFragment inboxFragment;
 
-
-        //Setting necessary parameters
-        InboxFragment inboxFragment = new InboxFragment();
-        Bundle bundle = new Bundle();
-        bundle.putSerializable("InboxMode", mode);
-        inboxFragment.setArguments(bundle);
+        if (getIntent() == null){
+            inboxFragment = InboxFragment.newInstance();
+        } else if (!(getIntent().getSerializableExtra(INBOX_MODE) instanceof InboxMode)) {
+            inboxFragment = InboxFragment.newInstance();
+        }  else {
+            inboxFragment = InboxFragment.newInstance((InboxMode) getIntent().getSerializableExtra(INBOX_MODE));
+        }
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
@@ -31,12 +34,5 @@ public class InboxActivity extends AppCompatActivity {
         }
     }
 
-    public InboxMode getMode() {
-        return mode;
-    }
-
-    public void setMode(InboxMode mode) {
-        this.mode = mode;
-    }
 
 }
