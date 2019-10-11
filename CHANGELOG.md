@@ -15,6 +15,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.4)
+#### Added
+- Push notifications now also display image thumbnails when collapsed
+
+#### Changed
+- Connection timeout for GET requests is now 3 seconds, to match other request timeouts
+- `Api-Key` header is now also used for GET requests
+
+#### Fixed
+- Fixed possible exceptions when an in-app message is not on the screen when it's being resized
+
 ## [3.1.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.3)
 #### Fixed
 - Fixed a NullPointerException that could occur in some cases when trying to get Advertising ID
