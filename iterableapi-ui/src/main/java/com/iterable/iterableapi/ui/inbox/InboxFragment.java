@@ -31,6 +31,8 @@ import java.util.Map;
 
 public class InboxFragment extends Fragment implements IterableInAppManager.Listener, InboxRecyclerViewAdapter.OnListInteractionListener {
 
+    //Default mode
+    private InboxMode inboxMode = InboxMode.POPUP;
     private static final String TAG = "InboxFragment";
 
     private final SessionManager sessionManager = new SessionManager();
@@ -41,7 +43,14 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         return new InboxFragment();
     }
 
-    private InboxMode inboxMode = InboxMode.POPUP;
+    public static InboxFragment newInstance(InboxMode inboxMode) {
+        InboxFragment inboxFragment = new InboxFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(InboxActivity.INBOX_MODE, inboxMode);
+        inboxFragment.setArguments(bundle);
+
+        return inboxFragment;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -53,6 +62,13 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         IterableLogger.printInfo();
+
+        if (getArguments() != null) {
+            if (getArguments().get(InboxActivity.INBOX_MODE) instanceof InboxMode) {
+                inboxMode = (InboxMode) getArguments().get(InboxActivity.INBOX_MODE);
+            }
+        }
+
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
         InboxRecyclerViewAdapter adapter = new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), itemLayoutId, InboxFragment.this);
@@ -155,6 +171,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
 
     /**
      * Specify a custom layout ID for inbox items
+     *
      * @param itemLayoutId Layout resouce ID for an inbox item
      */
     public void setItemLayoutId(@LayoutRes int itemLayoutId) {
@@ -265,7 +282,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         private void endImpression() {
             if (this.impressionStarted != null) {
                 this.displayCount += 1;
-                this.duration += (float)(new Date().getTime() - this.impressionStarted.getTime()) / 1000;
+                this.duration += (float) (new Date().getTime() - this.impressionStarted.getTime()) / 1000;
                 this.impressionStarted = null;
             }
         }
