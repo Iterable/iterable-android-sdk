@@ -13,12 +13,12 @@ import android.view.View;
 import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.ui.R;
 
-public class InboxRecyclerViewTouchHelper extends ItemTouchHelper.SimpleCallback {
+public class IterableInboxTouchHelper extends ItemTouchHelper.SimpleCallback {
     private final Drawable icon;
-    private final InboxRecyclerViewAdapter adapter;
+    private final IterableInboxAdapter adapter;
     private final ColorDrawable background;
 
-    public InboxRecyclerViewTouchHelper(Context context, InboxRecyclerViewAdapter adapter) {
+    public IterableInboxTouchHelper(Context context, IterableInboxAdapter adapter) {
         super(0,ItemTouchHelper.LEFT);
         this.adapter = adapter;
         this.icon = ContextCompat.getDrawable(context, R.drawable.ic_delete_black_24dp);

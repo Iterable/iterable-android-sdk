@@ -9,9 +9,9 @@ import androidx.test.espresso.web.webdriver.Locator;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.iterable.iterableapi.testapp.PathBasedQueueDispatcher;
-import com.iterable.iterableapi.ui.inbox.InboxActivity;
-import com.iterable.iterableapi.ui.inbox.InboxMessageActivity;
 import com.iterable.iterableapi.ui.inbox.InboxMode;
+import com.iterable.iterableapi.ui.inbox.IterableInboxActivity;
+import com.iterable.iterableapi.ui.inbox.IterableInboxMessageActivity;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -39,7 +39,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.espresso.web.sugar.Web.onWebView;
 import static androidx.test.espresso.web.webdriver.DriverAtoms.findElement;
-import static com.iterable.iterableapi.ui.inbox.InboxActivity.INBOX_MODE;
+import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.INBOX_MODE;
 import static org.hamcrest.Matchers.allOf;
 
 
@@ -54,8 +54,8 @@ public class MainActivityTest {
     private IterableUrlHandler urlHandler;
 
     @Rule
-    public IntentsTestRule<InboxActivity> rule =
-            new IntentsTestRule<>(InboxActivity.class, false, false);
+    public IntentsTestRule<IterableInboxActivity> rule =
+            new IntentsTestRule<>(IterableInboxActivity.class, false, false);
     @Before
     public void setUp() throws Exception {
         server = new MockWebServer();
@@ -116,7 +116,7 @@ public class MainActivityTest {
         rule.launchActivity(intent);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        intended(hasComponent(InboxMessageActivity.class.getName()));
+        intended(hasComponent(IterableInboxMessageActivity.class.getName()));
     }
 
     @Test
@@ -134,7 +134,7 @@ public class MainActivityTest {
         rule.launchActivity(intent);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        intended(allOf(hasComponent(InboxMessageActivity.class.getName())), times(0));
+        intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
@@ -154,7 +154,7 @@ public class MainActivityTest {
         rule.launchActivity(intent);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        intended(allOf(hasComponent(InboxMessageActivity.class.getName())), times(0));
+        intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
@@ -171,7 +171,7 @@ public class MainActivityTest {
         rule.launchActivity(null);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        intended(allOf(hasComponent(InboxMessageActivity.class.getName())), times(0));
+        intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
@@ -192,7 +192,7 @@ public class MainActivityTest {
         rule.launchActivity(intent);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        intended(allOf(hasComponent(InboxMessageActivity.class.getName())), times(0));
+        intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }

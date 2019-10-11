@@ -7,7 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
-public class InboxMessageActivity extends AppCompatActivity {
+public class IterableInboxMessageActivity extends AppCompatActivity {
     public static final String ARG_MESSAGE_ID = "messageId";
 
     @Override
@@ -17,7 +17,7 @@ public class InboxMessageActivity extends AppCompatActivity {
         IterableLogger.printInfo();
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, InboxMessageFragment.newInstance(getIntent().getStringExtra(ARG_MESSAGE_ID)))
+                    .replace(R.id.container, IterableInboxMessageFragment.newInstance(getIntent().getStringExtra(ARG_MESSAGE_ID)))
                     .commitNow();
         }
     }

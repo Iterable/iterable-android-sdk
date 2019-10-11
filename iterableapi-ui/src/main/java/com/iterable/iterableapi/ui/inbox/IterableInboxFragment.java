@@ -29,24 +29,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class InboxFragment extends Fragment implements IterableInAppManager.Listener, InboxRecyclerViewAdapter.OnListInteractionListener {
+public class IterableInboxFragment extends Fragment implements IterableInAppManager.Listener, IterableInboxAdapter.OnListInteractionListener {
+    private static final String TAG = "IterableInboxFragment";
+    public static final String INBOX_MODE = "inboxMode";
 
     //Default mode
     private InboxMode inboxMode = InboxMode.POPUP;
-    private static final String TAG = "InboxFragment";
 
     private final SessionManager sessionManager = new SessionManager();
     private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
     private boolean sessionStarted = false;
 
-    public static InboxFragment newInstance() {
-        return new InboxFragment();
+    public static IterableInboxFragment newInstance() {
+        return new IterableInboxFragment();
     }
 
-    public static InboxFragment newInstance(InboxMode inboxMode) {
-        InboxFragment inboxFragment = new InboxFragment();
+    public static IterableInboxFragment newInstance(InboxMode inboxMode) {
+        IterableInboxFragment inboxFragment = new IterableInboxFragment();
         Bundle bundle = new Bundle();
-        bundle.putSerializable(InboxActivity.INBOX_MODE, inboxMode);
+        bundle.putSerializable(INBOX_MODE, inboxMode);
         inboxFragment.setArguments(bundle);
 
         return inboxFragment;
@@ -63,17 +64,18 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         IterableLogger.printInfo();
 
-        if (getArguments() != null) {
-            if (getArguments().get(InboxActivity.INBOX_MODE) instanceof InboxMode) {
-                inboxMode = (InboxMode) getArguments().get(InboxActivity.INBOX_MODE);
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            if (arguments.get(INBOX_MODE) instanceof InboxMode) {
+                inboxMode = (InboxMode) arguments.get(INBOX_MODE);
             }
         }
 
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
-        InboxRecyclerViewAdapter adapter = new InboxRecyclerViewAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), itemLayoutId, InboxFragment.this);
+        IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), itemLayoutId, IterableInboxFragment.this);
         view.setAdapter(adapter);
-        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new InboxRecyclerViewTouchHelper(getContext(), adapter));
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
         itemTouchHelper.attachToRecyclerView(view);
         return view;
     }
@@ -126,7 +128,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
 
     private void updateList() {
         RecyclerView recyclerView = (RecyclerView) getView();
-        InboxRecyclerViewAdapter adapter = (InboxRecyclerViewAdapter) recyclerView.getAdapter();
+        IterableInboxAdapter adapter = (IterableInboxAdapter) recyclerView.getAdapter();
         adapter.setInboxItems(IterableApi.getInstance().getInAppManager().getInboxMessages());
     }
 
@@ -140,7 +142,7 @@ public class InboxFragment extends Fragment implements IterableInAppManager.List
         IterableApi.getInstance().getInAppManager().setRead(message, true);
 
         if (inboxMode == InboxMode.ACTIVITY) {
-            startActivity(new Intent(getContext(), InboxMessageActivity.class).putExtra(InboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));
+            startActivity(new Intent(getContext(), IterableInboxMessageActivity.class).putExtra(IterableInboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));
         } else {
             IterableApi.getInstance().getInAppManager().showMessage(message, IterableInAppLocation.INBOX);
         }

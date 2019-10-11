@@ -22,15 +22,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class InboxRecyclerViewAdapter extends RecyclerView.Adapter<InboxRecyclerViewAdapter.ViewHolder> {
+public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdapter.ViewHolder> {
 
-    private static final String TAG = "InboxRecyclerViewAdapter";
+    private static final String TAG = "IterableInboxAdapter";
     private final @LayoutRes int itemLayoutId;
 
     private List<InboxRow> inboxItems;
     private OnListInteractionListener listener;
 
-    public InboxRecyclerViewAdapter(List<IterableInAppMessage> values, @LayoutRes int itemLayoutId, OnListInteractionListener listener) {
+    public IterableInboxAdapter(List<IterableInAppMessage> values, @LayoutRes int itemLayoutId, OnListInteractionListener listener) {
         this.inboxItems = inboxRowListFromInboxMessages(values);
         this.itemLayoutId = itemLayoutId;
         this.listener = listener;
