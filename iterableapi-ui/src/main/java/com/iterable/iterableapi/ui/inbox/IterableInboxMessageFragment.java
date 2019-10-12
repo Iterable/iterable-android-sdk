@@ -18,7 +18,7 @@ import com.iterable.iterableapi.ui.R;
 
 import java.util.List;
 
-public class InboxMessageFragment extends Fragment {
+public class IterableInboxMessageFragment extends Fragment {
     public static final String ARG_MESSAGE_ID = "messageId";
     public static final String LOADED = "loaded";
 
@@ -27,8 +27,8 @@ public class InboxMessageFragment extends Fragment {
     private IterableInAppMessage message;
     private boolean loaded = false;
 
-    public static InboxMessageFragment newInstance(String messageId) {
-        InboxMessageFragment fragment = new InboxMessageFragment();
+    public static IterableInboxMessageFragment newInstance(String messageId) {
+        IterableInboxMessageFragment fragment = new IterableInboxMessageFragment();
 
         Bundle args = new Bundle();
         args.putString(ARG_MESSAGE_ID, messageId);

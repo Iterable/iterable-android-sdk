@@ -275,35 +275,35 @@ Add a new dependency, `iterableapi-ui`, to your `build.gradle` file:
 compile 'com.iterable:iterableapi-ui:3.2.0-beta1'
 ```
 
-To open Inbox as a separate activity, launch `InboxActivity`. The SDK also provides `InboxFragment` if you need to embed the Inbox UI within an existing activity.
+To open Inbox as a separate activity, launch `IterableInboxActivity`. The SDK also provides `IterableInboxFragment` if you need to embed the Inbox UI within an existing activity.
 
 ##### Show the inbox inside an existing activity
 
-You can embed `InboxFragment` either via a layout .xml file, or by calling `InboxFragment.newInstance()` and inserting it into your activity.
+You can embed `IterableInboxFragment` either via a layout .xml file, or by calling `IterableInboxFragment.newInstance()` and inserting it into your activity.
 
 ##### Display mobile inbox as a result of an user action
 
-It's also possible to show the inbox when a user taps a button (or completes some other action). To do this, respond to the user's action by starting `InboxActivity`. For example:
+It's also possible to show the inbox when a user taps a button (or completes some other action). To do this, respond to the user's action by starting `IterableInboxActivity`. For example:
 
 ```java
 // Add this in your button handler
-startActivity(this, InboxActivity.class);
+startActivity(this, IterableInboxActivity.class);
 ```
 
 #### Mobile Inbox customization options
 
-The SDK provides various ways to customize the inbox's interface to match your brand's styles. For simpler customization needs, specify a custom XML layout ID by calling `setItemLayoutId` on the `InboxFragment`. For more advanced scenarios, define classes that inherit from `InboxFragment` and `InboxRecyclerViewAdapter` and override existing methods as necessary.
+The SDK provides various ways to customize the inbox's interface to match your brand's styles. For simpler customization needs, specify a custom XML layout ID by calling `setItemLayoutId` on the `IterableInboxFragment`. For more advanced scenarios, define classes that inherit from `IterableInboxFragment` and `InboxRecyclerViewAdapter` and override existing methods as necessary.
 
 ##### inboxMode
 
-`InboxFragment` and `InboxActivity` can display inbox messages in two ways:
+`IterableInboxFragment` and `IterableInboxActivity` can display inbox messages in two ways:
 
 - `POPUP` - (default): Displays the inbox message as a dialog on top of the Inbox UI.
 - `ACTIVITY` - Displays the inbox message in a new activity.
 
 ##### itemLayoutId
 
-To completely change the look of an inbox, copy the contents of `fragment_inbox_item.xml` from `iterableapi-ui` into a new layout XML in your project and modify it. Then call `setItemLayoutId` on the `InboxFragment` in `onCreate` of the parent activity to specify the custom layout XML for Inbox cells.
+To completely change the look of an inbox, copy the contents of `fragment_inbox_item.xml` from `iterableapi-ui` into a new layout XML in your project and modify it. Then call `setItemLayoutId` on the `IterableInboxFragment` in `onCreate` of the parent activity to specify the custom layout XML for Inbox cells.
 
 #### Mobile inbox events and the events lifecycle
 

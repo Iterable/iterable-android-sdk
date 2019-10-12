@@ -1,6 +1,5 @@
 package com.iterable.iterableapi.ui.inbox;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -8,26 +7,27 @@ import android.support.v7.app.AppCompatActivity;
 import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
-public class InboxActivity extends AppCompatActivity {
+import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.INBOX_MODE;
 
-    static final String TAG = "InboxActivity";
-    public static String INBOX_MODE = "inboxMode";
+public class IterableInboxActivity extends AppCompatActivity {
+    static final String TAG = "IterableInboxActivity";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        IterableLogger.printInfo();
         super.onCreate(savedInstanceState);
+        IterableLogger.printInfo();
         setContentView(R.layout.inbox_activity);
-        InboxFragment inboxFragment;
+        IterableInboxFragment inboxFragment;
 
         if (getIntent() != null) {
-            if (((getIntent().getSerializableExtra(INBOX_MODE) instanceof InboxMode))) {
-                inboxFragment = InboxFragment.newInstance((InboxMode) getIntent().getSerializableExtra(INBOX_MODE));
+            Object inboxMode = getIntent().getSerializableExtra(INBOX_MODE);
+            if ((inboxMode instanceof InboxMode)) {
+                inboxFragment = IterableInboxFragment.newInstance((InboxMode) inboxMode);
             } else {
-                inboxFragment = InboxFragment.newInstance();
+                inboxFragment = IterableInboxFragment.newInstance();
             }
         } else {
-            inboxFragment = InboxFragment.newInstance();
+            inboxFragment = IterableInboxFragment.newInstance();
         }
 
         if (savedInstanceState == null) {
