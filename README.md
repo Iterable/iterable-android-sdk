@@ -121,8 +121,13 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
     > &#x26A0; Don't specify both email and userId in the same session, as they will be treated as different users by the SDK. Only use one type of identifier, email or userId, to identify the user.
 
 3. Register for remote notifications
-
-    On application launch (or whenever you want to register the token), call `registerForPush`:
+    
+    Iterable SDK automatically registers the push token with Iterable whenever `setEmail` or `setUserId` is called.
+    > &#x26A0; This default behavior is the preferred way of handling token registrations.
+    
+    If you want to trigger token registration manually, first disable automatic registration by calling `setAutoPushRegistration(false)` on `IterableConfig.Builder` when initializing the SDK.
+    
+    Than call `registerForPush` whenever you want to register the token:
 
     ```
     IterableApi.getInstance().registerForPush();
