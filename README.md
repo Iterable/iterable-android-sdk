@@ -17,16 +17,31 @@ For more details, read Iterable's [Setting up Android Push Notifications](https:
 
 Congratulations, you've configured your Iterable project to send push notifications to your app! Now, let's set up the Iterable SDK.
 
-## Installing the SDK
+## Installing a beta version of the SDK to use with Iterable's Mobile Inbox beta
 
-Add the following dependencies to your application's **build.gradle**:
+> &#x26A0; **IMPORTANT**
+> Beta versions of this SDK are subject to Iterable's 
+[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
 
-```groovy
-compile 'com.iterable:iterableapi:3.2.0-beta1'
-compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0
-```
+The current beta version of the SDK is `3.2.0-beta1`. Beta releases are not published to Maven; instead, use Jitpack:
 
-See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest version of the Iterable Android SDK.
+1. Add the JitPack repository to your build file. Add it in your root build.gradle at the end of repositories:
+
+    ```groovy
+    allprojects {
+        repositories {
+            ...
+            maven { url 'https://jitpack.io' }
+        }
+    }
+    ```
+    
+2. Add Iterable SDK dependencies:
+
+    ```groovy
+    implementation 'com.github.Iterable.iterable-android-sdk:iterableapi:3.2.0-beta1'
+    implementation 'com.github.Iterable.iterable-android-sdk:iterableapi-ui:3.2.0-beta1'
+    ```
 
 ### Handling Firebase push messages and tokens
 

@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.0-beta1)
+#### Added
+- [Mobile Inbox](https://github.com/Iterable/iterable-android-sdk/blob/inbox/README.md#mobile-inbox)
+- [Mobile Inbox related events](https://github.com/Iterable/iterable-android-sdk/blob/inbox/README.md#mobile-inbox-events-and-the-events-lifecycle)
+
+#### Changed
+- When `pushIntegrationName` is not set on `IterableConfig`, the SDK now defaults it to the app's package name.
+If you've set up your push integration with the new Mobile Apps UI, you don't have to specify `pushIntegrationName` in the SDK anymore. 
+
 ## [3.1.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.4)
 #### Added
 - Push notifications now also display image thumbnails when collapsed
