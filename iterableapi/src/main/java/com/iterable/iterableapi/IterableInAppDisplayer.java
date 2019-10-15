@@ -70,6 +70,7 @@ class IterableInAppDisplayer {
                     });
                 }
 
+                notification.setLoaded(true);
                 notification.show();
                 return true;
             }
