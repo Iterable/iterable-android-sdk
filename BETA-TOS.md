@@ -1,4 +1,4 @@
-# Beta SDK Terms of Service
+# Beta Mobile SDK Terms of Service
 
 The following terms of service apply to beta versions of the Iterable
 iOS and Android SDKs:

@@ -28,6 +28,9 @@ compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0
 
 See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest version of the Iterable Android SDK.
 
+Beta versions of this SDK are subject to Iterable's
+[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/en-us/articles/360034753412).
+
 ### Handling Firebase push messages and tokens
 
 The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
