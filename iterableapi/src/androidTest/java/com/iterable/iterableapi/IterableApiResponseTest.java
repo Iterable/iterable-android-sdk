@@ -21,6 +21,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 import okhttp3.mockwebserver.SocketPolicy;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static com.iterable.iterableapi.IterableTestUtils.createIterableApi;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
@@ -43,10 +44,6 @@ public class IterableApiResponseTest {
     public void tearDown() throws IOException {
         server.shutdown();
         server = null;
-    }
-
-    private void createIterableApi() {
-        IterableApi.sharedInstanceWithApiKey(getApplicationContext(), "fake_key", "test_email");
     }
 
     private void stubAnyRequestReturningStatusCode(int statusCode, JSONObject data) {

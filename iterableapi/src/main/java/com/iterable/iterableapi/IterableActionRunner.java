@@ -24,11 +24,6 @@ class IterableActionRunner {
             return false;
         }
 
-        // Do not handle actions and try to open URLs unless the SDK is initialized with a new init method
-        if (IterableApi.sharedInstance.sdkCompatEnabled) {
-            return false;
-        }
-
         IterableActionContext actionContext = new IterableActionContext(action, source);
 
         if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {

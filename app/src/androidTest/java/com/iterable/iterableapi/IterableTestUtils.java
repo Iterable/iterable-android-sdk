@@ -30,7 +30,7 @@ public class IterableTestUtils {
 
 
     public static void createIterableApi() {
-        IterableApi.sharedInstanceWithApiKey(ApplicationProvider.getApplicationContext(), apiKey, userEmail);
+        createIterableApiNew();
     }
 
     public static void createIterableApiNew() {

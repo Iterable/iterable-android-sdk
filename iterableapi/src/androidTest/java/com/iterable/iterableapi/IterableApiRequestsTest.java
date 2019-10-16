@@ -17,6 +17,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static com.iterable.iterableapi.IterableTestUtils.createIterableApi;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -38,10 +39,6 @@ public class IterableApiRequestsTest {
     public void tearDown() throws Exception {
         server.shutdown();
         server = null;
-    }
-
-    private void createIterableApi() {
-        IterableApi.sharedInstanceWithApiKey(getApplicationContext(), "fake_key", "test_email");
     }
 
     @Test

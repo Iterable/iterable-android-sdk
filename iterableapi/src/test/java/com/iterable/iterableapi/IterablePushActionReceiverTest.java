@@ -36,6 +36,7 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
 
     @Before
     public void setUp() throws Exception {
+        IterableApi.sharedInstance = new IterableApi();
         IterableTestUtils.createIterableApi();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());

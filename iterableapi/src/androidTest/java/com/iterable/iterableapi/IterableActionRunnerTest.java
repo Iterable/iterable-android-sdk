@@ -42,20 +42,6 @@ public class IterableActionRunnerTest {
     }
 
     @Test
-    public void testLegacyApiInit() throws Exception {
-        IterableTestUtils.legacyInitIterableApi();
-        intending(anyIntent()).respondWith(new Instrumentation.ActivityResult(0, null));
-        JSONObject actionData = new JSONObject();
-        actionData.put("type", "openUrl");
-        actionData.put("data", "https://example.com");
-        IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.executeAction(getApplicationContext(), action, IterableActionSource.PUSH);
-
-        // It should not attempt to open the URL unless it is initialized with a new method
-        Intents.assertNoUnverifiedIntents();
-    }
-
-    @Test
     public void testOpenUrlAction() throws Exception {
         IterableTestUtils.initIterableApi(null);
         intending(anyIntent()).respondWith(new Instrumentation.ActivityResult(0, null));
