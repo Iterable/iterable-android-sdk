@@ -2,6 +2,8 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 
+import com.iterable.iterableapi.util.Future;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,9 +14,14 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
+public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener{
+
     private static final String TAG = "IterableInAppFileStorage";
+    ExecutorService saveMessageService;
 
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
@@ -22,7 +29,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
 
     IterableInAppFileStorage(Context context) {
         this.context = context;
-        load();
+        backGroundLoad();
     }
 
     @Override
@@ -39,19 +46,24 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
         message.setOnChangeListener(this);
-        save();
+        backGroundSave();
     }
 
     @Override
     public synchronized void removeMessage(IterableInAppMessage message) {
         message.setOnChangeListener(null);
         messages.remove(message.getMessageId());
-        save();
+        backGroundSave();
+    }
+
+    @Override
+    public void save() {
+
     }
 
     @Override
     public void onInAppMessageChanged(IterableInAppMessage message) {
-        save();
+        backGroundSave();
     }
 
     private synchronized void clearMessages() {
@@ -100,26 +112,58 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         return new File(IterableUtil.getSdkCacheDir(context), "itbl_inapp.json");
     }
 
-    private void load() {
-        try {
-            File inAppStorageFile = getInAppStorageFile();
-            if (inAppStorageFile.exists()) {
-                JSONObject jsonData = new JSONObject(IterableUtil.readFile(inAppStorageFile));
-                loadMessagesFromJson(jsonData);
+    private void backGroundLoad() {
+
+        Future.runAsync(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                File inAppStorageFile = getInAppStorageFile();
+                if (inAppStorageFile.exists()) {
+                    JSONObject jsonData = new JSONObject(IterableUtil.readFile(inAppStorageFile));
+                    loadMessagesFromJson(jsonData);
+                }
+                return null;
             }
-        } catch (Exception e) {
-            IterableLogger.e("IterableInAppFileStorage", "Error while loading in-app messages from file", e);
-        }
+        }).onSuccess(new Future.SuccessCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                IterableApi.getInstance().getInAppManager().notifyOnChange();
+            }
+        }).onFailure(new Future.FailureCallback() {
+            @Override
+            public void onFailure(Throwable throwable) {
+                IterableLogger.e(TAG, "Error loading file");
+            }
+        });
     }
 
+    public void backGroundSave() {
 
-    public synchronized void save() {
-        try {
-            JSONObject jsonData = serializeMessages();
-            File inAppStorageFile = getInAppStorageFile();
-            IterableUtil.writeFile(inAppStorageFile, jsonData.toString());
-        } catch (Exception e) {
-            IterableLogger.e("IterableInAppFileStorage", "Error while saving in-app messages to file", e);
+        if (saveMessageService == null) {
+            saveMessageService =  Executors.newSingleThreadExecutor();
         }
+
+        Future.runAsync(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                JSONObject jsonData = serializeMessages();
+                File inAppStorageFile = getInAppStorageFile();
+                IterableUtil.writeFile(inAppStorageFile, jsonData.toString());
+                return null;
+            }
+        }, saveMessageService)
+                .onSuccess(new Future.SuccessCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        IterableApi.getInstance().getInAppManager().notifyOnChange();
+                    }
+                })
+                .onFailure(new Future.FailureCallback() {
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        IterableLogger.e(TAG, "Error saving file");
+                    }
+                });
+
     }
 }

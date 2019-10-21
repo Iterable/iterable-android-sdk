@@ -3,7 +3,6 @@ package com.iterable.iterableapi.util;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -11,17 +10,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Future<T> {
-    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+
+    private static final ExecutorService EXECUTOR_MULTI_THREAD = Executors.newCachedThreadPool();
 
     public static <T> Future<T> runAsync(Callable<T> callable) {
-        return new Future<>(callable);
+        return new Future<>(callable, EXECUTOR_MULTI_THREAD);
+    }
+
+    public static <T> Future<T> runAsync(Callable<T> callable, ExecutorService service) {
+        return new Future<>(callable, service);
     }
 
     private Handler callbackHandler;
     private final List<SuccessCallback<T>> successCallbacks = new ArrayList<>();
     private final List<FailureCallback> failureCallbacks = new ArrayList<>();
 
-    private Future(final Callable<T> callable) {
+    private Future(final Callable<T> callable, ExecutorService service) {
         // Set up a Handler for the callback based on the current thread
         Looper looper = Looper.myLooper();
         if (looper == null) {
@@ -29,7 +33,7 @@ public class Future<T> {
         }
         callbackHandler = new Handler(looper);
 
-        EXECUTOR.submit(new Runnable() {
+        service.submit(new Runnable() {
             @Override
             public void run() {
                 try {
