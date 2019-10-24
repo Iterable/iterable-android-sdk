@@ -41,6 +41,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final IterableActivityMonitor activityMonitor;
     private final double inAppDisplayInterval;
 
+
+    public InAppFileContentStorage getInAppStorage() {
+        return inAppStorage;
+    }
+
+    private final InAppFileContentStorage inAppStorage = new InAppFileContentStorage();
+
     private final List<Listener> listeners = new ArrayList<>();
     private long lastSyncTime = 0;
     private long lastInAppShown = 0;
@@ -69,6 +76,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         this.displayer = displayer;
         this.activityMonitor = activityMonitor;
         this.activityMonitor.addCallback(this);
+
     }
 
     /**
@@ -145,7 +153,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                         if (jsonArray != null) {
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject messageJson = jsonArray.optJSONObject(i);
-                                IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson);
+                                IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
                                 if (message != null) {
                                     messages.add(message);
                                 }
@@ -219,6 +227,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         IterableLogger.printInfo();
         message.setConsumed(true);
         api.inAppConsume(message, source, clickLocation);
+        inAppStorage.removeContent(message.getMessageId());
         notifyOnChange();
     }
 
@@ -281,6 +290,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         for (IterableInAppMessage localMessage : storage.getMessages()) {
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 storage.removeMessage(localMessage);
+                inAppStorage.removeContent(localMessage.getMessageId());
                 changed = true;
             }
         }

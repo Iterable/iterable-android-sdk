@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.graphics.Rect;
 import android.support.annotation.RestrictTo;
 import android.support.v4.util.ObjectsCompat;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -192,7 +193,13 @@ public class IterableInAppMessage {
     }
 
     public Content getContent() {
+        //TODO: Do the check here
          return content;
+    }
+
+    public String getHTML() {
+        InAppFileContentStorage storage = new InAppFileContentStorage();
+        return storage.getHTML(messageId);
     }
 
     public JSONObject getCustomPayload() {
@@ -243,7 +250,11 @@ public class IterableInAppMessage {
         onChanged();
     }
 
-    static IterableInAppMessage fromJSONObject(JSONObject messageJson) {
+
+
+    //Now this method is called when app is just launched. The message json
+    static IterableInAppMessage fromJSONObject(JSONObject messageJson, IterableInAppContentStorage storageInterface) {
+
         if (messageJson == null) {
             return null;
         }
@@ -259,7 +270,19 @@ public class IterableInAppMessage {
         long expiresAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT);
         Date expiresAt = expiresAtLong != 0 ? new Date(expiresAtLong) : null;
 
-        String html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
+        String html;
+
+        if (storageInterface == null) {
+            Log.d(TAG,"Added HTML from JSON..Hopefully from network");
+            html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
+        } else {
+            html = contentJson.optString(storageInterface.getHTML(messageId));
+            Log.d(TAG,"Added HTML from stored file");
+        }
+
+        InAppFileContentStorage inAppFileContentStorage = new InAppFileContentStorage();
+        inAppFileContentStorage.saveHTML(messageId,html);
+
         JSONObject paddingOptions = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
         Rect padding = getPaddingFromPayload(paddingOptions);
         double backgroundAlpha = contentJson.optDouble(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, 0);
@@ -286,7 +309,9 @@ public class IterableInAppMessage {
         return message;
     }
 
+    //Called when saving the message object to file. Commented lines where we were writing html content to json to be stored in file.
     JSONObject toJSONObject() {
+//        InAppFileContentStorage storage = new InAppFileContentStorage();
         JSONObject messageJson = new JSONObject();
         JSONObject contentJson = new JSONObject();
         try {
@@ -299,7 +324,8 @@ public class IterableInAppMessage {
             }
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
 
-            contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML, content.html);
+            //contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML, content.html);
+            //contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML,storage.getHTML(messageId));
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS, encodePaddingRectToJson(content.padding));
             if (content.backgroundAlpha != 0) {
                 contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, content.backgroundAlpha);

@@ -1,10 +1,12 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.annotation.VisibleForTesting;
+import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -62,6 +64,11 @@ class IterableUtil {
     static File getSdkCacheDir(Context context) {
         return instance.getSdkCacheDir(context);
     }
+
+    static File getFileDir(Context context, String child) {
+        return instance.getApplicationRootDirectory(context, child);
+    }
+
 
     static String readFile(File file) {
         return instance.readFile(file);
@@ -155,6 +162,14 @@ class IterableUtil {
             return sdkCacheDir;
         }
 
+        File getApplicationRootDirectory(Context context, String child) {
+            File applicationRootDirectory = new File(context.getFilesDir().toString(), child);
+            if (!applicationRootDirectory.exists()) {
+                applicationRootDirectory.mkdirs();
+            }
+            return applicationRootDirectory;
+        }
+
         String readFile(File file) {
             try {
                 FileInputStream inputStream = new FileInputStream(file);
@@ -174,6 +189,7 @@ class IterableUtil {
 
         boolean writeFile(File file, String content) {
             try {
+                Log.e(TAG + "Writing :",content);
                 FileOutputStream outputStream = new FileOutputStream(file);
                 OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
                 outputStreamWriter.write(content);

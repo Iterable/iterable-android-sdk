@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
-    private static final String TAG = "IterableInAppFileStorage";
-
+    private static final String TAG = "InAppFileStorage";
+    InAppFileContentStorage inAppstorage = new InAppFileContentStorage();
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
@@ -45,6 +46,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     @Override
     public synchronized void removeMessage(IterableInAppMessage message) {
         message.setOnChangeListener(null);
+
         messages.remove(message.getMessageId());
         save();
     }
@@ -86,7 +88,8 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             for (int i = 0; i < messagesJson.length(); i++) {
                 JSONObject messageJson = messagesJson.optJSONObject(i);
                 if (messageJson != null) {
-                    IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson);
+                    Log.d(TAG,"Asking for inAppStorage");
+                    IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, inAppstorage);
                     if (message != null) {
                         message.setOnChangeListener(this);
                         messages.put(message.getMessageId(), message);
@@ -115,6 +118,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
 
     public synchronized void save() {
         try {
+            //TODO: Serilize messages. but keep HTML part seperate.
             JSONObject jsonData = serializeMessages();
             File inAppStorageFile = getInAppStorageFile();
             IterableUtil.writeFile(inAppStorageFile, jsonData.toString());
