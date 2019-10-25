@@ -115,6 +115,12 @@ public class IterableActivityMonitor {
     }
 
     public void addCallback(AppStateCallback callback) {
+        // Don't insert again if the same callback already exists
+        for (WeakReference<AppStateCallback> existingCallback : callbacks) {
+            if (existingCallback.get() == callback) {
+                return;
+            }
+        }
         callbacks.add(new WeakReference<>(callback));
     }
 

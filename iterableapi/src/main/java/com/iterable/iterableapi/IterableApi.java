@@ -48,6 +48,7 @@ public class IterableApi {
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
     private String _deviceId;
+    private boolean _firstForegroundHandled;
 
     private IterableInAppManager inAppManager;
 
@@ -244,10 +245,7 @@ public class IterableApi {
         sharedInstance.retrieveEmailAndUserId();
         sharedInstance.checkForDeferredDeeplink();
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
-
-        if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
-            sharedInstance.registerForPush();
-        }
+        IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
     }
 
     /**
@@ -1222,6 +1220,26 @@ public class IterableApi {
 
 //region Private Fuctions
 //---------------------------------------------------------------------------------------
+
+    private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
+        @Override
+        public void onSwitchToForeground() {
+            onForeground();
+        }
+
+        @Override
+        public void onSwitchToBackground() {}
+    };
+
+    private void onForeground() {
+        if (!_firstForegroundHandled) {
+            _firstForegroundHandled = true;
+            if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
+                IterableLogger.d(TAG, "Performing automatic push registration");
+                sharedInstance.registerForPush();
+            }
+        }
+    }
 
     /**
      * Updates the data for the current user.

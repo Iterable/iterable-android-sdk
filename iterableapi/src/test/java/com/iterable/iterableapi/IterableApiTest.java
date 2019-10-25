@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.app.Activity;
 import android.net.Uri;
 
 import org.json.JSONObject;
@@ -10,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowApplication;
 
 import java.io.IOException;
@@ -246,14 +248,30 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
-    public void testAutomaticPushRegistrationOnInit() throws Exception {
+    public void testNoAutomaticPushRegistrationOnInit() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
         reInitIterableApi();
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        verify(IterableApi.sharedInstance, never()).registerForPush();
+        Mockito.reset(IterableApi.sharedInstance);
+    }
+
+    @Test
+    public void testAutomaticPushRegistrationOnInitAndForeground() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+
+        reInitIterableApi();
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
         verify(IterableApi.sharedInstance).registerForPush();
         Mockito.reset(IterableApi.sharedInstance);
+        activityController.pause().stop().destroy();
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
     }
 
     @Test
