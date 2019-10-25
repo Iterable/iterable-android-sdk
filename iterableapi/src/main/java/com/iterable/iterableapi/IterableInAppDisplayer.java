@@ -22,7 +22,7 @@ class IterableInAppDisplayer {
         // Prevent double display
         if (currentActivity != null) {
             return IterableInAppDisplayer.showIterableNotificationHTML(currentActivity,
-                    message.getHTML(),
+                    message.getContent().html,
                     message.getMessageId(),
                     clickCallback,
                     message.getContent().backgroundAlpha,

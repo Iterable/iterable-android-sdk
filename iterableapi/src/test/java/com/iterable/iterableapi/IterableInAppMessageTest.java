@@ -29,9 +29,16 @@ public class IterableInAppMessageTest {
         if (jsonArray != null) {
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject messageJson = jsonArray.optJSONObject(i);
-                IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson);
+
+                //Stripping out HTML content from the copy
+                JSONObject messageJsonHTMLStripped = new JSONObject(messageJson.toString());
+                JSONObject content = (JSONObject) messageJsonHTMLStripped.get("content");
+                content.remove("html");
+                messageJsonHTMLStripped.put("content",content);
+
+                IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
                 assertNotNull(message);
-                JSONAssert.assertEquals(messageJson, message.toJSONObject(), JSONCompareMode.STRICT_ORDER);
+                JSONAssert.assertEquals(messageJsonHTMLStripped, message.toJSONObject(), JSONCompareMode.STRICT_ORDER);
             }
         }
     }
@@ -41,7 +48,7 @@ public class IterableInAppMessageTest {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_legacy.json"));
         JSONArray jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
         JSONObject messageJson = jsonArray.optJSONObject(0);
-        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson);
+        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
         assertNotNull(message);
         assertNotNull(message.getCustomPayload());
         assertEquals(123, message.getCustomPayload().getInt("intValue"));

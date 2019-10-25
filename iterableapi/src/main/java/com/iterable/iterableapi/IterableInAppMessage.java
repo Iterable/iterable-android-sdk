@@ -22,7 +22,6 @@ public class IterableInAppMessage {
     private final Trigger trigger;
     private final Boolean saveToInbox;
     private final InboxMetadata inboxMetadata;
-
     private boolean processed = false;
     private boolean consumed = false;
     private boolean read = false;
@@ -197,11 +196,6 @@ public class IterableInAppMessage {
          return content;
     }
 
-    public String getHTML() {
-        InAppFileContentStorage storage = new InAppFileContentStorage();
-        return storage.getHTML(messageId);
-    }
-
     public JSONObject getCustomPayload() {
         return customPayload;
     }
@@ -252,8 +246,8 @@ public class IterableInAppMessage {
 
 
 
-    //Now this method is called when app is just launched. The message json
-    static IterableInAppMessage fromJSONObject(JSONObject messageJson, IterableInAppContentStorage storageInterface) {
+    //This method is called when app is just launched from SYNC inApp. Also called from IterableInAppFileStorage to load json from stored file
+    static IterableInAppMessage fromJSONObject(JSONObject messageJson, IterableInAppStorage storageInterface) {
 
         if (messageJson == null) {
             return null;
@@ -270,18 +264,8 @@ public class IterableInAppMessage {
         long expiresAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT);
         Date expiresAt = expiresAtLong != 0 ? new Date(expiresAtLong) : null;
 
-        String html;
 
-        if (storageInterface == null) {
-            Log.d(TAG,"Added HTML from JSON..Hopefully from network");
-            html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
-        } else {
-            html = contentJson.optString(storageInterface.getHTML(messageId));
-            Log.d(TAG,"Added HTML from stored file");
-        }
-
-        InAppFileContentStorage inAppFileContentStorage = new InAppFileContentStorage();
-        inAppFileContentStorage.saveHTML(messageId,html);
+        String html =  getHTML(contentJson, storageInterface, messageId);
 
         JSONObject paddingOptions = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
         Rect padding = getPaddingFromPayload(paddingOptions);
@@ -309,9 +293,20 @@ public class IterableInAppMessage {
         return message;
     }
 
+    private static String getHTML(JSONObject contentJson, IterableInAppStorage storageInterface, String messageId) {
+        String html;
+        if (storageInterface == null) {
+            IterableLogger.v(TAG,"storage reference is null. Getting html from contentJSON");
+            html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
+        } else {
+            html = storageInterface.getHTML(messageId);
+            IterableLogger.v(TAG,"Getting html from stored file");
+        }
+        return html;
+    }
+
     //Called when saving the message object to file. Commented lines where we were writing html content to json to be stored in file.
     JSONObject toJSONObject() {
-//        InAppFileContentStorage storage = new InAppFileContentStorage();
         JSONObject messageJson = new JSONObject();
         JSONObject contentJson = new JSONObject();
         try {

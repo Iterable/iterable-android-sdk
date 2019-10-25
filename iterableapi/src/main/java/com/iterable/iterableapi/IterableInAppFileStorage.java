@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,7 +15,7 @@ import java.util.Map;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private static final String TAG = "InAppFileStorage";
-    InAppFileContentStorage inAppstorage = new InAppFileContentStorage();
+    String FOLDER_PATH = "InAppContent";
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
@@ -39,6 +38,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     @Override
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
+        saveHTML(message.getMessageId(),message.getContent().html);
         message.setOnChangeListener(this);
         save();
     }
@@ -46,7 +46,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     @Override
     public synchronized void removeMessage(IterableInAppMessage message) {
         message.setOnChangeListener(null);
-
+        removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
         save();
     }
@@ -88,8 +88,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             for (int i = 0; i < messagesJson.length(); i++) {
                 JSONObject messageJson = messagesJson.optJSONObject(i);
                 if (messageJson != null) {
-                    Log.d(TAG,"Asking for inAppStorage");
-                    IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, inAppstorage);
+                    IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, this);
                     if (message != null) {
                         message.setOnChangeListener(this);
                         messages.put(message.getMessageId(), message);
@@ -125,5 +124,75 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         } catch (Exception e) {
             IterableLogger.e("IterableInAppFileStorage", "Error while saving in-app messages to file", e);
         }
+    }
+
+    @Override
+    public void saveHTML(String messageID, String contentHTML) {
+        File folder = createFolderIfNecessary(messageID);
+        if (folder == null) {
+            return;
+        }
+
+        File file = new File(folder,"index.html");
+        Boolean result = IterableUtil.instance.writeFile(file,contentHTML);
+        if (!result) {
+            IterableLogger.e(TAG,"Write fail");
+        }
+    }
+
+    private File createFolderIfNecessary(String messageID) {
+        File folder = getFolderForMessage(messageID);
+
+        if (folder.isDirectory()) {
+            IterableLogger.v(TAG, "Directory exists already. No need to store again");
+            return null;
+        }
+
+        Boolean result = folder.mkdir();
+        if (result){
+            return folder;
+        }else {
+            return null;
+        }
+    }
+
+    private File getInAppContentFolder() {
+        File context = IterableUtil.getFileDir(IterableApi.getInstance().getMainActivityContext(),FOLDER_PATH);
+        return context;
+    }
+
+    private File getFolderForMessage(String messageID) {
+        return new File(getInAppContentFolder(), messageID);
+    }
+
+    private File getFileForContent(String messageID) {
+        File folder = getFolderForMessage(messageID);
+        File file = new File(folder,"index.html");
+        return file;
+    }
+
+    @Override
+    public String getHTML(String messageID) {
+        File file = getFileForContent(messageID);
+        String contentHTML = IterableUtil.instance.readFile(file);
+        return contentHTML;
+    }
+
+    @Override
+    public void removeHTML(String messageID) {
+        File folder = getFolderForMessage(messageID);
+        if (folder == null) {
+            return;
+        }
+
+        File[] files = folder.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            file.delete();
+        }
+        folder.delete();
     }
 }
