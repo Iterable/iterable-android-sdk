@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.app.Activity;
 import android.net.Uri;
 
 import org.json.JSONObject;
@@ -246,12 +247,25 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
-    public void testAutomaticPushRegistrationOnInit() throws Exception {
+    public void testNoAutomaticPushRegistrationOnInit() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
         reInitIterableApi();
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        verify(IterableApi.sharedInstance, never()).registerForPush();
+        Mockito.reset(IterableApi.sharedInstance);
+    }
+
+    @Test
+    public void testAutomaticPushRegistrationOnInitAndForeground() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+
+        reInitIterableApi();
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        Robolectric.buildActivity(Activity.class).create().start().resume();
         verify(IterableApi.sharedInstance).registerForPush();
         Mockito.reset(IterableApi.sharedInstance);
     }

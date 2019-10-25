@@ -14,7 +14,7 @@ import java.util.List;
 
 public class IterableActivityMonitor {
 
-    private static boolean initialized = false;
+    private boolean initialized = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private WeakReference<Activity> currentActivity;
     private int numStartedActivities = 0;
@@ -115,6 +115,12 @@ public class IterableActivityMonitor {
     }
 
     public void addCallback(AppStateCallback callback) {
+        // Don't insert again if the same callback already exists
+        for (WeakReference<AppStateCallback> existingCallback : callbacks) {
+            if (existingCallback.get() == callback) {
+                return;
+            }
+        }
         callbacks.add(new WeakReference<>(callback));
     }
 
