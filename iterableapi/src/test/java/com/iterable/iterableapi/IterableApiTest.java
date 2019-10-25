@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowApplication;
 
 import java.io.IOException;
@@ -263,11 +264,14 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setEmail("test@email.com");
 
         reInitIterableApi();
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
-        Robolectric.buildActivity(Activity.class).create().start().resume();
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
         verify(IterableApi.sharedInstance).registerForPush();
         Mockito.reset(IterableApi.sharedInstance);
+        activityController.pause().stop().destroy();
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
     }
 
     @Test

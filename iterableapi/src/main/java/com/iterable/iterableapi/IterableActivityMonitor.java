@@ -14,7 +14,7 @@ import java.util.List;
 
 public class IterableActivityMonitor {
 
-    private boolean initialized = false;
+    private static boolean initialized = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private WeakReference<Activity> currentActivity;
     private int numStartedActivities = 0;
