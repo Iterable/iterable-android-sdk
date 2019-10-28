@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.5)
+#### Changed
+- Automatic push registration is now only done if the app is running in foreground
+
 ## [3.1.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.4)
 #### Added
 - Push notifications now also display image thumbnails when collapsed
