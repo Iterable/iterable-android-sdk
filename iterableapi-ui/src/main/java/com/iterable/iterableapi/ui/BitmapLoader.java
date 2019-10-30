@@ -26,6 +26,11 @@ public class BitmapLoader {
     private static final int DEFAULT_TIMEOUT_MS = 3000;
 
     static public void loadBitmap(final ImageView imageView, final Uri uri) {
+        if (uri == null || uri.getPath() == null || uri.getPath().isEmpty()) {
+            IterableLogger.d("BitmapLoader", "Empty url for Thumbnail in inbox");
+            return;
+        }
+
         Future.runAsync(new Callable<Bitmap>() {
             @Override
             public Bitmap call() throws Exception {
