@@ -517,60 +517,6 @@ public class IterableApi {
         }
     }
 
-    public void sendPush(String email, int campaignId) {
-        sendPush(email, campaignId, null, null);
-    }
-
-    /**
-     * Sends a push campaign to an email address at the given time.
-     * @param sendAt Schedule the message for up to 365 days in the future.
-     *               If set in the past, message is sent immediately.
-     *               Format is YYYY-MM-DD HH:MM:SS in UTC
-     */
-    public void sendPush(String email, int campaignId, Date sendAt) {
-        sendPush(email, campaignId, sendAt, null);
-    }
-
-    /**
-     * Sends a push campaign to an email address.
-     * @param email
-     * @param campaignId
-     * @param dataFields
-     */
-    public void sendPush(String email, int campaignId, JSONObject dataFields) {
-        sendPush(email, campaignId, null, dataFields);
-    }
-
-    /**
-     * Sends a push campaign to an email address at the given time.
-     * @param sendAt Schedule the message for up to 365 days in the future.
-     *               If set in the past, message is sent immediately.
-     *               Format is YYYY-MM-DD HH:MM:SS in UTC
-     */
-    public void sendPush(String email, int campaignId, Date sendAt, JSONObject dataFields) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            requestJSON.put(IterableConstants.KEY_RECIPIENT_EMAIL, email);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            if (sendAt != null){
-                SimpleDateFormat sdf = new SimpleDateFormat(IterableConstants.DATEFORMAT);
-                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-                String dateString = sdf.format(sendAt);
-                requestJSON.put(IterableConstants.KEY_SEND_AT, dateString);
-            }
-
-            sendPostRequest(IterableConstants.ENDPOINT_PUSH_TARGET, requestJSON);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * Updates the current user's email.
      * Also updates the current email in this IterableAPI instance if the API call was successful.
