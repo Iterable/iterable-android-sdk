@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -65,8 +64,12 @@ class IterableUtil {
         return instance.getSdkCacheDir(context);
     }
 
-    static File getFileDir(Context context, String child) {
-        return instance.getApplicationRootDirectory(context, child);
+    static File getSDKFilesDirectory(Context context) {
+        return instance.getSDKFilesDirectory(context);
+    }
+
+    static File getDirectory(File folder, String subFolder) {
+        return instance.getDirectory(folder, subFolder);
     }
 
 
@@ -162,8 +165,16 @@ class IterableUtil {
             return sdkCacheDir;
         }
 
-        File getApplicationRootDirectory(Context context, String child) {
-            File applicationRootDirectory = new File(context.getFilesDir().toString(), child);
+        File getSDKFilesDirectory(Context context) {
+            File iterableSDKRootDirectory = new File(context.getFilesDir(), "com.iterable.sdk");
+            if (!iterableSDKRootDirectory.exists()) {
+                iterableSDKRootDirectory.mkdirs();
+            }
+            return iterableSDKRootDirectory;
+        }
+
+        File getDirectory(File folder, String subFolder) {
+            File applicationRootDirectory = new File(folder, subFolder);
             if (!applicationRootDirectory.exists()) {
                 applicationRootDirectory.mkdirs();
             }
