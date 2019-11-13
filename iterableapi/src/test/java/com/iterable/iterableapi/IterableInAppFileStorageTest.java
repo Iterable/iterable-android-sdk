@@ -26,9 +26,9 @@ public class IterableInAppFileStorageTest {
         assertEquals(storage.getMessage(testInAppMessage.getMessageId()), testInAppMessage);
         testInAppMessage.setProcessed(true);
         testInAppMessage.setConsumed(true);
-        storage.save();
 
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
+
         assertEquals(1, storage.getMessages().size());
         JSONAssert.assertEquals(testInAppMessage.toJSONObject(), storage.getMessages().get(0).toJSONObject(), JSONCompareMode.STRICT);
         assertTrue(storage.getMessages().get(0).isProcessed());

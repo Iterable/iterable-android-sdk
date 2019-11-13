@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
-    private static final String TAG = "InAppFileStorage";
-    String FOLDER_PATH = "InAppContent";
+    private static final String TAG = "IterableInAppFileStorage";
+    String FOLDER_PATH = "IterableInAppFileStorage";
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
@@ -39,8 +39,8 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
         saveHTML(message.getMessageId(),message.getContent().html);
+        saveMetadata();
         message.setOnChangeListener(this);
-        save();
     }
 
     @Override
@@ -48,12 +48,12 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         message.setOnChangeListener(null);
         removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
-        save();
+        saveMetadata();
     }
 
     @Override
     public void onInAppMessageChanged(IterableInAppMessage message) {
-        save();
+        saveMetadata();
     }
 
     private synchronized void clearMessages() {
@@ -115,7 +115,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
 
-    public synchronized void save() {
+    private synchronized void saveMetadata() {
         try {
             //TODO: Serilize messages. but keep HTML part seperate.
             JSONObject jsonData = serializeMessages();
@@ -130,13 +130,14 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     public void saveHTML(String messageID, String contentHTML) {
         File folder = createFolderIfNecessary(messageID);
         if (folder == null) {
+            IterableLogger.e(TAG,"Failed to create folder for HTML content");
             return;
         }
 
         File file = new File(folder,"index.html");
-        Boolean result = IterableUtil.instance.writeFile(file,contentHTML);
+        Boolean result = IterableUtil.writeFile(file,contentHTML);
         if (!result) {
-            IterableLogger.e(TAG,"Write fail");
+            IterableLogger.e(TAG,"Failed to store HTML content");
         }
     }
 
@@ -157,7 +158,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
     private File getInAppContentFolder() {
-        File context = IterableUtil.getFileDir(IterableApi.getInstance().getMainActivityContext(),FOLDER_PATH);
+        File context = IterableUtil.getFileDir(this.context,FOLDER_PATH);
         return context;
     }
 
@@ -174,7 +175,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     @Override
     public String getHTML(String messageID) {
         File file = getFileForContent(messageID);
-        String contentHTML = IterableUtil.instance.readFile(file);
+        String contentHTML = IterableUtil.readFile(file);
         return contentHTML;
     }
 

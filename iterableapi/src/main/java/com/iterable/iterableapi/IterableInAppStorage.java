@@ -7,7 +7,6 @@ interface IterableInAppStorage {
     IterableInAppMessage getMessage(String messageId);
     void addMessage(IterableInAppMessage message);
     void removeMessage(IterableInAppMessage message);
-    void save();
 
     void saveHTML(String messageID, String contentHTML);
     String getHTML(String messageID);

@@ -36,11 +36,6 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
     }
 
     @Override
-    public void save() {
-
-    }
-
-    @Override
     public void saveHTML(String messageID, String contentHTML) {
 
     }

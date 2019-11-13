@@ -95,7 +95,7 @@ public class IterableInAppMessage {
     }
 
     public static class Content {
-         public final String html;
+         public String html;
          public final Rect padding;
          public final double backgroundAlpha;
 
@@ -192,7 +192,6 @@ public class IterableInAppMessage {
     }
 
     public Content getContent() {
-        //TODO: Do the check here
          return content;
     }
 
