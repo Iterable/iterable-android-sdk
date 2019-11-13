@@ -4,7 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.ActivityTestRule;
 
 import com.iterable.iterableapi.ui.R;
-import com.iterable.iterableapi.ui.inbox.InboxActivity;
+import com.iterable.iterableapi.ui.inbox.IterableInboxActivity;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(AndroidJUnit4.class)
 public class InboxUITest {
     @Rule
-    public ActivityTestRule rule = new ActivityTestRule<>(InboxActivity.class);
+    public ActivityTestRule rule = new ActivityTestRule<>(IterableInboxActivity.class);
 
     @Test
     public void basicTest() {

@@ -61,6 +61,9 @@ public class MainActivityTest {
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
         server.setDispatcher(dispatcher);
+        // This is done so we don't hold a reference to the previous in-app notification.
+        // We should handle in-app dismissal when the parent activity is destroyed though.
+        IterableInAppHTMLNotification.notification = null;
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         IterableApi.sharedInstance = new IterableApi();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
