@@ -70,12 +70,13 @@ before_script:
 
 script:
   - touch local.properties
-  - ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck :app:connectedCheck
+  - ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck :app:jacocoDebugAndroidTestReport
 
 after_script:
   - ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugTestReport/jacocoDebugTestReport.xml --input-type jacoco
   - ./cc-test-reporter format-coverage iterableapi/build/reports/coverage/debug/report.xml --input-type jacoco
   - ./cc-test-reporter format-coverage iterableapi/build/reports/jacoco/jacocoTestDebugUnitTestReport/jacocoTestDebugUnitTestReport.xml --input-type jacoco
+  - ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugAndroidTestReport/jacocoDebugAndroidTestReport.xml --input-type jacoco
   - ./cc-test-reporter upload-coverage
 
 after_success:
