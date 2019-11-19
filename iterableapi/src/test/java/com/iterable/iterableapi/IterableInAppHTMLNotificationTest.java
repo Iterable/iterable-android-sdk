@@ -14,7 +14,7 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start();
         Activity activity = controller.get();
 
-        IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
+        IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
 
         IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.getInstance();
         notification.dismiss();

@@ -1,14 +1,12 @@
 package com.iterable.iterableapi;
 
 import android.app.Activity;
-import android.net.Uri;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 
@@ -22,6 +20,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -116,7 +115,7 @@ public class IterableInboxTest extends BaseTest {
         IterableApi.sharedInstance = spy(new IterableApi());
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        when(inAppDisplayerMock.showMessage(any(IterableInAppMessage.class), any(IterableHelper.IterableUrlCallback.class))).thenReturn(true);
+        when(inAppDisplayerMock.showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class))).thenReturn(true);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
         doReturn(inAppManager).when(IterableApi.sharedInstance).getInAppManager();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
@@ -133,7 +132,7 @@ public class IterableInboxTest extends BaseTest {
         Robolectric.buildActivity(Activity.class).create().start().resume();
         Robolectric.flushForegroundThreadScheduler();
 
-        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), any(IterableHelper.IterableUrlCallback.class));
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class));
 
         assertEquals(2, inAppManager.getInboxMessages().size());
         assertEquals(1, inAppManager.getUnreadInboxMessagesCount());

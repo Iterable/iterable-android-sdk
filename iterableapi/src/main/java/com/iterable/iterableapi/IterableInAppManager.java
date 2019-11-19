@@ -186,7 +186,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public void showMessage(final IterableInAppMessage message, boolean consume, final IterableHelper.IterableUrlCallback clickCallback, IterableInAppLocation inAppLocation) {
-        if (displayer.showMessage(message, new IterableHelper.IterableUrlCallback() {
+        if (displayer.showMessage(message, inAppLocation, new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
                 if (clickCallback != null) {
