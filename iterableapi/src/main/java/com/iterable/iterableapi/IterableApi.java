@@ -18,11 +18,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -835,7 +832,9 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, location));
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-
+            if (IterableInboxSession.sessionId != null) {
+                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            }
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
         }
         catch (JSONException e) {
@@ -900,7 +899,9 @@ public class IterableApi {
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-
+            if (IterableInboxSession.sessionId != null) {
+                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            }
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
         }
         catch (JSONException e) {
@@ -946,6 +947,9 @@ public class IterableApi {
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            if (IterableInboxSession.sessionId != null) {
+                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            }
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
         }
@@ -1022,6 +1026,11 @@ public class IterableApi {
                 requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
                 requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
             }
+
+            if (IterableInboxSession.sessionId != null) {
+                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            }
+
             sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
         }
         catch (JSONException e) {
@@ -1072,6 +1081,9 @@ public class IterableApi {
             }
 
             requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            if (IterableInboxSession.sessionId != null) {
+                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            }
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
         }

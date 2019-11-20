@@ -98,6 +98,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     public void onDestroy() {
         super.onDestroy();
         stopSession();
+        IterableInboxSession.sessionId = null;
         IterableActivityMonitor.getInstance().removeCallback(appStateCallback);
     }
 
@@ -214,6 +215,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
                     IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
                     getImpressionList());
             IterableApi.getInstance().trackInboxSession(sessionToTrack);
+            IterableInboxSession.sessionId = null;
             session = new IterableInboxSession();
             impressions = new HashMap<>();
         }
