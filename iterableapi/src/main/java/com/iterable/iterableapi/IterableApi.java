@@ -47,6 +47,7 @@ public class IterableApi {
     private String _deviceId;
 
     private IterableInAppManager inAppManager;
+    private String inboxSessionId;
 
 //---------------------------------------------------------------------------------------
 //endregion
@@ -832,8 +833,8 @@ public class IterableApi {
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, location));
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            if (IterableInboxSession.sessionId != null) {
-                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            if (location == IterableInAppLocation.INBOX) {
+                addInboxSessionID(requestJSON);
             }
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
         }
@@ -899,8 +900,8 @@ public class IterableApi {
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            if (IterableInboxSession.sessionId != null) {
-                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            if (clickLocation == IterableInAppLocation.INBOX) {
+                addInboxSessionID(requestJSON);
             }
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
         }
@@ -947,10 +948,9 @@ public class IterableApi {
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            if (IterableInboxSession.sessionId != null) {
-                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            if (clickLocation == IterableInAppLocation.INBOX) {
+                addInboxSessionID(requestJSON);
             }
-
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
         }
         catch (JSONException e) {
@@ -1027,8 +1027,8 @@ public class IterableApi {
                 requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
             }
 
-            if (IterableInboxSession.sessionId != null) {
-                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
+            if (clickLocation == IterableInAppLocation.INBOX) {
+                addInboxSessionID(requestJSON);
             }
 
             sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
@@ -1081,9 +1081,7 @@ public class IterableApi {
             }
 
             requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            if (IterableInboxSession.sessionId != null) {
-                requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID,IterableInboxSession.sessionId);
-            }
+            addInboxSessionID(requestJSON);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
         }
@@ -1299,6 +1297,12 @@ public class IterableApi {
         return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
     }
 
+    private void addInboxSessionID(JSONObject requestJSON) throws JSONException {
+        if (this.inboxSessionId != null) {
+            requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID, this.inboxSessionId);
+        }
+    }
+
     /**
      * Sends the POST request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
@@ -1490,6 +1494,16 @@ public class IterableApi {
             IterableLogger.e(TAG, "Could not populate deviceInfo JSON", e);
         }
         return deviceInfo;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setInboxSessionId (String inboxSessionId) {
+        this.inboxSessionId = inboxSessionId;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void clearInboxSessionId() {
+        this.inboxSessionId = null;
     }
 
 //---------------------------------------------------------------------------------------
