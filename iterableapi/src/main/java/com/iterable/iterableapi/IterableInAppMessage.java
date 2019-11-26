@@ -24,6 +24,7 @@ public class IterableInAppMessage {
     private boolean processed = false;
     private boolean consumed = false;
     private boolean read = false;
+    private boolean loadedHtmlFromJson = false;
     private IterableInAppStorage inAppStorageInterface;
 
     IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date createdAt, Date expiresAt, Trigger trigger, Boolean saveToInbox, InboxMetadata inboxMetadata) {
@@ -246,6 +247,14 @@ public class IterableInAppMessage {
         onChanged();
     }
 
+    boolean hasLoadedHtmlFromJson() {
+        return loadedHtmlFromJson;
+    }
+
+    void setLoadedHtmlFromJson(boolean loadedHtmlFromJson) {
+        this.loadedHtmlFromJson = loadedHtmlFromJson;
+    }
+
     static IterableInAppMessage fromJSONObject(JSONObject messageJson, IterableInAppStorage storageInterface) {
 
         if (messageJson == null) {
@@ -286,6 +295,9 @@ public class IterableInAppMessage {
         IterableInAppMessage message = new IterableInAppMessage(messageId,
                 new Content(html, padding, backgroundAlpha), customPayload, createdAt, expiresAt, trigger, saveToInbox, inboxMetadata);
         message.inAppStorageInterface = storageInterface;
+        if (html != null) {
+            message.setLoadedHtmlFromJson(true);
+        }
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         message.read = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_READ, false);

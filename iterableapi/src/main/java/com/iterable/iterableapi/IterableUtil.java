@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.annotation.VisibleForTesting;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -200,7 +199,6 @@ class IterableUtil {
 
         boolean writeFile(File file, String content) {
             try {
-                Log.e(TAG + "Writing :",content);
                 FileOutputStream outputStream = new FileOutputStream(file);
                 OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
                 outputStreamWriter.write(content);

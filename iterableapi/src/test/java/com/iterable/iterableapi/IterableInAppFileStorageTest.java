@@ -8,7 +8,11 @@ import org.robolectric.RuntimeEnvironment;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
+import java.io.File;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(TestRunner.class)
@@ -65,5 +69,29 @@ public class IterableInAppFileStorageTest {
         assertEquals(0, storage.getMessages().size());
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertEquals(0, storage.getMessages().size());
+    }
+
+    @Test
+    public void testHTMLForMigration() throws Exception {
+        File folder = IterableUtil.getSdkCacheDir(RuntimeEnvironment.application);
+        assertTrue(folder.isDirectory());
+        File oldJsonStorageFile = new File(folder, "itbl_inapp.json");
+        assertTrue(!oldJsonStorageFile.exists());
+
+        Boolean fileWriteOperation = IterableUtil.writeFile(oldJsonStorageFile, IterableTestUtils.getResourceString("inapp_payload_multiple.json"));
+        assertTrue(fileWriteOperation);
+
+        IterableInAppFileStorage storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
+        List<IterableInAppMessage> messages = storage.getMessages();
+        IterableInAppMessage message = messages.get(0);
+        String messageID1 = message.getMessageId();
+        String messageID2 = messages.get(1).getMessageId();
+        
+        message.setProcessed(true);
+        storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
+
+        assertNotNull(storage.getHTML(messageID1));
+        assertEquals(message.getContent().html,storage.getHTML(messageID1));
+        assertNotNull(storage.getHTML(messageID2));
     }
 }

@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private static final String TAG = "IterableInAppFileStorage";
-    String FOLDER_PATH = "IterableInAppFileStorage";
+    private static final String FOLDER_PATH = "IterableInAppFileStorage";
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
@@ -38,9 +38,8 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     @Override
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
-        saveHTML(message.getMessageId(), message.getContent().html);
-        saveMetadata();
         message.setOnChangeListener(this);
+        saveMessages();
     }
 
     @Override
@@ -48,12 +47,12 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         message.setOnChangeListener(null);
         removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
-        saveMetadata();
+        saveMessages();
     }
 
     @Override
     public void onInAppMessageChanged(IterableInAppMessage message) {
-        saveMetadata();
+        saveMessages();
     }
 
     private synchronized void clearMessages() {
@@ -87,6 +86,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         if (messagesJson != null) {
             for (int i = 0; i < messagesJson.length(); i++) {
                 JSONObject messageJson = messagesJson.optJSONObject(i);
+
                 if (messageJson != null) {
                     IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, this);
                     if (message != null) {
@@ -114,12 +114,25 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
     }
 
+    private synchronized void saveMessages() {
+        saveHTMLContent();
+        saveMetadata();
+    }
+
+    private synchronized void saveHTMLContent() {
+        for (IterableInAppMessage message : messages.values()) {
+            if (message.hasLoadedHtmlFromJson()) {
+                saveHTML(message.getMessageId(), message.getContent().html);
+                message.setLoadedHtmlFromJson(false);
+            }
+        }
+    }
+
 
     private synchronized void saveMetadata() {
         try {
-            //TODO: Serilize messages. but keep HTML part seperate.
-            JSONObject jsonData = serializeMessages();
             File inAppStorageFile = getInAppStorageFile();
+            JSONObject jsonData = serializeMessages();
             IterableUtil.writeFile(inAppStorageFile, jsonData.toString());
         } catch (Exception e) {
             IterableLogger.e("IterableInAppFileStorage", "Error while saving in-app messages to file", e);
