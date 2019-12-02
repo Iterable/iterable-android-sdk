@@ -4,6 +4,7 @@ import android.support.annotation.RestrictTo;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class IterableInboxSession {
@@ -14,6 +15,7 @@ public class IterableInboxSession {
     public final int endTotalMessageCount;
     public final int endUnreadMessageCount;
     public final List<Impression> impressions;
+    public final String sessionId;
 
     public IterableInboxSession(Date sessionStartTime, Date sessionEndTime, int startTotalMessageCount, int startUnreadMessageCount, int endTotalMessageCount, int endUnreadMessageCount, List<Impression> impressions) {
         this.sessionStartTime = sessionStartTime;
@@ -23,6 +25,7 @@ public class IterableInboxSession {
         this.endTotalMessageCount = endTotalMessageCount;
         this.endUnreadMessageCount = endUnreadMessageCount;
         this.impressions = impressions;
+        this.sessionId = UUID.randomUUID().toString();
     }
 
     public IterableInboxSession() {
@@ -33,6 +36,7 @@ public class IterableInboxSession {
         this.endTotalMessageCount = 0;
         this.endUnreadMessageCount = 0;
         this.impressions = null;
+        this.sessionId = UUID.randomUUID().toString();
     }
 
     public static class Impression {

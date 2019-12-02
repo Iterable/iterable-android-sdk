@@ -63,7 +63,6 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         IterableLogger.printInfo();
-
         Bundle arguments = getArguments();
         if (arguments != null) {
             if (arguments.get(INBOX_MODE) instanceof InboxMode) {
@@ -197,6 +196,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
                     0,
                     0,
                     null);
+            IterableApi.getInstance().setInboxSessionId(session.sessionId);
         }
 
         private void onAppDidEnterBackground() {
@@ -214,6 +214,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
                     IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
                     getImpressionList());
             IterableApi.getInstance().trackInboxSession(sessionToTrack);
+            IterableApi.getInstance().clearInboxSessionId();
             session = new IterableInboxSession();
             impressions = new HashMap<>();
         }
