@@ -43,6 +43,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     double backgroundAlpha;
     Rect insetPadding;
     IterableHelper.IterableUrlCallback clickCallback;
+    IterableInAppLocation location;
 
     /**
      * Creates a static instance of the notification
@@ -119,6 +120,10 @@ public class IterableInAppHTMLNotification extends Dialog {
         this.insetPadding = insetPadding;
     }
 
+    public void setLocation(IterableInAppLocation location) {
+        this.location = location;
+    }
+
     /**
      * Tracks a button click when the back button is pressed
      */
@@ -164,7 +169,7 @@ public class IterableInAppHTMLNotification extends Dialog {
         relativeLayout.addView(webView,layoutParams);
         setContentView(relativeLayout,layoutParams);
 
-        IterableApi.sharedInstance.trackInAppOpen(messageId, IterableInAppLocation.IN_APP);
+        IterableApi.sharedInstance.trackInAppOpen(messageId, location);
     }
 
     /**

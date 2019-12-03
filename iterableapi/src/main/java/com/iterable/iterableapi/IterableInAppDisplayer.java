@@ -17,7 +17,7 @@ class IterableInAppDisplayer {
         return IterableInAppHTMLNotification.getInstance() != null;
     }
 
-    boolean showMessage(IterableInAppMessage message, final IterableHelper.IterableUrlCallback clickCallback) {
+    boolean showMessage(IterableInAppMessage message, IterableInAppLocation location, final IterableHelper.IterableUrlCallback clickCallback) {
         Activity currentActivity = activityMonitor.getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
@@ -27,7 +27,7 @@ class IterableInAppDisplayer {
                     clickCallback,
                     message.getContent().backgroundAlpha,
                     message.getContent().padding,
-                    true);
+                    true, location);
         }
         return false;
     }
@@ -41,11 +41,7 @@ class IterableInAppDisplayer {
      * @param backgroundAlpha
      * @param padding
      */
-    public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, Rect padding) {
-        return showIterableNotificationHTML(context, htmlString, messageId, clickCallback, backgroundAlpha, padding, false);
-    }
-
-    public static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel) {
+    static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel, IterableInAppLocation location) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
@@ -60,6 +56,7 @@ class IterableInAppDisplayer {
                 notification.setBackgroundAlpha(backgroundAlpha);
                 notification.setPadding(padding);
                 notification.setOwnerActivity(currentActivity);
+                notification.setLocation(location);
 
                 if (callbackOnCancel) {
                     notification.setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -78,4 +75,6 @@ class IterableInAppDisplayer {
         }
         return false;
     }
+
+
 }

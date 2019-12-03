@@ -27,6 +27,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -86,8 +87,8 @@ public class IterableInAppManagerTest extends BaseTest {
         ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start().resume();
         Activity activity = controller.get();
 
-        boolean shownFirstTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
-        boolean shownSecondTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect());
+        boolean shownFirstTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
+        boolean shownSecondTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
         assertTrue(shownFirstTime);
         assertFalse(shownSecondTime);
         ShadowDialog.getLatestDialog().dismiss();
@@ -205,7 +206,7 @@ public class IterableInAppManagerTest extends BaseTest {
         Robolectric.buildActivity(Activity.class).create().start().resume();
         Robolectric.flushForegroundThreadScheduler();
         ArgumentCaptor<IterableHelper.IterableUrlCallback> callbackCaptor = ArgumentCaptor.forClass(IterableHelper.IterableUrlCallback.class);
-        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         IterableInAppMessage message = inAppManager.getMessages().get(0);
         callbackCaptor.getValue().execute(Uri.parse("action://actionName"));
 
@@ -220,7 +221,7 @@ public class IterableInAppManagerTest extends BaseTest {
         reset(inAppDisplayerMock);
         reset(customActionHandler);
         inAppManager.showMessage(message);
-        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("itbl://legacyCustomAction"));
         verify(customActionHandler).handleIterableCustomAction(actionCaptor.capture(), contextCaptor.capture());
         assertEquals("legacyCustomAction", actionCaptor.getValue().getType());
@@ -228,7 +229,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         reset(inAppDisplayerMock);
         inAppManager.showMessage(message);
-        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("https://www.google.com"));
         ArgumentCaptor<Uri> urlCaptor = ArgumentCaptor.forClass(Uri.class);
         verify(urlHandler).handleIterableURL(urlCaptor.capture(), contextCaptor.capture());
@@ -240,7 +241,7 @@ public class IterableInAppManagerTest extends BaseTest {
         reset(customActionHandler);
         reset(urlHandler);
         inAppManager.showMessage(message);
-        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("iterable://someInternalAction"));
         verify(customActionHandler, never()).handleIterableCustomAction(any(IterableAction.class), any(IterableActionContext.class));
         verify(urlHandler, never()).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
@@ -277,7 +278,7 @@ public class IterableInAppManagerTest extends BaseTest {
         reset(urlHandler);
         inAppManager.showMessage(message, false, null);
         ArgumentCaptor<IterableHelper.IterableUrlCallback> callbackCaptor = ArgumentCaptor.forClass(IterableHelper.IterableUrlCallback.class);
-        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("iterable://dismiss"));
         assertFalse(message.isConsumed());
 
@@ -285,8 +286,8 @@ public class IterableInAppManagerTest extends BaseTest {
         reset(inAppDisplayerMock);
         reset(customActionHandler);
         reset(urlHandler);
-        inAppManager.showMessage(message, false, null);
-        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), callbackCaptor.capture());
+        inAppManager.showMessage(message, false, null, IterableInAppLocation.INBOX);
+        verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.INBOX), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("iterable://delete"));
         assertTrue(message.isConsumed());
     }
