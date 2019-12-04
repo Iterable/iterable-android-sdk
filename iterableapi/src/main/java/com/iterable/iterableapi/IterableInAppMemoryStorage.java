@@ -36,7 +36,17 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
     }
 
     @Override
-    public void save() {
+    public void saveHTML(String messageID, String contentHTML) {
+
+    }
+
+    @Override
+    public String getHTML(String messageID) {
+        return null;
+    }
+
+    @Override
+    public void removeHTML(String messageID) {
 
     }
 }

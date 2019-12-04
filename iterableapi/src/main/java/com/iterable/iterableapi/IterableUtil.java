@@ -63,6 +63,15 @@ class IterableUtil {
         return instance.getSdkCacheDir(context);
     }
 
+    static File getSDKFilesDirectory(Context context) {
+        return instance.getSDKFilesDirectory(context);
+    }
+
+    static File getDirectory(File folder, String subFolder) {
+        return instance.getDirectory(folder, subFolder);
+    }
+
+
     static String readFile(File file) {
         return instance.readFile(file);
     }
@@ -153,6 +162,22 @@ class IterableUtil {
                 sdkCacheDir.mkdirs();
             }
             return sdkCacheDir;
+        }
+
+        File getSDKFilesDirectory(Context context) {
+            File iterableSDKRootDirectory = new File(context.getFilesDir(), "com.iterable.sdk");
+            if (!iterableSDKRootDirectory.exists()) {
+                iterableSDKRootDirectory.mkdirs();
+            }
+            return iterableSDKRootDirectory;
+        }
+
+        File getDirectory(File folder, String subFolder) {
+            File applicationRootDirectory = new File(folder, subFolder);
+            if (!applicationRootDirectory.exists()) {
+                applicationRootDirectory.mkdirs();
+            }
+            return applicationRootDirectory;
         }
 
         String readFile(File file) {

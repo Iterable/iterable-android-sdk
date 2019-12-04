@@ -21,10 +21,11 @@ public class IterableInAppMessage {
     private final Trigger trigger;
     private final Boolean saveToInbox;
     private final InboxMetadata inboxMetadata;
-
     private boolean processed = false;
     private boolean consumed = false;
     private boolean read = false;
+    private boolean loadedHtmlFromJson = false;
+    private IterableInAppStorage inAppStorageInterface;
 
     IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date createdAt, Date expiresAt, Trigger trigger, Boolean saveToInbox, InboxMetadata inboxMetadata) {
         this.messageId = messageId;
@@ -95,9 +96,9 @@ public class IterableInAppMessage {
     }
 
     public static class Content {
-         public final String html;
-         public final Rect padding;
-         public final double backgroundAlpha;
+        public String html;
+        public final Rect padding;
+        public final double backgroundAlpha;
 
         Content(String html, Rect padding, double backgroundAlpha) {
             this.html = html;
@@ -192,7 +193,10 @@ public class IterableInAppMessage {
     }
 
     public Content getContent() {
-         return content;
+        if (content.html == null) {
+            content.html = inAppStorageInterface.getHTML(messageId);
+        }
+        return content;
     }
 
     public JSONObject getCustomPayload() {
@@ -243,7 +247,16 @@ public class IterableInAppMessage {
         onChanged();
     }
 
-    static IterableInAppMessage fromJSONObject(JSONObject messageJson) {
+    boolean hasLoadedHtmlFromJson() {
+        return loadedHtmlFromJson;
+    }
+
+    void setLoadedHtmlFromJson(boolean loadedHtmlFromJson) {
+        this.loadedHtmlFromJson = loadedHtmlFromJson;
+    }
+
+    static IterableInAppMessage fromJSONObject(JSONObject messageJson, IterableInAppStorage storageInterface) {
+
         if (messageJson == null) {
             return null;
         }
@@ -259,7 +272,8 @@ public class IterableInAppMessage {
         long expiresAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT);
         Date expiresAt = expiresAtLong != 0 ? new Date(expiresAtLong) : null;
 
-        String html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML);
+        String html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML, null);
+
         JSONObject paddingOptions = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
         Rect padding = getPaddingFromPayload(paddingOptions);
         double backgroundAlpha = contentJson.optDouble(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, 0);
@@ -280,6 +294,10 @@ public class IterableInAppMessage {
 
         IterableInAppMessage message = new IterableInAppMessage(messageId,
                 new Content(html, padding, backgroundAlpha), customPayload, createdAt, expiresAt, trigger, saveToInbox, inboxMetadata);
+        message.inAppStorageInterface = storageInterface;
+        if (html != null) {
+            message.setLoadedHtmlFromJson(true);
+        }
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         message.read = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_READ, false);
@@ -298,8 +316,6 @@ public class IterableInAppMessage {
                 messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, expiresAt.getTime());
             }
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
-
-            contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_HTML, content.html);
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS, encodePaddingRectToJson(content.padding));
             if (content.backgroundAlpha != 0) {
                 contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, content.backgroundAlpha);
@@ -327,6 +343,7 @@ public class IterableInAppMessage {
     interface OnChangeListener {
         void onInAppMessageChanged(IterableInAppMessage message);
     }
+
     private OnChangeListener onChangeListener;
 
     void setOnChangeListener(OnChangeListener listener) {
