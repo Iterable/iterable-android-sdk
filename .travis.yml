@@ -40,6 +40,12 @@ install:
   # Download required emulator tools
   - echo y | sdkmanager --no_https "platforms;android-$API" >/dev/null # We need the API of the emulator we will run
   - echo y | sdkmanager --no_https $EMU_CHANNEL "emulator" >/dev/null
+  - mv ${ANDROID_HOME}/emulator/package.xml package.xml
+  - rm -rf ${ANDROID_HOME}/emulator
+  - wget -q http://dl.google.com/android/repository/emulator-linux-5889189.zip -O android-emulator.zip
+  - unzip -q android-emulator.zip -d ${ANDROID_HOME}
+  - rm android-emulator.zip
+  - mv package.xml ${ANDROID_HOME}/emulator/package.xml
   - echo y | sdkmanager --no_https "system-images;android-$API;$EMU_FLAVOR;$ABI" >/dev/null # install our emulator
 
   # Set up KVM on linux for hardware acceleration.
