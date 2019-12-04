@@ -406,7 +406,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setEmail("test@email.com");
 
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
-        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, null);
+        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.IN_APP);
         Robolectric.flushBackgroundThreadScheduler();
 
         RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -418,8 +418,17 @@ public class IterableApiTest extends BaseTest {
         assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
         assertEquals("back", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION));
         assertNull(requestJson.optString(IterableConstants.KEY_INBOX_SESSION_ID, null));
+        assertEquals(IterableInAppLocation.IN_APP.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT).optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
+
         verifyMessageContext(requestJson);
         verifyDeviceInfo(requestJson);
+
+        //Making another request to check if inbox location is tracked
+        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.INBOX);
+        Robolectric.flushBackgroundThreadScheduler();
+        trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
+        assertEquals(IterableInAppLocation.INBOX.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT).optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
     }
 
     @Test
