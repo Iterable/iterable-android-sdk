@@ -130,7 +130,7 @@ public class IterableInAppHTMLNotification extends Dialog {
     @Override
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, IterableInAppLocation.IN_APP);
+        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
         super.onBackPressed();
     }
 
