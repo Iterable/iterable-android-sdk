@@ -99,6 +99,10 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
     private File getInAppStorageFile() {
+        return new File(getInAppContentFolder(), "itbl_inapp.json");
+    }
+
+    private File getInAppCacheStorageFile() {
         return new File(IterableUtil.getSdkCacheDir(context), "itbl_inapp.json");
     }
 
@@ -107,6 +111,9 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             File inAppStorageFile = getInAppStorageFile();
             if (inAppStorageFile.exists()) {
                 JSONObject jsonData = new JSONObject(IterableUtil.readFile(inAppStorageFile));
+                loadMessagesFromJson(jsonData);
+            } else if (getInAppCacheStorageFile().exists()) {
+                JSONObject jsonData = new JSONObject(IterableUtil.readFile(getInAppCacheStorageFile()));
                 loadMessagesFromJson(jsonData);
             }
         } catch (Exception e) {

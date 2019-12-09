@@ -94,4 +94,40 @@ public class IterableInAppFileStorageTest {
         assertEquals(message.getContent().html,storage.getHTML(messageID1));
         assertNotNull(storage.getHTML(messageID2));
     }
+
+    @Test
+    public void loadMessagesWithNoJson() {
+        IterableInAppFileStorage storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
+        assertEquals(0, storage.getMessages().size());
+    }
+
+    @Test
+    public void loadMessagesWithJsonInCache() throws Exception {
+        File folder = IterableUtil.getSdkCacheDir(RuntimeEnvironment.application);
+        File oldJsonStorageFile = new File(folder, "itbl_inapp.json");
+        Boolean fileWriteResult = IterableUtil.writeFile(oldJsonStorageFile, IterableTestUtils.getResourceString("inapp_payload_multiple.json"));
+        assertTrue(fileWriteResult);
+        IterableInAppFileStorage storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
+        assertTrue(storage.getMessages().size() > 1);
+
+        // Simulate message update and check if new json file is created in SDK directory
+        storage.onInAppMessageChanged(storage.getMessages().get(0));
+        File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(RuntimeEnvironment.application);
+        File inAppDirectory = IterableUtil.getDirectory(sdkFilesDirectory, "IterableInAppFileStorage");
+        File inAppJsonFile = new File(inAppDirectory, "itbl_inapp.json");
+        assertTrue(inAppJsonFile.exists());
+    }
+
+    @Test
+    public void loadMessagesWithJsonInFilesDirectory() throws Exception {
+        File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(RuntimeEnvironment.application);
+        File inAppDirectory = IterableUtil.getDirectory(sdkFilesDirectory, "IterableInAppFileStorage");
+        File inAppJsonFile = new File(inAppDirectory, "itbl_inapp.json");
+        Boolean fileWriteResult = IterableUtil.writeFile(inAppJsonFile, IterableTestUtils.getResourceString("inapp_payload_single.json"));
+        assertTrue(fileWriteResult);
+
+        IterableInAppFileStorage storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
+        assertEquals(1, storage.getMessages().size());
+    }
+
 }
