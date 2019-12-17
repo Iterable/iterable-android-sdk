@@ -10,7 +10,6 @@ env:
     - ANDROID_TOOLS_URL="https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip"
     - ANDROID_HOME=${HOME}/android-sdk
     - EMU_FLAVOR=default # use google_apis flavor if no default flavor emulator
-    - EMU_CHANNEL="" # use default / stable emulator channel normally
     - GRAVIS="https://raw.githubusercontent.com/DanySK/Gravis-CI/master/"
     - JDK="1.8"
     - TOOLS=${ANDROID_HOME}/tools
@@ -39,13 +38,7 @@ before_install:
 install:
   # Download required emulator tools
   - echo y | sdkmanager --no_https "platforms;android-$API" >/dev/null # We need the API of the emulator we will run
-  - echo y | sdkmanager --no_https $EMU_CHANNEL "emulator" >/dev/null
-  - mv ${ANDROID_HOME}/emulator/package.xml package.xml
-  - rm -rf ${ANDROID_HOME}/emulator
-  - wget -q http://dl.google.com/android/repository/emulator-linux-5889189.zip -O android-emulator.zip
-  - unzip -q android-emulator.zip -d ${ANDROID_HOME}
-  - rm android-emulator.zip
-  - mv package.xml ${ANDROID_HOME}/emulator/package.xml
+  - echo y | sdkmanager --no_https "emulator" >/dev/null
   - echo y | sdkmanager --no_https "system-images;android-$API;$EMU_FLAVOR;$ABI" >/dev/null # install our emulator
 
   # Set up KVM on linux for hardware acceleration.
@@ -58,9 +51,6 @@ install:
   - |
     EMU_PARAMS="-verbose -no-snapshot -no-window -camera-back none -camera-front none -selinux permissive -qemu -m 2048"
     EMU_COMMAND="emulator"
-    if [[ $ABI =~ "x86" ]]; then
-      EMU_COMMAND="emulator-headless"
-    fi
     # This double "sudo" monstrosity is used to have Travis execute the
     # emulator with its new group permissions and help preserve the rule
     # of least privilege.
