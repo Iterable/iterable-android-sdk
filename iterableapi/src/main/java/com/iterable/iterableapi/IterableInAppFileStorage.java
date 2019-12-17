@@ -1,12 +1,15 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -19,7 +22,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
-
+    private ArrayDeque<Runnable> saveOperationQueue = new ArrayDeque<>();
     IterableInAppFileStorage(Context context) {
         this.context = context;
         load();
@@ -39,7 +42,8 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
         message.setOnChangeListener(this);
-        saveMessages();
+//        saveMessages();
+        saveMessagesInBackground();
     }
 
     @Override
@@ -47,12 +51,14 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         message.setOnChangeListener(null);
         removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
-        saveMessages();
+//        saveMessages();
+        saveMessagesInBackground();
     }
 
     @Override
     public void onInAppMessageChanged(IterableInAppMessage message) {
-        saveMessages();
+//        saveMessages();
+        saveMessagesInBackground();
     }
 
     private synchronized void clearMessages() {
@@ -118,6 +124,27 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             }
         } catch (Exception e) {
             IterableLogger.e("IterableInAppFileStorage", "Error while loading in-app messages from file", e);
+        }
+    }
+
+    private void saveMessagesInBackground() {
+        //Add SaveRequest to Queue
+        if (saveOperationQueue.size() == 0) {
+            saveOperationQueue.add(new Runnable() {
+                @Override
+                public void run() {
+                    IterableLogger.e("Something", "Saving Message");
+                    saveMessages();
+                }
+            });
+
+            //Make a delayed request to consume the queue
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    saveOperationQueue.poll().run();
+                }
+            }, 1000);
         }
     }
 
