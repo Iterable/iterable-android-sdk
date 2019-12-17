@@ -13,27 +13,37 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.android.util.concurrent.PausedExecutorService;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowDialog;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
+import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.robolectric.Shadows.shadowOf;
 
 public class IterableInAppManagerTest extends BaseTest {
 
@@ -44,9 +54,11 @@ public class IterableInAppManagerTest extends BaseTest {
     private IterableUrlHandler urlHandler;
     private IterableUtil.IterableUtilImpl originalIterableUtil;
     private IterableUtil.IterableUtilImpl iterableUtilSpy;
+    private PausedExecutorService backgroundExecutor;
 
     @Before
     public void setUp() throws IOException {
+        backgroundExecutor = new PausedExecutorService();
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
         server.setDispatcher(dispatcher);
@@ -180,6 +192,37 @@ public class IterableInAppManagerTest extends BaseTest {
 
     private JSONObject triggerWithType(String triggerType) throws JSONException {
         return new JSONObject().putOpt("type", triggerType);
+    }
+
+    @Test
+    @LooperMode(LooperMode.Mode.PAUSED)
+    public void testListenerCalledOnMainThread() throws Exception {
+        JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        final IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        shadowOf(getMainLooper()).idle();
+
+        IterableInAppManager.Listener listener = mock(IterableInAppManager.Listener.class);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                assertSame("Callback is called on the main thread", getMainLooper().getThread(), Thread.currentThread());
+                return null;
+            }
+        }).when(listener).onInboxUpdated();
+        inAppManager.addListener(listener);
+
+        //Remove from a background thread and verify that it switches threads for the callback
+        backgroundExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                inAppManager.removeMessage("7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV");
+            }
+        });
+        backgroundExecutor.runAll();
+        shadowOf(getMainLooper()).idle();
+
+        verify(listener, timeout(100)).onInboxUpdated();
     }
 
     @Test

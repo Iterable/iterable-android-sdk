@@ -375,10 +375,15 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public void notifyOnChange() {
-        synchronized (listeners) {
-            for (Listener listener : listeners) {
-                listener.onInboxUpdated();
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (listeners) {
+                    for (Listener listener : listeners) {
+                        listener.onInboxUpdated();
+                    }
+                }
             }
-        }
+        });
     }
 }
