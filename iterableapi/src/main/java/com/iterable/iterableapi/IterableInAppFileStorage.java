@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private static final String TAG = "IterableInAppFileStorage";
@@ -22,7 +24,13 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
-    private ArrayDeque<Runnable> saveOperationQueue = new ArrayDeque<>();
+    private ArrayDeque<FileOperation> fileOperationQueue = new ArrayDeque<>();
+    private ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
+    enum Operation {
+        SAVE, LOAD, OTHER
+    }
+
     IterableInAppFileStorage(Context context) {
         this.context = context;
         load();
@@ -42,7 +50,6 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
         message.setOnChangeListener(this);
-//        saveMessages();
         saveMessagesInBackground();
     }
 
@@ -51,13 +58,11 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         message.setOnChangeListener(null);
         removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
-//        saveMessages();
         saveMessagesInBackground();
     }
 
     @Override
     public void onInAppMessageChanged(IterableInAppMessage message) {
-//        saveMessages();
         saveMessagesInBackground();
     }
 
@@ -129,24 +134,25 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
 
     private void saveMessagesInBackground() {
         //Add SaveRequest to Queue
-        if (saveOperationQueue.size() == 0) {
-            saveOperationQueue.add(new Runnable() {
+        FileOperation operation = null;
+        try {
+            operation = fileOperationQueue.getLast();
+        } catch (RuntimeException e) {
+            operation = null;
+        }
+        if (operation == null || operation.operationType != Operation.SAVE) {
+            FileOperation save = new FileOperation(Operation.SAVE, new Runnable() {
                 @Override
                 public void run() {
                     IterableLogger.e("Something", "Saving Message");
                     saveMessages();
                 }
             });
-
-            //Make a delayed request to consume the queue
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    saveOperationQueue.poll().run();
-                }
-            }, 1000);
+            fileOperationQueue.add(save);
         }
+        executeOperationQueueTasks();
     }
+
 
     private synchronized void saveMessages() {
         saveHTMLContent();
@@ -161,7 +167,6 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             }
         }
     }
-
 
     private synchronized void saveMetadata() {
         try {
@@ -206,6 +211,18 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
     }
 
+    private void executeOperationQueueTasks() {
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                for (FileOperation operation : fileOperationQueue) {
+                    singleThreadExecutor.submit(operation.backgroundMethod);
+                    fileOperationQueue.removeFirst();
+                }
+            }
+        }, 1000);
+    }
+
     private File getInAppContentFolder() {
         File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(this.context);
         File inAppContentFolder = IterableUtil.getDirectory(sdkFilesDirectory, FOLDER_PATH);
@@ -245,5 +262,15 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             file.delete();
         }
         folder.delete();
+    }
+
+    class FileOperation {
+        Operation operationType;
+        Runnable backgroundMethod;
+
+        public FileOperation(Operation operationType, Runnable backgroundMethod) {
+            this.operationType = operationType;
+            this.backgroundMethod = backgroundMethod;
+        }
     }
 }
