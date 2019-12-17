@@ -1,17 +1,22 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private static final String TAG = "IterableInAppFileStorage";
@@ -19,6 +24,12 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
+    private ArrayDeque<FileOperation> fileOperationQueue = new ArrayDeque<>();
+    private ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
+    enum Operation {
+        SAVE, LOAD, OTHER
+    }
 
     IterableInAppFileStorage(Context context) {
         this.context = context;
@@ -39,7 +50,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
         message.setOnChangeListener(this);
-        saveMessages();
+        saveMessagesInBackground();
     }
 
     @Override
@@ -47,12 +58,12 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         message.setOnChangeListener(null);
         removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
-        saveMessages();
+        saveMessagesInBackground();
     }
 
     @Override
     public void onInAppMessageChanged(IterableInAppMessage message) {
-        saveMessages();
+        saveMessagesInBackground();
     }
 
     private synchronized void clearMessages() {
@@ -121,6 +132,27 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
     }
 
+    private void saveMessagesInBackground() {
+        //Add SaveRequest to Queue
+        FileOperation operation = null;
+        try {
+            operation = fileOperationQueue.getLast();
+        } catch (RuntimeException e) {
+            operation = null;
+        }
+        if (operation == null || operation.operationType != Operation.SAVE) {
+            FileOperation save = new FileOperation(Operation.SAVE, new Runnable() {
+                @Override
+                public void run() {
+                    saveMessages();
+                }
+            });
+            fileOperationQueue.add(save);
+        }
+        executeOperationQueueTasks();
+    }
+
+
     private synchronized void saveMessages() {
         saveHTMLContent();
         saveMetadata();
@@ -134,7 +166,6 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             }
         }
     }
-
 
     private synchronized void saveMetadata() {
         try {
@@ -179,6 +210,17 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
     }
 
+    private void executeOperationQueueTasks() {
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                while (fileOperationQueue.size() > 0) {
+                    singleThreadExecutor.submit(fileOperationQueue.poll().backgroundMethod);
+                }
+            }
+        }, 100);
+    }
+
     private File getInAppContentFolder() {
         File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(this.context);
         File inAppContentFolder = IterableUtil.getDirectory(sdkFilesDirectory, FOLDER_PATH);
@@ -218,5 +260,15 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             file.delete();
         }
         folder.delete();
+    }
+
+    class FileOperation {
+        Operation operationType;
+        Runnable backgroundMethod;
+
+        public FileOperation(Operation operationType, Runnable backgroundMethod) {
+            this.operationType = operationType;
+            this.backgroundMethod = backgroundMethod;
+        }
     }
 }
