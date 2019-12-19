@@ -2,37 +2,38 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Message;
+import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private static final String TAG = "IterableInAppFileStorage";
     private static final String FOLDER_PATH = "IterableInAppFileStorage";
+    private static final int OPERATION_SAVE = 100;
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
-    private ArrayDeque<FileOperation> fileOperationQueue = new ArrayDeque<>();
-    private ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
-    enum Operation {
-        SAVE, LOAD, OTHER
-    }
+    private final HandlerThread fileOperationThread = new HandlerThread("FileOperationThread");
+    @VisibleForTesting
+    FileOperationHandler fileOperationHandler;
 
     IterableInAppFileStorage(Context context) {
         this.context = context;
+        fileOperationThread.start();
+        fileOperationHandler = new FileOperationHandler(fileOperationThread.getLooper());
         load();
     }
 
@@ -133,25 +134,10 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
     private void saveMessagesInBackground() {
-        //Add SaveRequest to Queue
-        FileOperation operation = null;
-        try {
-            operation = fileOperationQueue.getLast();
-        } catch (RuntimeException e) {
-            operation = null;
+        if (!fileOperationHandler.hasMessages(OPERATION_SAVE)) {
+            fileOperationHandler.sendEmptyMessageDelayed(OPERATION_SAVE, 100);
         }
-        if (operation == null || operation.operationType != Operation.SAVE) {
-            FileOperation save = new FileOperation(Operation.SAVE, new Runnable() {
-                @Override
-                public void run() {
-                    saveMessages();
-                }
-            });
-            fileOperationQueue.add(save);
-        }
-        executeOperationQueueTasks();
     }
-
 
     private synchronized void saveMessages() {
         saveHTMLContent();
@@ -210,17 +196,6 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
     }
 
-    private void executeOperationQueueTasks() {
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                while (fileOperationQueue.size() > 0) {
-                    singleThreadExecutor.submit(fileOperationQueue.poll().backgroundMethod);
-                }
-            }
-        }, 100);
-    }
-
     private File getInAppContentFolder() {
         File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(this.context);
         File inAppContentFolder = IterableUtil.getDirectory(sdkFilesDirectory, FOLDER_PATH);
@@ -262,13 +237,16 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         folder.delete();
     }
 
-    class FileOperation {
-        Operation operationType;
-        Runnable backgroundMethod;
+    class FileOperationHandler extends Handler {
+        FileOperationHandler(Looper threadLooper) {
+            super(threadLooper);
+        }
 
-        public FileOperation(Operation operationType, Runnable backgroundMethod) {
-            this.operationType = operationType;
-            this.backgroundMethod = backgroundMethod;
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == OPERATION_SAVE) {
+                saveMessages();
+            }
         }
     }
 }

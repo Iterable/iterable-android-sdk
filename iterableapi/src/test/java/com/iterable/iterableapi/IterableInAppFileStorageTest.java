@@ -4,7 +4,6 @@ import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -15,6 +14,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(TestRunner.class)
 public class IterableInAppFileStorageTest {
@@ -31,14 +31,14 @@ public class IterableInAppFileStorageTest {
         assertEquals(storage.getMessage(testInAppMessage.getMessageId()), testInAppMessage);
         testInAppMessage.setProcessed(true);
         testInAppMessage.setConsumed(true);
-        flushThreads();
+        runHandlerTasks(storage);
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertEquals(1, storage.getMessages().size());
         JSONAssert.assertEquals(testInAppMessage.toJSONObject(), storage.getMessages().get(0).toJSONObject(), JSONCompareMode.STRICT);
         assertTrue(storage.getMessages().get(0).isProcessed());
         assertTrue(storage.getMessages().get(0).isConsumed());
         storage.removeMessage(storage.getMessage(testInAppMessage.getMessageId()));
-        flushThreads();
+        runHandlerTasks(storage);
         assertEquals(0, storage.getMessages().size());
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertEquals(0, storage.getMessages().size());
@@ -50,14 +50,14 @@ public class IterableInAppFileStorageTest {
         IterableInAppFileStorage storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         IterableInAppMessage testInAppMessage = InAppTestUtils.getTestInAppMessage();
         storage.addMessage(testInAppMessage);
-        flushThreads();
+        runHandlerTasks(storage);
         // Test that the message attributes are stored properly without an explicit save call
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertEquals(1, storage.getMessages().size());
         testInAppMessage = storage.getMessages().get(0);
         testInAppMessage.setProcessed(true);
         testInAppMessage.setConsumed(true);
-        flushThreads();
+        runHandlerTasks(storage);
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertEquals(1, storage.getMessages().size());
         testInAppMessage = storage.getMessages().get(0);
@@ -66,7 +66,7 @@ public class IterableInAppFileStorageTest {
         assertTrue(storage.getMessages().get(0).isConsumed());
 
         storage.removeMessage(storage.getMessage(testInAppMessage.getMessageId()));
-        flushThreads();
+        runHandlerTasks(storage);
         assertEquals(0, storage.getMessages().size());
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertEquals(0, storage.getMessages().size());
@@ -89,7 +89,7 @@ public class IterableInAppFileStorageTest {
         String messageID2 = messages.get(1).getMessageId();
         
         message.setProcessed(true);
-        flushThreads();
+        runHandlerTasks(storage);
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertNotNull(storage.getHTML(messageID1));
         assertEquals(message.getContent().html,storage.getHTML(messageID1));
@@ -113,7 +113,7 @@ public class IterableInAppFileStorageTest {
 
         // Simulate message update and check if new json file is created in SDK directory
         storage.onInAppMessageChanged(storage.getMessages().get(0));
-        flushThreads();
+        runHandlerTasks(storage);
         File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(RuntimeEnvironment.application);
         File inAppDirectory = IterableUtil.getDirectory(sdkFilesDirectory, "IterableInAppFileStorage");
         File inAppJsonFile = new File(inAppDirectory, "itbl_inapp.json");
@@ -132,10 +132,7 @@ public class IterableInAppFileStorageTest {
         assertEquals(1, storage.getMessages().size());
     }
 
-    private void flushThreads() throws InterruptedException {
-        Robolectric.flushBackgroundThreadScheduler();
-        Robolectric.flushForegroundThreadScheduler();
-        Thread.sleep(10);
+    private void runHandlerTasks(IterableInAppFileStorage storage) throws InterruptedException {
+        shadowOf(storage.fileOperationHandler.getLooper()).runToEndOfTasks();
     }
-
 }
