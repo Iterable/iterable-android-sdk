@@ -1,6 +1,11 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
+import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,12 +21,19 @@ import java.util.Map;
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private static final String TAG = "IterableInAppFileStorage";
     private static final String FOLDER_PATH = "IterableInAppFileStorage";
+    private static final int OPERATION_SAVE = 100;
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
 
+    private final HandlerThread fileOperationThread = new HandlerThread("FileOperationThread");
+    @VisibleForTesting
+    FileOperationHandler fileOperationHandler;
+
     IterableInAppFileStorage(Context context) {
         this.context = context;
+        fileOperationThread.start();
+        fileOperationHandler = new FileOperationHandler(fileOperationThread.getLooper());
         load();
     }
 
@@ -39,7 +51,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     public synchronized void addMessage(IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
         message.setOnChangeListener(this);
-        saveMessages();
+        saveMessagesInBackground();
     }
 
     @Override
@@ -47,12 +59,12 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         message.setOnChangeListener(null);
         removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
-        saveMessages();
+        saveMessagesInBackground();
     }
 
     @Override
     public void onInAppMessageChanged(IterableInAppMessage message) {
-        saveMessages();
+        saveMessagesInBackground();
     }
 
     private synchronized void clearMessages() {
@@ -121,6 +133,12 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
     }
 
+    private void saveMessagesInBackground() {
+        if (!fileOperationHandler.hasMessages(OPERATION_SAVE)) {
+            fileOperationHandler.sendEmptyMessageDelayed(OPERATION_SAVE, 100);
+        }
+    }
+
     private synchronized void saveMessages() {
         saveHTMLContent();
         saveMetadata();
@@ -134,7 +152,6 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             }
         }
     }
-
 
     private synchronized void saveMetadata() {
         try {
@@ -218,5 +235,18 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             file.delete();
         }
         folder.delete();
+    }
+
+    class FileOperationHandler extends Handler {
+        FileOperationHandler(Looper threadLooper) {
+            super(threadLooper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == OPERATION_SAVE) {
+                saveMessages();
+            }
+        }
     }
 }
