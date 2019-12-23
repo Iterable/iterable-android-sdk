@@ -24,6 +24,7 @@
       }
     },{
       "messageId": "message2",
+      "createdAt": 1500000000,
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "inAppDisplaySettings": {
@@ -69,6 +70,7 @@
       }
     },{
       "messageId": "message4",
+      "createdAt": 1500000001,
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "inAppDisplaySettings": {

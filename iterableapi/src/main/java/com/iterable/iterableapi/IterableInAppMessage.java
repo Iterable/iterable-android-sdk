@@ -10,7 +10,7 @@ import org.json.JSONObject;
 
 import java.util.Date;
 
-public class IterableInAppMessage {
+public class IterableInAppMessage implements Comparable<IterableInAppMessage> {
     private static final String TAG = "IterableInAppMessage";
 
     private final String messageId;
@@ -439,5 +439,13 @@ public class IterableInAppMessage {
             }
         }
         return returnObject;
+    }
+
+    @Override
+    public int compareTo(IterableInAppMessage message) {
+        if (message.getCreatedAt() != null) {
+            return message.getCreatedAt().compareTo(getCreatedAt());
+        }
+        return 0;
     }
 }

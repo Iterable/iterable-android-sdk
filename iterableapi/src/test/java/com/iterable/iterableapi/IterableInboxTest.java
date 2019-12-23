@@ -82,8 +82,8 @@ public class IterableInboxTest extends BaseTest {
         inAppManager.syncInApp();
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
         assertEquals(2, inboxMessages.size());
-        assertEquals("message2", inboxMessages.get(0).getMessageId());
-        assertEquals("message4", inboxMessages.get(1).getMessageId());
+        assertEquals("message2", inboxMessages.get(1).getMessageId());
+        assertEquals("message4", inboxMessages.get(0).getMessageId());
     }
 
     @Test
