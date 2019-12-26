@@ -92,17 +92,27 @@ public class IterableInboxTest extends BaseTest {
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
-        assertEquals(2, inAppManager.getUnreadInboxMessagesCount());
+        assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
         assertEquals(2, inboxMessages.size());
         assertFalse(inboxMessages.get(0).isRead());
-        assertFalse(inboxMessages.get(1).isRead());
-
-        inAppManager.setRead(inboxMessages.get(1), true);
-
-        assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
-        assertEquals(2, inAppManager.getInboxMessages().size());
-        assertFalse(inboxMessages.get(0).isRead());
         assertTrue(inboxMessages.get(1).isRead());
+        inAppManager.setRead(inboxMessages.get(0), true);
+        assertEquals(0, inAppManager.getUnreadInboxMessagesCount());
+        assertEquals(2, inAppManager.getInboxMessages().size());
+        assertTrue(inboxMessages.get(0).isRead());
+        assertTrue(inboxMessages.get(1).isRead());
+    }
+
+    @Test
+    public void testMessageReadStatusFromServer() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
+        assertEquals(2, inboxMessages.size());
+        assertTrue(inboxMessages.get(1).isRead());
+        assertFalse(inboxMessages.get(0).isRead());
     }
 
     @Test

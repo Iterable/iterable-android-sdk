@@ -69,6 +69,7 @@
       }
     },{
       "messageId": "message4",
+      "read": true,
       "content": {
         "html": "<html><head></head><body>Test</body></html>",
         "inAppDisplaySettings": {
