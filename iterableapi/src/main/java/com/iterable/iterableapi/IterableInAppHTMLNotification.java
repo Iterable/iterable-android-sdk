@@ -129,7 +129,7 @@ public class IterableInAppHTMLNotification extends Dialog {
      */
     @Override
     public void onBackPressed() {
-        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
+        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON, location);
         IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
         super.onBackPressed();
     }
@@ -179,6 +179,13 @@ public class IterableInAppHTMLNotification extends Dialog {
     protected void onStop() {
         orientationListener.disable();
         notification = null;
+    }
+
+    protected void onUrlClicked(String url) {
+        IterableApi.sharedInstance.trackInAppClick(messageId, url, location);
+        IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location);
+        clickCallback.execute(Uri.parse(url));
+        dismiss();
     }
 
     /**
@@ -324,10 +331,7 @@ class IterableWebViewClient extends WebViewClient {
      */
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        IterableApi.sharedInstance.trackInAppClick(inAppHTMLNotification.messageId, url, IterableInAppLocation.IN_APP);
-        IterableApi.sharedInstance.trackInAppClose(inAppHTMLNotification.messageId, url, IterableInAppCloseAction.LINK, IterableInAppLocation.IN_APP);
-        inAppHTMLNotification.clickCallback.execute(Uri.parse(url));
-        inAppHTMLNotification.dismiss();
+        inAppHTMLNotification.onUrlClicked(url);
         return true;
     }
 
