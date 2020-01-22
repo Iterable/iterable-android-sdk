@@ -19,11 +19,9 @@ import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.android.util.concurrent.PausedExecutorService;
-import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowDialog;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -195,7 +193,6 @@ public class IterableInAppManagerTest extends BaseTest {
     }
 
     @Test
-    @LooperMode(LooperMode.Mode.PAUSED)
     public void testListenerCalledOnMainThread() throws Exception {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
