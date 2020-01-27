@@ -6,8 +6,6 @@ import android.content.DialogInterface;
 import android.graphics.Rect;
 import android.support.v4.app.FragmentActivity;
 
-import java.util.Random;
-
 class IterableInAppDisplayer {
 
     private final IterableActivityMonitor activityMonitor;
@@ -28,23 +26,13 @@ class IterableInAppDisplayer {
         Activity currentActivity = activityMonitor.getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
-            if (new Random().nextBoolean()) {
-                return IterableInAppDisplayer.showIterableFragmentNotificationHTML(currentActivity,
-                        message.getContent().html,
-                        message.getMessageId(),
-                        clickCallback,
-                        message.getContent().backgroundAlpha,
-                        message.getContent().padding,
-                        true, location);
-            } else {
-                return IterableInAppDisplayer.showIterableNotificationHTML(currentActivity,
-                        message.getContent().html,
-                        message.getMessageId(),
-                        clickCallback,
-                        message.getContent().backgroundAlpha,
-                        message.getContent().padding,
-                        true, location);
-            }
+            return IterableInAppDisplayer.showIterableFragmentNotificationHTML(currentActivity,
+                    message.getContent().html,
+                    message.getMessageId(),
+                    clickCallback,
+                    message.getContent().backgroundAlpha,
+                    message.getContent().padding,
+                    true, location);
         }
         return false;
     }

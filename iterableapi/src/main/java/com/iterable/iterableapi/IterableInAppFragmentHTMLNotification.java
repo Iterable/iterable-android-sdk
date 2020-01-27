@@ -56,6 +56,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         Bundle args = new Bundle();
         args.putString("html", htmlString);
         notification.setArguments(args);
+        notification.setStyle(DialogFragment.STYLE_NO_FRAME, R.style.Theme_AppCompat_NoActionBar);
         return notification;
     }
 
@@ -84,7 +85,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (args != null) {
             htmlString = args.getString("html", null);
         }
-        setStyle(DialogFragment.STYLE_NO_FRAME, 0);
     }
 
     /**
