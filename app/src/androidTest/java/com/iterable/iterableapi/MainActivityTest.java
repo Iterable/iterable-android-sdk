@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
+import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.rule.IntentsTestRule;
 import androidx.test.espresso.web.webdriver.Locator;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -19,16 +20,21 @@ import org.hamcrest.TypeSafeMatcher;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.VerificationModes.times;
@@ -200,6 +206,32 @@ public class MainActivityTest {
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
+    @Test
+    public void testSwipeToDeleteInApp() throws Exception {
+        //TODO: Add check to see if removeMessage method was triggered using spy objects. Somehow it(the commented code below) is failing in Travis environment. Mostly because the espresso continues before the background tasks are completed.
+        JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("editable_get_messages_response.json"));
+        getTwoValidOneExpiredMessage(payload);
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        //IterableInAppManager spyInAppManager = Mockito.spy(IterableApi.getInstance().getInAppManager());
+        //IterableApi api = new IterableApi(spyInAppManager);
+        //IterableApi.sharedInstance = api;
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        clearMessageFromStorage();
+        inAppManager.syncInApp();
+        rule.launchActivity(null);
+        //onView(withText("Tips and tricks 2")).check(matches(isDisplayed()));
+
+        //IterableInAppMessage messageToDelete = IterableApi.getInstance().getInAppManager().getInboxMessages().get(0);
+        onView(withText("Tips and tricks 2")).perform(ViewActions.swipeLeft());
+        waitFor(100);
+        //Mockito.verify(spyInAppManager).removeMessage(messageToDelete, IterableInAppDeleteActionType.INBOX_SWIPE, IterableInAppLocation.INBOX);
+        onView(withText("Tips and tricks 2")).check(doesNotExist());
+
+        rule.finishActivity();
+        IterableApi.getInstance().getInAppManager().syncInApp();
+        rule.launchActivity(null);
+        onView(withText("Tips and tricks 2")).check(doesNotExist());
+    }
 
 
     static class Matchers{
@@ -239,6 +271,16 @@ public class MainActivityTest {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    static void waitFor(int ms) {
+        final CountDownLatch signal = new CountDownLatch(1);
+
+        try {
+            signal.await(ms, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Assert.fail(e.getMessage());
         }
     }
 }
