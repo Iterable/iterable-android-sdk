@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -27,6 +28,8 @@ import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.widget.RelativeLayout;
 
+import com.iterable.iterableapi.model.InAppNotificationViewModel;
+
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
 
     static final String BACK_BUTTON = "itbl://backButton";
@@ -44,6 +47,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     Rect insetPadding;
     IterableHelper.IterableUrlCallback clickCallback;
     IterableInAppLocation location;
+    InAppNotificationViewModel viewModel;
 
     /**
      * Creates a static instance of the notification
@@ -84,6 +88,23 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         Bundle args = getArguments();
         if (args != null) {
             htmlString = args.getString("html", null);
+        }
+        viewModel = ViewModelProviders.of(this).get(InAppNotificationViewModel.class);
+        loadAndRetrieveFromViewModel();
+    }
+
+    private void loadAndRetrieveFromViewModel() {
+        //Checking transient variables which go null after configuration changes.
+        if (clickCallback == null) {
+            htmlString = viewModel.htmlString;
+            messageId = viewModel.messageID;
+            clickCallback = viewModel.clickCallback;
+            location = viewModel.location;
+        } else {
+            viewModel.htmlString = htmlString;
+            viewModel.messageID = messageId;
+            viewModel.clickCallback = clickCallback;
+            viewModel.location = location;
         }
     }
 
