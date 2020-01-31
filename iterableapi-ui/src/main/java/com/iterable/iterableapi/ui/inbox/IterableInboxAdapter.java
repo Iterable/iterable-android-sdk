@@ -1,8 +1,8 @@
 package com.iterable.iterableapi.ui.inbox;
 
 import android.net.Uri;
-import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.util.ObjectsCompat;
 import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
@@ -19,21 +19,28 @@ import com.iterable.iterableapi.ui.R;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
 public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdapter.ViewHolder> {
 
     private static final String TAG = "IterableInboxAdapter";
-    private final @LayoutRes int itemLayoutId;
+
+    private final @NonNull OnListInteractionListener listener;
+    private final @NonNull IterableInboxAdapterExtension extension;
+    private final @NonNull IterableInboxComparator comparator;
+    private final @NonNull IterableInboxFilter filter;
 
     private List<InboxRow> inboxItems;
-    private OnListInteractionListener listener;
 
-    public IterableInboxAdapter(List<IterableInAppMessage> values, @LayoutRes int itemLayoutId, OnListInteractionListener listener) {
-        this.inboxItems = inboxRowListFromInboxMessages(values);
-        this.itemLayoutId = itemLayoutId;
+    IterableInboxAdapter(@NonNull List<IterableInAppMessage> values, @NonNull OnListInteractionListener listener, @NonNull IterableInboxAdapterExtension extension, @NonNull IterableInboxComparator comparator, @NonNull IterableInboxFilter filter) {
         this.listener = listener;
+        this.extension = extension;
+        this.comparator = comparator;
+        this.filter = filter;
+        this.inboxItems = inboxRowListFromInboxMessages(values);
     }
 
     private View.OnClickListener onClickListener = new View.OnClickListener() {
@@ -44,28 +51,50 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
         }
     };
 
+    @Override
+    public int getItemViewType(int position) {
+        return extension.getItemViewType(inboxItems.get(position).message);
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(itemLayoutId, parent, false);
-        return new ViewHolder(view);
+        View view = LayoutInflater.from(parent.getContext()).inflate(extension.getLayoutForViewType(viewType), parent, false);
+        return new ViewHolder(view, extension.createViewHolderExtension(view, viewType));
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         InboxRow inboxRow = inboxItems.get(position);
         IterableInAppMessage.InboxMetadata inboxMetadata = inboxRow.inboxMetadata;
-        holder.title.setText(inboxMetadata.title);
-        holder.subtitle.setText(inboxMetadata.subtitle);
-        BitmapLoader.loadBitmap(holder.icon, Uri.parse(inboxMetadata.icon));
-        if (inboxRow.isRead) {
-            holder.unreadIndicator.setVisibility(View.INVISIBLE);
-        } else {
-            holder.unreadIndicator.setVisibility(View.VISIBLE);
+
+        if (holder.title != null) {
+            holder.title.setText(inboxMetadata.title);
         }
-        holder.date.setText(formatDate(inboxRow.createdAt));
+
+        if (holder.subtitle != null) {
+            holder.subtitle.setText(inboxMetadata.subtitle);
+        }
+
+        if (holder.icon != null) {
+            BitmapLoader.loadBitmap(holder.icon, Uri.parse(inboxMetadata.icon));
+        }
+
+        if (holder.unreadIndicator != null) {
+            if (inboxRow.isRead) {
+                holder.unreadIndicator.setVisibility(View.INVISIBLE);
+            } else {
+                holder.unreadIndicator.setVisibility(View.VISIBLE);
+            }
+        }
+
+        if (holder.date != null) {
+            holder.date.setText(formatDate(inboxRow.createdAt));
+        }
+
         holder.itemView.setTag(inboxRow.message);
         holder.itemView.setOnClickListener(onClickListener);
+        extension.onBindViewHolder(holder, holder.extension, inboxRow.message);
     }
 
     @Override
@@ -87,7 +116,7 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
         listener.onListItemImpressionEnded(message);
     }
 
-    public void setInboxItems(List<IterableInAppMessage> newValues) {
+    public void setInboxItems(@NonNull List<IterableInAppMessage> newValues) {
         List<InboxRow> newRowValues = inboxRowListFromInboxMessages(newValues);
         InAppMessageDiffCallback diffCallback = new InAppMessageDiffCallback(inboxItems, newRowValues);
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
@@ -96,35 +125,37 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
         diffResult.dispatchUpdatesTo(this);
     }
 
-    public void deleteItem(int position, IterableInAppDeleteActionType source) {
+    public void deleteItem(int position, @NonNull IterableInAppDeleteActionType source) {
         IterableInAppMessage deletedItem = inboxItems.get(position).message;
         inboxItems.remove(position);
         listener.onListItemDeleted(deletedItem, source);
         notifyItemRemoved(position);
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
-        private final TextView title;
-        private final TextView subtitle;
-        private final TextView date;
-        private final ImageView icon;
-        private final ImageView unreadIndicator;
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        public final @Nullable TextView title;
+        public final @Nullable TextView subtitle;
+        public final @Nullable TextView date;
+        public final @Nullable ImageView icon;
+        public final @Nullable ImageView unreadIndicator;
+        private Object extension;
 
-        public ViewHolder(View itemView) {
+        private ViewHolder(View itemView, Object extension) {
             super(itemView);
             title = itemView.findViewById(R.id.title);
             subtitle = itemView.findViewById(R.id.subtitle);
             icon = itemView.findViewById(R.id.imageView);
             unreadIndicator = itemView.findViewById(R.id.unreadIndicator);
             date = itemView.findViewById(R.id.date);
+            this.extension = extension;
         }
     }
 
     interface OnListInteractionListener {
-        void onListItemTapped(IterableInAppMessage message);
-        void onListItemDeleted(IterableInAppMessage message, IterableInAppDeleteActionType source);
-        void onListItemImpressionStarted(IterableInAppMessage message);
-        void onListItemImpressionEnded(IterableInAppMessage message);
+        void onListItemTapped(@NonNull IterableInAppMessage message);
+        void onListItemDeleted(@NonNull IterableInAppMessage message, IterableInAppDeleteActionType source);
+        void onListItemImpressionStarted(@NonNull IterableInAppMessage message);
+        void onListItemImpressionEnded(@NonNull IterableInAppMessage message);
     }
 
     private String formatDate(Date date) {
@@ -178,8 +209,16 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
     private List<InboxRow> inboxRowListFromInboxMessages(List<IterableInAppMessage> messages) {
         ArrayList<InboxRow> inboxRows = new ArrayList<>(messages.size());
         for (IterableInAppMessage message : messages) {
-            inboxRows.add(new InboxRow(message));
+            if (filter.filter(message)) {
+                inboxRows.add(new InboxRow(message));
+            }
         }
+        Collections.sort(inboxRows, new Comparator<InboxRow>() {
+            @Override
+            public int compare(InboxRow o1, InboxRow o2) {
+                return comparator.compare(o1.message, o2.message);
+            }
+        });
         return inboxRows;
     }
 

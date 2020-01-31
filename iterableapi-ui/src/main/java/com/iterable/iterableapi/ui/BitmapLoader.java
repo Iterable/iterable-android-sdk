@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
 import android.support.v4.view.ViewCompat;
 import android.widget.ImageView;
@@ -17,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.concurrent.Callable;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -25,7 +26,7 @@ public class BitmapLoader {
 
     private static final int DEFAULT_TIMEOUT_MS = 3000;
 
-    static public void loadBitmap(final ImageView imageView, final Uri uri) {
+    static public void loadBitmap(final @NonNull ImageView imageView, final @Nullable Uri uri) {
         if (uri == null || uri.getPath() == null || uri.getPath().isEmpty()) {
             IterableLogger.d("BitmapLoader", "Empty url for Thumbnail in inbox");
             return;
