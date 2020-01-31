@@ -29,9 +29,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The main class for Inbox UI. Renders the list of Inbox messages and handles touch interaction:
+ * tap on an item opens the in-app message, swipe left deletes it.
+ * <p>
+ * To customize the UI, either create the fragment with {@link #newInstance(InboxMode, int)},
+ * or subclass {@link IterableInboxFragment} to use {@link #setAdapterExtension(IterableInboxAdapterExtension)},
+ * {@link #setComparator(IterableInboxComparator)} and {@link #setFilter(IterableInboxFilter)}.
+ */
 public class IterableInboxFragment extends Fragment implements IterableInAppManager.Listener, IterableInboxAdapter.OnListInteractionListener {
     private static final String TAG = "IterableInboxFragment";
     public static final String INBOX_MODE = "inboxMode";
+    public static final String ITEM_LAYOUT_ID = "itemLayoutId";
 
     private InboxMode inboxMode = InboxMode.POPUP;
     private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
@@ -42,14 +51,29 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     private IterableInboxFilter filter = new DefaultInboxFilter();
     private boolean sessionStarted = false;
 
+    /**
+     * Create an Inbox fragment with default parameters
+     *
+     * @return {@link IterableInboxFragment} instance
+     */
     @NonNull public static IterableInboxFragment newInstance() {
         return new IterableInboxFragment();
     }
 
-    @NonNull public static IterableInboxFragment newInstance(@NonNull InboxMode inboxMode) {
+    /**
+     * Create an Inbox fragment with custom parameters for inbox mode and item layout id
+     * To customize beyond these parameters, subclass {@link IterableInboxFragment}.
+     * (see class description)
+     *
+     * @param inboxMode    Inbox mode
+     * @param itemLayoutId Layout resource id for inbox items. Pass 0 to use the default layout.
+     * @return {@link IterableInboxFragment} instance
+     */
+    @NonNull public static IterableInboxFragment newInstance(@NonNull InboxMode inboxMode, @LayoutRes int itemLayoutId) {
         IterableInboxFragment inboxFragment = new IterableInboxFragment();
         Bundle bundle = new Bundle();
         bundle.putSerializable(INBOX_MODE, inboxMode);
+        bundle.putInt(ITEM_LAYOUT_ID, itemLayoutId);
         inboxFragment.setArguments(bundle);
 
         return inboxFragment;
@@ -60,7 +84,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
      *
      * @param inboxMode Inbox mode
      */
-    public void setInboxMode(@NonNull InboxMode inboxMode) {
+    protected void setInboxMode(@NonNull InboxMode inboxMode) {
         this.inboxMode = inboxMode;
     }
 
@@ -70,7 +94,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
      *
      * @param adapterExtension Custom adapter extension implemented by the app
      */
-    public void setAdapterExtension(@NonNull IterableInboxAdapterExtension adapterExtension) {
+    protected void setAdapterExtension(@NonNull IterableInboxAdapterExtension adapterExtension) {
         if (adapterExtension != null) {
             this.adapterExtension = adapterExtension;
         }
@@ -81,7 +105,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
      *
      * @param comparator A{@link java.util.Comparator} implementation for {@link IterableInAppMessage}
      */
-    public void setComparator(@NonNull IterableInboxComparator comparator) {
+    protected void setComparator(@NonNull IterableInboxComparator comparator) {
         if (comparator != null) {
             this.comparator = comparator;
         }
@@ -92,7 +116,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
      *
      * @param filter Filter class that returns true or false to keep or exclude a message
      */
-    public void setFilter(@NonNull IterableInboxFilter filter) {
+    protected void setFilter(@NonNull IterableInboxFilter filter) {
         if (filter != null) {
             this.filter = filter;
         }
@@ -112,6 +136,9 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         if (arguments != null) {
             if (arguments.get(INBOX_MODE) instanceof InboxMode) {
                 inboxMode = (InboxMode) arguments.get(INBOX_MODE);
+            }
+            if (arguments.getInt(ITEM_LAYOUT_ID, 0) != 0) {
+                itemLayoutId = arguments.getInt(ITEM_LAYOUT_ID);
             }
         }
 
