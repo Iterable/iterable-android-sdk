@@ -8,7 +8,15 @@ import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
 import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.INBOX_MODE;
+import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.ITEM_LAYOUT_ID;
 
+/**
+ * An activity wrapping {@link IterableInboxFragment}
+ * <p>
+ * Supports optional extras:
+ * {@link IterableInboxFragment#INBOX_MODE} - {@link InboxMode} value with the inbox mode
+ * {@link IterableInboxFragment#ITEM_LAYOUT_ID} - Layout resource id for inbox items
+ */
 public class IterableInboxActivity extends AppCompatActivity {
     static final String TAG = "IterableInboxActivity";
 
@@ -20,12 +28,13 @@ public class IterableInboxActivity extends AppCompatActivity {
         IterableInboxFragment inboxFragment;
 
         if (getIntent() != null) {
-            Object inboxMode = getIntent().getSerializableExtra(INBOX_MODE);
-            if ((inboxMode instanceof InboxMode)) {
-                inboxFragment = IterableInboxFragment.newInstance((InboxMode) inboxMode);
-            } else {
-                inboxFragment = IterableInboxFragment.newInstance();
+            Object inboxModeExtra = getIntent().getSerializableExtra(INBOX_MODE);
+            int itemLayoutId = getIntent().getIntExtra(ITEM_LAYOUT_ID, 0);
+            InboxMode inboxMode = InboxMode.POPUP;
+            if (inboxModeExtra instanceof InboxMode) {
+                inboxMode = (InboxMode) inboxModeExtra;
             }
+            inboxFragment = IterableInboxFragment.newInstance(inboxMode, itemLayoutId);
         } else {
             inboxFragment = IterableInboxFragment.newInstance();
         }
@@ -36,6 +45,5 @@ public class IterableInboxActivity extends AppCompatActivity {
                     .commitNow();
         }
     }
-
 
 }
