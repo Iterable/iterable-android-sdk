@@ -26,7 +26,7 @@ class IterableInAppDisplayer {
         Activity currentActivity = activityMonitor.getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
-            return IterableInAppDisplayer.showIterableFragmentNotificationHTML(currentActivity,
+            return IterableInAppDisplayer.showIterableNotificationHTML(currentActivity,
                     message.getContent().html,
                     message.getMessageId(),
                     clickCallback,
