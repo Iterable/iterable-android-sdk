@@ -6,8 +6,6 @@ import android.content.DialogInterface;
 import android.graphics.Rect;
 import android.support.v4.app.FragmentActivity;
 
-import java.util.Random;
-
 class IterableInAppDisplayer {
 
     private final IterableActivityMonitor activityMonitor;
@@ -97,22 +95,12 @@ class IterableInAppDisplayer {
                     return false;
                 }
 
-                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(context, htmlString);
+                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(context, htmlString, callbackOnCancel);
                 notification.setTrackParams(messageId);
                 notification.setCallback(clickCallback);
                 notification.setBackgroundAlpha(backgroundAlpha);
                 notification.setPadding(padding);
-                //notification.setOwnerActivity(currentActivity);
                 notification.setLocation(location);
-
-                if (callbackOnCancel) {
-//                    notification.getDialog().setOnCancelListener(new DialogInterface.OnCancelListener() {
-//                        @Override
-//                        public void onCancel(DialogInterface dialog) {
-//                            clickCallback.execute(null);
-//                        }
-//                    });
-                }
 
                 notification.show(currentActivity.getSupportFragmentManager(), "iterable_in_app");
                 return true;

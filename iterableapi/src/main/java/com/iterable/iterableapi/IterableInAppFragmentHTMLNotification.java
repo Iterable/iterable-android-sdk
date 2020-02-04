@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -45,16 +46,19 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     IterableHelper.IterableUrlCallback clickCallback;
     IterableInAppLocation location;
 
+    private boolean callbackOnCancel = false;
+
     /**
      * Creates a static instance of the notification
      * @param context
      * @param htmlString
      * @return
      */
-    public static IterableInAppFragmentHTMLNotification createInstance(Context context, String htmlString) {
+    public static IterableInAppFragmentHTMLNotification createInstance(Context context, String htmlString, boolean callbackOnCancel) {
         notification = new IterableInAppFragmentHTMLNotification();
         Bundle args = new Bundle();
         args.putString("html", htmlString);
+        args.putBoolean("callbackOnCancel", callbackOnCancel);
         notification.setArguments(args);
         notification.setStyle(DialogFragment.STYLE_NO_FRAME, R.style.Theme_AppCompat_NoActionBar);
         return notification;
@@ -84,6 +88,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         Bundle args = getArguments();
         if (args != null) {
             htmlString = args.getString("html", null);
+            callbackOnCancel = args.getBoolean("callbackOnCancel", false);
         }
     }
 
@@ -141,6 +146,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 super.onBackPressed();
             }
         };
+        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override public void onCancel(DialogInterface dialog) {
+                if (callbackOnCancel) {
+                    clickCallback.execute(null);
+                }
+            }
+        });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         return dialog;
