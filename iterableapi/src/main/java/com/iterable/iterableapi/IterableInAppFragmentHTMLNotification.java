@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -10,27 +11,31 @@ import android.graphics.drawable.ColorDrawable;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
 
-public class IterableInAppHTMLNotification extends Dialog implements IterableWebViewClient.HTMLNotificationCallbacks {
+public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
 
     static final String BACK_BUTTON = "itbl://backButton";
     static final String JAVASCRIPT_INTERFACE = "ITBL";
-    private static final String TAG = "IterableInAppHTMLNotification";
+    private static final String TAG = "IterableInAppFragmentHTMLNotification";
 
-    static IterableInAppHTMLNotification notification;
+    static IterableInAppFragmentHTMLNotification notification;
 
-    Context context;
     IterableWebView webView;
     Boolean loaded;
     OrientationEventListener orientationListener;
@@ -41,14 +46,21 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
     IterableHelper.IterableUrlCallback clickCallback;
     IterableInAppLocation location;
 
+    private boolean callbackOnCancel = false;
+
     /**
      * Creates a static instance of the notification
      * @param context
      * @param htmlString
      * @return
      */
-    public static IterableInAppHTMLNotification createInstance(Context context, String htmlString) {
-        notification = new IterableInAppHTMLNotification(context, htmlString);
+    public static IterableInAppFragmentHTMLNotification createInstance(Context context, String htmlString, boolean callbackOnCancel) {
+        notification = new IterableInAppFragmentHTMLNotification();
+        Bundle args = new Bundle();
+        args.putString("html", htmlString);
+        args.putBoolean("callbackOnCancel", callbackOnCancel);
+        notification.setArguments(args);
+        notification.setStyle(DialogFragment.STYLE_NO_FRAME, R.style.Theme_AppCompat_NoActionBar);
         return notification;
     }
 
@@ -56,24 +68,28 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * Returns the notification instance currently being shown
      * @return notification instance
      */
-    public static IterableInAppHTMLNotification getInstance() {
+    public static IterableInAppFragmentHTMLNotification getInstance() {
         return notification;
     }
 
     /**
      * HTML In-App Notification
-     * @param context
-     * @param htmlString
      */
-    private IterableInAppHTMLNotification(Context context, String htmlString) {
-        super(context, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
-
-        this.context = context;
-        this.htmlString = htmlString;
+    public IterableInAppFragmentHTMLNotification() {
         this.loaded = false;
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Bundle args = getArguments();
+        if (args != null) {
+            htmlString = args.getString("html", null);
+            callbackOnCancel = args.getBoolean("callbackOnCancel", false);
+        }
     }
 
     /**
@@ -120,30 +136,48 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
         this.location = location;
     }
 
-    /**
-     * Tracks a button click when the back button is pressed
-     */
+    @NonNull
     @Override
-    public void onBackPressed() {
-        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON, location);
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
-        super.onBackPressed();
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        Dialog dialog = new Dialog(getActivity(), getTheme()){
+            @Override
+            public void onBackPressed() {
+                IterableInAppFragmentHTMLNotification.this.onBackPressed();
+                super.onBackPressed();
+            }
+        };
+        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override public void onCancel(DialogInterface dialog) {
+                if (callbackOnCancel) {
+                    clickCallback.execute(null);
+                }
+            }
+        });
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        return dialog;
     }
 
     /**
-     * Sets up the webview and the dialog layout
+     * Tracks a button click when the back button is pressed
      */
+    public void onBackPressed() {
+        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
+        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
+    }
+
+    @Nullable
     @Override
-    protected void onStart() {
-        super.onStart();
-        this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        webView = new IterableWebView(context);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
         webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
 
         if (orientationListener == null) {
-            orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
+            orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
                 public void onOrientationChanged(int orientation) {
                     // Resize the webview on device rotation
                     if (loaded) {
@@ -161,20 +195,30 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
         orientationListener.enable();
 
         RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.MATCH_PARENT);
         relativeLayout.addView(webView, layoutParams);
-        setContentView(relativeLayout, layoutParams);
 
         IterableApi.sharedInstance.trackInAppOpen(messageId, location);
+        return relativeLayout;
+    }
+
+    /**
+     * Sets up the webview and the dialog layout
+     */
+    @Override
+    public void onStart() {
+        super.onStart();
+        getDialog().getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
     }
 
     /**
      * On Stop of the dialog
      */
     @Override
-    protected void onStop() {
+    public void onStop() {
         orientationListener.disable();
         notification = null;
+        super.onStop();
     }
 
     @Override
@@ -191,7 +235,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      */
     @JavascriptInterface
     public void resize(final float height) {
-        final Activity activity = getOwnerActivity();
+        final Activity activity = getActivity();
         if (activity == null) {
             return;
         }
@@ -201,15 +245,15 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
             public void run() {
                 try {
                     // Since this is run asynchronously, notification might've been dismissed already
-                    if (notification == null || notification.getWindow() == null || !notification.isShowing()) {
+                    if (notification == null || notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
                         return;
                     }
 
                     DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
-                    Window window = notification.getWindow();
+                    Window window = notification.getDialog().getWindow();
                     Rect insetPadding = notification.insetPadding;
 
-                    WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                    WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
                     Display display = wm.getDefaultDisplay();
                     Point size = new Point();
 
@@ -228,7 +272,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
                         //Handle full screen
                         window.setLayout(webViewWidth, webViewHeight);
 
-                        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                        getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
                         // Calculates the dialog size
                         double notificationWidth = 100 - (insetPadding.left + insetPadding.right);
