@@ -43,9 +43,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     String messageId;
     double backgroundAlpha;
     Rect insetPadding;
-    IterableHelper.IterableUrlCallback clickCallback;
-    IterableInAppLocation location;
-
+    static IterableHelper.IterableUrlCallback clickCallback;
+    static IterableInAppLocation location;
     private boolean callbackOnCancel = false;
 
     /**
@@ -54,11 +53,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * @param htmlString
      * @return
      */
-    public static IterableInAppFragmentHTMLNotification createInstance(Context context, String htmlString, boolean callbackOnCancel) {
+    public static IterableInAppFragmentHTMLNotification createInstance(Context context, String htmlString, boolean callbackOnCancel, IterableHelper.IterableUrlCallback clickCallback, IterableInAppLocation location) {
+
         notification = new IterableInAppFragmentHTMLNotification();
         Bundle args = new Bundle();
         args.putString("html", htmlString);
         args.putBoolean("callbackOnCancel", callbackOnCancel);
+        IterableInAppFragmentHTMLNotification.clickCallback = clickCallback;
+        IterableInAppFragmentHTMLNotification.location = location;
         notification.setArguments(args);
         notification.setStyle(DialogFragment.STYLE_NO_FRAME, R.style.Theme_AppCompat_NoActionBar);
         return notification;
@@ -90,6 +92,17 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             htmlString = args.getString("html", null);
             callbackOnCancel = args.getBoolean("callbackOnCancel", false);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (this.getActivity() != null && this.getActivity().isChangingConfigurations()) {
+            return;
+        }
+        notification = null;
+        clickCallback = null;
+        location = null;
     }
 
     /**
@@ -217,7 +230,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onStop() {
         orientationListener.disable();
-        notification = null;
         super.onStop();
     }
 
@@ -245,7 +257,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             public void run() {
                 try {
                     // Since this is run asynchronously, notification might've been dismissed already
-                    if (notification == null || notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
+                    if (notification == null || notification.getDialog() == null || notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
                         return;
                     }
 
