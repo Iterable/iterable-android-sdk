@@ -13,7 +13,7 @@ public class IterableInboxMessageActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.inbox_message_activity);
+        setContentView(R.layout.iterable_inbox_message_activity);
         IterableLogger.printInfo();
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()

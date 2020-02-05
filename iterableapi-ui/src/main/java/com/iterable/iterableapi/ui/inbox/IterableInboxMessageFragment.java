@@ -57,7 +57,7 @@ public class IterableInboxMessageFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view  = inflater.inflate(R.layout.inbox_message_fragment, container, false);
+        View view  = inflater.inflate(R.layout.iterable_inbox_message_fragment, container, false);
         webView = view.findViewById(R.id.webView);
         loadMessage();
         return view;

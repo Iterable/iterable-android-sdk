@@ -24,7 +24,7 @@ public class IterableInboxActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         IterableLogger.printInfo();
-        setContentView(R.layout.inbox_activity);
+        setContentView(R.layout.iterable_inbox_activity);
         IterableInboxFragment inboxFragment;
 
         if (getIntent() != null) {
