@@ -1,7 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.iterable.iterableapi.ui">
     <application>
-        <activity android:name=".inbox.IterableInboxActivity"/>
-        <activity android:name=".inbox.IterableInboxMessageActivity"/>
+        <activity
+            android:name=".inbox.IterableInboxActivity"
+            android:label="Inbox"/>
+        <activity
+            android:name=".inbox.IterableInboxMessageActivity"/>
     </application>
 </manifest>
