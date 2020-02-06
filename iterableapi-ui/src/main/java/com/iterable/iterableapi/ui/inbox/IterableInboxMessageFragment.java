@@ -82,6 +82,9 @@ public class IterableInboxMessageFragment extends Fragment {
                 IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.INBOX);
                 loaded = true;
             }
+            if (getActivity() != null) {
+                getActivity().setTitle(message.getInboxMetadata().title);
+            }
         }
     }
 
