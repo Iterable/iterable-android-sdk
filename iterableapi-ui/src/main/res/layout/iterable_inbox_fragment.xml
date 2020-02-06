@@ -8,4 +8,4 @@
     android:layout_height="match_parent"
     app:layoutManager="LinearLayoutManager"
     tools:context=".inbox.IterableInboxFragment"
-    tools:listitem="@layout/fragment_inbox_item" />
+    tools:listitem="@layout/iterable_inbox_item" />

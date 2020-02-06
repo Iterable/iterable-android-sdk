@@ -43,7 +43,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     public static final String ITEM_LAYOUT_ID = "itemLayoutId";
 
     private InboxMode inboxMode = InboxMode.POPUP;
-    private @LayoutRes int itemLayoutId = R.layout.fragment_inbox_item;
+    private @LayoutRes int itemLayoutId = R.layout.iterable_inbox_item;
 
     private final SessionManager sessionManager = new SessionManager();
     private IterableInboxAdapterExtension adapterExtension = new DefaultAdapterExtension();
@@ -142,7 +142,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
             }
         }
 
-        RecyclerView view = (RecyclerView) inflater.inflate(R.layout.fragment_inbox_list, container, false);
+        RecyclerView view = (RecyclerView) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
         IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter);
         view.setAdapter(adapter);
