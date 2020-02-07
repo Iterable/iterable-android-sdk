@@ -1,6 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 public class IterableDefaultInAppHandler implements IterableInAppHandler {
     @NonNull

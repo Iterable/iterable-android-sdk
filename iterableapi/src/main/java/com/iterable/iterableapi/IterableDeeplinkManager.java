@@ -1,8 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;

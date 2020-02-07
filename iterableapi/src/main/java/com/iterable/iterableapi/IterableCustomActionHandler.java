@@ -1,6 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Custom action handler interface

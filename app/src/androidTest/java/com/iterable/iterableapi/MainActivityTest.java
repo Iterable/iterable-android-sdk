@@ -1,7 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.content.Intent;
-import android.support.v7.widget.RecyclerView;
+import androidx.recyclerview.widget.RecyclerView;
 import android.view.View;
 
 import androidx.test.espresso.action.ViewActions;
