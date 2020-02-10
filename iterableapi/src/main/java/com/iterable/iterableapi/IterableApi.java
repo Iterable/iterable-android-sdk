@@ -341,16 +341,6 @@ public class IterableApi {
     }
 
     /**
-     * Call onNewIntent to set the payload data and track pushOpens directly if
-     * sharedInstanceWithApiKey was called with a Context rather than an Activity.
-     * @deprecated Push opens are now tracked automatically.
-     */
-    @Deprecated
-    public void onNewIntent(Intent intent) {
-
-    }
-
-    /**
      * Returns whether or not the intent was sent from Iterable.
      */
     public boolean isIterableIntent(Intent intent) {
@@ -367,44 +357,14 @@ public class IterableApi {
      * @param token Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(String token) {
-        registerDeviceToken(getPushIntegrationName(), token);
+        registerDeviceToken(_email, _userId, getPushIntegrationName(), token);
     }
 
-    /**
-     * Registers a device token with Iterable.
-     * @param applicationName
-     * @param token
-     * @deprecated Call {@link #registerDeviceToken(String)} instead and specify the push
-     * integration name in {@link IterableConfig#pushIntegrationName}
-     */
-    @Deprecated
-    public void registerDeviceToken(String applicationName, String token) {
-        registerDeviceToken(applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
-    }
-
-    /**
-     * Registers a device token with Iterable.
-     * @param applicationName
-     * @param token
-     * @param pushServicePlatform
-     * @deprecated Call {@link #registerDeviceToken(String)} instead and specify the push
-     * integration name in {@link IterableConfig#pushIntegrationName}
-     */
-    @Deprecated
-    public void registerDeviceToken(final String applicationName, final String token, final String pushServicePlatform) {
-        registerDeviceToken(_email, _userId, applicationName, token, pushServicePlatform);
-    }
-
-    protected void registerDeviceToken(final String email, final String userId, final String applicationName, final String token, final String pushServicePlatform) {
-        if (!IterableConstants.MESSAGING_PLATFORM_FIREBASE.equals(pushServicePlatform)) {
-            IterableLogger.e(TAG, "registerDeviceToken: only MESSAGING_PLATFORM_FIREBASE is supported.");
-            return;
-        }
-
+    protected void registerDeviceToken(final String email, final String userId, final String applicationName, final String token) {
         if (token != null) {
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(email, userId, applicationName, token, IterableConstants.MESSAGING_PLATFORM_FIREBASE, null);
+                    registerDeviceToken(email, userId, applicationName, token, null);
                 }
             });
             registrationThread.start();
@@ -621,84 +581,10 @@ public class IterableApi {
     }
 
     /**
-     * Registers for push notifications.
-     * @param pushIntegrationName
-     * @param gcmProjectNumber
-     * @deprecated Call {@link #registerForPush()} instead and specify the push
-     * integration name in {@link IterableConfig#pushIntegrationName}
-     */
-    @Deprecated
-    public void registerForPush(String pushIntegrationName, String gcmProjectNumber) {
-        registerForPush(pushIntegrationName, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
-    }
-
-    /**
-     * Registers for push notifications.
-     * @param pushIntegrationName
-     * @param projectNumber
-     * @param pushServicePlatform
-     * @deprecated Call {@link #registerForPush()} instead and specify the push
-     * integration name in {@link IterableConfig#pushIntegrationName}
-     */
-    @Deprecated
-    public void registerForPush(String pushIntegrationName, String projectNumber, String pushServicePlatform) {
-        if (!IterableConstants.MESSAGING_PLATFORM_FIREBASE.equals(pushServicePlatform)) {
-            IterableLogger.e(TAG, "registerDeviceToken: only MESSAGING_PLATFORM_FIREBASE is supported.");
-            return;
-        }
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, pushIntegrationName, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        new IterablePushRegistration().execute(data);
-    }
-
-    /**
-     * Registers for push notifications.
-     * @param pushIntegrationName
-     * @deprecated Call {@link #registerForPush()} instead and specify the push
-     * integration name in {@link IterableConfig#pushIntegrationName}
-     */
-    @Deprecated
-    public void registerForPush(String pushIntegrationName) {
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, pushIntegrationName, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        new IterablePushRegistration().execute(data);
-    }
-
-    /**
      * Disables the device from push notifications
      */
     public void disablePush() {
         IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        new IterablePushRegistration().execute(data);
-    }
-
-    /**
-     * Disables the device from push notifications
-     * @param iterableAppId
-     * @param gcmProjectNumber
-     * @deprecated Call {@link #disablePush()} instead and specify the push
-     * integration name in {@link IterableConfig#pushIntegrationName}
-     */
-    @Deprecated
-    public void disablePush(String iterableAppId, String gcmProjectNumber) {
-        disablePush(iterableAppId, gcmProjectNumber, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
-    }
-
-    /**
-     * Disables the device from push notifications
-     * @param iterableAppId
-     * @param projectNumber
-     * @param pushServicePlatform
-     * @deprecated Call {@link #disablePush()} instead and specify the push
-     * integration name in {@link IterableConfig#pushIntegrationName}
-     */
-    @Deprecated
-    public void disablePush(String iterableAppId, String projectNumber, String pushServicePlatform) {
-        if (!IterableConstants.MESSAGING_PLATFORM_FIREBASE.equals(pushServicePlatform)) {
-            IterableLogger.e(TAG, "registerDeviceToken: only MESSAGING_PLATFORM_FIREBASE is supported.");
-            return;
-        }
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, iterableAppId, projectNumber, pushServicePlatform, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
     }
 
@@ -1201,10 +1087,9 @@ public class IterableApi {
      * Registers the GCM registration ID with Iterable.
      * @param applicationName
      * @param token
-     * @param pushServicePlatform
      * @param dataFields
      */
-    protected void registerDeviceToken(String email, String userId, String applicationName, String token, String pushServicePlatform, JSONObject dataFields) {
+    protected void registerDeviceToken(String email, String userId, String applicationName, String token, JSONObject dataFields) {
         if (!checkSDKInitialization()) {
             return;
         }

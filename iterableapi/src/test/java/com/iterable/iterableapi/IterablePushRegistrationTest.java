@@ -74,7 +74,7 @@ public class IterablePushRegistrationTest extends BaseTest {
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         new IterablePushRegistration().execute(data);
 
-        verify(apiMock, timeout(100)).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+        verify(apiMock, timeout(100)).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), eq(INTEGRATION_NAME), eq(TEST_TOKEN));
         verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), nullable(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }
 
@@ -102,7 +102,7 @@ public class IterablePushRegistrationTest extends BaseTest {
         new IterablePushRegistration().execute(data);
 
         ArgumentCaptor<IterableHelper.SuccessHandler> successHandlerCaptor = ArgumentCaptor.forClass(IterableHelper.SuccessHandler.class);
-        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN), eq(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN));
         verify(apiMock, times(1)).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), eq(OLD_TOKEN), successHandlerCaptor.capture(), nullable(IterableHelper.FailureHandler.class));
         successHandlerCaptor.getValue().onSuccess(new JSONObject());
 
@@ -110,7 +110,7 @@ public class IterablePushRegistrationTest extends BaseTest {
 
         new IterablePushRegistration().execute(data);
 
-        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN), eq(IterableConstants.MESSAGING_PLATFORM_FIREBASE));
+        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN));
         verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }
 

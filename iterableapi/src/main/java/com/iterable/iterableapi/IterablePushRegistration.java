@@ -32,8 +32,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                             iterablePushRegistrationData.email,
                             iterablePushRegistrationData.userId,
                             iterablePushRegistrationData.pushIntegrationName,
-                            pushRegistrationObject.token,
-                            IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+                            pushRegistrationObject.token);
 
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                     IterableApi.sharedInstance.disableToken(
