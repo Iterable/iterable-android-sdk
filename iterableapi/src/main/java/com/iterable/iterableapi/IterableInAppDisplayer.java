@@ -95,13 +95,10 @@ class IterableInAppDisplayer {
                     return false;
                 }
 
-                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(context, htmlString, callbackOnCancel);
+                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(context, htmlString, callbackOnCancel, clickCallback, location);
                 notification.setTrackParams(messageId);
-                notification.setCallback(clickCallback);
                 notification.setBackgroundAlpha(backgroundAlpha);
                 notification.setPadding(padding);
-                notification.setLocation(location);
-
                 notification.show(currentActivity.getSupportFragmentManager(), "iterable_in_app");
                 return true;
             }
