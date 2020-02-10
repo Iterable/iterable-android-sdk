@@ -1,0 +1,8 @@
+{
+  "itbl": {
+    "campaignId": 1234,
+    "templateId": 4321,
+    "messageId": "123456789abcdef",
+    "isGhostPush": true
+  }
+}
