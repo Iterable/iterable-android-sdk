@@ -270,8 +270,8 @@ class IterableNotificationHelper {
                     channelName = info.metaData.getString(IterableConstants.NOTIFICATION_CHANNEL_NAME);
 
                     // Try to read from a string resource
-                    if (channelName == null) {
-                        int stringId = info.metaData.getInt(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+                    int stringId = info.metaData.getInt(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+                    if (channelName == null && stringId != 0) {
                         channelName = context.getString(stringId);
                     }
                     IterableLogger.d(IterableNotificationBuilder.TAG, "channel name: " + channelName);
