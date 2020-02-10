@@ -18,6 +18,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Map;
+
 class IterableNotificationHelper {
     private static final String DEFAULT_CHANNEL_NAME = "iterable channel";
 
@@ -77,6 +79,14 @@ class IterableNotificationHelper {
      */
     static boolean isEmptyBody(Bundle extras) {
         return instance.isEmptyBody(extras);
+    }
+
+    static Bundle mapToBundle(Map<String,String> map) {
+        Bundle bundle = new Bundle();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            bundle.putString(entry.getKey(), entry.getValue());
+        }
+        return bundle;
     }
 
     static class IterableNotificationHelperImpl {
