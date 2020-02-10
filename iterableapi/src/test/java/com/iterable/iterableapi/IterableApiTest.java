@@ -81,7 +81,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().inAppConsume("12345");
         IterableApi.getInstance().trackInAppClick("12345", "");
         IterableApi.getInstance().registerDeviceToken("12345");
-        IterableApi.getInstance().disablePush("12345", "12345");
+        IterableApi.getInstance().disablePush();
         IterableApi.getInstance().updateUser(new JSONObject());
         IterableApi.getInstance().updateEmail("");
         IterableApi.getInstance().trackPurchase(10.0, new ArrayList<CommerceItem>());
@@ -264,7 +264,7 @@ public class IterableApiTest extends BaseTest {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
-        IterableApi.getInstance().registerDeviceToken("pushIntegration", "token", IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+        IterableApi.getInstance().registerDeviceToken("token");
         Thread.sleep(100);  // Since the network request is queued from a background thread, we need to wait
         Robolectric.flushBackgroundThreadScheduler();
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
@@ -287,7 +287,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setUserId("testUserId");
-        IterableApi.getInstance().registerDeviceToken("pushIntegration", "token", IterableConstants.MESSAGING_PLATFORM_FIREBASE);
+        IterableApi.getInstance().registerDeviceToken("token");
         Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
         Robolectric.flushBackgroundThreadScheduler();
 
