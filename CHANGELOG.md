@@ -15,6 +15,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.1.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.6)
+#### Added
+- Added a new static method to `IterableFirebaseMessagingService`: `isGhostPush`. Use this method to determine whether a Firebase message is an Iterable ghost push or silent push message.
+
+#### Fixed
+- Fixed the height of full-screen in-app messages to make sure they're not clipped by the Android navigation bar.
+- The SDK doesn't log an error message anymore when a custom notification channel name is not set.
+
 ## [3.1.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.5)
 #### Changed
 - Automatic push registration is now only done if the app is running in foreground
