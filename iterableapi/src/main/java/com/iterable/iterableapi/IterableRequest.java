@@ -276,11 +276,11 @@ class IterableApiRequest {
     static String GET = "GET";
     static String POST = "POST";
 
-    String apiKey = "";
-    String baseUrl = null;
-    String resourcePath = "";
-    JSONObject json;
-    String requestType = "";
+    final String apiKey;
+    final String baseUrl;
+    final String resourcePath;
+    final JSONObject json;
+    final String requestType;
 
     IterableHelper.IterableActionHandler legacyCallback;
     IterableHelper.SuccessHandler successCallback;
@@ -298,6 +298,7 @@ class IterableApiRequest {
 
     public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
+        this.baseUrl = null;
         this.resourcePath = resourcePath;
         this.json = json;
         this.requestType = requestType;
@@ -307,6 +308,7 @@ class IterableApiRequest {
 
     public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, final IterableHelper.IterableActionHandler callback) {
         this.apiKey = apiKey;
+        this.baseUrl = null;
         this.resourcePath = resourcePath;
         this.json = json;
         this.requestType = requestType;

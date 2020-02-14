@@ -1,6 +1,5 @@
 package com.iterable.iterableapi;
 
-import android.net.Uri;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 

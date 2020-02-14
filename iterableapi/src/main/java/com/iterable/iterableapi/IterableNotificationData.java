@@ -42,7 +42,7 @@ class IterableNotificationData {
             // Action buttons
             JSONArray actionButtonsJson = iterableJson.optJSONArray(IterableConstants.ITERABLE_DATA_ACTION_BUTTONS);
             if (actionButtonsJson != null) {
-                actionButtons = new ArrayList<Button>();
+                actionButtons = new ArrayList<>();
                 for (int i = 0; i < actionButtonsJson.length(); i++) {
                     JSONObject button = actionButtonsJson.getJSONObject(i);
                     actionButtons.add(new Button(button));
