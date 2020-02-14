@@ -37,7 +37,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     static IterableInAppFragmentHTMLNotification notification;
 
     IterableWebView webView;
-    Boolean loaded;
+    boolean loaded;
     OrientationEventListener orientationListener;
     String htmlString;
     String messageId;
@@ -125,7 +125,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * Sets the loaded flag
      * @param loaded
      */
-    public void setLoaded(Boolean loaded) {
+    public void setLoaded(boolean loaded) {
         this.loaded = loaded;
     }
 

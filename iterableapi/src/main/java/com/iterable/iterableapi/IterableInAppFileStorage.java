@@ -178,7 +178,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
 
         File file = new File(folder, "index.html");
-        Boolean result = IterableUtil.writeFile(file, contentHTML);
+        boolean result = IterableUtil.writeFile(file, contentHTML);
         if (!result) {
             IterableLogger.e(TAG, "Failed to store HTML content");
         }
@@ -194,7 +194,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             }
         }
 
-        Boolean result = folder.mkdir();
+        boolean result = folder.mkdir();
         if (result) {
             return folder;
         } else {
@@ -204,34 +204,29 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
 
     private File getInAppContentFolder() {
         File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(this.context);
-        File inAppContentFolder = IterableUtil.getDirectory(sdkFilesDirectory, FOLDER_PATH);
-        return inAppContentFolder;
+        return IterableUtil.getDirectory(sdkFilesDirectory, FOLDER_PATH);
     }
 
+    @NonNull
     private File getFolderForMessage(String messageID) {
         return new File(getInAppContentFolder(), messageID);
     }
 
     private File getFileForContent(String messageID) {
         File folder = getFolderForMessage(messageID);
-        File file = new File(folder, "index.html");
-        return file;
+        return new File(folder, "index.html");
     }
 
     @Nullable
     @Override
     public String getHTML(@NonNull String messageID) {
         File file = getFileForContent(messageID);
-        String contentHTML = IterableUtil.readFile(file);
-        return contentHTML;
+        return IterableUtil.readFile(file);
     }
 
     @Override
     public void removeHTML(@NonNull String messageID) {
         File folder = getFolderForMessage(messageID);
-        if (folder == null) {
-            return;
-        }
 
         File[] files = folder.listFiles();
         if (files == null) {

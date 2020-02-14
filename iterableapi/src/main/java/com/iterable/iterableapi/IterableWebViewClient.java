@@ -41,6 +41,6 @@ class IterableWebViewClient extends WebViewClient {
 
     public interface HTMLNotificationCallbacks {
         void onUrlClicked(String url);
-        void setLoaded(Boolean loaded);
+        void setLoaded(boolean loaded);
     }
 }
