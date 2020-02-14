@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 /**
@@ -90,7 +91,8 @@ public class IterableConfig {
          * If this field is not set, Iterable SDK defaults it to the app's package name
          * @param pushIntegrationName Push integration name
          */
-        public Builder setPushIntegrationName(String pushIntegrationName) {
+        @NonNull
+        public Builder setPushIntegrationName(@NonNull String pushIntegrationName) {
             this.pushIntegrationName = pushIntegrationName;
             return this;
         }
@@ -99,7 +101,8 @@ public class IterableConfig {
          * Set a custom URL handler to override openUrl actions
          * @param urlHandler Custom URL handler provided by the app
          */
-        public Builder setUrlHandler(IterableUrlHandler urlHandler) {
+        @NonNull
+        public Builder setUrlHandler(@NonNull IterableUrlHandler urlHandler) {
             this.urlHandler = urlHandler;
             return this;
         }
@@ -108,7 +111,8 @@ public class IterableConfig {
          * Set an action handler for custom actions
          * @param customActionHandler Custom action handler provided by the app
          */
-        public Builder setCustomActionHandler(IterableCustomActionHandler customActionHandler) {
+        @NonNull
+        public Builder setCustomActionHandler(@NonNull IterableCustomActionHandler customActionHandler) {
             this.customActionHandler = customActionHandler;
             return this;
         }
@@ -120,6 +124,7 @@ public class IterableConfig {
          * and disable the old device entry when the user logs out
          * @param enabled Enable automatic push token registration
          */
+        @NonNull
         public Builder setAutoPushRegistration(boolean enabled) {
             this.autoPushRegistration = enabled;
             return this;
@@ -130,7 +135,8 @@ public class IterableConfig {
          * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
          * @param legacyGCMSenderId legacy GCM sender ID
          */
-        public Builder setLegacyGCMSenderId(String legacyGCMSenderId) {
+        @NonNull
+        public Builder setLegacyGCMSenderId(@NonNull String legacyGCMSenderId) {
             this.legacyGCMSenderId = legacyGCMSenderId;
             return this;
         }
@@ -140,6 +146,7 @@ public class IterableConfig {
          * after installation.
          * @param checkForDeferredDeeplink Enable deferred deep link checks on first launch
          */
+        @NonNull
         public Builder setCheckForDeferredDeeplink(boolean checkForDeferredDeeplink) {
             this.checkForDeferredDeeplink = checkForDeferredDeeplink;
             return this;
@@ -149,6 +156,7 @@ public class IterableConfig {
          * Set the log level for Iterable SDK log messages
          * @param logLevel Log level, defaults to {@link Log#ERROR}
          */
+        @NonNull
         public Builder setLogLevel(int logLevel) {
             this.logLevel = logLevel;
             return this;
@@ -159,7 +167,8 @@ public class IterableConfig {
          * should be shown immediately or not
          * @param inAppHandler In-app handler provided by the app
          */
-        public Builder setInAppHandler(IterableInAppHandler inAppHandler) {
+        @NonNull
+        public Builder setInAppHandler(@NonNull IterableInAppHandler inAppHandler) {
             this.inAppHandler = inAppHandler;
             return this;
         }
@@ -169,11 +178,13 @@ public class IterableConfig {
          * the next in-app message, if there are multiple messages in the queue
          * @param inAppDisplayInterval display interval in seconds
          */
+        @NonNull
         public Builder setInAppDisplayInterval(double inAppDisplayInterval) {
             this.inAppDisplayInterval = inAppDisplayInterval;
             return this;
         }
 
+        @NonNull
         public IterableConfig build() {
             return new IterableConfig(this);
         }

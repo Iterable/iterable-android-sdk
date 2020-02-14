@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 
@@ -91,7 +92,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                     if (oldToken != null) {
                         IterableApi.sharedInstance.disableToken(iterablePushRegistrationData.email, iterablePushRegistrationData.userId, oldToken, new IterableHelper.SuccessHandler() {
                             @Override
-                            public void onSuccess(JSONObject data) {
+                            public void onSuccess(@NonNull JSONObject data) {
                                 sharedPref.edit().putBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, true).apply();
                             }
                         }, null);

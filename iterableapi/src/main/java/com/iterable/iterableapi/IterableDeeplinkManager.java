@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
@@ -19,7 +21,7 @@ class IterableDeeplinkManager {
      * @param url The URL that was clicked
      * @param callback The callback to execute the original URL is retrieved
      */
-    static void getAndTrackDeeplink(String url, IterableHelper.IterableActionHandler callback) {
+    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
         if (url != null) {
             if (isIterableDeeplink(url)) {
                 new RedirectTask(callback).execute(url);
@@ -36,7 +38,7 @@ class IterableDeeplinkManager {
      * @param url The URL to check
      * @return `true` if it looks like a link rewritten by Iterable, `false` otherwise
      */
-    static boolean isIterableDeeplink(String url) {
+    static boolean isIterableDeeplink(@Nullable String url) {
         if (url != null) {
             Matcher m = deeplinkPattern.matcher(url);
             if (m.find()) {

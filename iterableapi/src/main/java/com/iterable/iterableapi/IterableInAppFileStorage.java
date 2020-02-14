@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONArray;
@@ -37,25 +39,27 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         load();
     }
 
+    @NonNull
     @Override
     public synchronized List<IterableInAppMessage> getMessages() {
         return new ArrayList<>(messages.values());
     }
 
+    @Nullable
     @Override
-    public synchronized IterableInAppMessage getMessage(String messageId) {
+    public synchronized IterableInAppMessage getMessage(@NonNull String messageId) {
         return messages.get(messageId);
     }
 
     @Override
-    public synchronized void addMessage(IterableInAppMessage message) {
+    public synchronized void addMessage(@NonNull IterableInAppMessage message) {
         messages.put(message.getMessageId(), message);
         message.setOnChangeListener(this);
         saveMessagesInBackground();
     }
 
     @Override
-    public synchronized void removeMessage(IterableInAppMessage message) {
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message) {
         message.setOnChangeListener(null);
         removeHTML(message.getMessageId());
         messages.remove(message.getMessageId());
@@ -63,7 +67,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
     @Override
-    public void onInAppMessageChanged(IterableInAppMessage message) {
+    public void onInAppMessageChanged(@NonNull IterableInAppMessage message) {
         saveMessagesInBackground();
     }
 
@@ -75,6 +79,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         messages.clear();
     }
 
+    @NonNull
     private JSONObject serializeMessages() {
         JSONObject jsonData = new JSONObject();
         JSONArray messagesJson = new JSONArray();
@@ -164,7 +169,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
     @Override
-    public void saveHTML(String messageID, String contentHTML) {
+    public void saveHTML(@NonNull String messageID, @NonNull String contentHTML) {
         File folder = createFolderForMessage(messageID);
         if (folder == null) {
             IterableLogger.e(TAG, "Failed to create folder for HTML content");
@@ -212,15 +217,16 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         return file;
     }
 
+    @Nullable
     @Override
-    public String getHTML(String messageID) {
+    public String getHTML(@NonNull String messageID) {
         File file = getFileForContent(messageID);
         String contentHTML = IterableUtil.readFile(file);
         return contentHTML;
     }
 
     @Override
-    public void removeHTML(String messageID) {
+    public void removeHTML(@NonNull String messageID) {
         File folder = getFolderForMessage(messageID);
         if (folder == null) {
             return;

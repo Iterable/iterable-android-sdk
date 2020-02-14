@@ -1,22 +1,24 @@
 package com.iterable.iterableapi;
 
+import android.support.annotation.NonNull;
+
 /**
  * An object representing the action to execute and the context it is executing in
  */
 public class IterableActionContext {
 
     /** Action to execute */
-    public final IterableAction action;
+    public final @NonNull IterableAction action;
 
     /** Source of the action: push notification, app link, etc. */
-    public final IterableActionSource source;
+    public final @NonNull IterableActionSource source;
 
     /**
      * Create an {@link IterableActionContext} object with the given action and source
      * @param action Action to execute
      * @param source Source of the action
      */
-    IterableActionContext(IterableAction action, IterableActionSource source) {
+    IterableActionContext(@NonNull IterableAction action, @NonNull IterableActionSource source) {
         this.action = action;
         this.source = source;
     }

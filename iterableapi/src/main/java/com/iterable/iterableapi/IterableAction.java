@@ -1,5 +1,8 @@
 package com.iterable.iterableapi;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -12,16 +15,16 @@ public class IterableAction {
     /** Open the URL or deep link */
     public static final String ACTION_TYPE_OPEN_URL    = "openUrl";
 
-    private final JSONObject config;
+    private final @NonNull JSONObject config;
 
     /** The text response typed by the user */
-    public String userInput;
+    public @Nullable String userInput;
 
     /**
      * Creates a new {@link IterableAction} from a JSON payload
      * @param config JSON containing action data
      */
-    private IterableAction(JSONObject config) {
+    private IterableAction(@Nullable JSONObject config) {
         if (config != null) {
             this.config = config;
         } else {
@@ -29,7 +32,8 @@ public class IterableAction {
         }
     }
 
-    static IterableAction from(JSONObject config) {
+    @Nullable
+    static IterableAction from(@Nullable JSONObject config) {
         if (config != null) {
             return new IterableAction(config);
         } else {
@@ -37,7 +41,8 @@ public class IterableAction {
         }
     }
 
-    static IterableAction actionOpenUrl(String url) {
+    @Nullable
+    static IterableAction actionOpenUrl(@Nullable String url) {
         if (url != null) {
             try {
                 JSONObject config = new JSONObject();
@@ -49,7 +54,8 @@ public class IterableAction {
         return null;
     }
 
-    static IterableAction actionCustomAction(String customActionName) {
+    @Nullable
+    static IterableAction actionCustomAction(@NonNull String customActionName) {
         try {
             JSONObject config = new JSONObject();
             config.put("type", customActionName);
@@ -65,6 +71,7 @@ public class IterableAction {
      * For other types, {@link IterableCustomActionHandler} will be called.
      * @return Action type
      */
+    @Nullable
     public String getType() {
         return config.optString("type", null);
     }
@@ -74,6 +81,7 @@ public class IterableAction {
      * Additional data, its content depends on the action type
      * @return Additional data
      */
+    @Nullable
     public String getData() {
         return config.optString("data", null);
     }
@@ -83,7 +91,7 @@ public class IterableAction {
      * @param type Action type to match against
      * @return Boolean indicating whether the action type matches the one passed to this method
      */
-    public boolean isOfType(String type) {
+    public boolean isOfType(@NonNull String type) {
         return this.getType() != null && this.getType().equals(type);
     }
 }

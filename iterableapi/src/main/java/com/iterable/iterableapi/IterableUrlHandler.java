@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.net.Uri;
+import android.support.annotation.NonNull;
 
 /**
  * Custom URL handler interface
@@ -13,6 +14,6 @@ public interface IterableUrlHandler {
      * @param actionContext  The action context
      * @return Boolean value. Return YES if the URL was handled to override default behavior.
      */
-    boolean handleIterableURL(Uri uri, IterableActionContext actionContext);
+    boolean handleIterableURL(@NonNull Uri uri, @NonNull IterableActionContext actionContext);
 
 }

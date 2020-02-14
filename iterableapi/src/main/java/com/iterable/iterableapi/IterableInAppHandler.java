@@ -1,6 +1,6 @@
 package com.iterable.iterableapi;
 
-import java.util.List;
+import android.support.annotation.NonNull;
 
 public interface IterableInAppHandler {
     enum InAppResponse {
@@ -8,5 +8,6 @@ public interface IterableInAppHandler {
         SKIP
     }
 
-    InAppResponse onNewInApp(IterableInAppMessage message);
+    @NonNull
+    InAppResponse onNewInApp(@NonNull IterableInAppMessage message);
 }

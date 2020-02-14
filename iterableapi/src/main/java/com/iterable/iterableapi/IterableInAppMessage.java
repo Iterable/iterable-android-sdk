@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.graphics.Rect;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
 import android.support.v4.util.ObjectsCompat;
 
@@ -13,21 +15,21 @@ import java.util.Date;
 public class IterableInAppMessage {
     private static final String TAG = "IterableInAppMessage";
 
-    private final String messageId;
-    private final Content content;
-    private final JSONObject customPayload;
-    private final Date createdAt;
-    private final Date expiresAt;
-    private final Trigger trigger;
-    private final Boolean saveToInbox;
-    private final InboxMetadata inboxMetadata;
+    private final @NonNull String messageId;
+    private final @NonNull Content content;
+    private final @NonNull JSONObject customPayload;
+    private final @NonNull Date createdAt;
+    private final @NonNull Date expiresAt;
+    private final @NonNull Trigger trigger;
+    private final @Nullable Boolean saveToInbox;
+    private final @Nullable InboxMetadata inboxMetadata;
     private boolean processed = false;
     private boolean consumed = false;
     private boolean read = false;
     private boolean loadedHtmlFromJson = false;
-    private IterableInAppStorage inAppStorageInterface;
+    private @Nullable IterableInAppStorage inAppStorageInterface;
 
-    IterableInAppMessage(String messageId, Content content, JSONObject customPayload, Date createdAt, Date expiresAt, Trigger trigger, Boolean saveToInbox, InboxMetadata inboxMetadata) {
+    IterableInAppMessage(@NonNull String messageId, @NonNull Content content, @NonNull JSONObject customPayload, @NonNull Date createdAt, @NonNull Date expiresAt, @NonNull Trigger trigger, @Nullable Boolean saveToInbox, @Nullable InboxMetadata inboxMetadata) {
         this.messageId = messageId;
         this.content = content;
         this.customPayload = customPayload;
@@ -40,8 +42,9 @@ public class IterableInAppMessage {
 
     static class Trigger {
         enum TriggerType { IMMEDIATE, EVENT, NEVER }
-        final JSONObject triggerJson;
-        final TriggerType type;
+
+        final @Nullable JSONObject triggerJson;
+        final @NonNull TriggerType type;
 
         private Trigger(JSONObject triggerJson) {
             this.triggerJson = triggerJson;
@@ -59,11 +62,12 @@ public class IterableInAppMessage {
             }
         }
 
-        Trigger(TriggerType triggerType) {
+        Trigger(@NonNull TriggerType triggerType) {
             triggerJson = null;
             this.type = triggerType;
         }
 
+        @NonNull
         static Trigger fromJSONObject(JSONObject triggerJson) {
             if (triggerJson == null) {
                 // Default to 'immediate' if there is no trigger in the payload
@@ -73,6 +77,7 @@ public class IterableInAppMessage {
             }
         }
 
+        @Nullable
         JSONObject toJSONObject() {
             return triggerJson;
         }
@@ -127,17 +132,18 @@ public class IterableInAppMessage {
     }
 
     public static class InboxMetadata {
-        public final String title;
-        public final String subtitle;
-        public final String icon;
+        public final @Nullable String title;
+        public final @Nullable String subtitle;
+        public final @Nullable String icon;
 
-        public InboxMetadata(String title, String subtitle, String icon) {
+        public InboxMetadata(@Nullable String title, @Nullable String subtitle, @Nullable String icon) {
             this.title = title;
             this.subtitle = subtitle;
             this.icon = icon;
         }
 
-        static InboxMetadata fromJSONObject(JSONObject inboxMetadataJson) {
+        @Nullable
+        static InboxMetadata fromJSONObject(@Nullable JSONObject inboxMetadataJson) {
             if (inboxMetadataJson == null) {
                 return null;
             }
@@ -148,6 +154,7 @@ public class IterableInAppMessage {
             return new InboxMetadata(title, subtitle, icon);
         }
 
+        @NonNull
         JSONObject toJSONObject() {
             JSONObject inboxMetadataJson = new JSONObject();
             try {
@@ -180,18 +187,22 @@ public class IterableInAppMessage {
         }
     }
 
+    @NonNull
     public String getMessageId() {
         return messageId;
     }
 
+    @NonNull
     public Date getCreatedAt() {
         return createdAt;
     }
 
+    @NonNull
     Date getExpiresAt() {
         return expiresAt;
     }
 
+    @NonNull
     public Content getContent() {
         if (content.html == null) {
             content.html = inAppStorageInterface.getHTML(messageId);
@@ -199,6 +210,7 @@ public class IterableInAppMessage {
         return content;
     }
 
+    @NonNull
     public JSONObject getCustomPayload() {
         return customPayload;
     }
@@ -234,6 +246,7 @@ public class IterableInAppMessage {
         return isInboxMessage() && getTriggerType() == IterableInAppMessage.Trigger.TriggerType.NEVER;
     }
 
+    @Nullable
     public InboxMetadata getInboxMetadata() {
         return inboxMetadata;
     }
@@ -255,7 +268,7 @@ public class IterableInAppMessage {
         this.loadedHtmlFromJson = loadedHtmlFromJson;
     }
 
-    static IterableInAppMessage fromJSONObject(JSONObject messageJson, IterableInAppStorage storageInterface) {
+    static IterableInAppMessage fromJSONObject(@NonNull JSONObject messageJson, @Nullable IterableInAppStorage storageInterface) {
 
         if (messageJson == null) {
             return null;
@@ -304,6 +317,7 @@ public class IterableInAppMessage {
         return message;
     }
 
+    @NonNull
     JSONObject toJSONObject() {
         JSONObject messageJson = new JSONObject();
         JSONObject contentJson = new JSONObject();
@@ -425,6 +439,7 @@ public class IterableInAppMessage {
      * @param payload
      * @return
      */
+    @Deprecated
     public static JSONObject getNextMessageFromPayload(String payload) {
         JSONObject returnObject = null;
         if (payload != null && payload != "") {

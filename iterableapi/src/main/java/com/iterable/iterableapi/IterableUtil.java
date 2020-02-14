@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONObject;
@@ -72,6 +73,7 @@ class IterableUtil {
     }
 
 
+    @Nullable
     static String readFile(File file) {
         return instance.readFile(file);
     }
@@ -180,6 +182,7 @@ class IterableUtil {
             return applicationRootDirectory;
         }
 
+        @Nullable
         String readFile(File file) {
             try {
                 FileInputStream inputStream = new FileInputStream(file);
