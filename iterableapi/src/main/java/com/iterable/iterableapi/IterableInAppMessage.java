@@ -434,26 +434,4 @@ public class IterableInAppMessage {
         }
         return paddingJson;
     }
-
-    /**
-     * Gets the next message from the payload
-     * @param payload
-     * @return
-     */
-    @Deprecated
-    public static JSONObject getNextMessageFromPayload(String payload) {
-        JSONObject returnObject = null;
-        if (payload != null && payload != "") {
-            try {
-                JSONObject mainObject = new JSONObject(payload);
-                JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
-                if (jsonArray != null) {
-                    returnObject = jsonArray.optJSONObject(0);
-                }
-            } catch (JSONException e) {
-                IterableLogger.e(IterableInAppManager.TAG, e.toString());
-            }
-        }
-        return returnObject;
-    }
 }
