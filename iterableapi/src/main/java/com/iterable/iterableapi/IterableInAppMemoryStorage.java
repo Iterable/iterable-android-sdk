@@ -1,5 +1,8 @@
 package com.iterable.iterableapi;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,11 +13,13 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
 
     }
 
+    @NonNull
     @Override
     public synchronized List<IterableInAppMessage> getMessages() {
         return new ArrayList<>(messages);
     }
 
+    @Nullable
     @Override
     public synchronized IterableInAppMessage getMessage(String messageId) {
         for (IterableInAppMessage message : messages) {
@@ -26,27 +31,27 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
     }
 
     @Override
-    public synchronized void addMessage(IterableInAppMessage message) {
+    public synchronized void addMessage(@NonNull IterableInAppMessage message) {
         messages.add(message);
     }
 
     @Override
-    public synchronized void removeMessage(IterableInAppMessage message) {
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message) {
         messages.remove(message);
     }
 
     @Override
-    public void saveHTML(String messageID, String contentHTML) {
+    public void saveHTML(@NonNull String messageID, @NonNull String contentHTML) {
 
     }
 
     @Override
-    public String getHTML(String messageID) {
+    public String getHTML(@NonNull String messageID) {
         return null;
     }
 
     @Override
-    public void removeHTML(String messageID) {
+    public void removeHTML(@NonNull String messageID) {
 
     }
 }

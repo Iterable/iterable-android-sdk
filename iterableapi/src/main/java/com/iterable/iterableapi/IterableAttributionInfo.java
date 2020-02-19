@@ -1,5 +1,8 @@
 package com.iterable.iterableapi;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -9,12 +12,13 @@ public class IterableAttributionInfo {
     public final int templateId;
     public final String messageId;
 
-    public IterableAttributionInfo(int campaignId, int templateId, String messageId) {
+    public IterableAttributionInfo(int campaignId, int templateId, @Nullable String messageId) {
         this.campaignId = campaignId;
         this.templateId = templateId;
         this.messageId = messageId;
     }
 
+    @NonNull
     public JSONObject toJSONObject() {
         JSONObject jsonObject = new JSONObject();
         try {
@@ -25,7 +29,8 @@ public class IterableAttributionInfo {
         return jsonObject;
     }
 
-    public static IterableAttributionInfo fromJSONObject(JSONObject jsonObject) {
+    @Nullable
+    public static IterableAttributionInfo fromJSONObject(@Nullable JSONObject jsonObject) {
         if (jsonObject != null) {
             return new IterableAttributionInfo(
                     jsonObject.optInt(IterableConstants.KEY_CAMPAIGN_ID),

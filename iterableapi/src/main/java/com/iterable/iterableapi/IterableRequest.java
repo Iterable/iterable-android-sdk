@@ -3,6 +3,8 @@ package com.iterable.iterableapi;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,7 +41,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     private boolean success = false;
     private String failureReason;
     private String requestResult;
-    private JSONObject requestResultJson;
+    private @Nullable JSONObject requestResultJson;
 
     /**
      * Sends the given request to Iterable using a HttpUserConnection
@@ -215,12 +217,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
         return headerString.toString();
     }
 
-    private void handleSuccess(JSONObject data) {
+    private void handleSuccess(@NonNull JSONObject data) {
         requestResultJson = data;
         success = true;
     }
 
-    private void handleFailure(String reason, JSONObject data) {
+    private void handleFailure(@NonNull String reason, @Nullable JSONObject data) {
         requestResultJson = data;
         failureReason = reason;
         success = false;

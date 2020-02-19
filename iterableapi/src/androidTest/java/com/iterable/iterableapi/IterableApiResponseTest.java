@@ -1,5 +1,8 @@
 package com.iterable.iterableapi;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
@@ -70,7 +73,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, new IterableHelper.SuccessHandler() {
             @Override
-            public void onSuccess(JSONObject data) {
+            public void onSuccess(@NonNull JSONObject data) {
                 assertEquals(responseData.toString(), data.toString());
                 signal.countDown();
             }
@@ -89,7 +92,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
             @Override
-            public void onFailure(String reason, JSONObject data) {
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("No data received", reason);
                 signal.countDown();
             }
@@ -108,7 +111,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
             @Override
-            public void onFailure(String reason, JSONObject data) {
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertThat(reason, CoreMatchers.containsString("Could not parse json"));
                 signal.countDown();
             }
@@ -127,7 +130,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
             @Override
-            public void onFailure(String reason, JSONObject data) {
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("Invalid Request", reason);
                 signal.countDown();
             }
@@ -148,7 +151,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
             @Override
-            public void onFailure(String reason, JSONObject data) {
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("Test error", reason);
                 signal.countDown();
             }
@@ -167,7 +170,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
             @Override
-            public void onFailure(String reason, JSONObject data) {
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("Invalid API Key", reason);
                 signal.countDown();
             }
@@ -201,7 +204,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
             @Override
-            public void onFailure(String reason, JSONObject data) {
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertThat(reason, CoreMatchers.containsString("Received non-200 response"));
                 signal.countDown();
             }
@@ -221,7 +224,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
             @Override
-            public void onFailure(String reason, JSONObject data) {
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 signal.countDown();
             }
         });

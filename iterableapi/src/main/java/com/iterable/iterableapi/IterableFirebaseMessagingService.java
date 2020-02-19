@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -33,7 +34,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
      *        {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)}
      * @return Boolean indicating whether it was an Iterable message or not
      */
-    public static boolean handleMessageReceived(Context context, RemoteMessage remoteMessage) {
+    public static boolean handleMessageReceived(@NonNull Context context, @NonNull RemoteMessage remoteMessage) {
         Map<String,String> messageData = remoteMessage.getData();
 
         if (messageData == null || messageData.size() == 0) {

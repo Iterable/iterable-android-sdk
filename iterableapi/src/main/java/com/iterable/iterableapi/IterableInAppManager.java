@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 
@@ -76,6 +78,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * This list is synchronized with the server by the SDK
      * @return A {@link List} of {@link IterableInAppMessage} objects
      */
+    @NonNull
     public synchronized List<IterableInAppMessage> getMessages() {
         List<IterableInAppMessage> filteredList = new ArrayList<>();
         for (IterableInAppMessage message : storage.getMessages()) {
@@ -94,6 +97,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Get the list of inbox messages
      * @return A {@link List} of {@link IterableInAppMessage} objects stored in inbox
      */
+    @NonNull
     public synchronized List<IterableInAppMessage> getInboxMessages() {
         List<IterableInAppMessage> filteredList = new ArrayList<>();
         for (IterableInAppMessage message : storage.getMessages()) {
@@ -123,7 +127,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param message Inbox message object retrieved from {@link IterableInAppManager#getInboxMessages()}
      * @param read Read state flag. true = read, false = unread
      */
-    public synchronized void setRead(IterableInAppMessage message, boolean read) {
+    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read) {
         message.setRead(read);
         notifyOnChange();
     }
@@ -166,11 +170,11 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Display the in-app message on the screen
      * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
      */
-    public void showMessage(IterableInAppMessage message) {
+    public void showMessage(@NonNull IterableInAppMessage message) {
         showMessage(message, true, null);
     }
 
-    public void showMessage(IterableInAppMessage message, IterableInAppLocation location) {
+    public void showMessage(@NonNull IterableInAppMessage message, @NonNull IterableInAppLocation location) {
         showMessage(message, location == IterableInAppLocation.IN_APP, null, location);
     }
 
@@ -181,11 +185,11 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param consume A boolean indicating whether to remove the message from the list after showing
      * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
      */
-    public void showMessage(final IterableInAppMessage message, boolean consume, final IterableHelper.IterableUrlCallback clickCallback) {
+    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback) {
         showMessage(message,consume,clickCallback, IterableInAppLocation.IN_APP);
     }
 
-    public void showMessage(final IterableInAppMessage message, boolean consume, final IterableHelper.IterableUrlCallback clickCallback, IterableInAppLocation inAppLocation) {
+    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {
         if (displayer.showMessage(message, inAppLocation, new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
@@ -200,7 +204,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             setRead(message, true);
             if (consume) {
                 // Remove the message without tracking
-                removeMessage(message, null, null);
+                removeMessage(message);
             }
         }
     }
@@ -209,13 +213,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Remove message from the list
      * @param message The message to be removed
      */
-    public synchronized void removeMessage(IterableInAppMessage message) {
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message) {
         message.setConsumed(true);
         api.inAppConsume(message.getMessageId());
         notifyOnChange();
     }
 
-    public synchronized void removeMessage(IterableInAppMessage message, IterableInAppDeleteActionType source, IterableInAppLocation clickLocation) {
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message, @NonNull IterableInAppDeleteActionType source, @NonNull IterableInAppLocation clickLocation) {
         IterableLogger.printInfo();
         message.setConsumed(true);
         api.inAppConsume(message, source, clickLocation);
@@ -223,7 +227,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void handleInAppClick(IterableInAppMessage message, Uri url) {
+    public void handleInAppClick(@NonNull IterableInAppMessage message, @Nullable Uri url) {
         IterableLogger.printInfo();
         if (url != null && !url.toString().isEmpty()) {
             String urlString = url.toString();
@@ -362,13 +366,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     }
 
-    public void addListener(Listener listener) {
+    public void addListener(@NonNull Listener listener) {
         synchronized (listeners) {
             listeners.add(listener);
         }
     }
 
-    public void removeListener(Listener listener) {
+    public void removeListener(@NonNull Listener listener) {
         synchronized (listeners) {
             listeners.remove(listener);
         }

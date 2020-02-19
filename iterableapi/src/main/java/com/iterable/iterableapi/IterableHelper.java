@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.json.JSONObject;
 
@@ -13,18 +15,18 @@ public class IterableHelper {
      * Interface to handle Iterable Actions
      */
     public interface IterableActionHandler {
-        void execute(String data);
+        void execute(@Nullable String data);
     }
 
     public interface IterableUrlCallback {
-        void execute(Uri url);
+        void execute(@Nullable Uri url);
     }
 
     public interface SuccessHandler {
-        void onSuccess(JSONObject data);
+        void onSuccess(@NonNull JSONObject data);
     }
 
     public interface FailureHandler {
-        void onFailure(String reason, JSONObject data);
+        void onFailure(@NonNull String reason, @Nullable JSONObject data);
     }
 }

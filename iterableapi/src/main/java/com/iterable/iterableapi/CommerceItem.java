@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import android.support.annotation.NonNull;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,7 +31,7 @@ public class CommerceItem {
      * @param price      price of the product
      * @param quantity   quantity of the product
      */
-    public CommerceItem(String id, String name, double price, int quantity) {
+    public CommerceItem(@NonNull String id, @NonNull String name, double price, int quantity) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -41,6 +43,7 @@ public class CommerceItem {
      * @return A JSONObject representing this item
      * @throws JSONException
      */
+    @NonNull
     public JSONObject toJSONObject() throws JSONException {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", id);

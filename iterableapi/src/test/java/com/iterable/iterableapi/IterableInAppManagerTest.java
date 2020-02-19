@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.graphics.Rect;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
@@ -333,8 +334,9 @@ public class IterableInAppManagerTest extends BaseTest {
     }
 
     private static class IterableSkipInAppHandler implements IterableInAppHandler {
+        @NonNull
         @Override
-        public InAppResponse onNewInApp(IterableInAppMessage message) {
+        public InAppResponse onNewInApp(@NonNull IterableInAppMessage message) {
             return InAppResponse.SKIP;
         }
     }

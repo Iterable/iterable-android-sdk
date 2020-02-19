@@ -11,6 +11,8 @@ import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -47,7 +49,8 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * @param htmlString
      * @return
      */
-    public static IterableInAppHTMLNotification createInstance(Context context, String htmlString) {
+    @NonNull
+    public static IterableInAppHTMLNotification createInstance(@NonNull Context context, @NonNull String htmlString) {
         notification = new IterableInAppHTMLNotification(context, htmlString);
         return notification;
     }
@@ -56,6 +59,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * Returns the notification instance currently being shown
      * @return notification instance
      */
+    @Nullable
     public static IterableInAppHTMLNotification getInstance() {
         return notification;
     }
@@ -65,7 +69,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * @param context
      * @param htmlString
      */
-    private IterableInAppHTMLNotification(Context context, String htmlString) {
+    private IterableInAppHTMLNotification(@NonNull Context context, @NonNull String htmlString) {
         super(context, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
 
         this.context = context;
@@ -80,7 +84,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * Sets the trackParams
      * @param messageId
      */
-    public void setTrackParams(String messageId) {
+    public void setTrackParams(@NonNull String messageId) {
         this.messageId = messageId;
     }
 
@@ -88,7 +92,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * Sets the clickCallback
      * @param clickCallback
      */
-    public void setCallback(IterableHelper.IterableUrlCallback clickCallback) {
+    public void setCallback(@NonNull IterableHelper.IterableUrlCallback clickCallback) {
         this.clickCallback = clickCallback;
     }
 
@@ -112,11 +116,11 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * Sets the padding
      * @param insetPadding
      */
-    public void setPadding(Rect insetPadding) {
+    public void setPadding(@NonNull Rect insetPadding) {
         this.insetPadding = insetPadding;
     }
 
-    public void setLocation(IterableInAppLocation location) {
+    public void setLocation(@NonNull IterableInAppLocation location) {
         this.location = location;
     }
 
@@ -178,7 +182,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
     }
 
     @Override
-    public void onUrlClicked(String url) {
+    public void onUrlClicked(@NonNull String url) {
         IterableApi.sharedInstance.trackInAppClick(messageId, url, location);
         IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location);
         clickCallback.execute(Uri.parse(url));

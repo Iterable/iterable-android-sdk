@@ -6,6 +6,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -34,6 +36,7 @@ public class IterableActivityMonitor {
     private static final int BACKGROUND_DELAY_MS = 1000;
     static IterableActivityMonitor instance = new IterableActivityMonitor();
 
+    @NonNull
     public static IterableActivityMonitor getInstance() {
         return instance;
     }
@@ -92,20 +95,21 @@ public class IterableActivityMonitor {
         }
     };
 
-    public void registerLifecycleCallbacks(Context context) {
+    public void registerLifecycleCallbacks(@NonNull Context context) {
         if (!initialized) {
             initialized = true;
             ((Application) context.getApplicationContext()).registerActivityLifecycleCallbacks(lifecycleCallbacks);
         }
     }
 
-    public void unregisterLifecycleCallbacks(Context context) {
+    public void unregisterLifecycleCallbacks(@NonNull Context context) {
         if (initialized) {
             initialized = false;
             ((Application) context.getApplicationContext()).unregisterActivityLifecycleCallbacks(lifecycleCallbacks);
         }
     }
 
+    @Nullable
     public Activity getCurrentActivity() {
         return currentActivity != null ? currentActivity.get() : null;
     }
@@ -114,11 +118,11 @@ public class IterableActivityMonitor {
         return getCurrentActivity() != null;
     }
 
-    public void addCallback(AppStateCallback callback) {
+    public void addCallback(@NonNull AppStateCallback callback) {
         callbacks.add(new WeakReference<>(callback));
     }
 
-    public void removeCallback(AppStateCallback callback) {
+    public void removeCallback(@NonNull AppStateCallback callback) {
         Iterator<WeakReference<AppStateCallback>> iterator = callbacks.iterator();
         while (iterator.hasNext()) {
             WeakReference<AppStateCallback> callbackRef = iterator.next();

@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.NotificationManagerCompat;
@@ -75,7 +77,7 @@ public class IterableApi {
      * The icon name should match the resource name stored in the /res/drawable directory.
      * @param iconName
      */
-    public void setNotificationIcon(String iconName) {
+    public void setNotificationIcon(@Nullable String iconName) {
         setNotificationIcon(_applicationContext, iconName);
     }
 
@@ -85,7 +87,8 @@ public class IterableApi {
      * @param key
      * @return Returns the requested payload data from the current push campaign if it exists.
      */
-    public String getPayloadData(String key) {
+    @Nullable
+    public String getPayloadData(@NonNull String key) {
         return (_payloadData != null) ? _payloadData.getString(key, null): null;
     }
 
@@ -94,6 +97,7 @@ public class IterableApi {
      * @return Bundle
      */
 
+    @Nullable
     public Bundle getPayloadData() {
         return _payloadData;
     }
@@ -103,6 +107,7 @@ public class IterableApi {
      * Make sure the Iterable API is initialized before calling this method.
      * @return {@link IterableInAppManager} instance
      */
+    @NonNull
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
             inAppManager = new IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval);
@@ -116,6 +121,7 @@ public class IterableApi {
      * or app link click from an email.
      * @return {@link IterableAttributionInfo} Object containing
      */
+    @Nullable
     public IterableAttributionInfo getAttributionInfo() {
         return IterableAttributionInfo.fromJSONObject(
                 IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
@@ -205,6 +211,7 @@ public class IterableApi {
      * Get {@link IterableApi} singleton instance
      * @return {@link IterableApi} singleton instance
      */
+    @NonNull
     public static IterableApi getInstance() {
         return sharedInstance;
     }
@@ -217,7 +224,7 @@ public class IterableApi {
      * @param context Application context
      * @param apiKey Iterable Mobile API key
      */
-    public static void initialize(Context context, String apiKey) {
+    public static void initialize(@NonNull Context context, @NonNull String apiKey) {
         initialize(context, apiKey, null);
     }
 
@@ -230,7 +237,7 @@ public class IterableApi {
      * @param apiKey Iterable Mobile API key
      * @param config {@link IterableConfig} object holding SDK configuration options
      */
-    public static void initialize(Context context, String apiKey, IterableConfig config) {
+    public static void initialize(@NonNull Context context, @NonNull String apiKey, @Nullable IterableConfig config) {
         sharedInstance._applicationContext = context.getApplicationContext();
         sharedInstance._apiKey = apiKey;
         sharedInstance.config = config;
@@ -254,7 +261,7 @@ public class IterableApi {
      * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
      * @param email User email
      */
-    public void setEmail(String email) {
+    public void setEmail(@Nullable String email) {
         if (_email != null && _email.equals(email)) {
             return;
         }
@@ -277,7 +284,7 @@ public class IterableApi {
      * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
      * @param userId User ID
      */
-    public void setUserId(String userId) {
+    public void setUserId(@Nullable String userId) {
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
@@ -299,7 +306,7 @@ public class IterableApi {
      * @param onCallback Calls the callback handler with the destination location
      *                   or the original url if it is not a interable link.
      */
-    public static void getAndTrackDeeplink(String uri, IterableHelper.IterableActionHandler onCallback) {
+    public static void getAndTrackDeeplink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
         IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
     }
 
@@ -315,7 +322,7 @@ public class IterableApi {
      *            handler activity
      * @return
      */
-    public static boolean handleAppLink(String uri) {
+    public static boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
             IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
@@ -336,14 +343,14 @@ public class IterableApi {
      * Debugging function to send API calls to different url endpoints.
      * @param url
      */
-    public static void overrideURLEndpointPath(String url) {
+    public static void overrideURLEndpointPath(@NonNull String url) {
         IterableRequest.overrideUrl = url;
     }
 
     /**
      * Returns whether or not the intent was sent from Iterable.
      */
-    public boolean isIterableIntent(Intent intent) {
+    public boolean isIterableIntent(@Nullable Intent intent) {
         if (intent != null) {
             Bundle extras = intent.getExtras();
             return (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY));
@@ -356,11 +363,11 @@ public class IterableApi {
      * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
      * @param token Push token obtained from GCM or FCM
      */
-    public void registerDeviceToken(String token) {
+    public void registerDeviceToken(@NonNull String token) {
         registerDeviceToken(_email, _userId, getPushIntegrationName(), token);
     }
 
-    protected void registerDeviceToken(final String email, final String userId, final String applicationName, final String token) {
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String token) {
         if (token != null) {
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
@@ -375,7 +382,7 @@ public class IterableApi {
      * Track an event.
      * @param eventName
      */
-    public void track(String eventName) {
+    public void track(@NonNull String eventName) {
         track(eventName, 0, 0, null);
     }
 
@@ -384,7 +391,7 @@ public class IterableApi {
      * @param eventName
      * @param dataFields
      */
-    public void track(String eventName, JSONObject dataFields) {
+    public void track(@NonNull String eventName, @Nullable JSONObject dataFields) {
         track(eventName, 0, 0, dataFields);
     }
 
@@ -394,7 +401,7 @@ public class IterableApi {
      * @param campaignId
      * @param templateId
      */
-    public void track(String eventName, int campaignId, int templateId) {
+    public void track(@NonNull String eventName, int campaignId, int templateId) {
         track(eventName, campaignId, templateId, null);
     }
 
@@ -405,7 +412,7 @@ public class IterableApi {
      * @param templateId
      * @param dataFields
      */
-    public void track(String eventName, int campaignId, int templateId, JSONObject dataFields) {
+    public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
         if (!checkSDKInitialization()) {
             return;
@@ -436,7 +443,7 @@ public class IterableApi {
      * @param total total purchase amount
      * @param items list of purchased items
      */
-    public void trackPurchase(double total, List<CommerceItem> items) {
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
         trackPurchase(total, items, null);
     }
 
@@ -446,7 +453,7 @@ public class IterableApi {
      * @param items list of purchased items
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
-    public void trackPurchase(double total, List<CommerceItem> items, JSONObject dataFields) {
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -480,7 +487,7 @@ public class IterableApi {
      * Also updates the current email in this IterableAPI instance if the API call was successful.
      * @param newEmail New email
      */
-    public void updateEmail(final String newEmail) {
+    public void updateEmail(final @NonNull String newEmail) {
         updateEmail(newEmail, null, null);
     }
 
@@ -491,7 +498,7 @@ public class IterableApi {
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
-    public void updateEmail(final String newEmail, final IterableHelper.SuccessHandler successHandler, IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before "+
                     "calling updateEmail");
@@ -513,7 +520,7 @@ public class IterableApi {
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON, new IterableHelper.SuccessHandler() {
                 @Override
-                public void onSuccess(JSONObject data) {
+                public void onSuccess(@NonNull JSONObject data) {
                     if (_email != null) {
                         _email = newEmail;
                     }
@@ -533,7 +540,7 @@ public class IterableApi {
      * Updates the current user.
      * @param dataFields
      */
-    public void updateUser(JSONObject dataFields) {
+    public void updateUser(@NonNull JSONObject dataFields) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -594,7 +601,7 @@ public class IterableApi {
      * @param unsubscribedChannelIds
      * @param unsubscribedMessageTypeIds
      */
-    public void updateSubscriptions(Integer[] emailListIds, Integer[] unsubscribedChannelIds, Integer[] unsubscribedMessageTypeIds) {
+    public void updateSubscriptions(@Nullable Integer[] emailListIds, @Nullable Integer[] unsubscribedChannelIds, @Nullable Integer[] unsubscribedMessageTypeIds) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -644,7 +651,7 @@ public class IterableApi {
      * @param onCallback
      */
     @Deprecated
-    public void getInAppMessages(int count, IterableHelper.IterableActionHandler onCallback) {
+    public void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -669,7 +676,7 @@ public class IterableApi {
      * Tracks an in-app open.
      * @param messageId
      */
-    public void trackInAppOpen(String messageId) {
+    public void trackInAppOpen(@NonNull String messageId) {
         IterableLogger.printInfo();
         if (!checkSDKInitialization()) {
             return;
@@ -688,7 +695,7 @@ public class IterableApi {
         }
     }
 
-    void trackInAppOpen(String messageId, IterableInAppLocation location) {
+    void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
         IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
@@ -702,7 +709,7 @@ public class IterableApi {
      * Tracks an in-app open.
      * @param message in-app message
      */
-    public void trackInAppOpen(IterableInAppMessage message, IterableInAppLocation location) {
+    public void trackInAppOpen(@NonNull IterableInAppMessage message, @NonNull IterableInAppLocation location) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -729,7 +736,7 @@ public class IterableApi {
         }
     }
 
-    void trackInAppClick(String messageId, String clickedUrl, IterableInAppLocation location) {
+    void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
         IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
@@ -744,7 +751,7 @@ public class IterableApi {
      * @param messageId
      * @param clickedUrl
      */
-    public void trackInAppClick(String messageId, String clickedUrl) {
+    public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -768,7 +775,7 @@ public class IterableApi {
      * @param message in-app message
      * @param clickedUrl
      */
-    public void trackInAppClick(IterableInAppMessage message, String clickedUrl, IterableInAppLocation clickLocation) {
+    public void trackInAppClick(@NonNull IterableInAppMessage message, @NonNull String clickedUrl, @NonNull IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -797,7 +804,7 @@ public class IterableApi {
     }
 
 
-    void trackInAppClose(String messageId, String clickedURL, IterableInAppCloseAction closeAction, IterableInAppLocation clickLocation) {
+    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
             trackInAppClose(message, clickedURL, closeAction, clickLocation);
@@ -813,7 +820,7 @@ public class IterableApi {
      * @param clickedURL clicked Url if available
      * @param clickLocation location of the click
      */
-    void trackInAppClose(IterableInAppMessage message, String clickedURL, IterableInAppCloseAction closeAction, IterableInAppLocation clickLocation) {
+    void trackInAppClose(@NonNull IterableInAppMessage message, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -845,7 +852,7 @@ public class IterableApi {
 
     }
 
-    void trackInAppDelivery(IterableInAppMessage message) {
+    void trackInAppDelivery(@NonNull IterableInAppMessage message) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -874,7 +881,7 @@ public class IterableApi {
      * Consumes an InApp message.
      * @param messageId
      */
-    public void inAppConsume(String messageId) {
+    public void inAppConsume(@NonNull String messageId) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message == null) {
             IterableLogger.e(TAG, "inAppConsume: message is null");
@@ -893,7 +900,7 @@ public class IterableApi {
      * @param source An enum describing how the in App delete was triggered
      * @param clickLocation The module in which the action happened
      */
-    public void inAppConsume(IterableInAppMessage message, IterableInAppDeleteActionType source, IterableInAppLocation clickLocation) {
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -926,7 +933,7 @@ public class IterableApi {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void trackInboxSession(IterableInboxSession session) {
+    public void trackInboxSession(@NonNull IterableInboxSession session) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1028,7 +1035,7 @@ public class IterableApi {
         return iconName;
     }
 
-    protected void trackPushOpen(int campaignId, int templateId, String messageId) {
+    protected void trackPushOpen(int campaignId, int templateId, @Nullable String messageId) {
         trackPushOpen(campaignId, templateId, messageId, null);
     }
 
@@ -1037,7 +1044,7 @@ public class IterableApi {
      * @param campaignId
      * @param templateId
      */
-    protected void trackPushOpen(int campaignId, int templateId, String messageId, JSONObject dataFields) {
+    protected void trackPushOpen(int campaignId, int templateId, @Nullable String messageId, @Nullable JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -1058,7 +1065,7 @@ public class IterableApi {
         }
     }
 
-    protected void disableToken(String email, String userId, String token) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
         disableToken(email, userId, token, null, null);
     }
 
@@ -1066,7 +1073,7 @@ public class IterableApi {
      * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
      * @param token
      */
-    protected void disableToken(String email, String userId, String token, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, token);
@@ -1089,7 +1096,7 @@ public class IterableApi {
      * @param token
      * @param dataFields
      */
-    protected void registerDeviceToken(String email, String userId, String applicationName, String token, JSONObject dataFields) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1182,7 +1189,7 @@ public class IterableApi {
         return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
     }
 
-    private void addInboxSessionID(JSONObject requestJSON) throws JSONException {
+    private void addInboxSessionID(@NonNull JSONObject requestJSON) throws JSONException {
         if (this.inboxSessionId != null) {
             requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID, this.inboxSessionId);
         }
@@ -1194,12 +1201,12 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    void sendPostRequest(String resourcePath, JSONObject json) {
+    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null);
         new IterableRequest().execute(request);
     }
 
-    void sendPostRequest(String resourcePath, JSONObject json, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
@@ -1210,7 +1217,7 @@ public class IterableApi {
      * @param resourcePath
      * @param json
      */
-    void sendGetRequest(String resourcePath, JSONObject json, IterableHelper.IterableActionHandler onCallback) {
+    void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
         new IterableRequest().execute(request);
     }
@@ -1322,12 +1329,12 @@ public class IterableApi {
             IterableApiRequest request = new IterableApiRequest(_apiKey, IterableConstants.BASE_URL_LINKS,
                     IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, new IterableHelper.SuccessHandler() {
                 @Override
-                public void onSuccess(JSONObject data) {
+                public void onSuccess(@NonNull JSONObject data) {
                     handleDDL(data);
                 }
             }, new IterableHelper.FailureHandler() {
                 @Override
-                public void onFailure(String reason, JSONObject data) {
+                public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                     IterableLogger.e(TAG, "Error while checking deferred deep link: " + reason + ", response: " + data);
                 }
             });
@@ -1353,7 +1360,7 @@ public class IterableApi {
         setDDLChecked(true);
     }
 
-    private JSONObject getInAppMessageContext(IterableInAppMessage message, IterableInAppLocation location) {
+    private JSONObject getInAppMessageContext(@NonNull IterableInAppMessage message, @Nullable IterableInAppLocation location) {
         JSONObject messageContext = new JSONObject();
         try {
             boolean isSilentInbox = message.isSilentInboxMessage();
@@ -1369,6 +1376,7 @@ public class IterableApi {
         return messageContext;
     }
 
+    @NonNull
     private JSONObject getDeviceInfoJson() {
         JSONObject deviceInfo = new JSONObject();
         try {
@@ -1382,7 +1390,7 @@ public class IterableApi {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void setInboxSessionId (String inboxSessionId) {
+    public void setInboxSessionId(@Nullable String inboxSessionId) {
         this.inboxSessionId = inboxSessionId;
     }
 

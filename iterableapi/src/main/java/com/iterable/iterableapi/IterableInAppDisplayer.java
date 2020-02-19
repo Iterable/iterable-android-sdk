@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Rect;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 
 class IterableInAppDisplayer {
@@ -18,7 +20,7 @@ class IterableInAppDisplayer {
         return IterableInAppHTMLNotification.getInstance() != null;
     }
 
-    boolean showMessage(IterableInAppMessage message, IterableInAppLocation location, final IterableHelper.IterableUrlCallback clickCallback) {
+    boolean showMessage(@NonNull IterableInAppMessage message, IterableInAppLocation location, @NonNull final IterableHelper.IterableUrlCallback clickCallback) {
         Activity currentActivity = activityMonitor.getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
@@ -42,7 +44,7 @@ class IterableInAppDisplayer {
      * @param backgroundAlpha
      * @param padding
      */
-    static boolean showIterableNotificationHTML(Context context, String htmlString, String messageId, final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel, IterableInAppLocation location) {
+    static boolean showIterableNotificationHTML(@NonNull Context context, @Nullable String htmlString, String messageId, final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel, IterableInAppLocation location) {
         if (context instanceof Activity) {
             Activity currentActivity = (Activity) context;
             if (htmlString != null) {
