@@ -1,7 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Custom URL handler interface

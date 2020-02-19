@@ -1,6 +1,6 @@
 package com.iterable.iterableapi.ui.inbox;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.iterable.iterableapi.IterableInAppMessage;
 

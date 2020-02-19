@@ -1,6 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.support.annotation.RestrictTo;
+import androidx.annotation.RestrictTo;
 
 import java.util.Date;
 import java.util.List;

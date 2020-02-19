@@ -4,7 +4,7 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.RemoteInput;
+import androidx.core.app.RemoteInput;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
-import static android.support.v4.app.RemoteInput.RESULTS_CLIP_LABEL;
+import static androidx.core.app.RemoteInput.RESULTS_CLIP_LABEL;
 import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;

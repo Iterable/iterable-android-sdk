@@ -1,6 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * An object representing the action to execute and the context it is executing in
