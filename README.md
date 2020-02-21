@@ -95,6 +95,13 @@ your behalf with Firebase Cloud Messaging.
 For more details, read Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943) 
 guide.
 
+## AndroidX dependency (SDK version 3.2.0 and higher)
+
+Versions 3.2.0 and higher of Iterable's Android SDK depend on the
+[AndroidX](https://developer.android.com/jetpack/androidx) support libraries.
+[Migrate your app to use AndroidX](https://developer.android.com/jetpack/androidx/migrate)
+before using version 3.2.0 or higher of the SDK.
+
 ## Migrating from a version prior to 3.1.0
 
 - In-app messages: `spawnInAppNotification`
