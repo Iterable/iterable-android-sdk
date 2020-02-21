@@ -15,6 +15,10 @@ tokens.
 
 ### Stable versions
 
+> &#x26A0; **IMPORTANT**
+> Beta versions of this SDK are subject to Iterable's 
+[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
+
 Add the following dependencies to your application's **build.gradle**:
 
 - `compile 'com.iterable:iterableapi:3.2.0'`
@@ -30,10 +34,6 @@ version of the SDK.
 > before using version 3.2.0 or higher of the SDK.
 
 ### Beta versions
-
-> &#x26A0; **IMPORTANT**
-> Beta versions of this SDK are subject to Iterable's 
-[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
 
 Beta versions of Iterable's Android SDK are published to JitPack instead of
 Maven. To find the latest beta version of Iterable's Android SDK, look at
