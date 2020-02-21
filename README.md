@@ -14,6 +14,7 @@ as described below. You'll also need to handle Firebase push messages and
 tokens.
 
 > &#x26A0; **IMPORTANT**
+>
 > Versions 3.2.0 and higher of Iterable's Android SDK depend on the
 > [AndroidX](https://developer.android.com/jetpack/androidx) support libraries.
 > [Migrate your app to use AndroidX](https://developer.android.com/jetpack/androidx/migrate)
@@ -32,6 +33,7 @@ version of the SDK.
 ### Beta versions
 
 > &#x26A0; **IMPORTANT**
+>
 > Beta versions of this SDK are subject to Iterable's 
 [Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
 
