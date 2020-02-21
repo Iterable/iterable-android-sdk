@@ -13,11 +13,13 @@ It's possible to install stable or beta versions of Iterable's Android SDK,
 as described below. You'll also need to handle Firebase push messages and 
 tokens.
 
-### Stable versions
-
 > &#x26A0; **IMPORTANT**
-> Beta versions of this SDK are subject to Iterable's 
-[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
+> Versions 3.2.0 and higher of Iterable's Android SDK depend on the
+> [AndroidX](https://developer.android.com/jetpack/androidx) support libraries.
+> [Migrate your app to use AndroidX](https://developer.android.com/jetpack/androidx/migrate)
+> before using version 3.2.0 or higher of the SDK.
+
+### Stable versions
 
 Add the following dependencies to your application's **build.gradle**:
 
@@ -27,13 +29,11 @@ Add the following dependencies to your application's **build.gradle**:
 See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
 version of the SDK.
 
-> &#x26A0; **IMPORTANT**
-> Versions 3.2.0 and higher of Iterable's Android SDK depend on the
-> [AndroidX](https://developer.android.com/jetpack/androidx) support libraries.
-> [Migrate your app to use AndroidX](https://developer.android.com/jetpack/androidx/migrate)
-> before using version 3.2.0 or higher of the SDK.
-
 ### Beta versions
+
+> &#x26A0; **IMPORTANT**
+> Beta versions of this SDK are subject to Iterable's 
+[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
 
 Beta versions of Iterable's Android SDK are published to JitPack instead of
 Maven. To find the latest beta version of Iterable's Android SDK, look at
