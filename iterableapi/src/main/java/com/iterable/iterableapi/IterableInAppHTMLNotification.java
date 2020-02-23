@@ -217,13 +217,8 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
                     Display display = wm.getDefaultDisplay();
                     Point size = new Point();
 
-                    // Get the correct screen size based on api level
-                    // https://stackoverflow.com/questions/35780980/getting-the-actual-screen-height-android
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        display.getRealSize(size);
-                    } else {
-                        display.getSize(size);
-                    }
+                    // getSize gives us the screen size minus the navigation bar, which is what we want
+                    display.getSize(size);
                     int webViewWidth = size.x;
                     int webViewHeight = size.y;
 

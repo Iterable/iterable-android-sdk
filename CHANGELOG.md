@@ -24,6 +24,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - When `pushIntegrationName` is not set on `IterableConfig`, the SDK now defaults it to the app's package name.
 If you've set up your push integration with the new Mobile Apps UI, you don't have to specify `pushIntegrationName` in the SDK anymore. 
 
+## [3.1.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.6)
+#### Added
+- Added a new static method to `IterableFirebaseMessagingService`: `isGhostPush`. Use this method to determine whether a Firebase message is an Iterable ghost push or silent push message.
+
+#### Fixed
+- Fixed the height of full-screen in-app messages to make sure they're not clipped by the Android navigation bar.
+- The SDK doesn't log an error message anymore when a custom notification channel name is not set.
+
+## [3.1.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.5)
+#### Changed
+- Automatic push registration is now only done if the app is running in foreground
+
 ## [3.1.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.4)
 #### Added
 - Push notifications now also display image thumbnails when collapsed

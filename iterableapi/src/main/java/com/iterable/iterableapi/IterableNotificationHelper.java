@@ -17,6 +17,8 @@ import androidx.core.app.NotificationCompat;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Map;
+
 class IterableNotificationHelper {
     private static final String DEFAULT_CHANNEL_NAME = "iterable channel";
 
@@ -76,6 +78,14 @@ class IterableNotificationHelper {
      */
     static boolean isEmptyBody(Bundle extras) {
         return instance.isEmptyBody(extras);
+    }
+
+    static Bundle mapToBundle(Map<String,String> map) {
+        Bundle bundle = new Bundle();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            bundle.putString(entry.getKey(), entry.getValue());
+        }
+        return bundle;
     }
 
     static class IterableNotificationHelperImpl {
@@ -269,8 +279,8 @@ class IterableNotificationHelper {
                     channelName = info.metaData.getString(IterableConstants.NOTIFICATION_CHANNEL_NAME);
 
                     // Try to read from a string resource
-                    if (channelName == null) {
-                        int stringId = info.metaData.getInt(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+                    int stringId = info.metaData.getInt(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+                    if (channelName == null && stringId != 0) {
                         channelName = context.getString(stringId);
                     }
                     IterableLogger.d(IterableNotificationBuilder.TAG, "channel name: " + channelName);

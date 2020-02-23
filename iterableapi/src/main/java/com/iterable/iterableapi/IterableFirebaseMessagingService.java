@@ -47,10 +47,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             IterableLogger.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
         }
 
-        Bundle extras = new Bundle();
-        for (Map.Entry<String, String> entry : messageData.entrySet()) {
-            extras.putString(entry.getKey(), entry.getValue());
-        }
+        Bundle extras = IterableNotificationHelper.mapToBundle(messageData);
 
         if (!IterableNotificationHelper.isIterablePush(extras)) {
             IterableLogger.d(TAG, "Not an Iterable push message");
@@ -92,6 +89,23 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         String registrationToken = FirebaseInstanceId.getInstance().getToken();
         IterableLogger.d(TAG, "New Firebase Token generated: " + registrationToken);
         IterableApi.getInstance().registerForPush();
+    }
+
+    /**
+     * Checks if the message is an Iterable ghost push or silent push message
+     * @param remoteMessage Remote message received from Firebase in
+     *        {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)}
+     * @return Boolean indicating whether the message is an Iterable ghost push or silent push
+     */
+    public static boolean isGhostPush(RemoteMessage remoteMessage) {
+        Map<String,String> messageData = remoteMessage.getData();
+
+        if (messageData == null || messageData.isEmpty()) {
+            return false;
+        }
+
+        Bundle extras = IterableNotificationHelper.mapToBundle(messageData);
+        return IterableNotificationHelper.isGhostPush(extras);
     }
 }
 
