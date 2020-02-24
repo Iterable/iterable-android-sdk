@@ -73,6 +73,7 @@
         android:layout_alignStart="@+id/title"
         android:layout_alignLeft="@+id/title"
         android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
         android:textAppearance="?attr/textAppearanceListItem"
         android:textColor="#AAAAAA"
         android:textSize="10sp"
