@@ -249,6 +249,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
                     }
                 } catch (IllegalArgumentException e) {
                     IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);
+                    notification = null;
                 }
             }
         });
