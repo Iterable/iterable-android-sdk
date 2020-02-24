@@ -23,6 +23,7 @@ import com.iterable.iterableapi.IterableInboxSession;
 import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,6 +50,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     private IterableInboxAdapterExtension adapterExtension = new DefaultAdapterExtension();
     private IterableInboxComparator comparator = new DefaultInboxComparator();
     private IterableInboxFilter filter = new DefaultInboxFilter();
+    private IterableInboxDateMapper dateMapper = new DefaultInboxDateMapper();
     private boolean sessionStarted = false;
 
     /**
@@ -122,6 +124,17 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         }
     }
 
+    /**
+     * Set a custom date mapper to define how the date is rendered in an inbox cell
+     *
+     * @param dateMapper Date mapper class that takes an inbox message returns a string for the creation date
+     */
+    protected void setDateMapper(@NonNull IterableInboxDateMapper dateMapper) {
+        if (dateMapper != null) {
+            this.dateMapper = dateMapper;
+        }
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -144,7 +157,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
 
         RecyclerView view = (RecyclerView) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
         view.setLayoutManager(new LinearLayoutManager(getContext()));
-        IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter);
+        IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter, dateMapper);
         view.setAdapter(adapter);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
         itemTouchHelper.attachToRecyclerView(view);
@@ -278,6 +291,22 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         @Override
         public boolean filter(@NonNull IterableInAppMessage message) {
             return true;
+        }
+    }
+
+    /**
+     * Default implementation of the date mapper.
+     */
+    private static class DefaultInboxDateMapper implements IterableInboxDateMapper {
+        @Nullable
+        @Override
+        public CharSequence mapMessageToDateString(@NonNull IterableInAppMessage message) {
+            if (message.getCreatedAt() != null) {
+                DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
+                return formatter.format(message.getCreatedAt());
+            } else {
+                return "";
+            }
         }
     }
 
