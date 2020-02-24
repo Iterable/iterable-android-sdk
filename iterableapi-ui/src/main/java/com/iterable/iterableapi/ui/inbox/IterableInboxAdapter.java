@@ -17,7 +17,6 @@ import com.iterable.iterableapi.IterableInAppMessage;
 import com.iterable.iterableapi.ui.BitmapLoader;
 import com.iterable.iterableapi.ui.R;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,15 +31,17 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
     private final @NonNull IterableInboxAdapterExtension extension;
     private final @NonNull IterableInboxComparator comparator;
     private final @NonNull IterableInboxFilter filter;
+    private final @NonNull IterableInboxDateMapper dateMapper;
 
     private List<InboxRow> inboxItems;
 
-    IterableInboxAdapter(@NonNull List<IterableInAppMessage> values, @NonNull OnListInteractionListener listener, @NonNull IterableInboxAdapterExtension extension, @NonNull IterableInboxComparator comparator, @NonNull IterableInboxFilter filter) {
+    IterableInboxAdapter(@NonNull List<IterableInAppMessage> values, @NonNull OnListInteractionListener listener, @NonNull IterableInboxAdapterExtension extension, @NonNull IterableInboxComparator comparator, @NonNull IterableInboxFilter filter, @NonNull IterableInboxDateMapper dateMapper) {
         this.listener = listener;
         this.extension = extension;
         this.comparator = comparator;
         this.filter = filter;
         this.inboxItems = inboxRowListFromInboxMessages(values);
+        this.dateMapper = dateMapper;
     }
 
     private View.OnClickListener onClickListener = new View.OnClickListener() {
@@ -89,7 +90,7 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
         }
 
         if (holder.date != null) {
-            holder.date.setText(formatDate(inboxRow.createdAt));
+            holder.date.setText(dateMapper.mapMessageToDateString(inboxRow.message));
         }
 
         holder.itemView.setTag(inboxRow.message);
@@ -156,15 +157,6 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
         void onListItemDeleted(@NonNull IterableInAppMessage message, IterableInAppDeleteActionType source);
         void onListItemImpressionStarted(@NonNull IterableInAppMessage message);
         void onListItemImpressionEnded(@NonNull IterableInAppMessage message);
-    }
-
-    private String formatDate(Date date) {
-        if (date != null) {
-            DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
-            return formatter.format(date);
-        } else {
-            return "";
-        }
     }
 
     /**
