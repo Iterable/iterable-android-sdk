@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="#F2F2F7">
+
+    <ImageView
+        android:id="@+id/unreadIndicator"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_alignTop="@id/title"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/unread_indicator"
+        android:tint="#FF9500"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="8dp" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginEnd="8dp"
+        app:srcCompat="@drawable/ic_image_black_60dp" />
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_toStartOf="@+id/imageView"
+        android:layout_toLeftOf="@+id/imageView"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        tools:text="Food nutritionists eat when sick" />
+
+    <TextView
+        android:id="@+id/subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/title"
+        android:layout_alignStart="@+id/title"
+        android:layout_alignLeft="@+id/title"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_toStartOf="@+id/imageView"
+        android:layout_toLeftOf="@+id/imageView"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:textColor="#777777"
+        android:textSize="13sp"
+        tools:text="We asked 10 nutritionists what foods they crave when they're feeling a litle under-the-weather" />
+
+    <TextView
+        android:id="@+id/date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/subtitle"
+        android:layout_alignStart="@+id/title"
+        android:layout_alignLeft="@+id/title"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:textColor="#AAAAAA"
+        android:textSize="10sp"
+        tools:text="2 minutes ago" />
+
+</RelativeLayout>
