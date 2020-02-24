@@ -32,7 +32,7 @@ public class IterableApi {
 
 //region Variables
 //---------------------------------------------------------------------------------------
-    static final String TAG = "IterableApi";
+private static final String TAG = "IterableApi";
 
     /**
      * {@link IterableApi} singleton instance

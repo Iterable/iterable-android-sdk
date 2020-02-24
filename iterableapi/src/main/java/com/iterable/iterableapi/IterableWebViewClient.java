@@ -1,6 +1,5 @@
 package com.iterable.iterableapi;
 
-import android.net.Uri;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -41,6 +40,6 @@ class IterableWebViewClient extends WebViewClient {
 
     public interface HTMLNotificationCallbacks {
         void onUrlClicked(String url);
-        void setLoaded(Boolean loaded);
+        void setLoaded(boolean loaded);
     }
 }

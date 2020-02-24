@@ -3,7 +3,6 @@ package com.iterable.iterableapi.util;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;

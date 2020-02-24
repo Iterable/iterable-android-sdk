@@ -11,7 +11,7 @@ import android.util.Log;
 import java.util.List;
 
 class IterableActionRunner {
-    static final String TAG = "IterableActionRunner";
+    private static final String TAG = "IterableActionRunner";
 
     /**
      * Execute an {@link IterableAction} as a response to push action
@@ -19,7 +19,7 @@ class IterableActionRunner {
      * @param action The original action object
      * @return `true` if the action was handled, `false` if it was not
      */
-    public static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
+    static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
         if (action == null) {
             return false;
         }

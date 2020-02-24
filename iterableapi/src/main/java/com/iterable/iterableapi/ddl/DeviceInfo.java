@@ -6,6 +6,8 @@ import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
+import androidx.annotation.RestrictTo;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -13,9 +15,10 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class DeviceInfo {
-    String mobileDeviceType = "Android";
-    DeviceFp deviceFp;
+    private static final String MOBILE_DEVICE_TYPE = "Android";
+    private DeviceFp deviceFp;
 
     private DeviceInfo(DeviceFp deviceFp) {
         this.deviceFp = deviceFp;
@@ -78,7 +81,7 @@ public class DeviceInfo {
 
     public JSONObject toJSONObject() throws JSONException {
         JSONObject json = new JSONObject();
-        json.put("mobileDeviceType", mobileDeviceType);
+        json.put("mobileDeviceType", MOBILE_DEVICE_TYPE);
         json.put("deviceFp", deviceFp.toJSONObject());
         return json;
     }

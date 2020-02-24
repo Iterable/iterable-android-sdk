@@ -11,8 +11,6 @@ import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -20,9 +18,10 @@ import android.view.OrientationEventListener;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class IterableInAppHTMLNotification extends Dialog implements IterableWebViewClient.HTMLNotificationCallbacks {
 
@@ -34,7 +33,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
 
     Context context;
     IterableWebView webView;
-    Boolean loaded;
+    boolean loaded;
     OrientationEventListener orientationListener;
     String htmlString;
     String messageId;
@@ -100,7 +99,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
      * Sets the loaded flag
      * @param loaded
      */
-    public void setLoaded(Boolean loaded) {
+    public void setLoaded(boolean loaded) {
         this.loaded = loaded;
     }
 
