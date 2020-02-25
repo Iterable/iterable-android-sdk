@@ -26,7 +26,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 #### Removed
 - Removed all old initialization methods starting with `sharedInstanceWithApiKey`
-- Removed `sendPush` methods, these API methods can't be called from mobile apps
+- Removed `sendPush` methods (these API methods can't be called from mobile apps)
 - Removed all deprecated methods with extra parameters for push registration:
   - `void registerDeviceToken(String token)` is the only one available now for token registration
   - `void disablePush()` is the only one available for disabling the current push token
