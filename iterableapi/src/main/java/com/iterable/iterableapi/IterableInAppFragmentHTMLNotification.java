@@ -13,9 +13,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -28,24 +25,33 @@ import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
+
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
 
-    static final String BACK_BUTTON = "itbl://backButton";
-    static final String JAVASCRIPT_INTERFACE = "ITBL";
+    private static final String BACK_BUTTON = "itbl://backButton";
+    private static final String JAVASCRIPT_INTERFACE = "ITBL";
     private static final String TAG = "IterableInAppFragmentHTMLNotification";
+    private static final String HTML_STRING = "HTML";
+    private static final String BACKGROUND_ALPHA = "BackgroundAlpha";
+    private static final String INSET_PADDING = "InsetPadding";
+    private static final String CALLBACK_ON_CANCEL = "CallbackOnCancel";
+    private static final String MESSAGE_ID = "MessageId";
 
     static IterableInAppFragmentHTMLNotification notification;
-
-    IterableWebView webView;
-    boolean loaded;
-    OrientationEventListener orientationListener;
-    String htmlString;
-    String messageId;
-    double backgroundAlpha;
-    Rect insetPadding;
     static IterableHelper.IterableUrlCallback clickCallback;
     static IterableInAppLocation location;
+
+    private IterableWebView webView;
+    private boolean loaded;
+    private OrientationEventListener orientationListener;
     private boolean callbackOnCancel = false;
+    private String htmlString;
+    private String messageId;
+    private double backgroundAlpha;
+    private Rect insetPadding;
 
     /**
      * Creates a static instance of the notification
@@ -53,16 +59,18 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * @param htmlString
      * @return
      */
-    public static IterableInAppFragmentHTMLNotification createInstance(Context context, String htmlString, boolean callbackOnCancel, IterableHelper.IterableUrlCallback clickCallback, IterableInAppLocation location) {
+    public static IterableInAppFragmentHTMLNotification createInstance(String htmlString, boolean callbackOnCancel, IterableHelper.IterableUrlCallback clickCallback, IterableInAppLocation location, String messageId, Double backgroundAlpha, Rect padding) {
 
         notification = new IterableInAppFragmentHTMLNotification();
         Bundle args = new Bundle();
-        args.putString("html", htmlString);
-        args.putBoolean("callbackOnCancel", callbackOnCancel);
+        args.putString(HTML_STRING, htmlString);
+        args.putBoolean(CALLBACK_ON_CANCEL, callbackOnCancel);
+        args.putString(MESSAGE_ID, messageId);
+        args.putDouble(BACKGROUND_ALPHA, backgroundAlpha);
+        args.putParcelable(INSET_PADDING, padding);
         IterableInAppFragmentHTMLNotification.clickCallback = clickCallback;
         IterableInAppFragmentHTMLNotification.location = location;
         notification.setArguments(args);
-        notification.setStyle(DialogFragment.STYLE_NO_FRAME, R.style.Theme_AppCompat_NoActionBar);
         return notification;
     }
 
@@ -82,6 +90,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
+        this.setStyle(DialogFragment.STYLE_NO_FRAME, R.style.Theme_AppCompat_NoActionBar);
     }
 
     @Override
@@ -89,9 +98,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
         if (args != null) {
-            htmlString = args.getString("html", null);
-            callbackOnCancel = args.getBoolean("callbackOnCancel", false);
+            htmlString = args.getString(HTML_STRING, null);
+            callbackOnCancel = args.getBoolean(CALLBACK_ON_CANCEL, false);
+            messageId = args.getString(MESSAGE_ID);
+            backgroundAlpha = args.getDouble(BACKGROUND_ALPHA);
+            insetPadding = args.getParcelable(INSET_PADDING);
         }
+        notification = this;
     }
 
     @Override
@@ -105,21 +118,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         location = null;
     }
 
-    /**
-     * Sets the trackParams
-     * @param messageId
-     */
-    public void setTrackParams(String messageId) {
-        this.messageId = messageId;
-    }
-
-    /**
-     * Sets the clickCallback
-     * @param clickCallback
-     */
-    public void setCallback(IterableHelper.IterableUrlCallback clickCallback) {
-        this.clickCallback = clickCallback;
-    }
 
     /**
      * Sets the loaded flag
@@ -127,26 +125,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      */
     public void setLoaded(boolean loaded) {
         this.loaded = loaded;
-    }
-
-    /**
-     * Sets the backgroundAlpha
-     * @param backgroundAlpha
-     */
-    public void setBackgroundAlpha(double backgroundAlpha) {
-        this.backgroundAlpha = backgroundAlpha;
-    }
-
-    /**
-     * Sets the padding
-     * @param insetPadding
-     */
-    public void setPadding(Rect insetPadding) {
-        this.insetPadding = insetPadding;
-    }
-
-    public void setLocation(IterableInAppLocation location) {
-        this.location = location;
     }
 
     @NonNull
