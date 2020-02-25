@@ -12,9 +12,7 @@ Iterable, supporting Android API versions 15 and higher.
 - [Installation](#installation)
     - [Stable versions](#stable-versions)
     - [Beta versions](#beta-versions)
-    - [Handling Firebase push messages and tokens](#handling-firebase-push-messages-and-tokens)
 - [Setting up a push integration in Iterable](#setting-up-a-push-integration-in-iterable)
-- [Migrating from a version prior to 3.1.0](#migrating-from-a-version-prior-to-310)
 - [Sample apps](#sample-apps)
 - [Using the SDK](#using-the-sdk)
     - [Push notifications](#push-notifications)
@@ -22,6 +20,7 @@ Iterable, supporting Android API versions 15 and higher.
     - [Mobile Inbox](#mobile-inbox)
     - [Deep linking](#deep-linking)
 - [Optional setup](#optional-setup)
+    - [Migrating from a version prior to 3.1.0](#migrating-from-a-version-prior-to-310)
 - [Additional information](#additional-information)
 - [License](#license)
 - [Want to contribute?](#want-to-contribute)
@@ -44,6 +43,7 @@ tokens.
 Add the following dependencies to your application's **build.gradle**:
 
 - `implementation 'com.iterable:iterableapi:3.2.0'`
+- `implementation 'com.iterable:iterableapi-ui:3.2.0' // Optional, contains Inbox UI components`
 - `implementation 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0`
 
 See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
@@ -82,34 +82,6 @@ To install a beta version:
     implementation 'com.github.Iterable.iterable-android-sdk:iterableapi-ui:3.2.0-beta1'
     ```
 
-### Handling Firebase push messages and tokens
-
-The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so
-you don't have to do any extra setup to handle incoming push messages.
-
-If your application implements its own `FirebaseMessagingService`, make sure you
-forward `onMessageReceived` and `onNewToken` calls to
-`IterableFirebaseMessagingService.handleMessageReceived` and
-`IterableFirebaseMessagingService.handleTokenRefresh`, respectively:
-
-```java
-public class MyFirebaseMessagingService extends FirebaseMessagingService {
-
-    @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
-        IterableFirebaseMessagingService.handleMessageReceived(this, remoteMessage);
-    }
-
-    @Override
-    public void onNewToken(String s) {
-        IterableFirebaseMessagingService.handleTokenRefresh();
-    }
-}
-```
-
-Note that `FirebaseInstanceIdService` is deprecated and replaced with
-`onNewToken` in recent versions of Firebase.
-
 ## Setting up a push integration in Iterable
 
 Before you even start with the SDK, you will need to: 
@@ -121,52 +93,6 @@ your behalf with Firebase Cloud Messaging.
 
 For more details, read Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943) 
 guide.
-
-
-## Migrating from a version prior to 3.1.0
-
-- In-app messages: `spawnInAppNotification`
-
-    - `spawnInAppNotification` is no longer needed and will fail to compile.
-    The SDK now displays in-app messages automatically. For more information,
-    see [In-app messages](#in-app-messages).
-
-    - There is no need to poll the server for new messages.
-
-- In-app messages: handling manually
-
-    - To control when in-app messages display (rather than displaying them
-    automatically), set `IterableConfig.inAppHandler` (an 
-    `IterableInAppHandler` object). From its `onNewInApp` method, return 
-    `InAppResponse.SKIP`.
-
-    - To get the queue of available in-app messages, call 
-    `IterableApi.getInstance().getInAppManager().getMessages()`. Then, call 
-    `IterableApi.getInstance().getInAppManager().showMessage(message)`
-    to show a specific message.
-
-    - For more details, see [In-app messages](#in-app-messages).
-
-- In-app messages: custom actions
-
-    - This version of the SDK reserves the `iterable://` URL scheme for
-    Iterable-defined actions handled by the SDK and the `action://` URL
-    scheme for custom actions handled by the mobile application's custom
-    action handler. For more details, see 
-    [Handling in-app message buttons and links](#handling-in-app-message-buttons-and-links).
-
-    - If you are currently using the `itbl://` URL scheme for custom actions,
-    the SDK will still pass these actions to the custom action handler.
-    However, support for this URL scheme will eventually be removed (timeline
-    TBD), so it is best to move templates to the `action://` URL scheme as
-    it's possible to do so.
-
-- Consolidated deep link URL handling
-
-    - By default, the SDK handles deep links with the the URL handler
-    assigned to `IterableConfig`. Follow the instructions in 
-    [Deep linking](#deep-linking) to migrate any existing URL handling code
-    to this new API.
 
 ## Sample apps
 
@@ -216,6 +142,34 @@ This repository contains the following sample apps:
     > &#x26A0; Device registration will fail if user email or userId is not set. If you're calling `setEmail` or `setUserId` after the app is launched (i.e. when the user logs in), make sure you call `registerForPush()` again to register the device with the logged in user.
       
 Congratulations! You can now send remote push notifications to your device from Iterable!
+
+#### Handling Firebase push messages and tokens
+
+The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so
+you don't have to do any extra setup to handle incoming push messages.
+
+If your application implements its own `FirebaseMessagingService`, make sure you
+forward `onMessageReceived` and `onNewToken` calls to
+`IterableFirebaseMessagingService.handleMessageReceived` and
+`IterableFirebaseMessagingService.handleTokenRefresh`, respectively:
+
+```java
+public class MyFirebaseMessagingService extends FirebaseMessagingService {
+
+    @Override
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        IterableFirebaseMessagingService.handleMessageReceived(this, remoteMessage);
+    }
+
+    @Override
+    public void onNewToken(String s) {
+        IterableFirebaseMessagingService.handleTokenRefresh();
+    }
+}
+```
+
+Note that `FirebaseInstanceIdService` is deprecated and replaced with
+`onNewToken` in recent versions of Firebase.
 
 #### Disabling push notifications to a device
 
@@ -440,6 +394,51 @@ After tapping a deep link in an email from an Iterable campaign, users without t
 Set `checkForDeferredDeeplink` to `true` on `IterableConfig` when initializing the SDK to enable deferred deep linking for Iterable SDK. Make sure a `urlHandler` is also set up to handle deep links to open the right content within your app on first launch (see above for details).
 
 ## Optional setup
+
+### Migrating from a version prior to 3.1.0
+
+- In-app messages: `spawnInAppNotification`
+
+    - `spawnInAppNotification` is no longer needed and will fail to compile.
+    The SDK now displays in-app messages automatically. For more information,
+    see [In-app messages](#in-app-messages).
+
+    - There is no need to poll the server for new messages.
+
+- In-app messages: handling manually
+
+    - To control when in-app messages display (rather than displaying them
+    automatically), set `IterableConfig.inAppHandler` (an
+    `IterableInAppHandler` object). From its `onNewInApp` method, return
+    `InAppResponse.SKIP`.
+
+    - To get the queue of available in-app messages, call
+    `IterableApi.getInstance().getInAppManager().getMessages()`. Then, call
+    `IterableApi.getInstance().getInAppManager().showMessage(message)`
+    to show a specific message.
+
+    - For more details, see [In-app messages](#in-app-messages).
+
+- In-app messages: custom actions
+
+    - This version of the SDK reserves the `iterable://` URL scheme for
+    Iterable-defined actions handled by the SDK and the `action://` URL
+    scheme for custom actions handled by the mobile application's custom
+    action handler. For more details, see
+    [Handling in-app message buttons and links](#handling-in-app-message-buttons-and-links).
+
+    - If you are currently using the `itbl://` URL scheme for custom actions,
+    the SDK will still pass these actions to the custom action handler.
+    However, support for this URL scheme will eventually be removed (timeline
+    TBD), so it is best to move templates to the `action://` URL scheme as
+    it's possible to do so.
+
+- Consolidated deep link URL handling
+
+    - By default, the SDK handles deep links with the the URL handler
+    assigned to `IterableConfig`. Follow the instructions in
+    [Deep linking](#deep-linking) to migrate any existing URL handling code
+    to this new API.
 
 ### GCM -> Firebase migration
 
