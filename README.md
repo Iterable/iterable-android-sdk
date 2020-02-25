@@ -7,6 +7,24 @@
 The Iterable Android SDK is a Java implementation of an Android client for
 Iterable, supporting Android API versions 15 and higher.
 
+## Table of contents
+
+- [Installation](#installation)
+    - [Stable versions](#stable-versions)
+    - [Beta versions](#beta-versions)
+    - [Handling Firebase push messages and tokens](#handling-firebase-push-messages-and-tokens)
+- [Setting up a push integration in Iterable](#setting-up-a-push-integration-in-iterable)
+- [Migrating from a version prior to 3.1.0](#migrating-from-a-version-prior-to-310)
+- [Using the SDK](#using-the-sdk)
+    - [Push notifications](#push-notifications)
+    - [In-app messages](#in-app-messages)
+    - [Mobile Inbox](#mobile-inbox)
+    - [Deep linking](#deep-linking)
+- [Optional setup](#optional-setup)
+- [Additional information](#additional-information)
+- [License](#license)
+- [Want to contribute?](#want-to-contribute)
+
 ## Installation
 
 It's possible to install stable or beta versions of Iterable's Android SDK,
@@ -35,7 +53,7 @@ version of the SDK.
 > &#x26A0; **IMPORTANT**
 >
 > Beta versions of this SDK are subject to Iterable's 
-[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
+> [Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
 
 Beta versions of Iterable's Android SDK are published to JitPack instead of
 Maven. To find the latest beta version of Iterable's Android SDK, look at
@@ -324,10 +342,7 @@ allows users to read them at their convenience. The SDK provides a default user
 interface for the inbox, which can be customized to match your brand's styles.
 
 To learn more about Mobile Inbox, how to customize it, and events related to 
-its usage, read the following documentation on Iterable's support portal:
-
-- [Mobile Inbox](https://support.iterable.com/hc/articles/360034903151)
-- [Setting up Mobile Inbox on Android](https://support.iterable.com/hc/articles/360038744152)
+its usage, read Iterable's [Mobile Developer Guides](https://support.iterable.com/hc/categories/360002288712).
 
 ### Deep linking
 
@@ -427,11 +442,7 @@ If you're using a different project for FCM and have existing devices on a GCM p
 
 ## Additional information
 
-For more information, take a look at:
-
-- Iterable's [Android SDK Release Notes](https://support.iterable.com/hc/articles/360027543332)
-- Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943-Setting-up-Android-Push-Notifications) guide
-- Iterable's [Push Notification Setup FAQs](http://support.iterable.com/hc/articles/206791196-Push-Notification-Setup-FAQ-s)
+For more information, take a look at Iterable's [Mobile Developer Guides](https://support.iterable.com/hc/categories/360002288712).
 
 ## License
 
