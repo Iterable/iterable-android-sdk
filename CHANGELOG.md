@@ -15,14 +15,27 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
-## [3.2.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.0-beta1)
+## [3.2.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.0)
 #### Added
-- [Mobile Inbox](https://github.com/Iterable/iterable-android-sdk/blob/inbox/README.md#mobile-inbox)
-- [Mobile Inbox related events](https://github.com/Iterable/iterable-android-sdk/blob/inbox/README.md#mobile-inbox-events-and-the-events-lifecycle)
+- **[Mobile Inbox](https://github.com/Iterable/iterable-android-sdk/blob/master/README.md#mobile-inbox)**
+
+    Changes since beta:
+     - Added support for various ways to customize the default interface for a mobile inbox
+     - Added a sample project that demonstrates how to customize the default interface for a mobile inbox
+     - Added tracking for inbox sessions (when the inbox is visible in the app) and inbox message impressions (when a individual message's item is visible in the mobile inbox message list)
+
+#### Removed
+- Removed all old initialization methods starting with `sharedInstanceWithApiKey`
+- Removed `sendPush` methods (these API methods can't be called from mobile apps)
+- Removed all deprecated methods with extra parameters for push registration:
+  - `void registerDeviceToken(String token)` is the only one available now for token registration
+  - `void disablePush()` is the only one available for disabling the current push token
+  - Platform is always FCM, and push integration name is taken from `IterableConfig`
 
 #### Changed
+- The SDK now depends on *AndroidX* libraries. [Migrate your app to use AndroidX](https://developer.android.com/jetpack/androidx/migrate) before using version 3.2.0 or higher of the SDK.
 - When `pushIntegrationName` is not set on `IterableConfig`, the SDK now defaults it to the app's package name.
-If you've set up your push integration with the new Mobile Apps UI, you don't have to specify `pushIntegrationName` in the SDK anymore. 
+If you've set up your push integration with the new Mobile Apps UI, you don't have to specify `pushIntegrationName` in the SDK anymore.
 
 ## [3.1.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.1.6)
 #### Added
