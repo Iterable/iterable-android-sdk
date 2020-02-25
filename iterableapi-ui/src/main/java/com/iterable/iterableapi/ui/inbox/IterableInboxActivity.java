@@ -1,5 +1,6 @@
 package com.iterable.iterableapi.ui.inbox;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,7 +19,8 @@ import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.ITEM_LAYOU
  * {@link IterableInboxFragment#ITEM_LAYOUT_ID} - Layout resource id for inbox items
  */
 public class IterableInboxActivity extends AppCompatActivity {
-    static final String TAG = "IterableInboxActivity";
+    private static final String TAG = "IterableInboxActivity";
+    public static final String ACTIVITY_TITLE = "activityTitle";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -27,14 +29,19 @@ public class IterableInboxActivity extends AppCompatActivity {
         setContentView(R.layout.iterable_inbox_activity);
         IterableInboxFragment inboxFragment;
 
-        if (getIntent() != null) {
-            Object inboxModeExtra = getIntent().getSerializableExtra(INBOX_MODE);
-            int itemLayoutId = getIntent().getIntExtra(ITEM_LAYOUT_ID, 0);
+        Intent intent = getIntent();
+        if (intent != null) {
+            Object inboxModeExtra = intent.getSerializableExtra(INBOX_MODE);
+            int itemLayoutId = intent.getIntExtra(ITEM_LAYOUT_ID, 0);
             InboxMode inboxMode = InboxMode.POPUP;
             if (inboxModeExtra instanceof InboxMode) {
                 inboxMode = (InboxMode) inboxModeExtra;
             }
             inboxFragment = IterableInboxFragment.newInstance(inboxMode, itemLayoutId);
+
+            if (intent.getStringExtra(ACTIVITY_TITLE) != null) {
+                setTitle(intent.getStringExtra(ACTIVITY_TITLE));
+            }
         } else {
             inboxFragment = IterableInboxFragment.newInstance();
         }
