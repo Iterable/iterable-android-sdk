@@ -4,28 +4,66 @@
 
 # Iterable Android SDK
 
-The Iterable Android SDK is a Java implementation of an Android client for Iterable, supporting Android API versions 15 and higher.
+The Iterable Android SDK is a Java implementation of an Android client for
+Iterable, supporting Android API versions 15 and higher.
 
-## Setting up a push integration in Iterable
+## Table of contents
 
-Before you even start with the SDK, you will need to: 
+- [Installation](#installation)
+    - [Stable versions](#stable-versions)
+    - [Beta versions](#beta-versions)
+    - [Handling Firebase push messages and tokens](#handling-firebase-push-messages-and-tokens)
+- [Setting up a push integration in Iterable](#setting-up-a-push-integration-in-iterable)
+- [Migrating from a version prior to 3.1.0](#migrating-from-a-version-prior-to-310)
+- [Sample apps](#sample-apps)
+- [Using the SDK](#using-the-sdk)
+    - [Push notifications](#push-notifications)
+    - [In-app messages](#in-app-messages)
+    - [Mobile Inbox](#mobile-inbox)
+    - [Deep linking](#deep-linking)
+- [Optional setup](#optional-setup)
+- [Additional information](#additional-information)
+- [License](#license)
+- [Want to contribute?](#want-to-contribute)
 
-1. Set your application up to receive push notifications
-2. Set up a push integration in Iterable. This allows Iterable to communicate on your behalf with Firebase Cloud Messaging.
+## Installation
 
-For more details, read Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943-Setting-up-Android-Push-Notifications) guide.
-
-Congratulations, you've configured your Iterable project to send push notifications to your app! Now, let's set up the Iterable SDK.
-
-## Installing a beta version of the SDK to use with Iterable's Mobile Inbox beta
+It's possible to install stable or beta versions of Iterable's Android SDK,
+as described below. You'll also need to handle Firebase push messages and 
+tokens.
 
 > &#x26A0; **IMPORTANT**
+>
+> Versions 3.2.0 and higher of Iterable's Android SDK depend on the
+> [AndroidX](https://developer.android.com/jetpack/androidx) support libraries.
+> [Migrate your app to use AndroidX](https://developer.android.com/jetpack/androidx/migrate)
+> before using version 3.2.0 or higher of the SDK.
+
+### Stable versions
+
+Add the following dependencies to your application's **build.gradle**:
+
+- `compile 'com.iterable:iterableapi:3.2.0'`
+- `compile 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0`
+
+See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
+version of the SDK.
+
+### Beta versions
+
+> &#x26A0; **IMPORTANT**
+>
 > Beta versions of this SDK are subject to Iterable's 
-[Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
+> [Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
 
-The current beta version of the SDK is `3.2.0-beta1`. Beta releases are not published to Maven; instead, use Jitpack:
+Beta versions of Iterable's Android SDK are published to JitPack instead of
+Maven. To find the latest beta version of Iterable's Android SDK, look at
+look at this [JitPack page](https://jitpack.io/#Iterable/iterable-android-sdk).
 
-1. Add the JitPack repository to your build file. Add it in your root build.gradle at the end of repositories:
+To install a beta version:
+
+1. Add the JitPack repository to your build file. Add it in your root
+**build.gradle** at the end of repositories:
 
     ```groovy
     allprojects {
@@ -35,8 +73,9 @@ The current beta version of the SDK is `3.2.0-beta1`. Beta releases are not publ
         }
     }
     ```
-    
-2. Add Iterable SDK dependencies:
+
+2. Add dependencies for Iterable's Android SDK (this example selects version 
+`3.2.0-beta1`):
 
     ```groovy
     implementation 'com.github.Iterable.iterable-android-sdk:iterableapi:3.2.0-beta1'
@@ -45,9 +84,13 @@ The current beta version of the SDK is `3.2.0-beta1`. Beta releases are not publ
 
 ### Handling Firebase push messages and tokens
 
-The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so you don't have to do any extra setup to handle incoming push messages.
+The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so
+you don't have to do any extra setup to handle incoming push messages.
 
-If your application implements its own FirebaseMessagingService, make sure you forward `onMessageReceived` and `onNewToken` calls to `IterableFirebaseMessagingService.handleMessageReceived` and `IterableFirebaseMessagingService.handleTokenRefresh`, respectively:
+If your application implements its own `FirebaseMessagingService`, make sure you
+forward `onMessageReceived` and `onNewToken` calls to
+`IterableFirebaseMessagingService.handleMessageReceived` and
+`IterableFirebaseMessagingService.handleTokenRefresh`, respectively:
 
 ```java
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
@@ -64,7 +107,21 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 }
 ```
 
-Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToken` in recent versions of Firebase.
+Note that `FirebaseInstanceIdService` is deprecated and replaced with
+`onNewToken` in recent versions of Firebase.
+
+## Setting up a push integration in Iterable
+
+Before you even start with the SDK, you will need to: 
+
+1. Set your application up to receive push notifications
+
+2. Set up a push integration in Iterable. This allows Iterable to communicate on
+your behalf with Firebase Cloud Messaging.
+
+For more details, read Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943) 
+guide.
+
 
 ## Migrating from a version prior to 3.1.0
 
@@ -110,6 +167,12 @@ Note that `FirebaseInstanceIdService` is deprecated and replaced with `onNewToke
     assigned to `IterableConfig`. Follow the instructions in 
     [Deep linking](#deep-linking) to migrate any existing URL handling code
     to this new API.
+
+## Sample apps
+
+This repository contains the following sample apps:
+
+- [Inbox Customization](https://github.com/Iterable/iterable-android-sdk/tree/master/sample-apps/inbox-customization)
 
 ## Using the SDK
 
@@ -280,143 +343,13 @@ To customize the time delay between successive in-app messages, set `inAppDispla
 
 ### Mobile Inbox
 
-Apps using version 3.2.0 and later of this SDK can save in-app messages to an inbox. This inbox displays a list of saved in-app messages and allows users to read and interact with them at their convenience. The SDK provides a default user interface for the inbox, and it can be customized to match your brand's styles.
+Apps using version 3.2.0 and later of this SDK can allow users to save in-app
+messages to an inbox. This inbox displays a list of saved in-app messages and
+allows users to read them at their convenience. The SDK provides a default user
+interface for the inbox, which can be customized to match your brand's styles.
 
-To configure an in-app message to use the inbox, marketers should:
-
-- Enable the **Show in Inbox** toggle in the in-app message's template
-- Choose whether or not to **Deliver Silently to Inbox** (so that the message does not display prominently when the device receives it, but can be viewed later by the user)
-
-#### Mobile Inbox implementation guide
-
-Add a new dependency, `iterableapi-ui`, to your `build.gradle` file:
-
-```groovy
-compile 'com.iterable:iterableapi-ui:3.2.0-beta1'
-```
-
-To open Inbox as a separate activity, launch `IterableInboxActivity`. The SDK also provides `IterableInboxFragment` if you need to embed the Inbox UI within an existing activity.
-
-##### Show the inbox inside an existing activity
-
-You can embed `IterableInboxFragment` either via a layout .xml file, or by calling `IterableInboxFragment.newInstance()` and inserting it into your activity.
-
-##### Display mobile inbox as a result of an user action
-
-It's also possible to show the inbox when a user taps a button (or completes some other action). To do this, respond to the user's action by starting `IterableInboxActivity`. For example:
-
-```java
-// Add this in your button handler
-startActivity(this, IterableInboxActivity.class);
-```
-
-#### Mobile Inbox customization options
-
-The SDK provides various ways to customize the inbox's interface to match your brand's styles. For simpler customization needs, specify a custom XML layout ID by calling `setItemLayoutId` on the `IterableInboxFragment`. For more advanced scenarios, define classes that inherit from `IterableInboxFragment` and `InboxRecyclerViewAdapter` and override existing methods as necessary.
-
-##### inboxMode
-
-`IterableInboxFragment` and `IterableInboxActivity` can display inbox messages in two ways:
-
-- `POPUP` - (default): Displays the inbox message as a dialog on top of the Inbox UI.
-- `ACTIVITY` - Displays the inbox message in a new activity.
-
-##### itemLayoutId
-
-To completely change the look of an inbox, copy the contents of `fragment_inbox_item.xml` from `iterableapi-ui` into a new layout XML in your project and modify it. Then call `setItemLayoutId` on the `IterableInboxFragment` in `onCreate` of the parent activity to specify the custom layout XML for Inbox cells.
-
-#### Mobile inbox events and the events lifecycle
-
-An inbox lists saved in-app messages. Because of this, Iterable events that apply to in-app messages also apply to inbox messages. These events are described below:
-
-##### In-App Send
-
-This event is triggered when an in-app message is sent to a user.
-
-Important event properties:
-
-- `eventType` - `inAppSend`
-- `createdAt` - when the in-app message was sent
-- `campaignId`- the in-app message campaign ID
-
-##### In-App Delivery
-
-This event is triggered when an in-app message is received by a user's device.
-
-Important event properties:
-
-- `eventType` - `inAppDelivery`
-- `createdAt` - when the in-app message was received by the device
-- `campaignId` - the in-app message campaign ID
-
-##### Inbox Message Impression
-
-This event tracks the number of unique times a message appeared in the inbox during a single inbox session (period when the user had the inbox open). The total represents the count of unique times the message displayed on-screen in the inbox during an inbox session (not the number of times the user actually opened that message).
-
-Important event properties:
-
-- `eventType` - `inboxMessageImpression`
-- `createdAt` - when the event was created
-- `campaignId` - the in-app message campaign ID
-- `impressionCount` - how many times the message was visible in the inbox during the inbox session
-- `totalDuration` - the total duration of time (in seconds) the message was visible in the inbox
-
-##### In-App Open
-
-This event is triggered when the user taps a message in the inbox to view its contents.
-
-Important event properties:
-
-- `eventType` - `inAppOpen`
-- `createdAt` - when the in-app message was opened
-- `campaignId`- the in-app message campaign ID
-
-##### In-App Click
-
-This event is triggered when the user taps on a link or button in an in-app message.
-
-Important event properties:
-
-- `eventType` - `inAppClick`
-- `createdAt` - when the button in the in-app message was tapped
-- `campaignId`- the in-app message campaign ID
-- `clickedUrl` - the URL associated with the tapped link/button
-
-##### In-App Close
-
-This event is triggered when the user closes an inbox message by tapping a close button or a back button. Close buttons/links should have URL `iterable://dismiss`. Tapping a close button/link also creates an `inAppClick` event.
-
-Important event properties:
-
-- `eventType` - `inAppClose`
-- `createdAt` - when the in-app message was closed
-- `campaignId`- the in-app message campaign ID
-- `closeAction` - the type of item the user tapped: `link` (for buttons/links), `back` for a back button, or `other`
-
-##### In-App Delete 
-
-This event is triggered when the user deletes an inbox message by swiping left on it and tapping the **Delete** button, or when the user taps a delete button/link in the in-app message, which should have a URL of `iterable://delete`. Tapping a delete button/link also creates an `inAppClick` event and an `inAppClose` event.
-
-Important event properties:
-
-- `eventType` - `inAppDelete`
-- `createdAt` - when the in-app message was deleted
-- `campaignId`- the in-app campaign ID
-- `deleteAction` - how the message was deleted (`inbox-swipe` if the user swiped left in the inbox and tapped **Delete**, or `delete-button` if the user tapped a button/link with URL `iterable://delete`).
-
-##### Inbox Session
-
-This event captures information about an inbox session, which starts when a user opens the inbox and ends when they navigate away (or close/minimize the app). Viewing a message in the inbox does not end the session.
-
-Important event properties
-
-- `eventType` - `inboxSession`
-- `campaignId`- the in-app campaign id
-- `inboxSessionStart` - when the session started
-- `inboxSessionEnd` - when the session ended
-- `uniqueImpressionCount` - no of unique messages visible in the Inbox message list to the user during the inbox session
-- `startTotalMessageCount` - the number of messages in the inbox at the session's start
-- `endTotalMessageCount` - the number of messages in the inbox at the session's end (messages can be added or removed during a session)
+To learn more about Mobile Inbox, how to customize it, and events related to 
+its usage, read Iterable's [Mobile Developer Guides](https://support.iterable.com/hc/categories/360002288712).
 
 ### Deep linking
 
@@ -516,11 +449,7 @@ If you're using a different project for FCM and have existing devices on a GCM p
 
 ## Additional information
 
-For more information, take a look at:
-
-- Iterable's [Android SDK Release Notes](https://support.iterable.com/hc/articles/360027543332)
-- Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943-Setting-up-Android-Push-Notifications) guide
-- Iterable's [Push Notification Setup FAQs](http://support.iterable.com/hc/articles/206791196-Push-Notification-Setup-FAQ-s)
+For more information, take a look at Iterable's [Mobile Developer Guides](https://support.iterable.com/hc/categories/360002288712).
 
 ## License
 
