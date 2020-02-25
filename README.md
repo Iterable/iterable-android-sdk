@@ -15,6 +15,7 @@ Iterable, supporting Android API versions 15 and higher.
     - [Handling Firebase push messages and tokens](#handling-firebase-push-messages-and-tokens)
 - [Setting up a push integration in Iterable](#setting-up-a-push-integration-in-iterable)
 - [Migrating from a version prior to 3.1.0](#migrating-from-a-version-prior-to-310)
+- [Sample apps](#sample-apps)
 - [Using the SDK](#using-the-sdk)
     - [Push notifications](#push-notifications)
     - [In-app messages](#in-app-messages)
@@ -166,6 +167,12 @@ guide.
     assigned to `IterableConfig`. Follow the instructions in 
     [Deep linking](#deep-linking) to migrate any existing URL handling code
     to this new API.
+
+## Sample apps
+
+This repository contains the following sample apps:
+
+- [Inbox Customization](https://github.com/Iterable/iterable-android-sdk/tree/master/sample-apps/inbox-customization)
 
 ## Using the SDK
 
