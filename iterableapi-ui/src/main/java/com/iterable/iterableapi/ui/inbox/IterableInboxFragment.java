@@ -181,8 +181,10 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopSession();
         IterableActivityMonitor.getInstance().removeCallback(appStateCallback);
+        if (this.getActivity() != null && !this.getActivity().isChangingConfigurations()) {
+            stopSession();
+        }
     }
 
     private final IterableActivityMonitor.AppStateCallback appStateCallback = new IterableActivityMonitor.AppStateCallback() {
