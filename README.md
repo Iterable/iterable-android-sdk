@@ -84,12 +84,12 @@ To install a beta version:
 
 ## Setting up a push integration in Iterable
 
-Before you even start with the SDK, you will need to: 
+Before integrating the SDK for push messaging, you will need to:
 
-1. Set your application up to receive push notifications
+1. Set your application up to receive push notifications via Firebase.
 
-2. Set up a push integration in Iterable. This allows Iterable to communicate on
-your behalf with Firebase Cloud Messaging.
+2. Set up a Mobile App in Iterable and create a Firebase push integration in it.
+This allows Iterable to communicate on your behalf with Firebase Cloud Messaging.
 
 For more details, read Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943) 
 guide.
@@ -108,14 +108,26 @@ This repository contains the following sample apps:
 
     ```java
     IterableConfig config = new IterableConfig.Builder()
-            .setPushIntegrationName("myPushIntegration")
             .build();
     IterableApi.initialize(context, "<your-api-key>", config);
     ```
 
     * The `apiKey` should correspond to the API key of your project in Iterable. If you'd like, you can specify a different `apiKey` depending on whether you're building in `DEBUG` or `PRODUCTION`, and point the SDK to the relevant Iterable project.
+    * `IterableConfig` contains various configuration options for the SDK. Please refer to the [Javadoc comments](iterableapi/src/main/java/com/iterable/iterableapi/IterableConfig.java#L9) in the class source code for more information on the available configuration options.
 
     > &#x26A0; Don't call `IterableApi.initialize` from `Activity#onCreate`; it is necessary for Iterable SDK to be initialized when the application is starting, to make sure everything is set up regardless of whether the app is launched to open an activity or is woken up in background as a result of an incoming push message.
+
+    The SDK uses the app's package name by default when it is not specified (app's package name is also the default name for all new integrations created via Mobile Apps section in Iterable).
+    If your push integration was created before August 2019, it may have a custom name that is different from the app's package name. In that case, specify it when initializing the SDK:
+    ```java
+    IterableConfig config = new IterableConfig.Builder()
+            .setPushIntegrationName("<push integration name>")
+            .build();
+    IterableApi.initialize(context, "<your-api-key>", config);
+    ```
+    You can find the integration name in 'Push' section of the Mobile App:
+
+    ![Push integration name](images/push-integration-name.png)
 
 2. Once you know the email *(Preferred)* or userId of the user, call `setEmail` or `setUserId`
 
@@ -302,8 +314,14 @@ messages to an inbox. This inbox displays a list of saved in-app messages and
 allows users to read them at their convenience. The SDK provides a default user
 interface for the inbox, which can be customized to match your brand's styles.
 
-To learn more about Mobile Inbox, how to customize it, and events related to 
-its usage, read Iterable's [Mobile Developer Guides](https://support.iterable.com/hc/categories/360002288712).
+To learn more about Mobile Inbox, how to customize it, and events related to
+its usage, read:
+
+- [In-App Messages and Mobile Inbox](https://support.iterable.com/hc/articles/217517406)
+- [Sending In-App Messages](https://support.iterable.com/hc/articles/360034903151)
+- [Events for In-App Messages and Mobile Inbox](https://support.iterable.com/hc/articles/360038939972)
+- [Setting up Mobile Inbox on Android](https://support.iterable.com/hc/articles/360038744152)
+- [Customizing Mobile Inbox on Android](https://support.iterable.com/hc/articles/360039189931)
 
 ### Deep linking
 
@@ -319,7 +337,6 @@ public void onCreate() {
     super.onCreate();
     ...
     IterableConfig config = new IterableConfig.Builder()
-        .setPushIntegrationName("myPushIntegration")
         .setUrlHandler(this)
         .build();
     IterableApi.initialize(context, "YOUR API KEY", config);
