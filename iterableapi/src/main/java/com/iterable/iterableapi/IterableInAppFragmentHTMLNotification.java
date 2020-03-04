@@ -39,6 +39,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private static final String INSET_PADDING = "InsetPadding";
     private static final String CALLBACK_ON_CANCEL = "CallbackOnCancel";
     private static final String MESSAGE_ID = "MessageId";
+    private static final String INAPP_OPEN_TRACKED = "InAppOpenTracked";
 
     static IterableInAppFragmentHTMLNotification notification;
     static IterableHelper.IterableUrlCallback clickCallback;
@@ -189,8 +190,16 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.MATCH_PARENT);
         relativeLayout.addView(webView, layoutParams);
 
-        IterableApi.sharedInstance.trackInAppOpen(messageId, location);
+        if ((savedInstanceState == null) || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {
+            IterableApi.sharedInstance.trackInAppOpen(messageId, location);
+        }
         return relativeLayout;
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(INAPP_OPEN_TRACKED, true);
     }
 
     /**
