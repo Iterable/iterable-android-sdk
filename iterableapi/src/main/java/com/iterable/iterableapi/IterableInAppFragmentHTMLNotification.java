@@ -194,15 +194,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     /**
-     * Sets up the webview and the dialog layout
-     */
-    @Override
-    public void onStart() {
-        super.onStart();
-        getDialog().getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-    }
-
-    /**
      * On Stop of the dialog
      */
     @Override
