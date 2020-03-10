@@ -190,7 +190,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.MATCH_PARENT);
         relativeLayout.addView(webView, layoutParams);
 
-        if ((savedInstanceState == null) || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {
+        if (savedInstanceState == null || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
         }
         return relativeLayout;
