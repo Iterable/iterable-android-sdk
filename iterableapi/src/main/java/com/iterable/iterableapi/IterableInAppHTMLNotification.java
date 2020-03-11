@@ -9,7 +9,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.SensorManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -33,7 +32,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
 
     Context context;
     IterableWebView webView;
-    boolean loaded;
+    PageStatus webViewStatus;
     OrientationEventListener orientationListener;
     String htmlString;
     String messageId;
@@ -73,7 +72,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
 
         this.context = context;
         this.htmlString = htmlString;
-        this.loaded = false;
+        this.webViewStatus = PageStatus.NOT_INITIALIZED;
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
@@ -96,11 +95,12 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
     }
 
     /**
-     * Sets the loaded flag
-     * @param loaded
+     * Sets the webview's status
+     * @param status
      */
-    public void setLoaded(boolean loaded) {
-        this.loaded = loaded;
+    @Override
+    public void setWebViewStatus(PageStatus status) {
+        this.webViewStatus = status;
     }
 
     /**
@@ -149,7 +149,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
             orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
                 public void onOrientationChanged(int orientation) {
                     // Resize the webview on device rotation
-                    if (loaded) {
+                    if (webViewStatus == PageStatus.LOADED) {
                         final Handler handler = new Handler();
                         handler.postDelayed(new Runnable() {
                             @Override
@@ -195,7 +195,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
     @JavascriptInterface
     public void resize(final float height) {
         final Activity activity = getOwnerActivity();
-        if (activity == null) {
+        if (activity == null || webViewStatus != PageStatus.LOADED) {
             return;
         }
 
