@@ -42,8 +42,8 @@ tokens.
 
 Add the following dependencies to your application's **build.gradle**:
 
-- `implementation 'com.iterable:iterableapi:3.2.0'`
-- `implementation 'com.iterable:iterableapi-ui:3.2.0' // Optional, contains Inbox UI components`
+- `implementation 'com.iterable:iterableapi:3.2.1'`
+- `implementation 'com.iterable:iterableapi-ui:3.2.1' // Optional, contains Inbox UI components`
 - `implementation 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0`
 
 See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
