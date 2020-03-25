@@ -601,6 +601,10 @@ private static final String TAG = "IterableApi";
      * @param unsubscribedMessageTypeIds
      */
     public void updateSubscriptions(@Nullable Integer[] emailListIds, @Nullable Integer[] unsubscribedChannelIds, @Nullable Integer[] unsubscribedMessageTypeIds) {
+        updateSubscriptions(emailListIds, unsubscribedChannelIds, unsubscribedMessageTypeIds, null, null, null);
+    }
+
+    public void updateSubscriptions(@Nullable Integer[] emailListIds, @Nullable Integer[] unsubscribedChannelIds, @Nullable Integer[] unsubscribedMessageTypeIds, @Nullable Integer[] subcribedMessageTypeIDs, Integer campaignId, Integer templateId) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -611,7 +615,17 @@ private static final String TAG = "IterableApi";
         tryAddArrayToJSON(requestJSON, IterableConstants.KEY_EMAIL_LIST_IDS, emailListIds);
         tryAddArrayToJSON(requestJSON, IterableConstants.KEY_UNSUB_CHANNEL, unsubscribedChannelIds);
         tryAddArrayToJSON(requestJSON, IterableConstants.KEY_UNSUB_MESSAGE, unsubscribedMessageTypeIds);
-
+        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_SUB_MESSAGE, subcribedMessageTypeIDs);
+        try {
+            if (campaignId != null && campaignId != 0) {
+                requestJSON.putOpt(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            }
+            if (templateId != null && templateId != 0) {
+                requestJSON.putOpt(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            }
+        } catch (JSONException e) {
+            IterableLogger.e(TAG, e.toString());
+        }
         sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER_SUBS, requestJSON);
     }
 

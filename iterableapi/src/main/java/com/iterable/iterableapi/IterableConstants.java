@@ -42,6 +42,7 @@ public final class IterableConstants {
     public static final String KEY_TOTAL                = "total";
     public static final String KEY_UNSUB_CHANNEL        = "unsubscribedChannelIds";
     public static final String KEY_UNSUB_MESSAGE        = "unsubscribedMessageTypeIds";
+    public static final String KEY_SUB_MESSAGE          = "subscribedMessageTypeIds";
     public static final String KEY_USER_ID              = "userId";
     public static final String KEY_USER                 = "user";
     public static final String KEY_USER_TEXT            = "userText";
