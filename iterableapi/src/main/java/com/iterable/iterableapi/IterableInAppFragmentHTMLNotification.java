@@ -56,7 +56,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     /**
      * Creates a static instance of the notification
-     * @param context
      * @param htmlString
      * @return
      */
