@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.1)
+#### Added
+- Added support for new parameters - `subscribedMessageTypeIDs`, `campaignId`, `templateId` in `updateSubscriptions` method.
+
 ## [3.2.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.0)
 #### Added
 - **[Mobile Inbox](https://github.com/Iterable/iterable-android-sdk/blob/master/README.md#mobile-inbox)**
