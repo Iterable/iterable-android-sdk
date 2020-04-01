@@ -32,7 +32,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
 
     Context context;
     IterableWebView webView;
-    PageStatus webViewStatus;
+    boolean loaded;
     OrientationEventListener orientationListener;
     String htmlString;
     String messageId;
@@ -72,7 +72,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
 
         this.context = context;
         this.htmlString = htmlString;
-        this.webViewStatus = PageStatus.NOT_INITIALIZED;
+        this.loaded = false;
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
@@ -95,12 +95,12 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
     }
 
     /**
-     * Sets the webview's status
-     * @param status
+     * Sets the loaded flag
+     *
+     * @param loaded
      */
-    @Override
-    public void setWebViewStatus(PageStatus status) {
-        this.webViewStatus = status;
+    public void setLoaded(boolean loaded) {
+        this.loaded = loaded;
     }
 
     /**
@@ -149,7 +149,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
             orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
                 public void onOrientationChanged(int orientation) {
                     // Resize the webview on device rotation
-                    if (webViewStatus == PageStatus.LOADED) {
+                    if (loaded) {
                         final Handler handler = new Handler();
                         handler.postDelayed(new Runnable() {
                             @Override
@@ -195,7 +195,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
     @JavascriptInterface
     public void resize(final float height) {
         final Activity activity = getOwnerActivity();
-        if (activity == null || webViewStatus != PageStatus.LOADED) {
+        if (activity == null) {
             return;
         }
 

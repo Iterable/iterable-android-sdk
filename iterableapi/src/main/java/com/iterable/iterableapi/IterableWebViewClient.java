@@ -28,12 +28,6 @@ class IterableWebViewClient extends WebViewClient {
         return true;
     }
 
-    @Override
-    public void onPageStarted(WebView view, String url, Bitmap favicon) {
-        super.onPageStarted(view, url, favicon);
-        inAppHTMLNotification.setWebViewStatus(HTMLNotificationCallbacks.PageStatus.INITALIZED);
-    }
-
     /**
      * Resizes the view after the page has loaded
      * @param view
@@ -41,18 +35,12 @@ class IterableWebViewClient extends WebViewClient {
      */
     @Override
     public void onPageFinished(WebView view, String url) {
-        inAppHTMLNotification.setWebViewStatus(HTMLNotificationCallbacks.PageStatus.LOADED);
+        inAppHTMLNotification.setLoaded(true);
         view.loadUrl(resizeScript);
     }
 
     interface HTMLNotificationCallbacks {
-        enum PageStatus {
-            NOT_INITIALIZED,
-            INITALIZED,
-            LOADED
-        }
         void onUrlClicked(String url);
-
-        void setWebViewStatus(PageStatus status);
+        void setLoaded(boolean loaded);
     }
 }

@@ -46,7 +46,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     static IterableInAppLocation location;
 
     private IterableWebView webView;
-    private PageStatus webViewStatus;
+    private boolean loaded;
     private OrientationEventListener orientationListener;
     private boolean callbackOnCancel = false;
     private String htmlString;
@@ -86,7 +86,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * HTML In-App Notification
      */
     public IterableInAppFragmentHTMLNotification() {
-        this.webViewStatus = PageStatus.NOT_INITIALIZED;
+        this.loaded = false;
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
@@ -118,13 +118,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         location = null;
     }
 
-
     /**
      * Sets the loaded flag
-     * @param webViewStatus
+     *
+     * @param loaded
      */
-    public void setWebViewStatus(PageStatus webViewStatus) {
-        this.webViewStatus = webViewStatus;
+    public void setLoaded(boolean loaded) {
+        this.loaded = loaded;
     }
 
     @NonNull
@@ -169,7 +169,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
                 public void onOrientationChanged(int orientation) {
                     // Resize the webview on device rotation
-                    if (webViewStatus == PageStatus.INITALIZED || webViewStatus == PageStatus.LOADED) {
+                    if (loaded) {
                         final Handler handler = new Handler();
                         handler.postDelayed(new Runnable() {
                             @Override
