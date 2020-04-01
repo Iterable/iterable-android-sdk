@@ -145,7 +145,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
         hideDialogView(dialog);
         return dialog;
     }
@@ -155,7 +157,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+            getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
@@ -201,7 +205,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         try {
             dialog.getWindow().getDecorView().setVisibility(View.VISIBLE);
         } catch (NullPointerException e) {
-            IterableLogger.e(TAG, "View not present. Failed to show inapp");
+            IterableLogger.e(TAG, "View not present. Failed to show inapp", e);
         }
     }
     /**

@@ -32,7 +32,6 @@ class IterableWebViewClient extends WebViewClient {
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         super.onPageStarted(view, url, favicon);
         inAppHTMLNotification.setWebViewStatus(HTMLNotificationCallbacks.PageStatus.INITALIZED);
-        view.loadUrl(resizeScript);
     }
 
     /**
