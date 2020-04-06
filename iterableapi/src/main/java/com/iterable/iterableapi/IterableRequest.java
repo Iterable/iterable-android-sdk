@@ -189,6 +189,13 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             } catch (IOException e) {
                 logError(baseUrl, e);
                 handleFailure(e.getMessage(), null);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                // This exception is sometimes thrown from the inside of HttpUrlConnection/OkHttp
+                logError(baseUrl, e);
+                handleFailure(e.getMessage(), null);
+            } catch (Exception e) {
+                logError(baseUrl, e);
+                handleFailure(e.getMessage(), null);
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
