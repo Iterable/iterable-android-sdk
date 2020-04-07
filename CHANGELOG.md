@@ -15,8 +15,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
-## [3.2.2]
-
+## [3.2.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.2)
 #### Fixed
 -  Fixed an ArrayIndexOutOfBoundsException in IterableRequest which is thrown from inside HttpUrlConnection/OkHttp module in certain Android firmwares
 
