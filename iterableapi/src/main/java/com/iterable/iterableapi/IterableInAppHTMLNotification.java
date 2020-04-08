@@ -9,7 +9,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.SensorManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -97,6 +96,7 @@ public class IterableInAppHTMLNotification extends Dialog implements IterableWeb
 
     /**
      * Sets the loaded flag
+     *
      * @param loaded
      */
     public void setLoaded(boolean loaded) {

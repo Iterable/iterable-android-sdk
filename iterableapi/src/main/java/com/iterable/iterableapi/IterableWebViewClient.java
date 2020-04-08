@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.graphics.Bitmap;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -38,7 +39,7 @@ class IterableWebViewClient extends WebViewClient {
         view.loadUrl(resizeScript);
     }
 
-    public interface HTMLNotificationCallbacks {
+    interface HTMLNotificationCallbacks {
         void onUrlClicked(String url);
         void setLoaded(boolean loaded);
     }

@@ -118,9 +118,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         location = null;
     }
 
-
     /**
      * Sets the loaded flag
+     *
      * @param loaded
      */
     public void setLoaded(boolean loaded) {
@@ -145,23 +145,21 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
+        hideDialogView(dialog);
         return dialog;
     }
 
-    /**
-     * Tracks a button click when the back button is pressed
-     */
-    public void onBackPressed() {
-        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
-    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+            getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
@@ -195,6 +193,24 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         return relativeLayout;
     }
 
+    private void hideDialogView(Dialog dialog) {
+        try {
+            dialog.getWindow().getDecorView().setVisibility(View.INVISIBLE);
+        } catch (NullPointerException e) {
+            IterableLogger.e(TAG, "View not present. Failed to hide before resizing inapp");
+        }
+    }
+
+    private void showDialogView(Dialog dialog) {
+        try {
+            dialog.getWindow().getDecorView().setVisibility(View.VISIBLE);
+        } catch (NullPointerException e) {
+            IterableLogger.e(TAG, "View not present. Failed to show inapp", e);
+        }
+    }
+    /**
+     * Sets up the webview and the dialog layout
+     */
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -216,6 +232,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location);
         clickCallback.execute(Uri.parse(url));
         dismiss();
+    }
+
+    /**
+     * Tracks a button click when the back button is pressed
+     */
+    public void onBackPressed() {
+        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
+        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
     }
 
     /**
@@ -282,6 +306,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
                         window.setAttributes(wlp);
                     }
+                    showDialogView(getDialog());
                 } catch (IllegalArgumentException e) {
                     IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);
                 }
