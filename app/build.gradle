@@ -1,4 +1,6 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 apply plugin: 'jacoco'
 
 android {
@@ -25,12 +27,22 @@ android {
     }
 
     testOptions.unitTests.includeAndroidResources = true
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.0.0'
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'androidx.multidex:multidex:2.0.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.fragment:fragment:1.2.4'
+    debugImplementation 'androidx.fragment:fragment-testing:1.2.4'
 
     implementation project(':iterableapi')
     implementation project(':iterableapi-ui')
@@ -44,6 +56,7 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.3.1'
     testImplementation 'org.robolectric:shadows-playservices:4.3.1'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.2.2'
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
@@ -52,6 +65,8 @@ dependencies {
     androidTestImplementation 'com.squareup.okhttp3:mockwebserver:4.2.2'
     androidTestImplementation 'androidx.test.espresso:espresso-web:3.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-intents:3.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-contrib:3.2.0'
+    androidTestImplementation 'br.com.concretesolutions:kappuccino:1.2.1'
 }
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
