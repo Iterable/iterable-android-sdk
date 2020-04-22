@@ -16,7 +16,6 @@ public class IterableInAppMessage {
     private static final String TAG = "IterableInAppMessage";
 
     private final @NonNull String messageId;
-    private final @NonNull String campaignId;
     private final @NonNull Content content;
     private final @NonNull JSONObject customPayload;
     private final @NonNull Date createdAt;
@@ -24,6 +23,7 @@ public class IterableInAppMessage {
     private final @NonNull Trigger trigger;
     private final @Nullable Boolean saveToInbox;
     private final @Nullable InboxMetadata inboxMetadata;
+    private final @Nullable Long campaignId;
     private boolean processed = false;
     private boolean consumed = false;
     private boolean read = false;
@@ -31,17 +31,16 @@ public class IterableInAppMessage {
     private @Nullable IterableInAppStorage inAppStorageInterface;
 
     IterableInAppMessage(@NonNull String messageId,
-                         @NonNull String campaignId,
                          @NonNull Content content,
                          @NonNull JSONObject customPayload,
                          @NonNull Date createdAt,
                          @NonNull Date expiresAt,
                          @NonNull Trigger trigger,
                          @Nullable Boolean saveToInbox,
-                         @Nullable InboxMetadata inboxMetadata) {
+                         @Nullable InboxMetadata inboxMetadata,
+                         @Nullable Long campaignId) {
 
         this.messageId = messageId;
-        this.campaignId = campaignId;
         this.content = content;
         this.customPayload = customPayload;
         this.createdAt = createdAt;
@@ -49,6 +48,7 @@ public class IterableInAppMessage {
         this.trigger = trigger;
         this.saveToInbox = saveToInbox;
         this.inboxMetadata = inboxMetadata;
+        this.campaignId = campaignId;
     }
 
     static class Trigger {
@@ -203,8 +203,8 @@ public class IterableInAppMessage {
         return messageId;
     }
 
-    @NonNull
-    public String getCampaignId() {
+    @Nullable
+    public Long getCampaignId() {
         return campaignId;
     }
 
@@ -296,7 +296,7 @@ public class IterableInAppMessage {
         }
 
         String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
-        String campaignId = messageJson.optString(IterableConstants.KEY_CAMPAIGN_ID);
+        final Long campaignId = IterableUtil.retrieveValidCampaignIdOrNull(messageJson, IterableConstants.KEY_CAMPAIGN_ID);
         long createdAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_CREATED_AT);
         Date createdAt = createdAtLong != 0 ? new Date(createdAtLong) : null;
         long expiresAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT);
@@ -324,14 +324,14 @@ public class IterableInAppMessage {
 
         IterableInAppMessage message = new IterableInAppMessage(
                 messageId,
-                campaignId,
                 new Content(html, padding, backgroundAlpha),
                 customPayload,
                 createdAt,
                 expiresAt,
                 trigger,
                 saveToInbox,
-                inboxMetadata);
+                inboxMetadata,
+                campaignId);
 
         message.inAppStorageInterface = storageInterface;
         if (html != null) {
@@ -349,7 +349,9 @@ public class IterableInAppMessage {
         JSONObject contentJson = new JSONObject();
         try {
             messageJson.putOpt(IterableConstants.KEY_MESSAGE_ID, messageId);
-            messageJson.putOpt(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            if (campaignId != null && IterableUtil.isValidCampaignId(campaignId)) {
+                messageJson.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            }
             if (createdAt != null) {
                 messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CREATED_AT, createdAt.getTime());
             }
