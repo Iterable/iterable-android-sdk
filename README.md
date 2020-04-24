@@ -1,98 +1,16 @@
+<img src="Iterable-Logo.svg">
+
 [![Build Status](https://travis-ci.org/Iterable/iterable-android-sdk.svg?branch=master)](https://travis-ci.org/Iterable/iterable-android-sdk)
 [![codecov](https://codecov.io/gh/Iterable/iterable-android-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/Iterable/iterable-android-sdk)
 [![Download](https://api.bintray.com/packages/davidtruong/maven/Iterable-SDK/images/download.svg)](https://bintray.com/davidtruong/maven/Iterable-SDK/_latestVersion)
 
 # Iterable Android SDK
 
-The Iterable Android SDK is a Java implementation of an Android client for
-Iterable, supporting Android API versions 15 and higher.
-
-## Table of contents
-
-- [Installation](#installation)
-    - [Stable versions](#stable-versions)
-    - [Beta versions](#beta-versions)
-- [Setting up a push integration in Iterable](#setting-up-a-push-integration-in-iterable)
-- [Sample apps](#sample-apps)
-- [Using the SDK](#using-the-sdk)
-    - [Push notifications](#push-notifications)
-    - [In-app messages](#in-app-messages)
-    - [Mobile Inbox](#mobile-inbox)
-    - [Deep linking](#deep-linking)
-- [Optional setup](#optional-setup)
-    - [Migrating from a version prior to 3.1.0](#migrating-from-a-version-prior-to-310)
-- [Additional information](#additional-information)
-- [License](#license)
-- [Want to contribute?](#want-to-contribute)
+The Iterable Android SDK is a Java implementation of an Android client for Iterable, supporting Android API versions 15 and higher.
 
 ## Installation
 
-It's possible to install stable or beta versions of Iterable's Android SDK,
-as described below. You'll also need to handle Firebase push messages and 
-tokens.
-
-> &#x26A0; **IMPORTANT**
->
-> Versions 3.2.0 and higher of Iterable's Android SDK depend on the
-> [AndroidX](https://developer.android.com/jetpack/androidx) support libraries.
-> [Migrate your app to use AndroidX](https://developer.android.com/jetpack/androidx/migrate)
-> before using version 3.2.0 or higher of the SDK.
-
-### Stable versions
-
-Add the following dependencies to your application's **build.gradle**:
-
-- `implementation 'com.iterable:iterableapi:3.2.2'`
-- `implementation 'com.iterable:iterableapi-ui:3.2.2' // Optional, contains Inbox UI components`
-- `implementation 'com.google.firebase:firebase-messaging:X.X.X' // Min version 17.4.0`
-
-See [Bintray](https://bintray.com/davidtruong/maven/Iterable-SDK) for the latest
-version of the SDK.
-
-### Beta versions
-
-> &#x26A0; **IMPORTANT**
->
-> Beta versions of this SDK are subject to Iterable's 
-> [Beta Mobile SDK Terms of Service](https://support.iterable.com/hc/articles/360034753412).
-
-Beta versions of Iterable's Android SDK are published to JitPack instead of
-Maven. To find the latest beta version of Iterable's Android SDK, look at
-look at this [JitPack page](https://jitpack.io/#Iterable/iterable-android-sdk).
-
-To install a beta version:
-
-1. Add the JitPack repository to your build file. Add it in your root
-**build.gradle** at the end of repositories:
-
-    ```groovy
-    allprojects {
-        repositories {
-            ...
-            maven { url 'https://jitpack.io' }
-        }
-    }
-    ```
-
-2. Add dependencies for Iterable's Android SDK (this example selects version 
-`3.2.0-beta1`):
-
-    ```groovy
-    implementation 'com.github.Iterable.iterable-android-sdk:iterableapi:3.2.0-beta1'
-    implementation 'com.github.Iterable.iterable-android-sdk:iterableapi-ui:3.2.0-beta1'
-    ```
-
-## Setting up a push integration in Iterable
-
-Before integrating the SDK for push messaging, you will need to:
-
-1. Set your application up to receive push notifications via Firebase.
-
-2. Set up a Mobile App in Iterable and create a Firebase push integration in it.
-This allows Iterable to communicate on your behalf with Firebase Cloud Messaging.
-
-For more details, read Iterable's [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943) 
-guide.
+- [Installation and configuration of the Iterable Android SDK](https://support.iterable.com/hc/articles/360035019712-Iterable-s-Android-SDK-)
 
 ## Sample apps
 
@@ -104,208 +22,21 @@ This repository contains the following sample apps:
 
 ### Push notifications
 
-1. In the `onCreate` method of the `Application`, initialize the Iterable SDK:
+- [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943)
 
-    ```java
-    IterableConfig config = new IterableConfig.Builder()
-            .build();
-    IterableApi.initialize(context, "<your-api-key>", config);
-    ```
+### Deep linking
 
-    * The `apiKey` should correspond to the API key of your project in Iterable. If you'd like, you can specify a different `apiKey` depending on whether you're building in `DEBUG` or `PRODUCTION`, and point the SDK to the relevant Iterable project.
-    * `IterableConfig` contains various configuration options for the SDK. Please refer to the [Javadoc comments](iterableapi/src/main/java/com/iterable/iterableapi/IterableConfig.java#L9) in the class source code for more information on the available configuration options.
+A deep link is a URI that links to a specific location within your mobile 
+app. The following sections describe how to work with deep links using
+Iterable's Android SDK.
 
-    > &#x26A0; Don't call `IterableApi.initialize` from `Activity#onCreate`; it is necessary for Iterable SDK to be initialized when the application is starting, to make sure everything is set up regardless of whether the app is launched to open an activity or is woken up in background as a result of an incoming push message.
-
-    The SDK uses the app's package name by default when it is not specified (app's package name is also the default name for all new integrations created via Mobile Apps section in Iterable).
-    If your push integration was created before August 2019, it may have a custom name that is different from the app's package name. In that case, specify it when initializing the SDK:
-    ```java
-    IterableConfig config = new IterableConfig.Builder()
-            .setPushIntegrationName("<push integration name>")
-            .build();
-    IterableApi.initialize(context, "<your-api-key>", config);
-    ```
-    You can find the integration name in 'Push' section of the Mobile App:
-
-    ![Push integration name](images/push-integration-name.png)
-
-2. Once you know the email *(Preferred)* or userId of the user, call `setEmail` or `setUserId`
-
-    * EMAIL: `IterableApi.getInstance().setEmail("email@example.com");`
-    * USERID: `IterableApi.getInstance().setUserId("userId");`
-
-    > &#x26A0; Don't specify both email and userId in the same session, as they will be treated as different users by the SDK. Only use one type of identifier, email or userId, to identify the user.
-
-3. Register for remote notifications
-    
-    Iterable SDK automatically registers the push token with Iterable whenever `setEmail` or `setUserId` is called.
-    > &#x26A0; This default behavior is the preferred way of handling token registrations.
-    
-    If you want to trigger token registration manually, first disable automatic registration by calling `setAutoPushRegistration(false)` on `IterableConfig.Builder` when initializing the SDK.
-    
-    Than call `registerForPush` whenever you want to register the token:
-
-    ```
-    IterableApi.getInstance().registerForPush();
-    ```
-
-    This will take care of retrieving the token and registering it with Iterable.
-
-    > &#x26A0; Device registration will fail if user email or userId is not set. If you're calling `setEmail` or `setUserId` after the app is launched (i.e. when the user logs in), make sure you call `registerForPush()` again to register the device with the logged in user.
-      
-Congratulations! You can now send remote push notifications to your device from Iterable!
-
-#### Handling Firebase push messages and tokens
-
-The SDK adds a `FirebaseMessagingService` to the app manifest automatically, so
-you don't have to do any extra setup to handle incoming push messages.
-
-If your application implements its own `FirebaseMessagingService`, make sure you
-forward `onMessageReceived` and `onNewToken` calls to
-`IterableFirebaseMessagingService.handleMessageReceived` and
-`IterableFirebaseMessagingService.handleTokenRefresh`, respectively:
-
-```java
-public class MyFirebaseMessagingService extends FirebaseMessagingService {
-
-    @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
-        IterableFirebaseMessagingService.handleMessageReceived(this, remoteMessage);
-    }
-
-    @Override
-    public void onNewToken(String s) {
-        IterableFirebaseMessagingService.handleTokenRefresh();
-    }
-}
-```
-
-Note that `FirebaseInstanceIdService` is deprecated and replaced with
-`onNewToken` in recent versions of Firebase.
-
-#### Disabling push notifications to a device
-
-When a user logs out, you typically want to disable push notifications to that user/device. This can be accomplished by calling `disablePush()`. Please note that it will only attempt to disable the device if you have previously called `registerForPush()`.
-
-In order to re-enable push notifcations to that device, simply call `registerForPush()` as usual when the user logs back in.
-
-#### Customizing push notifications
-
-##### Notification icon
-
-Notifications are rendered with the app launcher icon by default. To specify a custom icon for notifications, add this line to `AndroidManifest.xml`:
-```xml
-<meta-data android:name="iterable_notification_icon" android:resource="@drawable/ic_notification_icon"/>
-```
-where `ic_notification_icon` is the name of the notification icon.
-
-##### Notification color
-
-Add this line to `AndroidManifest.xml` to specify the notification color:
-```xml
-<meta-data android:name="iterable_notification_color" android:value="#FFFFFF"/>
-```
-where `#FFFFFF` can be replaced with a hex representation of a color of your choice. In stock Android, the notification icon and action buttons will be tinted with this color.
-
-You can also use a color resource:
-```xml
-<meta-data android:name="iterable_notification_color" android:resource="@color/notification_color"/>
-```
-
-##### Notification channel name
-
-Since Android 8.0, Android requires apps to specify a channel for every notification. Iterable uses one channel for all notification; to customize the name of this channel, add this to `AndroidManifest.xml`:
-
-```xml
-<meta-data android:name="iterable_notification_channel_name" android:value="Notifications"/>
-```
-
-You can also use a string resource to localize the channel name:
-
-```xml
-<meta-data android:name="iterable_notification_channel_name" android:resource="@string/notification_channel_name"/>
-```
+- [Deep Links in Push Notifications](https://support.iterable.com/hc/en-us/articles/360035453971#android-deep-links)
+- [Android App Links](https://support.iterable.com/hc/en-us/articles/360035127392)
+- [Deferred deep linking](https://support.iterable.com/hc/articles/360035165872)
 
 ### In-app messages
 
-#### Default behavior
-
-By default, when an in-app message arrives from the server, the SDK automatically shows it if the app is in the foreground. If an in-app message is already showing when the new message arrives, the new in-app message will be shown 30 seconds after the currently displayed in-app message closes ([see how to change this default value below](#Changing-the-display-interval-between-in-app-messages)). Once an in-app message is shown, it will be "consumed" from the server queue and removed from the local queue as well. There is no need to write any code to get this default behavior.
-
-#### Overriding whether to show or skip a particular in-app message
-
-An incoming in-app message triggers a call to the `onNewInApp` method of `IterableConfig.inAppHandler` (an object of type `IterableInAppHandler`). To override the default behavior, set `inAppHandler` in `IterableConfig` to a custom class that overrides the `onNewInApp` method. `onNewInApp` should return `InAppResponse.SHOW` to show the incoming in-app message or `InAppResponse.SKIP` to skip showing it.
-
-```java
-class MyInAppHandler implements IterableInAppHandler {
-    @Override
-    public InAppResponse onNewInApp(IterableInAppMessage message) {
-        if (/* add conditions here */) {
-            return InAppResponse.SHOW;
-        } else {
-            return InAppResponse.SKIP;
-        }
-    }
-}
-
-// ...
-
-IterableConfig config = new IterableConfig.Builder()
-                .setPushIntegrationName("myPushIntegration")
-                .setInAppHandler(new MyInAppHandler())
-                .build();
-IterableApi.initialize(context, "<your-api-key>", config);
-```
-
-#### Getting the local queue of in-app messages
-
-The SDK keeps the local in-app message queue in sync by checking the server queue every time the app goes into foreground, and via silent push messages that arrive from Iterable servers to notify the app whenever a new in-app message is added to the queue.
-
-To access the in-app message queue, call `IterableApi.getInstance().getInAppManager().getMessages()`. To show a message, call `IterableApi.getInstance().getInAppManager().showMessage(message)`.
-
-```java
-// Get the in-app messages list
-IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
-List<IterableInAppMessage> messages = inAppManager.getMessages();
-
-// Show an in-app message 
-inAppManager.showMessage(message);
-
-// Show an in-app message without consuming (not removing it from the queue)
-inAppManager.showMessage(message, false, null);
-
-```
-
-#### Handling in-app message buttons and links
-
-The SDK handles in-app message buttons and links as follows:
-
-- If the URL of the button or link uses the `action://` URL scheme, the SDK
-passes the action to `IterableConfig.customActionHandler.handleIterableCustomAction()`. 
-If `customActionHandler` (an `IterableCustomActionHandler` object) has not 
-been set, the action will not be handled.
-
-    - For the time being, the SDK will treat `itbl://` URLs the same way as
-    `action://` URLs. However, this behavior will eventually be deprecated
-    (timeline TBD), so it's best to migrate to the `action://` URL scheme
-    as it's possible to do so.
-
-- The `iterable://` URL scheme is reserved for action names predefined by
-the SDK. If the URL of the button or link uses an `iterable://` URL known
-to the SDK, it will be handled automatically and will not be passed to the
-custom action handler.
-
-    - The SDK does not yet recognize any `iterable://` actions, but may
-    do so in the future.
-
-- The SDK passes all other URLs to `IterableConfig.urlHandler.handleIterableURL()`. 
-If `urlHandler` (an `IterableUrlHandler` object) has not been set, or if it
-returns `false` for the provided URL, the URL will be opened by the system
-(using a web browser or other application, as applicable).
-
-#### Changing the display interval between in-app messages
-
-To customize the time delay between successive in-app messages, set `inAppDisplayInterval` on `IterableConfig` to an appropriate value in seconds. The default value is 30 seconds.
+- [In-App Messages on Android](https://support.iterable.com/hc/en-us/articles/360035537231)
 
 ### Mobile Inbox
 
@@ -323,93 +54,17 @@ its usage, read:
 - [Setting up Mobile Inbox on Android](https://support.iterable.com/hc/articles/360038744152)
 - [Customizing Mobile Inbox on Android](https://support.iterable.com/hc/articles/360039189931)
 
-### Deep linking
+### Tracking custom events
 
-#### Handling links from push notifications
+- [Custom events](https://support.iterable.com/hc/articles/360035395671)
+    
+### User fields
 
-Push notifications and action buttons may have `openUrl` actions attached to them. When a URL is specified, the SDK first calls the `urlHandler` specified in your `IterableConfig` object. You can use this class to handle `openUrl` actions the same way as you handle normal deep links. If the handler is not set or returns NO, the SDK will open a browser with that URL.
+- [Updating User Profiles](https://support.iterable.com/hc/articles/360035402611)
+    
+### Uninstall tracking
 
-```java
-// MyApplication.java
-
-@Override
-public void onCreate() {
-    super.onCreate();
-    ...
-    IterableConfig config = new IterableConfig.Builder()
-        .setUrlHandler(this)
-        .build();
-    IterableApi.initialize(context, "YOUR API KEY", config);
-}
-
-@Override
-public boolean handleIterableURL(Uri uri, IterableActionContext actionContext) {
-    // Assuming you have a DeeplinkHandler class that handles all deep link URLs and navigates to the right place in the app
-    return DeeplinkHandler.handle(this, uri);
-}
-```
-
-#### Handling email links
-
-For App Links to work with link rewriting in emails, you need to set up an **assetlinks.json** file in the Iterable project. For more information, read [Setting up Android App Links](https://support.iterable.com/hc/articles/115001021063-Setting-up-Android-App-Links).
-
-If you already have a `urlHandler` (see [Handling links from push notifications](#handling-links-from-push-notifications)), the same handler can be used for email deep links by calling `handleAppLink` in the activity that handles all app links in your app:
-
-```java
-// MainActivity.java
-@Override
-public void onCreate() {
-    super.onCreate();
-    ...
-    handleIntent(getIntent());
-}
-
-@Override
-public void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    if (intent != null) {
-        handleIntent(intent);
-    }
-}
-
-private void handleIntent(Intent intent) {
-    if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
-        IterableApi.handleAppLink(intent.getDataString());
-        // Overwrite the intent to make sure we don't open the deep link
-        // again when the user opens our app later from the task manager
-        setIntent(new Intent(Intent.ACTION_MAIN));
-    }
-}
-```
-
-Alternatively, call `getAndTrackDeeplink` along with a callback to handle the original deep link URL. You can use this method for any incoming URLs, as it will execute the callback without changing the URL for non-Iterable URLs.
-
-```java
-IterableApi.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
-    @Override
-    public void execute(String result) {
-        Log.d("HandleDeeplink", "Redirected to: "+ result);
-        // Handle the original deep link URL here
-    }
-});
-```
-
-#### Deferred deep linking
-
-[Deferred deep linking](https://en.wikipedia.org/wiki/Deferred_deep_linking) allows a user who does not have a specific app installed to:
-
-- Click on a deep link that would normally open content in that app.
-- Install the app from the App Store.
-- Open the app and immediately see the content referenced by the link.
- 
-As the name implies, the deep link is _deferred_ until the app has been installed. 
-
-After tapping a deep link in an email from an Iterable campaign, users without the associated app will be directed to Play Store to install it. If the app uses the Iterable SDK and has deferred deep linking enabled, the content associated with the deep link will load on first launch.
-
-##### Enabling deferred deep linking
-
-Set `checkForDeferredDeeplink` to `true` on `IterableConfig` when initializing the SDK to enable deferred deep linking for Iterable SDK. Make sure a `urlHandler` is also set up to handle deep links to open the right content within your app on first launch (see above for details).
-
+- [Uninstall tracking](https://support.iterable.com/hc/articles/205730229#uninstall)
 ## Optional setup
 
 ### Migrating from a version prior to 3.1.0
