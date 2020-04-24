@@ -203,12 +203,9 @@ public class IterableInAppMessage {
         return messageId;
     }
 
-    public long getCampaignId() {
-        if (campaignId != null) {
-            return campaignId;
-        } else {
-            return 0L;
-        }
+    @Nullable
+    public Long getCampaignId() {
+        return campaignId;
     }
 
     @NonNull
