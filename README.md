@@ -65,58 +65,6 @@ its usage, read:
 ### Uninstall tracking
 
 - [Uninstall tracking](https://support.iterable.com/hc/articles/205730229#uninstall)
-## Optional setup
-
-### Migrating from a version prior to 3.1.0
-
-- In-app messages: `spawnInAppNotification`
-
-    - `spawnInAppNotification` is no longer needed and will fail to compile.
-    The SDK now displays in-app messages automatically. For more information,
-    see [In-app messages](#in-app-messages).
-
-    - There is no need to poll the server for new messages.
-
-- In-app messages: handling manually
-
-    - To control when in-app messages display (rather than displaying them
-    automatically), set `IterableConfig.inAppHandler` (an
-    `IterableInAppHandler` object). From its `onNewInApp` method, return
-    `InAppResponse.SKIP`.
-
-    - To get the queue of available in-app messages, call
-    `IterableApi.getInstance().getInAppManager().getMessages()`. Then, call
-    `IterableApi.getInstance().getInAppManager().showMessage(message)`
-    to show a specific message.
-
-    - For more details, see [In-app messages](#in-app-messages).
-
-- In-app messages: custom actions
-
-    - This version of the SDK reserves the `iterable://` URL scheme for
-    Iterable-defined actions handled by the SDK and the `action://` URL
-    scheme for custom actions handled by the mobile application's custom
-    action handler. For more details, see
-    [Handling in-app message buttons and links](#handling-in-app-message-buttons-and-links).
-
-    - If you are currently using the `itbl://` URL scheme for custom actions,
-    the SDK will still pass these actions to the custom action handler.
-    However, support for this URL scheme will eventually be removed (timeline
-    TBD), so it is best to move templates to the `action://` URL scheme as
-    it's possible to do so.
-
-- Consolidated deep link URL handling
-
-    - By default, the SDK handles deep links with the the URL handler
-    assigned to `IterableConfig`. Follow the instructions in
-    [Deep linking](#deep-linking) to migrate any existing URL handling code
-    to this new API.
-
-### GCM -> Firebase migration
-
-The recommended migration path is to upgrade the existing Google Cloud project to Firebase, update the server token in the existing GCM push integration in Iterable with the new Firebase token, and update the Android app to support Firebase. If you keep using the same project for FCM and the same integration name, the old tokens will still be valid and won't require re-registration of existing devices.
-
-If you're using a different project for FCM and have existing devices on a GCM project with a different sender ID, updating the app will generate new tokens for users, but the old tokens will still be valid. When migrating from one sender ID to another, specify `legacyGCMSenderId` in `IterableConfig` when initializing the SDK. This will disable old tokens to make sure users won't receive duplicate notifications.
 
 ## Additional information
 
