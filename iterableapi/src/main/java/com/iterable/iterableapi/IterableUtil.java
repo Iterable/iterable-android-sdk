@@ -8,7 +8,7 @@ import android.content.pm.PackageManager;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import com.google.android.gms.common.util.IOUtils;
+import com.iterable.iterableapi.util.IOUtils;
 
 import org.json.JSONObject;
 
