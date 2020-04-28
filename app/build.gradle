@@ -99,9 +99,9 @@ task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest'])
             '**/*$ModuleAdapter.class',
             '**/*$ViewInjector*.class',
     ]
-    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
-    def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
-    def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
+    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
+    def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/classes", excludes: fileFilter)
+    def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/classes", excludes: fileFilter)
     def mainSrc = "${project.projectDir}/src/main/java"
     def sdkSrc = "${project.projectDir}/../iterableapi/src/main/java"
     def sdkUiSrc = "${project.projectDir}/../iterableapi-ui/src/main/java"
@@ -141,9 +141,9 @@ task jacocoDebugAndroidTestReport(type: JacocoReport, dependsOn: ['connectedChec
             '**/*$ModuleAdapter.class',
             '**/*$ViewInjector*.class',
     ]
-    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
-    def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
-    def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes", excludes: fileFilter)
+    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
+    def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/classes", excludes: fileFilter)
+    def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/classes", excludes: fileFilter)
     def mainSrc = "${project.projectDir}/src/main/java"
     def sdkSrc = "${project.projectDir}/../iterableapi/src/main/java"
     def sdkUiSrc = "${project.projectDir}/../iterableapi-ui/src/main/java"
