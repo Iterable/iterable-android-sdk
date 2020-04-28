@@ -10,6 +10,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.util.IOUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -61,6 +62,15 @@ class IterableUtil {
 
     static JSONObject retrieveExpirableJsonObject(SharedPreferences preferences, String key) {
         return instance.retrieveExpirableJsonObject(preferences, key);
+    }
+
+    @Nullable
+    static Long retrieveValidCampaignIdOrNull(final JSONObject json, final String key) {
+        return instance.retrieveValidCampaignIdOrNull(json, key);
+    }
+
+    static boolean isValidCampaignId(final long campaignId) {
+        return instance.isValidCampaignId(campaignId);
     }
 
     static File getSdkCacheDir(Context context) {
@@ -159,6 +169,24 @@ class IterableUtil {
                 IterableLogger.e(TAG, "Error while parsing an expirable object for key: " + key, e);
             }
             return null;
+        }
+
+        @Nullable
+        Long retrieveValidCampaignIdOrNull(final JSONObject json, final String key) {
+            try {
+                final long id = json.getLong(key);
+                if (isValidCampaignId(id)) {
+                    return id;
+                } else {
+                    return null;
+                }
+            } catch (final JSONException ex) {
+                return null;
+            }
+        }
+
+        boolean isValidCampaignId(final long campaignId) {
+            return campaignId >= 0;
         }
 
         File getSdkCacheDir(Context context) {

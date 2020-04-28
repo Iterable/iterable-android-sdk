@@ -7,7 +7,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.ObjectsCompat;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,13 +23,23 @@ public class IterableInAppMessage {
     private final @NonNull Trigger trigger;
     private final @Nullable Boolean saveToInbox;
     private final @Nullable InboxMetadata inboxMetadata;
+    private final @Nullable Long campaignId;
     private boolean processed = false;
     private boolean consumed = false;
     private boolean read = false;
     private boolean loadedHtmlFromJson = false;
     private @Nullable IterableInAppStorage inAppStorageInterface;
 
-    IterableInAppMessage(@NonNull String messageId, @NonNull Content content, @NonNull JSONObject customPayload, @NonNull Date createdAt, @NonNull Date expiresAt, @NonNull Trigger trigger, @Nullable Boolean saveToInbox, @Nullable InboxMetadata inboxMetadata) {
+    IterableInAppMessage(@NonNull String messageId,
+                         @NonNull Content content,
+                         @NonNull JSONObject customPayload,
+                         @NonNull Date createdAt,
+                         @NonNull Date expiresAt,
+                         @NonNull Trigger trigger,
+                         @Nullable Boolean saveToInbox,
+                         @Nullable InboxMetadata inboxMetadata,
+                         @Nullable Long campaignId) {
+
         this.messageId = messageId;
         this.content = content;
         this.customPayload = customPayload;
@@ -39,6 +48,7 @@ public class IterableInAppMessage {
         this.trigger = trigger;
         this.saveToInbox = saveToInbox;
         this.inboxMetadata = inboxMetadata;
+        this.campaignId = campaignId;
     }
 
     static class Trigger {
@@ -193,6 +203,11 @@ public class IterableInAppMessage {
         return messageId;
     }
 
+    @Nullable
+    public Long getCampaignId() {
+        return campaignId;
+    }
+
     @NonNull
     public Date getCreatedAt() {
         return createdAt;
@@ -281,6 +296,7 @@ public class IterableInAppMessage {
         }
 
         String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
+        final Long campaignId = IterableUtil.retrieveValidCampaignIdOrNull(messageJson, IterableConstants.KEY_CAMPAIGN_ID);
         long createdAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_CREATED_AT);
         Date createdAt = createdAtLong != 0 ? new Date(createdAtLong) : null;
         long expiresAtLong = messageJson.optLong(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT);
@@ -306,8 +322,17 @@ public class IterableInAppMessage {
         JSONObject inboxPayloadJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA);
         InboxMetadata inboxMetadata = InboxMetadata.fromJSONObject(inboxPayloadJson);
 
-        IterableInAppMessage message = new IterableInAppMessage(messageId,
-                new Content(html, padding, backgroundAlpha), customPayload, createdAt, expiresAt, trigger, saveToInbox, inboxMetadata);
+        IterableInAppMessage message = new IterableInAppMessage(
+                messageId,
+                new Content(html, padding, backgroundAlpha),
+                customPayload,
+                createdAt,
+                expiresAt,
+                trigger,
+                saveToInbox,
+                inboxMetadata,
+                campaignId);
+
         message.inAppStorageInterface = storageInterface;
         if (html != null) {
             message.setLoadedHtmlFromJson(true);
@@ -324,6 +349,9 @@ public class IterableInAppMessage {
         JSONObject contentJson = new JSONObject();
         try {
             messageJson.putOpt(IterableConstants.KEY_MESSAGE_ID, messageId);
+            if (campaignId != null && IterableUtil.isValidCampaignId(campaignId)) {
+                messageJson.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            }
             if (createdAt != null) {
                 messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CREATED_AT, createdAt.getTime());
             }
