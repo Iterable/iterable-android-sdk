@@ -8,6 +8,8 @@ import android.content.pm.PackageManager;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.iterable.iterableapi.util.IOUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -213,10 +215,13 @@ class IterableUtil {
 
         @Nullable
         String readFile(File file) {
+            FileInputStream inputStream = null;
+            InputStreamReader streamReader = null;
+            BufferedReader bufferedReader = null;
             try {
-                FileInputStream inputStream = new FileInputStream(file);
-                InputStreamReader streamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(streamReader);
+                inputStream = new FileInputStream(file);
+                streamReader = new InputStreamReader(inputStream);
+                bufferedReader = new BufferedReader(streamReader);
                 StringBuilder stringBuilder = new StringBuilder();
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
@@ -225,6 +230,10 @@ class IterableUtil {
                 return stringBuilder.toString();
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Error while reading file: " + file.toString(), e);
+            } finally {
+                IOUtils.closeQuietly(inputStream);
+                IOUtils.closeQuietly(streamReader);
+                IOUtils.closeQuietly(bufferedReader);
             }
             return null;
         }
