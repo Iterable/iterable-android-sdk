@@ -41,6 +41,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private static final String MESSAGE_ID = "MessageId";
     private static final String INAPP_OPEN_TRACKED = "InAppOpenTracked";
 
+    private static final int DELAY_THRESHOLD_MS = 500;
+
     static IterableInAppFragmentHTMLNotification notification;
     static IterableHelper.IterableUrlCallback clickCallback;
     static IterableInAppLocation location;
@@ -125,6 +127,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      */
     public void setLoaded(boolean loaded) {
         this.loaded = loaded;
+        showDialogView();
     }
 
     @NonNull
@@ -148,7 +151,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (insetPadding.bottom == 0 && insetPadding.top == 0) {
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
-        hideDialogView(dialog);
         return dialog;
     }
 
@@ -190,20 +192,27 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (savedInstanceState == null || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
         }
+        hideDialogView();
         return relativeLayout;
     }
 
-    private void hideDialogView(Dialog dialog) {
+    private void hideDialogView() {
         try {
-            dialog.getWindow().getDecorView().setVisibility(View.INVISIBLE);
+            getDialog().getWindow().getDecorView().setAlpha(0.0f);
+            webView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    showDialogView();
+                }
+            }, DELAY_THRESHOLD_MS);
         } catch (NullPointerException e) {
             IterableLogger.e(TAG, "View not present. Failed to hide before resizing inapp");
         }
     }
 
-    private void showDialogView(Dialog dialog) {
+    private void showDialogView() {
         try {
-            dialog.getWindow().getDecorView().setVisibility(View.VISIBLE);
+            getDialog().getWindow().getDecorView().setAlpha(1.0f);
         } catch (NullPointerException e) {
             IterableLogger.e(TAG, "View not present. Failed to show inapp", e);
         }
@@ -306,7 +315,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
                         window.setAttributes(wlp);
                     }
-                    showDialogView(getDialog());
                 } catch (IllegalArgumentException e) {
                     IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);
                 }
