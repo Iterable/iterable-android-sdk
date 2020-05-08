@@ -2,11 +2,9 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Rect;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 
 class IterableInAppDisplayer {
@@ -18,64 +16,20 @@ class IterableInAppDisplayer {
     }
 
     boolean isShowingInApp() {
-        return IterableInAppHTMLNotification.getInstance() != null;
+        return IterableInAppFragmentHTMLNotification.getInstance() != null;
     }
 
     boolean showMessage(@NonNull IterableInAppMessage message, IterableInAppLocation location, @NonNull final IterableHelper.IterableUrlCallback clickCallback) {
         Activity currentActivity = activityMonitor.getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
-            return IterableInAppDisplayer.showIterableNotificationHTML(currentActivity,
+            return IterableInAppDisplayer.showIterableFragmentNotificationHTML(currentActivity,
                     message.getContent().html,
                     message.getMessageId(),
                     clickCallback,
                     message.getContent().backgroundAlpha,
                     message.getContent().padding,
                     true, location);
-        }
-        return false;
-    }
-
-    /**
-     * Displays an html rendered InApp Notification
-     * @param context
-     * @param htmlString
-     * @param messageId
-     * @param clickCallback
-     * @param backgroundAlpha
-     * @param padding
-     */
-    static boolean showIterableNotificationHTML(@NonNull Context context, @Nullable String htmlString, String messageId, final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel, IterableInAppLocation location) {
-        if (context instanceof Activity) {
-            Activity currentActivity = (Activity) context;
-            if (htmlString != null) {
-                if (IterableInAppHTMLNotification.getInstance() != null) {
-                    IterableLogger.w(IterableInAppManager.TAG, "Skipping the in-app notification: another notification is already being displayed");
-                    return false;
-                }
-
-                IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.createInstance(context, htmlString);
-                notification.setTrackParams(messageId);
-                notification.setCallback(clickCallback);
-                notification.setBackgroundAlpha(backgroundAlpha);
-                notification.setPadding(padding);
-                notification.setOwnerActivity(currentActivity);
-                notification.setLocation(location);
-
-                if (callbackOnCancel) {
-                    notification.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(DialogInterface dialog) {
-                            clickCallback.execute(null);
-                        }
-                    });
-                }
-
-                notification.show();
-                return true;
-            }
-        } else {
-            IterableLogger.w(IterableInAppManager.TAG, "To display in-app notifications, the context must be of an instance of: Activity");
         }
         return false;
     }

@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 
 /**
@@ -22,12 +21,12 @@ import static junit.framework.Assert.assertEquals;
 @MediumTest
 public class IterableInAppTest {
 
-    IterableInAppHTMLNotification notification;
+    IterableInAppFragmentHTMLNotification notification;
 
     @Before
     @UiThreadTest
     public void setUp() throws Exception {
-        notification = IterableInAppHTMLNotification.createInstance(getApplicationContext(), "");
+        notification = new IterableInAppFragmentHTMLNotification();
     }
 
     @Test

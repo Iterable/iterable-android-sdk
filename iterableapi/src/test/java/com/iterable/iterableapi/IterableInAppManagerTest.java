@@ -97,11 +97,10 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testDoNotShowMultipleTimes() throws Exception {
-        ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start().resume();
-        Activity activity = controller.get();
-
-        boolean shownFirstTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
-        boolean shownSecondTime = IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
+        ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
+        FragmentActivity activity = controller.get();
+        boolean shownFirstTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
+        boolean shownSecondTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
         assertTrue(shownFirstTime);
         assertFalse(shownSecondTime);
         ShadowDialog.getLatestDialog().dismiss();
@@ -109,12 +108,12 @@ public class IterableInAppManagerTest extends BaseTest {
     }
 
     @Test
-    public void testIfDialogDestroysAfterConfigurationChange() throws Exception {
-        ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start().resume();
-        Activity activity = controller.get();
-        assertTrue(IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP));
+    public void testIfDialogDoesNotDestroysAfterConfigurationChange() throws Exception {
+        ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
+        FragmentActivity activity = controller.get();
+        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP));
         controller.configurationChange();
-        assertEquals(0, activity.getFragmentManager().getFragments().size());
+        assertEquals(1, activity.getFragmentManager().getFragments().size());
         ShadowDialog.getLatestDialog().dismiss();
         controller.pause().stop().destroy();
     }
