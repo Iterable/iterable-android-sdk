@@ -1,7 +1,8 @@
 package com.iterable.iterableapi;
 
-import android.app.Activity;
 import android.graphics.Rect;
+
+import androidx.fragment.app.FragmentActivity;
 
 import org.junit.Test;
 import org.robolectric.Robolectric;
@@ -11,12 +12,11 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
 
     @Test
     public void testDoNotCrashOnResizeAfterDismiss() {
-        ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).create().start();
-        Activity activity = controller.get();
+        ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
+        FragmentActivity activity = controller.get();
+        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
 
-        IterableInAppDisplayer.showIterableNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
-
-        IterableInAppHTMLNotification notification = IterableInAppHTMLNotification.getInstance();
+        IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.getInstance();
         notification.dismiss();
         notification.resize(500.0f);
     }
