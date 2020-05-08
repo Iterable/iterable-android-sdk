@@ -17,7 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.2.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.3)
 #### Added
-- IterableInAppMessage now stores CampaignId it belongs to. (Thanks to nkotula!)
+- `IterableInAppMessage` now stores the `campaignId` it belongs to. (Thanks to @nkotula!)
 
 #### Changed
 - The SDK now uses DialogFragment to show in-apps. In-Apps are more stable than before and resilient to device configuration changes like device rotation.
