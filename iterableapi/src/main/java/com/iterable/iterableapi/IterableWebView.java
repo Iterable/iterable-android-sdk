@@ -5,14 +5,14 @@ import android.graphics.Color;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
-import static com.iterable.iterableapi.IterableWebViewClient.resizeScript;
+import static com.iterable.iterableapi.IterableWebViewClient.RESIZE_SCRIPT;
 
 /**
  * The custom html webView
  */
 class IterableWebView extends WebView {
-    static final String mimeType = "text/html";
-    static final String encoding = "UTF-8";
+    static final String MIME_TYPE = "text/html";
+    static final String ENCODING = "UTF-8";
 
     IterableWebView(Context context) {
         super(context);
@@ -25,12 +25,12 @@ class IterableWebView extends WebView {
      */
     void createWithHtml(IterableWebViewClient.HTMLNotificationCallbacks notificationDialog, String html) {
         IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog);
-        loadDataWithBaseURL("", html, mimeType, encoding, "");
+        loadDataWithBaseURL("", html, MIME_TYPE, ENCODING, "");
         setWebViewClient(webViewClient);
         setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
-                loadUrl(resizeScript);
+                loadUrl(RESIZE_SCRIPT);
             }
         });
 

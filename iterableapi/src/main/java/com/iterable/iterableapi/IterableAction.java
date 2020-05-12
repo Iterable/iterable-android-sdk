@@ -76,7 +76,6 @@ public class IterableAction {
         return config.optString("type", null);
     }
 
-
     /**
      * Additional data, its content depends on the action type
      * @return Additional data

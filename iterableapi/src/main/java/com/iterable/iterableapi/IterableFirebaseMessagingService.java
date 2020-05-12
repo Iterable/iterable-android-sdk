@@ -109,7 +109,6 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
     }
 }
 
-
 class IterableNotificationManager extends AsyncTask<IterableNotificationBuilder, Void, Void> {
 
     @Override

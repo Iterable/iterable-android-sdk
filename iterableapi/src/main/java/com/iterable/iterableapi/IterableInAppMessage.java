@@ -133,7 +133,7 @@ public class IterableInAppMessage {
             Content content = (Content) obj;
             return ObjectsCompat.equals(html, content.html) &&
                     ObjectsCompat.equals(padding, content.padding) &&
-                    backgroundAlpha == backgroundAlpha;
+                    backgroundAlpha == content.backgroundAlpha;
         }
 
         @Override

@@ -1,6 +1,5 @@
 package com.iterable.iterableapi;
 
-import android.graphics.Bitmap;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -8,7 +7,7 @@ import android.webkit.WebViewClient;
  * Custom webViewClient which handles url clicks
  */
 class IterableWebViewClient extends WebViewClient {
-    static final String resizeScript = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
+    static final String RESIZE_SCRIPT = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
 
     HTMLNotificationCallbacks inAppHTMLNotification;
 
@@ -36,7 +35,7 @@ class IterableWebViewClient extends WebViewClient {
     @Override
     public void onPageFinished(WebView view, String url) {
         inAppHTMLNotification.setLoaded(true);
-        view.loadUrl(resizeScript);
+        view.loadUrl(RESIZE_SCRIPT);
     }
 
     interface HTMLNotificationCallbacks {

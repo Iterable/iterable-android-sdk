@@ -24,6 +24,7 @@ import java.util.Map;
 public class IterableInAppFileStorage implements IterableInAppStorage, IterableInAppMessage.OnChangeListener {
     private static final String TAG = "IterableInAppFileStorage";
     private static final String FOLDER_PATH = "IterableInAppFileStorage";
+    private static final String INDEX_FILE = "index.html";
     private static final int OPERATION_SAVE = 100;
     private final Context context;
     private Map<String, IterableInAppMessage> messages =
@@ -135,7 +136,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
                 loadMessagesFromJson(jsonData);
             }
         } catch (Exception e) {
-            IterableLogger.e("IterableInAppFileStorage", "Error while loading in-app messages from file", e);
+            IterableLogger.e(TAG, "Error while loading in-app messages from file", e);
         }
     }
 
@@ -165,7 +166,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             JSONObject jsonData = serializeMessages();
             IterableUtil.writeFile(inAppStorageFile, jsonData.toString());
         } catch (Exception e) {
-            IterableLogger.e("IterableInAppFileStorage", "Error while saving in-app messages to file", e);
+            IterableLogger.e(TAG, "Error while saving in-app messages to file", e);
         }
     }
 
@@ -177,21 +178,20 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             return;
         }
 
-        File file = new File(folder, "index.html");
+        File file = new File(folder, INDEX_FILE);
         boolean result = IterableUtil.writeFile(file, contentHTML);
         if (!result) {
             IterableLogger.e(TAG, "Failed to store HTML content");
         }
     }
 
+    @Nullable
     private File createFolderForMessage(String messageID) {
         File folder = getFolderForMessage(messageID);
 
-        if (folder.isDirectory()) {
-            if (new File(folder, "index.html").exists()) {
-                IterableLogger.v(TAG, "Directory with file already exists. No need to store again");
-                return null;
-            }
+        if (folder.isDirectory() && new File(folder, INDEX_FILE).exists()) {
+            IterableLogger.v(TAG, "Directory with file already exists. No need to store again");
+            return null;
         }
 
         boolean result = folder.mkdir();
@@ -212,9 +212,10 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         return new File(getInAppContentFolder(), messageID);
     }
 
+    @NonNull
     private File getFileForContent(String messageID) {
         File folder = getFolderForMessage(messageID);
-        return new File(folder, "index.html");
+        return new File(folder, INDEX_FILE);
     }
 
     @Nullable
