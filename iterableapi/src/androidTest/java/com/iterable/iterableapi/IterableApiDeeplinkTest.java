@@ -203,7 +203,7 @@ public class IterableApiDeeplinkTest {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
             final String userId = "xxx";
-            final String requestString = "http://links.iterable.com/a/"+userId+"?_e=email&_m=123";
+            final String requestString = "http://links.iterable.com/a/" + userId + "?_e=email&_m=123";
             IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String result) {

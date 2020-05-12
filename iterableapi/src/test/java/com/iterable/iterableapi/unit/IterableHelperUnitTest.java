@@ -15,7 +15,7 @@ public class IterableHelperUnitTest {
     public void actionHandlerCallback() throws Exception {
         final String resultString = "testString";
 
-        IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler(){
+        IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(String result) {
                 assertEquals(result, resultString);

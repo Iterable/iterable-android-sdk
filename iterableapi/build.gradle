@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.hiya.jacoco-android'
+apply plugin: 'checkstyle'
 
 android {
     compileSdkVersion 28
@@ -87,6 +88,17 @@ apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
 }
+
+task checkstyle(type: Checkstyle) {
+    configFile file("${project.rootDir}/checkstyle.xml")
+    source 'src'
+    include '**/*.java'
+    exclude '**/gen/**'
+
+    classpath = files()
+}
+
+connectedCheck.dependsOn('checkstyle')
 
 // A hack to import the classpath and BuildConfig into the javadoc task
 afterEvaluate {

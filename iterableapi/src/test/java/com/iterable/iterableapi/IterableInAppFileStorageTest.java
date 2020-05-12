@@ -87,12 +87,12 @@ public class IterableInAppFileStorageTest {
         IterableInAppMessage message = messages.get(0);
         String messageID1 = message.getMessageId();
         String messageID2 = messages.get(1).getMessageId();
-        
+
         message.setProcessed(true);
         runHandlerTasks(storage);
         storage = new IterableInAppFileStorage(RuntimeEnvironment.application);
         assertNotNull(storage.getHTML(messageID1));
-        assertEquals(message.getContent().html,storage.getHTML(messageID1));
+        assertEquals(message.getContent().html, storage.getHTML(messageID1));
         assertNotNull(storage.getHTML(messageID2));
     }
 

@@ -95,7 +95,7 @@ public class IterableInAppMessageTest {
                 assertNotEquals(message.getContent().html, storageInterfaceHTML);
 
                 //Asserting if the storage was accessed even once
-                verify(storageInterface,times(0)).getHTML(message.getMessageId());
+                verify(storageInterface, times(0)).getHTML(message.getMessageId());
             }
         }
     }
@@ -120,7 +120,7 @@ public class IterableInAppMessageTest {
                 when(storageInterface.getHTML(message.getMessageId())).thenReturn(storageInterfaceHTML);
                 assertNotNull(message.getContent().html);
                 assertEquals(storageInterfaceHTML, message.getContent().html);
-                verify(storageInterface,times(1)).getHTML(message.getMessageId());
+                verify(storageInterface, times(1)).getHTML(message.getMessageId());
             }
         }
     }
@@ -139,7 +139,7 @@ public class IterableInAppMessageTest {
 
                 JSONObject messageBackInJSON = message.toJSONObject();
                 JSONObject contentJSON = messageBackInJSON.getJSONObject("content");
-                String html = contentJSON.optString("html",null);
+                String html = contentJSON.optString("html", null);
                 assertNull(html);
             }
         }

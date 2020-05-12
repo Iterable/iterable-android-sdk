@@ -133,7 +133,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        Dialog dialog = new Dialog(getActivity(), getTheme()){
+        Dialog dialog = new Dialog(getActivity(), getTheme()) {
             @Override
             public void onBackPressed() {
                 IterableInAppFragmentHTMLNotification.this.onBackPressed();
@@ -186,7 +186,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         orientationListener.enable();
 
         RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.MATCH_PARENT);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         relativeLayout.addView(webView, layoutParams);
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {

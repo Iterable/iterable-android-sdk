@@ -28,7 +28,7 @@ class IterableNotificationData {
      * Creates the notification data from a string
      * @param data
      */
-    IterableNotificationData(@Nullable String data){
+    IterableNotificationData(@Nullable String data) {
         try {
             JSONObject iterableJson = new JSONObject(data);
             campaignId = iterableJson.optInt(IterableConstants.KEY_CAMPAIGN_ID);
@@ -61,8 +61,7 @@ class IterableNotificationData {
      * Returns the campaignId
      * @return
      */
-    public int getCampaignId()
-    {
+    public int getCampaignId() {
         return this.campaignId;
     }
 
@@ -70,8 +69,7 @@ class IterableNotificationData {
      * Returns the templateId
      * @return
      */
-    public int getTemplateId()
-    {
+    public int getTemplateId() {
         return this.templateId;
     }
 
@@ -79,14 +77,15 @@ class IterableNotificationData {
      * Returns the messageId
      * @return
      */
-    public String getMessageId() { return this.messageId; }
+    public String getMessageId() {
+        return this.messageId;
+    }
 
     /**
      * Returns if the notification is a ghost/silent push notification
      * @return
      */
-    public boolean getIsGhostPush()
-    {
+    public boolean getIsGhostPush() {
         return this.isGhostPush;
     }
 
@@ -121,7 +120,7 @@ class IterableNotificationData {
         public final String inputTitle;
         public final IterableAction action;
 
-        public Button(@NonNull JSONObject buttonData) {
+        Button(@NonNull JSONObject buttonData) {
             identifier = buttonData.optString(IterableConstants.ITBL_BUTTON_IDENTIFIER);
             title = buttonData.optString(IterableConstants.ITBL_BUTTON_TITLE);
             buttonType = buttonData.optString(IterableConstants.ITBL_BUTTON_TYPE, BUTTON_TYPE_DEFAULT);

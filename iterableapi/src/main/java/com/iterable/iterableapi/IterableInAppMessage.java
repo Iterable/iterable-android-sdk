@@ -61,7 +61,7 @@ public class IterableInAppMessage {
             this.triggerJson = triggerJson;
             String typeString = triggerJson.optString(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE);
 
-            switch(typeString) {
+            switch (typeString) {
                 case "immediate":
                     type = TriggerType.IMMEDIATE;
                     break;

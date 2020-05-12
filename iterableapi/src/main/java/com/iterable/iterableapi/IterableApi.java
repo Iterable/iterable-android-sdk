@@ -91,7 +91,7 @@ private static final String TAG = "IterableApi";
      */
     @Nullable
     public String getPayloadData(@NonNull String key) {
-        return (_payloadData != null) ? _payloadData.getString(key, null): null;
+        return (_payloadData != null) ? _payloadData.getString(key, null) : null;
     }
 
     /**
@@ -431,8 +431,7 @@ private static final String TAG = "IterableApi";
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -475,8 +474,7 @@ private static final String TAG = "IterableApi";
             }
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -499,10 +497,10 @@ private static final String TAG = "IterableApi";
      */
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
-            IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before "+
+            IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
             if (failureHandler != null) {
-                failureHandler.onFailure("The Iterable SDK must be initialized with email or "+
+                failureHandler.onFailure("The Iterable SDK must be initialized with email or " +
                         "userId before calling updateEmail", null);
             }
             return;
@@ -529,8 +527,7 @@ private static final String TAG = "IterableApi";
                     }
                 }
             }, failureHandler);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -557,8 +554,7 @@ private static final String TAG = "IterableApi";
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
@@ -679,8 +675,7 @@ private static final String TAG = "IterableApi";
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, _applicationContext.getPackageName());
 
             sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -702,8 +697,7 @@ private static final String TAG = "IterableApi";
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -743,8 +737,7 @@ private static final String TAG = "IterableApi";
                 addInboxSessionID(requestJSON);
             }
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -777,8 +770,7 @@ private static final String TAG = "IterableApi";
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -810,8 +802,7 @@ private static final String TAG = "IterableApi";
                 addInboxSessionID(requestJSON);
             }
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -847,8 +838,8 @@ private static final String TAG = "IterableApi";
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_EMAIL,getEmail());
-            requestJSON.put(IterableConstants.KEY_USER_ID,getUserId());
+            requestJSON.put(IterableConstants.KEY_EMAIL, getEmail());
+            requestJSON.put(IterableConstants.KEY_USER_ID, getUserId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
@@ -858,11 +849,9 @@ private static final String TAG = "IterableApi";
                 addInboxSessionID(requestJSON);
             }
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
 
     void trackInAppDelivery(@NonNull IterableInAppMessage message) {
@@ -884,8 +873,7 @@ private static final String TAG = "IterableApi";
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -922,7 +910,7 @@ private static final String TAG = "IterableApi";
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_USER_ID,getUserId());
+            requestJSON.put(IterableConstants.KEY_USER_ID, getUserId());
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             if (source != null) {
                 requestJSON.put(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION, source.toString());
@@ -938,8 +926,7 @@ private static final String TAG = "IterableApi";
             }
 
             sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
@@ -990,8 +977,7 @@ private static final String TAG = "IterableApi";
             addInboxSessionID(requestJSON);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -1072,8 +1058,7 @@ private static final String TAG = "IterableApi";
             requestJSON.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -1097,8 +1082,7 @@ private static final String TAG = "IterableApi";
             }
 
             sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, onSuccess, onFailure);
-        }
-        catch (JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -1388,7 +1372,7 @@ private static final String TAG = "IterableApi";
             if (location != null) {
                 messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_LOCATION, location.toString());
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             IterableLogger.e(TAG, "Could not populate messageContext JSON", e);
         }
         return messageContext;
@@ -1401,7 +1385,7 @@ private static final String TAG = "IterableApi";
             deviceInfo.putOpt(IterableConstants.DEVICE_ID, getDeviceId());
             deviceInfo.putOpt(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
             deviceInfo.putOpt(IterableConstants.DEVICE_APP_PACKAGE_NAME, _applicationContext.getPackageName());
-        } catch(Exception e) {
+        } catch (Exception e) {
             IterableLogger.e(TAG, "Could not populate deviceInfo JSON", e);
         }
         return deviceInfo;

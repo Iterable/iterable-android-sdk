@@ -187,7 +187,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
      */
     public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback) {
-        showMessage(message,consume,clickCallback, IterableInAppLocation.IN_APP);
+        showMessage(message, consume, clickCallback, IterableInAppLocation.IN_APP);
     }
 
     public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {

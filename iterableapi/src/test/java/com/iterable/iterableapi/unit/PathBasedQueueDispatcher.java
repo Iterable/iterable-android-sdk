@@ -1,6 +1,5 @@
 package com.iterable.iterableapi.unit;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import okhttp3.mockwebserver.Dispatcher;
@@ -13,7 +12,7 @@ public class PathBasedQueueDispatcher extends Dispatcher {
         String pathPrefix;
         MockResponse response;
 
-        public PathBasedResponse(String pathPrefix, MockResponse response) {
+        PathBasedResponse(String pathPrefix, MockResponse response) {
             this.pathPrefix = pathPrefix;
             this.response = response;
         }

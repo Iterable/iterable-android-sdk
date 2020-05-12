@@ -58,7 +58,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             URL url;
             HttpURLConnection urlConnection = null;
 
-            IterableLogger.v(TAG,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+            IterableLogger.v(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
             String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl :
                     ITERABLE_BASE_URL;
             try {
@@ -69,7 +69,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     Uri.Builder builder = Uri.parse(baseUrl + iterableApiRequest.resourcePath).buildUpon();
 
                     Iterator<?> keys = iterableApiRequest.json.keys();
-                    while( keys.hasNext() ) {
+                    while (keys.hasNext()) {
                         String key = (String) keys.next();
                         builder.appendQueryParameter(key, iterableApiRequest.json.getString(key));
                     }
@@ -84,7 +84,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
 
-                    IterableLogger.v(TAG, "GET Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) +"\n body : \n"+ iterableApiRequest.json.toString(2));
+                    IterableLogger.v(TAG, "GET Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) + "\n body : \n" + iterableApiRequest.json.toString(2));
 
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
@@ -101,7 +101,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
 
-                    IterableLogger.v(TAG, "POST Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) +"\n body : \n"+ iterableApiRequest.json.toString(2));
+                    IterableLogger.v(TAG, "POST Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) + "\n body : \n" + iterableApiRequest.json.toString(2));
 
                     OutputStream os = urlConnection.getOutputStream();
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
@@ -144,7 +144,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                 try {
                     jsonResponse = new JSONObject(requestResult);
-                    IterableLogger.v(TAG,"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
+                    IterableLogger.v(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
                             "Response from : " + baseUrl + iterableApiRequest.resourcePath);
                     IterableLogger.v(TAG, jsonResponse.toString(2));
                 } catch (Exception e) {
@@ -207,7 +207,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     }
 
     private void logError(String baseUrl, Exception e) {
-        IterableLogger.e(TAG,"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
+        IterableLogger.e(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
                 "Exception occurred for : " + baseUrl + iterableApiRequest.resourcePath);
         IterableLogger.e(TAG, e.getMessage(), e);
     }
@@ -258,8 +258,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             if (iterableApiRequest.successCallback != null) {
                 iterableApiRequest.successCallback.onSuccess(requestResultJson);
             }
-        }
-        else {
+        } else {
             if (iterableApiRequest.failureCallback != null) {
                 iterableApiRequest.failureCallback.onFailure(failureReason, requestResultJson);
             }
@@ -280,8 +279,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
  *  Iterable Request object
  */
 class IterableApiRequest {
-    static String GET = "GET";
-    static String POST = "POST";
+    static final String GET = "GET";
+    static final String POST = "POST";
 
     final String apiKey;
     final String baseUrl;
@@ -293,7 +292,7 @@ class IterableApiRequest {
     IterableHelper.SuccessHandler successCallback;
     IterableHelper.FailureHandler failureCallback;
 
-    public IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
         this.resourcePath = resourcePath;
@@ -303,7 +302,7 @@ class IterableApiRequest {
         this.failureCallback = onFailure;
     }
 
-    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
         this.baseUrl = null;
         this.resourcePath = resourcePath;
@@ -313,7 +312,7 @@ class IterableApiRequest {
         this.failureCallback = onFailure;
     }
 
-    public IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, final IterableHelper.IterableActionHandler callback) {
+    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, final IterableHelper.IterableActionHandler callback) {
         this.apiKey = apiKey;
         this.baseUrl = null;
         this.resourcePath = resourcePath;

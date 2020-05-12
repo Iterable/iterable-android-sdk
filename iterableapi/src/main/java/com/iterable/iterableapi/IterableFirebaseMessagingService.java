@@ -35,7 +35,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
      * @return Boolean indicating whether it was an Iterable message or not
      */
     public static boolean handleMessageReceived(@NonNull Context context, @NonNull RemoteMessage remoteMessage) {
-        Map<String,String> messageData = remoteMessage.getData();
+        Map<String, String> messageData = remoteMessage.getData();
 
         if (messageData == null || messageData.size() == 0) {
             return false;
@@ -98,7 +98,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
      * @return Boolean indicating whether the message is an Iterable ghost push or silent push
      */
     public static boolean isGhostPush(RemoteMessage remoteMessage) {
-        Map<String,String> messageData = remoteMessage.getData();
+        Map<String, String> messageData = remoteMessage.getData();
 
         if (messageData == null || messageData.isEmpty()) {
             return false;
@@ -113,7 +113,7 @@ class IterableNotificationManager extends AsyncTask<IterableNotificationBuilder,
 
     @Override
     protected Void doInBackground(IterableNotificationBuilder... params) {
-        if ( params != null && params[0] != null) {
+        if (params != null && params[0] != null) {
             IterableNotificationBuilder notificationBuilder = params[0];
             IterableNotificationHelper.postNotificationOnDevice(notificationBuilder.context, notificationBuilder);
         }
