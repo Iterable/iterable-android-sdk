@@ -36,3 +36,4 @@ exclude_patterns:
   - app/src/androidTest/
   - iterableapi/src/androidTest/
   - iterableapi/src/test/
+  - sample-apps/
