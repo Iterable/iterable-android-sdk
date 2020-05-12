@@ -20,7 +20,7 @@ import java.util.List;
 
 public class IterableInboxMessageFragment extends Fragment {
     public static final String ARG_MESSAGE_ID = "messageId";
-    public static final String LOADED = "loaded";
+    public static final String STATE_LOADED = "loaded";
 
     private String messageId;
     private WebView webView;
@@ -44,14 +44,14 @@ public class IterableInboxMessageFragment extends Fragment {
             messageId = getArguments().getString(ARG_MESSAGE_ID);
         }
         if (savedInstanceState != null) {
-            loaded = savedInstanceState.getBoolean(LOADED, false);
+            loaded = savedInstanceState.getBoolean(STATE_LOADED, false);
         }
     }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean(LOADED, true);
+        outState.putBoolean(STATE_LOADED, true);
     }
 
     @Nullable
