@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 
-import com.iterable.iterableapi.IterableUtilRule;
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.Rule;

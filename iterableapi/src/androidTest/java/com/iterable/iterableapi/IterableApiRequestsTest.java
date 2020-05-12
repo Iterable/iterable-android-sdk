@@ -16,7 +16,6 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
-import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static com.iterable.iterableapi.IterableTestUtils.createIterableApi;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
@@ -142,7 +141,7 @@ public class IterableApiRequestsTest {
         IterableApi.sharedInstance.track("testEvent", 1234, 4321);
         request = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(request);
-        
+
         requestJson = new JSONObject(request.getBody().readUtf8());
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
         assertTrue("campaignId should be set in the request", requestJson.has(IterableConstants.KEY_CAMPAIGN_ID));

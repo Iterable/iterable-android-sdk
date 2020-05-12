@@ -5,8 +5,6 @@ import androidx.annotation.Nullable;
 
 import com.iterable.iterableapi.IterableInAppMessage;
 
-import java.util.Comparator;
-
 /**
  * An interface to override the the default display text for the creation date of an inbox message
  */

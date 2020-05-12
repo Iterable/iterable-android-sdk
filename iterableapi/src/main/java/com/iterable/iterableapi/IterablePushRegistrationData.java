@@ -18,7 +18,7 @@ class IterablePushRegistrationData {
     PushRegistrationAction pushRegistrationAction;
 
 
-    public IterablePushRegistrationData(String email, String userId, String pushIntegrationName, String projectNumber, String messagingPlatform, PushRegistrationAction pushRegistrationAction){
+    IterablePushRegistrationData(String email, String userId, String pushIntegrationName, String projectNumber, String messagingPlatform, PushRegistrationAction pushRegistrationAction) {
         this.email = email;
         this.userId = userId;
         this.pushIntegrationName = pushIntegrationName;
@@ -27,7 +27,7 @@ class IterablePushRegistrationData {
         this.pushRegistrationAction = pushRegistrationAction;
     }
 
-    public IterablePushRegistrationData(String email, String userId, String pushIntegrationName, PushRegistrationAction pushRegistrationAction) {
+    IterablePushRegistrationData(String email, String userId, String pushIntegrationName, PushRegistrationAction pushRegistrationAction) {
         this.email = email;
         this.userId = userId;
         this.pushIntegrationName = pushIntegrationName;

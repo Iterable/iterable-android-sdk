@@ -3,13 +3,9 @@ package com.iterable.iterableapi;
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.Rule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.rule.PowerMockRule;
-
-import static org.powermock.api.mockito.PowerMockito.spy;
 
 @PowerMockIgnore({
         "org.mockito.*",

@@ -2,7 +2,8 @@ package com.iterable.iterableapi;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class IterableInboxSessionTest {
 
@@ -12,9 +13,9 @@ public class IterableInboxSessionTest {
         assertNull(inboxSession.sessionEndTime);
         assertNull(inboxSession.sessionStartTime);
         assertNull(inboxSession.impressions);
-        assertEquals(0,inboxSession.endTotalMessageCount);
-        assertEquals(0,inboxSession.endUnreadMessageCount);
-        assertEquals(0,inboxSession.startTotalMessageCount);
-        assertEquals(0,inboxSession.endTotalMessageCount);
+        assertEquals(0, inboxSession.endTotalMessageCount);
+        assertEquals(0, inboxSession.endUnreadMessageCount);
+        assertEquals(0, inboxSession.startTotalMessageCount);
+        assertEquals(0, inboxSession.endTotalMessageCount);
     }
 }

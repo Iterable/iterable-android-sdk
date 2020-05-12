@@ -61,7 +61,7 @@ public class IterableNotificationTest {
         String receiveString = "";
         StringBuilder stringBuilder = new StringBuilder();
 
-        while ( (receiveString = bufferedReader.readLine()) != null ) {
+        while ((receiveString = bufferedReader.readLine()) != null) {
             stringBuilder.append(receiveString);
         }
 

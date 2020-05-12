@@ -154,7 +154,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
         String token;
         String messagingPlatform;
 
-        public PushRegistrationObject(String token) {
+        PushRegistrationObject(String token) {
             this.token = token;
             this.messagingPlatform = IterableConstants.MESSAGING_PLATFORM_FIREBASE;
         }

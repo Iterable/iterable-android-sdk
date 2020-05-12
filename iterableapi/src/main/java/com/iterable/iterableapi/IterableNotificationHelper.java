@@ -80,7 +80,7 @@ class IterableNotificationHelper {
         return instance.isEmptyBody(extras);
     }
 
-    static Bundle mapToBundle(Map<String,String> map) {
+    static Bundle mapToBundle(Map<String, String> map) {
         Bundle bundle = new Bundle();
         for (Map.Entry<String, String> entry : map.entrySet()) {
             bundle.putString(entry.getKey(), entry.getValue());
