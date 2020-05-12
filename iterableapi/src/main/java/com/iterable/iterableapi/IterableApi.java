@@ -1191,21 +1191,6 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    /**
-     * Updates the data for the current user.
-     * @param context
-     * @param apiKey
-     * @param email
-     * @param userId
-     */
-    private void updateData(Context context, String apiKey, String email, String userId) {
-
-        this._applicationContext = context;
-        this._apiKey = apiKey;
-        this._email = email;
-        this._userId = userId;
-    }
-
     private boolean isInitialized() {
         return _apiKey != null && (_email != null || _userId != null);
     }

@@ -25,8 +25,7 @@ import java.util.Iterator;
  */
 class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
     static final String TAG = "IterableRequest";
-
-    static final String iterableBaseUrl = "https://api.iterable.com/api/";
+    static final String ITERABLE_BASE_URL = "https://api.iterable.com/api/";
 
     static String overrideUrl;
 
@@ -60,7 +59,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             HttpURLConnection urlConnection = null;
 
             IterableLogger.v(TAG,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-            String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl : iterableBaseUrl;
+            String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl :
+                    ITERABLE_BASE_URL;
             try {
                 if (overrideUrl != null && !overrideUrl.isEmpty()) {
                     baseUrl = overrideUrl;

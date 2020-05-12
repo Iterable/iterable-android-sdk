@@ -176,7 +176,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                webView.loadUrl(IterableWebViewClient.resizeScript);
+                                webView.loadUrl(IterableWebViewClient.RESIZE_SCRIPT);
                             }
                         }, 1000);
                     }

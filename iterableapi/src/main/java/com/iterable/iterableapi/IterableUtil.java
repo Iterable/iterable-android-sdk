@@ -95,7 +95,6 @@ class IterableUtil {
         return instance.writeFile(file, content);
     }
 
-
     static class IterableUtilImpl {
 
         public long currentTimeMillis() {
