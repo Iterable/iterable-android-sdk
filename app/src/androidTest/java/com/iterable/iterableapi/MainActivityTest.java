@@ -1,9 +1,9 @@
 package com.iterable.iterableapi;
 
 import android.content.Intent;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.View;
 
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.rule.IntentsTestRule;
 import androidx.test.espresso.web.webdriver.Locator;
@@ -69,7 +69,7 @@ public class MainActivityTest {
         server.setDispatcher(dispatcher);
         // This is done so we don't hold a reference to the previous in-app notification.
         // We should handle in-app dismissal when the parent activity is destroyed though.
-        IterableInAppHTMLNotification.notification = null;
+        IterableInAppFragmentHTMLNotification.notification = null;
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         IterableApi.sharedInstance = new IterableApi();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {

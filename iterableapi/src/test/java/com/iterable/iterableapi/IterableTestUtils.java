@@ -59,7 +59,7 @@ public class IterableTestUtils {
         String receiveString = "";
         StringBuilder stringBuilder = new StringBuilder();
 
-        while ( (receiveString = bufferedReader.readLine()) != null ) {
+        while ((receiveString = bufferedReader.readLine()) != null) {
             stringBuilder.append(receiveString);
         }
 
@@ -79,7 +79,7 @@ public class IterableTestUtils {
 
     public static Bundle jsonToBundle(JSONObject jsonObject) throws JSONException {
         Bundle bundle = new Bundle();
-        for(Iterator<String> iterator = jsonObject.keys(); iterator.hasNext(); ){
+        for (Iterator<String> iterator = jsonObject.keys(); iterator.hasNext();) {
             String key = iterator.next();
             Object value = jsonObject.get(key);
             bundle.putString(key, value.toString());

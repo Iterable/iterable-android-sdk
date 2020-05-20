@@ -61,7 +61,7 @@ public class IterableInAppMessage {
             this.triggerJson = triggerJson;
             String typeString = triggerJson.optString(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE);
 
-            switch(typeString) {
+            switch (typeString) {
                 case "immediate":
                     type = TriggerType.IMMEDIATE;
                     break;
@@ -133,7 +133,7 @@ public class IterableInAppMessage {
             Content content = (Content) obj;
             return ObjectsCompat.equals(html, content.html) &&
                     ObjectsCompat.equals(padding, content.padding) &&
-                    backgroundAlpha == backgroundAlpha;
+                    backgroundAlpha == content.backgroundAlpha;
         }
 
         @Override

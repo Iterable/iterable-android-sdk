@@ -20,7 +20,7 @@ public class IterableInboxTouchHelper extends ItemTouchHelper.SimpleCallback {
     private final ColorDrawable background;
 
     public IterableInboxTouchHelper(@NonNull Context context, @NonNull IterableInboxAdapter adapter) {
-        super(0,ItemTouchHelper.LEFT);
+        super(0, ItemTouchHelper.LEFT);
         this.adapter = adapter;
         this.icon = ContextCompat.getDrawable(context, R.drawable.ic_delete_black_24dp);
         this.background = new ColorDrawable(Color.RED);
@@ -48,7 +48,7 @@ public class IterableInboxTouchHelper extends ItemTouchHelper.SimpleCallback {
         int iconBottom = iconTop + icon.getIntrinsicHeight();
 
         int iconLeft = itemView.getRight() - icon.getIntrinsicWidth() * 2;
-        int iconRight = itemView.getRight() - icon.getIntrinsicWidth() ;
+        int iconRight = itemView.getRight() - icon.getIntrinsicWidth();
         icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
 
         background.setBounds(itemView.getRight() + ((int) dX),

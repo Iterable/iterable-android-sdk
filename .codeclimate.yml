@@ -1,0 +1,39 @@
+version: "2"         # required to adjust maintainability checks
+checks:
+  argument-count:
+    config:
+      threshold: 8
+  complex-logic:
+    config:
+      threshold: 10
+  file-lines:
+    config:
+      threshold: 800
+  method-complexity:
+    config:
+      threshold: 10
+  method-count:
+    config:
+      threshold: 30
+  method-lines:
+    config:
+      threshold: 50
+  nested-control-flow:
+    config:
+      threshold: 5
+  return-statements:
+    config:
+      threshold: 4
+plugins:
+  sonar-java:
+    enabled: true
+    config:
+      sonar.java.source: "6"
+    checks:
+      squid:S2095:
+        enabled: false
+exclude_patterns:
+  - app/src/androidTest/
+  - iterableapi/src/androidTest/
+  - iterableapi/src/test/
+  - sample-apps/

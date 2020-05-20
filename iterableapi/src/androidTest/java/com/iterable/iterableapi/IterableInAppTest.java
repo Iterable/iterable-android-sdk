@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 
 /**
@@ -22,18 +21,18 @@ import static junit.framework.Assert.assertEquals;
 @MediumTest
 public class IterableInAppTest {
 
-    IterableInAppHTMLNotification notification;
+    IterableInAppFragmentHTMLNotification notification;
 
     @Before
     @UiThreadTest
     public void setUp() throws Exception {
-        notification = IterableInAppHTMLNotification.createInstance(getApplicationContext(), "");
+        notification = new IterableInAppFragmentHTMLNotification();
     }
 
     @Test
     @UiThreadTest
     public void testGetLocationFull() {
-        Rect padding = new Rect(0,0,0,0);
+        Rect padding = new Rect(0, 0, 0, 0);
         int verticalLocation = notification.getVerticalLocation(padding);
         assertEquals(Gravity.CENTER_VERTICAL, verticalLocation);
     }
@@ -41,7 +40,7 @@ public class IterableInAppTest {
     @Test
     @UiThreadTest
     public void testGetLocationTop() {
-        Rect padding = new Rect(0,0,0,-1);
+        Rect padding = new Rect(0, 0, 0, -1);
         int verticalLocation = notification.getVerticalLocation(padding);
         assertEquals(Gravity.TOP, verticalLocation);
     }
@@ -49,7 +48,7 @@ public class IterableInAppTest {
     @Test
     @UiThreadTest
     public void testGetLocationBottom() throws Exception {
-        Rect padding = new Rect(0,-1,0,0);
+        Rect padding = new Rect(0, -1, 0, 0);
         int verticalLocation = notification.getVerticalLocation(padding);
         assertEquals(Gravity.BOTTOM, verticalLocation);
     }
@@ -57,7 +56,7 @@ public class IterableInAppTest {
     @Test
     @UiThreadTest
     public void testGetLocationCenter() {
-        Rect padding = new Rect(0,-1,0,-1);
+        Rect padding = new Rect(0, -1, 0, -1);
         int verticalLocation = notification.getVerticalLocation(padding);
         assertEquals(Gravity.CENTER_VERTICAL, verticalLocation);
     }
@@ -65,7 +64,7 @@ public class IterableInAppTest {
     @Test
     @UiThreadTest
     public void testGetLocationRandom() {
-        Rect padding = new Rect(0,20,0,30);
+        Rect padding = new Rect(0, 20, 0, 30);
         int verticalLocation = notification.getVerticalLocation(padding);
         assertEquals(Gravity.CENTER_VERTICAL, verticalLocation);
     }

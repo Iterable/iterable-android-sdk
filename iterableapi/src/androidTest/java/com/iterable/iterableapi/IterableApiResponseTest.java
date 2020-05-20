@@ -14,7 +14,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +22,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import okhttp3.mockwebserver.SocketPolicy;
 
-import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static com.iterable.iterableapi.IterableTestUtils.createIterableApi;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;

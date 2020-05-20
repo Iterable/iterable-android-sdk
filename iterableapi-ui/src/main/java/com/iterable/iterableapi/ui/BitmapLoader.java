@@ -26,7 +26,7 @@ public class BitmapLoader {
 
     private static final int DEFAULT_TIMEOUT_MS = 3000;
 
-    static public void loadBitmap(final @NonNull ImageView imageView, final @Nullable Uri uri) {
+    public static void loadBitmap(final @NonNull ImageView imageView, final @Nullable Uri uri) {
         if (uri == null || uri.getPath() == null || uri.getPath().isEmpty()) {
             IterableLogger.d("BitmapLoader", "Empty url for Thumbnail in inbox");
             return;
