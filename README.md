@@ -12,8 +12,8 @@ you to create better experiences for—and deeper relationships with—your
 customers. Use it to send customized email, SMS, push notification, in-app
 message, and web push notifications to your customers.
 
-This SDK helps you integrate your iOS apps with Iterable. It supports Android
-API versions 15+.
+This SDK helps you integrate your Android apps with Iterable. It supports
+Android API versions 15+.
 
 ## Installation
 
