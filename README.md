@@ -1,6 +1,6 @@
 ![Iterable logo](./images/Iterable-Logo.png "Iterable Logo")
 
-[![License](https://img.shields.io/cocoapods/l/Iterable-iOS-SDK.svg?style=flat)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/github/license/iterable/iterable-android-sdk)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/Iterable/iterable-android-sdk.svg?branch=master)](https://travis-ci.org/Iterable/iterable-android-sdk)
 [![codecov](https://codecov.io/gh/Iterable/iterable-android-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/Iterable/iterable-android-sdk)
 [![Download](https://api.bintray.com/packages/davidtruong/maven/Iterable-SDK/images/download.svg)](https://bintray.com/davidtruong/maven/Iterable-SDK/_latestVersion)
@@ -50,7 +50,7 @@ Release notes:
 Support policies:
 
 - Iterable's [Mobile SDK Support Policy](https://support.iterable.com/hc/articles/360027543332#mobile-sdk-support-policy)
-- Iterable's [iOS SDK Deprecation and End-of-Life Schedule](https://support.iterable.com/hc/articles/360027543332#android-sdk-deprecation-and-end-of-life-schedule)
+- Iterable's [Android SDK Deprecation and End-of-Life Schedule](https://support.iterable.com/hc/articles/360027543332#android-sdk-deprecation-and-end-of-life-schedule)
 
 Troubleshooting:
 
