@@ -5,12 +5,12 @@
 [![codecov](https://codecov.io/gh/Iterable/iterable-android-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/Iterable/iterable-android-sdk)
 [![Download](https://api.bintray.com/packages/davidtruong/maven/Iterable-SDK/images/download.svg)](https://bintray.com/davidtruong/maven/Iterable-SDK/_latestVersion)
 
-# Iterable Android SDK
+# Iterable's Android SDK
 
 [Iterable](https://www.iterable.com) is a growth marketing platform that helps
 you to create better experiences for—and deeper relationships with—your
 customers. Use it to send customized email, SMS, push notification, in-app
-message, and web push notifications to your customers.
+message and web push notifications to your customers.
 
 This SDK helps you integrate your Android apps with Iterable. It supports
 Android API versions 15+.
@@ -36,6 +36,8 @@ To learn more about various SDK features, read:
 
 ## Sample projects
 
+For sample code, take a look at:
+
 - [Inbox Customization](https://github.com/Iterable/iterable-android-sdk/tree/master/sample-apps/inbox-customization)
 
 ## Release notes, support and troubleshooting
@@ -60,7 +62,7 @@ Please contact your customer success manager with any questions.
 
 ## License
 
-This SDK is released under the MIT License. See [LICENSE](https://github.com/Iterable/swift-sdk/blob/master/LICENSE?raw=true)
+This SDK is released under the MIT License. See [LICENSE](https://github.com/Iterable/iterable-android-sdk/blob/master/LICENSE?raw=true)
 for more information.
 
 ## Want to contribute?
