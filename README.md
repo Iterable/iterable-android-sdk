@@ -1,83 +1,71 @@
-<img src="Iterable-Logo.svg">
+![Iterable logo](./images/Iterable-Logo.png "Iterable Logo")
 
+[![License](https://img.shields.io/cocoapods/l/Iterable-iOS-SDK.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/Iterable/iterable-android-sdk.svg?branch=master)](https://travis-ci.org/Iterable/iterable-android-sdk)
 [![codecov](https://codecov.io/gh/Iterable/iterable-android-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/Iterable/iterable-android-sdk)
 [![Download](https://api.bintray.com/packages/davidtruong/maven/Iterable-SDK/images/download.svg)](https://bintray.com/davidtruong/maven/Iterable-SDK/_latestVersion)
 
-# Iterable Android SDK
+# Iterable's Android SDK
 
-The Iterable Android SDK is a Java implementation of an Android client for Iterable, supporting Android API versions 15 and higher.
+[Iterable](https://www.iterable.com) is a growth marketing platform that helps
+you to create better experiences for—and deeper relationships with—your
+customers. Use it to send customized email, SMS, push notification, in-app
+message and web push notifications to your customers.
+
+This SDK helps you integrate your Android apps with Iterable. It supports
+Android API versions 15+.
 
 ## Installation
 
-- [Installation and configuration of the Iterable Android SDK](https://support.iterable.com/hc/articles/360035019712-Iterable-s-Android-SDK-)
+For installation instructions, read [Iterable's Android SDK](https://support.iterable.com/hc/articles/360035019712).
 
-## Sample apps
+## Features
 
-This repository contains the following sample apps:
+To learn more about various SDK features, read:
+
+- [Identifying the User](https://support.iterable.com/hc/articles/360035402531)
+- [Updating User Profiles](https://support.iterable.com/hc/articles/360035402611)
+- [Tracking Events](https://support.iterable.com/hc/articles/360035395671)
+- [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943)
+- [In-App Messages on Android](https://support.iterable.com/hc/articles/360035537231)
+- [Setting up Mobile Inbox on Android](https://support.iterable.com/hc/articles/360038744152)
+- [Customizing Mobile Inbox on Android](https://support.iterable.com/hc/articles/360039189931)
+- [Android App Links](https://support.iterable.com/hc/articles/360035127392)
+- [Deep Links in Push Notifications](https://support.iterable.com/hc/articles/360035453971)
+- [Deferred Deep Linking](https://support.iterable.com/hc/articles/360035165872)
+
+## Sample projects
+
+For sample code, take a look at:
 
 - [Inbox Customization](https://github.com/Iterable/iterable-android-sdk/tree/master/sample-apps/inbox-customization)
 
-## Using the SDK
+## Release notes, support and troubleshooting
 
-### Push notifications
+Release notes:
 
-- [Setting up Android Push Notifications](https://support.iterable.com/hc/articles/115000331943)
+- [Android SDK Release Notes](https://support.iterable.com/hc/articles/360027543332) (major releases)
+- [Releases page](https://github.com/Iterable/iterable-android-sdk/releases) on GitHub (minor releases)
 
-### Deep linking
+Support policies:
 
-A deep link is a URI that links to a specific location within your mobile 
-app. The following sections describe how to work with deep links using
-Iterable's Android SDK.
+- Iterable's [Mobile SDK Support Policy](https://support.iterable.com/hc/articles/360027543332#mobile-sdk-support-policy)
+- Iterable's [iOS SDK Deprecation and End-of-Life Schedule](https://support.iterable.com/hc/articles/360027543332#android-sdk-deprecation-and-end-of-life-schedule)
 
-- [Deep Links in Push Notifications](https://support.iterable.com/hc/en-us/articles/360035453971#android-deep-links)
-- [Android App Links](https://support.iterable.com/hc/en-us/articles/360035127392)
-- [Deferred deep linking](https://support.iterable.com/hc/articles/360035165872)
+Troubleshooting:
 
-### In-app messages
+- [Testing and Troubleshooting Iterable's Mobile SDKs](https://support.iterable.com/hc/articles/360035392251)
+- [Frequently Asked Questions](https://support.iterable.com/hc/articles/360035624191) 
+  for mobile developers integrating with Iterable
 
-- [In-App Messages on Android](https://support.iterable.com/hc/en-us/articles/360035537231)
-
-### Mobile Inbox
-
-Apps using version 3.2.0 and later of this SDK can allow users to save in-app
-messages to an inbox. This inbox displays a list of saved in-app messages and
-allows users to read them at their convenience. The SDK provides a default user
-interface for the inbox, which can be customized to match your brand's styles.
-
-To learn more about Mobile Inbox, how to customize it, and events related to
-its usage, read:
-
-- [In-App Messages and Mobile Inbox](https://support.iterable.com/hc/articles/217517406)
-- [Sending In-App Messages](https://support.iterable.com/hc/articles/360034903151)
-- [Events for In-App Messages and Mobile Inbox](https://support.iterable.com/hc/articles/360038939972)
-- [Setting up Mobile Inbox on Android](https://support.iterable.com/hc/articles/360038744152)
-- [Customizing Mobile Inbox on Android](https://support.iterable.com/hc/articles/360039189931)
-
-### Tracking custom events
-
-- [Custom events](https://support.iterable.com/hc/articles/360035395671)
-    
-### User fields
-
-- [Updating User Profiles](https://support.iterable.com/hc/articles/360035402611)
-    
-### Uninstall tracking
-
-- [Uninstall tracking](https://support.iterable.com/hc/articles/205730229#uninstall)
-
-## Additional information
-
-For more information, take a look at Iterable's [Mobile Developer Guides](https://support.iterable.com/hc/categories/360002288712).
+Please contact your customer success manager with any questions.
 
 ## License
 
-The MIT License
-
-See [LICENSE](https://github.com/Iterable/iterable-android-sdk/blob/master/LICENSE)
+This SDK is released under the MIT License. See [LICENSE](https://github.com/Iterable/iterable-android-sdk/blob/master/LICENSE?raw=true)
+for more information.
 
 ## Want to contribute?
 
-This library is open source, and we will look at pull requests!
-
+This library is open source, and we will look at issue reports and pull requests.
 See [CONTRIBUTING](CONTRIBUTING.md) for more information.
