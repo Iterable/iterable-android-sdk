@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+
 import androidx.annotation.NonNull;
 
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -33,7 +34,8 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                             iterablePushRegistrationData.email,
                             iterablePushRegistrationData.userId,
                             iterablePushRegistrationData.pushIntegrationName,
-                            pushRegistrationObject.token);
+                            pushRegistrationObject.token,
+                            IterableApi.getInstance().getDeviceAttributes());
 
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                     IterableApi.sharedInstance.disableToken(
