@@ -331,6 +331,7 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(updateUserRequest.getBody().readUtf8());
         assertEquals(true, requestJson.getBoolean(IterableConstants.KEY_PREFER_USER_ID));
         assertEquals("value", requestJson.getJSONObject(IterableConstants.KEY_DATA_FIELDS).getString("key"));
+        assertEquals(false, requestJson.getBoolean(IterableConstants.KEY_MERGE_NESTED_OBJECTS));
     }
 
     @Test

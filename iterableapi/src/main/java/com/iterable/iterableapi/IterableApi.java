@@ -537,6 +537,15 @@ private static final String TAG = "IterableApi";
      * @param dataFields
      */
     public void updateUser(@NonNull JSONObject dataFields) {
+        updateUser(dataFields, false);
+    }
+
+    /**
+     * Updates the current user.
+     * @param dataFields
+     * @param mergeNestedObjects
+     */
+    public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -552,6 +561,7 @@ private static final String TAG = "IterableApi";
             }
 
             requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_MERGE_NESTED_OBJECTS, mergeNestedObjects);
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
         } catch (JSONException e) {
