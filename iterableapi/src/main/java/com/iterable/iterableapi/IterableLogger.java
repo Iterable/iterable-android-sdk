@@ -51,9 +51,9 @@ public class IterableLogger {
 
     public static void printInfo() {
         try {
-            Log.v("Iterable Call", " 💛 " + Thread.currentThread().getStackTrace()[3].getFileName() + " => " + Thread.currentThread().getStackTrace()[3].getClassName() + " => " + Thread.currentThread().getStackTrace()[3].getMethodName() + " => Line #" + Thread.currentThread().getStackTrace()[3].getLineNumber());
+            IterableLogger.v("Iterable Call", " 💛 " + Thread.currentThread().getStackTrace()[3].getFileName() + " => " + Thread.currentThread().getStackTrace()[3].getClassName() + " => " + Thread.currentThread().getStackTrace()[3].getMethodName() + " => Line #" + Thread.currentThread().getStackTrace()[3].getLineNumber());
         } catch (Exception e) {
-            Log.e("Iterable Call", "Couldn't print info");
+            IterableLogger.e("Iterable Call", "Couldn't print info");
         }
     }
 
