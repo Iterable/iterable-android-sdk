@@ -212,7 +212,7 @@ private static final String TAG = "IterableApi";
         deviceAttributes.put(key, value);
     }
 
-    public void removeFromDeviceAttribute(String key) {
+    public void removeDeviceAttribute(String key) {
         deviceAttributes.remove(key);
     }
 //---------------------------------------------------------------------------------------
@@ -1107,7 +1107,7 @@ private static final String TAG = "IterableApi";
      * @param token
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields, @Nullable HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1129,10 +1129,8 @@ private static final String TAG = "IterableApi";
                 dataFields = new JSONObject();
             }
 
-            if (deviceAttributes != null) {
-                for (HashMap.Entry<String, String> entry : deviceAttributes.entrySet()) {
-                    dataFields.put(entry.getKey(), entry.getValue());
-                }
+            for (HashMap.Entry<String, String> entry : deviceAttributes.entrySet()) {
+                dataFields.put(entry.getKey(), entry.getValue());
             }
 
             dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
