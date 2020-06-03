@@ -22,6 +22,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,6 +53,7 @@ private static final String TAG = "IterableApi";
 
     private IterableInAppManager inAppManager;
     private String inboxSessionId;
+    private HashMap<String, String> deviceAttributes = new HashMap<>();
 
 //---------------------------------------------------------------------------------------
 //endregion
@@ -200,6 +202,18 @@ private static final String TAG = "IterableApi";
         if (data != null) {
             setAttributionInfo(new IterableAttributionInfo(data.getCampaignId(), data.getTemplateId(), data.getMessageId()));
         }
+    }
+
+    HashMap getDeviceAttributes() {
+        return deviceAttributes;
+    }
+
+    public void setDeviceAttribute(String key, String value) {
+        deviceAttributes.put(key, value);
+    }
+
+    public void removeDeviceAttribute(String key) {
+        deviceAttributes.remove(key);
     }
 //---------------------------------------------------------------------------------------
 //endregion
@@ -363,14 +377,14 @@ private static final String TAG = "IterableApi";
      * @param token Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(@NonNull String token) {
-        registerDeviceToken(_email, _userId, getPushIntegrationName(), token);
+        registerDeviceToken(_email, _userId, getPushIntegrationName(), token, deviceAttributes);
     }
 
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String token) {
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String token, final HashMap<String, String> deviceAttributes) {
         if (token != null) {
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(email, userId, applicationName, token, null);
+                    registerDeviceToken(email, userId, applicationName, token, null, deviceAttributes);
                 }
             });
             registrationThread.start();
@@ -1103,7 +1117,7 @@ private static final String TAG = "IterableApi";
      * @param token
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1124,6 +1138,11 @@ private static final String TAG = "IterableApi";
             if (dataFields == null) {
                 dataFields = new JSONObject();
             }
+
+            for (HashMap.Entry<String, String> entry : deviceAttributes.entrySet()) {
+                dataFields.put(entry.getKey(), entry.getValue());
+            }
+
             dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
             dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true);
             dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
