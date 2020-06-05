@@ -15,6 +15,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.4)
+#### Added
+- Added support for new parameters - `mergeNestedObject` in `updateUser` method.
+- Added public methods - `setDeviceAttribute` and `removeDeviceAttribute` to support additional device attributes.
+
+#### Fixed
+- Method tracing now logs only in VERBOSE log level.
+
 ## [3.2.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.3)
 #### Added
 - `IterableInAppMessage` now stores the `campaignId` it belongs to. (Thanks to @nkotula!)
