@@ -1093,7 +1093,10 @@ private static final String TAG = "IterableApi";
 
     /**
      * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
-     * @param token
+     * It disables device under all users with this device by default. If a emailID or userID is provided, it will disable the device for specific user.
+     * @param email Specific email this device belongs to disable
+     * @param userId Specific userId this device belongs to disable
+     * @param token The device token
      */
     protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
@@ -1101,7 +1104,7 @@ private static final String TAG = "IterableApi";
             requestJSON.put(IterableConstants.KEY_TOKEN, token);
             if (email != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, email);
-            } else {
+            } else if (userId != null) {
                 requestJSON.put(IterableConstants.KEY_USER_ID, userId);
             }
 
