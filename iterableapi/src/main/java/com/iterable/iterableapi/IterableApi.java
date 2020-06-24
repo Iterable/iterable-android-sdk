@@ -1093,9 +1093,9 @@ private static final String TAG = "IterableApi";
 
     /**
      * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
-     * It disables device under all users with this device by default. If a emailID or userID is provided, it will disable the device for specific user.
-     * @param email Specific email this device belongs to disable
-     * @param userId Specific userId this device belongs to disable
+     * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
+     * @param email User email for whom to disable the device.
+     * @param userId User ID for whom to disable the device.
      * @param token The device token
      */
     protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
