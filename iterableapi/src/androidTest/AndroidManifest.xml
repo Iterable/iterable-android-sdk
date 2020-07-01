@@ -4,6 +4,6 @@
     package="iterable.com.iterableapi">
     <uses-sdk tools:overrideLibrary="android_libs.ub_uiautomator"/>
     <application
-        android:label="@string/app_name"
+        android:label="IterableAPI"
         android:supportsRtl="true"/>
 </manifest>
