@@ -317,6 +317,15 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
+    public void testInAppResetOnLogout() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().setEmail(null);
+        verify(IterableApi.sharedInstance.getInAppManager()).reset();
+    }
+
+    @Test
     public void testUpdateUserWithUserId() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 

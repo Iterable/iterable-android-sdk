@@ -1328,13 +1328,22 @@ private static final String TAG = "IterableApi";
     }
 
     private void onLogOut() {
-        if (config.autoPushRegistration && isInitialized()) {
+        if (!isInitialized()) {
+            return;
+        }
+
+        if (config.autoPushRegistration) {
             disablePush();
         }
+        getInAppManager().reset();
     }
 
     private void onLogIn() {
-        if (config.autoPushRegistration && isInitialized()) {
+        if (!isInitialized()) {
+            return;
+        }
+
+        if (config.autoPushRegistration) {
             registerForPush();
         }
         getInAppManager().syncInApp();

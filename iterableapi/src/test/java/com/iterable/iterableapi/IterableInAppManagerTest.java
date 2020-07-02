@@ -151,6 +151,20 @@ public class IterableInAppManagerTest extends BaseTest {
     }
 
     @Test
+    public void testReset() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        assertEquals(0, inAppManager.getMessages().size());
+
+        inAppManager.syncInApp();
+        Robolectric.flushBackgroundThreadScheduler();
+        Robolectric.flushForegroundThreadScheduler();
+        assertEquals(1, inAppManager.getMessages().size());
+        inAppManager.reset();
+        assertEquals(0, inAppManager.getMessages().size());
+    }
+
+    @Test
     public void testProcessAfterForeground() throws Exception {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
