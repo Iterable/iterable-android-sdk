@@ -43,9 +43,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private static final int DELAY_THRESHOLD_MS = 500;
 
-    static IterableInAppFragmentHTMLNotification notification;
-    static IterableHelper.IterableUrlCallback clickCallback;
-    static IterableInAppLocation location;
+    @Nullable static IterableInAppFragmentHTMLNotification notification;
+    @Nullable static IterableHelper.IterableUrlCallback clickCallback;
+    @Nullable static IterableInAppLocation location;
 
     private IterableWebView webView;
     private boolean loaded;
@@ -61,7 +61,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * @param htmlString
      * @return
      */
-    public static IterableInAppFragmentHTMLNotification createInstance(String htmlString, boolean callbackOnCancel, IterableHelper.IterableUrlCallback clickCallback, IterableInAppLocation location, String messageId, Double backgroundAlpha, Rect padding) {
+    public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
 
         notification = new IterableInAppFragmentHTMLNotification();
         Bundle args = new Bundle();
@@ -142,7 +142,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         };
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override public void onCancel(DialogInterface dialog) {
-                if (callbackOnCancel) {
+                if (callbackOnCancel && clickCallback != null) {
                     clickCallback.execute(null);
                 }
             }
@@ -239,7 +239,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public void onUrlClicked(String url) {
         IterableApi.sharedInstance.trackInAppClick(messageId, url, location);
         IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location);
-        clickCallback.execute(Uri.parse(url));
+        if (clickCallback != null) {
+            clickCallback.execute(Uri.parse(url));
+        }
         dismiss();
     }
 
@@ -267,7 +269,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             public void run() {
                 try {
                     // Since this is run asynchronously, notification might've been dismissed already
-                    if (notification == null || notification.getDialog() == null || notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
+                    if (getContext() == null || notification == null || notification.getDialog() == null ||
+                            notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
                         return;
                     }
 

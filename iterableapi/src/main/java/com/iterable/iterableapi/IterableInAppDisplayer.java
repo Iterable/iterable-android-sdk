@@ -43,7 +43,7 @@ class IterableInAppDisplayer {
      * @param backgroundAlpha
      * @param padding
      */
-    static boolean showIterableFragmentNotificationHTML(Context context, String htmlString, String messageId, final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, Rect padding, boolean callbackOnCancel, IterableInAppLocation location) {
+    static boolean showIterableFragmentNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull String messageId,  @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, @NonNull Rect padding, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
         if (context instanceof FragmentActivity) {
             FragmentActivity currentActivity = (FragmentActivity) context;
             if (htmlString != null) {
@@ -57,7 +57,7 @@ class IterableInAppDisplayer {
                 return true;
             }
         } else {
-            IterableLogger.w(IterableInAppManager.TAG, "To display in-app notifications, the context must be of an instance of: Activity");
+            IterableLogger.w(IterableInAppManager.TAG, "To display in-app notifications, the context must be of an instance of: FragmentActivity");
         }
         return false;
     }
