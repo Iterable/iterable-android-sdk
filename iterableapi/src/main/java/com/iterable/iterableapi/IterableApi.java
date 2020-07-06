@@ -1328,11 +1328,7 @@ private static final String TAG = "IterableApi";
     }
 
     private void onLogOut() {
-        if (!isInitialized()) {
-            return;
-        }
-
-        if (config.autoPushRegistration) {
+        if (config.autoPushRegistration && isInitialized()) {
             disablePush();
         }
         getInAppManager().reset();

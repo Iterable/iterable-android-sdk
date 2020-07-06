@@ -37,6 +37,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -322,7 +323,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
-        verify(IterableApi.sharedInstance.getInAppManager()).reset();
+        verify(IterableApi.sharedInstance.getInAppManager(), times(2)).reset();
     }
 
     @Test
