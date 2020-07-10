@@ -45,12 +45,12 @@ private static final String TAG = "IterableApi";
     private String _apiKey;
     private String _email;
     private String _userId;
+    private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
-    private String _authToken;
 
     private IterableInAppManager inAppManager;
     private String inboxSessionId;
@@ -287,7 +287,7 @@ private static final String TAG = "IterableApi";
      * @param email User email
      * @param authToken Authorization token
      */
-    public void setEmail(@Nullable String email, @Nullable String authToken) {
+    public void setEmail(@Nullable String email, @Nullable String token) {
         if (_email != null && _email.equals(email)) {
             return;
         }
@@ -299,7 +299,7 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = email;
         _userId = null;
-        _authToken = authToken;
+        _authToken = token;
         storeAuthData();
         onLogIn();
     }
@@ -323,7 +323,7 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      * @param authToken Authorization token
      */
-    public void setUserId(@Nullable String userId, @Nullable String authToken) {
+    public void setUserId(@Nullable String userId, @Nullable String token) {
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
@@ -335,7 +335,7 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = null;
         _userId = userId;
-        _authToken = authToken;
+        _authToken = token;
         storeAuthData();
         onLogIn();
     }
@@ -1074,7 +1074,7 @@ private static final String TAG = "IterableApi";
 //---------------------------------------------------------------------------------------
 //endregion
 
-//region Protected Fuctions
+//region Protected Functions
 //---------------------------------------------------------------------------------------
 
     /**
@@ -1226,7 +1226,7 @@ private static final String TAG = "IterableApi";
 //---------------------------------------------------------------------------------------
 //endregion
 
-//region Private Fuctions
+//region Private Functions
 //---------------------------------------------------------------------------------------
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -1278,12 +1278,12 @@ private static final String TAG = "IterableApi";
      * @param json
      */
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null, null);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, null, null);
         new IterableRequest().execute(request);
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, onSuccess, onFailure);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
 
