@@ -531,7 +531,17 @@ private static final String TAG = "IterableApi";
 
     /**
      * Updates the current user's email.
-     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param authToken Authorization token
+     */
+    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
+        updateEmail(newEmail, authToken, null, null);
+    }
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
      * @param newEmail New email
      * @param authToken
      * @param successHandler Success handler. Called when the server returns a success code.
