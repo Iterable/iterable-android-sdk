@@ -50,6 +50,7 @@ private static final String TAG = "IterableApi";
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private String _authToken;
 
     private IterableInAppManager inAppManager;
     private String inboxSessionId;
@@ -275,6 +276,18 @@ private static final String TAG = "IterableApi";
      * @param email User email
      */
     public void setEmail(@Nullable String email) {
+        setEmail(email, null);
+    }
+
+    /**
+     * Set user email used for API calls
+     * Calling this or `setUserId:` is required before making any API calls.
+     *
+     * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
+     * @param email User email
+     * @param authToken Authorization token
+     */
+    public void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             return;
         }
@@ -286,7 +299,8 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = email;
         _userId = null;
-        storeEmailAndUserId();
+        _authToken = authToken;
+        storeAuthData();
         onLogIn();
     }
 
@@ -298,6 +312,18 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
+        setUserId(userId, null);
+    }
+
+    /**
+     * Set user ID used for API calls
+     * Calling this or `setEmail:` is required before making any API calls.
+     *
+     * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
+     * @param userId User ID
+     * @param authToken Authorization token
+     */
+    public void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
@@ -309,7 +335,8 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = null;
         _userId = userId;
-        storeEmailAndUserId();
+        _authToken = authToken;
+        storeAuthData();
         onLogIn();
     }
 
@@ -535,7 +562,7 @@ private static final String TAG = "IterableApi";
                     if (_email != null) {
                         _email = newEmail;
                     }
-                    storeEmailAndUserId();
+                    storeAuthData();
                     if (successHandler != null) {
                         successHandler.onSuccess(data);
                     }
@@ -1236,12 +1263,12 @@ private static final String TAG = "IterableApi";
      * @param json
      */
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null, null);
         new IterableRequest().execute(request);
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, onSuccess, onFailure);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
 
@@ -1252,7 +1279,7 @@ private static final String TAG = "IterableApi";
      * @param json
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, null, onCallback);
         new IterableRequest().execute(request);
     }
 
@@ -1306,11 +1333,12 @@ private static final String TAG = "IterableApi";
         return _deviceId;
     }
 
-    private void storeEmailAndUserId() {
+    private void storeAuthData() {
         try {
             SharedPreferences.Editor editor = getPreferences().edit();
             editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
             editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
+            editor.putString(IterableConstants.SHARED_PREFS_AUTHTOKEN_KEY, _authToken);
             editor.commit();
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while persisting email/userId", e);
@@ -1322,8 +1350,9 @@ private static final String TAG = "IterableApi";
             SharedPreferences prefs = getPreferences();
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTHTOKEN_KEY, null);
         } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while retrieving email/userId", e);
+            IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
     }
 
@@ -1361,7 +1390,7 @@ private static final String TAG = "IterableApi";
             JSONObject requestJSON = DeviceInfo.createDeviceInfo(_applicationContext).toJSONObject();
 
             IterableApiRequest request = new IterableApiRequest(_apiKey, IterableConstants.BASE_URL_LINKS,
-                    IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, new IterableHelper.SuccessHandler() {
+                    IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, null, new IterableHelper.SuccessHandler() {
                 @Override
                 public void onSuccess(@NonNull JSONObject data) {
                     handleDDL(data);
