@@ -83,7 +83,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, iterableApiRequest.authToken);
+                    //TODO: check if this is okay to pass in a null value to the authToken
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT+iterableApiRequest.authToken);
 
                     IterableLogger.v(TAG, "GET Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) + "\n body : \n" + iterableApiRequest.json.toString(2));
 
@@ -101,7 +102,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, iterableApiRequest.authToken);
+                    //TODO: check if this is okay to pass in a null value to the authToken
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT+iterableApiRequest.authToken);
 
                     IterableLogger.v(TAG, "POST Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) + "\n body : \n" + iterableApiRequest.json.toString(2));
 

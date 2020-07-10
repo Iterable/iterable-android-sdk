@@ -19,6 +19,7 @@ public final class IterableConstants {
     public static final String HEADER_SDK_PLATFORM      = "SDK-Platform";
     public static final String HEADER_SDK_VERSION       = "SDK-Version";
     public static final String HEADER_SDK_AUTHORIZATION = "Authorization";
+    public static final String HEADER_SDK_AUTH_FORMAT   = "Bearer ";
     public static final String KEY_APPLICATION_NAME     = "applicationName";
     public static final String KEY_CAMPAIGN_ID          = "campaignId";
     public static final String KEY_CURRENT_EMAIL        = "currentEmail";
