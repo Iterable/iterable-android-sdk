@@ -297,35 +297,35 @@ class IterableApiRequest {
     IterableHelper.SuccessHandler successCallback;
     IterableHelper.FailureHandler failureCallback;
 
-    IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String token, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
         this.resourcePath = resourcePath;
         this.json = json;
         this.requestType = requestType;
-        this.authToken = token;
+        this.authToken = authToken;
         this.successCallback = onSuccess;
         this.failureCallback = onFailure;
     }
 
-    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, String token, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
+    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
         this.baseUrl = null;
         this.resourcePath = resourcePath;
         this.json = json;
         this.requestType = requestType;
-        this.authToken = token;
+        this.authToken = authToken;
         this.successCallback = onSuccess;
         this.failureCallback = onFailure;
     }
 
-    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, String token, final IterableHelper.IterableActionHandler callback) {
+    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, String authToken, final IterableHelper.IterableActionHandler callback) {
         this.apiKey = apiKey;
         this.baseUrl = null;
         this.resourcePath = resourcePath;
         this.json = json;
         this.requestType = requestType;
-        this.authToken = token;
+        this.authToken = authToken;
         this.legacyCallback = callback;
     }
 }

@@ -287,7 +287,7 @@ private static final String TAG = "IterableApi";
      * @param email User email
      * @param authToken Authorization token
      */
-    public void setEmail(@Nullable String email, @Nullable String token) {
+    public void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             return;
         }
@@ -299,7 +299,7 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = email;
         _userId = null;
-        _authToken = token;
+        _authToken = authToken;
         storeAuthData();
         onLogIn();
     }
@@ -323,7 +323,7 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      * @param authToken Authorization token
      */
-    public void setUserId(@Nullable String userId, @Nullable String token) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
@@ -335,7 +335,7 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = null;
         _userId = userId;
-        _authToken = token;
+        _authToken = authToken;
         storeAuthData();
         onLogIn();
     }
@@ -403,15 +403,15 @@ private static final String TAG = "IterableApi";
      * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
      * @param token Push token obtained from GCM or FCM
      */
-    public void registerDeviceToken(@NonNull String token) {
-        registerDeviceToken(_email, _userId, getPushIntegrationName(), token, deviceAttributes);
+    public void registerDeviceToken(@NonNull String deviceToken) {
+        registerDeviceToken(_email, _userId, getPushIntegrationName(), deviceToken, deviceAttributes);
     }
 
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String token, final HashMap<String, String> deviceAttributes) {
-        if (token != null) {
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
+        if (deviceToken != null) {
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(email, userId, applicationName, token, null, deviceAttributes);
+                    registerDeviceToken(email, userId, applicationName, deviceToken, null, deviceAttributes);
                 }
             });
             registrationThread.start();
