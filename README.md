@@ -51,6 +51,7 @@ Support policies:
 
 - Iterable's [Mobile SDK Support Policy](https://support.iterable.com/hc/articles/360027543332#mobile-sdk-support-policy)
 - Iterable's [Android SDK Deprecation and End-of-Life Schedule](https://support.iterable.com/hc/articles/360027543332#android-sdk-deprecation-and-end-of-life-schedule)
+- Iterable's [Beta Mobile SDK Disclaimer](https://support.iterable.com/hc/articles/360034753412)
 
 Troubleshooting:
 
