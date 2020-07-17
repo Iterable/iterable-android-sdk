@@ -772,7 +772,7 @@ private static final String TAG = "IterableApi";
         if (message != null) {
             trackInAppClick(message, clickedUrl, location);
         } else {
-            IterableLogger.w(TAG, "trackInAppClick: could not find an in-app message with ID: " + messageId);
+            trackInAppClick(messageId, clickedUrl);
         }
     }
 
