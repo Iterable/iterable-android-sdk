@@ -1294,7 +1294,7 @@ private static final String TAG = "IterableApi";
      * @param json
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, null, onCallback);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, _authToken, onCallback);
         new IterableRequest().execute(request);
     }
 
