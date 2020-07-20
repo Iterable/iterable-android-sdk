@@ -37,6 +37,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -314,6 +315,15 @@ public class IterableApiTest extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, registerDeviceRequest.getPath());
         JSONObject requestJson = new JSONObject(registerDeviceRequest.getBody().readUtf8());
         assertEquals(requestJson.getBoolean(IterableConstants.KEY_PREFER_USER_ID), true);
+    }
+
+    @Test
+    public void testInAppResetOnLogout() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().setEmail(null);
+        verify(IterableApi.sharedInstance.getInAppManager(), times(2)).reset();
     }
 
     @Test

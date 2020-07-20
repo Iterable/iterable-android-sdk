@@ -168,6 +168,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     /**
+     * Clear all in-app messages.
+     * Should be called on user logout.
+     */
+    void reset() {
+        IterableLogger.printInfo();
+
+        for (IterableInAppMessage message : storage.getMessages()) {
+            storage.removeMessage(message);
+        }
+
+        notifyOnChange();
+    }
+
+    /**
      * Display the in-app message on the screen
      * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
      */

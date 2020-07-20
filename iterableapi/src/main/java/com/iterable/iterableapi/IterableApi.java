@@ -1331,10 +1331,15 @@ private static final String TAG = "IterableApi";
         if (config.autoPushRegistration && isInitialized()) {
             disablePush();
         }
+        getInAppManager().reset();
     }
 
     private void onLogIn() {
-        if (config.autoPushRegistration && isInitialized()) {
+        if (!isInitialized()) {
+            return;
+        }
+
+        if (config.autoPushRegistration) {
             registerForPush();
         }
         getInAppManager().syncInApp();

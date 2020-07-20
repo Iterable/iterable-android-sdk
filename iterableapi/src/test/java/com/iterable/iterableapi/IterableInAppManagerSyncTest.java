@@ -9,6 +9,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -75,6 +76,8 @@ public class IterableInAppManagerSyncTest extends BaseTest {
     public void testSyncOnLogin() throws Exception {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
         IterableApi apiSpy = spy(new IterableApi());
+        IterableApi.sharedInstance = apiSpy;
+        IterableApi.initialize(getApplicationContext(), "apiKey");
         doReturn(inAppManagerMock).when(apiSpy).getInAppManager();
         apiSpy.setEmail("test@email.com");
         verify(inAppManagerMock).syncInApp();
