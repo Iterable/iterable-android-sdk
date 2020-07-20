@@ -344,7 +344,7 @@ private static final String TAG = "IterableApi";
      * Tracks a click on the uri if it is an iterable link.
      * @param uri the
      * @param onCallback Calls the callback handler with the destination location
-     *                   or the original url if it is not a Iterable link.
+     *                   or the original url if it is not an Iterable link.
      */
     public static void getAndTrackDeeplink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
         IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
