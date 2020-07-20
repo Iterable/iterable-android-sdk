@@ -270,7 +270,7 @@ private static final String TAG = "IterableApi";
 
     /**
      * Set user email used for API calls
-     * Calling this or `setUserId:` is required before making any API calls.
+     * Calling this or {@link #setUserId(String)} is required before making any API calls.
      *
      * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
      * @param email User email
@@ -281,7 +281,7 @@ private static final String TAG = "IterableApi";
 
     /**
      * Set user email used for API calls
-     * Calling this or `setUserId:` is required before making any API calls.
+     * Calling this or {@link #setUserId(String)} is required before making any API calls.
      *
      * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
      * @param email User email
@@ -306,7 +306,7 @@ private static final String TAG = "IterableApi";
 
     /**
      * Set user ID used for API calls
-     * Calling this or `setEmail:` is required before making any API calls.
+     * Calling this or {@link #setEmail(String)} is required before making any API calls.
      *
      * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
      * @param userId User ID
@@ -317,7 +317,7 @@ private static final String TAG = "IterableApi";
 
     /**
      * Set user ID used for API calls
-     * Calling this or `setEmail:` is required before making any API calls.
+     * Calling this or {@link #setEmail(String)} is required before making any API calls.
      *
      * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
      * @param userId User ID
@@ -344,7 +344,7 @@ private static final String TAG = "IterableApi";
      * Tracks a click on the uri if it is an iterable link.
      * @param uri the
      * @param onCallback Calls the callback handler with the destination location
-     *                   or the original url if it is not a interable link.
+     *                   or the original url if it is not a Iterable link.
      */
     public static void getAndTrackDeeplink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
         IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
@@ -1353,7 +1353,7 @@ private static final String TAG = "IterableApi";
             SharedPreferences.Editor editor = getPreferences().edit();
             editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
             editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-            editor.putString(IterableConstants.SHARED_PREFS_AUTHTOKEN_KEY, _authToken);
+            editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
             editor.commit();
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while persisting email/userId", e);
@@ -1365,7 +1365,7 @@ private static final String TAG = "IterableApi";
             SharedPreferences prefs = getPreferences();
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTHTOKEN_KEY, null);
+            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
