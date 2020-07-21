@@ -298,7 +298,7 @@ private static final String TAG = "IterableApi";
             storeAuthData();
 
             onLogIn();
-        } else if (email != null && (_authToken == null || _authToken != authToken)) {
+        } else if (email != null && email.equals(_email) && (_authToken == null || _authToken != authToken)) {
             _authToken = authToken;
             storeAuthData();
         }
@@ -334,7 +334,7 @@ private static final String TAG = "IterableApi";
             storeAuthData();
 
             onLogIn();
-        } else if (userId != null & (_authToken == null || _authToken != authToken)) {
+        } else if (userId != null && userId.equals(_userId) && (_authToken == null || _authToken != authToken)) {
             _authToken = authToken;
             storeAuthData();
         }
