@@ -15,6 +15,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+
+## [3.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.5)
+#### Added
+- Introducing authToken. `setUserId` and `setEmail` methods now takes optional `authToken` parameter
+- `app_name` is set to `IterableAPI` in strings resource file
+
+#### Fixed
+- Fixed an issue where trackInAppClicks were not being registered after displaying an inApp.
+- Fixed crash issues by handling null cases caused in `IterableInAppFragmentHTMLNotification` class
+
 ## [3.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.4)
 #### Added
 - Added support for new parameters - `mergeNestedObject` in `updateUser` method.
