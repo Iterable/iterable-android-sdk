@@ -288,20 +288,20 @@ private static final String TAG = "IterableApi";
      * @param authToken Authorization token
      */
     public void setEmail(@Nullable String email, @Nullable String authToken) {
-        if (_email != null && _email.equals(email)) {
-            return;
-        }
+        if (_email != null && !_email.equals(email)) {
+            onLogOut();
 
-        if (_email == null && _userId == null && email == null) {
-            return;
-        }
+            _email = email;
+            _userId = null;
+            _authToken = authToken;
 
-        onLogOut();
-        _email = email;
-        _userId = null;
-        _authToken = authToken;
-        storeAuthData();
-        onLogIn();
+            storeAuthData();
+
+            onLogIn();
+        } else if (email != null && (_authToken == null || _authToken != authToken)) {
+            _authToken = authToken;
+            storeAuthData();
+        }
     }
 
     /**
@@ -324,20 +324,20 @@ private static final String TAG = "IterableApi";
      * @param authToken Authorization token
      */
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        if (_userId != null && _userId.equals(userId)) {
-            return;
-        }
+        if (_userId != null && !_userId.equals(userId)) {
+            onLogOut();
 
-        if (_email == null && _userId == null && userId == null) {
-            return;
-        }
+            _email = null;
+            _userId = userId;
+            _authToken = authToken;
 
-        onLogOut();
-        _email = null;
-        _userId = userId;
-        _authToken = authToken;
-        storeAuthData();
-        onLogIn();
+            storeAuthData();
+
+            onLogIn();
+        } else if (userId != null & (_authToken == null || _authToken != authToken)) {
+            _authToken = authToken;
+            storeAuthData();
+        }
     }
 
     /**
