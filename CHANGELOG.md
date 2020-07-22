@@ -19,11 +19,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [3.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.5)
 #### Added
 - Introducing authToken. `setUserId` and `setEmail` methods now takes optional `authToken` parameter
-- `app_name` is set to `IterableAPI` in strings resource file
+- `app_name` was removed from published strings and replaced with plain string values in test manifests.
 
 #### Fixed
-- Fixed an issue where trackInAppClicks were not being registered after displaying an inApp.
-- Fixed crash issues by handling null cases caused in `IterableInAppFragmentHTMLNotification` class
+- Fixed an issue where in-app click events were not being registered after displaying an in-app message.
+- Fixed NullPointerExceptions in `IterableInAppFragmentHTMLNotification` that could occur in some cases when the activity is destroyed and recreated.
 
 ## [3.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.4)
 #### Added
