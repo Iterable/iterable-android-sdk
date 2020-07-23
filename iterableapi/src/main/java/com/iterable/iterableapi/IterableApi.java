@@ -401,7 +401,7 @@ private static final String TAG = "IterableApi";
     /**
      * Registers a device token with Iterable.
      * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
-     * @param token Push token obtained from GCM or FCM
+     * @param deviceToken Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(@NonNull String deviceToken) {
         registerDeviceToken(_email, _userId, getPushIntegrationName(), deviceToken, deviceAttributes);
@@ -1151,12 +1151,12 @@ private static final String TAG = "IterableApi";
      * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
      * @param email User email for whom to disable the device.
      * @param userId User ID for whom to disable the device.
-     * @param token The device token
+     * @param deviceToken The device token
      */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);
+            requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
             if (email != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, email);
             } else if (userId != null) {
@@ -1171,16 +1171,17 @@ private static final String TAG = "IterableApi";
 
     /**
      * Registers the GCM registration ID with Iterable.
+     *
      * @param applicationName
-     * @param token
+     * @param deviceToken
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
 
-        if (token == null) {
+        if (deviceToken == null) {
             IterableLogger.e(TAG, "registerDeviceToken: token is null");
             return;
         }
@@ -1219,7 +1220,7 @@ private static final String TAG = "IterableApi";
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled());
 
             JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, token);
+            device.put(IterableConstants.KEY_TOKEN, deviceToken);
             device.put(IterableConstants.KEY_PLATFORM, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
             device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
             device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
