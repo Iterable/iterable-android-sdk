@@ -287,7 +287,7 @@ private static final String TAG = "IterableApi";
      * @param email User email
      * @param authToken Authorization token
      */
-    public void setEmail(@Nullable String email, @Nullable String authToken) {
+    private void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             return;
         }
@@ -323,7 +323,7 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      * @param authToken Authorization token
      */
-    public void setUserId(@Nullable String userId, @Nullable String authToken) {
+    private void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
@@ -532,10 +532,11 @@ private static final String TAG = "IterableApi";
     /**
      * Updates the current user's email.
      * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
-     * @param newEmail New email
+     *
+     * @param newEmail  New email
      * @param authToken Authorization token
      */
-    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
+    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
         updateEmail(newEmail, authToken, null, null);
     }
 
