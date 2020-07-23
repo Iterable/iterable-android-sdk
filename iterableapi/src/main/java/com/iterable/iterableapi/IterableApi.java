@@ -539,6 +539,18 @@ private static final String TAG = "IterableApi";
         updateEmail(newEmail, authToken, null, null);
     }
 
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param successHandler Success handler. Called when the server returns a success code.
+     * @param failureHandler Failure handler. Called when the server call failed.
+     */
+    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        updateEmail(newEmail, _authToken, successHandler, failureHandler);
+    }
+
     /**
      * Updates the current user's email.
      * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
@@ -547,7 +559,7 @@ private static final String TAG = "IterableApi";
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
-    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
