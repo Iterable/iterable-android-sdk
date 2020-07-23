@@ -17,8 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [3.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.5)
-#### Added
-- Introducing authToken. `setUserId` and `setEmail` methods now takes optional `authToken` parameter
+#### Changed
 - `app_name` was removed from published strings and replaced with plain string values in test manifests.
 
 #### Fixed
