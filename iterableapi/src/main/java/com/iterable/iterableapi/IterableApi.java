@@ -1245,6 +1245,10 @@ private static final String TAG = "IterableApi";
         }
     }
 
+    protected String getAuthToken() {
+        return _authToken;
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
