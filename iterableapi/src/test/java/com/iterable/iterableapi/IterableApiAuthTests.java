@@ -228,5 +228,24 @@ public class IterableApiAuthTests extends BaseTest {
         IterableApi.getInstance().setEmail(null);
 
         assertNull(IterableApi.getInstance().getEmail());
+        assertNull(IterableApi.getInstance().getUserId());
+        assertNull(IterableApi.getInstance().getAuthToken());
+    }
+
+    @Test
+    public void testUserIdLogOut() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+
+        String userId = "testUserId";
+
+        IterableApi.getInstance().setUserId(userId);
+
+        assertEquals(IterableApi.getInstance().getUserId(), userId);
+
+        IterableApi.getInstance().setUserId(null);
+
+        assertNull(IterableApi.getInstance().getEmail());
+        assertNull(IterableApi.getInstance().getUserId());
+        assertNull(IterableApi.getInstance().getAuthToken());
     }
 }
