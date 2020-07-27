@@ -287,7 +287,7 @@ private static final String TAG = "IterableApi";
      * @param email User email
      * @param authToken Authorization token
      */
-    public void setEmail(@Nullable String email, @Nullable String authToken) {
+    private void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             if (_authToken == null && authToken == null) {
                 return;
@@ -334,7 +334,7 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      * @param authToken Authorization token
      */
-    public void setUserId(@Nullable String userId, @Nullable String authToken) {
+    private void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
             if (_authToken == null && authToken == null) {
                 return;
@@ -423,7 +423,7 @@ private static final String TAG = "IterableApi";
     /**
      * Registers a device token with Iterable.
      * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
-     * @param token Push token obtained from GCM or FCM
+     * @param deviceToken Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(@NonNull String deviceToken) {
         registerDeviceToken(_email, _userId, getPushIntegrationName(), deviceToken, deviceAttributes);
@@ -554,11 +554,24 @@ private static final String TAG = "IterableApi";
     /**
      * Updates the current user's email.
      * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
-     * @param newEmail New email
+     *
+     * @param newEmail  New email
      * @param authToken Authorization token
      */
-    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
+    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
         updateEmail(newEmail, authToken, null, null);
+    }
+
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param successHandler Success handler. Called when the server returns a success code.
+     * @param failureHandler Failure handler. Called when the server call failed.
+     */
+    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        updateEmail(newEmail, _authToken, successHandler, failureHandler);
     }
 
     /**
@@ -569,7 +582,7 @@ private static final String TAG = "IterableApi";
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
-    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
@@ -1168,12 +1181,12 @@ private static final String TAG = "IterableApi";
      * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
      * @param email User email for whom to disable the device.
      * @param userId User ID for whom to disable the device.
-     * @param token The device token
+     * @param deviceToken The device token
      */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);
+            requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
             if (email != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, email);
             } else if (userId != null) {
@@ -1188,16 +1201,17 @@ private static final String TAG = "IterableApi";
 
     /**
      * Registers the GCM registration ID with Iterable.
+     *
      * @param applicationName
-     * @param token
+     * @param deviceToken
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
 
-        if (token == null) {
+        if (deviceToken == null) {
             IterableLogger.e(TAG, "registerDeviceToken: token is null");
             return;
         }
@@ -1236,7 +1250,7 @@ private static final String TAG = "IterableApi";
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled());
 
             JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, token);
+            device.put(IterableConstants.KEY_TOKEN, deviceToken);
             device.put(IterableConstants.KEY_PLATFORM, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
             device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
             device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
