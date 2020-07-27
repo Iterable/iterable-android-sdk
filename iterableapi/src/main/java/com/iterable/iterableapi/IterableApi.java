@@ -287,8 +287,19 @@ private static final String TAG = "IterableApi";
      * @param email User email
      * @param authToken Authorization token
      */
-    private void setEmail(@Nullable String email, @Nullable String authToken) {
+    void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
+            if (_authToken == null && authToken == null) {
+                return;
+            }
+
+            if (_authToken != null && _authToken.equals(authToken)) {
+                return;
+            }
+
+            _authToken = authToken;
+            storeAuthData();
+
             return;
         }
 
@@ -323,8 +334,19 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      * @param authToken Authorization token
      */
-    private void setUserId(@Nullable String userId, @Nullable String authToken) {
+    void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
+            if (_authToken == null && authToken == null) {
+                return;
+            }
+
+            if (_authToken != null && _authToken.equals(authToken)) {
+                return;
+            }
+
+            _authToken = authToken;
+            storeAuthData();
+
             return;
         }
 
@@ -1082,6 +1104,14 @@ private static final String TAG = "IterableApi";
      */
     String getUserId() {
         return _userId;
+    }
+
+    /**
+     * Get the authentication token
+     * @return authentication token
+     */
+    String getAuthToken() {
+        return _authToken;
     }
 
 //---------------------------------------------------------------------------------------
