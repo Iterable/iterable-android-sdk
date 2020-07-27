@@ -40,7 +40,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetEmailWithTokenStatus() throws Exception {
+    public void testSetEmailWithToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
@@ -53,7 +53,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetUserIdWithTokenStatus() throws Exception {
+    public void testSetUserIdWithToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String userId = "testUserId";
@@ -66,7 +66,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSameEmailWithNewTokenStatus() throws Exception {
+    public void testSameEmailWithNewToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
@@ -86,7 +86,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSameUserIdWithNewTokenStatus() throws Exception {
+    public void testSameUserIdWithNewToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String userId = "testUserId";
@@ -106,7 +106,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetSameEmailAndRemoveTokenStatus() throws Exception {
+    public void testSetSameEmailAndRemoveToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
@@ -124,7 +124,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetSameUserIdAndRemoveTokenStatus() throws Exception {
+    public void testSetSameUserIdAndRemoveToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String userId = "testUserId";
@@ -142,7 +142,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetSameEmailStatus() throws Exception {
+    public void testSetSameEmail() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
@@ -161,7 +161,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetSameUserIdStatus() throws Exception {
+    public void testSetSameUserId() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String userId = "testUserId";
@@ -180,7 +180,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetSameEmailWithSameTokenStatus() throws Exception {
+    public void testSetSameEmailWithSameToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
@@ -198,7 +198,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testSetSameUserIdWithSameTokenStatus() throws Exception {
+    public void testSetSameUserIdWithSameToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String userId = "testUserId";
@@ -216,7 +216,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     @Test
-    public void testLogOutStatus() throws Exception {
+    public void testEmailLogOut() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
