@@ -1093,6 +1093,14 @@ private static final String TAG = "IterableApi";
         return _userId;
     }
 
+    /**
+     * Get the authentication token
+     * @return authentication token
+     */
+    String getAuthToken() {
+        return _authToken;
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -1243,10 +1251,6 @@ private static final String TAG = "IterableApi";
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }
-    }
-
-    protected String getAuthToken() {
-        return _authToken;
     }
 
 //---------------------------------------------------------------------------------------
