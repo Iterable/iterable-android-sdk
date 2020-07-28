@@ -288,7 +288,7 @@ private static final String TAG = "IterableApi";
      * @param email User email
      * @param authToken Authorization token
      */
-    void setEmail(@Nullable String email, @Nullable String authToken) {
+    public void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             if (_authToken == null && authToken == null) {
                 return;
@@ -335,7 +335,7 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      * @param authToken Authorization token
      */
-    void setUserId(@Nullable String userId, @Nullable String authToken) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
             if (_authToken == null && authToken == null) {
                 return;
@@ -559,7 +559,7 @@ private static final String TAG = "IterableApi";
      * @param newEmail  New email
      * @param authToken Authorization token
      */
-    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
         updateEmail(newEmail, authToken, null, null);
     }
 
@@ -583,7 +583,7 @@ private static final String TAG = "IterableApi";
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
-    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
