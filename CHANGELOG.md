@@ -24,7 +24,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed an issue where in-app click events were not being registered after displaying an in-app message.
 - Fixed NullPointerExceptions in `IterableInAppFragmentHTMLNotification` that could occur in some cases when the activity is destroyed and recreated.
 - Fixed an issue where in-app messages were not getting cleared upon logout.
-- Fixed an issue where `disableToken` could not disable all devices with same deviceToken
+- `disableToken` now disables all devices with the current device token when `email` and `userId` are not set.
 
 ## [3.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.4)
 #### Added
