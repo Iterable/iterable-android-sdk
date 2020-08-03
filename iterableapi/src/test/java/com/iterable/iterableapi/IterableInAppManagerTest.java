@@ -43,6 +43,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -368,6 +369,27 @@ public class IterableInAppManagerTest extends BaseTest {
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.INBOX), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("iterable://delete"));
         assertTrue(message.isConsumed());
+    }
+
+    @Test
+    public void testInAppAutoDisplayPause() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        assertEquals(0, inAppManager.getMessages().size());
+
+        inAppManager.syncInApp();
+        Robolectric.flushBackgroundThreadScheduler();
+        Robolectric.flushForegroundThreadScheduler();
+        assertEquals(1, inAppManager.getMessages().size());
+
+        inAppManager.setAutoDisplayPaused(true);
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
+        Robolectric.flushForegroundThreadScheduler();
+        ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler, times(0)).onNewInApp(inAppMessageCaptor.capture());
+
+        inAppManager.setAutoDisplayPaused(false);
+        verify(inAppHandler, times(1)).onNewInApp(inAppMessageCaptor.capture());
     }
 
     private static class IterableSkipInAppHandler implements IterableInAppHandler {

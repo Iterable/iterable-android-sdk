@@ -46,6 +46,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final List<Listener> listeners = new ArrayList<>();
     private long lastSyncTime = 0;
     private long lastInAppShown = 0;
+    private boolean autoDisplayPaused = false;
 
     IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval) {
         this(iterableApi,
@@ -131,6 +132,22 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read) {
         message.setRead(read);
         notifyOnChange();
+    }
+
+
+    boolean isAutoDisplayPaused() {
+        return autoDisplayPaused;
+    }
+
+    /**
+     * Set a pause to prevent showing an in-app automatically. By default the value is set to false.
+     * @param paused Whether to pause showing an in-app.
+     */
+    public void setAutoDisplayPaused(boolean paused) {
+        this.autoDisplayPaused = paused;
+        if (!paused) {
+            scheduleProcessing();
+        }
     }
 
     /**
@@ -310,7 +327,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void processMessages() {
-        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
+        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
             return;
         }
 
