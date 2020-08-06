@@ -275,13 +275,16 @@ class IterableNotificationHelper {
             try {
                 ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
                 if (info.metaData != null) {
-                    // Literal string value
-                    channelName = info.metaData.getString(IterableConstants.NOTIFICATION_CHANNEL_NAME);
-
-                    // Try to read from a string resource
-                    int stringId = info.metaData.getInt(IterableConstants.NOTIFICATION_CHANNEL_NAME);
-                    if (channelName == null && stringId != 0) {
-                        channelName = context.getString(stringId);
+                    Object channelNameMetaData = info.metaData.get(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+                    if (channelNameMetaData instanceof String) {
+                        // Literal string value
+                        channelName = (String) channelNameMetaData;
+                    } else if (channelNameMetaData instanceof Integer) {
+                        // Try to read from a string resource
+                        int stringId = (Integer) channelNameMetaData;
+                        if (stringId != 0) {
+                            channelName = context.getString(stringId);
+                        }
                     }
                     IterableLogger.d(IterableNotificationBuilder.TAG, "channel name: " + channelName);
                 }
