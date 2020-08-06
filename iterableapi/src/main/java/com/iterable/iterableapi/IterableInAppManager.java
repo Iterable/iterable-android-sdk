@@ -140,8 +140,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     /**
-     * Set a pause to prevent showing an in-app automatically. By default the value is set to false.
-     * @param paused Whether to pause showing an in-app.
+     * Set a pause to prevent showing in-app messages automatically. By default the value is set to false.
+     * @param paused Whether to pause showing in-app messages.
      */
     public void setAutoDisplayPaused(boolean paused) {
         this.autoDisplayPaused = paused;
