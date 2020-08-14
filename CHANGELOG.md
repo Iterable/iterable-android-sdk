@@ -15,6 +15,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+
+## [3.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.5)
+#### Changed
+- `app_name` was removed from published strings and replaced with plain string values in test manifests.
+- `disableToken` now disables all devices with the current device token when `email` and `userId` are not set.
+
+#### Fixed
+- Fixed an issue where in-app click events were not being registered after displaying an in-app message.
+- Fixed NullPointerExceptions in `IterableInAppFragmentHTMLNotification` that could occur in some cases when the activity is destroyed and recreated.
+- Fixed an issue where in-app messages were not getting cleared upon logout.
+
 ## [3.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.4)
 #### Added
 - Added support for new parameters - `mergeNestedObject` in `updateUser` method.

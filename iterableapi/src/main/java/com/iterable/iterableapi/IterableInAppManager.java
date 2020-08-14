@@ -46,6 +46,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final List<Listener> listeners = new ArrayList<>();
     private long lastSyncTime = 0;
     private long lastInAppShown = 0;
+    private boolean autoDisplayPaused = false;
 
     IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval) {
         this(iterableApi,
@@ -133,6 +134,22 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         notifyOnChange();
     }
 
+
+    boolean isAutoDisplayPaused() {
+        return autoDisplayPaused;
+    }
+
+    /**
+     * Set a pause to prevent showing in-app messages automatically. By default the value is set to false.
+     * @param paused Whether to pause showing in-app messages.
+     */
+    public void setAutoDisplayPaused(boolean paused) {
+        this.autoDisplayPaused = paused;
+        if (!paused) {
+            scheduleProcessing();
+        }
+    }
+
     /**
      * Trigger a manual sync. This method is called automatically by the SDK, so there should be no
      * need to call this method from your app.
@@ -165,6 +182,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 }
             }
         });
+    }
+
+    /**
+     * Clear all in-app messages.
+     * Should be called on user logout.
+     */
+    void reset() {
+        IterableLogger.printInfo();
+
+        for (IterableInAppMessage message : storage.getMessages()) {
+            storage.removeMessage(message);
+        }
+
+        notifyOnChange();
     }
 
     /**
@@ -296,7 +327,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void processMessages() {
-        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
+        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
             return;
         }
 

@@ -69,7 +69,7 @@ public class IterableApiResponseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         stubAnyRequestReturningStatusCode(200, responseData);
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, new IterableHelper.SuccessHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 assertEquals(responseData.toString(), data.toString());
@@ -88,7 +88,7 @@ public class IterableApiResponseTest {
 
         stubAnyRequestReturningStatusCode(200, (String) null);
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("No data received", reason);
@@ -107,7 +107,7 @@ public class IterableApiResponseTest {
 
         stubAnyRequestReturningStatusCode(200, "{'''}}");
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertThat(reason, CoreMatchers.containsString("Could not parse json"));
@@ -126,7 +126,7 @@ public class IterableApiResponseTest {
 
         stubAnyRequestReturningStatusCode(400, "{}");
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("Invalid Request", reason);
@@ -147,7 +147,7 @@ public class IterableApiResponseTest {
         final JSONObject responseData = new JSONObject("{\"msg\":\"Test error\"}");
         stubAnyRequestReturningStatusCode(400, responseData);
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("Test error", reason);
@@ -166,7 +166,7 @@ public class IterableApiResponseTest {
 
         stubAnyRequestReturningStatusCode(401, "{}");
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertEquals("Invalid API Key", reason);
@@ -185,7 +185,7 @@ public class IterableApiResponseTest {
             stubAnyRequestReturningStatusCode(500, "{}");
         }
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null);
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, null);
         IterableRequest task = new IterableRequest();
         task.execute(request);
 
@@ -200,7 +200,7 @@ public class IterableApiResponseTest {
 
         stubAnyRequestReturningStatusCode(302, "{}");
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertThat(reason, CoreMatchers.containsString("Received non-200 response"));
@@ -220,7 +220,7 @@ public class IterableApiResponseTest {
         MockResponse response = new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_DURING_REQUEST_BODY);
         server.enqueue(response);
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.FailureHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 signal.countDown();

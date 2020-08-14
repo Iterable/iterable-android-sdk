@@ -45,6 +45,7 @@ private static final String TAG = "IterableApi";
     private String _apiKey;
     private String _email;
     private String _userId;
+    private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
@@ -269,13 +270,36 @@ private static final String TAG = "IterableApi";
 
     /**
      * Set user email used for API calls
-     * Calling this or `setUserId:` is required before making any API calls.
+     * Calling this or {@link #setUserId(String)} is required before making any API calls.
      *
      * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
      * @param email User email
      */
     public void setEmail(@Nullable String email) {
+        setEmail(email, null);
+    }
+
+    /**
+     * Set user email used for API calls
+     * Calling this or {@link #setUserId(String)} is required before making any API calls.
+     *
+     * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
+     * @param email User email
+     * @param authToken Authorization token
+     */
+    void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
+            if (_authToken == null && authToken == null) {
+                return;
+            }
+
+            if (_authToken != null && _authToken.equals(authToken)) {
+                return;
+            }
+
+            _authToken = authToken;
+            storeAuthData();
+
             return;
         }
 
@@ -286,19 +310,43 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = email;
         _userId = null;
-        storeEmailAndUserId();
+        _authToken = authToken;
+        storeAuthData();
         onLogIn();
     }
 
     /**
      * Set user ID used for API calls
-     * Calling this or `setEmail:` is required before making any API calls.
+     * Calling this or {@link #setEmail(String)} is required before making any API calls.
      *
      * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
+        setUserId(userId, null);
+    }
+
+    /**
+     * Set user ID used for API calls
+     * Calling this or {@link #setEmail(String)} is required before making any API calls.
+     *
+     * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
+     * @param userId User ID
+     * @param authToken Authorization token
+     */
+    void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
+            if (_authToken == null && authToken == null) {
+                return;
+            }
+
+            if (_authToken != null && _authToken.equals(authToken)) {
+                return;
+            }
+
+            _authToken = authToken;
+            storeAuthData();
+
             return;
         }
 
@@ -309,7 +357,8 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = null;
         _userId = userId;
-        storeEmailAndUserId();
+        _authToken = authToken;
+        storeAuthData();
         onLogIn();
     }
 
@@ -317,7 +366,7 @@ private static final String TAG = "IterableApi";
      * Tracks a click on the uri if it is an iterable link.
      * @param uri the
      * @param onCallback Calls the callback handler with the destination location
-     *                   or the original url if it is not a interable link.
+     *                   or the original url if it is not an Iterable link.
      */
     public static void getAndTrackDeeplink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
         IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
@@ -374,17 +423,17 @@ private static final String TAG = "IterableApi";
     /**
      * Registers a device token with Iterable.
      * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
-     * @param token Push token obtained from GCM or FCM
+     * @param deviceToken Push token obtained from GCM or FCM
      */
-    public void registerDeviceToken(@NonNull String token) {
-        registerDeviceToken(_email, _userId, getPushIntegrationName(), token, deviceAttributes);
+    public void registerDeviceToken(@NonNull String deviceToken) {
+        registerDeviceToken(_email, _userId, getPushIntegrationName(), deviceToken, deviceAttributes);
     }
 
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String token, final HashMap<String, String> deviceAttributes) {
-        if (token != null) {
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
+        if (deviceToken != null) {
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(email, userId, applicationName, token, null, deviceAttributes);
+                    registerDeviceToken(email, userId, applicationName, deviceToken, null, deviceAttributes);
                 }
             });
             registrationThread.start();
@@ -499,17 +548,41 @@ private static final String TAG = "IterableApi";
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        updateEmail(newEmail, null, null);
+        updateEmail(newEmail, null, null, null);
     }
 
     /**
      * Updates the current user's email.
-     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
+     *
+     * @param newEmail  New email
+     * @param authToken Authorization token
+     */
+    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
+        updateEmail(newEmail, authToken, null, null);
+    }
+
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
      * @param newEmail New email
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        updateEmail(newEmail, _authToken, successHandler, failureHandler);
+    }
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param authToken
+     * @param successHandler Success handler. Called when the server returns a success code.
+     * @param failureHandler Failure handler. Called when the server call failed.
+     */
+    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
@@ -535,7 +608,11 @@ private static final String TAG = "IterableApi";
                     if (_email != null) {
                         _email = newEmail;
                     }
-                    storeEmailAndUserId();
+                    if (_authToken != null) {
+                        _authToken = authToken;
+                    }
+
+                    storeAuthData();
                     if (successHandler != null) {
                         successHandler.onSuccess(data);
                     }
@@ -772,7 +849,7 @@ private static final String TAG = "IterableApi";
         if (message != null) {
             trackInAppClick(message, clickedUrl, location);
         } else {
-            IterableLogger.w(TAG, "trackInAppClick: could not find an in-app message with ID: " + messageId);
+            trackInAppClick(messageId, clickedUrl);
         }
     }
 
@@ -1029,10 +1106,18 @@ private static final String TAG = "IterableApi";
         return _userId;
     }
 
+    /**
+     * Get the authentication token
+     * @return authentication token
+     */
+    String getAuthToken() {
+        return _authToken;
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
-//region Protected Fuctions
+//region Protected Functions
 //---------------------------------------------------------------------------------------
 
     /**
@@ -1058,7 +1143,7 @@ private static final String TAG = "IterableApi";
         return iconName;
     }
 
-    protected void trackPushOpen(int campaignId, int templateId, @Nullable String messageId) {
+    protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
         trackPushOpen(campaignId, templateId, messageId, null);
     }
 
@@ -1067,7 +1152,13 @@ private static final String TAG = "IterableApi";
      * @param campaignId
      * @param templateId
      */
-    protected void trackPushOpen(int campaignId, int templateId, @Nullable String messageId, @Nullable JSONObject dataFields) {
+    protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
+
+        if (messageId == null) {
+            IterableLogger.e(TAG, "messageId is null");
+            return;
+        }
+
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -1096,12 +1187,12 @@ private static final String TAG = "IterableApi";
      * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
      * @param email User email for whom to disable the device.
      * @param userId User ID for whom to disable the device.
-     * @param token The device token
+     * @param deviceToken The device token
      */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, token);
+            requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
             if (email != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, email);
             } else if (userId != null) {
@@ -1116,16 +1207,17 @@ private static final String TAG = "IterableApi";
 
     /**
      * Registers the GCM registration ID with Iterable.
+     *
      * @param applicationName
-     * @param token
+     * @param deviceToken
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String token, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
 
-        if (token == null) {
+        if (deviceToken == null) {
             IterableLogger.e(TAG, "registerDeviceToken: token is null");
             return;
         }
@@ -1164,7 +1256,7 @@ private static final String TAG = "IterableApi";
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled());
 
             JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, token);
+            device.put(IterableConstants.KEY_TOKEN, deviceToken);
             device.put(IterableConstants.KEY_PLATFORM, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
             device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
             device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
@@ -1184,7 +1276,7 @@ private static final String TAG = "IterableApi";
 //---------------------------------------------------------------------------------------
 //endregion
 
-//region Private Fuctions
+//region Private Functions
 //---------------------------------------------------------------------------------------
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -1236,12 +1328,12 @@ private static final String TAG = "IterableApi";
      * @param json
      */
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, null, null);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, null, null);
         new IterableRequest().execute(request);
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, onSuccess, onFailure);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
 
@@ -1252,7 +1344,7 @@ private static final String TAG = "IterableApi";
      * @param json
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, onCallback);
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, _authToken, onCallback);
         new IterableRequest().execute(request);
     }
 
@@ -1306,11 +1398,12 @@ private static final String TAG = "IterableApi";
         return _deviceId;
     }
 
-    private void storeEmailAndUserId() {
+    private void storeAuthData() {
         try {
             SharedPreferences.Editor editor = getPreferences().edit();
             editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
             editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
+            editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
             editor.commit();
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while persisting email/userId", e);
@@ -1322,8 +1415,9 @@ private static final String TAG = "IterableApi";
             SharedPreferences prefs = getPreferences();
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
         } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while retrieving email/userId", e);
+            IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
     }
 
@@ -1331,10 +1425,15 @@ private static final String TAG = "IterableApi";
         if (config.autoPushRegistration && isInitialized()) {
             disablePush();
         }
+        getInAppManager().reset();
     }
 
     private void onLogIn() {
-        if (config.autoPushRegistration && isInitialized()) {
+        if (!isInitialized()) {
+            return;
+        }
+
+        if (config.autoPushRegistration) {
             registerForPush();
         }
         getInAppManager().syncInApp();
@@ -1361,7 +1460,7 @@ private static final String TAG = "IterableApi";
             JSONObject requestJSON = DeviceInfo.createDeviceInfo(_applicationContext).toJSONObject();
 
             IterableApiRequest request = new IterableApiRequest(_apiKey, IterableConstants.BASE_URL_LINKS,
-                    IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, new IterableHelper.SuccessHandler() {
+                    IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, null, new IterableHelper.SuccessHandler() {
                 @Override
                 public void onSuccess(@NonNull JSONObject data) {
                     handleDDL(data);
