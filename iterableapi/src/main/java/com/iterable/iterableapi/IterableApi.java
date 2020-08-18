@@ -382,7 +382,7 @@ private static final String TAG = "IterableApi";
      * in your deep link handler activity
      * @param uri the URL obtained from {@link Intent#getData()} in your deep link
      *            handler activity
-     * @return
+     * @return whether or not the app link was handled
      */
     public static boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();
