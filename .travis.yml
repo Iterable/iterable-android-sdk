@@ -66,10 +66,7 @@ before_script:
 
 script:
   - touch local.properties
-  - ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck :app:jacocoDebugAndroidTestReport
-  - ./gradlew clean
-  - ./gradlew install
-  - ./gradlew :iterableapi:javadoc
+  - ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck :app:jacocoDebugAndroidTestReport :iterableapi:javadoc :iterableapi-ui:javadoc
 
 after_script:
   - ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugTestReport/jacocoDebugTestReport.xml --input-type jacoco

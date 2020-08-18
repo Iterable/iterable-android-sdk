@@ -102,8 +102,7 @@ connectedCheck.dependsOn('checkstyle')
 
 // A hack to import the classpath and BuildConfig into the javadoc task
 afterEvaluate {
-    javadoc.classpath += files(android.libraryVariants.collect { variant -> variant.javaCompile.classpath.files
-    })
-    javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/r/${variant.flavorName}/release" })
-    javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/buildConfig/${variant.flavorName}/release" })
+    javadoc.classpath += files(android.libraryVariants.collect { variant -> variant.javaCompile.classpath.files })
+    javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/r/${variant.flavorName}/${variant.buildType.name}" })
+    javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/buildConfig/${variant.flavorName}/${variant.buildType.name}" })
 }
