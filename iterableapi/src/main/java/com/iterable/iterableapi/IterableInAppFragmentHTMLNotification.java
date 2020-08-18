@@ -60,7 +60,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * Creates a static instance of the notification
      *
      * @param htmlString
-     * @return IterableInAppFragmentHTMLNotification
+     * @return notification instance
      */
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
 
