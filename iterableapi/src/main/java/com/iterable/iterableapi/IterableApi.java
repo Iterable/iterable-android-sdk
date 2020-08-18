@@ -377,12 +377,13 @@ private static final String TAG = "IterableApi";
      * For Iterable links, it will track the click and retrieve the original URL, pass it to
      * {@link IterableUrlHandler} for handling
      * If it's not an Iterable link, it just passes the same URL to {@link IterableUrlHandler}
-     *
+     * <p>
      * Call this from {@link Activity#onCreate(Bundle)} and {@link Activity#onNewIntent(Intent)}
      * in your deep link handler activity
+     *
      * @param uri the URL obtained from {@link Intent#getData()} in your deep link
      *            handler activity
-     * @return
+     * @return handleAppLink whether true or false
      */
     public static boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();

@@ -67,6 +67,8 @@ before_script:
 script:
   - touch local.properties
   - ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport :iterableapi:connectedCheck :app:jacocoDebugAndroidTestReport
+  - ./gradlew clean
+  - ./gradlew install
   - ./gradlew :iterableapi:javadoc
 
 after_script:
