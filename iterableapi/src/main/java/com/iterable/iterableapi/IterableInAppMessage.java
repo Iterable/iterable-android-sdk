@@ -28,6 +28,7 @@ public class IterableInAppMessage {
     private boolean consumed = false;
     private boolean read = false;
     private boolean loadedHtmlFromJson = false;
+    private boolean markedForDeletion = false;
     private @Nullable IterableInAppStorage inAppStorageInterface;
 
     IterableInAppMessage(@NonNull String messageId,
@@ -282,6 +283,14 @@ public class IterableInAppMessage {
 
     void setLoadedHtmlFromJson(boolean loadedHtmlFromJson) {
         this.loadedHtmlFromJson = loadedHtmlFromJson;
+    }
+
+    public boolean isMarkedForDeletion() {
+        return markedForDeletion;
+    }
+
+    public void markForDeletion(boolean delete) {
+        this.markedForDeletion = delete;
     }
 
     static IterableInAppMessage fromJSONObject(@NonNull JSONObject messageJson, @Nullable IterableInAppStorage storageInterface) {

@@ -243,6 +243,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (clickCallback != null) {
             clickCallback.execute(Uri.parse(url));
         }
+        processMessageRemoval();
         dismiss();
     }
 
@@ -252,6 +253,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
         IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
+        processMessageRemoval();
+    }
+
+    private void processMessageRemoval() {
+        IterableInAppMessage message = IterableApi.sharedInstance.getInAppManager().getMessageById(messageId);
+        if (message.isMarkedForDeletion() && !message.isConsumed()) {
+            IterableApi.sharedInstance.getInAppManager().removeMessage(message, IterableInAppDeleteActionType.OTHER, location);
+        }
     }
 
     /**
