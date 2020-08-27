@@ -52,7 +52,7 @@ private static final String TAG = "IterableApi";
     private String _deviceId;
     private boolean _firstForegroundHandled;
 
-    private IterableInAppManager inAppManager;
+    private @Nullable IterableInAppManager inAppManager;
     private String inboxSessionId;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
 
@@ -115,8 +115,8 @@ private static final String TAG = "IterableApi";
     @NonNull
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
-            inAppManager = new IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval);
-            inAppManager.syncInApp();
+            throw new RuntimeException("IterableApi must be initialized before calling getInAppManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return inAppManager;
     }
@@ -266,6 +266,7 @@ private static final String TAG = "IterableApi";
         sharedInstance.checkForDeferredDeeplink();
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
+        sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler, sharedInstance.config.inAppDisplayInterval);
     }
 
     /**
