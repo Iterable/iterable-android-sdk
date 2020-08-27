@@ -6,8 +6,15 @@ import org.junit.Test;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+
+import static com.iterable.iterableapi.IterableConstants.HEADER_SDK_AUTH_FORMAT;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -17,9 +24,13 @@ public class IterableApiAuthTests extends BaseTest {
 
     private IterableUtil.IterableUtilImpl originalIterableUtil;
     private IterableUtil.IterableUtilImpl iterableUtilSpy;
+    private MockWebServer server;
 
     @Before
     public void setUp() {
+
+        server = new MockWebServer();
+        IterableApi.overrideURLEndpointPath(server.url("").toString());
         reInitIterableApi();
 
         originalIterableUtil = IterableUtil.instance;
@@ -31,6 +42,8 @@ public class IterableApiAuthTests extends BaseTest {
     public void tearDown() throws IOException {
         IterableUtil.instance = originalIterableUtil;
         iterableUtilSpy = null;
+        server.shutdown();
+        server = null;
     }
 
     private void reInitIterableApi() {
@@ -247,5 +260,24 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getEmail());
         assertNull(IterableApi.getInstance().getUserId());
         assertNull(IterableApi.getInstance().getAuthToken());
+    }
+
+    @Test
+    public void testAuthTokenPresentInRequest() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        String token = "token";
+        IterableApi.getInstance().setEmail("new@email.com", token);
+        IterableApi.getInstance().updateEmail("newEmail@gmail.com", null, null);
+        RecordedRequest updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(updateEmailRequest);
+
+        assertEquals(HEADER_SDK_AUTH_FORMAT + token, updateEmailRequest.getHeader("Authorization"));
+
+        IterableApi.getInstance().setEmail("new@email.com");
+        IterableApi.getInstance().updateEmail("new@email2.com");
+        updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(updateEmailRequest);
+        assertNull(updateEmailRequest.getHeader("Authorization"));
     }
 }
