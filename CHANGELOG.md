@@ -15,6 +15,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.6)
+#### Added
+- Added a new method - `setAutoDisplayPaused` to `InAppManager`. This method pauses the display of in-app messages and can be used to prevent interruptions in certain areas of your app.
+
+#### Changed
+- Changed `messageId` argument to be non-null in `trackPushOpen`.
+
+#### Fixed
+- Fixed an issue where the in-app message queue wasn't being refreshed on app launch.
+- Removed warning messages from logs when using string resources for notification channel name.
 
 ## [3.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.5)
 #### Changed
