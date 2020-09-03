@@ -10,6 +10,8 @@ import java.util.TimerTask;
 
 public class IterableAuthManager {
     private static final String TAG = "IterableAuth";
+
+    private final IterableApi api;
     private String authToken;
 
     //For expiration handling
@@ -24,13 +26,15 @@ public class IterableAuthManager {
 
     private int failedSequentialAuthRequestCount;
 
-    IterableAuthManager()
+    IterableAuthManager(IterableApi api)
     {
         timer = new Timer();
+        this.api = api;
     }
 
     public void requestNewAuthToken() {
         //What do we do if there's already a pending auth? Ignore since it will eventually fix itself
+        //I think the pending auth will help since push pushRegistration and getMessages happen sequentially.
         if (pendingAuth == false) {
             long currentTime = IterableUtil.currentTimeMillis();
             if (currentTime - lastTokenRequestTime >= rateLimitTime) {
@@ -57,6 +61,12 @@ public class IterableAuthManager {
        if (!authToken.equals(this.authToken)) {
             this.authToken = authToken;
             pendingAuth = false;
+
+            //re-register for push and in-apps
+           if (api.config.autoPushRegistration) {
+               api.registerForPush();
+           }
+           api.getInAppManager().syncInApp();
 
             queueExpirationRefresh(authToken);
         }

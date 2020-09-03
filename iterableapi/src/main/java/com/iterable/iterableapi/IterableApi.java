@@ -124,14 +124,14 @@ private static final String TAG = "IterableApi";
     }
 
     /**
-     * Returns an {@link IterableInAppManager} that can be used to manage in-app messages.
+     * Returns an {@link IterableAuthManager} that can be used to manage mobile auth.
      * Make sure the Iterable API is initialized before calling this method.
-     * @return {@link IterableInAppManager} instance
+     * @return {@link IterableAuthManager} instance
      */
     @NonNull
     public IterableAuthManager getAuthManager() {
         if (authManager == null) {
-            authManager = new IterableAuthManager();
+            authManager = new IterableAuthManager(this);
         }
         return authManager;
     }
@@ -1421,8 +1421,6 @@ private static final String TAG = "IterableApi";
             editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
             editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
             editor.commit();
-
-            _authTokenExpiration = IterableAuthManager.decodedIat(_authToken);
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while persisting email/userId", e);
         }
@@ -1434,8 +1432,6 @@ private static final String TAG = "IterableApi";
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-            _authTokenExpiration = IterableAuthManager.decodedIat(_authToken);
-
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
