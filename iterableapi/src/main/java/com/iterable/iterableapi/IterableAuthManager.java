@@ -34,15 +34,15 @@ public class IterableAuthManager {
 
     public void requestNewAuthToken() {
         //What do we do if there's already a pending auth? Ignore since it will eventually fix itself
-        //I think the pending auth will help since push pushRegistration and getMessages happen sequentially.
-        if (pendingAuth == false) {
+        if (!pendingAuth) {
             long currentTime = IterableUtil.currentTimeMillis();
             if (currentTime - lastTokenRequestTime >= rateLimitTime) {
                 pendingAuth = true;
 
                 failedSequentialAuthRequestCount++;
                 //Blocking call on a separate thread
-                String authToken = "";//onAuthTokenRequested();
+                String authToken = "";
+                //onAuthTokenRequested();
                 updateAuthToken(this.authToken);
             } else {
                 //queue up another requestNewAuthToken at currentTime + rateLimitTime
@@ -88,15 +88,15 @@ public class IterableAuthManager {
         }, 0, timeDuration);
     }
 
-    private int decodedExpiration(String JWTEncoded) {
+    public static int decodedExpiration(String encodedJWT) {
         int exp = 0;
         try {
-            String[] split = JWTEncoded.split("\\.");
+            String[] split = encodedJWT.split("\\.");
             String body = getJson(split[1]);
             JSONObject jObj = new JSONObject(body);
             exp = jObj.getInt(expirationString);
         } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while parsing JWT for the expiration: " + JWTEncoded, e);
+            IterableLogger.e(TAG, "Error while parsing JWT for the expiration: " + encodedJWT, e);
         }
         return exp;
     }

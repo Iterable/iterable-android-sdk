@@ -162,9 +162,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
-                    // Add a rate limiter here if too many are called. Clear on success
-
-                    handleFailure("Invalid API Key", jsonResponse);
+                    if (jsonResponse.getString("msg") == "JWT Authorization header is not set") {
+                        handleFailure("JWT Authorization header is not set", jsonResponse);
+                        // TODO: Add a rate limiter here if too many are called. Clear on success
+                    } else {
+                        handleFailure("Invalid API Key", jsonResponse);
+                    }
                 } else if (responseCode >= 400) {
                     String errorMessage = "Invalid Request";
 
