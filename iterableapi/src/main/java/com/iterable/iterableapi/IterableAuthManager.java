@@ -5,52 +5,46 @@ import android.util.Base64;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class IterableAuthManager {
     private static final String TAG = "IterableAuth";
-
-    private static final int refreshWindowSeconds = 60;
-    private static final String expirationString = "exp";
     private String authToken;
-    private boolean pendingAuth;
 
+    //For expiration handling
+    private static final int refreshWindowTime = 60000;
+    private static final String expirationString = "exp";
+
+    //For rate limiting
+    private boolean pendingAuth;
     private long lastTokenRequestTime;
+    private long rateLimitTime = 1000;
+    private Timer timer;
 
     private int failedSequentialAuthRequestCount;
 
     IterableAuthManager()
     {
-    }
-
-    public static void queueExpirationRefresh(String JWTEncoded) {
-
-
-        int expirationTime = decodedExpiration(JWTEncoded);
-        int triggerRefreshTime = expirationTime - refreshWindowSeconds;
-
-        //Schedule timer to trigger to refresh the auth token
-            //cancel existing authRefreshTimer
-            //call onAuthExpiration
+        timer = new Timer();
     }
 
     public void requestNewAuthToken() {
         //What do we do if there's already a pending auth? Ignore since it will eventually fix itself
         if (pendingAuth == false) {
             long currentTime = IterableUtil.currentTimeMillis();
-
-            if (currentTime - lastTokenRequestTime > 1000) {
+            if (currentTime - lastTokenRequestTime >= rateLimitTime) {
                 pendingAuth = true;
-
-                //rate limit
-                lastTokenRequestTime = IterableUtil.currentTimeMillis();
 
                 failedSequentialAuthRequestCount++;
                 //Blocking call on a separate thread
                 String authToken = "";//onAuthTokenRequested();
                 updateAuthToken(this.authToken);
             } else {
-                //queue up another requestNewAuthToken at currentTime + 1 second
+                //queue up another requestNewAuthToken at currentTime + rateLimitTime
+                scheduleAuthTokenRefresh(lastTokenRequestTime + rateLimitTime);
             }
+            lastTokenRequestTime = currentTime;
         }
     }
 
@@ -58,15 +52,33 @@ public class IterableAuthManager {
         failedSequentialAuthRequestCount = 0;
     }
 
-    public void updateAuthToken(String authToken) {
-        //TODO: What if the authToken is the same authToken as before?
-        this.authToken = authToken;
-        pendingAuth = false;
+    //TODO: do we need to make this public?
+    private void updateAuthToken(String authToken) {
+       if (!authToken.equals(this.authToken)) {
+            this.authToken = authToken;
+            pendingAuth = false;
 
-        queueExpirationRefresh(authToken);
+            queueExpirationRefresh(authToken);
+        }
     }
 
-    public static int decodedExpiration(String JWTEncoded) {
+    private void queueExpirationRefresh(String JWTEncoded) {
+        int expirationTimeSeconds = decodedExpiration(JWTEncoded);
+        long triggerExpirationRefreshTime = expirationTimeSeconds*1000 - refreshWindowTime - IterableUtil.currentTimeMillis();
+        scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
+    }
+
+    private void scheduleAuthTokenRefresh(long timeDuration) {
+        timer.cancel();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                requestNewAuthToken();
+            }
+        }, 0, timeDuration);
+    }
+
+    private int decodedExpiration(String JWTEncoded) {
         int exp = 0;
         try {
             String[] split = JWTEncoded.split("\\.");
@@ -79,7 +91,7 @@ public class IterableAuthManager {
         return exp;
     }
 
-    private static String getJson(String strEncoded) throws UnsupportedEncodingException {
+    private String getJson(String strEncoded) throws UnsupportedEncodingException {
         byte[] decodedBytes = Base64.decode(strEncoded, Base64.URL_SAFE);
         return new String(decodedBytes, "UTF-8");
     }
