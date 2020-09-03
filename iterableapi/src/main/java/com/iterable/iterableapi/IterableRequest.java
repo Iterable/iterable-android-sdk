@@ -162,6 +162,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
+                    // Add a rate limiter here if too many are called. Clear on success
+
                     handleFailure("Invalid API Key", jsonResponse);
                 } else if (responseCode >= 400) {
                     String errorMessage = "Invalid Request";

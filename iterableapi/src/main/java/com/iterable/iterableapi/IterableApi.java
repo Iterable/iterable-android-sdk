@@ -46,6 +46,7 @@ private static final String TAG = "IterableApi";
     private String _email;
     private String _userId;
     private String _authToken;
+    private int _authTokenExpiration;
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
@@ -54,6 +55,7 @@ private static final String TAG = "IterableApi";
 
     private IterableInAppManager inAppManager;
     private String inboxSessionId;
+    private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
 
 //---------------------------------------------------------------------------------------
@@ -119,6 +121,19 @@ private static final String TAG = "IterableApi";
             inAppManager.syncInApp();
         }
         return inAppManager;
+    }
+
+    /**
+     * Returns an {@link IterableInAppManager} that can be used to manage in-app messages.
+     * Make sure the Iterable API is initialized before calling this method.
+     * @return {@link IterableInAppManager} instance
+     */
+    @NonNull
+    public IterableAuthManager getAuthManager() {
+        if (authManager == null) {
+            authManager = new IterableAuthManager();
+        }
+        return authManager;
     }
 
     /**
@@ -311,6 +326,7 @@ private static final String TAG = "IterableApi";
         _email = email;
         _userId = null;
         _authToken = authToken;
+//        _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         storeAuthData();
         onLogIn();
     }
@@ -1405,6 +1421,8 @@ private static final String TAG = "IterableApi";
             editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
             editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
             editor.commit();
+
+            _authTokenExpiration = IterableAuthManager.decodedIat(_authToken);
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while persisting email/userId", e);
         }
@@ -1416,6 +1434,8 @@ private static final String TAG = "IterableApi";
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+            _authTokenExpiration = IterableAuthManager.decodedIat(_authToken);
+
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
