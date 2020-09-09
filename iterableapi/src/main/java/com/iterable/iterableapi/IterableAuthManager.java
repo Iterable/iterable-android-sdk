@@ -26,8 +26,7 @@ public class IterableAuthManager {
 
     private int failedSequentialAuthRequestCount;
 
-    IterableAuthManager(IterableApi api)
-    {
+    IterableAuthManager(IterableApi api) {
         timer = new Timer();
         this.api = api;
     }
@@ -73,9 +72,9 @@ public class IterableAuthManager {
         }
     }
 
-    private void queueExpirationRefresh(String JWTEncoded) {
-        int expirationTimeSeconds = decodedExpiration(JWTEncoded);
-        long triggerExpirationRefreshTime = expirationTimeSeconds*1000 - refreshWindowTime - IterableUtil.currentTimeMillis();
+    private void queueExpirationRefresh(String encdodedJWT) {
+        int expirationTimeSeconds = decodedExpiration(encdodedJWT);
+        long triggerExpirationRefreshTime = expirationTimeSeconds * 1000 - refreshWindowTime - IterableUtil.currentTimeMillis();
         scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
     }
 
