@@ -29,9 +29,10 @@ public class IterableAuthManager {
 
     private int failedSequentialAuthRequestCount;
 
-    IterableAuthManager(IterableApi api) {
+    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler) {
         timer = new Timer(true);
         this.api = api;
+        this.authHandler = authHandler
     }
 
     public void requestNewAuthToken() {
@@ -66,7 +67,6 @@ public class IterableAuthManager {
         return failedSequentialAuthRequestCount;
     }
 
-    //TODO: do we need to make this public?
     private void updateAuthToken(String authToken) {
        if (authToken == null) {
            api.setAuthToken(authToken);
@@ -86,7 +86,7 @@ public class IterableAuthManager {
 
     private void queueExpirationRefresh(String encodedJWT) {
         int expirationTimeSeconds = decodedExpiration(encodedJWT);
-        long triggerExpirationRefreshTime = expirationTimeSeconds*1000L - refreshWindowTime - IterableUtil.currentTimeMillis();
+        long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - refreshWindowTime - IterableUtil.currentTimeMillis();
         if (triggerExpirationRefreshTime > 0) {
             scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
         }

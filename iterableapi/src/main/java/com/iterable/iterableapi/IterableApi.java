@@ -130,13 +130,9 @@ private static final String TAG = "IterableApi";
     @NonNull
     public IterableAuthManager getAuthManager() {
         if (authManager == null) {
-            authManager = new IterableAuthManager(this);
+            authManager = new IterableAuthManager(this, config.authHandler);
         }
         return authManager;
-    }
-
-    public void setAuthHandler(IterableAuthHandler authHandler) {
-        getAuthManager().authHandler = authHandler;
     }
 
     /**

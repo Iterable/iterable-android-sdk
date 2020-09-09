@@ -35,7 +35,6 @@ public class IterableAuthManagerTest extends BaseTest {
     private String validJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE2MTYyMzkwMjJ9.GOKZqDEYCIuuuWAgOXLiSE9FZafJ0vV9SY9DaWTAb3g";
     private String expiredJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
 
-
     @Before
     public void setUp() {
 
@@ -58,8 +57,8 @@ public class IterableAuthManagerTest extends BaseTest {
 
     private void reInitIterableApi() {
         IterableApi.sharedInstance = spy(new IterableApi());
-        IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        doReturn(inAppManagerMock).when(IterableApi.sharedInstance).getInAppManager();
+        IterableAuthManager authManagerMock = mock(IterableAuthManager.class);
+        doReturn(authManagerMock).when(IterableApi.sharedInstance).getAuthManager();
     }
 
     @Test
@@ -84,7 +83,7 @@ public class IterableAuthManagerTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
-        IterableApi.getInstance().setAuthHandler(new IterableAuthHandler() {
+        IterableApi.getInstance().getAuthManager(new IterableAuthHandler() {
             @Override
             public String onAuthTokenRequested() {
                 signal.countDown();
