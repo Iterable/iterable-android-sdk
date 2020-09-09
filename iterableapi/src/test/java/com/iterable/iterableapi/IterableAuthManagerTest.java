@@ -57,8 +57,8 @@ public class IterableAuthManagerTest extends BaseTest {
 
     private void reInitIterableApi() {
         IterableApi.sharedInstance = spy(new IterableApi());
-        IterableAuthManager authManagerMock = mock(IterableAuthManager.class);
-        doReturn(authManagerMock).when(IterableApi.sharedInstance).getAuthManager();
+//        IterableAuthManager authManagerMock = mock(IterableAuthManager.class);
+//        doReturn(authManagerMock).when(IterableApi.sharedInstance).getAuthManager();
     }
 
     @Test
@@ -83,13 +83,13 @@ public class IterableAuthManagerTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
-        IterableApi.getInstance().getAuthManager(new IterableAuthHandler() {
+        IterableApi.getInstance().getAuthManager().authHandler = new IterableAuthHandler() {
             @Override
             public String onAuthTokenRequested() {
                 signal.countDown();
                 return validJWT;
             }
-        });
+        };
 
         IterableApi.getInstance().setEmail(email);
 
@@ -108,17 +108,18 @@ public class IterableAuthManagerTest extends BaseTest {
 
         String email = "test@example.com";
 
-        IterableApi.getInstance().setAuthHandler(new IterableAuthHandler() {
+        IterableApi.getInstance().getAuthManager().authHandler = new IterableAuthHandler() {
             @Override
             public String onAuthTokenRequested() {
+//                signal.countDown();
                 return expiredJWT;
             }
-        });
+        };
 
         IterableApi.getInstance().setEmail(email);
 
         assertEquals(email, IterableApi.getInstance().getEmail());
-//        assertEquals(expiredJWT, IterableApi.getInstance().getAuthToken());
+        assertEquals(expiredJWT, IterableApi.getInstance().getAuthToken());
         assertEquals(0, IterableApi.getInstance().getAuthManager().timer.purge());
     }
 
@@ -127,12 +128,13 @@ public class IterableAuthManagerTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String userId = "testUserId";
-        IterableApi.getInstance().setAuthHandler(new IterableAuthHandler() {
+        IterableApi.getInstance().getAuthManager().authHandler = new IterableAuthHandler() {
             @Override
             public String onAuthTokenRequested() {
+//                signal.countDown();
                 return validJWT;
             }
-        });
+        };
         IterableApi.getInstance().setUserId(userId);
 
         assertEquals(userId, IterableApi.getInstance().getUserId());

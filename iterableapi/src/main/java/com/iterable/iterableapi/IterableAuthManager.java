@@ -32,7 +32,7 @@ public class IterableAuthManager {
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler) {
         timer = new Timer(true);
         this.api = api;
-        this.authHandler = authHandler
+        this.authHandler = authHandler;
     }
 
     public void requestNewAuthToken() {
@@ -48,7 +48,7 @@ public class IterableAuthManager {
                 //TODO: Make this a Blocking call on a separate thread
                 String authToken = null;
                 if (authHandler != null) {
-                    authHandler.onAuthTokenRequested();
+                    authToken = authHandler.onAuthTokenRequested();
                 }
                 updateAuthToken(authToken);
             } else {
