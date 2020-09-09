@@ -46,7 +46,6 @@ private static final String TAG = "IterableApi";
     private String _email;
     private String _userId;
     private String _authToken;
-    private int _authTokenExpiration;
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
@@ -134,6 +133,10 @@ private static final String TAG = "IterableApi";
             authManager = new IterableAuthManager(this);
         }
         return authManager;
+    }
+
+    public void setAuthHandler(IterableAuthHandler authHandler) {
+        getAuthManager().authHandler = authHandler;
     }
 
     /**
@@ -291,7 +294,13 @@ private static final String TAG = "IterableApi";
      * @param email User email
      */
     public void setEmail(@Nullable String email) {
-        setEmail(email, null);
+        getAuthManager().requestNewAuthToken();
+
+        onLogOut();
+        _email = email;
+        _userId = null;
+        storeAuthData();
+        onLogIn();
     }
 
     /**
@@ -326,7 +335,6 @@ private static final String TAG = "IterableApi";
         _email = email;
         _userId = null;
         _authToken = authToken;
-//        _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         storeAuthData();
         onLogIn();
     }
@@ -339,7 +347,13 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null);
+        getAuthManager().requestNewAuthToken();
+
+        onLogOut();
+        _email = null;
+        _userId = userId;
+        storeAuthData();
+        onLogIn();
     }
 
     /**
@@ -1287,6 +1301,11 @@ private static final String TAG = "IterableApi";
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }
+    }
+
+    void setAuthToken(String authToken) {
+        _authToken = authToken;
+        storeAuthData();
     }
 
 //---------------------------------------------------------------------------------------
