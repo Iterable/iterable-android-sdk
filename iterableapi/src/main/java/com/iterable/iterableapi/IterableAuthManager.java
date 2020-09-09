@@ -35,6 +35,7 @@ public class IterableAuthManager {
     public void requestNewAuthToken() {
         //What do we do if there's already a pending auth? Ignore since it will eventually fix itself
         if (!pendingAuth) {
+        //I think the pending auth will help since push pushRegistration and getMessages happen sequentially.
             long currentTime = IterableUtil.currentTimeMillis();
             if (currentTime - lastTokenRequestTime >= rateLimitTime) {
                 pendingAuth = true;
@@ -88,7 +89,7 @@ public class IterableAuthManager {
         }, 0, timeDuration);
     }
 
-    public static int decodedExpiration(String encodedJWT) {
+    static int decodedExpiration(String encodedJWT) {
         int exp = 0;
         try {
             String[] split = encodedJWT.split("\\.");
