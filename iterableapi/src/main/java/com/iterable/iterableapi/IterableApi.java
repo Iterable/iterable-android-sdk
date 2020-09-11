@@ -128,7 +128,7 @@ private static final String TAG = "IterableApi";
      * @return {@link IterableAuthManager} instance
      */
     @NonNull
-    public IterableAuthManager getAuthManager() {
+    IterableAuthManager getAuthManager() {
         if (authManager == null) {
             authManager = new IterableAuthManager(this, config.authHandler);
         }
@@ -290,49 +290,17 @@ private static final String TAG = "IterableApi";
      * @param email User email
      */
     public void setEmail(@Nullable String email) {
-        getAuthManager().requestNewAuthToken();
-
         onLogOut();
         _email = email;
         _userId = null;
         storeAuthData();
-        onLogIn();
-    }
 
-    /**
-     * Set user email used for API calls
-     * Calling this or {@link #setUserId(String)} is required before making any API calls.
-     *
-     * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
-     * @param email User email
-     * @param authToken Authorization token
-     */
-    void setEmail(@Nullable String email, @Nullable String authToken) {
-        if (_email != null && _email.equals(email)) {
-            if (_authToken == null && authToken == null) {
-                return;
+        getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+            @Override
+            public void onSuccess(@NonNull String authToken) {
+                setAuthToken(authToken);
             }
-
-            if (_authToken != null && _authToken.equals(authToken)) {
-                return;
-            }
-
-            _authToken = authToken;
-            storeAuthData();
-
-            return;
-        }
-
-        if (_email == null && _userId == null && email == null) {
-            return;
-        }
-
-        onLogOut();
-        _email = email;
-        _userId = null;
-        _authToken = authToken;
-        storeAuthData();
-        onLogIn();
+        });
     }
 
     /**
@@ -343,7 +311,12 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
-        getAuthManager().requestNewAuthToken();
+        getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+            @Override
+            public void onSuccess(@NonNull String authToken) {
+                setAuthToken(authToken);
+            }
+        });
 
         onLogOut();
         _email = null;
@@ -574,20 +547,8 @@ private static final String TAG = "IterableApi";
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        updateEmail(newEmail, null, null, null);
+        updateEmail(newEmail, null, null);
     }
-
-    /**
-     * Updates the current user's email.
-     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
-     *
-     * @param newEmail  New email
-     * @param authToken Authorization token
-     */
-    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
-        updateEmail(newEmail, authToken, null, null);
-    }
-
 
     /**
      * Updates the current user's email.
@@ -597,19 +558,7 @@ private static final String TAG = "IterableApi";
      * @param failureHandler Failure handler. Called when the server call failed.
      */
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        updateEmail(newEmail, _authToken, successHandler, failureHandler);
-    }
-
-    /**
-     * Updates the current user's email.
-     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
-     * @param newEmail New email
-     * @param authToken
-     * @param successHandler Success handler. Called when the server returns a success code.
-     * @param failureHandler Failure handler. Called when the server call failed.
-     */
-    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if (!checkSDKInitialization()) {
+       if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
             if (failureHandler != null) {
@@ -634,9 +583,12 @@ private static final String TAG = "IterableApi";
                     if (_email != null) {
                         _email = newEmail;
                     }
-                    if (_authToken != null) {
-                        _authToken = authToken;
-                    }
+                    getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+                        @Override
+                        public void onSuccess(@NonNull String authToken) {
+                            setAuthToken(authToken);
+                        }
+                    });
 
                     storeAuthData();
                     if (successHandler != null) {
@@ -1302,6 +1254,7 @@ private static final String TAG = "IterableApi";
     void setAuthToken(String authToken) {
         _authToken = authToken;
         storeAuthData();
+        onLogIn();
     }
 
 //---------------------------------------------------------------------------------------

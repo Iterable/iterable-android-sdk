@@ -2,6 +2,8 @@ package com.iterable.iterableapi;
 
 import android.util.Base64;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONObject;
@@ -20,14 +22,9 @@ public class IterableAuthManager {
     private static final int refreshWindowTime = 60000; // 60 seconds
     private static final String expirationString = "exp";
 
-    //For rate limiting
-    private boolean pendingAuth;
-    private long lastTokenRequestTime;
-    private long rateLimitTime = 1000;
     @VisibleForTesting
     Timer timer;
-
-    private int failedSequentialAuthRequestCount;
+    private boolean hasFailedPriorAuth;
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler) {
         timer = new Timer(true);
@@ -35,52 +32,18 @@ public class IterableAuthManager {
         this.authHandler = authHandler;
     }
 
-    public void requestNewAuthToken() {
-        //What do we do if there's already a pending auth? Ignore since it will eventually fix itself
-        //I think the pending auth will help since push pushRegistration and getMessages happen sequentially.
-        if (!pendingAuth) {
-            long currentTime = IterableUtil.currentTimeMillis();
-            if (currentTime - lastTokenRequestTime >= rateLimitTime) {
-                pendingAuth = true;
-
-                failedSequentialAuthRequestCount++;
-
-                //TODO: Make this a Blocking call on a separate thread
-                String authToken = null;
-                if (authHandler != null) {
-                    authToken = authHandler.onAuthTokenRequested();
+    public void requestNewAuthToken(boolean hasFailedPriorAuth, final @Nullable IterableHelper.SuccessAuthHandler successHandler) {
+        if (!this.hasFailedPriorAuth || !hasFailedPriorAuth) {
+            this.hasFailedPriorAuth = hasFailedPriorAuth;
+            if (authHandler != null) {
+                String authToken = authHandler.onAuthTokenRequested();
+                if (authToken != null ) {
+                    queueExpirationRefresh(authToken);
                 }
-                updateAuthToken(authToken);
+                successHandler.onSuccess(authToken);
             } else {
-                //Rate Limiter: queue up another requestNewAuthToken at currentTime + rateLimitTime
-                scheduleAuthTokenRefresh(lastTokenRequestTime + rateLimitTime);
+                successHandler.onSuccess(null);
             }
-            lastTokenRequestTime = currentTime;
-        }
-    }
-
-    public void resetFailedSequentialAuthRequestCount() {
-        failedSequentialAuthRequestCount = 0;
-    }
-
-    public int getFailedSequentialAuthRequestCount() {
-        return failedSequentialAuthRequestCount;
-    }
-
-    private void updateAuthToken(String authToken) {
-       if (authToken == null) {
-           api.setAuthToken(authToken);
-       } else if (!authToken.equals(api.getAuthToken())) {
-           api.setAuthToken(authToken);
-            pendingAuth = false;
-
-            //re-register for push and in-apps
-           if (api.config.autoPushRegistration) {
-               api.registerForPush();
-           }
-           api.getInAppManager().syncInApp();
-
-            queueExpirationRefresh(authToken);
         }
     }
 
@@ -93,14 +56,34 @@ public class IterableAuthManager {
     }
 
     private void scheduleAuthTokenRefresh(long timeDuration) {
-        timer.purge();
+        timer.cancel();
+        timer = new Timer(true);
         try {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    requestNewAuthToken();
+                    api.getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+                        @Override
+                        public void onSuccess(@NonNull String authToken) {
+                            api.setAuthToken(authToken);
+                        }
+                    });
                 }
-            }, 0, timeDuration);
+            }, timeDuration);
+
+            timer.purge();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    api.getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+                        @Override
+                        public void onSuccess(@NonNull String authToken) {
+                            api.setAuthToken(authToken);
+                        }
+                    });
+                }
+            }, timeDuration);
+
         } catch (Exception e) {
             IterableLogger.e(TAG, "timer exception: " + timer, e);
         }

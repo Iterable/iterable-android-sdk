@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.net.Uri;
 import android.util.Base64;
 
 import org.junit.After;
@@ -10,6 +11,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
+import java.util.Timer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +24,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -31,6 +34,7 @@ public class IterableAuthManagerTest extends BaseTest {
     private IterableUtil.IterableUtilImpl originalIterableUtil;
     private IterableUtil.IterableUtilImpl iterableUtilSpy;
     private MockWebServer server;
+    private IterableAuthHandler authHandler;
 
     private String validJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE2MTYyMzkwMjJ9.GOKZqDEYCIuuuWAgOXLiSE9FZafJ0vV9SY9DaWTAb3g";
     private String expiredJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
@@ -45,6 +49,13 @@ public class IterableAuthManagerTest extends BaseTest {
         originalIterableUtil = IterableUtil.instance;
         iterableUtilSpy = spy(originalIterableUtil);
         IterableUtil.instance = iterableUtilSpy;
+
+        IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
+            @Override
+            public IterableConfig.Builder run(IterableConfig.Builder builder) {
+                return builder.setAuthHandler(authHandler);
+            }
+        });
     }
 
     @After
@@ -59,47 +70,19 @@ public class IterableAuthManagerTest extends BaseTest {
         IterableApi.sharedInstance = spy(new IterableApi());
 //        IterableAuthManager authManagerMock = mock(IterableAuthManager.class);
 //        doReturn(authManagerMock).when(IterableApi.sharedInstance).getAuthManager();
+        authHandler = mock(IterableAuthHandler.class);
     }
 
     @Test
     public void testSetEmailWithToken() throws Exception {
-        final CountDownLatch signal = new CountDownLatch(1);
-//        try {
-//            final String requestString = null;
-//            IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
-//                @Override
-//                public void execute(String result) {
-//                    Assert.assertEquals(requestString, result);
-//                    signal.countDown();
-//                }
-//            };
-//            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
-//            assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-        //
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
-        IterableApi.getInstance().getAuthManager().authHandler = new IterableAuthHandler() {
-            @Override
-            public String onAuthTokenRequested() {
-                signal.countDown();
-                return validJWT;
-            }
-        };
+        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
 
         IterableApi.getInstance().setEmail(email);
-
         assertEquals(IterableApi.getInstance().getEmail(), email);
-
-
-        assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
-        Thread.sleep(5000);
         assertEquals(IterableApi.getInstance().getAuthToken(), validJWT);
-        assertEquals(1, IterableApi.getInstance().getAuthManager().timer.purge());
     }
 
     @Test
@@ -107,20 +90,11 @@ public class IterableAuthManagerTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String email = "test@example.com";
-
-        IterableApi.getInstance().getAuthManager().authHandler = new IterableAuthHandler() {
-            @Override
-            public String onAuthTokenRequested() {
-//                signal.countDown();
-                return expiredJWT;
-            }
-        };
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
 
         IterableApi.getInstance().setEmail(email);
-
-        assertEquals(email, IterableApi.getInstance().getEmail());
-        assertEquals(expiredJWT, IterableApi.getInstance().getAuthToken());
-        assertEquals(0, IterableApi.getInstance().getAuthManager().timer.purge());
+        assertEquals(IterableApi.getInstance().getEmail(), email);
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
 
     @Test
@@ -128,18 +102,11 @@ public class IterableAuthManagerTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
 
         String userId = "testUserId";
-        IterableApi.getInstance().getAuthManager().authHandler = new IterableAuthHandler() {
-            @Override
-            public String onAuthTokenRequested() {
-//                signal.countDown();
-                return validJWT;
-            }
-        };
+        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
         IterableApi.getInstance().setUserId(userId);
 
         assertEquals(userId, IterableApi.getInstance().getUserId());
         assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
-        assertEquals(1, IterableApi.getInstance().getAuthManager().timer.purge());
     }
 
     @Test
@@ -149,14 +116,14 @@ public class IterableAuthManagerTest extends BaseTest {
         String email = "test@example.com";
         String token = "token";
 
-        IterableApi.getInstance().setEmail(email, token);
+//        IterableApi.getInstance().setEmail(email, token);
 
         assertEquals(IterableApi.getInstance().getEmail(), email);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
 
         String newToken = "asdf";
 
-        IterableApi.getInstance().setEmail(email, newToken);
+//        IterableApi.getInstance().setEmail(email, newToken);
 
         assertEquals(IterableApi.getInstance().getEmail(), email);
         assertEquals(IterableApi.getInstance().getAuthToken(), newToken);
@@ -189,7 +156,7 @@ public class IterableAuthManagerTest extends BaseTest {
         String email = "test@example.com";
         String token = "token";
 
-        IterableApi.getInstance().setEmail(email, token);
+//        IterableApi.getInstance().setEmail(email, token);
 
         assertEquals(IterableApi.getInstance().getEmail(), email);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
@@ -263,12 +230,12 @@ public class IterableAuthManagerTest extends BaseTest {
         String email = "test@example.com";
         String token = "token";
 
-        IterableApi.getInstance().setEmail(email, token);
+//        IterableApi.getInstance().setEmail(email, token);
 
         assertEquals(IterableApi.getInstance().getEmail(), email);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
 
-        IterableApi.getInstance().setEmail(email, token);
+//        IterableApi.getInstance().setEmail(email, token);
 
         assertEquals(IterableApi.getInstance().getEmail(), email);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
@@ -331,7 +298,7 @@ public class IterableAuthManagerTest extends BaseTest {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         String token = "token";
-        IterableApi.getInstance().setEmail("new@email.com", token);
+//        IterableApi.getInstance().setEmail("new@email.com", token);
         IterableApi.getInstance().updateEmail("newEmail@gmail.com", null, null);
         RecordedRequest updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(updateEmailRequest);

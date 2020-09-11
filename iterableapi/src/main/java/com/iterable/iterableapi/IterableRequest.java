@@ -164,7 +164,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 if (responseCode == 401) {
                     if (jsonResponse.getString("msg") == "JWT Authorization header is not set") {
                         handleFailure("JWT Authorization header is not set", jsonResponse);
-                        IterableApi.getInstance().getAuthManager().requestNewAuthToken();
+                        IterableApi.getInstance().getAuthManager().requestNewAuthToken(true, new IterableHelper.SuccessAuthHandler() {
+                            @Override
+                            public void onSuccess(@NonNull String authToken) {
+                                IterableApi.getInstance().setAuthToken(authToken);
+                            }
+                        });
                     } else {
                         handleFailure("Invalid API Key", jsonResponse);
                     }
