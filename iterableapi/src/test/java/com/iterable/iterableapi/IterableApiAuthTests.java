@@ -72,7 +72,7 @@ public class IterableApiAuthTests extends BaseTest {
         String userId = "testUserId";
         String token = "token";
 
-        IterableApi.getInstance().setUserId(userId, token);
+        IterableApi.getInstance().setUserId(userId);
 
         assertEquals(IterableApi.getInstance().getUserId(), userId);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
@@ -105,14 +105,14 @@ public class IterableApiAuthTests extends BaseTest {
         String userId = "testUserId";
         String token = "token";
 
-        IterableApi.getInstance().setUserId(userId, token);
+//        IterableApi.getInstance().setUserId(userId, token);
 
         assertEquals(IterableApi.getInstance().getUserId(), userId);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
 
         String newToken = "asdf";
 
-        IterableApi.getInstance().setUserId(userId, newToken);
+//        IterableApi.getInstance().setUserId(userId, newToken);
 
         assertEquals(IterableApi.getInstance().getUserId(), userId);
         assertEquals(IterableApi.getInstance().getAuthToken(), newToken);
@@ -143,7 +143,7 @@ public class IterableApiAuthTests extends BaseTest {
         String userId = "testUserId";
         String token = "token";
 
-        IterableApi.getInstance().setUserId(userId, token);
+//        IterableApi.getInstance().setUserId(userId, token);
 
         assertEquals(IterableApi.getInstance().getUserId(), userId);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
@@ -217,12 +217,12 @@ public class IterableApiAuthTests extends BaseTest {
         String userId = "testUserId";
         String token = "token";
 
-        IterableApi.getInstance().setUserId(userId, token);
+//        IterableApi.getInstance().setUserId(userId, token);
 
         assertEquals(IterableApi.getInstance().getUserId(), userId);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
 
-        IterableApi.getInstance().setUserId(userId, token);
+//        IterableApi.getInstance().setUserId(userId, token);
 
         assertEquals(IterableApi.getInstance().getUserId(), userId);
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
@@ -267,7 +267,7 @@ public class IterableApiAuthTests extends BaseTest {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         String token = "token";
-//        IterableApi.getInstance().setEmail("new@email.com", token);
+        IterableApi.getInstance().setEmail("new@email.com");
         IterableApi.getInstance().updateEmail("newEmail@gmail.com", null, null);
         RecordedRequest updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(updateEmailRequest);

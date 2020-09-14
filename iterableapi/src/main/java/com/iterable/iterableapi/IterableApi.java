@@ -295,12 +295,16 @@ private static final String TAG = "IterableApi";
         _userId = null;
         storeAuthData();
 
-        getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-            @Override
-            public void onSuccess(@NonNull String authToken) {
-                setAuthToken(authToken);
-            }
-        });
+        if (email != null) {
+            getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+                @Override
+                public void onSuccess(@NonNull String authToken) {
+                    onSetAuthToken(authToken);
+                }
+            });
+        } else {
+            onSetAuthToken(null);
+        }
     }
 
     /**
@@ -311,18 +315,21 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
-        getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-            @Override
-            public void onSuccess(@NonNull String authToken) {
-                setAuthToken(authToken);
-            }
-        });
-
         onLogOut();
         _email = null;
         _userId = userId;
         storeAuthData();
-        onLogIn();
+
+        if (userId != null) {
+            getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+                @Override
+                public void onSuccess(@NonNull String authToken) {
+                    onSetAuthToken(authToken);
+                }
+            });
+        } else {
+            onSetAuthToken(null);
+        }
     }
 
     /**
@@ -333,33 +340,33 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      * @param authToken Authorization token
      */
-    void setUserId(@Nullable String userId, @Nullable String authToken) {
-        if (_userId != null && _userId.equals(userId)) {
-            if (_authToken == null && authToken == null) {
-                return;
-            }
-
-            if (_authToken != null && _authToken.equals(authToken)) {
-                return;
-            }
-
-            _authToken = authToken;
-            storeAuthData();
-
-            return;
-        }
-
-        if (_email == null && _userId == null && userId == null) {
-            return;
-        }
-
-        onLogOut();
-        _email = null;
-        _userId = userId;
-        _authToken = authToken;
-        storeAuthData();
-        onLogIn();
-    }
+//    void setUserId(@Nullable String userId, @Nullable String authToken) {
+//        if (_userId != null && _userId.equals(userId)) {
+//            if (_authToken == null && authToken == null) {
+//                return;
+//            }
+//
+//            if (_authToken != null && _authToken.equals(authToken)) {
+//                return;
+//            }
+//
+//            _authToken = authToken;
+//            storeAuthData();
+//
+//            return;
+//        }
+//
+//        if (_email == null && _userId == null && userId == null) {
+//            return;
+//        }
+//
+//        onLogOut();
+//        _email = null;
+//        _userId = userId;
+//        _authToken = authToken;
+//        storeAuthData();
+//        onLogIn();
+//    }
 
     /**
      * Tracks a click on the uri if it is an iterable link.
@@ -583,16 +590,16 @@ private static final String TAG = "IterableApi";
                     if (_email != null) {
                         _email = newEmail;
                     }
-                    getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-                        @Override
-                        public void onSuccess(@NonNull String authToken) {
-                            setAuthToken(authToken);
-                        }
-                    });
 
                     storeAuthData();
                     if (successHandler != null) {
                         successHandler.onSuccess(data);
+                        getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+                            @Override
+                            public void onSuccess(@NonNull String authToken) {
+                                onSetAuthToken(authToken);
+                            }
+                        });
                     }
                 }
             }, failureHandler);
@@ -1251,7 +1258,7 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    void setAuthToken(String authToken) {
+    void onSetAuthToken(String authToken) {
         _authToken = authToken;
         storeAuthData();
         onLogIn();

@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
 import android.util.Base64;
 
 import androidx.annotation.NonNull;
@@ -16,7 +17,9 @@ public class IterableAuthManager {
     private static final String TAG = "IterableAuth";
 
     private final IterableApi api;
-    IterableAuthHandler authHandler;
+    private final IterableAuthHandler authHandler;
+    private final Context context;
+    private String authToken;
 
     //For expiration handling
     private static final int refreshWindowTime = 60000; // 60 seconds
@@ -30,6 +33,7 @@ public class IterableAuthManager {
         timer = new Timer(true);
         this.api = api;
         this.authHandler = authHandler;
+        this.context = api.getMainActivityContext();
     }
 
     public void requestNewAuthToken(boolean hasFailedPriorAuth, final @Nullable IterableHelper.SuccessAuthHandler successHandler) {
@@ -65,7 +69,7 @@ public class IterableAuthManager {
                     api.getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
                         @Override
                         public void onSuccess(@NonNull String authToken) {
-                            api.setAuthToken(authToken);
+                            api.onSetAuthToken(authToken);
                         }
                     });
                 }
@@ -78,7 +82,7 @@ public class IterableAuthManager {
                     api.getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
                         @Override
                         public void onSuccess(@NonNull String authToken) {
-                            api.setAuthToken(authToken);
+                            api.onSetAuthToken(authToken);
                         }
                     });
                 }

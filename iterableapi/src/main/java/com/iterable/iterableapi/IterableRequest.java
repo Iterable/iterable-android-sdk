@@ -167,7 +167,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                         IterableApi.getInstance().getAuthManager().requestNewAuthToken(true, new IterableHelper.SuccessAuthHandler() {
                             @Override
                             public void onSuccess(@NonNull String authToken) {
-                                IterableApi.getInstance().setAuthToken(authToken);
+                                IterableApi.getInstance().onSetAuthToken(authToken);
                             }
                         });
                     } else {
