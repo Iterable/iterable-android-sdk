@@ -188,6 +188,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getUserId(), userId);
         assertEquals(IterableApi.getInstance().getAuthToken(), validJWT);
 
+        doReturn(null).when(authHandler).onAuthTokenRequested();
         IterableApi.getInstance().setUserId(userId);
 
         assertEquals(IterableApi.getInstance().getUserId(), userId);
