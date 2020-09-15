@@ -333,42 +333,6 @@ private static final String TAG = "IterableApi";
     }
 
     /**
-     * Set user ID used for API calls
-     * Calling this or {@link #setEmail(String)} is required before making any API calls.
-     *
-     * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
-     * @param userId User ID
-     * @param authToken Authorization token
-     */
-//    void setUserId(@Nullable String userId, @Nullable String authToken) {
-//        if (_userId != null && _userId.equals(userId)) {
-//            if (_authToken == null && authToken == null) {
-//                return;
-//            }
-//
-//            if (_authToken != null && _authToken.equals(authToken)) {
-//                return;
-//            }
-//
-//            _authToken = authToken;
-//            storeAuthData();
-//
-//            return;
-//        }
-//
-//        if (_email == null && _userId == null && userId == null) {
-//            return;
-//        }
-//
-//        onLogOut();
-//        _email = null;
-//        _userId = userId;
-//        _authToken = authToken;
-//        storeAuthData();
-//        onLogIn();
-//    }
-
-    /**
      * Tracks a click on the uri if it is an iterable link.
      * @param uri the
      * @param onCallback Calls the callback handler with the destination location
@@ -1261,7 +1225,9 @@ private static final String TAG = "IterableApi";
     void onSetAuthToken(String authToken) {
         _authToken = authToken;
         storeAuthData();
-        onLogIn();
+        if (_authToken != null) {
+            onLogIn();
+        }
     }
 
 //---------------------------------------------------------------------------------------

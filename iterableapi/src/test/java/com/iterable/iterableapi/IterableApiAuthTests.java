@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -29,7 +30,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     private String validJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI5MTYyMzkwMjJ9.mYtgSqdUIxK8_RnYBTUP4cmpKw83aKi7cMiixF3qMB4";
     private String newJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE5MTYyMzkwMjJ9.dMD3MLuHTiO-Qy9PvOoMchNM4CzFIgI7jKVrRtlqlM0";
-    private String expiredJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    private String expiredJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyNDkwMjJ9.6Yc3QcBGwCdV1sdKmgOtw4D69P_HUoVqEW3YMuEgH8c";
 
     @Before
     public void setUp() {
@@ -63,6 +64,33 @@ public class IterableApiAuthTests extends BaseTest {
 //        IterableAuthManager authManagerMock = mock(IterableAuthManager.class);
 //        doReturn(authManagerMock).when(IterableApi.sharedInstance).getAuthManager();
         authHandler = mock(IterableAuthHandler.class);
+    }
+
+    @Test
+    public void testRefreshToken() throws Exception {
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        Timer timer = IterableApi.getInstance().getAuthManager().timer;
+
+        IterableApi api = IterableApi.getInstance();
+        IterableAuthManager authManager = api.getAuthManager();
+
+        String email = "test@example.com";
+        IterableApi.getInstance().setEmail(email);
+        timer = IterableApi.getInstance().getAuthManager().timer;
+
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email);
+        timer = IterableApi.getInstance().getAuthManager().timer;
+
+        String email2 = "test2@example.com";
+        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email2);
+        timer = IterableApi.getInstance().getAuthManager().timer;
+        int timerCounts = timer.purge();
+
+        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email2);
+        timer = IterableApi.getInstance().getAuthManager().timer;
     }
 
     @Test

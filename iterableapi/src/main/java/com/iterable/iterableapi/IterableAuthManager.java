@@ -52,7 +52,7 @@ public class IterableAuthManager {
     }
 
     private void queueExpirationRefresh(String encodedJWT) {
-        int expirationTimeSeconds = decodedExpiration(encodedJWT);
+        long expirationTimeSeconds = decodedExpiration(encodedJWT);
         long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - refreshWindowTime - IterableUtil.currentTimeMillis();
         if (triggerExpirationRefreshTime > 0) {
             scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
@@ -74,32 +74,18 @@ public class IterableAuthManager {
                     });
                 }
             }, timeDuration);
-
-            timer.purge();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    api.getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-                        @Override
-                        public void onSuccess(@NonNull String authToken) {
-                            api.onSetAuthToken(authToken);
-                        }
-                    });
-                }
-            }, timeDuration);
-
         } catch (Exception e) {
             IterableLogger.e(TAG, "timer exception: " + timer, e);
         }
     }
 
-    private static int decodedExpiration(String encodedJWT) {
-        int exp = 0;
+    private static long decodedExpiration(String encodedJWT) {
+        long exp = 0;
         try {
             String[] split = encodedJWT.split("\\.");
             String body = getJson(split[1]);
             JSONObject jObj = new JSONObject(body);
-            exp = jObj.getInt(expirationString);
+            exp = jObj.getLong(expirationString);
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration: " + encodedJWT, e);
         }
