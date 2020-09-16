@@ -128,7 +128,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      */
     public void setLoaded(boolean loaded) {
         this.loaded = loaded;
-        showDialogView();
+        IterableLogger.v("Progress", "Showing Dialog view as page is loaded...");
     }
 
     @NonNull
@@ -177,6 +177,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
+                                IterableLogger.v("Progress", "calling resize script due to orientation change");
                                 webView.loadUrl(IterableWebViewClient.RESIZE_SCRIPT);
                             }
                         }, 1000);
@@ -199,11 +200,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private void hideDialogView() {
         try {
+            IterableLogger.v("Progress", "Hiding Dialog View..");
             getDialog().getWindow().getDecorView().setAlpha(0.0f);
             webView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
+                    IterableLogger.v("Progress", "Showing Dialog View because of delay threshold");
                     showDialogView();
+                    webView.webViewClient.showWebView();
                 }
             }, DELAY_THRESHOLD_MS);
         } catch (NullPointerException e) {
@@ -213,6 +217,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private void showDialogView() {
         try {
+            IterableLogger.v("Progress", "showing Dialog View..");
             getDialog().getWindow().getDecorView().setAlpha(1.0f);
         } catch (NullPointerException e) {
             IterableLogger.e(TAG, "View not present. Failed to show inapp", e);

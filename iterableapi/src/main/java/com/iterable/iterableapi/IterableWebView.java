@@ -13,6 +13,7 @@ import static com.iterable.iterableapi.IterableWebViewClient.RESIZE_SCRIPT;
 class IterableWebView extends WebView {
     static final String MIME_TYPE = "text/html";
     static final String ENCODING = "UTF-8";
+    IterableWebViewClient webViewClient;
 
     IterableWebView(Context context) {
         super(context);
@@ -24,12 +25,14 @@ class IterableWebView extends WebView {
      * @param html
      */
     void createWithHtml(IterableWebViewClient.HTMLNotificationCallbacks notificationDialog, String html) {
-        IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog);
+        webViewClient = new IterableWebViewClient(notificationDialog);
         loadDataWithBaseURL("", html, MIME_TYPE, ENCODING, "");
         setWebViewClient(webViewClient);
         setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
+                IterableLogger.v("Progress", "on progress changed - " + newProgress);
+                IterableLogger.v("Progress", "calling resize script from on Progress changed");
                 loadUrl(RESIZE_SCRIPT);
             }
         });
