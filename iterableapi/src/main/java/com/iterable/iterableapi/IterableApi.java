@@ -219,6 +219,14 @@ private static final String TAG = "IterableApi";
         }
     }
 
+    void onSetAuthToken(String authToken) {
+        _authToken = authToken;
+        storeAuthData();
+        if (_authToken != null) {
+            onLogIn();
+        }
+    }
+
     HashMap getDeviceAttributes() {
         return deviceAttributes;
     }
@@ -1219,14 +1227,6 @@ private static final String TAG = "IterableApi";
             sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
-        }
-    }
-
-    void onSetAuthToken(String authToken) {
-        _authToken = authToken;
-        storeAuthData();
-        if (_authToken != null) {
-            onLogIn();
         }
     }
 

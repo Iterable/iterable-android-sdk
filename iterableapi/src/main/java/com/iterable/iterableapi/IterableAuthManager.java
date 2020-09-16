@@ -1,6 +1,5 @@
 package com.iterable.iterableapi;
 
-import android.content.Context;
 import android.util.Base64;
 
 import androidx.annotation.NonNull;
@@ -15,15 +14,12 @@ import java.util.TimerTask;
 
 public class IterableAuthManager {
     private static final String TAG = "IterableAuth";
-
-    private final IterableApi api;
-    private final IterableAuthHandler authHandler;
-    private final Context context;
-    private String authToken;
-
     //For expiration handling
     private static final int refreshWindowTime = 60000; // 60 seconds
     private static final String expirationString = "exp";
+
+    private final IterableApi api;
+    private final IterableAuthHandler authHandler;
 
     @VisibleForTesting
     Timer timer;
@@ -33,7 +29,6 @@ public class IterableAuthManager {
         timer = new Timer(true);
         this.api = api;
         this.authHandler = authHandler;
-        this.context = api.getMainActivityContext();
     }
 
     public void requestNewAuthToken(boolean hasFailedPriorAuth, final @Nullable IterableHelper.SuccessAuthHandler successHandler) {
