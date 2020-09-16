@@ -1373,6 +1373,9 @@ private static final String TAG = "IterableApi";
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+            if (_authToken != null) {
+                getAuthManager().queueExpirationRefresh(_authToken);
+            }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }

@@ -46,7 +46,7 @@ public class IterableAuthManager {
         }
     }
 
-    private void queueExpirationRefresh(String encodedJWT) {
+    public void queueExpirationRefresh(String encodedJWT) {
         long expirationTimeSeconds = decodedExpiration(encodedJWT);
         long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - refreshWindowTime - IterableUtil.currentTimeMillis();
         if (triggerExpirationRefreshTime > 0) {
