@@ -14,21 +14,21 @@ import java.util.TimerTask;
 
 public class IterableAuthManager {
     private static final String TAG = "IterableAuth";
-    //For expiration handling
-    private static final int refreshWindowTime = 60000; // 60 seconds
     private static final String expirationString = "exp";
 
     private final IterableApi api;
     private final IterableAuthHandler authHandler;
+    private final long authRefreshPeriod;
 
     @VisibleForTesting
     Timer timer;
     private boolean hasFailedPriorAuth;
 
-    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler) {
+    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long authRefreshPeriod) {
         timer = new Timer(true);
         this.api = api;
         this.authHandler = authHandler;
+        this.authRefreshPeriod = authRefreshPeriod;
     }
 
     public void requestNewAuthToken(boolean hasFailedPriorAuth, final @Nullable IterableHelper.SuccessAuthHandler successHandler) {
@@ -48,7 +48,7 @@ public class IterableAuthManager {
 
     public void queueExpirationRefresh(String encodedJWT) {
         long expirationTimeSeconds = decodedExpiration(encodedJWT);
-        long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - refreshWindowTime - IterableUtil.currentTimeMillis();
+        long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - authRefreshPeriod - IterableUtil.currentTimeMillis();
         if (triggerExpirationRefreshTime > 0) {
             scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
         }

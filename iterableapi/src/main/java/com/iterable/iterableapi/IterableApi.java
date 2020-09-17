@@ -130,7 +130,7 @@ private static final String TAG = "IterableApi";
     @NonNull
     IterableAuthManager getAuthManager() {
         if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler);
+            authManager = new IterableAuthManager(this, config.authHandler, config.authRefreshPeriod);
         }
         return authManager;
     }
