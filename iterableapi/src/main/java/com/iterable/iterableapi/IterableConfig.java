@@ -61,8 +61,7 @@ public class IterableConfig {
     final double inAppDisplayInterval;
 
     /**
-     * Custom in-app handler that can be used to control whether an incoming in-app message should
-     * be shown immediately or not
+     * Custom auth handler that can be used to control retrieving and storing an auth token
      */
     final IterableAuthHandler authHandler;
 
