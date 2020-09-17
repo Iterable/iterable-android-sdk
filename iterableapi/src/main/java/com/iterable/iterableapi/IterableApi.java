@@ -634,7 +634,7 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE, null);
         new IterablePushRegistration().execute(data);
     }
 
@@ -642,7 +642,7 @@ private static final String TAG = "IterableApi";
      * Disables the device from push notifications
      */
     public void disablePush() {
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE, _authToken);
         new IterablePushRegistration().execute(data);
     }
 
@@ -1134,7 +1134,7 @@ private static final String TAG = "IterableApi";
     }
 
     protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
-        disableToken(email, userId, token, null, null);
+        disableToken(email, userId, token, null, null, null);
     }
 
     /**
@@ -1143,8 +1143,9 @@ private static final String TAG = "IterableApi";
      * @param email User email for whom to disable the device.
      * @param userId User ID for whom to disable the device.
      * @param deviceToken The device token
+     * @param priorAuthToken
      */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure, String priorAuthToken) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
@@ -1154,7 +1155,7 @@ private static final String TAG = "IterableApi";
                 requestJSON.put(IterableConstants.KEY_USER_ID, userId);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, onSuccess, onFailure);
+            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, onSuccess, onFailure, priorAuthToken);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -1283,12 +1284,20 @@ private static final String TAG = "IterableApi";
      * @param json
      */
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, null, null);
-        new IterableRequest().execute(request);
+        sendPostRequest(resourcePath, json, null);
+    }
+
+    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String priorAuthToken) {
+        sendPostRequest(resourcePath, json, null, null,priorAuthToken);
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, onSuccess, onFailure);
+        sendPostRequest(resourcePath, json, onSuccess, onFailure,null);
+    }
+
+    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure, @Nullable String priorAuthToken) {
+        String authToken = (priorAuthToken != null) ? priorAuthToken : _authToken;
+        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
         new IterableRequest().execute(request);
     }
 

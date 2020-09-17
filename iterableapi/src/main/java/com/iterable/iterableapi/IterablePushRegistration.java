@@ -41,9 +41,13 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                     IterableApi.sharedInstance.disableToken(
                             iterablePushRegistrationData.email,
                             iterablePushRegistrationData.userId,
-                            pushRegistrationObject.token);
+                            pushRegistrationObject.token,
+                            null,
+                            null,
+                            iterablePushRegistrationData.priorAuthToken
+                            );
                 }
-                disableOldDeviceIfNeeded();
+                disableOldDeviceIfNeeded(iterablePushRegistrationData.priorAuthToken);
             }
         } else {
             IterableLogger.e("IterablePush", "iterablePushRegistrationData has not been specified");
@@ -80,7 +84,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
      * If {@link IterableConfig#legacyGCMSenderId} is specified, this will attempt to retrieve the old token
      * and disable it to avoid duplicate notifications
      */
-    private void disableOldDeviceIfNeeded() {
+    private void disableOldDeviceIfNeeded(String priorAuthToken) {
         try {
             Context applicationContext = IterableApi.sharedInstance.getMainActivityContext();
             String gcmSenderId = IterableApi.sharedInstance.config.legacyGCMSenderId;
@@ -97,7 +101,7 @@ class IterablePushRegistration extends AsyncTask<IterablePushRegistrationData, V
                             public void onSuccess(@NonNull JSONObject data) {
                                 sharedPref.edit().putBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, true).apply();
                             }
-                        }, null);
+                        }, null, priorAuthToken);
                     }
                 }
             }
