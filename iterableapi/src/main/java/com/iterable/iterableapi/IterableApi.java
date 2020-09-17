@@ -222,9 +222,7 @@ private static final String TAG = "IterableApi";
     void onSetAuthToken(String authToken) {
         _authToken = authToken;
         storeAuthData();
-        if (_authToken != null) {
-            onLogIn();
-        }
+        onLogIn();
     }
 
     HashMap getDeviceAttributes() {
