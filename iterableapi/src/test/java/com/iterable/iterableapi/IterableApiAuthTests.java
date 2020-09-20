@@ -1,8 +1,11 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
@@ -27,6 +30,7 @@ public class IterableApiAuthTests extends BaseTest {
     private IterableUtil.IterableUtilImpl iterableUtilSpy;
     private MockWebServer server;
     private IterableAuthHandler authHandler;
+    private PathBasedQueueDispatcher dispatcher;
 
     private String validJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI5MTYyMzkwMjJ9.mYtgSqdUIxK8_RnYBTUP4cmpKw83aKi7cMiixF3qMB4";
     private String newJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE5MTYyMzkwMjJ9.dMD3MLuHTiO-Qy9PvOoMchNM4CzFIgI7jKVrRtlqlM0";
@@ -36,6 +40,8 @@ public class IterableApiAuthTests extends BaseTest {
     public void setUp() {
 
         server = new MockWebServer();
+        dispatcher = new PathBasedQueueDispatcher();
+        server.setDispatcher(dispatcher);
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         reInitIterableApi();
 
@@ -360,4 +366,64 @@ public class IterableApiAuthTests extends BaseTest {
         RecordedRequest getMessagesSet2Request = server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals(HEADER_SDK_AUTH_FORMAT + newJWT, getMessagesSet2Request.getHeader("Authorization"));
     }
+
+    @Test
+    public void testAuthFailureReturns401() throws InterruptedException {
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(401).setBody("{\"code\": \"InvalidJwtPayload\"}"));
+        IterableApi.getInstance().inAppConsume(new IterableInAppMessage("asd", null, null, null, null, null, null, null, (long) 2), null, null);
+        Robolectric.flushForegroundThreadScheduler();
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
+    }
+
+    @Test
+    public void testAuthRequestedOnSetEmail() throws InterruptedException {
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail("someEmail@domain.com");
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
+
+        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().updateEmail("someNewEmail@domain.com");
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
+
+    }
+
+    @Test
+    public void testAuthRequestedOnUpdateEmail() throws InterruptedException {
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail("someEmail@domain.com");
+
+        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().updateEmail("someNewEmail@domain.com");
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
+
+        //TODO: Shouldn't the update call also update the authToken in IterableAPI class?
+    }
+
+    @Test
+    public void testAuthRequestedOnSetUserId() throws InterruptedException {
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setUserId("SomeUser");
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
+    }
+
+    @Test
+    public void testAuthSetToNullOnLogOut() throws InterruptedException {
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setUserId("SomeUser");
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
+
+        IterableApi.getInstance().setUserId(null);
+        assertNull(IterableApi.getInstance().getAuthToken());
+    }
+
+    @Test
+    public void testRegisterForPushInvokedAfterTokenRefresh() throws InterruptedException {
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail("someEmail@domain.com");
+        assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
+
+        //TODO: Verify if registerForPush is invoked
+    }
+
 }
