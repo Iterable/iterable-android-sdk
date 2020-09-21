@@ -6,11 +6,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.iterable.iterableapi.util.Future;
+
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
 
 public class IterableAuthManager {
     private static final String TAG = "IterableAuth";
@@ -35,11 +38,27 @@ public class IterableAuthManager {
         if (!this.hasFailedPriorAuth || !hasFailedPriorAuth) {
             this.hasFailedPriorAuth = hasFailedPriorAuth;
             if (authHandler != null) {
-                String authToken = authHandler.onAuthTokenRequested();
-                if (authToken != null ) {
-                    queueExpirationRefresh(authToken);
-                }
-                successHandler.onSuccess(authToken);
+                Future.runAsync(new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        return authHandler.onAuthTokenRequested();
+                    }
+                })
+                .onSuccess(new Future.SuccessCallback<String>() {
+                    @Override
+                    public void onSuccess(String authToken) {
+                        if (authToken != null ) {
+                            queueExpirationRefresh(authToken);
+                        }
+                        successHandler.onSuccess(authToken);
+                    }
+                })
+                .onFailure(new Future.FailureCallback() {
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
+                    }
+                });
             } else {
                 successHandler.onSuccess(null);
             }

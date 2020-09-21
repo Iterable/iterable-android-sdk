@@ -562,14 +562,15 @@ private static final String TAG = "IterableApi";
                     }
 
                     storeAuthData();
+                    getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
+                        @Override
+                        public void onSuccess(@NonNull String authToken) {
+                            onSetAuthToken(authToken);
+                        }
+                    });
                     if (successHandler != null) {
                         successHandler.onSuccess(data);
-                        getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-                            @Override
-                            public void onSuccess(@NonNull String authToken) {
-                                onSetAuthToken(authToken);
-                            }
-                        });
+
                     }
                 }
             }, failureHandler);
