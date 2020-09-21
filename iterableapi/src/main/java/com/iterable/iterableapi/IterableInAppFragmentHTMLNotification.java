@@ -55,6 +55,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private String messageId;
     private double backgroundAlpha;
     private Rect insetPadding;
+    private boolean shouldAnimate = true;
 
     /**
      * Creates a static instance of the notification
@@ -63,6 +64,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * @return notification instance
      */
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
+        return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location,messageId, backgroundAlpha, padding,true);
+    }
+
+    public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding, @NonNull boolean shouldAnimate) {
 
         notification = new IterableInAppFragmentHTMLNotification();
         Bundle args = new Bundle();
@@ -71,6 +76,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         args.putString(MESSAGE_ID, messageId);
         args.putDouble(BACKGROUND_ALPHA, backgroundAlpha);
         args.putParcelable(INSET_PADDING, padding);
+        notification.shouldAnimate = shouldAnimate;
         IterableInAppFragmentHTMLNotification.clickCallback = clickCallback;
         IterableInAppFragmentHTMLNotification.location = location;
         notification.setArguments(args);
@@ -165,7 +171,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
-        webView.createWithHtml(this, htmlString);
+        webView.createWithHtml(this, htmlString, shouldAnimate);
         webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
 
         if (orientationListener == null) {

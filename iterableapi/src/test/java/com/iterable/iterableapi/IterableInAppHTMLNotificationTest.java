@@ -14,7 +14,7 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
     public void testDoNotCrashOnResizeAfterDismiss() {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
         FragmentActivity activity = controller.get();
-        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), false, IterableInAppLocation.IN_APP);
+        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, false, IterableInAppLocation.IN_APP);
 
         IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.getInstance();
         notification.dismiss();

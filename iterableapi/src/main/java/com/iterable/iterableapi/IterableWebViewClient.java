@@ -11,12 +11,14 @@ import android.webkit.WebViewClient;
  */
 class IterableWebViewClient extends WebViewClient {
     WebView htmlView;
+    boolean shouldAnimate;
     static final String RESIZE_SCRIPT = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
 
     HTMLNotificationCallbacks inAppHTMLNotification;
 
-    IterableWebViewClient(HTMLNotificationCallbacks inAppHTMLNotification) {
+    IterableWebViewClient(HTMLNotificationCallbacks inAppHTMLNotification, boolean shouldAnimate) {
         this.inAppHTMLNotification = inAppHTMLNotification;
+        this.shouldAnimate = shouldAnimate;
     }
 
     /**
@@ -48,7 +50,9 @@ class IterableWebViewClient extends WebViewClient {
 
     void showWebView() {
         if (htmlView != null) {
-            animate(htmlView);
+            if(shouldAnimate) {
+                animate(htmlView);
+            }
             htmlView.setVisibility(View.VISIBLE);
         }
     }

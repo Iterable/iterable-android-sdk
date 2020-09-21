@@ -29,6 +29,7 @@ class IterableInAppDisplayer {
                     clickCallback,
                     message.getContent().backgroundAlpha,
                     message.getContent().padding,
+                    message.getContent().shouldAnimate,
                     true, location);
         }
         return false;
@@ -43,7 +44,7 @@ class IterableInAppDisplayer {
      * @param backgroundAlpha
      * @param padding
      */
-    static boolean showIterableFragmentNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull String messageId,  @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, @NonNull Rect padding, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
+    static boolean showIterableFragmentNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull String messageId, @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, @NonNull Rect padding, boolean shouldAnimate, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
         if (context instanceof FragmentActivity) {
             FragmentActivity currentActivity = (FragmentActivity) context;
             if (htmlString != null) {
@@ -52,7 +53,7 @@ class IterableInAppDisplayer {
                     return false;
                 }
 
-                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding);
+                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, shouldAnimate);
                 notification.show(currentActivity.getSupportFragmentManager(), "iterable_in_app");
                 return true;
             }
