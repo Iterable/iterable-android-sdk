@@ -235,8 +235,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         })) {
             setRead(message, true);
             if (consume) {
-                // Remove the message without tracking
-                removeMessage(message);
+                message.markForDeletion(true);
             }
         }
     }
