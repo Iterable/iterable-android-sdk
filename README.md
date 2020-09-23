@@ -1,4 +1,4 @@
-![Iterable logo](./images/Iterable-Logo.png "Iterable Logo")
+![Iterable logo](https://raw.githubusercontent.com/Iterable/iterable-android-sdk/master/images/Iterable-Logo.png "Iterable Logo")
 
 [![License](https://img.shields.io/github/license/iterable/iterable-android-sdk)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/Iterable/iterable-android-sdk.svg?branch=master)](https://travis-ci.org/Iterable/iterable-android-sdk)
