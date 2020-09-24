@@ -28,48 +28,39 @@ public class Future<T> {
         }
         callbackHandler = new Handler(looper);
 
-        EXECUTOR.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    T result = callable.call();
-                    handleSuccess(result);
-                } catch (Exception e) {
-                    handleFailure(e);
-                }
+        EXECUTOR.submit(() -> {
+            try {
+                T result = callable.call();
+                handleSuccess(result);
+            } catch (Exception e) {
+                handleFailure(e);
             }
         });
     }
 
     private void handleSuccess(final T result) {
-        callbackHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                List<SuccessCallback<T>> callbacks;
-                synchronized (successCallbacks) {
-                    callbacks = new ArrayList<>(successCallbacks);
-                }
-                for (SuccessCallback<T> callback : callbacks) {
-                    if (callback != null) {
-                        callback.onSuccess(result);
-                    }
+        callbackHandler.post(() -> {
+            List<SuccessCallback<T>> callbacks;
+            synchronized (successCallbacks) {
+                callbacks = new ArrayList<>(successCallbacks);
+            }
+            for (SuccessCallback<T> callback : callbacks) {
+                if (callback != null) {
+                    callback.onSuccess(result);
                 }
             }
         });
     }
 
     private void handleFailure(final Throwable t) {
-        callbackHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                List<FailureCallback> callbacks;
-                synchronized (failureCallbacks) {
-                    callbacks = new ArrayList<>(failureCallbacks);
-                }
-                for (FailureCallback callback : callbacks) {
-                    if (callback != null) {
-                        callback.onFailure(t);
-                    }
+        callbackHandler.post(() -> {
+            List<FailureCallback> callbacks;
+            synchronized (failureCallbacks) {
+                callbacks = new ArrayList<>(failureCallbacks);
+            }
+            for (FailureCallback callback : callbacks) {
+                if (callback != null) {
+                    callback.onFailure(t);
                 }
             }
         });

@@ -3,7 +3,6 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -144,12 +143,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 hideWebView();
             }
         };
-        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-            @Override
-            public void onCancel(DialogInterface dialog) {
-                if (callbackOnCancel && clickCallback != null) {
-                    clickCallback.execute(null);
-                }
+        dialog.setOnCancelListener(dialogInterface -> {
+            if (callbackOnCancel && clickCallback != null) {
+                clickCallback.execute(null);
             }
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -183,12 +179,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     // Resize the webview on device rotation
                     if (loaded) {
                         final Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                webView.loadUrl(IterableWebViewClient.RESIZE_SCRIPT);
-                            }
-                        }, 1000);
+                        handler.postDelayed(() -> webView.loadUrl(IterableWebViewClient.RESIZE_SCRIPT), 1000);
                     }
                 }
             };
@@ -389,23 +380,21 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             return;
         }
 
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    // Since this is run asynchronously, notification might've been dismissed already
-                    if (getContext() == null || notification == null || notification.getDialog() == null ||
-                            notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
-                        return;
-                    }
+        activity.runOnUiThread(() -> {
+            try {
+                // Since this is run asynchronously, notification might've been dismissed already
+                if (getContext() == null || notification == null || notification.getDialog() == null ||
+                        notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
+                    return;
+                }
 
-                    DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
-                    Window window = notification.getDialog().getWindow();
-                    Rect insetPadding = notification.insetPadding;
+                DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
+                Window window = notification.getDialog().getWindow();
+                Rect insetPadding = notification.insetPadding;
 
-                    WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-                    Display display = wm.getDefaultDisplay();
-                    Point size = new Point();
+                WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+                Display display = wm.getDefaultDisplay();
+                Point size = new Point();
 
                     // Get the correct screen size based on api level
                     // https://stackoverflow.com/questions/35780980/getting-the-actual-screen-height-android
@@ -426,9 +415,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
                         webView.setLayoutParams(webViewLayout);
                     }
-                } catch (IllegalArgumentException e) {
-                    IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);
-                }
+            } catch (IllegalArgumentException e) {
+                IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);
             }
         });
     }

@@ -22,14 +22,11 @@ public class IterableActivityMonitor {
     private int numStartedActivities = 0;
     private boolean inForeground = false;
     private List<WeakReference<AppStateCallback>> callbacks = new ArrayList<>();
-    private Runnable backgroundTransitionRunnable = new Runnable() {
-        @Override
-        public void run() {
-            inForeground = false;
-            for (WeakReference<AppStateCallback> callback : callbacks) {
-                if (callback.get() != null) {
-                    callback.get().onSwitchToBackground();
-                }
+    private Runnable backgroundTransitionRunnable = () -> {
+        inForeground = false;
+        for (WeakReference<AppStateCallback> callback : callbacks) {
+            if (callback.get() != null) {
+                callback.get().onSwitchToBackground();
             }
         }
     };

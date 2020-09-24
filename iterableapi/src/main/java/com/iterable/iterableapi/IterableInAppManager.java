@@ -156,29 +156,26 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      */
     void syncInApp() {
         IterableLogger.printInfo();
-        this.api.getInAppMessages(MESSAGES_TO_FETCH, new IterableHelper.IterableActionHandler() {
-            @Override
-            public void execute(String payload) {
-                if (payload != null && !payload.isEmpty()) {
-                    try {
-                        List<IterableInAppMessage> messages = new ArrayList<>();
-                        JSONObject mainObject = new JSONObject(payload);
-                        JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
-                        if (jsonArray != null) {
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject messageJson = jsonArray.optJSONObject(i);
-                                IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
-                                if (message != null) {
-                                    messages.add(message);
-                                }
+        this.api.getInAppMessages(MESSAGES_TO_FETCH, payload -> {
+            if (payload != null && !payload.isEmpty()) {
+                try {
+                    List<IterableInAppMessage> messages = new ArrayList<>();
+                    JSONObject mainObject = new JSONObject(payload);
+                    JSONArray jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);
+                    if (jsonArray != null) {
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            JSONObject messageJson = jsonArray.optJSONObject(i);
+                            IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
+                            if (message != null) {
+                                messages.add(message);
                             }
-
-                            syncWithRemoteQueue(messages);
-                            lastSyncTime = IterableUtil.currentTimeMillis();
                         }
-                    } catch (JSONException e) {
-                        IterableLogger.e(TAG, e.toString());
+
+                        syncWithRemoteQueue(messages);
+                        lastSyncTime = IterableUtil.currentTimeMillis();
                     }
+                } catch (JSONException e) {
+                    IterableLogger.e(TAG, e.toString());
                 }
             }
         });
@@ -222,16 +219,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {
-        if (displayer.showMessage(message, inAppLocation, new IterableHelper.IterableUrlCallback() {
-            @Override
-            public void execute(Uri url) {
-                if (clickCallback != null) {
-                    clickCallback.execute(url);
-                }
-                handleInAppClick(message, url);
-                lastInAppShown = IterableUtil.currentTimeMillis();
-                scheduleProcessing();
+        if (displayer.showMessage(message, inAppLocation, url -> {
+            if (clickCallback != null) {
+                clickCallback.execute(url);
             }
+            handleInAppClick(message, url);
+            lastInAppShown = IterableUtil.currentTimeMillis();
+            scheduleProcessing();
         })) {
             setRead(message, true);
             if (consume) {
@@ -353,12 +347,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         if (canShowInAppAfterPrevious()) {
             processMessages();
         } else {
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    processMessages();
-                }
-            }, (long) ((inAppDisplayInterval - getSecondsSinceLastInApp() + 2.0) * 1000));
+            new Handler(Looper.getMainLooper()).postDelayed(
+                    this::processMessages,
+                    (long) ((inAppDisplayInterval - getSecondsSinceLastInApp() + 2.0) * 1000)
+            );
         }
     }
 
@@ -410,13 +402,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public void notifyOnChange() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (listeners) {
-                    for (Listener listener : listeners) {
-                        listener.onInboxUpdated();
-                    }
+        new Handler(Looper.getMainLooper()).post(() -> {
+            synchronized (listeners) {
+                for (Listener listener : listeners) {
+                    listener.onInboxUpdated();
                 }
             }
         });

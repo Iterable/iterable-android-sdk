@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.Callable;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class BitmapLoader {
@@ -32,25 +31,14 @@ public class BitmapLoader {
             return;
         }
 
-        Future.runAsync(new Callable<Bitmap>() {
-            @Override
-            public Bitmap call() throws Exception {
-                return fetchBitmap(imageView.getContext(), uri);
+        Future.runAsync(() -> fetchBitmap(imageView.getContext(), uri))
+        .onSuccess(result -> {
+            if (ViewCompat.isAttachedToWindow(imageView)) {
+                imageView.setImageBitmap(result);
             }
         })
-        .onSuccess(new Future.SuccessCallback<Bitmap>() {
-            @Override
-            public void onSuccess(Bitmap result) {
-                if (ViewCompat.isAttachedToWindow(imageView)) {
-                    imageView.setImageBitmap(result);
-                }
-            }
-        })
-        .onFailure(new Future.FailureCallback() {
-            @Override
-            public void onFailure(Throwable throwable) {
-                IterableLogger.e("BitmapLoader", "Error while loading image: " + uri.toString(), throwable);
-            }
+        .onFailure(throwable -> {
+            IterableLogger.e("BitmapLoader", "Error while loading image: " + uri.toString(), throwable);
         });
     }
 

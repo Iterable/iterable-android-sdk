@@ -261,12 +261,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             }
 
             Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    request.execute(iterableApiRequest);
-                }
-            }, delay);
+            handler.postDelayed(() -> request.execute(iterableApiRequest), delay);
             return;
         } else if (success) {
             if (iterableApiRequest.successCallback != null) {

@@ -205,12 +205,7 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
                 inboxRows.add(new InboxRow(message));
             }
         }
-        Collections.sort(inboxRows, new Comparator<InboxRow>() {
-            @Override
-            public int compare(InboxRow o1, InboxRow o2) {
-                return comparator.compare(o1.message, o2.message);
-            }
-        });
+        Collections.sort(inboxRows, (o1, o2) -> comparator.compare(o1.message, o2.message));
         return inboxRows;
     }
 

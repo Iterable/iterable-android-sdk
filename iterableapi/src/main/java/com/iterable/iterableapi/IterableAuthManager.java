@@ -11,7 +11,6 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Callable;
 
 public class IterableAuthManager {
     private static final String TAG = "IterableAuth";
@@ -39,30 +38,20 @@ public class IterableAuthManager {
                 if (!(this.hasFailedPriorAuth && hasFailedPriorAuth)) {
                     this.hasFailedPriorAuth = hasFailedPriorAuth;
                     pendingAuth = true;
-                    Future.runAsync(new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            return authHandler.onAuthTokenRequested();
-                        }
-                    }).onSuccess(new Future.SuccessCallback<String>() {
-                        @Override
-                        public void onSuccess(String authToken) {
-                            if (authToken != null) {
-                                queueExpirationRefresh(authToken);
-                            }
-                            IterableApi.getInstance().setAuthToken(authToken);
-                            pendingAuth = false;
-                            reSyncAuth();
-                        }
-                    })
-                    .onFailure(new Future.FailureCallback() {
-                        @Override
-                        public void onFailure(Throwable throwable) {
-                            IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
-                            pendingAuth = false;
-                            reSyncAuth();
-                        }
-                    });
+                    Future.runAsync(authHandler::onAuthTokenRequested)
+                            .onSuccess(authToken -> {
+                                if (authToken != null) {
+                                    queueExpirationRefresh(authToken);
+                                }
+                                IterableApi.getInstance().setAuthToken(authToken);
+                                pendingAuth = false;
+                                reSyncAuth();
+                            })
+                            .onFailure(throwable -> {
+                                IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
+                                pendingAuth = false;
+                                reSyncAuth();
+                            });
                 }
             } else if (!hasFailedPriorAuth) {
                 //setFlag to resync auth after current auth returns
