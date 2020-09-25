@@ -71,6 +71,10 @@ public class IterableAuthManager {
         }
     }
 
+    void resetFailedAuth() {
+        hasFailedPriorAuth = false;
+    }
+
     private void scheduleAuthTokenRefresh(long timeDuration) {
         timer.cancel();
         timer = new Timer(true);

@@ -192,6 +192,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                         handleFailure("No data received", jsonResponse);
                     } else if (error != null) {
                         handleFailure(error, null);
+                    } else {
+                        IterableApi.getInstance().getAuthManager().resetFailedAuth();
                     }
                 } else {
                     handleFailure("Received non-200 response: " + responseCode, jsonResponse);
