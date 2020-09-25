@@ -15,7 +15,7 @@ class IterablePushRegistrationData {
     String pushIntegrationName;
     String projectNumber = "";
     String messagingPlatform = IterableConstants.MESSAGING_PLATFORM_FIREBASE;
-    String priorAuthToken;
+    String authToken;
     PushRegistrationAction pushRegistrationAction;
 
 
@@ -28,11 +28,11 @@ class IterablePushRegistrationData {
         this.pushRegistrationAction = pushRegistrationAction;
     }
 
-    IterablePushRegistrationData(String email, String userId, String pushIntegrationName, PushRegistrationAction pushRegistrationAction, String priorAuthToken) {
+    IterablePushRegistrationData(String email, String userId, String authToken, String pushIntegrationName, PushRegistrationAction pushRegistrationAction) {
         this.email = email;
         this.userId = userId;
         this.pushIntegrationName = pushIntegrationName;
         this.pushRegistrationAction = pushRegistrationAction;
-        this.priorAuthToken = priorAuthToken;
+        this.authToken = authToken;
     }
 }
