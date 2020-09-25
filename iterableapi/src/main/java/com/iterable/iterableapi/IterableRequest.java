@@ -164,12 +164,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                 if (responseCode == 401) {
                     if (jsonResponse.has("code") && jsonResponse.getString("code").equals("InvalidJwtPayload")) {
                         handleFailure("JWT Authorization header error", jsonResponse);
-                        IterableApi.getInstance().getAuthManager().requestNewAuthToken(true, new IterableHelper.SuccessAuthHandler() {
-                            @Override
-                            public void onSuccess(@NonNull String authToken) {
-                                IterableApi.getInstance().onSetAuthToken(authToken);
-                            }
-                        });
+                        IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
                     } else {
                         handleFailure("Invalid API Key", jsonResponse);
                     }

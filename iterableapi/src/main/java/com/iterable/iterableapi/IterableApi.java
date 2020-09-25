@@ -219,9 +219,11 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    void onSetAuthToken(String authToken) {
-        _authToken = authToken;
-        storeAuthData();
+    void setAuthToken(String authToken) {
+        if (_authToken != authToken) {
+            _authToken = authToken;
+            storeAuthData();
+        }
         onLogIn();
     }
 
@@ -302,14 +304,9 @@ private static final String TAG = "IterableApi";
         storeAuthData();
 
         if (email != null) {
-            getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-                @Override
-                public void onSuccess(@NonNull String authToken) {
-                    onSetAuthToken(authToken);
-                }
-            });
+            getAuthManager().requestNewAuthToken(false);
         } else {
-            onSetAuthToken(null);
+            setAuthToken(null);
         }
     }
 
@@ -327,14 +324,9 @@ private static final String TAG = "IterableApi";
         storeAuthData();
 
         if (userId != null) {
-            getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-                @Override
-                public void onSuccess(@NonNull String authToken) {
-                    onSetAuthToken(authToken);
-                }
-            });
+            getAuthManager().requestNewAuthToken(false);
         } else {
-            onSetAuthToken(null);
+            setAuthToken(null);
         }
     }
 
@@ -562,12 +554,7 @@ private static final String TAG = "IterableApi";
                     }
 
                     storeAuthData();
-                    getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-                        @Override
-                        public void onSuccess(@NonNull String authToken) {
-                            onSetAuthToken(authToken);
-                        }
-                    });
+                    getAuthManager().requestNewAuthToken(false);
                     if (successHandler != null) {
                         successHandler.onSuccess(data);
 

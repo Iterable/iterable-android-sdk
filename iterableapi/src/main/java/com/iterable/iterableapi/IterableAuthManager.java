@@ -2,8 +2,6 @@ package com.iterable.iterableapi;
 
 import android.util.Base64;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.util.Future;
@@ -34,7 +32,7 @@ public class IterableAuthManager {
         this.authRefreshPeriod = authRefreshPeriod;
     }
 
-    public void requestNewAuthToken(boolean hasFailedPriorAuth, final @Nullable IterableHelper.SuccessAuthHandler successHandler) {
+    public void requestNewAuthToken(boolean hasFailedPriorAuth) {
         if (!this.hasFailedPriorAuth || !hasFailedPriorAuth) {
             this.hasFailedPriorAuth = hasFailedPriorAuth;
             if (authHandler != null) {
@@ -50,7 +48,7 @@ public class IterableAuthManager {
                         if (authToken != null ) {
                             queueExpirationRefresh(authToken);
                         }
-                        successHandler.onSuccess(authToken);
+                        IterableApi.getInstance().setAuthToken(authToken);
                     }
                 })
                 .onFailure(new Future.FailureCallback() {
@@ -60,7 +58,7 @@ public class IterableAuthManager {
                     }
                 });
             } else {
-                successHandler.onSuccess(null);
+                IterableApi.getInstance().setAuthToken(null);
             }
         }
     }
@@ -80,12 +78,7 @@ public class IterableAuthManager {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    api.getAuthManager().requestNewAuthToken(false, new IterableHelper.SuccessAuthHandler() {
-                        @Override
-                        public void onSuccess(@NonNull String authToken) {
-                            api.onSetAuthToken(authToken);
-                        }
-                    });
+                    api.getAuthManager().requestNewAuthToken(false);
                 }
             }, timeDuration);
         } catch (Exception e) {
