@@ -195,6 +195,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        relativeLayout.setVerticalGravity(getVerticalLocation(insetPadding));
         relativeLayout.addView(webView, layoutParams);
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {
@@ -320,24 +321,32 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
                         getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
-                        // Calculates the dialog size
-                        double notificationWidth = 100 - (insetPadding.left + insetPadding.right);
-                        float widthPercentage = (float) notificationWidth / 100;
-                        int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
-                        int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
-                        window.setLayout(maxWidth, maxHeight);
+//                        // Calculates the dialog size
+//                        double notificationWidth = 100 - (insetPadding.left + insetPadding.right);
+//                        float widthPercentage = (float) notificationWidth / 100;
+//                        int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
+//                        int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
+//                        window.setLayout(maxWidth, maxHeight);
+//
+//                        //Calculates the horizontal position based on the dialog size
+//                        double center = (insetPadding.left + notificationWidth / 2f);
+//                        int offset = (int) ((center - 50) / 100f * webViewWidth);
 
-                        //Calculates the horizontal position based on the dialog size
-                        double center = (insetPadding.left + notificationWidth / 2f);
-                        int offset = (int) ((center - 50) / 100f * webViewWidth);
+//                        //Set the window properties
+//                        WindowManager.LayoutParams wlp = window.getAttributes();
+////                        wlp.x = offset;
+//                        wlp.gravity = getVerticalLocation(insetPadding);
+////                        wlp.dimAmount = (float) notification.backgroundAlpha;
+////                        wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+//                        window.setAttributes(wlp);
+//                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
 
-                        //Set the window properties
-                        WindowManager.LayoutParams wlp = window.getAttributes();
-                        wlp.x = offset;
-                        wlp.gravity = getVerticalLocation(insetPadding);
-                        wlp.dimAmount = (float) notification.backgroundAlpha;
-                        wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-                        window.setAttributes(wlp);
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                            webView.setForegroundGravity(Gravity.CENTER_VERTICAL);
+//                        }
+                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
+                        webViewLayout.alignWithParent = true;
+                        webView.setLayoutParams(webViewLayout);
                     }
                 } catch (IllegalArgumentException e) {
                     IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);

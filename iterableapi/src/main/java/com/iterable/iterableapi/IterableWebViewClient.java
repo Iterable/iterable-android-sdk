@@ -10,6 +10,14 @@ import android.webkit.WebViewClient;
  * Custom webViewClient which handles url clicks
  */
 class IterableWebViewClient extends WebViewClient {
+    enum Layout{
+        TOP,
+        BOTTOM,
+        CENTER,
+        FULLSCREEN
+    }
+
+    Layout inAppLayout;
     WebView htmlView;
     boolean shouldAnimate;
     static final String RESIZE_SCRIPT = "javascript:ITBL.resize(document.body.getBoundingClientRect().height)";
