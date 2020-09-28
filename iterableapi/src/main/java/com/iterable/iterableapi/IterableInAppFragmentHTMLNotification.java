@@ -208,10 +208,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private void hideDialogView() {
         try {
             IterableLogger.v("Progress", "Hiding Dialog View..");
-            getDialog().getWindow().getDecorView().setAlpha(0.0f);
+//            getDialog().getWindow().getDecorView().setAlpha(0.0f);
+            webView.setAlpha(0.0f);
             webView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
+
                     IterableLogger.v("Progress", "Showing Dialog View because of delay threshold");
                     showDialogView();
                     webView.webViewClient.showWebView();
@@ -225,7 +227,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private void showDialogView() {
         try {
             IterableLogger.v("Progress", "showing Dialog View..");
-            getDialog().getWindow().getDecorView().setAlpha(1.0f);
+//            getDialog().getWindow().getDecorView().setAlpha(1.0f);
+            webView.setAlpha(1.0f);
         } catch (NullPointerException e) {
             IterableLogger.e(TAG, "View not present. Failed to show inapp", e);
         }
@@ -333,19 +336,19 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 //                        int offset = (int) ((center - 50) / 100f * webViewWidth);
 
 //                        //Set the window properties
-//                        WindowManager.LayoutParams wlp = window.getAttributes();
+                        WindowManager.LayoutParams wlp = window.getAttributes();
 ////                        wlp.x = offset;
 //                        wlp.gravity = getVerticalLocation(insetPadding);
-////                        wlp.dimAmount = (float) notification.backgroundAlpha;
-////                        wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-//                        window.setAttributes(wlp);
+                        wlp.dimAmount = 0.4f;
+                        wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+                        window.setAttributes(wlp);
 //                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
 
 //                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //                            webView.setForegroundGravity(Gravity.CENTER_VERTICAL);
 //                        }
                         RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
-                        webViewLayout.alignWithParent = true;
+//                        webViewLayout.alignWithParent = true;
                         webView.setLayoutParams(webViewLayout);
                     }
                 } catch (IllegalArgumentException e) {
