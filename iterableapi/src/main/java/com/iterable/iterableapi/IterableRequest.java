@@ -184,6 +184,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                         if (jsonError != null) {
                             handleFailure("Could not parse json: " + jsonError, null);
                         } else if (jsonResponse != null) {
+                            IterableApi.getInstance().getAuthManager().resetFailedAuth();
                             handleSuccess(jsonResponse);
                         } else {
                             handleFailure("Response is not a JSON object", jsonResponse);
@@ -192,8 +193,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                         handleFailure("No data received", jsonResponse);
                     } else if (error != null) {
                         handleFailure(error, null);
-                    } else {
-                        IterableApi.getInstance().getAuthManager().resetFailedAuth();
                     }
                 } else {
                     handleFailure("Received non-200 response: " + responseCode, jsonResponse);
