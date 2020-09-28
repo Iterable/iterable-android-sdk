@@ -45,7 +45,7 @@ public class IterableAuthManager {
                 .onSuccess(new Future.SuccessCallback<String>() {
                     @Override
                     public void onSuccess(String authToken) {
-                        if (authToken != null ) {
+                        if (authToken != null) {
                             queueExpirationRefresh(authToken);
                         }
                         IterableApi.getInstance().setAuthToken(authToken);

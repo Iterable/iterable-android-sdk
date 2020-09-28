@@ -4,6 +4,7 @@ import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
@@ -28,7 +29,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
-import static org.robolectric.shadows.ShadowLooper.getShadowMainLooper;
 
 @LooperMode(PAUSED)
 public class IterableApiAuthTests extends BaseTest {
@@ -79,6 +79,7 @@ public class IterableApiAuthTests extends BaseTest {
         authHandler = mock(IterableAuthHandler.class);
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testRefreshToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -106,6 +107,7 @@ public class IterableApiAuthTests extends BaseTest {
         timer = IterableApi.getInstance().getAuthManager().timer;
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetEmailWithToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -129,6 +131,7 @@ public class IterableApiAuthTests extends BaseTest {
         shadowOf(getMainLooper()).runToEndOfTasks();
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetEmailWithTokenExpired() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -142,6 +145,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetUserIdWithToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -165,6 +169,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(expiredJWT, IterableApi.getInstance().getAuthToken());
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSameEmailWithNewToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -188,6 +193,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), newJWT);
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSameUserIdWithNewToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -206,6 +212,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), newJWT);
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetSameEmailAndRemoveToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -224,6 +231,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getAuthToken());
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetSameUserIdAndRemoveToken() throws Exception {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
@@ -354,6 +362,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getAuthToken());
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testAuthTokenPresentInRequest() throws Exception {
 //        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
@@ -393,6 +402,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(HEADER_SDK_AUTH_FORMAT + newJWT, getMessagesSet2Request.getHeader("Authorization"));
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testAuthFailureReturns401() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -402,6 +412,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testAuthRequestedOnSetEmail() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -416,6 +427,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testAuthRequestedOnUpdateEmail() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -429,6 +441,7 @@ public class IterableApiAuthTests extends BaseTest {
         //TODO: Shouldn't the update call also update the authToken in IterableAPI class?
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testAuthRequestedOnSetUserId() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -449,6 +462,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getAuthToken());
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testRegisterForPushInvokedAfterTokenRefresh() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
