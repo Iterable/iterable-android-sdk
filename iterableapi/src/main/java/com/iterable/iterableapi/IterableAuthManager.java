@@ -24,6 +24,7 @@ public class IterableAuthManager {
     @VisibleForTesting
     Timer timer;
     private boolean hasFailedPriorAuth;
+    private boolean pendingAuth;
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long authRefreshPeriod) {
         timer = new Timer(true);
@@ -32,10 +33,11 @@ public class IterableAuthManager {
         this.authRefreshPeriod = authRefreshPeriod;
     }
 
-    public void requestNewAuthToken(boolean hasFailedPriorAuth) {
-        if (!this.hasFailedPriorAuth || !hasFailedPriorAuth) {
-            this.hasFailedPriorAuth = hasFailedPriorAuth;
-            if (authHandler != null) {
+    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
+        if (authHandler != null) {
+            if (!pendingAuth && !(this.hasFailedPriorAuth && hasFailedPriorAuth)) {
+                this.hasFailedPriorAuth = hasFailedPriorAuth;
+                pendingAuth = true;
                 Future.runAsync(new Callable<String>() {
                     @Override
                     public String call() throws Exception {
@@ -49,17 +51,19 @@ public class IterableAuthManager {
                             queueExpirationRefresh(authToken);
                         }
                         IterableApi.getInstance().setAuthToken(authToken);
+                        pendingAuth = false;
                     }
                 })
                 .onFailure(new Future.FailureCallback() {
                     @Override
                     public void onFailure(Throwable throwable) {
                         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
+                        pendingAuth = false;
                     }
                 });
-            } else {
-                IterableApi.getInstance().setAuthToken(null);
             }
+        } else {
+            IterableApi.getInstance().setAuthToken(null);
         }
     }
 

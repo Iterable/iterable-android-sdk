@@ -298,6 +298,14 @@ private static final String TAG = "IterableApi";
      * @param email User email
      */
     public void setEmail(@Nullable String email) {
+        if (_email != null && _email.equals(email)) {
+            return;
+        }
+
+        if (_email == null && _userId == null && email == null) {
+            return;
+        }
+
         onLogOut();
         _email = email;
         _userId = null;
@@ -318,6 +326,14 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
+        if (userId != null && _userId.equals(userId)) {
+            return;
+        }
+
+        if (_email == null && _userId == null && userId == null) {
+            return;
+        }
+
         onLogOut();
         _email = null;
         _userId = userId;
