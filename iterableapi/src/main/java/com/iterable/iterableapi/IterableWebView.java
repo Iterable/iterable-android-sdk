@@ -24,8 +24,8 @@ class IterableWebView extends WebView {
      * @param notificationDialog
      * @param html
      */
-    void createWithHtml(IterableWebViewClient.HTMLNotificationCallbacks notificationDialog, String html, boolean shouldAnimate) {
-        webViewClient = new IterableWebViewClient(notificationDialog, shouldAnimate);
+    void createWithHtml(IterableWebViewClient.HTMLNotificationCallbacks notificationDialog, String html, boolean shouldAnimate, InAppLayout layout) {
+        webViewClient = new IterableWebViewClient(notificationDialog, shouldAnimate, layout);
         loadDataWithBaseURL("", html, MIME_TYPE, ENCODING, "");
         setWebViewClient(webViewClient);
         setWebChromeClient(new WebChromeClient() {

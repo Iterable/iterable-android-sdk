@@ -64,7 +64,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * @return notification instance
      */
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
-        return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location,messageId, backgroundAlpha, padding,true);
+        return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, true);
     }
 
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding, @NonNull boolean shouldAnimate) {
@@ -144,7 +144,27 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             @Override
             public void onBackPressed() {
                 IterableInAppFragmentHTMLNotification.this.onBackPressed();
-                super.onBackPressed();
+                Runnable dismissFragmentRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        getInstance().dismiss();
+                    }
+                };
+
+                if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
+                    super.dismiss();
+                } else {
+//                    Might have to uncomment below code if the exiting fading out animation of background is not sufficient
+//                    WindowManager.LayoutParams wlp = getWindow().getAttributes();
+//                    wlp.dimAmount = 0.0f;
+//                    wlp.flags = WindowManager.LayoutParams.DIM_AMOUNT_CHANGED;
+//                    getWindow().setAttributes(wlp);
+                    if (webView != null && webView.webViewClient != null) {
+                        webView.webViewClient.animateClose(webView, dismissFragmentRunnable);
+                    } else {
+                        super.dismiss();
+                    }
+                }
             }
         };
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -171,7 +191,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
-        webView.createWithHtml(this, htmlString, shouldAnimate);
+        webView.createWithHtml(this, htmlString, shouldAnimate, getInAppLayout(insetPadding));
         webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
 
         if (orientationListener == null) {
@@ -321,34 +341,19 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     if (insetPadding.bottom == 0 && insetPadding.top == 0) {
                         //Handle full screen
                         window.setLayout(webViewWidth, webViewHeight);
-
                         getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
-//                        // Calculates the dialog size
-//                        double notificationWidth = 100 - (insetPadding.left + insetPadding.right);
-//                        float widthPercentage = (float) notificationWidth / 100;
-//                        int maxHeight = Math.min((int) (height * displayMetrics.scaledDensity), webViewHeight);
-//                        int maxWidth = Math.min(webViewWidth, (int) (webViewWidth * widthPercentage));
-//                        window.setLayout(maxWidth, maxHeight);
-//
-//                        //Calculates the horizontal position based on the dialog size
-//                        double center = (insetPadding.left + notificationWidth / 2f);
-//                        int offset = (int) ((center - 50) / 100f * webViewWidth);
-
-//                        //Set the window properties
-                        WindowManager.LayoutParams wlp = window.getAttributes();
-////                        wlp.x = offset;
-//                        wlp.gravity = getVerticalLocation(insetPadding);
-                        wlp.dimAmount = 0.4f;
-                        wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-                        window.setAttributes(wlp);
-//                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
-
-//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                            webView.setForegroundGravity(Gravity.CENTER_VERTICAL);
-//                        }
+                        //Set background window fading if animation and backgroundAlpha/opacity configured
+                        //TODO: Uncomment below  two lines
+//                        if (shouldAnimate && notification.backgroundAlpha > 0) {
+                        if (shouldAnimate) {
+                            WindowManager.LayoutParams wlp = window.getAttributes();
+//                            wlp.dimAmount = (float) notification.backgroundAlpha;
+                            wlp.dimAmount = 0.4f;
+                            wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+                            window.setAttributes(wlp);
+                        }
                         RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
-//                        webViewLayout.alignWithParent = true;
                         webView.setLayoutParams(webViewLayout);
                     }
                 } catch (IllegalArgumentException e) {
@@ -371,5 +376,17 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             gravity = Gravity.BOTTOM;
         }
         return gravity;
+    }
+
+    InAppLayout getInAppLayout(Rect padding) {
+        if (padding.top == 0 && padding.bottom == 0) {
+            return InAppLayout.FULLSCREEN;
+        } else if (padding.top == 0 && padding.bottom < 0) {
+            return InAppLayout.TOP;
+        } else if (padding.top < 0 && padding.bottom == 0) {
+            return InAppLayout.BOTTOM;
+        } else {
+            return InAppLayout.CENTER;
+        }
     }
 }

@@ -100,7 +100,7 @@ public class IterableInAppManagerTest extends BaseTest {
     public void testDoNotShowMultipleTimes() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
         FragmentActivity activity = controller.get();
-        boolean shownFirstTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true,false, IterableInAppLocation.IN_APP);
+        boolean shownFirstTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, false, IterableInAppLocation.IN_APP);
         boolean shownSecondTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, false, IterableInAppLocation.IN_APP);
         assertTrue(shownFirstTime);
         assertFalse(shownSecondTime);
