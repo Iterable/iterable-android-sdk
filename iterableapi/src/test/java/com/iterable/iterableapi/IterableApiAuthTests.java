@@ -452,6 +452,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
 
+    @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testAuthSetToNullOnLogOut() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
