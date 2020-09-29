@@ -68,7 +68,7 @@ public class IterableConfig {
     /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
-    final long authRefreshPeriod;
+    final long expiringAuthTokenRefreshPeriod;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -81,7 +81,7 @@ public class IterableConfig {
         inAppHandler = builder.inAppHandler;
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
-        authRefreshPeriod = builder.authRefreshPeriod;
+        expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
     }
 
     public static class Builder {
@@ -95,7 +95,7 @@ public class IterableConfig {
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
-        private long authRefreshPeriod = 60000L;
+        private long expiringAuthTokenRefreshPeriod = 60000L;
 
         public Builder() {}
 
@@ -205,6 +205,16 @@ public class IterableConfig {
         @NonNull
         public Builder setAuthHandler(@NonNull IterableAuthHandler authHandler) {
             this.authHandler = authHandler;
+            return this;
+        }
+
+        /**
+         * Set a custom period before an auth token expires to automatically retrieve a new token
+         * @param expiringAuthTokenRefreshPeriod period in milliseconds
+         */
+        @NonNull
+        public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long expiringAuthTokenRefreshPeriod) {
+            this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
             return this;
         }
 

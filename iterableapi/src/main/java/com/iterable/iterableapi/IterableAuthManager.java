@@ -6,7 +6,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.util.Future;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -20,7 +19,7 @@ public class IterableAuthManager {
 
     private final IterableApi api;
     private final IterableAuthHandler authHandler;
-    private final long authRefreshPeriod;
+    private final long expiringAuthTokenRefreshPeriod;
 
     @VisibleForTesting
     Timer timer;
@@ -28,11 +27,11 @@ public class IterableAuthManager {
     private boolean pendingAuth;
     private boolean requiresAuthRefresh;
 
-    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long authRefreshPeriod) {
+    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long expiringAuthTokenRefreshPeriod) {
         timer = new Timer(true);
         this.api = api;
         this.authHandler = authHandler;
-        this.authRefreshPeriod = authRefreshPeriod;
+        this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
@@ -79,9 +78,11 @@ public class IterableAuthManager {
     public void queueExpirationRefresh(String encodedJWT) {
         try {
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
-            long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - authRefreshPeriod - IterableUtil.currentTimeMillis();
+            long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
             if (triggerExpirationRefreshTime > 0) {
                 scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
+            } else {
+                IterableLogger.w(TAG, "The expiringAuthTokenRefreshPeriod has already passed for the current JWT " + encodedJWT);
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration: " + encodedJWT, e);
