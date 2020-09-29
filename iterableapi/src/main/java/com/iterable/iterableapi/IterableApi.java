@@ -299,7 +299,6 @@ private static final String TAG = "IterableApi";
      */
     public void setEmail(@Nullable String email) {
         if (_email != null && _email.equals(email)) {
-            getAuthManager().requestNewAuthToken(false);
             return;
         }
 
@@ -328,7 +327,6 @@ private static final String TAG = "IterableApi";
      */
     public void setUserId(@Nullable String userId) {
         if (_userId != null && _userId.equals(userId)) {
-            getAuthManager().requestNewAuthToken(false);
             return;
         }
 
