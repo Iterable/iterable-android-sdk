@@ -326,7 +326,7 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
-        if (userId != null && _userId.equals(userId)) {
+        if (_userId != null && _userId.equals(userId)) {
             return;
         }
 
