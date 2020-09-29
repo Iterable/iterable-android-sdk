@@ -66,7 +66,7 @@ public class IterableAuthManager {
                         }
                     });
                 }
-            } else {
+            } else if (!hasFailedPriorAuth) {
                 //setFlag to resync auth after current auth returns
                 requiresAuthRefresh = true;
             }
