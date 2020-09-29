@@ -6,6 +6,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.util.Future;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -76,10 +77,14 @@ public class IterableAuthManager {
     }
 
     public void queueExpirationRefresh(String encodedJWT) {
-        long expirationTimeSeconds = decodedExpiration(encodedJWT);
-        long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - authRefreshPeriod - IterableUtil.currentTimeMillis();
-        if (triggerExpirationRefreshTime > 0) {
-            scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
+        try {
+            long expirationTimeSeconds = decodedExpiration(encodedJWT);
+            long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - authRefreshPeriod - IterableUtil.currentTimeMillis();
+            if (triggerExpirationRefreshTime > 0) {
+                scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while parsing JWT for the expiration: " + encodedJWT, e);
         }
     }
 
@@ -109,16 +114,12 @@ public class IterableAuthManager {
         }
     }
 
-    private static long decodedExpiration(String encodedJWT) {
+    private static long decodedExpiration(String encodedJWT) throws Exception {
         long exp = 0;
-        try {
             String[] split = encodedJWT.split("\\.");
             String body = getJson(split[1]);
             JSONObject jObj = new JSONObject(body);
             exp = jObj.getLong(expirationString);
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while parsing JWT for the expiration: " + encodedJWT, e);
-        }
         return exp;
     }
 
