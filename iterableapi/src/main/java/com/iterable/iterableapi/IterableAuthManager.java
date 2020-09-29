@@ -52,7 +52,6 @@ public class IterableAuthManager {
                                 queueExpirationRefresh(authToken);
                             }
                             IterableApi.getInstance().setAuthToken(authToken);
-                            IterableApi.getInstance().setAuthToken(authToken);
                             pendingAuth = false;
                             reSyncAuth();
                         }
