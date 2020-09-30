@@ -214,7 +214,7 @@ public class IterableConfig {
          */
         @NonNull
         public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
-            this.expiringAuthTokenRefreshPeriod = period*1000L;
+            this.expiringAuthTokenRefreshPeriod = period * 1000L;
             return this;
         }
 
