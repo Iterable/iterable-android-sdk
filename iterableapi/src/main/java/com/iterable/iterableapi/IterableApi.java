@@ -1397,6 +1397,7 @@ private static final String TAG = "IterableApi";
             disablePush();
         }
         getInAppManager().reset();
+        getAuthManager().clearRefreshTimer();
     }
 
     private void onLogIn() {

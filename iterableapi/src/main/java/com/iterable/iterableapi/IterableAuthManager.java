@@ -28,7 +28,6 @@ public class IterableAuthManager {
     private boolean requiresAuthRefresh;
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long expiringAuthTokenRefreshPeriod) {
-        timer = new Timer(true);
         this.api = api;
         this.authHandler = authHandler;
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
@@ -76,6 +75,7 @@ public class IterableAuthManager {
     }
 
     public void queueExpirationRefresh(String encodedJWT) {
+        clearRefreshTimer();
         try {
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
             long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
@@ -101,7 +101,6 @@ public class IterableAuthManager {
     }
 
     private void scheduleAuthTokenRefresh(long timeDuration) {
-        timer.cancel();
         timer = new Timer(true);
         try {
             timer.schedule(new TimerTask() {
@@ -127,6 +126,13 @@ public class IterableAuthManager {
     private static String getJson(String strEncoded) throws UnsupportedEncodingException {
         byte[] decodedBytes = Base64.decode(strEncoded, Base64.URL_SAFE);
         return new String(decodedBytes, "UTF-8");
+    }
+
+    void clearRefreshTimer() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 }
 
