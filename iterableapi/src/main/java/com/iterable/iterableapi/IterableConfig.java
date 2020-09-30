@@ -210,11 +210,11 @@ public class IterableConfig {
 
         /**
          * Set a custom period before an auth token expires to automatically retrieve a new token
-         * @param expiringAuthTokenRefreshPeriod period in milliseconds
+         * @param period in seconds
          */
         @NonNull
-        public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long expiringAuthTokenRefreshPeriod) {
-            this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
+        public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
+            this.expiringAuthTokenRefreshPeriod = period*1000L;
             return this;
         }
 
