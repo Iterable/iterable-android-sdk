@@ -220,11 +220,13 @@ private static final String TAG = "IterableApi";
     }
 
     void setAuthToken(String authToken) {
-        if (_authToken != authToken) {
-            _authToken = authToken;
-            storeAuthData();
+        if (isInitialized()) {
+            if (_authToken != authToken) {
+                _authToken = authToken;
+                storeAuthData();
+            }
+            onLogIn();
         }
-        onLogIn();
     }
 
     HashMap getDeviceAttributes() {
