@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.7-beta2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.7-beta2)
+#### Added
+- Added authentication support
+
 ## [3.2.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.6)
 #### Added
 - Added a new method - `setAutoDisplayPaused` to `InAppManager`. This method pauses the display of in-app messages and can be used to prevent interruptions in certain areas of your app.
