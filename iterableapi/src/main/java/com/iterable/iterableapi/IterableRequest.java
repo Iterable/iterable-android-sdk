@@ -162,7 +162,12 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
-                    handleFailure("Invalid API Key", jsonResponse);
+                    if (jsonResponse.has("code") && jsonResponse.getString("code").equals("InvalidJwtPayload")) {
+                        handleFailure("JWT Authorization header error", jsonResponse);
+                        IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
+                    } else {
+                        handleFailure("Invalid API Key", jsonResponse);
+                    }
                 } else if (responseCode >= 400) {
                     String errorMessage = "Invalid Request";
 
@@ -179,6 +184,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                         if (jsonError != null) {
                             handleFailure("Could not parse json: " + jsonError, null);
                         } else if (jsonResponse != null) {
+                            IterableApi.getInstance().getAuthManager().resetFailedAuth();
                             handleSuccess(jsonResponse);
                         } else {
                             handleFailure("Response is not a JSON object", jsonResponse);

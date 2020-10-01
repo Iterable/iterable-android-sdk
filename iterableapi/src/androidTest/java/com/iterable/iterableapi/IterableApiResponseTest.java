@@ -180,6 +180,25 @@ public class IterableApiResponseTest {
     }
 
     @Test
+    public void testResponseCode401AuthError() throws Exception {
+        final CountDownLatch signal = new CountDownLatch(1);
+
+        stubAnyRequestReturningStatusCode(401, "{\"msg\":\"JWT Authorization header error\",\"code\":\"InvalidJwtPayload\"}");
+
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertEquals("JWT Authorization header error", reason);
+                signal.countDown();
+            }
+        });
+        new IterableRequest().execute(request);
+
+        server.takeRequest(1, TimeUnit.SECONDS);
+        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+    }
+
+    @Test
     public void testResponseCode500() throws Exception {
         for (int i = 0; i < 5; i++) {
             stubAnyRequestReturningStatusCode(500, "{}");

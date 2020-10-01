@@ -60,6 +60,16 @@ public class IterableConfig {
      */
     final double inAppDisplayInterval;
 
+    /**
+     * Custom auth handler that can be used to control retrieving and storing an auth token
+     */
+    final IterableAuthHandler authHandler;
+
+    /**
+     * Duration prior to an auth expiration that a new auth token should be requested.
+     */
+    final long expiringAuthTokenRefreshPeriod;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -70,6 +80,8 @@ public class IterableConfig {
         logLevel = builder.logLevel;
         inAppHandler = builder.inAppHandler;
         inAppDisplayInterval = builder.inAppDisplayInterval;
+        authHandler = builder.authHandler;
+        expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
     }
 
     public static class Builder {
@@ -82,6 +94,8 @@ public class IterableConfig {
         private int logLevel = Log.ERROR;
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
         private double inAppDisplayInterval = 30.0;
+        private IterableAuthHandler authHandler;
+        private long expiringAuthTokenRefreshPeriod = 60000L;
 
         public Builder() {}
 
@@ -181,6 +195,26 @@ public class IterableConfig {
         @NonNull
         public Builder setInAppDisplayInterval(double inAppDisplayInterval) {
             this.inAppDisplayInterval = inAppDisplayInterval;
+            return this;
+        }
+
+        /**
+         * Set a custom auth handler that can be used to retrieve a new auth token
+         * @param authHandler Auth handler provided by the app
+         */
+        @NonNull
+        public Builder setAuthHandler(@NonNull IterableAuthHandler authHandler) {
+            this.authHandler = authHandler;
+            return this;
+        }
+
+        /**
+         * Set a custom period before an auth token expires to automatically retrieve a new token
+         * @param period in seconds
+         */
+        @NonNull
+        public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
+            this.expiringAuthTokenRefreshPeriod = period * 1000L;
             return this;
         }
 
