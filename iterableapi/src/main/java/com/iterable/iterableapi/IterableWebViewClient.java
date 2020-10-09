@@ -45,10 +45,8 @@ class IterableWebViewClient extends WebViewClient {
      */
     @Override
     public void onPageFinished(WebView view, String url) {
-        IterableLogger.v("Progress", "Page Load Finished Triggered");
         htmlView = view;
         inAppHTMLNotification.setLoaded(true);
-        IterableLogger.v("Progress", "Calling resize script from onpageload");
         view.loadUrl(RESIZE_SCRIPT);
     }
 
@@ -109,6 +107,7 @@ class IterableWebViewClient extends WebViewClient {
         Animation anim = AnimationUtils.loadAnimation(IterableApi.getInstance().getMainActivityContext(),
                 animationResource);
         view.startAnimation(anim);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             view.postOnAnimationDelayed(parentViewDismissRunnable, 400);
         } else {

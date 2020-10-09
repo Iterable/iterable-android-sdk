@@ -40,6 +40,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private static final String CALLBACK_ON_CANCEL = "CallbackOnCancel";
     private static final String MESSAGE_ID = "MessageId";
     private static final String INAPP_OPEN_TRACKED = "InAppOpenTracked";
+    private static final String INAPP_BGALPHA = "InAppBgAlpha";
+    private static final String INAPP_BGCOLOR = "InAppBgColor";
+    private static final String INAPP_SHOULD_ANIMATE = "shouldAnimate";
 
     private static final int DELAY_THRESHOLD_MS = 500;
 
@@ -53,9 +56,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private boolean callbackOnCancel = false;
     private String htmlString;
     private String messageId;
+
+    //TODO: To delete this variable in future iterations
     private double backgroundAlpha;
     private Rect insetPadding;
-    private boolean shouldAnimate = true;
+    private boolean shouldAnimate;
+    private double inAppBackgroundAlpha;
+    private String inAppBackgroundColor;
 
     /**
      * Creates a static instance of the notification
@@ -64,10 +71,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * @return notification instance
      */
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
-        return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, true);
+        return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
     }
 
-    public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding, @NonNull boolean shouldAnimate) {
+    public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding, @NonNull boolean shouldAnimate, IterableInAppMessage.InAppBgColor inAppBgColor) {
 
         notification = new IterableInAppFragmentHTMLNotification();
         Bundle args = new Bundle();
@@ -76,7 +83,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         args.putString(MESSAGE_ID, messageId);
         args.putDouble(BACKGROUND_ALPHA, backgroundAlpha);
         args.putParcelable(INSET_PADDING, padding);
-        notification.shouldAnimate = shouldAnimate;
+        args.putString(INAPP_BGCOLOR, inAppBgColor.bgHexColor);
+        args.putDouble(INAPP_BGALPHA, inAppBgColor.bgAlpha);
+        args.putBoolean(INAPP_SHOULD_ANIMATE, shouldAnimate);
+
         IterableInAppFragmentHTMLNotification.clickCallback = clickCallback;
         IterableInAppFragmentHTMLNotification.location = location;
         notification.setArguments(args);
@@ -112,6 +122,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             messageId = args.getString(MESSAGE_ID);
             backgroundAlpha = args.getDouble(BACKGROUND_ALPHA);
             insetPadding = args.getParcelable(INSET_PADDING);
+            inAppBackgroundAlpha = args.getDouble(INAPP_BGALPHA);
+            inAppBackgroundColor = args.getString(INAPP_BGCOLOR, null);
+            shouldAnimate = args.getBoolean(INAPP_SHOULD_ANIMATE);
         }
         notification = this;
     }
@@ -134,7 +147,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      */
     public void setLoaded(boolean loaded) {
         this.loaded = loaded;
-        IterableLogger.v("Progress", "Showing Dialog view as page is loaded...");
     }
 
     @NonNull
@@ -151,19 +163,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     }
                 };
 
-                if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
-                    super.dismiss();
+                if (webView != null && webView.webViewClient != null) {
+                    webView.webViewClient.animateClose(webView, dismissFragmentRunnable);
                 } else {
-//                    Might have to uncomment below code if the exiting fading out animation of background is not sufficient
-//                    WindowManager.LayoutParams wlp = getWindow().getAttributes();
-//                    wlp.dimAmount = 0.0f;
-//                    wlp.flags = WindowManager.LayoutParams.DIM_AMOUNT_CHANGED;
-//                    getWindow().setAttributes(wlp);
-                    if (webView != null && webView.webViewClient != null) {
-                        webView.webViewClient.animateClose(webView, dismissFragmentRunnable);
-                    } else {
-                        super.dismiss();
-                    }
+                    super.dismiss();
                 }
             }
         };
@@ -186,6 +189,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
         if (insetPadding.bottom == 0 && insetPadding.top == 0) {
             getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
@@ -203,7 +207,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                IterableLogger.v("Progress", "calling resize script due to orientation change");
                                 webView.loadUrl(IterableWebViewClient.RESIZE_SCRIPT);
                             }
                         }, 1000);
@@ -227,14 +230,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private void hideDialogView() {
         try {
-            IterableLogger.v("Progress", "Hiding Dialog View..");
-//            getDialog().getWindow().getDecorView().setAlpha(0.0f);
             webView.setAlpha(0.0f);
             webView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-
-                    IterableLogger.v("Progress", "Showing Dialog View because of delay threshold");
                     showDialogView();
                     webView.webViewClient.showWebView();
                 }
@@ -246,13 +245,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private void showDialogView() {
         try {
-            IterableLogger.v("Progress", "showing Dialog View..");
-//            getDialog().getWindow().getDecorView().setAlpha(1.0f);
             webView.setAlpha(1.0f);
+            if (webView.webViewClient.htmlView == null) {
+                IterableLogger.d(TAG, "Html not completely loaded even after threshold wait. Animation may not succeed.");
+            }
         } catch (NullPointerException e) {
             IterableLogger.e(TAG, "View not present. Failed to show inapp", e);
         }
     }
+
     /**
      * Sets up the webview and the dialog layout
      */
@@ -344,14 +345,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
                         //Set background window fading if animation and backgroundAlpha/opacity configured
-                        //TODO: Uncomment below  two lines
-//                        if (shouldAnimate && notification.backgroundAlpha > 0) {
-                        if (shouldAnimate) {
+                        if (shouldAnimate && (inAppBackgroundColor != null)) {
+                            window.setBackgroundDrawable(new ColorDrawable(Color.parseColor(inAppBackgroundColor)));
                             WindowManager.LayoutParams wlp = window.getAttributes();
-//                            wlp.dimAmount = (float) notification.backgroundAlpha;
-                            wlp.dimAmount = 0.4f;
+                            wlp.dimAmount = (float) inAppBackgroundAlpha;
                             wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
                             window.setAttributes(wlp);
+                            // Uncomment below line if status bar transparency is needed non-fullscreen in-apps
+                            //window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                         }
                         RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
                         webView.setLayoutParams(webViewLayout);

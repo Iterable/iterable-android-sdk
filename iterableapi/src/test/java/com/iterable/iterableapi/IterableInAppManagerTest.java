@@ -100,8 +100,8 @@ public class IterableInAppManagerTest extends BaseTest {
     public void testDoNotShowMultipleTimes() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
         FragmentActivity activity = controller.get();
-        boolean shownFirstTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, false, IterableInAppLocation.IN_APP);
-        boolean shownSecondTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, false, IterableInAppLocation.IN_APP);
+        boolean shownFirstTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
+        boolean shownSecondTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
         assertTrue(shownFirstTime);
         assertFalse(shownSecondTime);
         ShadowDialog.getLatestDialog().dismiss();
@@ -112,7 +112,7 @@ public class IterableInAppManagerTest extends BaseTest {
     public void testIfDialogDoesNotDestroysAfterConfigurationChange() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
         FragmentActivity activity = controller.get();
-        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, false, IterableInAppLocation.IN_APP));
+        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP));
         controller.configurationChange();
         assertEquals(1, activity.getFragmentManager().getFragments().size());
         ShadowDialog.getLatestDialog().dismiss();
@@ -123,7 +123,7 @@ public class IterableInAppManagerTest extends BaseTest {
     public void testIfDialogFragmentExistAfterRotation() throws Exception {
         ActivityController controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
         FragmentActivity activity = (FragmentActivity) controller.get();
-        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, false, IterableInAppLocation.IN_APP));
+        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP));
         controller.configurationChange();
         assertEquals(1, activity.getSupportFragmentManager().getFragments().size());
         ShadowDialog.getLatestDialog().dismiss();

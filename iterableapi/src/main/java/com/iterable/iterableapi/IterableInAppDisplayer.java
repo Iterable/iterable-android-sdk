@@ -29,7 +29,8 @@ class IterableInAppDisplayer {
                     clickCallback,
                     message.getContent().backgroundAlpha,
                     message.getContent().padding,
-                    message.getContent().shouldAnimate,
+                    message.getContent().inAppDisplaySetting.shouldAnimate,
+                    message.getContent().inAppDisplaySetting.inAppBgColor,
                     true, location);
         }
         return false;
@@ -44,7 +45,7 @@ class IterableInAppDisplayer {
      * @param backgroundAlpha
      * @param padding
      */
-    static boolean showIterableFragmentNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull String messageId, @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, @NonNull Rect padding, boolean shouldAnimate, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
+    static boolean showIterableFragmentNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull String messageId, @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha,  @NonNull Rect padding, boolean shouldAnimate, IterableInAppMessage.InAppBgColor bgColor, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
         if (context instanceof FragmentActivity) {
             FragmentActivity currentActivity = (FragmentActivity) context;
             if (htmlString != null) {
@@ -53,7 +54,7 @@ class IterableInAppDisplayer {
                     return false;
                 }
 
-                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, shouldAnimate);
+                IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, shouldAnimate, bgColor);
                 notification.show(currentActivity.getSupportFragmentManager(), "iterable_in_app");
                 return true;
             }

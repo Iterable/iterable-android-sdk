@@ -161,6 +161,9 @@ public final class IterableConstants {
     public static final String LOCATION_HEADER_FIELD = "Location";
 
     //In-App Constants
+    public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";
+    public static final String ITERABLE_IN_APP_BGCOLOR_HEX      = "hex";
+    public static final String ITERABLE_IN_APP_BGCOLOR          = "bgColor";
     public static final String ITERABLE_IN_APP_BACKGROUND_COLOR = "backgroundColor";
     public static final String ITERABLE_IN_APP_BACKGROUND_ALPHA = "backgroundAlpha";
     public static final String ITERABLE_IN_APP_BODY             = "body";

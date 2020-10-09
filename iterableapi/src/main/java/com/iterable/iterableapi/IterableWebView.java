@@ -31,8 +31,6 @@ class IterableWebView extends WebView {
         setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
-                IterableLogger.v("Progress", "on progress changed - " + newProgress);
-                IterableLogger.v("Progress", "calling resize script from on Progress changed");
                 loadUrl(RESIZE_SCRIPT);
             }
         });
