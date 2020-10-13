@@ -220,10 +220,16 @@ private static final String TAG = "IterableApi";
     }
 
     void setAuthToken(String authToken) {
+        setAuthToken(authToken, false);
+    }
+
+    void setAuthToken(String authToken, boolean bypassAuth) {
         if (isInitialized()) {
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
                 storeAuthData();
+                onLogIn();
+            } else if (bypassAuth) {
                 onLogIn();
             }
         }
