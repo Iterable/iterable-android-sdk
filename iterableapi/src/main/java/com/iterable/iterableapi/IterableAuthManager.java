@@ -70,7 +70,7 @@ public class IterableAuthManager {
             }
 
         } else {
-            IterableApi.getInstance().setAuthToken(null);
+            IterableApi.getInstance().setAuthToken(null, true);
         }
     }
 
