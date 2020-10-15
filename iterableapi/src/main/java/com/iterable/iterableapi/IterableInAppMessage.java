@@ -215,7 +215,7 @@ public class IterableInAppMessage {
     }
 
     @NonNull
-    Date getExpiresAt() {
+    public Date getExpiresAt() {
         return expiresAt;
     }
 
