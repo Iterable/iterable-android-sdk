@@ -33,6 +33,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
+import java.util.IllegalFormatException;
+
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
 
     private static final String BACK_BUTTON = "itbl://backButton";
@@ -281,14 +283,18 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             ColorDrawable transparentDrawable = new ColorDrawable(Color.TRANSPARENT);
             int backgroundColor;
             try {
-                backgroundColor = Color.parseColor(inAppBackgroundColor);
+                String backgroundAlphaHexValue = String.format("%02X", (0xFF & (int) (inAppBackgroundAlpha * 255)));
+                String backgroundColorWithAlpha = "#" + backgroundAlphaHexValue + inAppBackgroundColor.substring(1);
+                backgroundColor = Color.parseColor(backgroundColorWithAlpha);
+            } catch (IllegalFormatException e) {
+                IterableLogger.e(TAG, "Failed to add alpha values to background. Background will not be animated");
+                return;
             } catch (IllegalArgumentException e) {
                 IterableLogger.e(TAG, "Background color could not be identified for input string \"" + inAppBackgroundColor + "\". Failed to animate background.");
                 return;
             }
-            ColorDrawable backgroundColorDrawable = new ColorDrawable(backgroundColor);
-            backgroundColorDrawable.setAlpha((int) inAppBackgroundAlpha);
 
+            ColorDrawable backgroundColorDrawable = new ColorDrawable(backgroundColor);
             Drawable[] layers = new Drawable[2];
             layers[0] = transparentDrawable;
             layers[1] = backgroundColorDrawable;
