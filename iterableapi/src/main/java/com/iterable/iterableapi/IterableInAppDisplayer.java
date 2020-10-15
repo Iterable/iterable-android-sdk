@@ -29,8 +29,8 @@ class IterableInAppDisplayer {
                     clickCallback,
                     message.getContent().backgroundAlpha,
                     message.getContent().padding,
-                    message.getContent().inAppDisplaySetting.shouldAnimate,
-                    message.getContent().inAppDisplaySetting.inAppBgColor,
+                    message.getContent().inAppDisplaySettings.shouldAnimate,
+                    message.getContent().inAppDisplaySettings.inAppBgColor,
                     true, location);
         }
         return false;

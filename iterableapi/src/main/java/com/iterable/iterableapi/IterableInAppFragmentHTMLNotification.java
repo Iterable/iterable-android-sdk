@@ -5,9 +5,12 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
@@ -22,6 +25,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.webkit.JavascriptInterface;
 import android.widget.RelativeLayout;
 
@@ -42,7 +47,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private static final String INAPP_OPEN_TRACKED = "InAppOpenTracked";
     private static final String INAPP_BGALPHA = "InAppBgAlpha";
     private static final String INAPP_BGCOLOR = "InAppBgColor";
-    private static final String INAPP_SHOULD_ANIMATE = "shouldAnimate";
+    private static final String INAPP_SHOULD_ANIMATE = "ShouldAnimate";
 
     private static final int DELAY_THRESHOLD_MS = 500;
 
@@ -156,22 +161,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             @Override
             public void onBackPressed() {
                 IterableInAppFragmentHTMLNotification.this.onBackPressed();
-                Runnable dismissFragmentRunnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        getInstance().dismiss();
-                    }
-                };
-
-                if (webView != null && webView.webViewClient != null) {
-                    webView.webViewClient.animateClose(webView, dismissFragmentRunnable);
-                } else {
-                    super.dismiss();
-                }
+                hideWebView();
+                super.dismiss();
             }
         };
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-            @Override public void onCancel(DialogInterface dialog) {
+            @Override
+            public void onCancel(DialogInterface dialog) {
                 if (callbackOnCancel && clickCallback != null) {
                     clickCallback.execute(null);
                 }
@@ -180,6 +176,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         if (insetPadding.bottom == 0 && insetPadding.top == 0) {
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
+            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
         return dialog;
     }
@@ -195,7 +193,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
-        webView.createWithHtml(this, htmlString, shouldAnimate, getInAppLayout(insetPadding));
+        webView.createWithHtml(this, htmlString);
         webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
 
         if (orientationListener == null) {
@@ -224,34 +222,103 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (savedInstanceState == null || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
         }
-        hideDialogView();
+        prepareToShowWebView();
         return relativeLayout;
     }
 
-    private void hideDialogView() {
+    private void prepareToShowWebView() {
         try {
             webView.setAlpha(0.0f);
+            webView.setVisibility(View.GONE);
             webView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    showDialogView();
-                    webView.webViewClient.showWebView();
+                    showAndAnimateWebView();
                 }
             }, DELAY_THRESHOLD_MS);
+            loadBackground();
         } catch (NullPointerException e) {
             IterableLogger.e(TAG, "View not present. Failed to hide before resizing inapp");
         }
     }
 
-    private void showDialogView() {
-        try {
-            webView.setAlpha(1.0f);
-            if (webView.webViewClient.htmlView == null) {
-                IterableLogger.d(TAG, "Html not completely loaded even after threshold wait. Animation may not succeed.");
-            }
-        } catch (NullPointerException e) {
-            IterableLogger.e(TAG, "View not present. Failed to show inapp", e);
+    private void loadBackground() {
+        if (shouldAnimate && (inAppBackgroundColor != null)) {
+            ColorDrawable transparency = new ColorDrawable(Color.TRANSPARENT);
+            ColorDrawable backgroundColor = new ColorDrawable(Color.parseColor(inAppBackgroundColor));
+            backgroundColor.setAlpha((int) inAppBackgroundAlpha);
+
+            Drawable[] layers = new Drawable[2];
+            layers[0] = transparency;
+            layers[1] = backgroundColor;
+            TransitionDrawable transitionDrawable = new TransitionDrawable(layers);
+            getDialog().getWindow().setBackgroundDrawable(transitionDrawable);
+            transitionDrawable.startTransition(300);
         }
+    }
+
+    private void showAndAnimateWebView() {
+        webView.setAlpha(1.0f);
+        webView.setVisibility(View.VISIBLE);
+        if (shouldAnimate) {
+            int animationResource;
+            InAppLayout inAppLayout = getInAppLayout(insetPadding);
+            switch (inAppLayout) {
+                case TOP:
+                    animationResource = R.anim.slide_down_custom;
+                    break;
+                case CENTER:
+                case FULLSCREEN:
+                    animationResource = R.anim.fade_in_custom;
+                    break;
+                case BOTTOM:
+                    animationResource = R.anim.slide_up_custom;
+                    break;
+                default:
+                    animationResource = R.anim.fade_in_custom;
+            }
+            Animation anim = AnimationUtils.loadAnimation(getContext(), animationResource);
+            webView.startAnimation(anim);
+        }
+    }
+
+    private void hideWebView() {
+        if (shouldAnimate) {
+            int animationResource;
+            InAppLayout inAppLayout = getInAppLayout(insetPadding);
+
+            switch (inAppLayout) {
+                case TOP:
+                    animationResource = R.anim.top_exit;
+                    break;
+                case CENTER:
+                case FULLSCREEN:
+                    animationResource = R.anim.fade_out_custom;
+                    break;
+                case BOTTOM:
+                    animationResource = R.anim.bottom_exit;
+                    break;
+                default:
+                    animationResource = R.anim.fade_out_custom;
+            }
+            Animation anim = AnimationUtils.loadAnimation(getContext(),
+                    animationResource);
+            webView.startAnimation(anim);
+        }
+
+        Runnable dismissWebviewRunnable = new Runnable() {
+            @Override
+            public void run() {
+                IterableInAppFragmentHTMLNotification.super.dismiss();
+            }
+        };
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            webView.postOnAnimationDelayed(dismissWebviewRunnable, 400);
+        } else {
+            dismissWebviewRunnable.run();
+        }
+
     }
 
     /**
@@ -344,16 +411,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         window.setLayout(webViewWidth, webViewHeight);
                         getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
-                        //Set background window fading if animation and backgroundAlpha/opacity configured
-                        if (shouldAnimate && (inAppBackgroundColor != null)) {
-                            window.setBackgroundDrawable(new ColorDrawable(Color.parseColor(inAppBackgroundColor)));
-                            WindowManager.LayoutParams wlp = window.getAttributes();
-                            wlp.dimAmount = (float) inAppBackgroundAlpha;
-                            wlp.flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-                            window.setAttributes(wlp);
-                            // Uncomment below line if status bar transparency is needed non-fullscreen in-apps
-                            //window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-                        }
                         RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
                         webView.setLayoutParams(webViewLayout);
                     }
@@ -390,4 +447,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             return InAppLayout.CENTER;
         }
     }
+}
+
+enum InAppLayout {
+    TOP,
+    BOTTOM,
+    CENTER,
+    FULLSCREEN
 }

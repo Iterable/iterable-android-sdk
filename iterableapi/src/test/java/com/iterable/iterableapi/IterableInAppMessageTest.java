@@ -37,11 +37,19 @@ public class IterableInAppMessageTest {
                 //Stripping out HTML content from the copy
                 JSONObject messageJsonHTMLStripped = new JSONObject(messageJson.toString());
                 JSONObject content = (JSONObject) messageJsonHTMLStripped.get("content");
+                JSONObject inAppDisplaySettings = content.getJSONObject("inAppDisplaySettings");
+                assertEquals( (Boolean) inAppDisplaySettings.get("shouldAnimate"), true);
+                JSONObject bgColor = (JSONObject) inAppDisplaySettings.get("bgColor");
+                assertNotNull(bgColor.get("hex"));
+                assertNotNull(bgColor.get("alpha"));
                 content.remove("html");
                 messageJsonHTMLStripped.put("content", content);
 
                 IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
                 assertNotNull(message);
+                assertNotNull(message.getContent().inAppDisplaySettings.inAppBgColor.bgHexColor);
+                assertNotNull(message.getContent().inAppDisplaySettings.inAppBgColor.bgAlpha);
+                assertNotNull(message.getContent().inAppDisplaySettings.shouldAnimate);
                 JSONAssert.assertEquals(messageJsonHTMLStripped, message.toJSONObject(), JSONCompareMode.STRICT_ORDER);
             }
         }

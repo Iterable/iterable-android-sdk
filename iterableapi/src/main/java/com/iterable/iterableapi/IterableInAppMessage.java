@@ -12,11 +12,6 @@ import org.json.JSONObject;
 
 import java.util.Date;
 
-import static com.iterable.iterableapi.IterableConstants.ITERABLE_IN_APP_BGCOLOR;
-import static com.iterable.iterableapi.IterableConstants.ITERABLE_IN_APP_BGCOLOR_ALPHA;
-import static com.iterable.iterableapi.IterableConstants.ITERABLE_IN_APP_BGCOLOR_HEX;
-import static com.iterable.iterableapi.IterableConstants.ITERABLE_IN_APP_DEFAULT_ANIMATION;
-
 public class IterableInAppMessage {
     private static final String TAG = "IterableInAppMessage";
 
@@ -121,13 +116,13 @@ public class IterableInAppMessage {
         public String html;
         public final Rect padding;
         public final double backgroundAlpha;
-        public InAppDisplaySetting inAppDisplaySetting;
+        public InAppDisplaySettings inAppDisplaySettings;
 
-        Content(String html, Rect padding, double backgroundAlpha, boolean shouldAnimate, InAppDisplaySetting inAppDisplaySetting) {
+        Content(String html, Rect padding, double backgroundAlpha, boolean shouldAnimate, InAppDisplaySettings inAppDisplaySettings) {
             this.html = html;
             this.padding = padding;
             this.backgroundAlpha = backgroundAlpha;
-            this.inAppDisplaySetting = inAppDisplaySetting;
+            this.inAppDisplaySettings = inAppDisplaySettings;
         }
 
         @Override
@@ -150,11 +145,11 @@ public class IterableInAppMessage {
         }
     }
 
-    public static class InAppDisplaySetting {
+    public static class InAppDisplaySettings {
         boolean shouldAnimate;
         InAppBgColor inAppBgColor;
 
-        public InAppDisplaySetting(boolean shouldAnimate, InAppBgColor inAppBgColor) {
+        public InAppDisplaySettings(boolean shouldAnimate, InAppBgColor inAppBgColor) {
             this.shouldAnimate = shouldAnimate;
             this.inAppBgColor = inAppBgColor;
         }
@@ -342,19 +337,19 @@ public class IterableInAppMessage {
         JSONObject inAppDisplaySettingsJson = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
         Rect padding = getPaddingFromPayload(inAppDisplaySettingsJson);
         double backgroundAlpha = contentJson.optDouble(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, 0);
-        boolean shouldAnimate = inAppDisplaySettingsJson.optBoolean(ITERABLE_IN_APP_DEFAULT_ANIMATION, true);
-        JSONObject bgColorSetting = inAppDisplaySettingsJson.optJSONObject(ITERABLE_IN_APP_BGCOLOR);
+        boolean shouldAnimate = inAppDisplaySettingsJson.optBoolean(IterableConstants.ITERABLE_IN_APP_SHOULD_ANIMATE, false);
+        JSONObject bgColorJson = inAppDisplaySettingsJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_BGCOLOR);
 
-//        String bgColorInHex = "#00D3D3D3";
-//        double bgAlpha = 0.3f;
+//        String bgColorInHex = "#70D3D3D3";
+//        double bgAlpha = 150f;
         String bgColorInHex = null;
         double bgAlpha = 0.0f;
-        if (bgColorSetting != null) {
-            bgColorInHex = bgColorSetting.optString(ITERABLE_IN_APP_BGCOLOR_HEX);
-            bgAlpha = bgColorSetting.optDouble(ITERABLE_IN_APP_BGCOLOR_ALPHA);
+        if (bgColorJson != null) {
+            bgColorInHex = bgColorJson.optString(IterableConstants.ITERABLE_IN_APP_BGCOLOR_HEX);
+            bgAlpha = bgColorJson.optDouble(IterableConstants.ITERABLE_IN_APP_BGCOLOR_ALPHA);
         }
 
-        InAppDisplaySetting inAppDisplaySetting = new InAppDisplaySetting(shouldAnimate, new InAppBgColor(bgColorInHex, bgAlpha));
+        InAppDisplaySettings inAppDisplaySettings = new InAppDisplaySettings(shouldAnimate, new InAppBgColor(bgColorInHex, bgAlpha));
         JSONObject triggerJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_TRIGGER);
         Trigger trigger = Trigger.fromJSONObject(triggerJson);
         JSONObject customPayload = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD);
@@ -372,7 +367,7 @@ public class IterableInAppMessage {
 
         IterableInAppMessage message = new IterableInAppMessage(
                 messageId,
-                new Content(html, padding, backgroundAlpha, shouldAnimate, inAppDisplaySetting),
+                new Content(html, padding, backgroundAlpha, shouldAnimate, inAppDisplaySettings),
                 customPayload,
                 createdAt,
                 expiresAt,
@@ -410,12 +405,12 @@ public class IterableInAppMessage {
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
             inAppDisplaySettingsJson = encodePaddingRectToJson(content.padding);
 
-            inAppDisplaySettingsJson.put(ITERABLE_IN_APP_DEFAULT_ANIMATION, content.inAppDisplaySetting.shouldAnimate);
-            if (content.inAppDisplaySetting.inAppBgColor != null && content.inAppDisplaySetting.inAppBgColor.bgHexColor != null) {
+            inAppDisplaySettingsJson.put(IterableConstants.ITERABLE_IN_APP_SHOULD_ANIMATE, content.inAppDisplaySettings.shouldAnimate);
+            if (content.inAppDisplaySettings.inAppBgColor != null && content.inAppDisplaySettings.inAppBgColor.bgHexColor != null) {
                 JSONObject bgColorJson = new JSONObject();
-                bgColorJson.put(ITERABLE_IN_APP_BGCOLOR_ALPHA, content.inAppDisplaySetting.inAppBgColor.bgAlpha);
-                bgColorJson.putOpt(ITERABLE_IN_APP_BGCOLOR_HEX, content.inAppDisplaySetting.inAppBgColor.bgHexColor);
-                inAppDisplaySettingsJson.put(ITERABLE_IN_APP_BGCOLOR, bgColorJson);
+                bgColorJson.put(IterableConstants.ITERABLE_IN_APP_BGCOLOR_ALPHA, content.inAppDisplaySettings.inAppBgColor.bgAlpha);
+                bgColorJson.putOpt(IterableConstants.ITERABLE_IN_APP_BGCOLOR_HEX, content.inAppDisplaySettings.inAppBgColor.bgHexColor);
+                inAppDisplaySettingsJson.put(IterableConstants.ITERABLE_IN_APP_BGCOLOR, bgColorJson);
             }
 
             contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS, inAppDisplaySettingsJson);
