@@ -208,6 +208,7 @@ public final class IterableConstants {
     public static final String ITERABLE_INBOX_IMP_DISPLAY_COUNT          = "displayCount";
     public static final String ITERABLE_INBOX_IMP_DISPLAY_DURATION       = "displayDuration";
     public static final String ITERABLE_IN_APP_SHOULD_ANIMATE            = "shouldAnimate";
+    public static final int ITERABLE_IN_APP_ANIMATION_DURATION           = 500;
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";

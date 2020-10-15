@@ -1,9 +1,6 @@
 package com.iterable.iterableapi;
 
-import android.os.Build;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 

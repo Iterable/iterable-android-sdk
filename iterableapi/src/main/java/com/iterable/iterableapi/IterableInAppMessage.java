@@ -340,8 +340,6 @@ public class IterableInAppMessage {
         boolean shouldAnimate = inAppDisplaySettingsJson.optBoolean(IterableConstants.ITERABLE_IN_APP_SHOULD_ANIMATE, false);
         JSONObject bgColorJson = inAppDisplaySettingsJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_BGCOLOR);
 
-//        String bgColorInHex = "#70D3D3D3";
-//        double bgAlpha = 150f;
         String bgColorInHex = null;
         double bgAlpha = 0.0f;
         if (bgColorJson != null) {

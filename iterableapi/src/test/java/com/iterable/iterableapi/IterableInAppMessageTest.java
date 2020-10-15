@@ -38,7 +38,7 @@ public class IterableInAppMessageTest {
                 JSONObject messageJsonHTMLStripped = new JSONObject(messageJson.toString());
                 JSONObject content = (JSONObject) messageJsonHTMLStripped.get("content");
                 JSONObject inAppDisplaySettings = content.getJSONObject("inAppDisplaySettings");
-                assertEquals( (Boolean) inAppDisplaySettings.get("shouldAnimate"), true);
+                assertEquals((Boolean) inAppDisplaySettings.get("shouldAnimate"), true);
                 JSONObject bgColor = (JSONObject) inAppDisplaySettings.get("bgColor");
                 assertNotNull(bgColor.get("hex"));
                 assertNotNull(bgColor.get("alpha"));
