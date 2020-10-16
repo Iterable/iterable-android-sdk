@@ -265,7 +265,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private void prepareToShowWebView() {
         try {
             webView.setAlpha(0.0f);
-            webView.setVisibility(View.GONE);
             webView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
