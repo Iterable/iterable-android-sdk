@@ -153,9 +153,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
+            // For TOP layout in-app, status bar will be opaque so that the inapp content does not overlap with translucent status bar.
+            // For other non-fullscreen in-apps layouts (BOTTOM and CENTER), status bar will be translucent
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
         return dialog;
@@ -167,7 +169,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-        if (insetPadding.bottom == 0 && insetPadding.top == 0) {
+        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
         webView = new IterableWebView(getContext());
@@ -250,7 +252,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (clickCallback != null) {
             clickCallback.execute(Uri.parse(url));
         }
-        dismiss();
+        hideWebView();
     }
 
     /**
@@ -277,16 +279,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     private void loadBackground() {
-        if (shouldAnimate && (inAppBackgroundColor != null)) {
-            ColorDrawable transparentDrawable = new ColorDrawable(Color.TRANSPARENT);
+        if (inAppBackgroundColor != null) {
             int backgroundColorWithAlpha;
             try {
                 backgroundColorWithAlpha = ColorUtils.setAlphaComponent(Color.parseColor(inAppBackgroundColor), (int) (inAppBackgroundAlpha * 255));
             } catch (IllegalArgumentException e) {
-                IterableLogger.e(TAG, "Background color could not be identified for input string \"" + inAppBackgroundColor + "\". Failed to animate background.");
+                IterableLogger.e(TAG, "Background color could not be identified for input string \"" + inAppBackgroundColor + "\". Failed to load in-app background.");
                 return;
             }
-
+            ColorDrawable transparentDrawable = new ColorDrawable(Color.TRANSPARENT);
             ColorDrawable backgroundColorDrawable = new ColorDrawable(backgroundColorWithAlpha);
             Drawable[] layers = new Drawable[2];
             layers[0] = transparentDrawable;
@@ -358,7 +359,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             webView.postOnAnimationDelayed(dismissWebviewRunnable, 400);
         } else {
-            dismissWebviewRunnable.run();
+            webView.postDelayed(dismissWebviewRunnable, 400);
         }
 
     }
