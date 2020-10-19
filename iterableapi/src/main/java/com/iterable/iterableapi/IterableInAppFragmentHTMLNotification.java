@@ -252,6 +252,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (clickCallback != null) {
             clickCallback.execute(Uri.parse(url));
         }
+        processMessageRemoval();
         hideWebView();
     }
 
@@ -261,6 +262,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
         IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
+        processMessageRemoval();
     }
 
     private void prepareToShowWebView() {
@@ -362,44 +364,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             webView.postDelayed(dismissWebviewRunnable, 400);
         }
 
-    }
-
-    /**
-     * Sets up the webview and the dialog layout
-     */
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean(INAPP_OPEN_TRACKED, true);
-    }
-
-    /**
-     * On Stop of the dialog
-     */
-    @Override
-    public void onStop() {
-        orientationListener.disable();
-        super.onStop();
-    }
-
-    @Override
-    public void onUrlClicked(String url) {
-        IterableApi.sharedInstance.trackInAppClick(messageId, url, location);
-        IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location);
-        if (clickCallback != null) {
-            clickCallback.execute(Uri.parse(url));
-        }
-        processMessageRemoval();
-        dismiss();
-    }
-
-    /**
-     * Tracks a button click when the back button is pressed
-     */
-    public void onBackPressed() {
-        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
-        processMessageRemoval();
     }
 
     private void processMessageRemoval() {
