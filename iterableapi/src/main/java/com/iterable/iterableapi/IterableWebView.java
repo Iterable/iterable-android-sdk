@@ -13,7 +13,6 @@ import static com.iterable.iterableapi.IterableWebViewClient.RESIZE_SCRIPT;
 class IterableWebView extends WebView {
     static final String MIME_TYPE = "text/html";
     static final String ENCODING = "UTF-8";
-    IterableWebViewClient webViewClient;
 
     IterableWebView(Context context) {
         super(context);
@@ -25,7 +24,7 @@ class IterableWebView extends WebView {
      * @param html
      */
     void createWithHtml(IterableWebViewClient.HTMLNotificationCallbacks notificationDialog, String html) {
-        webViewClient = new IterableWebViewClient(notificationDialog);
+        IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog);
         loadDataWithBaseURL("", html, MIME_TYPE, ENCODING, "");
         setWebViewClient(webViewClient);
         setWebChromeClient(new WebChromeClient() {

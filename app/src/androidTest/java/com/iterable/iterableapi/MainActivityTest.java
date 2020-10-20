@@ -143,7 +143,6 @@ public class MainActivityTest {
         rule.launchActivity(intent);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        waitFor(500);
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
@@ -164,7 +163,6 @@ public class MainActivityTest {
         rule.launchActivity(intent);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        waitFor(500);
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
@@ -182,7 +180,6 @@ public class MainActivityTest {
         rule.launchActivity(null);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        waitFor(500);
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
@@ -204,7 +201,6 @@ public class MainActivityTest {
         rule.launchActivity(intent);
 
         onView(withText("Tips and tricks 2")).perform(click());
-        waitFor(500);
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));

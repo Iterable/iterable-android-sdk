@@ -1,6 +1,5 @@
 package com.iterable.iterableapi;
 
-import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -25,7 +24,6 @@ class IterableWebViewClient extends WebViewClient {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
         inAppHTMLNotification.onUrlClicked(url);
-        view.setVisibility(View.GONE);
         return true;
     }
 
