@@ -258,6 +258,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private void processMessageRemoval() {
         IterableInAppMessage message = IterableApi.sharedInstance.getInAppManager().getMessageById(messageId);
+        if (message == null) {
+            IterableLogger.e(TAG, "Message with id " + messageId + " does not exist");
+            return;
+        }
+
         if (message.isMarkedForDeletion() && !message.isConsumed()) {
             IterableApi.sharedInstance.getInAppManager().removeMessage(message);
         }
