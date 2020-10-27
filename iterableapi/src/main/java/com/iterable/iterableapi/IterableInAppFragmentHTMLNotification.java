@@ -271,33 +271,58 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             webView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
+                    showInAppBackground();
                     showAndAnimateWebView();
                 }
             }, DELAY_THRESHOLD_MS);
-            loadBackground();
         } catch (NullPointerException e) {
             IterableLogger.e(TAG, "View not present. Failed to hide before resizing inapp");
         }
     }
 
-    private void loadBackground() {
-        if (inAppBackgroundColor != null) {
-            int backgroundColorWithAlpha;
-            try {
-                backgroundColorWithAlpha = ColorUtils.setAlphaComponent(Color.parseColor(inAppBackgroundColor), (int) (inAppBackgroundAlpha * 255));
-            } catch (IllegalArgumentException e) {
-                IterableLogger.e(TAG, "Background color could not be identified for input string \"" + inAppBackgroundColor + "\". Failed to load in-app background.");
-                return;
-            }
-            ColorDrawable transparentDrawable = new ColorDrawable(Color.TRANSPARENT);
-            ColorDrawable backgroundColorDrawable = new ColorDrawable(backgroundColorWithAlpha);
-            Drawable[] layers = new Drawable[2];
-            layers[0] = transparentDrawable;
-            layers[1] = backgroundColorDrawable;
-            TransitionDrawable transitionDrawable = new TransitionDrawable(layers);
-            getDialog().getWindow().setBackgroundDrawable(transitionDrawable);
-            transitionDrawable.startTransition(300);
+    private void showInAppBackground() {
+        animateBackground(new ColorDrawable(Color.TRANSPARENT), getInAppBackgroundDrawable());
+    }
+
+    private void hideInAppBackground() {
+        animateBackground(getInAppBackgroundDrawable(), new ColorDrawable(Color.TRANSPARENT));
+    }
+
+    private void animateBackground(Drawable from, Drawable to) {
+        if (from == null || to == null) {
+            return;
         }
+
+        if (getDialog() == null || getDialog().getWindow() == null) {
+            IterableLogger.e(TAG, "Dialog or Window not present. Skipping background animation");
+            return;
+        }
+
+        Drawable[] layers = new Drawable[2];
+        layers[0] = from;
+        layers[1] = to;
+        TransitionDrawable transitionDrawable = new TransitionDrawable(layers);
+        transitionDrawable.setCrossFadeEnabled(true);
+        getDialog().getWindow().setBackgroundDrawable(transitionDrawable);
+        transitionDrawable.startTransition(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ANIMATION_DURATION);
+    }
+
+    private ColorDrawable getInAppBackgroundDrawable() {
+
+        if (inAppBackgroundColor == null) {
+            IterableLogger.d(TAG, "Background Color does not exist. In App background animation will not be performed");
+            return null;
+        }
+
+        int backgroundColorWithAlpha;
+        try {
+            backgroundColorWithAlpha = ColorUtils.setAlphaComponent(Color.parseColor(inAppBackgroundColor), (int) (inAppBackgroundAlpha * 255));
+        } catch (IllegalArgumentException e) {
+            IterableLogger.e(TAG, "Background color could not be identified for input string \"" + inAppBackgroundColor + "\". Failed to load in-app background.");
+            return null;
+        }
+        ColorDrawable backgroundColorDrawable = new ColorDrawable(backgroundColorWithAlpha);
+        return backgroundColorDrawable;
     }
 
     private void showAndAnimateWebView() {
@@ -351,6 +376,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             webView.startAnimation(anim);
         }
 
+        hideInAppBackground();
         Runnable dismissWebviewRunnable = new Runnable() {
             @Override
             public void run() {
