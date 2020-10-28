@@ -17,11 +17,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.2.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.8)
 #### Added
-- Added support for in-app animations! Select the checkbox to use preset animations when creating a template to see this feature in action.
-- Added support to set custom color and transparency to in-app background.
+- Added support for in-app animations. Select the checkbox to use preset animations when creating a template to see this feature in action.
+- Added support to set custom color and transparency for in-app background.
 
 #### Fixed
-- Fixed an issue where closing an in-app could crash the app if the message gets deleted from other logged in device in the meantime.
+- Fixed an issue where closing an in-app could crash the app if the message gets deleted from another logged in device while it is being displayed.
 
 #### Changed
 - The method `getExpiresAt` in `IterableInAppMessage` is now public.
