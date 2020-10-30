@@ -19,10 +19,8 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Bundle extras = intent.getExtras();
-
         // Dismiss the notification
-        int requestCode = extras.getInt(IterableConstants.REQUEST_CODE, 0);
+        int requestCode = intent.getIntExtra(IterableConstants.REQUEST_CODE, 0);
         NotificationManager mNotificationManager = (NotificationManager)
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.cancel(requestCode);
@@ -37,6 +35,10 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
     }
 
     private void handlePushAction(Context context, Intent intent) {
+        if (intent.getExtras() == null) {
+            IterableLogger.e(TAG, "handlePushAction: extras == null, can't handle push action");
+            return;
+        }
         IterableNotificationData notificationData = new IterableNotificationData(intent.getExtras());
         String actionIdentifier = intent.getStringExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER);
         IterableAction action = null;
