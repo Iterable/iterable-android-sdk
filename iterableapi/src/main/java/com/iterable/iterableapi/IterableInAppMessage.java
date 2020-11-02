@@ -116,7 +116,7 @@ public class IterableInAppMessage {
         public String html;
         public final Rect padding;
         public final double backgroundAlpha;
-        public InAppDisplaySettings inAppDisplaySettings;
+        public final InAppDisplaySettings inAppDisplaySettings;
 
         Content(String html, Rect padding, double backgroundAlpha, boolean shouldAnimate, InAppDisplaySettings inAppDisplaySettings) {
             this.html = html;
