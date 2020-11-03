@@ -271,8 +271,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             webView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    showInAppBackground();
-                    showAndAnimateWebView();
+                    if (getContext() != null && getDialog() != null && getDialog().getWindow() != null) {
+                        showInAppBackground();
+                        showAndAnimateWebView();
+                    }
                 }
             }, DELAY_THRESHOLD_MS);
         } catch (NullPointerException e) {
