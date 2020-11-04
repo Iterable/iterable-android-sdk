@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+
 import androidx.core.app.RemoteInput;
 
 import org.json.JSONException;
@@ -16,6 +17,8 @@ import org.json.JSONObject;
  */
 public class IterablePushActionReceiver extends BroadcastReceiver {
     private static final String TAG = "IterablePushActionReceiver";
+    // Used to hold intents until the SDK is initialized
+    private static PendingAction pendingAction = null;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -34,7 +37,16 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
         }
     }
 
-    private void handlePushAction(Context context, Intent intent) {
+    static boolean processPendingAction(Context context) {
+        boolean handled = false;
+        if (pendingAction != null) {
+            handled = executeAction(context, pendingAction);
+            pendingAction = null;
+        }
+        return handled;
+    }
+
+    private static void handlePushAction(Context context, Intent intent) {
         if (intent.getExtras() == null) {
             IterableLogger.e(TAG, "handlePushAction: extras == null, can't handle push action");
             return;
@@ -77,12 +89,12 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
             }
         }
 
-        // Automatic tracking
-        IterableApi.sharedInstance.setPayloadData(intent);
-        IterableApi.sharedInstance.setNotificationData(notificationData);
-        IterableApi.sharedInstance.trackPushOpen(notificationData.getCampaignId(), notificationData.getTemplateId(), notificationData.getMessageId(), dataFields);
+        pendingAction = new PendingAction(intent, notificationData, action, openApp, dataFields);
 
-        boolean handled = IterableActionRunner.executeAction(context, action, IterableActionSource.PUSH);
+        boolean handled = false;
+        if (IterableApi.getInstance().getMainActivityContext() != null) {
+            handled = processPendingAction(context);
+        }
 
         // Open the launcher activity if the action was not handled by anything, and openApp is true
         if (openApp && !handled) {
@@ -94,7 +106,17 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
         }
     }
 
-    private IterableAction getLegacyDefaultActionFromPayload(Bundle extras) {
+    private static boolean executeAction(Context context, PendingAction action) {
+        // Automatic tracking
+        IterableApi.sharedInstance.setPayloadData(action.intent);
+        IterableApi.sharedInstance.setNotificationData(action.notificationData);
+        IterableApi.sharedInstance.trackPushOpen(action.notificationData.getCampaignId(), action.notificationData.getTemplateId(),
+                action.notificationData.getMessageId(), action.dataFields);
+
+        return IterableActionRunner.executeAction(context, action.iterableAction, IterableActionSource.PUSH);
+    }
+
+    private static IterableAction getLegacyDefaultActionFromPayload(Bundle extras) {
         try {
             if (extras.containsKey(IterableConstants.ITERABLE_DATA_DEEP_LINK_URL)) {
                 JSONObject actionJson = new JSONObject();
@@ -106,6 +128,22 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static class PendingAction {
+        Intent intent;
+        IterableNotificationData notificationData;
+        IterableAction iterableAction;
+        boolean openApp;
+        JSONObject dataFields;
+
+        PendingAction(Intent intent, IterableNotificationData notificationData, IterableAction iterableAction, boolean openApp, JSONObject dataFields) {
+            this.intent = intent;
+            this.notificationData = notificationData;
+            this.iterableAction = iterableAction;
+            this.openApp = openApp;
+            this.dataFields = dataFields;
+        }
     }
 
 }
