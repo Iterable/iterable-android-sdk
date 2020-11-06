@@ -14,6 +14,7 @@ import java.util.HashMap;
 
 import okhttp3.mockwebserver.MockWebServer;
 
+import static android.os.Looper.getMainLooper;
 import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 public class IterablePushRegistrationTest extends BaseTest {
 
@@ -90,7 +92,7 @@ public class IterablePushRegistrationTest extends BaseTest {
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
         new IterablePushRegistration().execute(data);
-        ShadowApplication.runBackgroundTasks();
+        shadowOf(getMainLooper()).idle();
 
         verify(apiMock, timeout(100)).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }

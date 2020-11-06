@@ -13,6 +13,7 @@ import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
+import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 public class DeferredDeepLinkTest extends BaseTest {
 
@@ -52,6 +54,7 @@ public class DeferredDeepLinkTest extends BaseTest {
                 .setCheckForDeferredDeeplink(true)
                 .build();
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", config);
+        shadowOf(getMainLooper()).idle();
 
         // Verify that IterableActionRunner was called with openUrl action
         ArgumentCaptor<Uri> capturedUri = ArgumentCaptor.forClass(Uri.class);

@@ -102,6 +102,7 @@ public class IterableInAppManagerTest extends BaseTest {
         FragmentActivity activity = controller.get();
         boolean shownFirstTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
         boolean shownSecondTime = IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
+        shadowOf(getMainLooper()).idle();
         assertTrue(shownFirstTime);
         assertFalse(shownSecondTime);
         ShadowDialog.getLatestDialog().dismiss();
@@ -112,7 +113,9 @@ public class IterableInAppManagerTest extends BaseTest {
     public void testIfDialogDoesNotDestroysAfterConfigurationChange() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
         FragmentActivity activity = controller.get();
-        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP));
+        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true,
+                new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP));
+        shadowOf(getMainLooper()).idle();
         controller.configurationChange();
         assertEquals(1, activity.getFragmentManager().getFragments().size());
         ShadowDialog.getLatestDialog().dismiss();
@@ -123,7 +126,9 @@ public class IterableInAppManagerTest extends BaseTest {
     public void testIfDialogFragmentExistAfterRotation() throws Exception {
         ActivityController controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
         FragmentActivity activity = (FragmentActivity) controller.get();
-        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP));
+        assertTrue(IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "", null, 0.0, new Rect(), true,
+                new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP));
+        shadowOf(getMainLooper()).idle();
         controller.configurationChange();
         assertEquals(1, activity.getSupportFragmentManager().getFragments().size());
         ShadowDialog.getLatestDialog().dismiss();
@@ -137,16 +142,14 @@ public class IterableInAppManagerTest extends BaseTest {
         assertEquals(0, inAppManager.getMessages().size());
 
         inAppManager.syncInApp();
-        Robolectric.flushBackgroundThreadScheduler();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getMessages().size());
         assertEquals("7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV", inAppManager.getMessages().get(0).getMessageId());
 
         // Check that we remove the old message if it doesn't exist in the new queue state
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single2.json")));
         inAppManager.syncInApp();
-        Robolectric.flushBackgroundThreadScheduler();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getMessages().size());
         assertEquals("Q19mD2NlQUnxnmSGuQu9ujzkKR6c12TogeaGA29", inAppManager.getMessages().get(0).getMessageId());
     }
@@ -158,8 +161,7 @@ public class IterableInAppManagerTest extends BaseTest {
         assertEquals(0, inAppManager.getMessages().size());
 
         inAppManager.syncInApp();
-        Robolectric.flushBackgroundThreadScheduler();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getMessages().size());
         inAppManager.reset();
         assertEquals(0, inAppManager.getMessages().size());
@@ -172,12 +174,11 @@ public class IterableInAppManagerTest extends BaseTest {
         assertEquals(0, inAppManager.getMessages().size());
 
         inAppManager.syncInApp();
-        Robolectric.flushBackgroundThreadScheduler();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getMessages().size());
 
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(inAppMessageCaptor.capture());
@@ -195,6 +196,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getMessages().size());
 
         doReturn(System.currentTimeMillis() + 120 * 1000).when(iterableUtilSpy).currentTimeMillis();
@@ -212,7 +214,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
         Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(inAppMessageCaptor.capture());
@@ -378,8 +380,7 @@ public class IterableInAppManagerTest extends BaseTest {
         assertEquals(0, inAppManager.getMessages().size());
 
         inAppManager.syncInApp();
-        Robolectric.flushBackgroundThreadScheduler();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getMessages().size());
 
         inAppManager.setAutoDisplayPaused(true);
