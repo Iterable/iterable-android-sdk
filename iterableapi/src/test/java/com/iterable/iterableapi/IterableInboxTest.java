@@ -158,6 +158,7 @@ public class IterableInboxTest extends BaseTest {
         IterableInAppManager.Listener listenerMock = mock(IterableInAppManager.Listener.class);
 
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        shadowOf(getMainLooper()).idle();
         inAppManager.addListener(listenerMock);
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_update.json")));
         inAppManager.syncInApp();
