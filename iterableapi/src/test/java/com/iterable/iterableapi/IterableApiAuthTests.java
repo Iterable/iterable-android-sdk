@@ -33,8 +33,6 @@ import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 @LooperMode(PAUSED)
 public class IterableApiAuthTests extends BaseTest {
 
-    private IterableUtil.IterableUtilImpl originalIterableUtil;
-    private IterableUtil.IterableUtilImpl iterableUtilSpy;
     private MockWebServer server;
     private IterableAuthHandler authHandler;
     private PathBasedQueueDispatcher dispatcher;
@@ -52,10 +50,6 @@ public class IterableApiAuthTests extends BaseTest {
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         reInitIterableApi();
 
-        originalIterableUtil = IterableUtil.instance;
-        iterableUtilSpy = spy(originalIterableUtil);
-        IterableUtil.instance = iterableUtilSpy;
-
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -66,8 +60,6 @@ public class IterableApiAuthTests extends BaseTest {
 
     @After
     public void tearDown() throws IOException {
-        IterableUtil.instance = originalIterableUtil;
-        iterableUtilSpy = null;
         server.shutdown();
         server = null;
     }

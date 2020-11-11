@@ -37,8 +37,6 @@ public class IterableInboxTest extends BaseTest {
     private IterableInAppHandler inAppHandler;
     private IterableCustomActionHandler customActionHandler;
     private IterableUrlHandler urlHandler;
-    private IterableUtil.IterableUtilImpl originalIterableUtil;
-    private IterableUtil.IterableUtilImpl iterableUtilSpy;
 
     @Before
     public void setUp() throws IOException {
@@ -60,17 +58,10 @@ public class IterableInboxTest extends BaseTest {
                         .setUrlHandler(urlHandler);
             }
         });
-
-        originalIterableUtil = IterableUtil.instance;
-        iterableUtilSpy = spy(originalIterableUtil);
-        IterableUtil.instance = iterableUtilSpy;
     }
 
     @After
     public void tearDown() throws IOException {
-        IterableUtil.instance = originalIterableUtil;
-        iterableUtilSpy = null;
-
         server.shutdown();
         server = null;
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);

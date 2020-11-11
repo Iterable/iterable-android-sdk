@@ -47,24 +47,16 @@ public class IterableApiTest extends BaseTest {
 
     public static final String PACKAGE_NAME = "com.iterable.iterableapi.test";
     private MockWebServer server;
-    private IterableUtil.IterableUtilImpl originalIterableUtil;
-    private IterableUtil.IterableUtilImpl iterableUtilSpy;
 
     @Before
     public void setUp() {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         reInitIterableApi();
-
-        originalIterableUtil = IterableUtil.instance;
-        iterableUtilSpy = spy(originalIterableUtil);
-        IterableUtil.instance = iterableUtilSpy;
     }
 
     @After
     public void tearDown() throws IOException {
-        IterableUtil.instance = originalIterableUtil;
-        iterableUtilSpy = null;
         server.shutdown();
         server = null;
     }
@@ -120,7 +112,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setAttributionInfo(attributionInfo);
 
         // 23 hours, not expired, still present
-        doReturn(System.currentTimeMillis() + 3600 * 23 * 1000).when(iterableUtilSpy).currentTimeMillis();
+        doReturn(System.currentTimeMillis() + 3600 * 23 * 1000).when(utilsRule.iterableUtilSpy).currentTimeMillis();
         IterableAttributionInfo storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
         assertNotNull(storedAttributionInfo);
         assertEquals(attributionInfo.campaignId, storedAttributionInfo.campaignId);
@@ -128,7 +120,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals(attributionInfo.messageId, storedAttributionInfo.messageId);
 
         // 24 hours, expired, attributionInfo should be null
-        doReturn(System.currentTimeMillis() + 3600 * 24 * 1000).when(iterableUtilSpy).currentTimeMillis();
+        doReturn(System.currentTimeMillis() + 3600 * 24 * 1000).when(utilsRule.iterableUtilSpy).currentTimeMillis();
         storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
         assertNull(storedAttributionInfo);
     }
