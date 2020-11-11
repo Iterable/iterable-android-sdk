@@ -70,8 +70,8 @@ public class IterableApiTest extends BaseTest {
     }
 
     private void reInitIterableApi() {
-        IterableApi.sharedInstance = spy(new IterableApi());
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
+        IterableApi.sharedInstance = spy(new IterableApi(inAppManagerMock));
         doReturn(inAppManagerMock).when(IterableApi.sharedInstance).getInAppManager();
     }
 
