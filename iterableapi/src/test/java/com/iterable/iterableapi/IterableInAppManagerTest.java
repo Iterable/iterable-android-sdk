@@ -19,7 +19,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.android.util.concurrent.PausedExecutorService;
 import org.robolectric.shadows.ShadowDialog;
@@ -84,7 +83,7 @@ public class IterableInAppManagerTest extends BaseTest {
     public void tearDown() throws IOException {
         server.shutdown();
         server = null;
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
@@ -260,7 +259,7 @@ public class IterableInAppManagerTest extends BaseTest {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
 
         // Reset the existing IterableApi
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterableApi.sharedInstance = spy(new IterableApi());
 
@@ -325,7 +324,7 @@ public class IterableInAppManagerTest extends BaseTest {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
 
         // Reset the existing IterableApi
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterableApi.sharedInstance = spy(new IterableApi());
 

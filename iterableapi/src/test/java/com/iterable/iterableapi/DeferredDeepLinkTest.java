@@ -6,7 +6,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
 
@@ -53,7 +52,7 @@ public class DeferredDeepLinkTest extends BaseTest {
                 .setUrlHandler(urlHandlerMock)
                 .setCheckForDeferredDeeplink(true)
                 .build();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", config);
+        IterableApi.initialize(getContext(), "apiKey", config);
         shadowOf(getMainLooper()).idle();
 
         // Verify that IterableActionRunner was called with openUrl action
@@ -68,7 +67,7 @@ public class DeferredDeepLinkTest extends BaseTest {
         server.enqueue(new MockResponse().setBody(IterableTestUtils.getResourceString("fp_match_success.json")));
         reset(urlHandlerMock);
         IterableTestUtils.resetIterableApi();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", config);
+        IterableApi.initialize(getContext(), "apiKey", config);
         verify(urlHandlerMock, after(100).never()).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
     }
 
@@ -83,7 +82,7 @@ public class DeferredDeepLinkTest extends BaseTest {
                 .setUrlHandler(urlHandlerMock)
                 .setCheckForDeferredDeeplink(false)
                 .build();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", config);
+        IterableApi.initialize(getContext(), "apiKey", config);
 
         // Verify that the deferred deep link is never handled since it is disabled
         verify(urlHandlerMock, after(100).never()).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
@@ -100,7 +99,7 @@ public class DeferredDeepLinkTest extends BaseTest {
                 .setUrlHandler(urlHandlerMock)
                 .setCheckForDeferredDeeplink(true)
                 .build();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", config);
+        IterableApi.initialize(getContext(), "apiKey", config);
 
         // Verify that the URL handler wasn't called because fingerprint matcher returned no result
         verify(urlHandlerMock, after(100).never()).handleIterableURL(any(Uri.class), any(IterableActionContext.class));

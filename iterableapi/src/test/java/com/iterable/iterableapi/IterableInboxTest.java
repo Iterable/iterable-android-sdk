@@ -8,7 +8,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 
 import java.io.IOException;
 import java.util.List;
@@ -64,7 +63,7 @@ public class IterableInboxTest extends BaseTest {
     public void tearDown() throws IOException {
         server.shutdown();
         server = null;
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
@@ -116,7 +115,7 @@ public class IterableInboxTest extends BaseTest {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_show.json")));
 
         // Reset the existing IterableApi
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterableApi.sharedInstance = spy(new IterableApi());
 
