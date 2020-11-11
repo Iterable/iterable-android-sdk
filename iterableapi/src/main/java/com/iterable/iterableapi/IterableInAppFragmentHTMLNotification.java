@@ -382,7 +382,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         Runnable dismissWebviewRunnable = new Runnable() {
             @Override
             public void run() {
-                IterableInAppFragmentHTMLNotification.super.dismiss();
+                if (getContext() != null && getDialog() != null && getDialog().getWindow() != null) {
+                    IterableInAppFragmentHTMLNotification.super.dismiss();
+                }
             }
         };
 
