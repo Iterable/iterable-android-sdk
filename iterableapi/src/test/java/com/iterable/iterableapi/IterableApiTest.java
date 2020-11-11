@@ -14,9 +14,6 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
-import org.robolectric.android.util.concurrent.InlineExecutorService;
-import org.robolectric.android.util.concurrent.PausedExecutorService;
-import org.robolectric.shadows.ShadowPausedAsyncTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
