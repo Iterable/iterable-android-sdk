@@ -16,6 +16,7 @@ import java.util.List;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
+import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 public class IterableInboxTest extends BaseTest {
 
@@ -80,6 +82,7 @@ public class IterableInboxTest extends BaseTest {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
         assertEquals(2, inboxMessages.size());
         assertEquals("message2", inboxMessages.get(0).getMessageId());
@@ -91,6 +94,7 @@ public class IterableInboxTest extends BaseTest {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
         assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
         assertEquals(2, inboxMessages.size());
@@ -108,6 +112,7 @@ public class IterableInboxTest extends BaseTest {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
         assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
         assertEquals(2, inboxMessages.size());
@@ -135,12 +140,12 @@ public class IterableInboxTest extends BaseTest {
             }
         });
         inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
 
         assertEquals(2, inAppManager.getInboxMessages().size());
         assertEquals(2, inAppManager.getUnreadInboxMessagesCount());
 
         Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
 
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class));
 
@@ -153,9 +158,11 @@ public class IterableInboxTest extends BaseTest {
         IterableInAppManager.Listener listenerMock = mock(IterableInAppManager.Listener.class);
 
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        shadowOf(getMainLooper()).idle();
         inAppManager.addListener(listenerMock);
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_update.json")));
         inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getInboxMessages().size());
         assertEquals("message1", inAppManager.getInboxMessages().get(0).getMessageId());
         verify(listenerMock).onInboxUpdated();
@@ -163,6 +170,7 @@ public class IterableInboxTest extends BaseTest {
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_update2.json")));
         inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
         assertEquals(2, inAppManager.getInboxMessages().size());
         assertEquals("message1", inAppManager.getInboxMessages().get(0).getMessageId());
         assertEquals("message2", inAppManager.getInboxMessages().get(1).getMessageId());

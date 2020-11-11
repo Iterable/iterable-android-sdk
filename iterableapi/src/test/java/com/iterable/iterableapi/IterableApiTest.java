@@ -26,6 +26,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -40,6 +41,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 public class IterableApiTest extends BaseTest {
 
@@ -139,6 +141,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals("test@email.com", IterableApi.getInstance().getEmail());
 
         IterableApi.getInstance().updateEmail("new@email.com");
+        shadowOf(getMainLooper()).idle();
         server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
 
@@ -183,13 +186,16 @@ public class IterableApiTest extends BaseTest {
     public void testHandleUniversalLinkRewrite() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
         when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableActionContext.class))).thenReturn(true);
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
+        IterableApi.initialize(RuntimeEnvironment.application, "fake_key",
+                new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
 
         String url = "https://links.iterable.com/api/docs#!/email";
-        IterableApi.handleAppLink("http://links.iterable.com/a/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0");
+        IterableApi.handleAppLink(
+                "http://links.iterable.com/a/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0");
 
         ArgumentCaptor<Uri> capturedUri = ArgumentCaptor.forClass(Uri.class);
         ArgumentCaptor<IterableActionContext> capturedActionContext = ArgumentCaptor.forClass(IterableActionContext.class);
+        shadowOf(getMainLooper()).idle();
         verify(urlHandlerMock, timeout(5000)).handleIterableURL(capturedUri.capture(), capturedActionContext.capture());
         assertEquals(url, capturedUri.getValue().toString());
         assertEquals(IterableActionSource.APP_LINK, capturedActionContext.getValue().source);
@@ -285,7 +291,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().registerDeviceToken("token");
         Thread.sleep(100);  // Since the network request is queued from a background thread, we need to wait
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(request);
 
@@ -308,7 +314,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setUserId("testUserId");
         IterableApi.getInstance().registerDeviceToken("token");
         Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest registerDeviceRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(registerDeviceRequest);
@@ -333,7 +339,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setUserId("testUserId");
         IterableApi.getInstance().updateUser(new JSONObject("{\"key\": \"value\"}"));
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest updateUserRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(updateUserRequest);
@@ -353,7 +359,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().getInAppMessages(10, handlerMock);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         verify(handlerMock).execute(eq("{}"));
 
@@ -374,7 +380,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().trackInAppOpen("testMessageId");
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppOpenRequest);
@@ -394,7 +400,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.IN_APP);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppOpenRequest);
@@ -414,7 +420,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().trackInAppClick("testMessageId", "https://www.google.com");
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -431,12 +437,14 @@ public class IterableApiTest extends BaseTest {
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(RuntimeEnvironment.application, "apiKey",
+                new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
-        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.IN_APP);
-        Robolectric.flushBackgroundThreadScheduler();
+        IterableApi.getInstance()
+                .trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.IN_APP);
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppCloseRequest);
@@ -447,17 +455,20 @@ public class IterableApiTest extends BaseTest {
         assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
         assertEquals("back", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION));
         assertNull(requestJson.optString(IterableConstants.KEY_INBOX_SESSION_ID, null));
-        assertEquals(IterableInAppLocation.IN_APP.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT).optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
+        assertEquals(IterableInAppLocation.IN_APP.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT)
+                .optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
 
         verifyMessageContext(requestJson);
         verifyDeviceInfo(requestJson);
 
         //Making another request to check if inbox location is tracked
-        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.INBOX);
-        Robolectric.flushBackgroundThreadScheduler();
+        IterableApi.getInstance()
+                .trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.INBOX);
+        shadowOf(getMainLooper()).idle();
         trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
-        assertEquals(IterableInAppLocation.INBOX.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT).optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
+        assertEquals(IterableInAppLocation.INBOX.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT)
+                .optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
     }
 
     @Test
@@ -471,7 +482,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().trackInAppClick(message, "https://www.google.com", IterableInAppLocation.IN_APP);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -494,7 +505,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().trackInAppDelivery(message);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -540,7 +551,7 @@ public class IterableApiTest extends BaseTest {
                 impressions);
         IterableApi.getInstance().setInboxSessionId(session.sessionId);
         IterableApi.getInstance().trackInboxSession(session);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -595,7 +606,7 @@ public class IterableApiTest extends BaseTest {
         //Explicitly updating sessionId in IterableAPI as it is done when IterableInboxFragment initializes session manager
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().inAppConsume(message, IterableInAppDeleteActionType.INBOX_SWIPE, IterableInAppLocation.INBOX);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppConsumeRequest);
@@ -619,7 +630,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().inAppConsume(message, null, null);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppConsumeRequest);
