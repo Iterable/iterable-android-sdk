@@ -54,8 +54,6 @@ public class IterableInAppManagerTest extends BaseTest {
     private IterableInAppHandler inAppHandler;
     private IterableCustomActionHandler customActionHandler;
     private IterableUrlHandler urlHandler;
-    private IterableUtil.IterableUtilImpl originalIterableUtil;
-    private IterableUtil.IterableUtilImpl iterableUtilSpy;
     private PausedExecutorService backgroundExecutor;
 
     @Before
@@ -79,17 +77,11 @@ public class IterableInAppManagerTest extends BaseTest {
                         .setUrlHandler(urlHandler);
             }
         });
-
-        originalIterableUtil = IterableUtil.instance;
-        iterableUtilSpy = spy(originalIterableUtil);
-        IterableUtil.instance = iterableUtilSpy;
+        IterableInAppFragmentHTMLNotification.notification = null;
     }
 
     @After
     public void tearDown() throws IOException {
-        IterableUtil.instance = originalIterableUtil;
-        iterableUtilSpy = null;
-
         server.shutdown();
         server = null;
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
@@ -199,7 +191,7 @@ public class IterableInAppManagerTest extends BaseTest {
         shadowOf(getMainLooper()).idle();
         assertEquals(1, inAppManager.getMessages().size());
 
-        doReturn(System.currentTimeMillis() + 120 * 1000).when(iterableUtilSpy).currentTimeMillis();
+        doReturn(System.currentTimeMillis() + 120 * 1000).when(utilsRule.iterableUtilSpy).currentTimeMillis();
         assertEquals(0, inAppManager.getMessages().size());
     }
 
