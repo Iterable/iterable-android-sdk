@@ -35,6 +35,7 @@ private static final String TAG = "IterableApi";
      * {@link IterableApi} singleton instance
      */
     static volatile IterableApi sharedInstance = new IterableApi();
+    private static IterableDataManager dataManager;
 
     private Context _applicationContext;
     IterableConfig config;
@@ -307,6 +308,11 @@ private static final String TAG = "IterableApi";
                     sharedInstance.config.inAppDisplayInterval);
         }
         IterablePushActionReceiver.processPendingAction(context);
+        if (dataManager == null) {
+            dataManager = new IterableDataManager();
+        }
+//        dataManager.createTask("testTask");
+//        dataManager.deleteAllTasks();
     }
 
     /**
