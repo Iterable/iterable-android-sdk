@@ -296,7 +296,10 @@ private static final String TAG = "IterableApi";
         sharedInstance.checkForDeferredDeeplink();
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
-        sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler, sharedInstance.config.inAppDisplayInterval);
+        if (sharedInstance.inAppManager == null) {
+            sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
+                    sharedInstance.config.inAppDisplayInterval);
+        }
         IterablePushActionReceiver.processPendingAction(context);
     }
 

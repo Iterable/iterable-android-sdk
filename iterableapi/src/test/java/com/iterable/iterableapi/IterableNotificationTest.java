@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
 
+import androidx.test.core.app.ApplicationProvider;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;
@@ -14,7 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowPendingIntent;
 
 import static com.iterable.iterableapi.IterableTestUtils.getResourceString;
@@ -28,7 +29,7 @@ public class IterableNotificationTest {
     private NotificationManager mNotificationManager;
 
     protected Context getContext() {
-        return RuntimeEnvironment.application;
+        return ApplicationProvider.getApplicationContext();
     }
 
     private IterableNotificationBuilder postNotification(Bundle notificationData) throws InterruptedException {

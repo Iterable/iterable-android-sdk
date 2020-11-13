@@ -2,13 +2,14 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 
+import androidx.test.core.app.ApplicationProvider;
+
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.util.concurrent.InlineExecutorService;
 import org.robolectric.shadows.ShadowPausedAsyncTask;
 
@@ -26,7 +27,7 @@ public abstract class BaseTest {
     }
 
     protected Context getContext() {
-        return RuntimeEnvironment.application;
+        return ApplicationProvider.getApplicationContext();
     }
 
     private static class AsyncTaskRule extends TestWatcher {

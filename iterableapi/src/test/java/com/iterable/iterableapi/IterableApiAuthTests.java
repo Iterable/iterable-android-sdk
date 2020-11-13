@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.LooperMode;
 
 import java.io.IOException;
@@ -33,8 +32,6 @@ import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 @LooperMode(PAUSED)
 public class IterableApiAuthTests extends BaseTest {
 
-    private IterableUtil.IterableUtilImpl originalIterableUtil;
-    private IterableUtil.IterableUtilImpl iterableUtilSpy;
     private MockWebServer server;
     private IterableAuthHandler authHandler;
     private PathBasedQueueDispatcher dispatcher;
@@ -52,10 +49,6 @@ public class IterableApiAuthTests extends BaseTest {
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         reInitIterableApi();
 
-        originalIterableUtil = IterableUtil.instance;
-        iterableUtilSpy = spy(originalIterableUtil);
-        IterableUtil.instance = iterableUtilSpy;
-
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -66,8 +59,6 @@ public class IterableApiAuthTests extends BaseTest {
 
     @After
     public void tearDown() throws IOException {
-        IterableUtil.instance = originalIterableUtil;
-        iterableUtilSpy = null;
         server.shutdown();
         server = null;
     }
@@ -82,7 +73,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testRefreshToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         Timer timer = IterableApi.getInstance().getAuthManager().timer;
 
         IterableApi api = IterableApi.getInstance();
@@ -110,7 +101,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetEmailWithToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
         IterableApi.getInstance().setEmail(email);
@@ -134,7 +125,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetEmailWithTokenExpired() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -148,7 +139,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetUserIdWithToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "testUserId";
         IterableApi.getInstance().setUserId(userId);
@@ -172,7 +163,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSameEmailWithNewToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
         IterableApi.getInstance().setEmail(email);
@@ -196,7 +187,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSameUserIdWithNewToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "testUserId";
         doReturn(validJWT).when(authHandler).onAuthTokenRequested();
@@ -215,7 +206,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetSameEmailAndRemoveToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         String email = "test@example.com";
 
         doReturn(validJWT).when(authHandler).onAuthTokenRequested();
@@ -234,7 +225,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetSameUserIdAndRemoveToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "testUserId";
         doReturn(validJWT).when(authHandler).onAuthTokenRequested();
@@ -253,7 +244,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     @Test
     public void testSetSameEmail() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
 
@@ -272,7 +263,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     @Test
     public void testSetSameUserId() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "testUserId";
 
@@ -292,7 +283,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetSameEmailWithSameToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
         String token = validJWT;
@@ -312,7 +303,7 @@ public class IterableApiAuthTests extends BaseTest {
     @Ignore ("Ignoring the JWT Tests")
     @Test
     public void testSetSameUserIdWithSameToken() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "testUserId";
         String token = validJWT;
@@ -331,7 +322,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     @Test
     public void testEmailLogOut() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
         doReturn(validJWT).when(authHandler).onAuthTokenRequested();
@@ -348,7 +339,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     @Test
     public void testUserIdLogOut() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "testUserId";
 
@@ -370,7 +361,7 @@ public class IterableApiAuthTests extends BaseTest {
 //        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         dispatcher.enqueueResponse(ENDPOINT_UPDATE_EMAIL, new MockResponse().setResponseCode(200).setBody("{}"));
         shadowOf(getMainLooper()).runToEndOfTasks();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         RecordedRequest getMessagesRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNull(getMessagesRequest.getHeader("Authorization"));
 

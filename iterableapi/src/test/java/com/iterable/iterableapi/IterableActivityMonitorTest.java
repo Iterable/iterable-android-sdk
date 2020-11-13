@@ -6,7 +6,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 
 import static org.junit.Assert.assertFalse;
@@ -20,12 +19,12 @@ public class IterableActivityMonitorTest extends BaseTest {
 
     @Before
     public void setUp() {
-        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(getContext());
     }
 
     @After
     public void tearDown() {
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 

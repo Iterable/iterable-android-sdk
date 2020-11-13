@@ -7,7 +7,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RuntimeEnvironment;
 
 import java.util.HashMap;
 
@@ -99,7 +98,7 @@ public class IterablePushRegistrationTest extends BaseTest {
     @Test
     public void testDisableOldGcmToken() throws Exception {
         stubAnyRequestReturningStatusCode(server, 200, "{}");
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setLegacyGCMSenderId(GCM_SENDER_ID).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setLegacyGCMSenderId(GCM_SENDER_ID).build());
 
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(NEW_TOKEN);
         when(pushRegistrationUtilMock.getFirebaseToken(eq(GCM_SENDER_ID), eq(IterableConstants.MESSAGING_PLATFORM_GOOGLE))).thenReturn(OLD_TOKEN);

@@ -75,11 +75,9 @@ public class IterableInAppManagerSyncTest extends BaseTest {
     @Test
     public void testSyncOnLogin() throws Exception {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        IterableApi apiSpy = spy(new IterableApi());
-        IterableApi.sharedInstance = apiSpy;
+        IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
         IterableApi.initialize(getApplicationContext(), "apiKey");
-        doReturn(inAppManagerMock).when(apiSpy).getInAppManager();
-        apiSpy.setEmail("test@email.com");
+        IterableApi.getInstance().setEmail("test@email.com");
         verify(inAppManagerMock).syncInApp();
     }
 

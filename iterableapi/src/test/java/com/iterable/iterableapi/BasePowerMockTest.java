@@ -1,5 +1,9 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
+
+import androidx.test.core.app.ApplicationProvider;
+
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.Rule;
@@ -25,5 +29,9 @@ public abstract class BasePowerMockTest {
 
     @Rule
     public PowerMockRule rule = new PowerMockRule();
+
+    public Context getContext() {
+        return ApplicationProvider.getApplicationContext();
+    }
 
 }
