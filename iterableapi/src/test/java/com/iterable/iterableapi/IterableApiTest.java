@@ -17,6 +17,7 @@ import org.robolectric.android.controller.ActivityController;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,6 +41,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -46,6 +49,8 @@ public class IterableApiTest extends BaseTest {
 
     public static final String PACKAGE_NAME = "com.iterable.iterableapi.test";
     private MockWebServer server;
+    private IterableApiClient originalApiClient;
+    private IterableApiClient mockApiClient;
 
     @Before
     public void setUp() {
@@ -62,8 +67,10 @@ public class IterableApiTest extends BaseTest {
 
     private void reInitIterableApi() {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        IterableApi.sharedInstance = spy(new IterableApi(inAppManagerMock));
-        doReturn(inAppManagerMock).when(IterableApi.sharedInstance).getInAppManager();
+        IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
+        originalApiClient = IterableApi.sharedInstance.apiClient;
+        mockApiClient = spy(originalApiClient);
+        IterableApi.sharedInstance.apiClient = mockApiClient;
     }
 
     @Test
@@ -82,8 +89,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().updateEmail("");
         IterableApi.getInstance().trackPurchase(10.0, new ArrayList<CommerceItem>());
 
-        RecordedRequest request = server.takeRequest(100, TimeUnit.MILLISECONDS);
-        assertNull(request);
+        verifyNoInteractions(mockApiClient);
     }
 
     @Test
@@ -126,13 +132,17 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testUpdateEmailPersistence() throws Exception {
+        String oldEmail = "test@email.com";
+        String newEmail = "new@email.com";
+
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.initialize(getContext(), "apiKey");
-        IterableApi.getInstance().setEmail("test@email.com");
-        assertEquals("test@email.com", IterableApi.getInstance().getEmail());
+        IterableApi.getInstance().setEmail(oldEmail);
+        assertEquals(oldEmail, IterableApi.getInstance().getEmail());
 
-        IterableApi.getInstance().updateEmail("new@email.com");
+        IterableApi.getInstance().updateEmail(newEmail);
         shadowOf(getMainLooper()).idle();
+        verify(mockApiClient).updateEmail(eq(newEmail), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
         server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
 

@@ -48,7 +48,7 @@ private static final String TAG = "IterableApi";
     private String _deviceId;
     private boolean _firstForegroundHandled;
 
-    private IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
