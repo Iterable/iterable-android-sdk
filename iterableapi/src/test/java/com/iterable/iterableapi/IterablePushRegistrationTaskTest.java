@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
-public class IterablePushRegistrationTest extends BaseTest {
+public class IterablePushRegistrationTaskTest extends BaseTest {
 
     private static final String TEST_TOKEN = "testToken";
     private static final String NEW_TOKEN = "newToken";
@@ -41,8 +41,8 @@ public class IterablePushRegistrationTest extends BaseTest {
     private MockWebServer server;
     private IterableApi originalApi;
     private IterableApi apiMock;
-    private IterablePushRegistration.Util.UtilImpl originalPushRegistrationUtil;
-    private IterablePushRegistration.Util.UtilImpl pushRegistrationUtilMock;
+    private IterablePushRegistrationTask.Util.UtilImpl originalPushRegistrationUtil;
+    private IterablePushRegistrationTask.Util.UtilImpl pushRegistrationUtilMock;
     private HashMap<String, String> deviceAttributes = new HashMap<String, String>();
 
     @Before
@@ -55,16 +55,16 @@ public class IterablePushRegistrationTest extends BaseTest {
         apiMock = spy(IterableApi.sharedInstance);
         IterableApi.sharedInstance = apiMock;
 
-        originalPushRegistrationUtil = IterablePushRegistration.Util.instance;
-        pushRegistrationUtilMock = mock(IterablePushRegistration.Util.UtilImpl.class);
-        IterablePushRegistration.Util.instance = pushRegistrationUtilMock;
+        originalPushRegistrationUtil = IterablePushRegistrationTask.Util.instance;
+        pushRegistrationUtilMock = mock(IterablePushRegistrationTask.Util.UtilImpl.class);
+        IterablePushRegistrationTask.Util.instance = pushRegistrationUtilMock;
 
         when(pushRegistrationUtilMock.getFirebaseResouceId(any(Context.class))).thenReturn(1);
     }
 
     @After
     public void tearDown() throws Exception {
-        IterablePushRegistration.Util.instance = originalPushRegistrationUtil;
+        IterablePushRegistrationTask.Util.instance = originalPushRegistrationUtil;
         IterableApi.sharedInstance = originalApi;
 
         server.shutdown();
@@ -76,7 +76,7 @@ public class IterablePushRegistrationTest extends BaseTest {
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        new IterablePushRegistration().execute(data);
+        new IterablePushRegistrationTask().execute(data);
 
         verify(apiMock, timeout(100)).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), isNull(String.class), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(deviceAttributes));
 
@@ -89,7 +89,7 @@ public class IterablePushRegistrationTest extends BaseTest {
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn("testToken");
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        new IterablePushRegistration().execute(data);
+        new IterablePushRegistrationTask().execute(data);
         shadowOf(getMainLooper()).idle();
 
         verify(apiMock, timeout(100)).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
@@ -105,7 +105,7 @@ public class IterablePushRegistrationTest extends BaseTest {
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         IterableApi.getInstance().setDeviceAttribute(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
-        new IterablePushRegistration().execute(data);
+        new IterablePushRegistrationTask().execute(data);
         deviceAttributes.put(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
 
         ArgumentCaptor<IterableHelper.SuccessHandler> successHandlerCaptor = ArgumentCaptor.forClass(IterableHelper.SuccessHandler.class);
@@ -115,7 +115,7 @@ public class IterablePushRegistrationTest extends BaseTest {
 
         reset(apiMock);
 
-        new IterablePushRegistration().execute(data);
+        new IterablePushRegistrationTask().execute(data);
 
         verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN), eq(deviceAttributes));
         verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));

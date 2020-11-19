@@ -592,7 +592,7 @@ IterableApi() {
         }
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        new IterablePushRegistration().execute(data);
+        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
@@ -600,7 +600,7 @@ IterableApi() {
      */
     public void disablePush() {
         IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        new IterablePushRegistration().execute(data);
+        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
