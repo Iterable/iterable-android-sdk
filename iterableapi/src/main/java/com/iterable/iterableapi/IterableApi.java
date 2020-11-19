@@ -18,6 +18,9 @@ import com.iterable.iterableapi.ddl.MatchFpResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -35,7 +38,7 @@ private static final String TAG = "IterableApi";
      * {@link IterableApi} singleton instance
      */
     static volatile IterableApi sharedInstance = new IterableApi();
-    private static IterableDataManager dataManager;
+    private static IterableTaskManager dataManager;
 
     private Context _applicationContext;
     IterableConfig config;
@@ -308,11 +311,24 @@ private static final String TAG = "IterableApi";
                     sharedInstance.config.inAppDisplayInterval);
         }
         IterablePushActionReceiver.processPendingAction(context);
+
+        //TODO: Temporary code to test. Datamanger would eventually either go to IterableRequest or apiInternal as architecture concretes.
+        //TODO: Have test methods to test all TaskManager methods.
         if (dataManager == null) {
-            dataManager = new IterableDataManager();
+            dataManager = new IterableTaskManager();
         }
-//        dataManager.createTask("testTask");
-//        dataManager.deleteAllTasks();
+        dataManager.createTask("testTask");
+        ArrayList<String> taskIDsInDB = dataManager.getAllTaskIds();
+        IterableLogger.v(TAG, "These are the tasks in DB now..");
+        for (String taskId: taskIDsInDB
+             ) {
+            IterableLogger.v("Offline", taskId);
+            IterableTask task = dataManager.getTask(taskId);
+            IterableLogger.v(TAG+"Thats Task",task.createdAt.toString());
+            dataManager.updateModifiedAt(taskId, new Date());
+        }
+
+
     }
 
     /**

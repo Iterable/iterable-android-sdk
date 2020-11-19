@@ -39,13 +39,14 @@ class IterableTask {
     Boolean failed;
     Boolean blocking;
 
+    //TODO: Confirm if data and failure data would be String converted from JSONObjects.
     Object data;
-    Error taskFailureData;
+    Object taskFailureData;
     IterableTaskType taskType;
     int attempts;
 
     //To be used when creating IterableTask from database
-    public IterableTask(String id, @NonNull String name, @NonNull int version, @NonNull Date createdAt, Date modifiedAt, Date lastAttemptedAt, Date scheduledAt, Date requestedAt, Boolean processing, Boolean failed, Boolean blocking, Object data, Error taskFailureData, IterableTaskType taskType, int attempts) {
+    public IterableTask(String id, @NonNull String name, @NonNull int version, @NonNull Date createdAt, Date modifiedAt, Date lastAttemptedAt, Date scheduledAt, Date requestedAt, Boolean processing, Boolean failed, Boolean blocking, Object data, Object taskFailureData, IterableTaskType taskType, int attempts) {
 
         this.id = id;
         this.name = name;
@@ -76,7 +77,7 @@ class IterableTask {
 
     }
 
-    IterableTask updateTask(int attempts, Date lastAttemptedAt, Boolean processing, Date scheduledAt, Object data, Error taskFailureData) {
+    IterableTask updateTask(int attempts, Date lastAttemptedAt, Boolean processing, Date scheduledAt, Object data, Object taskFailureData) {
         return new IterableTask(id, name, version, createdAt, modifiedAt, lastAttemptedAt, scheduledAt, requestedAt, processing, failed, blocking, data, taskFailureData, taskType, attempts);
     }
 }
@@ -85,7 +86,7 @@ enum IterableTaskType {
     API {
         @Override
         public String toString() {
-            return "delete-button";
+            return "API";
         }
     }
 }
