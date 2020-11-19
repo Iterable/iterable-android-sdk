@@ -59,9 +59,10 @@ private static final String TAG = "IterableApi";
 
 //region Constructor
 //---------------------------------------------------------------------------------------
-IterableApi() {
-    config = new IterableConfig.Builder().build();
-}
+
+    IterableApi() {
+        config = new IterableConfig.Builder().build();
+    }
 
     @VisibleForTesting
     IterableApi(IterableInAppManager inAppManager) {
