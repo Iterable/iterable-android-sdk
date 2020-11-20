@@ -261,11 +261,10 @@ public class IterableInAppManagerTest extends BaseTest {
         // Reset the existing IterableApi
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
-        IterableApi.sharedInstance = spy(new IterableApi());
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
-        doReturn(inAppManager).when(IterableApi.sharedInstance).getInAppManager();
+        IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -326,11 +325,10 @@ public class IterableInAppManagerTest extends BaseTest {
         // Reset the existing IterableApi
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
-        IterableApi.sharedInstance = spy(new IterableApi());
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
-        doReturn(inAppManager).when(IterableApi.sharedInstance).getInAppManager();
+        IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {

@@ -25,7 +25,6 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 
@@ -64,9 +63,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     private void reInitIterableApi() {
-        IterableApi.sharedInstance = spy(new IterableApi());
-//        IterableAuthManager authManagerMock = mock(IterableAuthManager.class);
-//        doReturn(authManagerMock).when(IterableApi.sharedInstance).getAuthManager();
+        IterableApi.sharedInstance = new IterableApi();
         authHandler = mock(IterableAuthHandler.class);
     }
 

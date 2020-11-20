@@ -32,6 +32,7 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,6 +40,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -46,12 +48,17 @@ public class IterableApiTest extends BaseTest {
 
     public static final String PACKAGE_NAME = "com.iterable.iterableapi.test";
     private MockWebServer server;
+    private IterableApiClient originalApiClient;
+    private IterableApiClient mockApiClient;
 
     @Before
     public void setUp() {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+
         reInitIterableApi();
+
+        IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
     }
 
     @After
@@ -62,8 +69,10 @@ public class IterableApiTest extends BaseTest {
 
     private void reInitIterableApi() {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        IterableApi.sharedInstance = spy(new IterableApi(inAppManagerMock));
-        doReturn(inAppManagerMock).when(IterableApi.sharedInstance).getInAppManager();
+        IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
+        originalApiClient = IterableApi.sharedInstance.apiClient;
+        mockApiClient = spy(originalApiClient);
+        IterableApi.sharedInstance.apiClient = mockApiClient;
     }
 
     @Test
@@ -82,8 +91,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().updateEmail("");
         IterableApi.getInstance().trackPurchase(10.0, new ArrayList<CommerceItem>());
 
-        RecordedRequest request = server.takeRequest(100, TimeUnit.MILLISECONDS);
-        assertNull(request);
+        verifyNoInteractions(mockApiClient);
     }
 
     @Test
@@ -126,13 +134,17 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testUpdateEmailPersistence() throws Exception {
+        String oldEmail = "test@email.com";
+        String newEmail = "new@email.com";
+
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.initialize(getContext(), "apiKey");
-        IterableApi.getInstance().setEmail("test@email.com");
-        assertEquals("test@email.com", IterableApi.getInstance().getEmail());
+        IterableApi.getInstance().setEmail(oldEmail);
+        assertEquals(oldEmail, IterableApi.getInstance().getEmail());
 
-        IterableApi.getInstance().updateEmail("new@email.com");
+        IterableApi.getInstance().updateEmail(newEmail);
         shadowOf(getMainLooper()).idle();
+        verify(mockApiClient).updateEmail(eq(newEmail), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
         server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
 
@@ -199,13 +211,16 @@ public class IterableApiTest extends BaseTest {
 
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setEmail("test@email.com");
-        verify(IterableApi.sharedInstance).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setEmail(null) disables the device
         IterableApi.getInstance().setEmail(null);
-        verify(IterableApi.sharedInstance).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.DISABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
     }
 
     @Test
@@ -215,9 +230,7 @@ public class IterableApiTest extends BaseTest {
         // Check that setEmail doesn't call registerForPush or disablePush
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
-        verify(IterableApi.sharedInstance, never()).registerForPush();
-        verify(IterableApi.sharedInstance, never()).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
     }
 
     @Test
@@ -226,13 +239,16 @@ public class IterableApiTest extends BaseTest {
 
         // Check that setUserId calls registerForPush
         IterableApi.getInstance().setUserId("userId");
-        verify(IterableApi.sharedInstance).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setUserId(null) disables the device
         IterableApi.getInstance().setUserId(null);
-        verify(IterableApi.sharedInstance).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.DISABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
     }
 
     @Test
@@ -242,34 +258,36 @@ public class IterableApiTest extends BaseTest {
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setUserId("userId");
         IterableApi.getInstance().setUserId(null);
-        verify(IterableApi.sharedInstance, never()).registerForPush();
-        verify(IterableApi.sharedInstance, never()).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
     }
 
     @Test
     public void testNoAutomaticPushRegistrationOnInit() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
+        Mockito.reset(IterablePushRegistration.instance);
 
         reInitIterableApi();
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
-        verify(IterableApi.sharedInstance, never()).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
     }
 
     @Test
     public void testAutomaticPushRegistrationOnInitAndForeground() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
+        Mockito.reset(IterablePushRegistration.instance);
 
         reInitIterableApi();
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
-        verify(IterableApi.sharedInstance).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+
+        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+
         activityController.pause().stop().destroy();
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
     }

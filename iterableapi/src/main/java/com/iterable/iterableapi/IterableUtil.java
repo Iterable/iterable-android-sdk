@@ -48,6 +48,14 @@ class IterableUtil {
         return instance.convertVersionStringToInt(versionString);
     }
 
+    /**
+     * Gets the advertisingId if available
+     * @return
+     */
+    static String getAdvertisingId(Context context) {
+        return instance.getAdvertisingId(context);
+    }
+
     static void saveExpirableJsonObject(SharedPreferences preferences, String key, JSONObject object, long expirationInterval) {
         instance.saveExpirableJsonObject(preferences, key, object, expirationInterval);
     }
@@ -134,6 +142,25 @@ class IterableUtil {
                 version += ((int) Math.pow(10, 3 * (2 - i))) * Integer.parseInt(versionNumbers[i]);
             }
             return version;
+        }
+
+        String getAdvertisingId(Context context) {
+            String advertisingId = null;
+            try {
+                Class adClass = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+                if (adClass != null) {
+                    Object advertisingIdInfo = adClass.getMethod("getAdvertisingIdInfo", Context.class).invoke(null, context);
+                    if (advertisingIdInfo != null) {
+                        advertisingId = (String) advertisingIdInfo.getClass().getMethod("getId").invoke(advertisingIdInfo);
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                IterableLogger.d(TAG, "ClassNotFoundException: Can't track ADID. " +
+                        "Check that play-services-ads is added to the dependencies.", e);
+            } catch (Exception e) {
+                IterableLogger.w(TAG, "Error while fetching advertising ID", e);
+            }
+            return advertisingId;
         }
 
         void saveExpirableJsonObject(SharedPreferences preferences, String key, JSONObject object, long expirationInterval) {
