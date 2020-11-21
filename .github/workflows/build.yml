@@ -45,6 +45,14 @@ jobs:
       - name: Test
         run: ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport
 
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests
+          path: |
+            ./**/build/**/jacoco*.xml
+            ./**/build/**/report.xml
+
   instrumentation-tests:
     name: Instrumentation tests
     runs-on: macos-latest
@@ -67,3 +75,49 @@ jobs:
         with:
           api-level: 28
           script: ./gradlew :iterableapi:connectedCheck :app:jacocoDebugAndroidTestReport
+
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v2
+        with:
+          name: instrumentation-tests
+          path: |
+            ./**/build/**/jacoco*.xml
+            ./**/build/**/report.xml
+
+  report-coverage:
+    name: Report coverage
+    runs-on: ubuntu-latest
+    needs: [unit-tests, instrumentation-tests]
+    env:
+      JACOCO_SOURCE_PATH: "iterableapi/src/main/java iterableapi-ui/src/main/java"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+      - run: chmod +x ./cc-test-reporter
+      - run: ./cc-test-reporter before-build
+
+      - name: Download unit tests coverage
+        uses: actions/download-artifact@v2
+        with:
+          name: unit-tests
+
+      - name: Download instrumentation tests coverage
+        uses: actions/download-artifact@v2
+        with:
+          name: instrumentation-tests
+
+      - run: bash <(curl -s https://codecov.io/bash)
+      - run: ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugTestReport/jacocoDebugTestReport.xml --input-type jacoco -d
+      - run: ./cc-test-reporter format-coverage iterableapi/build/reports/coverage/debug/report.xml --input-type jacoco -d
+      - run: ./cc-test-reporter format-coverage iterableapi/build/jacoco/jacoco.xml --input-type jacoco -d
+      - run: ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugAndroidTestReport/jacocoDebugAndroidTestReport.xml --input-type jacoco -d
+      - run: ./cc-test-reporter upload-coverage
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
