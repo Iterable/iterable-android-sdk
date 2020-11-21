@@ -1,0 +1,69 @@
+name: Build and Test
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Configure JDK
+        uses: actions/setup-java@v1
+        with:
+            java-version: 1.8
+
+      - run: touch local.properties
+
+      - name: Test
+        run: ./gradlew :iterableapi:checkstyle :iterableapi-ui:assembleDebug :iterableapi:javadoc :iterableapi-ui:javadoc
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Configure JDK
+        uses: actions/setup-java@v1
+        with:
+            java-version: 1.8
+
+      - run: touch local.properties
+
+      - name: Test
+        run: ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport
+
+  instrumentation-tests:
+    name: Instrumentation tests
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Configure JDK
+        uses: actions/setup-java@v1
+        with:
+            java-version: 1.8
+
+      - run: touch local.properties
+
+      - name: Test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 28
+          script: ./gradlew :iterableapi:connectedCheck :app:jacocoDebugAndroidTestReport
