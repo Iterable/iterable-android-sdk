@@ -4,10 +4,10 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-class IterableTaskDatabaseManager extends SQLiteOpenHelper {
+class IterableDatabaseManager extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "iterable_sdk.db";
     private static final int DATABASE_VERSION = 1;
-    IterableTaskDatabaseManager(Context context) {
+    IterableDatabaseManager(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
