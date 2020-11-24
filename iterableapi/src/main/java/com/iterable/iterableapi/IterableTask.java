@@ -26,9 +26,9 @@ class IterableTask {
 
     int currentVersion = 1;
 
-    String id; //uuid generated for each task when getting created
-    String name;//name of the api
-    int version;//version for the task? Not sure. replicating as on iOS
+    String id;
+    String name;
+    int version;
     Date createdAt;
     Date modifiedAt;
     Date lastAttemptedAt;
@@ -65,12 +65,13 @@ class IterableTask {
     }
 
     //Bare minimum one to be used when creating the Task
-    IterableTask(String name, IterableTaskType taskType) {
+    IterableTask(String name, IterableTaskType taskType, String data) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
         this.createdAt = new Date();
         this.scheduledAt = new Date();
         this.requestedAt = new Date();
+        this.data = data;
         this.taskType = taskType;
     }
 

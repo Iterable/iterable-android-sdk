@@ -3,8 +3,11 @@ package com.iterable.iterableapi;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,9 +42,8 @@ public class IterableTaskManager {
     private SQLiteDatabase database;
     private IterableDatabaseManager databaseManager;
 
-    IterableTaskManager() {
+    private IterableTaskManager(Context context) {
         try {
-            Context context = IterableApi.getInstance().getMainActivityContext();
             if (context == null) {
                 return;
             }
@@ -50,14 +52,14 @@ public class IterableTaskManager {
                 databaseManager = new IterableDatabaseManager(IterableApi.getInstance().getMainActivityContext());
             }
             database = databaseManager.getWritableDatabase();
-        } catch (Throwable t) {
-            IterableLogger.e(TAG, "Failed to create database");
+        } catch (SQLException e) {
+            IterableLogger.e(TAG, "Database cannot be opened for writing");
         }
     }
 
-    public static IterableTaskManager sharedInstance() {
+    static IterableTaskManager sharedInstance(Context context) {
         if (sharedInstance == null) {
-            sharedInstance = new IterableTaskManager();
+            sharedInstance = new IterableTaskManager(context);
         }
         return sharedInstance;
     }
@@ -68,14 +70,11 @@ public class IterableTaskManager {
      * @param name Type of the offline task. See {@link IterableTaskType}
      * @return unique id of the task created
      */
-    String createTask(String name) {
-
-        if (database == null) {
-            IterableLogger.e(TAG, "Database not initialized");
-            return null;
-        }
+    @Nullable
+    String createTask(String name, IterableTaskType type, String data) {
+        if (!isDatabaseReady()) return null;
         ContentValues contentValues = new ContentValues();
-        IterableTask iterableTask = new IterableTask(name, IterableTaskType.API);
+        IterableTask iterableTask = new IterableTask(name, IterableTaskType.API, data);
         contentValues.put(IterableTask.TASK_ID, iterableTask.id);
         contentValues.put(IterableTask.NAME, iterableTask.name);
         contentValues.put(IterableTask.VERSION, iterableTask.version);
@@ -123,7 +122,10 @@ public class IterableTaskManager {
      * @param id Unique id for the task
      * @return {@link IterableTask} corresponding to id provided
      */
+    @Nullable
     IterableTask getTask(String id) {
+
+        if (!isDatabaseReady()) return null;
 
         String name = null;
         IterableTaskType type = null;
@@ -133,12 +135,6 @@ public class IterableTaskManager {
         Date dateModified = null, datelastAttempted = null, datescheduled = null, dateRequested = null;
         Boolean processing = false, failed = false, blocking = false;
         String data = null, error = null;
-
-
-        if (database == null) {
-            IterableLogger.e(TAG, "database not initialized");
-            return null;
-        }
 
         String query = QUERY_GET_TASK_BY_ID.replace(REPLACING_STRING, id);
         Cursor cursor = database.rawQuery(query, null);
@@ -153,7 +149,6 @@ public class IterableTaskManager {
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.MODIFIED_AT))) {
             dateModified = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.MODIFIED_AT)));
         }
-
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.LAST_ATTEMPTED_AT))) {
             datelastAttempted = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.LAST_ATTEMPTED_AT)));
         }
@@ -166,7 +161,6 @@ public class IterableTaskManager {
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.PROCESSING))) {
             processing = cursor.getInt(cursor.getColumnIndex(IterableTask.PROCESSING)) > 0;
         }
-
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.FAILED))) {
             failed = cursor.getInt(cursor.getColumnIndex(IterableTask.FAILED)) > 0;
         }
@@ -182,12 +176,11 @@ public class IterableTaskManager {
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.TYPE))) {
             type = IterableTaskType.valueOf(cursor.getString(cursor.getColumnIndex(IterableTask.TYPE)));
         }
-
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.ATTEMPTS))) {
             attempts = cursor.getInt(cursor.getColumnIndex(IterableTask.ATTEMPTS));
         }
 
-        IterableTask task = new IterableTask(id, name, version, dateCreated, dateModified, datelastAttempted, datescheduled, dateRequested, processing, failed, blocking, data, error, IterableTaskType.API, attempts);
+        IterableTask task = new IterableTask(id, name, version, dateCreated, dateModified, datelastAttempted, datescheduled, dateRequested, processing, failed, blocking, data, error, type, attempts);
         IterableLogger.v(TAG, "Found " + cursor.getColumnCount() + "columns");
         return task;
     }
@@ -197,12 +190,15 @@ public class IterableTaskManager {
      *
      * @return {@link ArrayList} of {@link String} ids for all the tasks in OfflineTask table
      */
+    @NonNull
     ArrayList<String> getAllTaskIds() {
-        if (!precheck()) return null;
+        ArrayList<String> taskIds = new ArrayList<>();
+        if (!isDatabaseReady()) return taskIds;
+
         Cursor cursor = database.rawQuery("SELECT " + IterableTask.TASK_ID +
                         " FROM " + ITERABLE_TASK_TABLE_NAME,
                 null);
-        ArrayList<String> taskIds = new ArrayList<>();
+
         if (cursor.moveToFirst()) {
             do {
                 taskIds.add(cursor.getString(0));
@@ -213,28 +209,10 @@ public class IterableTaskManager {
     }
 
     /**
-     * Gets number of rows in the OfflineTask table.
-     *
-     * @return Number of rows in the event table.
-     */
-    long getTaskCount() {
-        long count = 0;
-        if (database == null) {
-            return count;
-        }
-        try {
-            count = DatabaseUtils.queryNumEntries(database, ITERABLE_TASK_TABLE_NAME);
-        } catch (Throwable t) {
-            IterableLogger.e(TAG, "Unable to get a number of rows in the table.", t);
-        }
-        return count;
-    }
-
-    /**
      * Deletes all the entries from the OfflineTask table.
      */
     void deleteAllTasks() {
-        if (!precheck()) return;
+        if (!isDatabaseReady()) return;
         int numberOfRowsDeleted = database.delete(ITERABLE_TASK_TABLE_NAME, null, null);
         IterableLogger.v(TAG, "Deleted " + numberOfRowsDeleted + " offline tasks");
         return;
@@ -246,8 +224,8 @@ public class IterableTaskManager {
      * @param id for the task
      * @return Whether or not the task was deleted
      */
-    Boolean deleteTask(String id) {
-        if (!precheck()) return false;
+    boolean deleteTask(String id) {
+        if (!isDatabaseReady()) return false;
         int numberOfEntriesDeleted = database.delete(ITERABLE_TASK_TABLE_NAME, IterableTask.TASK_ID + " =?", new String[]{id});
         IterableLogger.v(TAG, "Deleted entry - " + numberOfEntriesDeleted);
         return true;
@@ -260,11 +238,11 @@ public class IterableTaskManager {
      * @param date Date when the task was modified
      * @return Whether or not the task was updated
      */
-    Boolean updateModifiedAt(String id, Date date) {
-        if (!precheck()) return false;
+    boolean updateModifiedAt(String id, Date date) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.MODIFIED_AT, date.toString());
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -274,11 +252,11 @@ public class IterableTaskManager {
      * @param date Date when the task was last attempted
      * @return Whether or not the task was updated
      */
-    Boolean updateLastAttemptedAt(String id, Date date) {
-        if (!precheck()) return false;
+    boolean updateLastAttemptedAt(String id, Date date) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.LAST_ATTEMPTED_AT, date.toString());
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -288,11 +266,11 @@ public class IterableTaskManager {
      * @param date Date when the task was last requested
      * @return Whether or not the task was updated
      */
-    Boolean updateRequestedAt(String id, Date date) {
-        if (!precheck()) return false;
+    boolean updateRequestedAt(String id, Date date) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.REQUESTED_AT, date.toString());
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -302,11 +280,11 @@ public class IterableTaskManager {
      * @param date Date when the task is Scheduled
      * @return Whether or not the task was updated
      */
-    Boolean updateScheduledAt(String id, Date date) {
-        if (precheck()) return false;
+    boolean updateScheduledAt(String id, Date date) {
+        if (isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.SCHEDULED_AT, date.toString());
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -316,12 +294,12 @@ public class IterableTaskManager {
      * @param state whether the task is processing or completed
      * @return Whether or not the task was updated
      */
-    Boolean updateIsProcessing(String id, Boolean state) {
-        if (!precheck()) return false;
+    boolean updateIsProcessing(String id, Boolean state) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
 
         contentValues.put(IterableTask.PROCESSING, state);
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -331,11 +309,11 @@ public class IterableTaskManager {
      * @param state whether the task failed
      * @return Whether or not the task was updated
      */
-    Boolean updateHasFailed(String id, Boolean state) {
-        if (!precheck()) return false;
+    boolean updateHasFailed(String id, boolean state) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.FAILED, state);
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -345,11 +323,11 @@ public class IterableTaskManager {
      * @param attempt number of times the task has been executed
      * @return Whether or not the task was updated
      */
-    Boolean updateAttempts(String id, int attempt) {
-        if (!precheck()) return false;
+    boolean incrementAttempts(String id, int attempt) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.ATTEMPTS, attempt);
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -358,8 +336,8 @@ public class IterableTaskManager {
      * @param id Unique id for the task
      * @return Whether or not the task was updated
      */
-    Boolean updateAttempts(String id) {
-        if (!precheck()) return false;
+    boolean incrementAttempts(String id) {
+        if (!isDatabaseReady()) return false;
         IterableTask task = getTask(id);
         if (task == null) {
             IterableLogger.e(TAG, "No task found for id " + id);
@@ -367,7 +345,7 @@ public class IterableTaskManager {
         }
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.ATTEMPTS, task.attempts + 1);
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -377,11 +355,11 @@ public class IterableTaskManager {
      * @param errorData error received after processing the task
      * @return Whether or not the task was updated
      */
-    Boolean updateError(String id, String errorData) {
-        if (!precheck()) return false;
+    boolean updateError(String id, String errorData) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.ERROR, errorData);
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
+        return updateTaskWithContentValues(id, contentValues);
     }
 
     /**
@@ -391,16 +369,24 @@ public class IterableTaskManager {
      * @param data required for the task. JSONObject converted to string
      * @return Whether or not the task was updated
      */
-    Boolean updateData(String id, String data) {
-        if (!precheck()) return false;
+    boolean updateData(String id, String data) {
+        if (!isDatabaseReady()) return false;
         ContentValues contentValues = new ContentValues();
         contentValues.put(IterableTask.DATA, data);
+        return updateTaskWithContentValues(id, contentValues);
+    }
+
+    private boolean updateTaskWithContentValues(String id, ContentValues contentValues) {
         return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, IterableTask.TASK_ID + "=?", new String[]{id}));
     }
 
-    private boolean precheck() {
+    private boolean isDatabaseReady() {
         if (database == null) {
             IterableLogger.e(TAG, "Database not initialized");
+            return false;
+        }
+        if (!database.isOpen()) {
+            IterableLogger.e(TAG, "Database is closed");
             return false;
         }
         return true;
