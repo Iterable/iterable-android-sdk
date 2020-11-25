@@ -30,18 +30,12 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
             if (pushRegistrationObject != null) {
                 if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
                     IterableApi.sharedInstance.registerDeviceToken(
-                            iterablePushRegistrationData.email,
-                            iterablePushRegistrationData.userId,
-                            iterablePushRegistrationData.authToken,
                             iterablePushRegistrationData.pushIntegrationName,
                             pushRegistrationObject.token,
                             IterableApi.getInstance().getDeviceAttributes());
 
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                     IterableApi.sharedInstance.disableToken(
-                            iterablePushRegistrationData.email,
-                            iterablePushRegistrationData.userId,
-                            iterablePushRegistrationData.authToken,
                             pushRegistrationObject.token,
                             null,
                             null
@@ -96,7 +90,7 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
 
                     // We disable the device on Iterable but keep the token
                     if (oldToken != null) {
-                        IterableApi.sharedInstance.disableToken(iterablePushRegistrationData.email, iterablePushRegistrationData.userId, iterablePushRegistrationData.authToken, oldToken, new IterableHelper.SuccessHandler() {
+                        IterableApi.sharedInstance.disableToken(oldToken, new IterableHelper.SuccessHandler() {
                             @Override
                             public void onSuccess(@NonNull JSONObject data) {
                                 sharedPref.edit().putBoolean(IterableConstants.SHARED_PREFS_FCM_MIGRATION_DONE_KEY, true).apply();

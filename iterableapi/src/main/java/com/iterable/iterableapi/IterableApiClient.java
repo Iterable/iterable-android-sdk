@@ -334,23 +334,23 @@ class IterableApiClient {
         }
     }
 
-    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
-            if (email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, email);
-            } else if (userId != null) {
-                requestJSON.put(IterableConstants.KEY_USER_ID, userId);
+            if (authProvider.getEmail() != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail());
+            } else if (authProvider.getUserId() != null) {
+                requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, authToken, onSuccess, onFailure);
+            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
         Context context = authProvider.getContext();
         JSONObject requestJSON = new JSONObject();
         try {
@@ -389,11 +389,11 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_DEVICE, device);
 
             // Create the user by userId if it doesn't exist
-            if (email == null && userId != null) {
+            if (authProvider.getEmail() == null && authProvider.getUserId() != null) {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON, authToken);
+            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }
@@ -473,20 +473,12 @@ class IterableApiClient {
      * @param json
      */
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json) {
-        sendPostRequest(resourcePath, json, authProvider.getAuthToken());
-    }
-
-    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken) {
-        sendPostRequest(resourcePath, json, authToken, null, null);
+        sendPostRequest(resourcePath, json, null, null);
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        sendPostRequest(resourcePath, json, authProvider.getAuthToken(), onSuccess, onFailure);
-    }
-
-    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(authProvider.getApiKey(), resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        new IterableRequest().execute(request);
+        RequestProcessor requestProcessor = new OnlineRequestProcessor();
+        requestProcessor.processPostRequest(authProvider, resourcePath, json, onSuccess, onFailure);
     }
 
     /**
@@ -496,7 +488,7 @@ class IterableApiClient {
      * @param json
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        IterableApiRequest request = new IterableApiRequest(authProvider.getApiKey(), resourcePath, json, IterableApiRequest.GET, authProvider.getAuthToken(), onCallback);
-        new IterableRequest().execute(request);
+        RequestProcessor requestProcessor = new OnlineRequestProcessor();
+        requestProcessor.processGetRequest(authProvider, resourcePath, json, onCallback);
     }
 }
