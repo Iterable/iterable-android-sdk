@@ -50,6 +50,7 @@ public class IterableApiTest extends BaseTest {
     private MockWebServer server;
     private IterableApiClient originalApiClient;
     private IterableApiClient mockApiClient;
+    private IterablePushRegistration.IterablePushRegistrationImpl originalPushRegistrationImpl;
 
     @Before
     public void setUp() {
@@ -58,11 +59,14 @@ public class IterableApiTest extends BaseTest {
 
         reInitIterableApi();
 
+        originalPushRegistrationImpl = IterablePushRegistration.instance;
         IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
     }
 
     @After
     public void tearDown() throws IOException {
+        IterablePushRegistration.instance = originalPushRegistrationImpl;
+
         server.shutdown();
         server = null;
     }
