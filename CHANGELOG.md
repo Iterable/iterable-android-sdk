@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.9)
+#### Added
+- Added support for delayed initialization of the SDK. While we still recommend calling `IterableApi.initialize` in `Application#onCreate`, apps initializing the Iterable SDK later should now work properly with push actions and background push notifications without issues.
+
+#### Fixed
+- Fixed `IllegalStateException` crash in `IterableInAppFragmentHTMLNotification` by adding safety checks before dismissing the in-app dialog.
+- Fixed a crash in the in-app dialog that could occur in some cases when the device is rotated while the in-app dialog is beginning to load.
+- Fixed a crash in `IterablePushActionReceiver` when `extras` are `null`. This was only happening in automated analysis tools and not in production, but was nevertheless showing up in crash reports.
+
 ## [3.2.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.8)
 #### Added
 - Added support for in-app animations. Select the checkbox to use preset animations when creating a template to see this feature in action.
