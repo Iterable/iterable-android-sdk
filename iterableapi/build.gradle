@@ -24,6 +24,11 @@ android {
             multiDexEnabled true
         }
     }
+    testOptions.unitTests.all {
+        testLogging {
+            exceptionFormat "full"
+        }
+    }
     testOptions.unitTests.includeAndroidResources = true
 }
 
