@@ -485,8 +485,8 @@ class IterableApiClient {
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(authProvider.getApiKey(), resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        new IterableRequest().execute(request);
+        RequestProcessor requestProcessor = new OnlineRequestProcessor();
+        requestProcessor.processPostRequest(authProvider.getApiKey(), resourcePath, json, authToken, onSuccess, onFailure);
     }
 
     /**
@@ -496,7 +496,7 @@ class IterableApiClient {
      * @param json
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        IterableApiRequest request = new IterableApiRequest(authProvider.getApiKey(), resourcePath, json, IterableApiRequest.GET, authProvider.getAuthToken(), onCallback);
-        new IterableRequest().execute(request);
+        RequestProcessor requestProcessor = new OnlineRequestProcessor();
+        requestProcessor.processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onCallback);
     }
 }
