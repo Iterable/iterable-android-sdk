@@ -3,8 +3,6 @@ package com.iterable.iterableapi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.android.gms.tasks.Task;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,38 +25,36 @@ public class OfflineRequestProcessor implements RequestProcessor {
     }
 }
 
-
+//Placeholder Taskschedular for testing purpose.
 class TaskScheduler {
-    private final String TAG = "RequestProcessor";
 
     static HashMap<String, IterableHelper.SuccessHandler> successCallbackMap = new HashMap<>();
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
 
     void scheduleTask(IterableApiRequest request, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableTaskManager taskManager = IterableTaskManager.sharedInstance(IterableApi.getInstance().getMainActivityContext());
-        JSONObject iterableRequestOffline = null;
+        JSONObject serializedRequest = null;
         try {
-            iterableRequestOffline = request.toJSONObject();
+            serializedRequest = request.toJSONObject();
         } catch (JSONException e) {
-            IterableLogger.e(TAG, "Failed serializating the request for offline execution. Attempting to request the request now...");
+            IterableLogger.e("RequestProcessor", "Failed serializating the request for offline execution. Attempting to request the request now...");
             new IterableRequest().execute(request);
             return;
         }
 
-        String taskId = taskManager.createTask(request.resourcePath, IterableTaskType.API, iterableRequestOffline.toString());
+        String taskId = taskManager.createTask(request.resourcePath, IterableTaskType.API, serializedRequest.toString());
 
         successCallbackMap.put(taskId, onSuccess);
-        failureCallbackMap.put(taskId,onFailure);
+        failureCallbackMap.put(taskId, onFailure);
 
-        processTask();
+        processTasks();
     }
 
     //Temporary function to convert database offline task to ITerableReuqest and execute.
-    void processTask() {
+    void processTasks() {
         IterableTaskManager taskManager = IterableTaskManager.sharedInstance(IterableApi.getInstance().getMainActivityContext());
         ArrayList<String> taskIds = taskManager.getAllTaskIds();
-        for (String id : taskIds
-        ) {
+        for (String id : taskIds) {
             try {
                 IterableApiRequest request = makeRequestFromTask(taskManager.getTask(id));
                 new IterableRequest().execute(request);
