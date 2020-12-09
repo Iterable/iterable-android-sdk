@@ -12,15 +12,14 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class IterableTaskManager {
+class IterableTaskManager {
 
     private static IterableTaskManager sharedInstance;
 
     private static final String TAG = "IterableTaskManager";
 
     static final String ITERABLE_TASK_TABLE_NAME = "OfflineTask";
-    private static final String REPLACING_STRING = "*#*#*#*";
-    private static final String QUERY_GET_TASK_BY_ID = "select * from OfflineTask where task_id = '" + REPLACING_STRING + "'";
+    private static final String QUERY_GET_TASK_BY_ID = "select * from OfflineTask where task_id = ?";
 
     static final String OFFLINE_TASK_COLUMN_DATA = " (" + IterableTask.TASK_ID + " TEXT PRIMARY KEY," +
             IterableTask.NAME + " TEXT," +
@@ -37,7 +36,6 @@ public class IterableTaskManager {
             IterableTask.ERROR + " TEXT," +
             IterableTask.TYPE + " TEXT," +
             IterableTask.ATTEMPTS + " INTEGER" + ")";
-    private static final String KEY_ROWID = "rowid";
 
     private SQLiteDatabase database;
     private IterableDatabaseManager databaseManager;
@@ -91,20 +89,14 @@ public class IterableTaskManager {
         if (iterableTask.requestedAt != null) {
             contentValues.put(IterableTask.REQUESTED_AT, iterableTask.requestedAt.toString());
         }
-        if (iterableTask.processing != null) {
-            contentValues.put(IterableTask.PROCESSING, iterableTask.processing);
-        }
-        if (iterableTask.failed != null) {
-            contentValues.put(IterableTask.FAILED, iterableTask.failed);
-        }
-        if (iterableTask.blocking != null) {
-            contentValues.put(IterableTask.BLOCKING, iterableTask.blocking);
-        }
+        contentValues.put(IterableTask.PROCESSING, iterableTask.processing);
+        contentValues.put(IterableTask.FAILED, iterableTask.failed);
+        contentValues.put(IterableTask.BLOCKING, iterableTask.blocking);
         if (iterableTask.data != null) {
-            contentValues.put(IterableTask.DATA, iterableTask.data.toString());
+            contentValues.put(IterableTask.DATA, iterableTask.data);
         }
         if (iterableTask.taskFailureData != null) {
-            contentValues.put(IterableTask.ERROR, iterableTask.taskFailureData.toString());
+            contentValues.put(IterableTask.ERROR, iterableTask.taskFailureData);
         }
 
         contentValues.put(IterableTask.TYPE, iterableTask.taskType.toString());
@@ -124,20 +116,20 @@ public class IterableTaskManager {
      */
     @Nullable
     IterableTask getTask(String id) {
-
-        if (!isDatabaseReady()) return null;
+        if (!isDatabaseReady()) {
+            return null;
+        }
 
         String name = null;
         IterableTaskType type = null;
         int version = 1;
         int attempts = 0;
         Date dateCreated = null;
-        Date dateModified = null, datelastAttempted = null, datescheduled = null, dateRequested = null;
-        Boolean processing = false, failed = false, blocking = false;
+        Date dateModified = null, dateLastAttempted = null, dateScheduled = null, dateRequested = null;
+        boolean processing = false, failed = false, blocking = false;
         String data = null, error = null;
 
-        String query = QUERY_GET_TASK_BY_ID.replace(REPLACING_STRING, id);
-        Cursor cursor = database.rawQuery(query, null);
+        Cursor cursor = database.rawQuery(QUERY_GET_TASK_BY_ID, new String[]{id});
 
         if (!cursor.moveToFirst()) {
             IterableLogger.d(TAG, "No record found");
@@ -150,10 +142,10 @@ public class IterableTaskManager {
             dateModified = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.MODIFIED_AT)));
         }
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.LAST_ATTEMPTED_AT))) {
-            datelastAttempted = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.LAST_ATTEMPTED_AT)));
+            dateLastAttempted = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.LAST_ATTEMPTED_AT)));
         }
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.SCHEDULED_AT))) {
-            datescheduled = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.SCHEDULED_AT)));
+            dateScheduled = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.SCHEDULED_AT)));
         }
         if (!cursor.isNull(cursor.getColumnIndex(IterableTask.REQUESTED_AT))) {
             dateRequested = new Date(cursor.getString(cursor.getColumnIndex(IterableTask.REQUESTED_AT)));
@@ -180,8 +172,9 @@ public class IterableTaskManager {
             attempts = cursor.getInt(cursor.getColumnIndex(IterableTask.ATTEMPTS));
         }
 
-        IterableTask task = new IterableTask(id, name, version, dateCreated, dateModified, datelastAttempted, datescheduled, dateRequested, processing, failed, blocking, data, error, type, attempts);
+        IterableTask task = new IterableTask(id, name, version, dateCreated, dateModified, dateLastAttempted, dateScheduled, dateRequested, processing, failed, blocking, data, error, type, attempts);
         IterableLogger.v(TAG, "Found " + cursor.getColumnCount() + "columns");
+        cursor.close();
         return task;
     }
 
@@ -205,6 +198,7 @@ public class IterableTaskManager {
             } while (cursor.moveToNext());
         }
         IterableLogger.v(TAG, "Found " + cursor.getColumnCount() + " columns");
+        cursor.close();
         return taskIds;
     }
 
@@ -215,7 +209,6 @@ public class IterableTaskManager {
         if (!isDatabaseReady()) return;
         int numberOfRowsDeleted = database.delete(ITERABLE_TASK_TABLE_NAME, null, null);
         IterableLogger.v(TAG, "Deleted " + numberOfRowsDeleted + " offline tasks");
-        return;
     }
 
     /**

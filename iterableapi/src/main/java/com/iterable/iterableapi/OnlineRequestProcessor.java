@@ -5,7 +5,7 @@ import androidx.annotation.Nullable;
 
 import org.json.JSONObject;
 
-public class OnlineRequestProcessor implements RequestProcessor {
+class OnlineRequestProcessor implements RequestProcessor {
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
