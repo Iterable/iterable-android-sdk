@@ -35,9 +35,9 @@ class IterableTask {
     Date scheduledAt;
     Date requestedAt;
 
-    Boolean processing;
-    Boolean failed;
-    Boolean blocking;
+    boolean processing;
+    boolean failed;
+    boolean blocking;
 
     //TODO: Confirm if data and failure data would be String converted from JSONObjects.
     String data;
@@ -46,7 +46,7 @@ class IterableTask {
     int attempts;
 
     //To be used when creating IterableTask from database
-    IterableTask(String id, @NonNull String name, @NonNull int version, @NonNull Date createdAt, Date modifiedAt, Date lastAttemptedAt, Date scheduledAt, Date requestedAt, Boolean processing, Boolean failed, Boolean blocking, String data, String taskFailureData, IterableTaskType taskType, int attempts) {
+    IterableTask(String id, @NonNull String name, int version, @NonNull Date createdAt, Date modifiedAt, Date lastAttemptedAt, Date scheduledAt, Date requestedAt, boolean processing, boolean failed, boolean blocking, String data, String taskFailureData, IterableTaskType taskType, int attempts) {
         this.id = id;
         this.name = name;
         this.version = version;
@@ -80,6 +80,7 @@ class IterableTask {
 enum IterableTaskType {
     API {
         @Override
+        @NonNull
         public String toString() {
             return "API";
         }
