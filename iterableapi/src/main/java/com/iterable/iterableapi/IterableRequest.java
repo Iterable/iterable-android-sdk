@@ -293,6 +293,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
  *  Iterable Request object
  */
 class IterableApiRequest {
+    private static final String TAG = "IterableApiRequest";
+
     static final String GET = "GET";
     static final String POST = "POST";
 
@@ -337,5 +339,32 @@ class IterableApiRequest {
         this.requestType = requestType;
         this.authToken = authToken;
         this.legacyCallback = callback;
+    }
+
+    public JSONObject toJSONObject() throws JSONException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("apiKey", this.apiKey);
+        jsonObject.put("resourcePath", this.resourcePath);
+        jsonObject.put("authToken", this.authToken);
+        jsonObject.put("requestType", this.requestType);
+        jsonObject.put("data", this.json);
+        return jsonObject;
+    }
+
+    static IterableApiRequest fromJSON(JSONObject jsonData, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        try {
+            String apikey = jsonData.getString("apiKey");
+            String resourcePath = jsonData.getString("resourcePath");
+            String requestType = jsonData.getString("requestType");
+            String authToken = "";
+            if (jsonData.has("authToken")) {
+                authToken = jsonData.getString("authToken");
+            }
+            JSONObject json = jsonData.getJSONObject("data");
+            return new IterableApiRequest(apikey, resourcePath, json, requestType, authToken, onSuccess, onFailure);
+        } catch (JSONException e) {
+            IterableLogger.e(TAG, "Failed to create Iterable request from JSON");
+        }
+        return null;
     }
 }
