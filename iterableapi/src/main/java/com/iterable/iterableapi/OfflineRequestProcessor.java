@@ -32,7 +32,7 @@ class TaskScheduler {
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
 
     void scheduleTask(IterableApiRequest request, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableTaskManager taskManager = IterableTaskManager.sharedInstance(IterableApi.getInstance().getMainActivityContext());
+        IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(IterableApi.getInstance().getMainActivityContext());
         JSONObject serializedRequest = null;
         try {
             serializedRequest = request.toJSONObject();
@@ -42,7 +42,7 @@ class TaskScheduler {
             return;
         }
 
-        String taskId = taskManager.createTask(request.resourcePath, IterableTaskType.API, serializedRequest.toString());
+        String taskId = taskStorage.createTask(request.resourcePath, IterableTaskType.API, serializedRequest.toString());
 
         successCallbackMap.put(taskId, onSuccess);
         failureCallbackMap.put(taskId, onFailure);
@@ -52,13 +52,13 @@ class TaskScheduler {
 
     //Temporary function to convert database offline task to ITerableReuqest and execute.
     void processTasks() {
-        IterableTaskManager taskManager = IterableTaskManager.sharedInstance(IterableApi.getInstance().getMainActivityContext());
-        ArrayList<String> taskIds = taskManager.getAllTaskIds();
+        IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(IterableApi.getInstance().getMainActivityContext());
+        ArrayList<String> taskIds = taskStorage.getAllTaskIds();
         for (String id : taskIds) {
             try {
-                IterableApiRequest request = makeRequestFromTask(taskManager.getTask(id));
+                IterableApiRequest request = makeRequestFromTask(taskStorage.getTask(id));
                 new IterableRequest().execute(request);
-                taskManager.deleteTask(id);
+                taskStorage.deleteTask(id);
             } catch (JSONException e) {
                 e.printStackTrace();
             }

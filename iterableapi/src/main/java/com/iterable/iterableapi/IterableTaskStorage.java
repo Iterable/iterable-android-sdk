@@ -12,11 +12,11 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Date;
 
-class IterableTaskManager {
+class IterableTaskStorage {
 
-    private static IterableTaskManager sharedInstance;
+    private static IterableTaskStorage sharedInstance;
 
-    private static final String TAG = "IterableTaskManager";
+    private static final String TAG = "IterableTaskStorage";
 
     static final String ITERABLE_TASK_TABLE_NAME = "OfflineTask";
 
@@ -58,7 +58,7 @@ class IterableTaskManager {
     private SQLiteDatabase database;
     private IterableDatabaseManager databaseManager;
 
-    private IterableTaskManager(Context context) {
+    private IterableTaskStorage(Context context) {
         try {
             if (context == null) {
                 return;
@@ -73,9 +73,9 @@ class IterableTaskManager {
         }
     }
 
-    static IterableTaskManager sharedInstance(Context context) {
+    static IterableTaskStorage sharedInstance(Context context) {
         if (sharedInstance == null) {
-            sharedInstance = new IterableTaskManager(context);
+            sharedInstance = new IterableTaskStorage(context);
         }
         return sharedInstance;
     }

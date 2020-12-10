@@ -14,7 +14,7 @@ class IterableDatabaseManager extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // Create event table.
-        db.execSQL("CREATE TABLE IF NOT EXISTS " + IterableTaskManager.ITERABLE_TASK_TABLE_NAME + IterableTaskManager.OFFLINE_TASK_COLUMN_DATA);
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + IterableTaskStorage.ITERABLE_TASK_TABLE_NAME + IterableTaskStorage.OFFLINE_TASK_COLUMN_DATA);
     }
 
     @Override
