@@ -139,22 +139,30 @@ class IterableTaskManager {
         if (!isDatabaseReady()) {
             return null;
         }
-
-        String name = null;
-        IterableTaskType type = null;
-        int version = 1;
-        int attempts = 0;
-        Date dateCreated = null;
-        Date dateModified = null, dateLastAttempted = null, dateScheduled = null, dateRequested = null;
-        boolean processing = false, failed = false, blocking = false;
-        String data = null, error = null;
-
         Cursor cursor = database.rawQuery(QUERY_GET_TASK_BY_ID, new String[]{id});
 
         if (!cursor.moveToFirst()) {
             IterableLogger.d(TAG, "No record found");
             return null;
         }
+
+        IterableTask task = createTaskFromCursor(cursor);
+
+        IterableLogger.v(TAG, "Found " + cursor.getColumnCount() + "columns");
+        cursor.close();
+        return task;
+    }
+
+    private IterableTask createTaskFromCursor(Cursor cursor) {
+        String id, name;
+        IterableTaskType type = null;
+        int version = 1;
+        int attempts = 0;
+        Date dateCreated = null, dateModified = null, dateLastAttempted = null, dateScheduled = null, dateRequested = null;
+        boolean processing = false, failed = false, blocking = false;
+        String data = null, error = null;
+
+        id = cursor.getString(cursor.getColumnIndex(TASK_ID));
         name = cursor.getString(cursor.getColumnIndex(NAME));
         version = cursor.getInt(cursor.getColumnIndex(VERSION));
         dateCreated = new Date(cursor.getString(cursor.getColumnIndex(CREATED_AT)));
@@ -192,21 +200,19 @@ class IterableTaskManager {
             attempts = cursor.getInt(cursor.getColumnIndex(ATTEMPTS));
         }
 
-        IterableTask task = new IterableTask(id, name, version, dateCreated, dateModified, dateLastAttempted, dateScheduled, dateRequested, processing, failed, blocking, data, error, type, attempts);
-        IterableLogger.v(TAG, "Found " + cursor.getColumnCount() + "columns");
-        cursor.close();
-        return task;
+        return new IterableTask(id, name, version, dateCreated, dateModified, dateLastAttempted, dateScheduled, dateRequested, processing, failed, blocking, data, error, type, attempts);
     }
 
     /**
      * Gets ids of all the tasks in OfflineTask table
-     *
      * @return {@link ArrayList} of {@link String} ids for all the tasks in OfflineTask table
      */
     @NonNull
     ArrayList<String> getAllTaskIds() {
         ArrayList<String> taskIds = new ArrayList<>();
-        if (!isDatabaseReady()) return taskIds;
+        if (!isDatabaseReady()) {
+            return taskIds;
+        }
 
         Cursor cursor = database.rawQuery("SELECT " + TASK_ID +
                         " FROM " + ITERABLE_TASK_TABLE_NAME,
@@ -223,10 +229,27 @@ class IterableTaskManager {
     }
 
     /**
+     * Returns the next scheduled task for processing
+     * @return next scheduled {@link IterableTask}
+     */
+    @Nullable
+    IterableTask nextTask() {
+        Cursor cursor = database.rawQuery("select * from OfflineTask order by scheduled limit 1", null);
+        IterableTask task = null;
+        if (cursor.moveToFirst()) {
+            task = createTaskFromCursor(cursor);
+        }
+        cursor.close();
+        return task;
+    }
+
+    /**
      * Deletes all the entries from the OfflineTask table.
      */
     void deleteAllTasks() {
-        if (!isDatabaseReady()) return;
+        if (!isDatabaseReady()) {
+            return;
+        }
         int numberOfRowsDeleted = database.delete(ITERABLE_TASK_TABLE_NAME, null, null);
         IterableLogger.v(TAG, "Deleted " + numberOfRowsDeleted + " offline tasks");
     }
