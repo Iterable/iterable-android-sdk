@@ -7,23 +7,6 @@ import java.util.UUID;
 
 class IterableTask {
 
-    //String columns as stored in DB
-    static final String TASK_ID = "task_id";
-    static final String NAME = "name";
-    static final String VERSION = "version";
-    static final String CREATED_AT = "created";
-    static final String MODIFIED_AT = "modified";
-    static final String LAST_ATTEMPTED_AT = "last_attempt";
-    static final String SCHEDULED_AT = "scheduled";
-    static final String REQUESTED_AT = "requested";
-    static final String PROCESSING = "processing";
-    static final String FAILED = "failed";
-    static final String BLOCKING = "blocking";
-    static final String DATA = "data";
-    static final String ERROR = "error";
-    static final String TYPE = "type";
-    static final String ATTEMPTS = "attempts";
-
     int currentVersion = 1;
 
     String id;
