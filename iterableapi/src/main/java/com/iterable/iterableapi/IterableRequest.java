@@ -33,9 +33,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
     static final long RETRY_DELAY_MS = 2000;      //2 seconds
     static final int MAX_RETRY_COUNT = 5;
 
+    static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
+
     int retryCount = 0;
     IterableApiRequest iterableApiRequest;
-    boolean retryRequest;
 
     /**
      * Sends the given request to Iterable using a HttpUserConnection
@@ -159,9 +160,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
-                    if (jsonResponse.has("code") && jsonResponse.getString("code").equals("InvalidJwtPayload")) {
+                    if (matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
-                        IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -172,7 +172,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
                         errorMessage = jsonResponse.getString("msg");
                     } else if (responseCode >= 500) {
                         errorMessage = "Internal Server Error";
-                        retryRequest = true;
                     }
 
                     apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, errorMessage);
@@ -181,7 +180,6 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
                         if (jsonError != null) {
                             apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Could not parse json: " + jsonError);
                         } else if (jsonResponse != null) {
-                            IterableApi.getInstance().getAuthManager().resetFailedAuth();
                             apiResponse = IterableApiResponse.success(responseCode, requestResult, jsonResponse);
                         } else {
                             apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Response is not a JSON object");
@@ -217,6 +215,14 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
         return apiResponse;
     }
 
+    private boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {
+        try {
+            return jsonResponse != null && jsonResponse.has("code") && jsonResponse.getString("code").equals(errorCode);
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+
     private void logError(String baseUrl, Exception e) {
         IterableLogger.e(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
                 "Exception occurred for : " + baseUrl + iterableApiRequest.resourcePath);
@@ -237,6 +243,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
 
     @Override
     protected void onPostExecute(IterableApiResponse response) {
+        boolean retryRequest = !response.success && response.responseCode >= 500;
+
         if (retryRequest && retryCount <= MAX_RETRY_COUNT) {
             final IterableRequest request = new IterableRequest();
             request.setRetryCount(retryCount + 1);
@@ -255,10 +263,14 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
             }, delay);
             return;
         } else if (response.success) {
+            IterableApi.getInstance().getAuthManager().resetFailedAuth();
             if (iterableApiRequest.successCallback != null) {
                 iterableApiRequest.successCallback.onSuccess(response.responseJson);
             }
         } else {
+            if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
+                IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
+            }
             if (iterableApiRequest.failureCallback != null) {
                 iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
             }
