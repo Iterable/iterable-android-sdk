@@ -38,7 +38,7 @@ class TaskScheduler {
             serializedRequest = request.toJSONObject();
         } catch (JSONException e) {
             IterableLogger.e("RequestProcessor", "Failed serializating the request for offline execution. Attempting to request the request now...");
-            new IterableRequest().execute(request);
+            new IterableRequestTask().execute(request);
             return;
         }
 
@@ -57,7 +57,7 @@ class TaskScheduler {
         for (String id : taskIds) {
             try {
                 IterableApiRequest request = makeRequestFromTask(taskStorage.getTask(id));
-                new IterableRequest().execute(request);
+                new IterableRequestTask().execute(request);
                 taskStorage.deleteTask(id);
             } catch (JSONException e) {
                 e.printStackTrace();

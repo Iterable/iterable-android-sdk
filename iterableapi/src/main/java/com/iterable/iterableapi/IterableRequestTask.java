@@ -23,7 +23,7 @@ import java.util.Iterator;
  * Async task to handle sending data to the Iterable server
  * Created by David Truong dt@iterable.com
  */
-class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiResponse> {
+class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableApiResponse> {
     static final String TAG = "IterableRequest";
     static final String ITERABLE_BASE_URL = "https://api.iterable.com/api/";
 
@@ -250,8 +250,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
         boolean retryRequest = !response.success && response.responseCode >= 500;
 
         if (retryRequest && retryCount <= MAX_RETRY_COUNT) {
-            final IterableRequest request = new IterableRequest();
-            request.setRetryCount(retryCount + 1);
+            final IterableRequestTask requestTask = new IterableRequestTask();
+            requestTask.setRetryCount(retryCount + 1);
 
             long delay = 0;
             if (retryCount > 2) {
@@ -262,7 +262,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    request.execute(iterableApiRequest);
+                    requestTask.execute(iterableApiRequest);
                 }
             }, delay);
             return;
