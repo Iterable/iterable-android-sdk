@@ -49,6 +49,10 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
             iterableApiRequest = params[0];
         }
 
+        return executeApiRequest(iterableApiRequest);
+    }
+
+    static IterableApiResponse executeApiRequest(IterableApiRequest iterableApiRequest) {
         IterableApiResponse apiResponse = null;
         String requestResult = null;
 
@@ -140,7 +144,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
                     in.close();
                     requestResult = response.toString();
                 } catch (IOException e) {
-                    logError(baseUrl, e);
+                    logError(iterableApiRequest, baseUrl, e);
                     error = e.getMessage();
                 }
 
@@ -154,7 +158,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
                             "Response from : " + baseUrl + iterableApiRequest.resourcePath);
                     IterableLogger.v(TAG, jsonResponse.toString(2));
                 } catch (Exception e) {
-                    logError(baseUrl, e);
+                    logError(iterableApiRequest, baseUrl, e);
                     jsonError = e.getMessage();
                 }
 
@@ -193,17 +197,17 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
                     apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Received non-200 response: " + responseCode);
                 }
             } catch (JSONException e) {
-                logError(baseUrl, e);
+                logError(iterableApiRequest, baseUrl, e);
                 apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (IOException e) {
-                logError(baseUrl, e);
+                logError(iterableApiRequest, baseUrl, e);
                 apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (ArrayIndexOutOfBoundsException e) {
                 // This exception is sometimes thrown from the inside of HttpUrlConnection/OkHttp
-                logError(baseUrl, e);
+                logError(iterableApiRequest, baseUrl, e);
                 apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (Exception e) {
-                logError(baseUrl, e);
+                logError(iterableApiRequest, baseUrl, e);
                 apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } finally {
                 if (urlConnection != null) {
@@ -215,7 +219,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
         return apiResponse;
     }
 
-    private boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {
+    private static boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {
         try {
             return jsonResponse != null && jsonResponse.has("code") && jsonResponse.getString("code").equals(errorCode);
         } catch (JSONException e) {
@@ -223,13 +227,13 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, IterableApiRes
         }
     }
 
-    private void logError(String baseUrl, Exception e) {
+    private static void logError(IterableApiRequest iterableApiRequest, String baseUrl, Exception e) {
         IterableLogger.e(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
                 "Exception occurred for : " + baseUrl + iterableApiRequest.resourcePath);
         IterableLogger.e(TAG, e.getMessage(), e);
     }
 
-    private String buildHeaderString(HttpURLConnection urlConnection) {
+    private static String buildHeaderString(HttpURLConnection urlConnection) {
         StringBuilder headerString = new StringBuilder();
         headerString.append("\nHeaders { \n");
         Iterator<?> headerKeys = urlConnection.getRequestProperties().keySet().iterator();
