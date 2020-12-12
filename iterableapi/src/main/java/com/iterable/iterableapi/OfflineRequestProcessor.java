@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -10,7 +12,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 class OfflineRequestProcessor implements RequestProcessor {
+    private TaskScheduler taskScheduler;
 
+    OfflineRequestProcessor(Context context) {
+        IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(context);
+        taskScheduler = new TaskScheduler(taskStorage);
+    }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
@@ -20,16 +27,19 @@ class OfflineRequestProcessor implements RequestProcessor {
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        TaskScheduler taskScheduler = new TaskScheduler();
         taskScheduler.scheduleTask(request, onSuccess, onFailure);
     }
 }
 
 //Placeholder Taskschedular for testing purpose.
 class TaskScheduler {
-
     static HashMap<String, IterableHelper.SuccessHandler> successCallbackMap = new HashMap<>();
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
+    private final IterableTaskStorage taskStorage;
+
+    TaskScheduler(IterableTaskStorage taskStorage) {
+        this.taskStorage = taskStorage;
+    }
 
     void scheduleTask(IterableApiRequest request, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(IterableApi.getInstance().getMainActivityContext());
