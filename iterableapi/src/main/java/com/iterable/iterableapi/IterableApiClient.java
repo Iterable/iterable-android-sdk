@@ -18,6 +18,7 @@ import java.util.List;
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
+    private RequestProcessor requestProcessor;
 
     interface AuthProvider {
         @Nullable
@@ -36,6 +37,13 @@ class IterableApiClient {
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
         this.authProvider = authProvider;
+    }
+
+    private RequestProcessor getRequestProcessor() {
+        if (requestProcessor == null) {
+            requestProcessor = new OnlineRequestProcessor();
+        }
+        return requestProcessor;
     }
 
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
@@ -485,8 +493,7 @@ class IterableApiClient {
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        RequestProcessor requestProcessor = new OnlineRequestProcessor();
-        requestProcessor.processPostRequest(authProvider.getApiKey(), resourcePath, json, authToken, onSuccess, onFailure);
+        getRequestProcessor().processPostRequest(authProvider.getApiKey(), resourcePath, json, authToken, onSuccess, onFailure);
     }
 
     /**
@@ -496,7 +503,6 @@ class IterableApiClient {
      * @param json
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        RequestProcessor requestProcessor = new OnlineRequestProcessor();
-        requestProcessor.processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onCallback);
+        getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onCallback);
     }
 }
