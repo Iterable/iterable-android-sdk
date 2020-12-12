@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,6 +53,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         return executeApiRequest(iterableApiRequest);
     }
 
+    @WorkerThread
     static IterableApiResponse executeApiRequest(IterableApiRequest iterableApiRequest) {
         IterableApiResponse apiResponse = null;
         String requestResult = null;
