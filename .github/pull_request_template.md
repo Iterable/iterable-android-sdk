@@ -2,6 +2,6 @@
 
 * [JIRA-XXXX](https://iterable.atlassian.net/browse/JIRA-XXXX)
 
- ## ✏️ Description
+## ✏️ Description
 
 > Please provide a brief description of what this pull request does.
