@@ -21,7 +21,9 @@ class OfflineRequestProcessor implements RequestProcessor {
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        //Invoke taskScheduler and add task to database
+        // Call GET requests directly, without using the queue
+        IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback);
+        new IterableRequestTask().execute(request);
     }
 
     @Override
