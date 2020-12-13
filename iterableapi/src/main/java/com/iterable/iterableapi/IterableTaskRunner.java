@@ -17,7 +17,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     private static final int OPERATION_PROCESS_TASKS = 100;
 
     private final HandlerThread networkThread = new HandlerThread("NetworkThread");
-    private Handler handler;
+    Handler handler;
 
     IterableTaskRunner(IterableTaskStorage taskStorage, IterableActivityMonitor activityMonitor) {
         this.taskStorage = taskStorage;
