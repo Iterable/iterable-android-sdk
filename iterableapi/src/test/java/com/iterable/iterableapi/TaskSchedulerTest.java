@@ -14,12 +14,14 @@ import static org.mockito.Mockito.verify;
 @RunWith(TestRunner.class)
 public class TaskSchedulerTest {
     private IterableTaskStorage mockTaskStorage;
+    private IterableTaskRunner mockTaskRunner;
     private TaskScheduler taskScheduler;
 
     @Before
     public void setUp() throws Exception {
         mockTaskStorage = mock(IterableTaskStorage.class);
-        taskScheduler = new TaskScheduler(mockTaskStorage);
+        mockTaskRunner = mock(IterableTaskRunner.class);
+        taskScheduler = new TaskScheduler(mockTaskStorage, mockTaskRunner);
     }
 
     @Test
