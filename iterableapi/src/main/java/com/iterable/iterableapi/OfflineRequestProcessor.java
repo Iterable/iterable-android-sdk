@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -16,8 +17,8 @@ class OfflineRequestProcessor implements RequestProcessor {
 
     OfflineRequestProcessor(Context context) {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(context);
-        taskScheduler = new TaskScheduler(taskStorage);
         taskRunner = new IterableTaskRunner(taskStorage, IterableActivityMonitor.getInstance());
+        taskScheduler = new TaskScheduler(taskStorage, taskRunner);
     }
 
     @Override
@@ -35,13 +36,16 @@ class OfflineRequestProcessor implements RequestProcessor {
 }
 
 //Placeholder Taskschedular for testing purpose.
-class TaskScheduler {
+class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
     static HashMap<String, IterableHelper.SuccessHandler> successCallbackMap = new HashMap<>();
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
     private final IterableTaskStorage taskStorage;
+    private final IterableTaskRunner taskRunner;
 
-    TaskScheduler(IterableTaskStorage taskStorage) {
+    TaskScheduler(IterableTaskStorage taskStorage, IterableTaskRunner taskRunner) {
         this.taskStorage = taskStorage;
+        this.taskRunner = taskRunner;
+        taskRunner.addTaskCompletedListener(this);
     }
 
     void scheduleTask(IterableApiRequest request, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
@@ -58,5 +62,23 @@ class TaskScheduler {
 
         successCallbackMap.put(taskId, onSuccess);
         failureCallbackMap.put(taskId, onFailure);
+    }
+
+    @MainThread
+    @Override
+    public void onTaskCompleted(String taskId, IterableTaskRunner.TaskResult result, IterableApiResponse response) {
+        IterableHelper.SuccessHandler onSuccess = successCallbackMap.get(taskId);
+        IterableHelper.FailureHandler onFailure = failureCallbackMap.get(taskId);
+        successCallbackMap.remove(taskId);
+        failureCallbackMap.remove(taskId);
+        if (response.success) {
+            if (onSuccess != null) {
+                onSuccess.onSuccess(response.responseJson);
+            }
+        } else {
+            if (onFailure != null) {
+                onFailure.onFailure(response.errorMessage, response.responseJson);
+            }
+        }
     }
 }
