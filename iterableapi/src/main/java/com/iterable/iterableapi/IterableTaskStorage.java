@@ -5,6 +5,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,6 +60,12 @@ class IterableTaskStorage {
     private SQLiteDatabase database;
     private IterableDatabaseManager databaseManager;
 
+    interface TaskCreatedListener {
+        void onTaskCreated(IterableTask iterableTask);
+    }
+
+    private ArrayList<TaskCreatedListener> taskCreatedListeners = new ArrayList<>();
+
     private IterableTaskStorage(Context context) {
         try {
             if (context == null) {
@@ -80,6 +88,14 @@ class IterableTaskStorage {
         return sharedInstance;
     }
 
+    void addTaskCreatedListener(TaskCreatedListener listener) {
+        taskCreatedListeners.add(listener);
+    }
+
+    void removeTaskCreatedListener(TaskCreatedListener listener) {
+        taskCreatedListeners.remove(listener);
+    }
+
     /**
      * Creates a new instance with default values of IterableTask and stores it in the database
      *
@@ -92,7 +108,7 @@ class IterableTaskStorage {
             return null;
         }
         ContentValues contentValues = new ContentValues();
-        IterableTask iterableTask = new IterableTask(name, IterableTaskType.API, data);
+        final IterableTask iterableTask = new IterableTask(name, IterableTaskType.API, data);
         contentValues.put(TASK_ID, iterableTask.id);
         contentValues.put(NAME, iterableTask.name);
         contentValues.put(VERSION, iterableTask.version);
@@ -124,6 +140,16 @@ class IterableTaskStorage {
 
         database.insert(ITERABLE_TASK_TABLE_NAME, null, contentValues);
         contentValues.clear();
+
+        // Call through Handler to make sure we don't call the listeners immediately, as the caller may need additional processing
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                for (TaskCreatedListener listener : taskCreatedListeners) {
+                    listener.onTaskCreated(iterableTask);
+                }
+            }
+        });
 
         return iterableTask.id;
     }
