@@ -409,7 +409,7 @@ private static final String TAG = "IterableApi";
      * @param url
      */
     public static void overrideURLEndpointPath(@NonNull String url) {
-        IterableRequest.overrideUrl = url;
+        IterableRequestTask.overrideUrl = url;
     }
 
     /**
@@ -1072,7 +1072,7 @@ private static final String TAG = "IterableApi";
                     IterableLogger.e(TAG, "Error while checking deferred deep link: " + reason + ", response: " + data);
                 }
             });
-            new IterableRequest().execute(request);
+            new IterableRequestTask().execute(request);
 
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while checking deferred deep link", e);
