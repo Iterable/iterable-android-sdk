@@ -10,12 +10,17 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -50,9 +55,29 @@ public class IterableTaskRunnerTest {
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
         assertEquals("/api/test", recordedRequest.getPath());
+        verify(mockTaskStorage).deleteTask(any(String.class));
+    }
+
+    @Test
+    public void testRunOnTaskCreatedCallsCompletionListener() throws Exception {
+        IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
+        IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
+        when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+
+        IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
+        taskRunner.addTaskCompletedListener(taskCompletedListener);
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        taskRunner.onTaskCreated(null);
+        runHandlerTasks(taskRunner);
+        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(recordedRequest);
+
+        shadowOf(getMainLooper()).idle();
+        verify(taskCompletedListener).onTaskCompleted(any(String.class), eq(IterableTaskRunner.TaskResult.SUCCESS), any(IterableApiResponse.class));
     }
 
     private void runHandlerTasks(IterableTaskRunner taskRunner) throws InterruptedException {
-        shadowOf(taskRunner.handler.getLooper()).runToEndOfTasks();
+        shadowOf(taskRunner.handler.getLooper()).idle();
     }
 }
