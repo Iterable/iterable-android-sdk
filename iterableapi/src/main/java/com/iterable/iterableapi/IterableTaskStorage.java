@@ -230,10 +230,11 @@ class IterableTaskStorage {
 
     /**
      * Returns the next scheduled task for processing
+     *
      * @return next scheduled {@link IterableTask}
      */
     @Nullable
-    IterableTask nextTask() {
+    IterableTask getNextScheduledTask() {
         Cursor cursor = database.rawQuery("select * from OfflineTask order by scheduled limit 1", null);
         IterableTask task = null;
         if (cursor.moveToFirst()) {
