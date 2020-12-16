@@ -18,7 +18,7 @@ import java.util.Set;
 class OfflineRequestProcessor implements RequestProcessor {
     private TaskScheduler taskScheduler;
     private IterableTaskRunner taskRunner;
-    Set<String> offlineApiSet = new HashSet<>(Arrays.asList(
+    private static final Set<String> offlineApiSet = new HashSet<>(Arrays.asList(
             IterableConstants.ENDPOINT_TRACK,
             IterableConstants.ENDPOINT_TRACK_PUSH_OPEN,
             IterableConstants.ENDPOINT_TRACK_PURCHASE,
