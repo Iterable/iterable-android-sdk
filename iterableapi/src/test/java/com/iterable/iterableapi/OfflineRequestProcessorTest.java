@@ -31,7 +31,7 @@ public class OfflineRequestProcessorTest extends BaseTest {
     public void testOfflineRequestIsStored() {
         IterableApiRequest request = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, new JSONObject(), "POST", null, null, null);
         offlineRequestProcessor.processPostRequest(request.apiKey, request.resourcePath, request.json, request.authToken, request.successCallback, request.failureCallback);
-        verify(mockTaskScheduler).scheduleTask(any(IterableApiRequest.class), (IterableHelper.SuccessHandler) isNull(), (IterableHelper.FailureHandler) isNull());
+        verify(mockTaskScheduler).scheduleTask(any(IterableApiRequest.class), isNull(IterableHelper.SuccessHandler.class), isNull(IterableHelper.FailureHandler.class));
     }
 
     @Test
