@@ -306,6 +306,7 @@ private static final String TAG = "IterableApi";
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
                     sharedInstance.config.inAppDisplayInterval);
         }
+        sharedInstance.apiClient.setOfflineProcessingEnabled(sharedInstance.config.offlineProcessing);
         IterablePushActionReceiver.processPendingAction(context);
     }
 

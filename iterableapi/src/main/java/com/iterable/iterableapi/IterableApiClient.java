@@ -46,6 +46,14 @@ class IterableApiClient {
         return requestProcessor;
     }
 
+    void setOfflineProcessingEnabled(boolean offlineMode) {
+        if (offlineMode) {
+            this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
+        } else {
+            this.requestProcessor = new OnlineRequestProcessor();
+        }
+    }
+
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {

@@ -33,6 +33,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -82,8 +83,9 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSdkInitializedWithoutEmailOrUserId() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
-        IterableApi.getInstance().setEmail(null);
+        clearInvocations(mockApiClient);
 
+        IterableApi.getInstance().setEmail(null);
         // Verify that none of the calls to the API result in a request
         IterableApi.getInstance().track("testEvent");
         IterableApi.getInstance().trackInAppOpen("12345");
@@ -94,8 +96,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().updateUser(new JSONObject());
         IterableApi.getInstance().updateEmail("");
         IterableApi.getInstance().trackPurchase(10.0, new ArrayList<CommerceItem>());
-
-        verifyNoInteractions(mockApiClient);
+        verifyNoMoreInteractions(mockApiClient);
     }
 
     @Test
