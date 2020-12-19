@@ -5,15 +5,29 @@ import android.content.Context;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 class OfflineRequestProcessor implements RequestProcessor {
     private TaskScheduler taskScheduler;
     private IterableTaskRunner taskRunner;
+    private static final Set<String> offlineApiSet = new HashSet<>(Arrays.asList(
+            IterableConstants.ENDPOINT_TRACK,
+            IterableConstants.ENDPOINT_TRACK_PUSH_OPEN,
+            IterableConstants.ENDPOINT_TRACK_PURCHASE,
+            IterableConstants.ENDPOINT_TRACK_INAPP_OPEN,
+            IterableConstants.ENDPOINT_TRACK_INAPP_CLICK,
+            IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE,
+            IterableConstants.ENDPOINT_TRACK_INBOX_SESSION,
+            IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY,
+            IterableConstants.ENDPOINT_INAPP_CONSUME));
 
     OfflineRequestProcessor(Context context) {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(context);
@@ -21,9 +35,14 @@ class OfflineRequestProcessor implements RequestProcessor {
         taskScheduler = new TaskScheduler(taskStorage, taskRunner);
     }
 
+    @VisibleForTesting
+    OfflineRequestProcessor(TaskScheduler scheduler, IterableTaskRunner iterableTaskRunner) {
+        taskRunner = iterableTaskRunner;
+        taskScheduler = scheduler;
+    }
+
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        // Call GET requests directly, without using the queue
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback);
         new IterableRequestTask().execute(request);
     }
@@ -31,7 +50,15 @@ class OfflineRequestProcessor implements RequestProcessor {
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        taskScheduler.scheduleTask(request, onSuccess, onFailure);
+        if (isRequestOfflineCompatible(request.resourcePath)) {
+            taskScheduler.scheduleTask(request, onSuccess, onFailure);
+        } else {
+            new IterableRequestTask().execute(request);
+        }
+    }
+
+    boolean isRequestOfflineCompatible(String baseUrl) {
+        return offlineApiSet.contains(baseUrl);
     }
 }
 
