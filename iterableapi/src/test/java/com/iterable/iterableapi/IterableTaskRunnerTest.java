@@ -29,13 +29,15 @@ public class IterableTaskRunnerTest {
     private IterableTaskRunner taskRunner;
     private IterableTaskStorage mockTaskStorage;
     private IterableActivityMonitor mockActivityMonitor;
+    private IterableNetworkConnectivityManager mockNetworkConnectivityManager;
     private MockWebServer server;
 
     @Before
     public void setUp() throws Exception {
         mockTaskStorage = mock(IterableTaskStorage.class);
         mockActivityMonitor = mock(IterableActivityMonitor.class);
-        taskRunner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor);
+        mockNetworkConnectivityManager = mock(IterableNetworkConnectivityManager.class);
+        taskRunner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager);
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
     }
@@ -50,6 +52,7 @@ public class IterableTaskRunnerTest {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -63,7 +66,7 @@ public class IterableTaskRunnerTest {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
-
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
 
