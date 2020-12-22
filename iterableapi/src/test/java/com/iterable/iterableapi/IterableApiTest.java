@@ -383,6 +383,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals("10", uri.getQueryParameter(IterableConstants.ITERABLE_IN_APP_COUNT));
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, uri.getQueryParameter(IterableConstants.ITBL_KEY_SDK_VERSION));
+        assertNotNull(uri.getQueryParameter(IterableConstants.ITBL_SYSTEM_VERSION));
         assertEquals(getContext().getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
     }
 

@@ -231,4 +231,5 @@ public final class IterableConstants {
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
     public static final String ITBL_PLATFORM_ANDROID = "Android";
     public static final String ITBL_KEY_SDK_VERSION_NUMBER = BuildConfig.ITERABLE_SDK_VERSION;
+    public static final String ITBL_SYSTEM_VERSION = "systemVersion";
 }
