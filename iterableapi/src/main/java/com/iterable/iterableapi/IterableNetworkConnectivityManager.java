@@ -42,7 +42,7 @@ class IterableNetworkConnectivityManager {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public void startNetworkCallback(Context context) {
+    private void startNetworkCallback(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkRequest.Builder networkBuilder = new NetworkRequest.Builder();
 
@@ -71,7 +71,7 @@ class IterableNetworkConnectivityManager {
         }
     }
 
-    public void addNetworkListener(IterableNetworkMonitorListener listener) {
+    void addNetworkListener(IterableNetworkMonitorListener listener) {
         networkMonitorListeners.add(listener);
     }
 

@@ -47,10 +47,12 @@ class IterableApiClient {
     }
 
     void setOfflineProcessingEnabled(boolean offlineMode) {
-        if (offlineMode) {
-            this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
-        } else {
-            this.requestProcessor = new OnlineRequestProcessor();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (offlineMode) {
+                this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
+            } else {
+                this.requestProcessor = new OnlineRequestProcessor();
+            }
         }
     }
 
