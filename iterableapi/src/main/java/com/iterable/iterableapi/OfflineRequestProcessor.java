@@ -31,7 +31,8 @@ class OfflineRequestProcessor implements RequestProcessor {
 
     OfflineRequestProcessor(Context context) {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(context);
-        taskRunner = new IterableTaskRunner(taskStorage, IterableActivityMonitor.getInstance());
+        IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
+        taskRunner = new IterableTaskRunner(taskStorage, IterableActivityMonitor.getInstance(), networkConnectivityManager);
         taskScheduler = new TaskScheduler(taskStorage, taskRunner);
     }
 

@@ -13,10 +13,11 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback {
+class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback, IterableNetworkConnectivityManager.IterableNetworkMonitorListener {
     private static final String TAG = "IterableTaskRunner";
     private IterableTaskStorage taskStorage;
     private IterableActivityMonitor activityMonitor;
+    private IterableNetworkConnectivityManager networkConnectivityManager;
 
     private static final int OPERATION_PROCESS_TASKS = 100;
 
@@ -34,13 +35,14 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     private ArrayList<TaskCompletedListener> taskCompletedListeners = new ArrayList<>();
 
-    IterableTaskRunner(IterableTaskStorage taskStorage, IterableActivityMonitor activityMonitor) {
+    IterableTaskRunner(IterableTaskStorage taskStorage, IterableActivityMonitor activityMonitor, IterableNetworkConnectivityManager networkConnectivityManager) {
         this.taskStorage = taskStorage;
         this.activityMonitor = activityMonitor;
-
+        this.networkConnectivityManager = networkConnectivityManager;
         networkThread.start();
         handler = new Handler(networkThread.getLooper(), this);
         taskStorage.addTaskCreatedListener(this);
+        networkConnectivityManager.addNetworkListener(this);
     }
 
     void addTaskCompletedListener(TaskCompletedListener listener) {
@@ -56,6 +58,15 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         runNow();
     }
 
+    @Override
+    public void onNetworkConnected() {
+        runNow();
+    }
+
+    @Override
+    public void onNetworkDisconnected() {
+
+    }
     private void runNow() {
         handler.removeCallbacksAndMessages(this);
         handler.sendEmptyMessage(OPERATION_PROCESS_TASKS);
@@ -73,7 +84,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     @WorkerThread
     private void processTasks() {
-        while (true) {
+        while (networkConnectivityManager.isConnected()) {
             boolean proceed = processNextTask();
             if (!proceed) {
                 break;
