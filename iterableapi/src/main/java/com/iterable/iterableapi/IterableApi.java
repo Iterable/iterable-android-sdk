@@ -1028,6 +1028,9 @@ private static final String TAG = "IterableApi";
         }
         getInAppManager().reset();
         getAuthManager().clearRefreshTimer();
+        if (config.offlineProcessing) {
+            IterableTaskStorage.sharedInstance(getMainActivityContext()).deleteAllTasks();
+        }
     }
 
     private void onLogIn() {

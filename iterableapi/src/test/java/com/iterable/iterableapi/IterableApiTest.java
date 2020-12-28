@@ -27,6 +27,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
@@ -343,6 +344,17 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
         verify(IterableApi.sharedInstance.getInAppManager(), times(2)).reset();
+    }
+
+    @Test
+    public void databaseClearOnLogout() throws Exception {
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).setOfflineProcessing(true).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(getContext());
+        taskStorage.createTask("Test", IterableTaskType.API, "data");
+        assertFalse(taskStorage.getAllTaskIds().isEmpty());
+        IterableApi.getInstance().setEmail(null);
+        assertTrue(taskStorage.getAllTaskIds().isEmpty());
     }
 
     @Test
