@@ -53,7 +53,8 @@ class IterableNetworkConnectivityManager {
                     super.onAvailable(network);
                     IterableLogger.v(TAG, "Network Connected");
                     isConnected = true;
-                    for (IterableNetworkMonitorListener listener : networkMonitorListeners) {
+                    ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
+                    for (IterableNetworkMonitorListener listener : networkListenersCopy) {
                         listener.onNetworkConnected();
                     }
                 }
@@ -63,7 +64,8 @@ class IterableNetworkConnectivityManager {
                     super.onLost(network);
                     IterableLogger.v(TAG, "Network Disconnected");
                     isConnected = false;
-                    for (IterableNetworkMonitorListener listener : networkMonitorListeners) {
+                    ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
+                    for (IterableNetworkMonitorListener listener : networkListenersCopy) {
                         listener.onNetworkDisconnected();
                     }
                 }
@@ -71,11 +73,11 @@ class IterableNetworkConnectivityManager {
         }
     }
 
-    void addNetworkListener(IterableNetworkMonitorListener listener) {
+    synchronized void addNetworkListener(IterableNetworkMonitorListener listener) {
         networkMonitorListeners.add(listener);
     }
 
-    void removeNetworkListener(IterableNetworkMonitorListener listener) {
+    synchronized void removeNetworkListener(IterableNetworkMonitorListener listener) {
         networkMonitorListeners.remove(listener);
     }
 
