@@ -59,7 +59,7 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         pushRegistrationUtilMock = mock(IterablePushRegistrationTask.Util.UtilImpl.class);
         IterablePushRegistrationTask.Util.instance = pushRegistrationUtilMock;
 
-        when(pushRegistrationUtilMock.getFirebaseResouceId(any(Context.class))).thenReturn(1);
+        when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
     }
 
     @After
