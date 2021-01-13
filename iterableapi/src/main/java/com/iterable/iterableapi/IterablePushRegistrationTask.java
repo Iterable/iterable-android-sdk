@@ -66,9 +66,9 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
                 return null;
             }
 
-            int firebaseResourceId = Util.getFirebaseResouceId(applicationContext);
-            if (firebaseResourceId == 0) {
-                IterableLogger.e(TAG, "Could not find firebase_database_url, please check that Firebase SDK is set up properly");
+            String senderId = Util.getSenderId(applicationContext);
+            if (senderId == null) {
+                IterableLogger.e(TAG, "Could not find gcm_defaultSenderId, please check that Firebase SDK is set up properly");
                 return null;
             }
 
@@ -113,10 +113,6 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
     static class Util {
         static UtilImpl instance = new UtilImpl();
 
-        static int getFirebaseResouceId(Context applicationContext) {
-            return instance.getFirebaseResouceId(applicationContext);
-        }
-
         static String getFirebaseToken() {
             return instance.getFirebaseToken();
         }
@@ -130,10 +126,6 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
         }
 
         static class UtilImpl {
-            int getFirebaseResouceId(Context applicationContext) {
-                return applicationContext.getResources().getIdentifier(IterableConstants.FIREBASE_RESOURCE_ID, IterableConstants.ANDROID_STRING, applicationContext.getPackageName());
-            }
-
             String getFirebaseToken() {
                 FirebaseInstanceId instanceID = FirebaseInstanceId.getInstance();
                 return instanceID.getToken();

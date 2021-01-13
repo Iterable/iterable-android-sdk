@@ -54,7 +54,7 @@ public class IterableApiIntegrationTest extends BaseTest {
     @Test
     public void testDisablePushOnLogout() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-        when(pushRegistrationUtilMock.getFirebaseResouceId(any(Context.class))).thenReturn(1);
+        when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
         IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");

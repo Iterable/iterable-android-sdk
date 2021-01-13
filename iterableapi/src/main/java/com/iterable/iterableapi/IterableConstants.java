@@ -148,7 +148,6 @@ public final class IterableConstants {
     public static final String USER_INPUT               = "userInput";
 
     //Firebase
-    public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";
     public static final String FIREBASE_SENDER_ID       = "gcm_defaultSenderId";
     public static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
     public static final String FIREBASE_COMPATIBLE      = "firebaseCompatible";
