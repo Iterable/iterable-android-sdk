@@ -38,6 +38,8 @@ public final class IterableConstants {
     public static final String KEY_PREFER_USER_ID       = "preferUserId";
     public static final String KEY_RECIPIENT_EMAIL      = "recipientEmail";
     public static final String KEY_SEND_AT              = "sendAt";
+    public static final String KEY_CREATED_AT           = "createdAt";
+    public static final String KEY_SENT_AT              = "sentAt";
     public static final String KEY_TEMPLATE_ID          = "templateId";
     public static final String KEY_MESSAGE_CONTEXT      = "messageContext";
     public static final String KEY_MESSAGE_ID           = "messageId";

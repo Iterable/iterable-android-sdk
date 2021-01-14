@@ -112,18 +112,19 @@ class IterableTaskStorage {
         contentValues.put(TASK_ID, iterableTask.id);
         contentValues.put(NAME, iterableTask.name);
         contentValues.put(VERSION, iterableTask.version);
-        contentValues.put(CREATED_AT, iterableTask.createdAt.toString());
-        if (iterableTask.modifiedAt != null) {
-            contentValues.put(MODIFIED_AT, iterableTask.modifiedAt.toString());
+        //TODO: you might have to change the created to epoch literally while storing
+        contentValues.put(CREATED_AT, iterableTask.createdAt);
+        if (iterableTask.modifiedAt != 0) {
+            contentValues.put(MODIFIED_AT, iterableTask.modifiedAt);
         }
-        if (iterableTask.lastAttemptedAt != null) {
-            contentValues.put(LAST_ATTEMPTED_AT, iterableTask.lastAttemptedAt.toString());
+        if (iterableTask.lastAttemptedAt != 0) {
+            contentValues.put(LAST_ATTEMPTED_AT, iterableTask.lastAttemptedAt);
         }
-        if (iterableTask.scheduledAt != null) {
-            contentValues.put(SCHEDULED_AT, iterableTask.scheduledAt.toString());
+        if (iterableTask.scheduledAt != 0) {
+            contentValues.put(SCHEDULED_AT, iterableTask.scheduledAt);
         }
-        if (iterableTask.requestedAt != null) {
-            contentValues.put(REQUESTED_AT, iterableTask.requestedAt.toString());
+        if (iterableTask.requestedAt != 0) {
+            contentValues.put(REQUESTED_AT, iterableTask.requestedAt);
         }
         contentValues.put(PROCESSING, iterableTask.processing);
         contentValues.put(FAILED, iterableTask.failed);
@@ -184,25 +185,25 @@ class IterableTaskStorage {
         IterableTaskType type = null;
         int version = 1;
         int attempts = 0;
-        Date dateCreated = null, dateModified = null, dateLastAttempted = null, dateScheduled = null, dateRequested = null;
+        long dateCreated = 0, dateModified = 0, dateLastAttempted = 0, dateScheduled = 0, dateRequested = 0;
         boolean processing = false, failed = false, blocking = false;
         String data = null, error = null;
 
         id = cursor.getString(cursor.getColumnIndex(TASK_ID));
         name = cursor.getString(cursor.getColumnIndex(NAME));
         version = cursor.getInt(cursor.getColumnIndex(VERSION));
-        dateCreated = new Date(cursor.getString(cursor.getColumnIndex(CREATED_AT)));
+        dateCreated = cursor.getLong(cursor.getColumnIndex(CREATED_AT));
         if (!cursor.isNull(cursor.getColumnIndex(MODIFIED_AT))) {
-            dateModified = new Date(cursor.getString(cursor.getColumnIndex(MODIFIED_AT)));
+            dateModified = cursor.getLong(cursor.getColumnIndex(MODIFIED_AT));
         }
         if (!cursor.isNull(cursor.getColumnIndex(LAST_ATTEMPTED_AT))) {
-            dateLastAttempted = new Date(cursor.getString(cursor.getColumnIndex(LAST_ATTEMPTED_AT)));
+            dateLastAttempted = cursor.getLong(cursor.getColumnIndex(LAST_ATTEMPTED_AT));
         }
         if (!cursor.isNull(cursor.getColumnIndex(SCHEDULED_AT))) {
-            dateScheduled = new Date(cursor.getString(cursor.getColumnIndex(SCHEDULED_AT)));
+            dateScheduled = cursor.getLong(cursor.getColumnIndex(SCHEDULED_AT));
         }
         if (!cursor.isNull(cursor.getColumnIndex(REQUESTED_AT))) {
-            dateRequested = new Date(cursor.getString(cursor.getColumnIndex(REQUESTED_AT)));
+            dateRequested = cursor.getLong(cursor.getColumnIndex(REQUESTED_AT));
         }
         if (!cursor.isNull(cursor.getColumnIndex(PROCESSING))) {
             processing = cursor.getInt(cursor.getColumnIndex(PROCESSING)) > 0;
