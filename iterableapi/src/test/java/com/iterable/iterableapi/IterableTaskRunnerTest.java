@@ -56,6 +56,7 @@ public class IterableTaskRunnerTest {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
@@ -70,6 +71,7 @@ public class IterableTaskRunnerTest {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
@@ -90,6 +92,7 @@ public class IterableTaskRunnerTest {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(false);
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
@@ -111,6 +114,7 @@ public class IterableTaskRunnerTest {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
