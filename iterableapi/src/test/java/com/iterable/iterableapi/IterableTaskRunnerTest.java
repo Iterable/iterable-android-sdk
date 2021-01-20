@@ -58,11 +58,14 @@ public class IterableTaskRunnerTest {
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
+
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
         assertEquals("/api/test", recordedRequest.getPath());
+
         verify(mockTaskStorage).deleteTask(any(String.class));
     }
 
@@ -75,10 +78,11 @@ public class IterableTaskRunnerTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
-
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
+
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
 
@@ -96,14 +100,39 @@ public class IterableTaskRunnerTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(false);
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
-
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-        taskRunner.onTaskCreated(null);
 
+        taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
+
         verify(mockNetworkConnectivityManager, times(1)).isConnected();
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNull(recordedRequest);
+
+        shadowOf(getMainLooper()).idle();
+        verifyNoInteractions(taskCompletedListener);
+        verifyNoInteractions(mockTaskStorage);
+    }
+
+    @Test
+    public void testNoRequestsWhenInBackground() throws Exception {
+        clearInvocations(mockTaskStorage);
+        IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
+        IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
+        when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(false);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
+        taskRunner.addTaskCompletedListener(taskCompletedListener);
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        taskRunner.onTaskCreated(null);
+        runHandlerTasks(taskRunner);
+
+        verify(mockActivityMonitor, times(1)).isInForeground();
+        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNull(recordedRequest);
+
         shadowOf(getMainLooper()).idle();
         verifyNoInteractions(taskCompletedListener);
         verifyNoInteractions(mockTaskStorage);
@@ -116,8 +145,10 @@ public class IterableTaskRunnerTest {
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
+
         shadowOf(getMainLooper()).idle();
         verify(mockNetworkConnectivityManager, times(2)).isConnected();
     }
