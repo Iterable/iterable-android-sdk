@@ -310,6 +310,24 @@ private static final String TAG = "IterableApi";
         IterablePushActionReceiver.processPendingAction(context);
     }
 
+    void fetchRemoteConfiguration() {
+        apiClient.getRemoteConfiguration(new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                try {
+                    sharedInstance.apiClient.setOfflineProcessingEnabled(data.getBoolean("offlineModeBeta"));
+                } catch (JSONException e) {
+                    IterableLogger.e(TAG, "OfflineMode parameter not found");
+                }
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                IterableLogger.e(TAG, "Failed to fetch remote configuration. Default values will be used");
+            }
+        });
+    }
+
     /**
      * Set user email used for API calls
      * Calling this or {@link #setUserId(String)} is required before making any API calls.
@@ -967,6 +985,7 @@ private static final String TAG = "IterableApi";
                 sharedInstance.registerForPush();
             }
         }
+        fetchRemoteConfiguration();
     }
 
     private boolean isInitialized() {
