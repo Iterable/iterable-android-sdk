@@ -13,11 +13,13 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback, IterableNetworkConnectivityManager.IterableNetworkMonitorListener {
+class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback, IterableNetworkConnectivityManager.IterableNetworkMonitorListener, IterableActivityMonitor.AppStateCallback {
     private static final String TAG = "IterableTaskRunner";
     private IterableTaskStorage taskStorage;
     private IterableActivityMonitor activityMonitor;
     private IterableNetworkConnectivityManager networkConnectivityManager;
+
+    private static final int RETRY_INTERVAL_SECONDS = 60;
 
     private static final int OPERATION_PROCESS_TASKS = 100;
 
@@ -43,6 +45,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         handler = new Handler(networkThread.getLooper(), this);
         taskStorage.addTaskCreatedListener(this);
         networkConnectivityManager.addNetworkListener(this);
+        activityMonitor.addCallback(this);
     }
 
     void addTaskCompletedListener(TaskCompletedListener listener) {
@@ -67,9 +70,25 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     public void onNetworkDisconnected() {
 
     }
+
+    @Override
+    public void onSwitchToForeground() {
+        runNow();
+    }
+
+    @Override
+    public void onSwitchToBackground() {
+
+    }
+
     private void runNow() {
-        handler.removeCallbacksAndMessages(this);
+        handler.removeMessages(OPERATION_PROCESS_TASKS);
         handler.sendEmptyMessage(OPERATION_PROCESS_TASKS);
+    }
+
+    private void scheduleRetry() {
+        handler.removeCallbacksAndMessages(OPERATION_PROCESS_TASKS);
+        handler.sendEmptyMessageDelayed(OPERATION_PROCESS_TASKS, RETRY_INTERVAL_SECONDS * 1000);
     }
 
     @WorkerThread
@@ -84,22 +103,28 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     @WorkerThread
     private void processTasks() {
+        if (!activityMonitor.isInForeground()) {
+            IterableLogger.d(TAG, "App not in foreground, skipping processing tasks");
+            return;
+        }
+
         while (networkConnectivityManager.isConnected()) {
-            boolean proceed = processNextTask();
+            IterableTask task = taskStorage.getNextScheduledTask();
+
+            if (task == null) {
+                return;
+            }
+
+            boolean proceed = processTask(task);
             if (!proceed) {
-                break;
+                scheduleRetry();
+                return;
             }
         }
     }
 
     @WorkerThread
-    private boolean processNextTask() {
-        IterableTask task = taskStorage.getNextScheduledTask();
-
-        if (task == null) {
-            return false;
-        }
-
+    private boolean processTask(@NonNull IterableTask task) {
         if (task.taskType == IterableTaskType.API) {
             IterableApiResponse response = null;
             TaskResult result = TaskResult.FAILURE;
@@ -109,14 +134,32 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Error while processing request task", e);
             }
+
             if (response != null) {
-                result = response.success ? TaskResult.SUCCESS : TaskResult.FAILURE;
+                if (response.success) {
+                    result = TaskResult.SUCCESS;
+                } else {
+                    if (isRetriableError(response.errorMessage)) {
+                        result = TaskResult.RETRY;
+                    } else {
+                        result = TaskResult.FAILURE;
+                    }
+                }
             }
             callTaskCompletedListeners(task.id, result, response);
-            taskStorage.deleteTask(task.id);
-            return true;
+            if (result == TaskResult.RETRY) {
+                // Keep the task, stop further processing
+                return false;
+            } else {
+                taskStorage.deleteTask(task.id);
+                return true;
+            }
         }
         return false;
+    }
+
+    private boolean isRetriableError(String errorMessage) {
+        return errorMessage.contains("failed to connect");
     }
 
     @WorkerThread
