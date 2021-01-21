@@ -42,11 +42,11 @@ class IterableTaskStorage {
     static final String OFFLINE_TASK_COLUMN_DATA = " (" + TASK_ID + " TEXT PRIMARY KEY," +
             NAME + " TEXT," +
             VERSION + " INTEGER," +
-            CREATED_AT + " TEXT," +
-            MODIFIED_AT + " TEXT," +
-            LAST_ATTEMPTED_AT + " TEXT," +
-            SCHEDULED_AT + " TEXT," +
-            REQUESTED_AT + " TEXT," +
+            CREATED_AT + " NUMERIC," +
+            MODIFIED_AT + " NUMERIC," +
+            LAST_ATTEMPTED_AT + " NUMERIC," +
+            SCHEDULED_AT + " NUMERIC," +
+            REQUESTED_AT + " NUMERIC," +
             PROCESSING + " BOOLEAN," +
             FAILED + " BOOLEAN," +
             BLOCKING + " BOOLEAN," +
@@ -112,7 +112,6 @@ class IterableTaskStorage {
         contentValues.put(TASK_ID, iterableTask.id);
         contentValues.put(NAME, iterableTask.name);
         contentValues.put(VERSION, iterableTask.version);
-        //TODO: you might have to change the created to epoch literally while storing
         contentValues.put(CREATED_AT, iterableTask.createdAt);
         if (iterableTask.modifiedAt != 0) {
             contentValues.put(MODIFIED_AT, iterableTask.modifiedAt);

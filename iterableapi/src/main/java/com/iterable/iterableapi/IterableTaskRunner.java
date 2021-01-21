@@ -106,7 +106,6 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             TaskResult result = TaskResult.FAILURE;
             try {
                 IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), null, null);
-                //TODO: Any chances of request getting null?
                 response = IterableRequestTask.executeApiRequest(request);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Error while processing request task", e);
@@ -124,7 +123,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     JSONObject getTaskDataWithDate(IterableTask task) {
         try {
             JSONObject jsonData = new JSONObject(task.data);
-            jsonData.put(IterableConstants.KEY_CREATED_AT, task.createdAt);
+            jsonData.put(IterableConstants.KEY_CREATED_AT, task.createdAt / 1000);
             return jsonData;
         } catch (JSONException e) {
             e.printStackTrace();

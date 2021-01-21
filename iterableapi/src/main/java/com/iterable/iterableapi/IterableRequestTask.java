@@ -88,7 +88,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-                    urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime()));
+                    urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
 
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
@@ -110,7 +110,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-                    urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime()));
+                    urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
 
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
