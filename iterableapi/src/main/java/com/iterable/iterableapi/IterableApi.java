@@ -311,19 +311,15 @@ private static final String TAG = "IterableApi";
     }
 
     void fetchRemoteConfiguration() {
-        apiClient.getRemoteConfiguration(new IterableHelper.SuccessHandler() {
+        apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
             @Override
-            public void onSuccess(@NonNull JSONObject data) {
+            public void execute(@Nullable String data) {
                 try {
-                    sharedInstance.apiClient.setOfflineProcessingEnabled(data.getBoolean("offlineModeBeta"));
+                    JSONObject jsonData = new JSONObject(data);
+                    sharedInstance.apiClient.setOfflineProcessingEnabled(jsonData.getBoolean("offlineModeBeta"));
                 } catch (JSONException e) {
-                    IterableLogger.e(TAG, "OfflineMode parameter not found");
+                    IterableLogger.e(TAG, "Failed to read remote configuration");
                 }
-            }
-        }, new IterableHelper.FailureHandler() {
-            @Override
-            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
-                IterableLogger.e(TAG, "Failed to fetch remote configuration. Default values will be used");
             }
         });
     }
@@ -984,8 +980,8 @@ private static final String TAG = "IterableApi";
                 IterableLogger.d(TAG, "Performing automatic push registration");
                 sharedInstance.registerForPush();
             }
+            fetchRemoteConfiguration();
         }
-        fetchRemoteConfiguration();
     }
 
     private boolean isInitialized() {

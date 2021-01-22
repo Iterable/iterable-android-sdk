@@ -60,15 +60,14 @@ class IterableApiClient {
         }
     }
 
-    void getRemoteConfiguration(IterableHelper.SuccessHandler successHandler, IterableHelper.FailureHandler failureHandler) {
+    void getRemoteConfiguration(IterableHelper.IterableActionHandler actionHandler) {
         JSONObject requestJSON = new JSONObject();
         try {
-            //TODO: Add data and make request
             requestJSON.putOpt(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.putOpt(IterableConstants.DEVICE_APP_PACKAGE_NAME, authProvider.getContext().getPackageName());
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
-            sendPostRequest(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION, requestJSON, successHandler, failureHandler);
+            sendGetRequest(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION, requestJSON, actionHandler);
         } catch (JSONException e) {
             e.printStackTrace();
         }
