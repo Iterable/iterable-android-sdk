@@ -21,6 +21,7 @@ public class IterableInAppMessage {
     private final @NonNull Date createdAt;
     private final @NonNull Date expiresAt;
     private final @NonNull Trigger trigger;
+    private final @NonNull double priorityLevel;
     private final @Nullable Boolean saveToInbox;
     private final @Nullable InboxMetadata inboxMetadata;
     private final @Nullable Long campaignId;
@@ -37,6 +38,7 @@ public class IterableInAppMessage {
                          @NonNull Date createdAt,
                          @NonNull Date expiresAt,
                          @NonNull Trigger trigger,
+                         @NonNull Double priorityLevel,
                          @Nullable Boolean saveToInbox,
                          @Nullable InboxMetadata inboxMetadata,
                          @Nullable Long campaignId) {
@@ -47,6 +49,7 @@ public class IterableInAppMessage {
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
         this.trigger = trigger;
+        this.priorityLevel = priorityLevel;
         this.saveToInbox = saveToInbox;
         this.inboxMetadata = inboxMetadata;
         this.campaignId = campaignId;
@@ -276,6 +279,8 @@ public class IterableInAppMessage {
         return trigger.type;
     }
 
+    public double getPriorityLevel() { return priorityLevel; }
+
     public boolean isInboxMessage() {
         return saveToInbox != null ? saveToInbox : false;
     }
@@ -358,6 +363,8 @@ public class IterableInAppMessage {
             customPayload = new JSONObject();
         }
 
+        double priorityLevel = messageJson.optDouble(IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL, IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL_UNASSIGNED);
+
         Boolean saveToInbox = messageJson.has(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX) ? messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX) : null;
         JSONObject inboxPayloadJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA);
         InboxMetadata inboxMetadata = InboxMetadata.fromJSONObject(inboxPayloadJson);
@@ -370,6 +377,7 @@ public class IterableInAppMessage {
                 createdAt,
                 expiresAt,
                 trigger,
+                priorityLevel,
                 saveToInbox,
                 inboxMetadata,
                 campaignId);
@@ -400,7 +408,11 @@ public class IterableInAppMessage {
             if (expiresAt != null) {
                 messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, expiresAt.getTime());
             }
+
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
+
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL, priorityLevel);
+
             inAppDisplaySettingsJson = encodePaddingRectToJson(content.padding);
 
             inAppDisplaySettingsJson.put(IterableConstants.ITERABLE_IN_APP_SHOULD_ANIMATE, content.inAppDisplaySettings.shouldAnimate);

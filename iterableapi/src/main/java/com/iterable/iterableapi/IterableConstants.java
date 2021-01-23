@@ -185,6 +185,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_CUSTOM_PAYLOAD   = "customPayload";
     public static final String ITERABLE_IN_APP_TRIGGER          = "trigger";
     public static final String ITERABLE_IN_APP_TRIGGER_TYPE     = "type";
+    public static final String ITERABLE_IN_APP_PRIORITY_LEVEL   = "priorityLevel";
     public static final String ITERABLE_IN_APP_SAVE_TO_INBOX    = "saveToInbox";
     public static final String ITERABLE_IN_APP_SILENT_INBOX     = "silentInbox";
     public static final String ITERABLE_IN_APP_INBOX_METADATA   = "inboxMetadata";
@@ -209,6 +210,12 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_SHOULD_ANIMATE            = "shouldAnimate";
     public static final int ITERABLE_IN_APP_ANIMATION_DURATION           = 500;
     public static final int ITERABLE_IN_APP_BACKGROUND_ANIMATION_DURATION = 300;
+
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_LOW           = 400.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_MEDIUM        = 300.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_HIGH          = 200.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_CRITICAL      = 100.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_UNASSIGNED    = 300.5;
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";
