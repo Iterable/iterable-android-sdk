@@ -306,8 +306,14 @@ private static final String TAG = "IterableApi";
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
                     sharedInstance.config.inAppDisplayInterval);
         }
-        sharedInstance.apiClient.setOfflineProcessingEnabled(sharedInstance.config.offlineProcessing);
+        loadLastSavedConfiguration(context);
         IterablePushActionReceiver.processPendingAction(context);
+    }
+
+    static void loadLastSavedConfiguration(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, false);
+        sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
     }
 
     void fetchRemoteConfiguration() {
@@ -316,7 +322,12 @@ private static final String TAG = "IterableApi";
             public void execute(@Nullable String data) {
                 try {
                     JSONObject jsonData = new JSONObject(data);
-                    sharedInstance.apiClient.setOfflineProcessingEnabled(jsonData.getBoolean("offlineModeBeta"));
+                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY);
+                    sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
+                    SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, offlineConfiguration);
+                    editor.apply();
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, "Failed to read remote configuration");
                 }
