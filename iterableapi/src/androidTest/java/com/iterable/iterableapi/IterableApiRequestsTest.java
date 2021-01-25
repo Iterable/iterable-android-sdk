@@ -48,6 +48,7 @@ public class IterableApiRequestsTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
         assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
+        assertNotNull(request.getHeader(IterableConstants.KEY_SENT_AT));
         assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
     }
 
