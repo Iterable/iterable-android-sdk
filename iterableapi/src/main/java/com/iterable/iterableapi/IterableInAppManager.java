@@ -327,14 +327,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         }
     }
 
-    private void processMessages() {
-        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
-            return;
-        }
-
-        IterableLogger.printInfo();
-
-        List<IterableInAppMessage> messages = getMessages();
+    private List<IterableInAppMessage> getMessagesSortedByPriorityLevel(List<IterableInAppMessage> messages) {
         List<IterableInAppMessage> messagesByPriorityLevel = messages;
 
         Collections.sort(messagesByPriorityLevel, new Comparator<IterableInAppMessage>() {
@@ -349,6 +342,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 }
             }
         });
+
+        return messagesByPriorityLevel;
+    }
+
+    private void processMessages() {
+        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
+            return;
+        }
+
+        IterableLogger.printInfo();
+
+        List<IterableInAppMessage> messages = getMessages();
+
+        List<IterableInAppMessage> messagesByPriorityLevel = getMessagesSortedByPriorityLevel(messages);
 
         for (IterableInAppMessage message : messagesByPriorityLevel) {
             if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE) {
