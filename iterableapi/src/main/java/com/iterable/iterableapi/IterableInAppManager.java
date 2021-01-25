@@ -18,6 +18,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -325,6 +327,25 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         }
     }
 
+    private List<IterableInAppMessage> getMessagesSortedByPriorityLevel(List<IterableInAppMessage> messages) {
+        List<IterableInAppMessage> messagesByPriorityLevel = messages;
+
+        Collections.sort(messagesByPriorityLevel, new Comparator<IterableInAppMessage>() {
+            @Override
+            public int compare(IterableInAppMessage message1, IterableInAppMessage message2) {
+                if (message1.getPriorityLevel() < message2.getPriorityLevel()) {
+                    return -1;
+                } else if (message1.getPriorityLevel() == message2.getPriorityLevel()) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        });
+
+        return messagesByPriorityLevel;
+    }
+
     private void processMessages() {
         if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
             return;
@@ -333,7 +354,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         IterableLogger.printInfo();
 
         List<IterableInAppMessage> messages = getMessages();
-        for (IterableInAppMessage message : messages) {
+
+        List<IterableInAppMessage> messagesByPriorityLevel = getMessagesSortedByPriorityLevel(messages);
+
+        for (IterableInAppMessage message : messagesByPriorityLevel) {
             if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE) {
                 IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
                 InAppResponse response = handler.onNewInApp(message);
