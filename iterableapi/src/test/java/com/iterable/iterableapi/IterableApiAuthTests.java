@@ -397,7 +397,7 @@ public class IterableApiAuthTests extends BaseTest {
     public void testAuthFailureReturns401() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
         dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(401).setBody("{\"code\": \"InvalidJwtPayload\"}"));
-        IterableApi.getInstance().inAppConsume(new IterableInAppMessage("asd", null, null, null, null, null, null, null, (long) 2), null, null);
+        IterableApi.getInstance().inAppConsume(new IterableInAppMessage("asd", null, null, null, null, null, null, null, 0.0, (long) 2), null, null);
         Robolectric.flushForegroundThreadScheduler();
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
