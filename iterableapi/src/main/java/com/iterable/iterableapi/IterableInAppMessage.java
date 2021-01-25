@@ -279,7 +279,9 @@ public class IterableInAppMessage {
         return trigger.type;
     }
 
-    public double getPriorityLevel() { return priorityLevel; }
+    public double getPriorityLevel() {
+        return priorityLevel;
+    }
 
     public boolean isInboxMessage() {
         return saveToInbox != null ? saveToInbox : false;
