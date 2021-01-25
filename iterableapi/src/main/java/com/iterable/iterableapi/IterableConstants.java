@@ -38,6 +38,8 @@ public final class IterableConstants {
     public static final String KEY_PREFER_USER_ID       = "preferUserId";
     public static final String KEY_RECIPIENT_EMAIL      = "recipientEmail";
     public static final String KEY_SEND_AT              = "sendAt";
+    public static final String KEY_CREATED_AT           = "createdAt";
+    public static final String KEY_SENT_AT              = "sentAt";
     public static final String KEY_TEMPLATE_ID          = "templateId";
     public static final String KEY_MESSAGE_CONTEXT      = "messageContext";
     public static final String KEY_MESSAGE_ID           = "messageId";
@@ -69,6 +71,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_DDL_MATCH               = "a/matchFp";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
+    public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -106,6 +109,8 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_ATTRIBUTION_INFO_KEY = "itbl_attribution_info";
     public static final int    SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS = 24;
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
+    public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
+    public static final String SHARED_PREFS_OFFLINE_MODE_BETA_KEY = "offlineModeBeta";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";

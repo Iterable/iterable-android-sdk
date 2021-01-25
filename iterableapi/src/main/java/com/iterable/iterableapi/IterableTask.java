@@ -12,11 +12,11 @@ class IterableTask {
     String id;
     String name;
     int version;
-    Date createdAt;
-    Date modifiedAt;
-    Date lastAttemptedAt;
-    Date scheduledAt;
-    Date requestedAt;
+    long createdAt;
+    long modifiedAt;
+    long lastAttemptedAt;
+    long scheduledAt;
+    long requestedAt;
 
     boolean processing;
     boolean failed;
@@ -29,7 +29,7 @@ class IterableTask {
     int attempts;
 
     //To be used when creating IterableTask from database
-    IterableTask(String id, @NonNull String name, int version, @NonNull Date createdAt, Date modifiedAt, Date lastAttemptedAt, Date scheduledAt, Date requestedAt, boolean processing, boolean failed, boolean blocking, String data, String taskFailureData, IterableTaskType taskType, int attempts) {
+    IterableTask(String id, @NonNull String name, int version, @NonNull long createdAt, long modifiedAt, long lastAttemptedAt, long scheduledAt, long requestedAt, boolean processing, boolean failed, boolean blocking, String data, String taskFailureData, IterableTaskType taskType, int attempts) {
         this.id = id;
         this.name = name;
         this.version = version;
@@ -51,9 +51,9 @@ class IterableTask {
     IterableTask(String name, IterableTaskType taskType, String data) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
-        this.createdAt = new Date();
-        this.scheduledAt = new Date();
-        this.requestedAt = new Date();
+        this.createdAt = new Date().getTime();
+        this.scheduledAt = new Date().getTime();
+        this.requestedAt = new Date().getTime();
         this.data = data;
         this.taskType = taskType;
     }

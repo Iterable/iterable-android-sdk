@@ -9,6 +9,7 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.WorkerThread;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -129,7 +130,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             IterableApiResponse response = null;
             TaskResult result = TaskResult.FAILURE;
             try {
-                IterableApiRequest request = IterableApiRequest.fromJSON(new JSONObject(task.data), null, null);
+                IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), null, null);
                 response = IterableRequestTask.executeApiRequest(request);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Error while processing request task", e);
@@ -156,6 +157,17 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             }
         }
         return false;
+    }
+
+    JSONObject getTaskDataWithDate(IterableTask task) {
+        try {
+            JSONObject jsonData = new JSONObject(task.data);
+            jsonData.getJSONObject("data").put(IterableConstants.KEY_CREATED_AT, task.createdAt / 1000);
+            return jsonData;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private boolean isRetriableError(String errorMessage) {
