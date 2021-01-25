@@ -49,10 +49,27 @@ class IterableApiClient {
     void setOfflineProcessingEnabled(boolean offlineMode) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (offlineMode) {
-                this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
+                if (this.requestProcessor == null || this.requestProcessor.getClass() != OfflineRequestProcessor.class) {
+                    this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
+                }
             } else {
-                this.requestProcessor = new OnlineRequestProcessor();
+                if (this.requestProcessor == null || this.requestProcessor.getClass() != OnlineRequestProcessor.class) {
+                    this.requestProcessor = new OnlineRequestProcessor();
+                }
             }
+        }
+    }
+
+    void getRemoteConfiguration(IterableHelper.IterableActionHandler actionHandler) {
+        JSONObject requestJSON = new JSONObject();
+        try {
+            requestJSON.putOpt(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.putOpt(IterableConstants.DEVICE_APP_PACKAGE_NAME, authProvider.getContext().getPackageName());
+            requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+            requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
+            sendGetRequest(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION, requestJSON, actionHandler);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 

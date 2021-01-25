@@ -310,6 +310,20 @@ private static final String TAG = "IterableApi";
         IterablePushActionReceiver.processPendingAction(context);
     }
 
+    void fetchRemoteConfiguration() {
+        apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
+            @Override
+            public void execute(@Nullable String data) {
+                try {
+                    JSONObject jsonData = new JSONObject(data);
+                    sharedInstance.apiClient.setOfflineProcessingEnabled(jsonData.getBoolean("offlineModeBeta"));
+                } catch (JSONException e) {
+                    IterableLogger.e(TAG, "Failed to read remote configuration");
+                }
+            }
+        });
+    }
+
     /**
      * Set user email used for API calls
      * Calling this or {@link #setUserId(String)} is required before making any API calls.
@@ -966,6 +980,7 @@ private static final String TAG = "IterableApi";
                 IterableLogger.d(TAG, "Performing automatic push registration");
                 sharedInstance.registerForPush();
             }
+            fetchRemoteConfiguration();
         }
     }
 
