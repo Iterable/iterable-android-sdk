@@ -162,7 +162,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     JSONObject getTaskDataWithDate(IterableTask task) {
         try {
             JSONObject jsonData = new JSONObject(task.data);
-            jsonData.put(IterableConstants.KEY_CREATED_AT, task.createdAt / 1000);
+            jsonData.getJSONObject("data").put(IterableConstants.KEY_CREATED_AT, task.createdAt / 1000);
             return jsonData;
         } catch (JSONException e) {
             e.printStackTrace();

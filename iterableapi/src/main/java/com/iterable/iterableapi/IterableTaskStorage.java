@@ -42,11 +42,11 @@ class IterableTaskStorage {
     static final String OFFLINE_TASK_COLUMN_DATA = " (" + TASK_ID + " TEXT PRIMARY KEY," +
             NAME + " TEXT," +
             VERSION + " INTEGER," +
-            CREATED_AT + " NUMERIC," +
-            MODIFIED_AT + " NUMERIC," +
-            LAST_ATTEMPTED_AT + " NUMERIC," +
-            SCHEDULED_AT + " NUMERIC," +
-            REQUESTED_AT + " NUMERIC," +
+            CREATED_AT + " BIGINT," +
+            MODIFIED_AT + " BIGINT," +
+            LAST_ATTEMPTED_AT + " BIGINT," +
+            SCHEDULED_AT + " BIGINT," +
+            REQUESTED_AT + " BIGINT," +
             PROCESSING + " BOOLEAN," +
             FAILED + " BOOLEAN," +
             BLOCKING + " BOOLEAN," +

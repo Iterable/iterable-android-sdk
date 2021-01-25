@@ -368,9 +368,6 @@ class IterableApiRequest {
                 authToken = jsonData.getString("authToken");
             }
             JSONObject json = jsonData.getJSONObject("data");
-            if (jsonData.has(IterableConstants.KEY_CREATED_AT)) {
-                json.put(IterableConstants.KEY_CREATED_AT, jsonData.getString(IterableConstants.KEY_CREATED_AT));
-            }
             return new IterableApiRequest(apikey, resourcePath, json, requestType, authToken, onSuccess, onFailure);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "Failed to create Iterable request from JSON");
