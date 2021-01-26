@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -65,7 +66,7 @@ public class IterableApiRequestsTest {
 
     @Test
     public void testTrackPurchase() throws Exception {
-        String expectedRequest = "{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100}";
+        String expectedRequest = new StringBuilder(new StringBuffer("{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100").append(",\"createdAt\":").append(new Date().getTime() / 1000).append("}")).toString();
 
         CommerceItem item1 = new CommerceItem("sku123", "Item", 50.0, 2);
         List<CommerceItem> items = new ArrayList<CommerceItem>();
@@ -80,7 +81,7 @@ public class IterableApiRequestsTest {
 
     @Test
     public void testTrackPurchaseWithDataFields() throws Exception {
-        String expectedRequest = "{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100,\"dataFields\":{\"field\":\"testValue\"}}";
+        String expectedRequest = new StringBuilder(new StringBuffer("{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100,\"dataFields\":{\"field\":\"testValue\"}").append(",\"createdAt\":").append(new Date().getTime() / 1000).append("}")).toString();
 
         CommerceItem item1 = new CommerceItem("sku123", "Item", 50.0, 2);
         List<CommerceItem> items = new ArrayList<CommerceItem>();
