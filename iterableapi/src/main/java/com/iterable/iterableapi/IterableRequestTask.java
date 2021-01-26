@@ -89,7 +89,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
                     urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
-
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.processorType.toString());
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
                     }
@@ -111,7 +111,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
                     urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
-
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.processorType.toString());
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
                     }
@@ -312,9 +312,31 @@ class IterableApiRequest {
     final String requestType;
     final String authToken;
 
+    ProcessorType processorType = ProcessorType.ONLINE;
     IterableHelper.IterableActionHandler legacyCallback;
     IterableHelper.SuccessHandler successCallback;
     IterableHelper.FailureHandler failureCallback;
+
+    enum ProcessorType {
+        ONLINE {
+            @NonNull
+            @Override
+            public String toString() {
+                return "Online";
+            }
+        },
+        OFFLINE {
+            @NonNull
+            @Override
+            public String toString() {
+                return "Offline";
+            }
+        }
+    }
+
+    public void setProcessorType(ProcessorType processorType) {
+        this.processorType = processorType;
+    }
 
     IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
