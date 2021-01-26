@@ -348,7 +348,28 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void databaseClearOnLogout() throws Exception {
-        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).setOfflineProcessing(true).build());
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{\n" +
+                "            \"offlineMode\": false,\n" +
+                "            \"offlineModeBeta\": true,\n" +
+                "            \"someOtherKey1\": \"someOtherValue1\"\n" +
+                "        }"));
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        verify(mockApiClient).setOfflineProcessingEnabled(false);
+        clearInvocations(mockApiClient);
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+        RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppConsumeRequest);
+        assertTrue(trackInAppConsumeRequest.getRequestUrl().toString().contains("/getRemoteConfiguration"));
+        verify(mockApiClient).setOfflineProcessingEnabled(true);
+
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+
         IterableApi.getInstance().setEmail("test@email.com");
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(getContext());
         taskStorage.createTask("Test", IterableTaskType.API, "data");

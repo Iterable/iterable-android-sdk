@@ -533,4 +533,8 @@ class IterableApiClient {
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
         getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onCallback);
     }
+
+    void onLogout() {
+        getRequestProcessor().onLogout(authProvider.getContext());
+    }
 }
