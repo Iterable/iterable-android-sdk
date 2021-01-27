@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.10)
+#### Fixed
+- Fixed Firebase check to work without a Firebase database URL in `google-services.json` that may not be present in some recently created Firebase projects.
+
 ## [3.2.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.9)
 #### Added
 - Added support for delayed initialization of the SDK. While we still recommend calling `IterableApi.initialize` in `Application#onCreate`, apps initializing the Iterable SDK later should now work properly with push actions and background push notifications without issues.
