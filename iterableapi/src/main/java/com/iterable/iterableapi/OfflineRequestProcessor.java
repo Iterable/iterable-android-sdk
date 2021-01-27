@@ -46,7 +46,6 @@ class OfflineRequestProcessor implements RequestProcessor {
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback);
-        request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
         new IterableRequestTask().execute(request);
     }
 
