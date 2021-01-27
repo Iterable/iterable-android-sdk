@@ -18,6 +18,7 @@ import java.util.Set;
 class OfflineRequestProcessor implements RequestProcessor {
     private TaskScheduler taskScheduler;
     private IterableTaskRunner taskRunner;
+    private IterableTaskStorage taskStorage;
     private static final Set<String> offlineApiSet = new HashSet<>(Arrays.asList(
             IterableConstants.ENDPOINT_TRACK,
             IterableConstants.ENDPOINT_TRACK_PUSH_OPEN,
@@ -30,7 +31,7 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_INAPP_CONSUME));
 
     OfflineRequestProcessor(Context context) {
-        IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(context);
+        taskStorage = IterableTaskStorage.sharedInstance(context);
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
         taskRunner = new IterableTaskRunner(taskStorage, IterableActivityMonitor.getInstance(), networkConnectivityManager);
         taskScheduler = new TaskScheduler(taskStorage, taskRunner);
@@ -56,6 +57,11 @@ class OfflineRequestProcessor implements RequestProcessor {
         } else {
             new IterableRequestTask().execute(request);
         }
+    }
+
+    @Override
+    public void onLogout(Context context) {
+        taskStorage.deleteAllTasks();
     }
 
     boolean isRequestOfflineCompatible(String baseUrl) {

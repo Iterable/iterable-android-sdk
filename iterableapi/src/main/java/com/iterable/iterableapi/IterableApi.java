@@ -320,6 +320,10 @@ private static final String TAG = "IterableApi";
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(@Nullable String data) {
+                if (data == null) {
+                    IterableLogger.e(TAG, "Remote configuration returned null");
+                    return;
+                }
                 try {
                     JSONObject jsonData = new JSONObject(data);
                     boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY);
@@ -1054,9 +1058,7 @@ private static final String TAG = "IterableApi";
         }
         getInAppManager().reset();
         getAuthManager().clearRefreshTimer();
-        if (config.offlineProcessing) {
-            IterableTaskStorage.sharedInstance(getMainActivityContext()).deleteAllTasks();
-        }
+        apiClient.onLogout();
     }
 
     private void onLogIn() {

@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -24,6 +26,11 @@ class OnlineRequestProcessor implements RequestProcessor {
         new IterableRequestTask().execute(request);
     }
 
+    @Override
+    public void onLogout(Context context) {
+
+    }
+
     JSONObject addCreatedAtToJson(JSONObject jsonObject) {
         try {
             jsonObject.put(IterableConstants.KEY_CREATED_AT, new Date().getTime() / 1000);
@@ -32,4 +39,5 @@ class OnlineRequestProcessor implements RequestProcessor {
         }
         return jsonObject;
     }
+
 }

@@ -66,11 +66,6 @@ public class IterableConfig {
     final IterableAuthHandler authHandler;
 
     /**
-     * When set to true, the SDK will keep track of events when the device and trigger them once the network establishes
-     */
-    boolean offlineProcessing;
-
-    /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
     final long expiringAuthTokenRefreshPeriod;
@@ -87,7 +82,6 @@ public class IterableConfig {
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
-        offlineProcessing = builder.offlineProcessing;
     }
 
     public static class Builder {
@@ -102,7 +96,6 @@ public class IterableConfig {
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
-        private boolean offlineProcessing = false;
         public Builder() {}
 
         /**
@@ -221,16 +214,6 @@ public class IterableConfig {
         @NonNull
         public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
             this.expiringAuthTokenRefreshPeriod = period * 1000L;
-            return this;
-        }
-
-        /**
-         * When set to true, the SDK will capture events when the device goes offline.
-         * @param offlineProcessing boolean which will enable offline processing
-         */
-        @NonNull
-        Builder setOfflineProcessing(@NonNull boolean offlineProcessing) {
-            this.offlineProcessing = offlineProcessing;
             return this;
         }
 
