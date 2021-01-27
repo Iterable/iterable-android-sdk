@@ -89,7 +89,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
                     urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
-                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.processorType.toString());
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.getProcessorType().toString());
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
                     }
@@ -111,7 +111,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
                     urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
-                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.processorType.toString());
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.getProcessorType().toString());
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
                     }
@@ -312,7 +312,7 @@ class IterableApiRequest {
     final String requestType;
     final String authToken;
 
-    ProcessorType processorType = ProcessorType.ONLINE;
+    private ProcessorType processorType = ProcessorType.ONLINE;
     IterableHelper.IterableActionHandler legacyCallback;
     IterableHelper.SuccessHandler successCallback;
     IterableHelper.FailureHandler failureCallback;
@@ -334,7 +334,11 @@ class IterableApiRequest {
         }
     }
 
-    public void setProcessorType(ProcessorType processorType) {
+    public ProcessorType getProcessorType() {
+        return processorType;
+    }
+
+    void setProcessorType(ProcessorType processorType) {
         this.processorType = processorType;
     }
 
