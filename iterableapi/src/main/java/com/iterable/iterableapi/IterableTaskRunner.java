@@ -131,6 +131,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             TaskResult result = TaskResult.FAILURE;
             try {
                 IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), null, null);
+                request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
                 response = IterableRequestTask.executeApiRequest(request);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Error while processing request task", e);
