@@ -36,9 +36,9 @@ public class IterableApiResponseTest {
 
     @Before
     public void setUp() {
-        createIterableApi();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+        createIterableApi();
     }
 
     @After
