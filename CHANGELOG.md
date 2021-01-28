@@ -19,8 +19,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Added
 - This beta SDK release includes support for two new Iterable features (both of which are in beta):
 
-- Offline events processing - Capturing engagement events when a device is offline and sending them to Iterable when a network connection is reestablished
-- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
+	- Offline events processing - Capturing engagement events when a device is offline and sending them to Iterable when a network connection is reestablished
+	- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
 
   If you'd like to try out these beta features, talk with your Iterable customer success manager.
 
