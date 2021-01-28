@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0-beta1)
+#### Added
+- This beta SDK release includes support for two new Iterable features (both of which are in beta):
+
+	- Offline events processing - Capturing engagement events when a device is offline and sending them to Iterable when a network connection is reestablished
+	- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
+
+  If you'd like to try out these beta features, talk with your Iterable customer success manager.
+
 ## [3.2.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.10)
 #### Fixed
 - Fixed Firebase check to work without a Firebase database URL in `google-services.json` that may not be present in some recently created Firebase projects.
