@@ -58,6 +58,9 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     private String noMessagesTitle = "No Messages";
     private String noMessagesBody = "There are no messages in the inbox";
 
+    TextView noMessagesTitleTextView;
+    TextView noMessagesBodyTextView;
+    RecyclerView recyclerView;
     /**
      * Create an Inbox fragment with default parameters
      *
@@ -167,29 +170,34 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         }
 
         RelativeLayout relativeLayout = (RelativeLayout) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
-        RecyclerView view = relativeLayout.findViewById(R.id.list);
-        view.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView = relativeLayout.findViewById(R.id.list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter, dateMapper);
-        view.setAdapter(adapter);
+        recyclerView.setAdapter(adapter);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
-        itemTouchHelper.attachToRecyclerView(view);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
         return relativeLayout.getRootView();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateEmptyInboxMessage();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        updateEmptyInboxMessage();
         updateList();
         IterableApi.getInstance().getInAppManager().addListener(this);
         startSession();
     }
 
     private void updateEmptyInboxMessage() {
-        TextView emptyInboxTitleTextView = getView().findViewById(R.id.emptyInboxTitle);
-        emptyInboxTitleTextView.setText(noMessagesTitle);
-        TextView emptyInboxMessageTextView = getView().findViewById(R.id.emptyInboxMessage);
-        emptyInboxMessageTextView.setText(noMessagesBody);
+        noMessagesTitleTextView = getView().findViewById(R.id.emptyInboxTitle);
+        noMessagesBodyTextView = getView().findViewById(R.id.emptyInboxMessage);
+        noMessagesTitleTextView.setText(noMessagesTitle);
+        noMessagesBodyTextView.setText(noMessagesBody);
     }
 
     @Override
@@ -241,13 +249,13 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
 
     private void handleEmptyInbox(IterableInboxAdapter adapter) {
         if (adapter.getItemCount() == 0) {
-            getView().findViewById(R.id.emptyInboxMessage).setVisibility(View.VISIBLE);
-            getView().findViewById(R.id.emptyInboxTitle).setVisibility(View.VISIBLE);
-            getView().findViewById(R.id.list).setVisibility(View.INVISIBLE);
+            noMessagesTitleTextView.setVisibility(View.VISIBLE);
+            noMessagesBodyTextView.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.INVISIBLE);
         } else {
-            getView().findViewById(R.id.emptyInboxMessage).setVisibility(View.INVISIBLE);
-            getView().findViewById(R.id.emptyInboxTitle).setVisibility(View.INVISIBLE);
-            getView().findViewById(R.id.list).setVisibility(View.VISIBLE);
+            noMessagesTitleTextView.setVisibility(View.INVISIBLE);
+            noMessagesBodyTextView.setVisibility(View.INVISIBLE);
+            recyclerView.setVisibility(View.VISIBLE);
         }
     }
 

@@ -2,18 +2,18 @@
 
 <RelativeLayout xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/inboxFragmentLayout"
+    android:name="com.iterable.iterableapi.ui.InboxFragment"
+    android:layout_height="match_parent"
     android:layout_width="match_parent"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    tools:context=".inbox.IterableInboxFragment">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list"
-        android:name="com.iterable.iterableapi.ui.InboxFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layoutManager="LinearLayoutManager"
-        tools:context=".inbox.IterableInboxFragment"
         tools:listitem="@layout/iterable_inbox_item" />
 
     <TextView
