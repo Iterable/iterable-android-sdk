@@ -55,8 +55,8 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     private IterableInboxFilter filter = new DefaultInboxFilter();
     private IterableInboxDateMapper dateMapper = new DefaultInboxDateMapper();
     private boolean sessionStarted = false;
-    private String noMessagesTitle = "No Messages";
-    private String noMessagesBody = "There are no messages in the inbox";
+    private String noMessagesTitle;
+    private String noMessagesBody;
 
     TextView noMessagesTitleTextView;
     TextView noMessagesBodyTextView;
