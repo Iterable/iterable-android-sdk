@@ -233,6 +233,18 @@ public class MainActivityTest {
         onView(withText("Tips and tricks 2")).check(doesNotExist());
     }
 
+    @Test
+    public void testNoMessagesTitleAndText() throws Exception {
+        Intent intent = new Intent();
+        String noMessageTitle = "OOPSY";
+        String noMessageBody = "No messages for you";
+        intent.putExtra(IterableConstants.NO_MESSAGES_TITLE,noMessageTitle);
+        intent.putExtra(IterableConstants.NO_MESSAGES_BODY,noMessageBody);
+        rule.launchActivity(intent);
+        onView(withText(noMessageTitle)).check(matches(isDisplayed()));
+        onView(withText(noMessageBody)).check(matches(isDisplayed()));
+    }
+
 
     static class Matchers{
         public static Matcher<View> withListSize (final int size) {

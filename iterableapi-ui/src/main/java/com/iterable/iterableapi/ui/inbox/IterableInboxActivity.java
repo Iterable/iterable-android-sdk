@@ -38,6 +38,7 @@ public class IterableInboxActivity extends AppCompatActivity {
                 inboxMode = (InboxMode) inboxModeExtra;
             }
             inboxFragment = IterableInboxFragment.newInstance(inboxMode, itemLayoutId);
+            inboxFragment.setArguments(intent.getExtras());
 
             if (intent.getStringExtra(ACTIVITY_TITLE) != null) {
                 setTitle(intent.getStringExtra(ACTIVITY_TITLE));

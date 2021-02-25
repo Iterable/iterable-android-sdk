@@ -174,15 +174,13 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter, dateMapper);
         recyclerView.setAdapter(adapter);
+        noMessagesTitleTextView = relativeLayout.findViewById(R.id.emptyInboxTitle);
+        noMessagesBodyTextView = relativeLayout.findViewById(R.id.emptyInboxMessage);
+        noMessagesTitleTextView.setText(noMessagesTitle);
+        noMessagesBodyTextView.setText(noMessagesBody);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
         itemTouchHelper.attachToRecyclerView(recyclerView);
         return relativeLayout.getRootView();
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        updateEmptyInboxMessage();
     }
 
     @Override
@@ -191,13 +189,6 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         updateList();
         IterableApi.getInstance().getInAppManager().addListener(this);
         startSession();
-    }
-
-    private void updateEmptyInboxMessage() {
-        noMessagesTitleTextView = getView().findViewById(R.id.emptyInboxTitle);
-        noMessagesBodyTextView = getView().findViewById(R.id.emptyInboxMessage);
-        noMessagesTitleTextView.setText(noMessagesTitle);
-        noMessagesBodyTextView.setText(noMessagesBody);
     }
 
     @Override
@@ -241,7 +232,6 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     }
 
     private void updateList() {
-        RecyclerView recyclerView = getView().findViewById(R.id.list);
         IterableInboxAdapter adapter = (IterableInboxAdapter) recyclerView.getAdapter();
         adapter.setInboxItems(IterableApi.getInstance().getInAppManager().getInboxMessages());
         handleEmptyInbox(adapter);
