@@ -48,6 +48,11 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
 
     private InboxMode inboxMode = InboxMode.POPUP;
     private @LayoutRes int itemLayoutId = R.layout.iterable_inbox_item;
+    private String noMessagesTitle;
+    private String noMessagesBody;
+    TextView noMessagesTitleTextView;
+    TextView noMessagesBodyTextView;
+    RecyclerView recyclerView;
 
     private final SessionManager sessionManager = new SessionManager();
     private IterableInboxAdapterExtension adapterExtension = new DefaultAdapterExtension();
@@ -55,12 +60,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     private IterableInboxFilter filter = new DefaultInboxFilter();
     private IterableInboxDateMapper dateMapper = new DefaultInboxDateMapper();
     private boolean sessionStarted = false;
-    private String noMessagesTitle;
-    private String noMessagesBody;
 
-    TextView noMessagesTitleTextView;
-    TextView noMessagesBodyTextView;
-    RecyclerView recyclerView;
     /**
      * Create an Inbox fragment with default parameters
      *
@@ -80,10 +80,16 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
      * @return {@link IterableInboxFragment} instance
      */
     @NonNull public static IterableInboxFragment newInstance(@NonNull InboxMode inboxMode, @LayoutRes int itemLayoutId) {
+        return newInstance(inboxMode, itemLayoutId, null, null);
+    }
+
+    @NonNull public static IterableInboxFragment newInstance(@NonNull InboxMode inboxMode, @LayoutRes int itemLayoutId, @Nullable String noMessagesTitle, @Nullable String noMessagesBody) {
         IterableInboxFragment inboxFragment = new IterableInboxFragment();
         Bundle bundle = new Bundle();
         bundle.putSerializable(INBOX_MODE, inboxMode);
         bundle.putInt(ITEM_LAYOUT_ID, itemLayoutId);
+        bundle.putString(IterableConstants.NO_MESSAGES_TITLE, noMessagesTitle);
+        bundle.putString(IterableConstants.NO_MESSAGES_BODY, noMessagesBody);
         inboxFragment.setArguments(bundle);
 
         return inboxFragment;
@@ -162,10 +168,10 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
                 itemLayoutId = arguments.getInt(ITEM_LAYOUT_ID);
             }
             if (arguments.getString(IterableConstants.NO_MESSAGES_TITLE) != null) {
-                this.noMessagesTitle = arguments.getString(IterableConstants.NO_MESSAGES_TITLE);
+                noMessagesTitle = arguments.getString(IterableConstants.NO_MESSAGES_TITLE);
             }
             if (arguments.getString(IterableConstants.NO_MESSAGES_BODY) != null) {
-                this.noMessagesBody = arguments.getString(IterableConstants.NO_MESSAGES_BODY);
+                noMessagesBody = arguments.getString(IterableConstants.NO_MESSAGES_BODY);
             }
         }
 
@@ -180,7 +186,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         noMessagesBodyTextView.setText(noMessagesBody);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
         itemTouchHelper.attachToRecyclerView(recyclerView);
-        return relativeLayout.getRootView();
+        return relativeLayout;
     }
 
     @Override
