@@ -307,20 +307,31 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
         boolean changed = false;
         Map<String, IterableInAppMessage> remoteQueueMap = new HashMap<>();
+
         for (IterableInAppMessage message : remoteQueue) {
             remoteQueueMap.put(message.getMessageId(), message);
+
             if (storage.getMessage(message.getMessageId()) == null) {
                 storage.addMessage(message);
                 onMessageAdded(message);
                 changed = true;
             }
+
+            if (storage.getMessage(message.getMessageId()) != null && message.isRead()) {
+                IterableInAppMessage localMessage = storage.getMessage(message.getMessageId());
+                localMessage.setRead(message.isRead());
+
+                changed = true;
+            }
         }
+
         for (IterableInAppMessage localMessage : storage.getMessages()) {
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 storage.removeMessage(localMessage);
                 changed = true;
             }
         }
+
         scheduleProcessing();
         if (changed) {
             notifyOnChange();
