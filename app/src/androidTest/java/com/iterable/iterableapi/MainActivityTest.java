@@ -238,8 +238,8 @@ public class MainActivityTest {
         Intent intent = new Intent();
         String noMessageTitle = "OOPSY";
         String noMessageBody = "No messages for you";
-        intent.putExtra(IterableConstants.NO_MESSAGES_TITLE,noMessageTitle);
-        intent.putExtra(IterableConstants.NO_MESSAGES_BODY,noMessageBody);
+        intent.putExtra(IterableConstants.NO_MESSAGES_TITLE, noMessageTitle);
+        intent.putExtra(IterableConstants.NO_MESSAGES_BODY, noMessageBody);
         rule.launchActivity(intent);
         onView(withText(noMessageTitle)).check(matches(isDisplayed()));
         onView(withText(noMessageBody)).check(matches(isDisplayed()));
