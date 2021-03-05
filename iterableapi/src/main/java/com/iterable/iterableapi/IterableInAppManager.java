@@ -319,7 +319,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
             if (storage.getMessage(message.getMessageId()) != null) {
                 IterableInAppMessage localMessage = storage.getMessage(message.getMessageId());
-                
+
                 if (!localMessage.isRead() && message.isRead()) {
                     localMessage.setRead(message.isRead());
 
