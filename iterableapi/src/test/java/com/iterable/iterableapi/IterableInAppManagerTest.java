@@ -389,6 +389,7 @@ public class IterableInAppManagerTest extends BaseTest {
         // load the in-app that has not been synchronized with the server yet (read state is set to false)
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_read_state_1.json")));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
 
         // now load the one that has the in-app with read state set to true
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_read_state_2.json")));
