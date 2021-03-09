@@ -31,7 +31,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     static String overrideUrl;
 
-    static final int DEFAULT_TIMEOUT_MS = 3000;   //3 seconds
+    static final int POST_REQUEST_DEFAULT_TIMEOUT_MS = 3000;    //3 seconds
+    static final int GET_REQUEST_DEFAULT_TIMEOUT_MS = 10000;    //10 seconds
     static final long RETRY_DELAY_MS = 2000;      //2 seconds
     static final int MAX_RETRY_COUNT = 5;
 
@@ -82,8 +83,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
 
-                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                    urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setReadTimeout(GET_REQUEST_DEFAULT_TIMEOUT_MS);
+                    urlConnection.setConnectTimeout(GET_REQUEST_DEFAULT_TIMEOUT_MS);
 
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
@@ -102,8 +103,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     urlConnection.setDoOutput(true);
                     urlConnection.setRequestMethod(iterableApiRequest.requestType);
 
-                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                    urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setReadTimeout(POST_REQUEST_DEFAULT_TIMEOUT_MS);
+                    urlConnection.setConnectTimeout(POST_REQUEST_DEFAULT_TIMEOUT_MS);
 
                     urlConnection.setRequestProperty("Accept", "application/json");
                     urlConnection.setRequestProperty("Content-Type", "application/json");
