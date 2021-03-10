@@ -311,16 +311,16 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         for (IterableInAppMessage message : remoteQueue) {
             remoteQueueMap.put(message.getMessageId(), message);
 
-            if (storage.getMessage(message.getMessageId()) == null) {
+            if (!isStoringInApp(message)) {
                 storage.addMessage(message);
                 onMessageAdded(message);
                 changed = true;
             }
 
-            if (storage.getMessage(message.getMessageId()) != null) {
+            if (isStoringInApp(message)) {
                 IterableInAppMessage localMessage = storage.getMessage(message.getMessageId());
 
-                if (!localMessage.isRead() && message.isRead()) {
+                if (shouldOverwriteInApp(localMessage, message)) {
                     localMessage.setRead(message.isRead());
 
                     changed = true;
@@ -414,6 +414,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private boolean canShowInAppAfterPrevious() {
         return getSecondsSinceLastInApp() >= inAppDisplayInterval;
+    }
+
+    private boolean isStoringInApp(IterableInAppMessage message) {
+        return storage.getMessage(message.getMessageId()) != null;
+    }
+
+    private boolean shouldOverwriteInApp(IterableInAppMessage localMessage, IterableInAppMessage remoteMessage) {
+        return !localMessage.isRead() && remoteMessage.isRead();
     }
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
