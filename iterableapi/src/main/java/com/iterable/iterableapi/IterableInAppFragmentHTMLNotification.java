@@ -383,7 +383,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             @Override
             public void run() {
                 if (getContext() != null && getDialog() != null && getDialog().getWindow() != null) {
-                    IterableInAppFragmentHTMLNotification.super.dismiss();
+                    dismissAllowingStateLoss();
                 }
             }
         };
