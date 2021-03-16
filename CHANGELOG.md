@@ -24,6 +24,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
   If you'd like to try out these beta features, talk with your Iterable customer success manager.
 
+## [3.2.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.11)
+#### Changed
+- Changed the timeout for GET calls (`/inApp/getMessages` in particular) from 3 to 10 seconds.
+
+#### Fixed
+- Fixed a crash that would sometimes happen when dismissing an in-app message while the app is in background.
+
 ## [3.2.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.10)
 #### Fixed
 - Fixed Firebase check to work without a Firebase database URL in `google-services.json` that may not be present in some recently created Firebase projects.
