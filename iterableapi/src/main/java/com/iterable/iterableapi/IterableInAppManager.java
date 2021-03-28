@@ -428,7 +428,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     @Override
     public void onSwitchToForeground() {
-        scheduleProcessing();
         if (IterableUtil.currentTimeMillis() - lastSyncTime > MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS) {
             syncInApp();
         }
