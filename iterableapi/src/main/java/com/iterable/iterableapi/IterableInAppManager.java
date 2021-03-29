@@ -181,6 +181,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                     } catch (JSONException e) {
                         IterableLogger.e(TAG, e.toString());
                     }
+                } else {
+                    scheduleProcessing();
                 }
             }
         });
@@ -430,6 +432,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     public void onSwitchToForeground() {
         if (IterableUtil.currentTimeMillis() - lastSyncTime > MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS) {
             syncInApp();
+        } else {
+            scheduleProcessing();
         }
     }
 

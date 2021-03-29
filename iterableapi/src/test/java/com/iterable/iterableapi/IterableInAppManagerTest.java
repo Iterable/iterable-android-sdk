@@ -163,15 +163,14 @@ public class IterableInAppManagerTest extends BaseTest {
     @Test
     public void testProcessAfterForeground() throws Exception {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
-        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
-        assertEquals(0, inAppManager.getMessages().size());
-
-        inAppManager.syncInApp();
-        shadowOf(getMainLooper()).idle();
-        assertEquals(1, inAppManager.getMessages().size());
 
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
         shadowOf(getMainLooper()).idle();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, inAppManager.getMessages().size());
 
         ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(inAppMessageCaptor.capture());
