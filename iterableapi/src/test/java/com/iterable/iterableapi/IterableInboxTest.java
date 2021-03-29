@@ -127,13 +127,9 @@ public class IterableInboxTest extends BaseTest {
                 return builder.setInAppHandler(inAppHandler).setCustomActionHandler(customActionHandler).setUrlHandler(urlHandler);
             }
         });
-        inAppManager.syncInApp();
-        shadowOf(getMainLooper()).idle();
-
-        assertEquals(2, inAppManager.getInboxMessages().size());
-        assertEquals(2, inAppManager.getUnreadInboxMessagesCount());
 
         Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
 
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class));
 
