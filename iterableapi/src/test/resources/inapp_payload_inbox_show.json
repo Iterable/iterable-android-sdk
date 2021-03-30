@@ -2,6 +2,7 @@
   "inAppMessages": [
     {
       "messageId": "message1",
+      "read": false,
       "trigger": {
         "type": "immediate"
       },
@@ -28,6 +29,7 @@
       }
     },{
       "messageId": "message2",
+      "read": false,
       "trigger": {
         "type": "immediate"
       },

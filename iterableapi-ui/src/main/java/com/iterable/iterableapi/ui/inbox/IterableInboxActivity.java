@@ -5,6 +5,7 @@ import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
@@ -37,7 +38,14 @@ public class IterableInboxActivity extends AppCompatActivity {
             if (inboxModeExtra instanceof InboxMode) {
                 inboxMode = (InboxMode) inboxModeExtra;
             }
-            inboxFragment = IterableInboxFragment.newInstance(inboxMode, itemLayoutId);
+            String noMessageTitle = null;
+            String noMessageBody = null;
+            Bundle extraBundle = getIntent().getExtras();
+            if (extraBundle != null) {
+                noMessageTitle = extraBundle.getString(IterableConstants.NO_MESSAGES_TITLE, null);
+                noMessageBody = extraBundle.getString(IterableConstants.NO_MESSAGES_BODY, null);
+            }
+            inboxFragment = IterableInboxFragment.newInstance(inboxMode, itemLayoutId, noMessageTitle, noMessageBody);
 
             if (intent.getStringExtra(ACTIVITY_TITLE) != null) {
                 setTitle(intent.getStringExtra(ACTIVITY_TITLE));

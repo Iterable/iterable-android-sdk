@@ -3,6 +3,7 @@
     {
       "messageId": "7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV",
       "expiresAt": 1949157312395,
+      "read": false,
       "trigger": {
         "type": "immediate"
       },

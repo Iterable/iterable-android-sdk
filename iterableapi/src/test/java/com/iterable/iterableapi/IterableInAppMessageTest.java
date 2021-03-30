@@ -79,6 +79,15 @@ public class IterableInAppMessageTest {
         verify(mockChangeListener).onInAppMessageChanged(testInAppMessage);
     }
 
+    @Test
+    public void testInAppMessageOnChangeListener_read() throws Exception {
+        IterableInAppMessage testInAppMessage = InAppTestUtils.getTestInAppMessage();
+        IterableInAppMessage.OnChangeListener mockChangeListener = mock(IterableInAppMessage.OnChangeListener.class);
+        testInAppMessage.setOnChangeListener(mockChangeListener);
+
+        testInAppMessage.setRead(true);
+        verify(mockChangeListener).onInAppMessageChanged(testInAppMessage);
+    }
 
     @Test
     public void testStorageNotInvoked() throws Exception {

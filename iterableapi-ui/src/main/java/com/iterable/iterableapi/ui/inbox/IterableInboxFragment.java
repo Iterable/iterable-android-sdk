@@ -12,9 +12,12 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.iterable.iterableapi.IterableActivityMonitor;
 import com.iterable.iterableapi.IterableApi;
+import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppLocation;
 import com.iterable.iterableapi.IterableInAppManager;
@@ -45,6 +48,11 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
 
     private InboxMode inboxMode = InboxMode.POPUP;
     private @LayoutRes int itemLayoutId = R.layout.iterable_inbox_item;
+    private String noMessagesTitle;
+    private String noMessagesBody;
+    TextView noMessagesTitleTextView;
+    TextView noMessagesBodyTextView;
+    RecyclerView recyclerView;
 
     private final SessionManager sessionManager = new SessionManager();
     private IterableInboxAdapterExtension adapterExtension = new DefaultAdapterExtension();
@@ -72,10 +80,16 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
      * @return {@link IterableInboxFragment} instance
      */
     @NonNull public static IterableInboxFragment newInstance(@NonNull InboxMode inboxMode, @LayoutRes int itemLayoutId) {
+        return newInstance(inboxMode, itemLayoutId, null, null);
+    }
+
+    @NonNull public static IterableInboxFragment newInstance(@NonNull InboxMode inboxMode, @LayoutRes int itemLayoutId, @Nullable String noMessagesTitle, @Nullable String noMessagesBody) {
         IterableInboxFragment inboxFragment = new IterableInboxFragment();
         Bundle bundle = new Bundle();
         bundle.putSerializable(INBOX_MODE, inboxMode);
         bundle.putInt(ITEM_LAYOUT_ID, itemLayoutId);
+        bundle.putString(IterableConstants.NO_MESSAGES_TITLE, noMessagesTitle);
+        bundle.putString(IterableConstants.NO_MESSAGES_BODY, noMessagesBody);
         inboxFragment.setArguments(bundle);
 
         return inboxFragment;
@@ -153,15 +167,26 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
             if (arguments.getInt(ITEM_LAYOUT_ID, 0) != 0) {
                 itemLayoutId = arguments.getInt(ITEM_LAYOUT_ID);
             }
+            if (arguments.getString(IterableConstants.NO_MESSAGES_TITLE) != null) {
+                noMessagesTitle = arguments.getString(IterableConstants.NO_MESSAGES_TITLE);
+            }
+            if (arguments.getString(IterableConstants.NO_MESSAGES_BODY) != null) {
+                noMessagesBody = arguments.getString(IterableConstants.NO_MESSAGES_BODY);
+            }
         }
 
-        RecyclerView view = (RecyclerView) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
-        view.setLayoutManager(new LinearLayoutManager(getContext()));
+        RelativeLayout relativeLayout = (RelativeLayout) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
+        recyclerView = relativeLayout.findViewById(R.id.list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter, dateMapper);
-        view.setAdapter(adapter);
+        recyclerView.setAdapter(adapter);
+        noMessagesTitleTextView = relativeLayout.findViewById(R.id.emptyInboxTitle);
+        noMessagesBodyTextView = relativeLayout.findViewById(R.id.emptyInboxMessage);
+        noMessagesTitleTextView.setText(noMessagesTitle);
+        noMessagesBodyTextView.setText(noMessagesBody);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
-        itemTouchHelper.attachToRecyclerView(view);
-        return view;
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+        return relativeLayout;
     }
 
     @Override
@@ -213,9 +238,21 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     }
 
     private void updateList() {
-        RecyclerView recyclerView = (RecyclerView) getView();
         IterableInboxAdapter adapter = (IterableInboxAdapter) recyclerView.getAdapter();
         adapter.setInboxItems(IterableApi.getInstance().getInAppManager().getInboxMessages());
+        handleEmptyInbox(adapter);
+    }
+
+    private void handleEmptyInbox(IterableInboxAdapter adapter) {
+        if (adapter.getItemCount() == 0) {
+            noMessagesTitleTextView.setVisibility(View.VISIBLE);
+            noMessagesBodyTextView.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.INVISIBLE);
+        } else {
+            noMessagesTitleTextView.setVisibility(View.INVISIBLE);
+            noMessagesBodyTextView.setVisibility(View.INVISIBLE);
+            recyclerView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
