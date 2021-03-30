@@ -29,7 +29,6 @@ public class InboxUITest {
 
     @Test
     public void basicTest() {
-        onView(withId(R.id.list)).perform(click());
         assertNotNull(rule.getActivity());
     }
 }
