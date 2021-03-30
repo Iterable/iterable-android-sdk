@@ -7,6 +7,8 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
+import java.util.List;
+
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONArray;
@@ -161,15 +163,14 @@ public class IterableInAppManagerTest extends BaseTest {
     @Test
     public void testProcessAfterForeground() throws Exception {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
-        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
-        assertEquals(0, inAppManager.getMessages().size());
-
-        inAppManager.syncInApp();
-        shadowOf(getMainLooper()).idle();
-        assertEquals(1, inAppManager.getMessages().size());
 
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
         shadowOf(getMainLooper()).idle();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, inAppManager.getMessages().size());
 
         ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(inAppMessageCaptor.capture());
@@ -382,6 +383,25 @@ public class IterableInAppManagerTest extends BaseTest {
         verify(inAppHandler, times(1)).onNewInApp(inAppMessageCaptor.capture());
     }
 
+    @Test
+    public void testMessagePersistentReadStateFromServer() throws Exception {
+        // load the in-app that has not been synchronized with the server yet (read state is set to false)
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_read_state_1.json")));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertFalse(inboxMessages.get(0).isRead());
+
+        // now load the one that has the in-app with read state set to true
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_read_state_2.json")));
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+
+        assertTrue(inboxMessages.get(0).isRead());
+    }
+
     private static class IterableSkipInAppHandler implements IterableInAppHandler {
         @NonNull
         @Override
@@ -389,5 +409,4 @@ public class IterableInAppManagerTest extends BaseTest {
             return InAppResponse.SKIP;
         }
     }
-
 }

@@ -1,0 +1,31 @@
+{
+    "inAppMessages": [
+        {
+            "messageId": "readMessage1",
+            "read": true,
+            "content": {
+                "html": "<html><head></head><body>Test</body></html>",
+                "inAppDisplaySettings": {
+                    "top": {
+                        "percentage": 0
+                    },
+                    "right": {
+                        "percentage": 0
+                    },
+                    "bottom": {
+                        "percentage": 0
+                    },
+                    "left": {
+                        "percentage": 0
+                    }
+                }
+            },
+            "saveToInbox": true,
+            "inboxMetadata": {
+                "title": "Title",
+                "subtitle": "Subtitle",
+                "icon": "icon.png"
+            }
+        }
+    ]
+}

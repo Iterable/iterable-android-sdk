@@ -179,6 +179,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                     } catch (JSONException e) {
                         IterableLogger.e(TAG, e.toString());
                     }
+                } else {
+                    scheduleProcessing();
                 }
             }
         });
@@ -305,20 +307,38 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
         boolean changed = false;
         Map<String, IterableInAppMessage> remoteQueueMap = new HashMap<>();
+
         for (IterableInAppMessage message : remoteQueue) {
             remoteQueueMap.put(message.getMessageId(), message);
-            if (storage.getMessage(message.getMessageId()) == null) {
+
+            boolean isInAppStored = storage.getMessage(message.getMessageId()) != null;
+
+            if (!isInAppStored) {
                 storage.addMessage(message);
                 onMessageAdded(message);
                 changed = true;
             }
+
+            if (isInAppStored) {
+                IterableInAppMessage localMessage = storage.getMessage(message.getMessageId());
+
+                boolean shouldOverwriteInApp = !localMessage.isRead() && message.isRead();
+
+                if (shouldOverwriteInApp) {
+                    localMessage.setRead(message.isRead());
+
+                    changed = true;
+                }
+            }
         }
+
         for (IterableInAppMessage localMessage : storage.getMessages()) {
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 storage.removeMessage(localMessage);
                 changed = true;
             }
         }
+
         scheduleProcessing();
         if (changed) {
             notifyOnChange();
@@ -386,9 +406,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     @Override
     public void onSwitchToForeground() {
-        scheduleProcessing();
         if (IterableUtil.currentTimeMillis() - lastSyncTime > MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS) {
             syncInApp();
+        } else {
+            scheduleProcessing();
         }
     }
 
