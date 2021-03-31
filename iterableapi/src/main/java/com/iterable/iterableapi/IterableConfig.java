@@ -32,12 +32,6 @@ public class IterableConfig {
     final boolean autoPushRegistration;
 
     /**
-     * GCM sender ID for the previous integration
-     * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
-     */
-    final String legacyGCMSenderId;
-
-    /**
      * When set to true, it will check for deferred deep links on first time app launch
      * after installation.
      */
@@ -75,7 +69,6 @@ public class IterableConfig {
         urlHandler = builder.urlHandler;
         customActionHandler = builder.customActionHandler;
         autoPushRegistration = builder.autoPushRegistration;
-        legacyGCMSenderId = builder.legacyGCMSenderId;
         checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
         logLevel = builder.logLevel;
         inAppHandler = builder.inAppHandler;
@@ -89,7 +82,6 @@ public class IterableConfig {
         private IterableUrlHandler urlHandler;
         private IterableCustomActionHandler customActionHandler;
         private boolean autoPushRegistration = true;
-        private String legacyGCMSenderId;
         private boolean checkForDeferredDeeplink;
         private int logLevel = Log.ERROR;
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
@@ -140,17 +132,6 @@ public class IterableConfig {
         @NonNull
         public Builder setAutoPushRegistration(boolean enabled) {
             this.autoPushRegistration = enabled;
-            return this;
-        }
-
-        /**
-         * Set the GCM sender ID for the previous integration
-         * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
-         * @param legacyGCMSenderId legacy GCM sender ID
-         */
-        @NonNull
-        public Builder setLegacyGCMSenderId(@NonNull String legacyGCMSenderId) {
-            this.legacyGCMSenderId = legacyGCMSenderId;
             return this;
         }
 
