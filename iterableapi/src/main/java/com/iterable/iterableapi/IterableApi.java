@@ -653,25 +653,14 @@ private static final String TAG = "IterableApi";
     }
 
     /**
-     * In-app messages are now shown automatically, and you can customize it via {@link IterableInAppHandler}
-     * If you need to show messages manually, see {@link IterableInAppManager#getMessages()} and
-     * {@link IterableInAppManager#showMessage(IterableInAppMessage)}
-     *
-     * @deprecated Please check our migration guide here:
-     * https://github.com/iterable/iterable-android-sdk/#migrating-in-app-messages-from-the-previous-version-of-the-sdk
-     */
-    @Deprecated
-    void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
-    }
-
-    /**
      * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
-     * @deprecated Use {@link IterableInAppManager#getMessages()} instead
-     * @param count the number of messages to fetch
+     * Now package-private. If you were previously using this method, use
+     * {@link IterableInAppManager#getMessages()} instead
+     *
+     * @param count      the number of messages to fetch
      * @param onCallback
      */
-    @Deprecated
-    public void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
