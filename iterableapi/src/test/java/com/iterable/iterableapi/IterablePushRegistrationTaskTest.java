@@ -2,11 +2,9 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.HashMap;
 
@@ -20,10 +18,8 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
@@ -31,9 +27,6 @@ import static org.robolectric.Shadows.shadowOf;
 public class IterablePushRegistrationTaskTest extends BaseTest {
 
     private static final String TEST_TOKEN = "testToken";
-    private static final String NEW_TOKEN = "newToken";
-    private static final String OLD_TOKEN = "oldToken";
-    private static final String GCM_SENDER_ID = "1234567890";
     public static final String INTEGRATION_NAME = "integrationName";
     public static final String DEVICE_ATTRIBUTES_KEY = "SDK";
     public static final String DEVICE_ATTRIBUTES_VALUE = "ReactNative 2.3.4";
@@ -76,7 +69,9 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        IterableApi.getInstance().setDeviceAttribute(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
         new IterablePushRegistrationTask().execute(data);
+        deviceAttributes.put(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
 
         verify(apiMock, timeout(100)).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), isNull(String.class), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(deviceAttributes));
 
@@ -94,31 +89,4 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
 
         verify(apiMock, timeout(100)).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }
-
-    @Test
-    public void testDisableOldGcmToken() throws Exception {
-        stubAnyRequestReturningStatusCode(server, 200, "{}");
-        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setLegacyGCMSenderId(GCM_SENDER_ID).build());
-
-        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(NEW_TOKEN);
-        when(pushRegistrationUtilMock.getFirebaseToken(eq(GCM_SENDER_ID), eq(IterableConstants.MESSAGING_PLATFORM_GOOGLE))).thenReturn(OLD_TOKEN);
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        IterableApi.getInstance().setDeviceAttribute(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
-        new IterablePushRegistrationTask().execute(data);
-        deviceAttributes.put(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
-
-        ArgumentCaptor<IterableHelper.SuccessHandler> successHandlerCaptor = ArgumentCaptor.forClass(IterableHelper.SuccessHandler.class);
-        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN), eq(deviceAttributes));
-        verify(apiMock, times(1)).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), eq(OLD_TOKEN), successHandlerCaptor.capture(), nullable(IterableHelper.FailureHandler.class));
-        successHandlerCaptor.getValue().onSuccess(new JSONObject());
-
-        reset(apiMock);
-
-        new IterablePushRegistrationTask().execute(data);
-
-        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), eq(INTEGRATION_NAME), eq(NEW_TOKEN), eq(deviceAttributes));
-        verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), isNull(String.class), isNull(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
-    }
-
 }
