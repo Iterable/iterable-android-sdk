@@ -18,12 +18,15 @@ jobs:
       - name: Configure JDK
         uses: actions/setup-java@v1
         with:
-            java-version: 1.8
+          java-version: 1.8
 
       - run: touch local.properties
 
-      - name: Test
-        run: ./gradlew :iterableapi:checkstyle :iterableapi-ui:assembleDebug :iterableapi:javadoc :iterableapi-ui:javadoc
+      - name: Checkstyle
+        run: ./gradlew :iterableapi:checkstyle :iterableapi-ui:assembleDebug
+
+      - name: Javadoc Check
+        run: ./gradlew :iterableapi:javadoc :iterableapi-ui:javadoc
 
   unit-tests:
     name: Unit tests
