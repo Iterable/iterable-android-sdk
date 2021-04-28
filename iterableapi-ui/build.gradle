@@ -66,6 +66,9 @@ ext {
 
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+if(hasProperty("mavenPublishEnabled")) {
+    apply from: '../maven-push.gradle'
+}
 
 // A hack to import the classpath and BuildConfig into the javadoc task
 afterEvaluate {
