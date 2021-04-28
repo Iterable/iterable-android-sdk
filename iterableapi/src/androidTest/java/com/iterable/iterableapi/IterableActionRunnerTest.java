@@ -81,7 +81,7 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.pendingAction = new IterableActionRunner.PendingAction(action, IterableActionSource.APP_LINK);;
+        IterableActionRunner.pendingAction = new IterableActionRunner.PendingAction(action, IterableActionSource.APP_LINK);
         IterableActionRunner.processPendingAction(getApplicationContext());
 
         intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.com")));
