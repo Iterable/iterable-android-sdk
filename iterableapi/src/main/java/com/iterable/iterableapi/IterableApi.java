@@ -307,13 +307,18 @@ private static final String TAG = "IterableApi";
                     sharedInstance.config.inAppDisplayInterval);
         }
         loadLastSavedConfiguration(context);
-        IterablePushActionReceiver.processPendingAction(context);
+        processPendingActions(context);
     }
 
     static void loadLastSavedConfiguration(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, false);
         sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+    }
+
+    private static void processPendingActions(Context context) {
+        IterablePushActionReceiver.processPendingAction(context);
+        IterableActionRunner.processPendingAction(context);
     }
 
     void fetchRemoteConfiguration() {

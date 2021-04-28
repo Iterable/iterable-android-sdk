@@ -22,6 +22,8 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasData;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -34,6 +36,7 @@ public class IterableActionRunnerTest {
     @Before
     public void setUp() {
         Intents.init();
+        IterableActionRunner.pendingAction = null;
     }
 
     @After
@@ -50,6 +53,36 @@ public class IterableActionRunnerTest {
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
         IterableActionRunner.executeAction(getApplicationContext(), action, IterableActionSource.PUSH);
+
+        intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.com")));
+        Intents.assertNoUnverifiedIntents();
+    }
+
+    @Test
+    public void testOpenUrlActionWithoutContext() throws Exception {
+        IterableTestUtils.initIterableApi(null);
+        intending(anyIntent()).respondWith(new Instrumentation.ActivityResult(0, null));
+        JSONObject actionData = new JSONObject();
+        actionData.put("type", "openUrl");
+        actionData.put("data", "https://example.com");
+        IterableAction action = IterableAction.from(actionData);
+        assertNull(IterableActionRunner.pendingAction);
+        IterableActionRunner.executeAction(null, action, IterableActionSource.APP_LINK);
+
+        assertNotNull(IterableActionRunner.pendingAction);
+        Intents.assertNoUnverifiedIntents();
+    }
+
+    @Test
+    public void testProcessPendingActions() throws Exception {
+        IterableTestUtils.initIterableApi(null);
+        intending(anyIntent()).respondWith(new Instrumentation.ActivityResult(0, null));
+        JSONObject actionData = new JSONObject();
+        actionData.put("type", "openUrl");
+        actionData.put("data", "https://example.com");
+        IterableAction action = IterableAction.from(actionData);
+        IterableActionRunner.pendingAction = new IterableActionRunner.PendingAction(action, IterableActionSource.APP_LINK);;
+        IterableActionRunner.processPendingAction(getApplicationContext());
 
         intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.com")));
         Intents.assertNoUnverifiedIntents();
