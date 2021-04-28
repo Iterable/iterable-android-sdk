@@ -36,7 +36,7 @@ public class IterableActionRunnerTest {
     @Before
     public void setUp() {
         Intents.init();
-        IterableActionRunner.pendingAction = null;
+        IterableActionRunner.instance.pendingAction = null;
     }
 
     @After
@@ -66,10 +66,10 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        assertNull(IterableActionRunner.pendingAction);
+        assertNull(IterableActionRunner.instance.pendingAction);
         IterableActionRunner.executeAction(null, action, IterableActionSource.APP_LINK);
 
-        assertNotNull(IterableActionRunner.pendingAction);
+        assertNotNull(IterableActionRunner.instance.pendingAction);
         Intents.assertNoUnverifiedIntents();
     }
 
@@ -81,7 +81,7 @@ public class IterableActionRunnerTest {
         actionData.put("type", "openUrl");
         actionData.put("data", "https://example.com");
         IterableAction action = IterableAction.from(actionData);
-        IterableActionRunner.pendingAction = new IterableActionRunner.PendingAction(action, IterableActionSource.APP_LINK);
+        IterableActionRunner.instance.pendingAction = new IterableActionRunner.PendingAction(action, IterableActionSource.APP_LINK);
         IterableActionRunner.processPendingAction(getApplicationContext());
 
         intended(allOf(hasAction(Intent.ACTION_VIEW), hasData("https://example.com")));

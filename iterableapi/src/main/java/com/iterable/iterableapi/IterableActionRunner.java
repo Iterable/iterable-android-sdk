@@ -18,25 +18,20 @@ class IterableActionRunner {
     @VisibleForTesting
     static IterableActionRunnerImpl instance = new IterableActionRunnerImpl();
 
-    // Used to hold an action until the SDK is initialized
-    @VisibleForTesting
-    static PendingAction pendingAction = null;
-
     static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
         return instance.executeAction(context, action, source);
     }
 
     static boolean processPendingAction(Context context) {
-        boolean handled = false;
-        if (pendingAction != null) {
-            handled = instance.executeAction(context, pendingAction.iterableAction, pendingAction.iterableActionSource);
-            pendingAction = null;
-        }
-        return handled;
+        return instance.processPendingAction(context);
     }
 
     static class IterableActionRunnerImpl {
         private static final String TAG = "IterableActionRunner";
+
+        // Used to hold an action until the SDK is initialized
+        @VisibleForTesting
+        protected PendingAction pendingAction = null;
 
         /**
          * Execute an {@link IterableAction} as a response to push action
@@ -123,10 +118,19 @@ class IterableActionRunner {
             }
             return false;
         }
+
+        public boolean processPendingAction(Context context) {
+            boolean handled = false;
+            if (pendingAction != null) {
+                handled = instance.executeAction(context, pendingAction.iterableAction, pendingAction.iterableActionSource);
+                pendingAction = null;
+            }
+            return handled;
+        }
     }
 
     @VisibleForTesting
-    static class PendingAction {
+    protected static class PendingAction {
         IterableAction iterableAction;
         IterableActionSource iterableActionSource;
 
