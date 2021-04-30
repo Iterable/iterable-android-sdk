@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.13](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.13)
+#### Added
+- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
+
 ## [3.2.12](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.12)
 #### Added
 - Support for the display of a custom message (title and body) in an empty mobile inbox.
