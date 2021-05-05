@@ -378,7 +378,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         List<IterableInAppMessage> messagesByPriorityLevel = getMessagesSortedByPriorityLevel(messages);
 
         for (IterableInAppMessage message : messagesByPriorityLevel) {
-            if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE) {
+            if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE && !message.isRead()) {
                 IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
