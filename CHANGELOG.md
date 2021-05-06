@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.14)
+#### Fixed
+- non-silent inbox messages will now properly account for the read state
+
 ## [3.2.13](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.13)
 #### Added
 - In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
