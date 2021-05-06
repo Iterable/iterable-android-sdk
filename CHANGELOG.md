@@ -17,7 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.2.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.14)
 #### Fixed
-- non-silent inbox messages will now properly account for the read state
+- Non-silent inbox messages will now properly account for the read state.
 
 ## [3.2.13](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.13)
 #### Added
