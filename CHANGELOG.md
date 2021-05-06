@@ -15,6 +15,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.2.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.14)
+#### Fixed
+- Non-silent inbox messages will now properly account for the read state.
+
+## [3.2.13](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.13)
+#### Added
+- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
+
 ## [3.3.0-beta3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0-beta3)
 #### Added
 - Support for the display of a custom message (title and body) in an empty mobile inbox.
@@ -25,6 +33,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
   If you'd like to try out these beta features, talk with your Iterable customer success manager.
 
+## [3.2.12](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.12)
+#### Added
+- Support for the display of a custom message (title and body) in an empty mobile inbox.
+    For more details, see [Customizing Mobile Inbox on Android](https://iterable.zendesk.com/hc/articles/360039189931#empty-state)
+- Support for syncing in-app message read state across multiple devices:
+  - When the SDK fetches in-app messages from Iterable, it examines each message's `read` field to determine if it has already been read.
+  - The SDK's default implementation no longer automatically displays in-app messages that have already been seen on another device (even if those messages were _not_ configured to go directly to the inbox).
+
+## [3.2.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.11)
+#### Changed
+- Changed the timeout for GET calls (`/inApp/getMessages` in particular) from 3 to 10 seconds.
+
+#### Fixed
+- Fixed a crash that would sometimes happen when dismissing an in-app message while the app is in background.
+
 ## [3.3.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0-beta1)
 #### Added
 - This beta SDK release includes support for two new Iterable features (both of which are in beta):
@@ -33,13 +56,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 	- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
 
   If you'd like to try out these beta features, talk with your Iterable customer success manager.
-
-## [3.2.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.11)
-#### Changed
-- Changed the timeout for GET calls (`/inApp/getMessages` in particular) from 3 to 10 seconds.
-
-#### Fixed
-- Fixed a crash that would sometimes happen when dismissing an in-app message while the app is in background.
 
 ## [3.2.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.10)
 #### Fixed
