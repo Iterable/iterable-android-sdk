@@ -19,12 +19,14 @@ public class OfflineRequestProcessorTest extends BaseTest {
     private OfflineRequestProcessor offlineRequestProcessor;
     private IterableTaskRunner mockTaskRunner;
     private TaskScheduler mockTaskScheduler;
+    private IterableTaskStorage mockTaskStorage;
 
     @Before
     public void setUp() {
         mockTaskRunner = mock(IterableTaskRunner.class);
         mockTaskScheduler = mock(TaskScheduler.class);
-        offlineRequestProcessor = new OfflineRequestProcessor(mockTaskScheduler, mockTaskRunner);
+        mockTaskStorage = mock(IterableTaskStorage.class);
+        offlineRequestProcessor = new OfflineRequestProcessor(mockTaskScheduler, mockTaskRunner, mockTaskStorage);
     }
 
     @Test

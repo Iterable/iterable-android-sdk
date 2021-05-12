@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Handler;
@@ -252,6 +253,13 @@ class IterableTaskStorage {
         IterableLogger.v(TAG, "Found " + cursor.getColumnCount() + " columns");
         cursor.close();
         return taskIds;
+    }
+
+    long numberOfTasks() {
+        if (!isDatabaseReady()) {
+            return 0;
+        }
+        return DatabaseUtils.queryNumEntries(database, ITERABLE_TASK_TABLE_NAME);
     }
 
     /**

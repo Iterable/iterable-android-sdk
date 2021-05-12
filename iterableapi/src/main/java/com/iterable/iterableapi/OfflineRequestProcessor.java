@@ -38,9 +38,10 @@ class OfflineRequestProcessor implements RequestProcessor {
     }
 
     @VisibleForTesting
-    OfflineRequestProcessor(TaskScheduler scheduler, IterableTaskRunner iterableTaskRunner) {
+    OfflineRequestProcessor(TaskScheduler scheduler, IterableTaskRunner iterableTaskRunner, IterableTaskStorage storage) {
         taskRunner = iterableTaskRunner;
         taskScheduler = scheduler;
+        taskStorage = storage;
     }
 
     @Override
@@ -52,7 +53,7 @@ class OfflineRequestProcessor implements RequestProcessor {
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        if (isRequestOfflineCompatible(request.resourcePath)) {
+        if (isRequestOfflineCompatible(request.resourcePath) && taskStorage.numberOfTasks() < IterableConstants.MAX_OFFLINE_OPERATION) {
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
             taskScheduler.scheduleTask(request, onSuccess, onFailure);
         } else {
