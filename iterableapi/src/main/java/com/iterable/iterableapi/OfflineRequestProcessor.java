@@ -95,7 +95,7 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
         try {
             serializedRequest = request.toJSONObject();
         } catch (JSONException e) {
-            IterableLogger.e("RequestProcessor", "Failed serializating the request for offline execution. Attempting to request the request now...");
+            IterableLogger.e("RequestProcessor", "Failed serializing the request for offline execution. Attempting to request the request now...");
             new IterableRequestTask().execute(request);
             return;
         }
