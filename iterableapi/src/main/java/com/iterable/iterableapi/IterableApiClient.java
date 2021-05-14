@@ -18,7 +18,6 @@ import java.util.List;
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
-    private RequestProcessor requestProcessor;
     private boolean offlineMode = true;
     private OfflineRequestProcessor offlineRequestProcessor;
     private OnlineRequestProcessor onlineRequestProcessor;
