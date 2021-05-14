@@ -32,10 +32,10 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY,
             IterableConstants.ENDPOINT_INAPP_CONSUME));
 
-    OfflineRequestProcessor(Context context) {
+    OfflineRequestProcessor(Context context, HealthMonitor healthMonitor) {
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
         taskStorage = IterableTaskStorage.sharedInstance(context);
-        healthMonitor = new HealthMonitor(taskStorage);
+        this.healthMonitor = healthMonitor;
         taskRunner = new IterableTaskRunner(taskStorage,
                 IterableActivityMonitor.getInstance(),
                 networkConnectivityManager,

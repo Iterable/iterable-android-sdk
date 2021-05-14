@@ -19,6 +19,10 @@ class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
     private RequestProcessor requestProcessor;
+    private boolean offlineMode = true;
+    private RequestProcessor offlineRequestProcessor;
+    private RequestProcessor onlineRequestProcessor;
+    private HealthMonitor healthMonitor;
 
     interface AuthProvider {
         @Nullable
@@ -37,26 +41,32 @@ class IterableApiClient {
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
         this.authProvider = authProvider;
+
+        this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
+
+        this.offlineRequestProcessor = new OfflineRequestProcessor(authProvider.getContext(), healthMonitor);
+        this.onlineRequestProcessor = new OnlineRequestProcessor();
     }
 
     private RequestProcessor getRequestProcessor() {
-        if (requestProcessor == null) {
-            requestProcessor = new OnlineRequestProcessor();
+        if (!offlineMode) {
+            return onlineRequestProcessor;
         }
-        return requestProcessor;
+
+        if (offlineRequestProcessor == null || healthMonitor == null) {
+            return onlineRequestProcessor;
+        }
+
+        if (healthMonitor.canSchedule()) {
+            return offlineRequestProcessor;
+        }
+
+        return onlineRequestProcessor;
     }
 
     void setOfflineProcessingEnabled(boolean offlineMode) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (offlineMode) {
-                if (this.requestProcessor == null || this.requestProcessor.getClass() != OfflineRequestProcessor.class) {
-                    this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
-                }
-            } else {
-                if (this.requestProcessor == null || this.requestProcessor.getClass() != OnlineRequestProcessor.class) {
-                    this.requestProcessor = new OnlineRequestProcessor();
-                }
-            }
+            this.offlineMode = offlineMode;
         }
     }
 
