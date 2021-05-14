@@ -20,8 +20,8 @@ class IterableApiClient {
     private final @NonNull AuthProvider authProvider;
     private RequestProcessor requestProcessor;
     private boolean offlineMode = true;
-    private RequestProcessor offlineRequestProcessor;
-    private RequestProcessor onlineRequestProcessor;
+    private OfflineRequestProcessor offlineRequestProcessor;
+    private OnlineRequestProcessor onlineRequestProcessor;
     private HealthMonitor healthMonitor;
 
     interface AuthProvider {
@@ -43,22 +43,35 @@ class IterableApiClient {
         this.authProvider = authProvider;
 
         this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
-
-        this.offlineRequestProcessor = new OfflineRequestProcessor(authProvider.getContext(), healthMonitor);
-        this.onlineRequestProcessor = new OnlineRequestProcessor();
     }
 
     private RequestProcessor getRequestProcessor() {
         if (!offlineMode) {
-            return onlineRequestProcessor;
+            return getOnlineProcessor();
         }
 
         if (offlineRequestProcessor == null || healthMonitor == null) {
-            return onlineRequestProcessor;
+            return getOnlineProcessor();
         }
 
         if (healthMonitor.canSchedule()) {
-            return offlineRequestProcessor;
+            return getOfflineProcessor();
+        }
+
+        return getOnlineProcessor();
+    }
+
+    private OfflineRequestProcessor getOfflineProcessor() {
+        if (offlineRequestProcessor == null) {
+            offlineRequestProcessor = new OfflineRequestProcessor(authProvider.getContext(), healthMonitor);
+        }
+
+        return offlineRequestProcessor;
+    }
+
+    private OnlineRequestProcessor getOnlineProcessor() {
+        if (onlineRequestProcessor == null) {
+            onlineRequestProcessor = new OnlineRequestProcessor();
         }
 
         return onlineRequestProcessor;
