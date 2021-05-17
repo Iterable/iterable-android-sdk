@@ -15,7 +15,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Date;
 
-class IterableTaskStorage {
+class IterableTaskStorage implements HealthMonitorHandler {
 
     private static IterableTaskStorage sharedInstance;
 
@@ -60,6 +60,11 @@ class IterableTaskStorage {
 
     private SQLiteDatabase database;
     private IterableDatabaseManager databaseManager;
+
+    @Override
+    public void onDBError() {
+
+    }
 
     interface TaskCreatedListener {
         void onTaskCreated(IterableTask iterableTask);
@@ -269,6 +274,9 @@ class IterableTaskStorage {
      */
     @Nullable
     IterableTask getNextScheduledTask() {
+        if (!isDatabaseReady()) {
+            return null;
+        }
         Cursor cursor = database.rawQuery("select * from OfflineTask order by scheduled limit 1", null);
         IterableTask task = null;
         if (cursor.moveToFirst()) {
@@ -451,7 +459,8 @@ class IterableTaskStorage {
         return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, TASK_ID + "=?", new String[]{id}));
     }
 
-    private boolean isDatabaseReady() {
+    //TODO: This can be reverted back to private if db issues are correctly informed to HealthMonitor. Currenlty Healthmonitor is directly accessing this method which can also be fine,
+    boolean isDatabaseReady() {
         if (database == null) {
             IterableLogger.e(TAG, "Database not initialized");
             return false;
@@ -461,6 +470,15 @@ class IterableTaskStorage {
             return false;
         }
         return true;
+    }
+
+    //TODO: This I am thinking of notifier from DB class here to Healthmonitor which will invoke DBerror method in Healthmonitor class. Not sure though.
+    interface IterableTaskStorageHandler {
+        void isNotReady();
+
+        void onDBError();
+
+        void isClosed();
     }
 
 }

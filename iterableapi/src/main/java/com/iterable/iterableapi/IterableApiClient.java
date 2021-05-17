@@ -40,16 +40,20 @@ class IterableApiClient {
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
         this.authProvider = authProvider;
-
-        this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
+        //TODO: Remove below line. Healthmonitor cant be initilized here as the context might not be ready by then. And has to be initialized only if offline operation is to be involved
+//        this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
     }
 
     private RequestProcessor getRequestProcessor() {
+        //online case
         if (!offlineMode) {
             return getOnlineProcessor();
         }
 
-        if (offlineRequestProcessor == null || healthMonitor == null) {
+        //offline case
+        offlineRequestProcessor = getOfflineProcessor();
+        if (offlineRequestProcessor == null) {
+            //In case the context is not available
             return getOnlineProcessor();
         }
 
@@ -57,10 +61,17 @@ class IterableApiClient {
             return getOfflineProcessor();
         }
 
+        //if healthMonitor fails to schedule
         return getOnlineProcessor();
     }
 
     private OfflineRequestProcessor getOfflineProcessor() {
+        if(authProvider.getContext() == null) {
+            return null;
+        }
+
+        this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
+
         if (offlineRequestProcessor == null) {
             offlineRequestProcessor = new OfflineRequestProcessor(authProvider.getContext(), healthMonitor);
         }
