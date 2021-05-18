@@ -15,7 +15,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Date;
 
-class IterableTaskStorage implements HealthMonitorHandler {
+class IterableTaskStorage {
 
     private static IterableTaskStorage sharedInstance;
 
@@ -60,11 +60,6 @@ class IterableTaskStorage implements HealthMonitorHandler {
 
     private SQLiteDatabase database;
     private IterableDatabaseManager databaseManager;
-
-    @Override
-    public void onDBError() {
-
-    }
 
     interface TaskCreatedListener {
         void onTaskCreated(IterableTask iterableTask);
@@ -153,6 +148,9 @@ class IterableTaskStorage implements HealthMonitorHandler {
             public void run() {
                 for (TaskCreatedListener listener : taskCreatedListeners) {
                     listener.onTaskCreated(iterableTask);
+                }
+                if (numberOfTasks() > IterableConstants.MAX_OFFLINE_OPERATION) {
+                    notifyDBError();
                 }
             }
         });
@@ -462,10 +460,13 @@ class IterableTaskStorage implements HealthMonitorHandler {
     //TODO: This can be reverted back to private if db issues are correctly informed to HealthMonitor. Currenlty Healthmonitor is directly accessing this method which can also be fine,
     boolean isDatabaseReady() {
         if (database == null) {
+            notifyDBNotReady();
+            notifyDBError();
             IterableLogger.e(TAG, "Database not initialized");
             return false;
         }
         if (!database.isOpen()) {
+            notifyDBClosed();
             IterableLogger.e(TAG, "Database is closed");
             return false;
         }
@@ -473,12 +474,72 @@ class IterableTaskStorage implements HealthMonitorHandler {
     }
 
     //TODO: This I am thinking of notifier from DB class here to Healthmonitor which will invoke DBerror method in Healthmonitor class. Not sure though.
-    interface IterableTaskStorageHandler {
+    public interface IterableDatabaseStatusListeners {
         void isNotReady();
 
         void onDBError();
 
         void isClosed();
+
+        void isReady();
     }
 
+    private ArrayList<IterableDatabaseStatusListeners> databaseStatusListeners = new ArrayList<>();
+
+    void addDataBaseListener(IterableDatabaseStatusListeners listener) {
+        if (isDatabaseReady()) {
+            listener.isReady();
+        } else {
+            listener.isNotReady();
+        }
+        databaseStatusListeners.add(listener);
+    }
+
+    void removeTaskCreatedListener(IterableDatabaseStatusListeners listener) {
+        databaseStatusListeners.remove(listener);
+    }
+
+    private void notifyDBClosed() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
+                    listener.isClosed();
+                }
+            }
+        });
+    }
+
+    private void notifyDBError() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
+                    listener.onDBError();
+                }
+            }
+        });
+    }
+
+    private void notifyDBReady() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
+                    listener.isReady();
+                }
+            }
+        });
+    }
+
+    private void notifyDBNotReady() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
+                    listener.isNotReady();
+                }
+            }
+        });
+    }
 }

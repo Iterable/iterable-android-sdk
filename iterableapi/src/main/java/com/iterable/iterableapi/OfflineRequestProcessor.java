@@ -44,10 +44,11 @@ class OfflineRequestProcessor implements RequestProcessor {
     }
 
     @VisibleForTesting
-    OfflineRequestProcessor(TaskScheduler scheduler, IterableTaskRunner iterableTaskRunner, IterableTaskStorage storage) {
+    OfflineRequestProcessor(TaskScheduler scheduler, IterableTaskRunner iterableTaskRunner, IterableTaskStorage storage, HealthMonitor healthMonitor) {
         taskRunner = iterableTaskRunner;
         taskScheduler = scheduler;
         taskStorage = storage;
+        this.healthMonitor = healthMonitor;
     }
 
     @Override

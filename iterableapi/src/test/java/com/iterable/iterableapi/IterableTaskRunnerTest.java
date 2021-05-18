@@ -33,6 +33,7 @@ public class IterableTaskRunnerTest {
     private IterableTaskRunner taskRunner;
     private IterableTaskStorage mockTaskStorage;
     private IterableActivityMonitor mockActivityMonitor;
+    private HealthMonitor mockHealthMonitor;
     private IterableNetworkConnectivityManager mockNetworkConnectivityManager;
     private MockWebServer server;
 
@@ -41,7 +42,8 @@ public class IterableTaskRunnerTest {
         mockTaskStorage = mock(IterableTaskStorage.class);
         mockActivityMonitor = mock(IterableActivityMonitor.class);
         mockNetworkConnectivityManager = mock(IterableNetworkConnectivityManager.class);
-        taskRunner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager);
+        mockHealthMonitor = mock(HealthMonitor.class);
+        taskRunner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor);
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
     }
@@ -58,7 +60,8 @@ public class IterableTaskRunnerTest {
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
-
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+        when(mockHealthMonitor.canSchedule()).thenReturn(true);
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
 
@@ -76,6 +79,8 @@ public class IterableTaskRunnerTest {
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+        when(mockHealthMonitor.canSchedule()).thenReturn(true);
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
@@ -98,11 +103,13 @@ public class IterableTaskRunnerTest {
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(false);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+        when(mockHealthMonitor.canSchedule()).thenReturn(true);
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
-        taskRunner.onTaskCreated(null);
+        taskRunner.onTaskCreated(mock(IterableTask.class));
         runHandlerTasks(taskRunner);
 
         verify(mockNetworkConnectivityManager, times(1)).isConnected();
@@ -145,7 +152,8 @@ public class IterableTaskRunnerTest {
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
-
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+        when(mockHealthMonitor.canSchedule()).thenReturn(true);
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
 

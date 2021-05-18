@@ -66,11 +66,13 @@ class IterableApiClient {
     }
 
     private OfflineRequestProcessor getOfflineProcessor() {
-        if(authProvider.getContext() == null) {
+        if (authProvider.getContext() == null) {
             return null;
         }
 
-        this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
+        if (healthMonitor == null) {
+            this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
+        }
 
         if (offlineRequestProcessor == null) {
             offlineRequestProcessor = new OfflineRequestProcessor(authProvider.getContext(), healthMonitor);

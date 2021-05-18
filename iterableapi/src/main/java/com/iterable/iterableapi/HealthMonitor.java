@@ -1,31 +1,23 @@
 package com.iterable.iterableapi;
 
-import java.util.ArrayList;
-
-public class HealthMonitor implements HealthMonitorHandler{
+public class HealthMonitor implements IterableTaskStorage.IterableDatabaseStatusListeners {
     private static final String TAG = "HealthMonitor";
 
     private IterableTaskStorage database;
     private boolean errored = false;
-    private ArrayList<HealthMonitorHandler> healthMonitorListeners = new ArrayList<>();
+
     public HealthMonitor(IterableTaskStorage database) {
         this.database = database;
+        database.addDataBaseListener(this);
     }
 
     public boolean canSchedule() {
         IterableLogger.d(TAG, "canSchedule");
-
-        return database.isDatabaseReady() && database.numberOfTasks() < IterableConstants.MAX_OFFLINE_OPERATION;
-        //TODO: errored has to be set by DB errors being found during Taskstorage initialization or during other DB operations.
-//        if (errored) {
-//            return false;
-//        }
-//
-//        return database.numberOfTasks() < IterableConstants.MAX_OFFLINE_OPERATION;
+        return !errored;
     }
 
     public boolean canProcess() {
-        IterableLogger.d(TAG, "canProcess");
+        IterableLogger.d(TAG, "Health monitor can process: " + !errored);
         return !errored;
     }
 
@@ -36,34 +28,35 @@ public class HealthMonitor implements HealthMonitorHandler{
 
     void onNextTaskError() {
         IterableLogger.w(TAG, "onNextTaskError");
-        onError();
+        onDBError();
     }
 
     void onDeleteAllTasksError() {
         IterableLogger.w(TAG, "onDeleteAllTasksError");
-        onError();
+        onDBError();
     }
 
-    //TODO: Is it similar to DBError? how should the logic work
-    private void onError() {
+    @Override
+    public void isNotReady() {
+        IterableLogger.v(TAG, "DB Not ready notified to healthMonitor");
         errored = true;
-
     }
 
-    synchronized void addHealthMonitorListener(HealthMonitorHandler listener) {
-        healthMonitorListeners.add(listener);
-    }
-
-    synchronized void removeNetworkListener(HealthMonitorHandler listener) {
-        healthMonitorListeners.remove(listener);
-    }
-
-    //TODO: Might have to reconsider changing this
     @Override
     public void onDBError() {
-        ArrayList<HealthMonitorHandler> healthMonitorHandlersCopy = new ArrayList<>(healthMonitorListeners);
-        for (HealthMonitorHandler listener : healthMonitorHandlersCopy) {
-            listener.onDBError();
-        }
+        IterableLogger.v(TAG, "DB Error notified to healthMonitor");
+        errored = true;
+    }
+
+    @Override
+    public void isClosed() {
+        IterableLogger.v(TAG, "DB Closed notified to healthMonitor");
+        errored = true;
+    }
+
+    @Override
+    public void isReady() {
+        IterableLogger.v(TAG, "DB Ready notified to healthMonitor");
+        errored = false;
     }
 }
