@@ -40,8 +40,6 @@ class IterableApiClient {
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
         this.authProvider = authProvider;
-        //TODO: Remove below line. Healthmonitor cant be initilized here as the context might not be ready by then. And has to be initialized only if offline operation is to be involved
-//        this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
     }
 
     private RequestProcessor getRequestProcessor() {

@@ -117,8 +117,8 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         if (!healthMonitor.canProcess()) {
             return;
         }
-        while (networkConnectivityManager.isConnected()) {
 
+        while (networkConnectivityManager.isConnected()) {
             IterableTask task = taskStorage.getNextScheduledTask();
 
             if (task == null) {

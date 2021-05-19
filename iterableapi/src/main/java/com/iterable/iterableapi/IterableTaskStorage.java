@@ -457,19 +457,20 @@ class IterableTaskStorage {
         return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, TASK_ID + "=?", new String[]{id}));
     }
 
-    //TODO: This can be reverted back to private if db issues are correctly informed to HealthMonitor. Currenlty Healthmonitor is directly accessing this method which can also be fine,
-    boolean isDatabaseReady() {
+    private boolean isDatabaseReady() {
         if (database == null) {
             notifyDBNotReady();
             notifyDBError();
             IterableLogger.e(TAG, "Database not initialized");
             return false;
         }
+
         if (!database.isOpen()) {
             notifyDBClosed();
             IterableLogger.e(TAG, "Database is closed");
             return false;
         }
+
         return true;
     }
 

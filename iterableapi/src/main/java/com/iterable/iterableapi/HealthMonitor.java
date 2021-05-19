@@ -3,11 +3,9 @@ package com.iterable.iterableapi;
 public class HealthMonitor implements IterableTaskStorage.IterableDatabaseStatusListeners {
     private static final String TAG = "HealthMonitor";
 
-    private IterableTaskStorage database;
     private boolean errored = false;
 
     public HealthMonitor(IterableTaskStorage database) {
-        this.database = database;
         database.addDataBaseListener(this);
     }
 
