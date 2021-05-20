@@ -5,12 +5,21 @@ public class HealthMonitor implements IterableTaskStorage.IterableDatabaseStatus
 
     private boolean errored = false;
 
-    public HealthMonitor(IterableTaskStorage database) {
-        database.addDataBaseListener(this);
+    private IterableTaskStorage iterableTaskStorage;
+    
+    public HealthMonitor(IterableTaskStorage storage) {
+        this.iterableTaskStorage = storage;
+        this.iterableTaskStorage.addDataBaseListener(this);
     }
 
     public boolean canSchedule() {
         IterableLogger.d(TAG, "canSchedule");
+        try {
+            errored = iterableTaskStorage.numberOfTasks() >= IterableConstants.MAX_OFFLINE_OPERATION;
+        } catch (Exception e) {
+            IterableLogger.e(TAG, e.getLocalizedMessage());
+            errored = true;
+        }
         return !errored;
     }
 
@@ -21,7 +30,6 @@ public class HealthMonitor implements IterableTaskStorage.IterableDatabaseStatus
 
     public void onScheduleError() {
         IterableLogger.w(TAG, "onScheduleError");
-
     }
 
     void onNextTaskError() {

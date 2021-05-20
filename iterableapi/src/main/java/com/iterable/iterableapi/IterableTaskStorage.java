@@ -149,9 +149,6 @@ class IterableTaskStorage {
                 for (TaskCreatedListener listener : taskCreatedListeners) {
                     listener.onTaskCreated(iterableTask);
                 }
-                if (numberOfTasks() > IterableConstants.MAX_OFFLINE_OPERATION) {
-                    notifyDBError();
-                }
             }
         });
 
@@ -258,9 +255,10 @@ class IterableTaskStorage {
         return taskIds;
     }
 
-    long numberOfTasks() {
+    long numberOfTasks() throws Exception{
         if (!isDatabaseReady()) {
-            return 0;
+            notifyDBNotReady();
+            throw new Exception("Database is not ready");
         }
         return DatabaseUtils.queryNumEntries(database, ITERABLE_TASK_TABLE_NAME);
     }
