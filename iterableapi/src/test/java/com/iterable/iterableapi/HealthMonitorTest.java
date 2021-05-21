@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(TestRunner.class)
-public class HealthMonitorTests extends BaseTest{
+public class HealthMonitorTest extends BaseTest {
     private IterableTaskStorage mockTaskStorage;
     private IterableTaskRunner mockTaskRunner;
     private TaskScheduler mockTaskScheduler;
@@ -32,8 +33,10 @@ public class HealthMonitorTests extends BaseTest{
     @Test
     public void testUseOfflineProcessorByDefault() throws Exception {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
-        
-        verifyNoInteractions(mockTaskScheduler);
+        IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
+        when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+
+//        assertEquals(request.getProcessorType().toString(), "Offline");
     }
 
 
