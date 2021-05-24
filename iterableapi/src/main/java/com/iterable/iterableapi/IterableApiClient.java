@@ -18,10 +18,7 @@ import java.util.List;
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
-    private boolean offlineMode = true;
-    private OfflineRequestProcessor offlineRequestProcessor;
-    private OnlineRequestProcessor onlineRequestProcessor;
-    private HealthMonitor healthMonitor;
+    private RequestProcessor requestProcessor;
 
     interface AuthProvider {
         @Nullable
@@ -43,53 +40,23 @@ class IterableApiClient {
     }
 
     private RequestProcessor getRequestProcessor() {
-        //online case
-        if (!offlineMode) {
-            return getOnlineProcessor();
+        if (requestProcessor == null) {
+            requestProcessor = new OnlineRequestProcessor();
         }
-
-        //offline case
-        offlineRequestProcessor = getOfflineProcessor();
-        if (offlineRequestProcessor == null) {
-            //In case the context is not available
-            return getOnlineProcessor();
-        }
-
-        if (healthMonitor.canSchedule()) {
-            return getOfflineProcessor();
-        }
-
-        //if healthMonitor fails to schedule
-        return getOnlineProcessor();
-    }
-
-    private OfflineRequestProcessor getOfflineProcessor() {
-        if (authProvider.getContext() == null) {
-            return null;
-        }
-
-        if (healthMonitor == null) {
-            this.healthMonitor = new HealthMonitor(IterableTaskStorage.sharedInstance(authProvider.getContext()));
-        }
-
-        if (offlineRequestProcessor == null) {
-            offlineRequestProcessor = new OfflineRequestProcessor(authProvider.getContext(), healthMonitor);
-        }
-
-        return offlineRequestProcessor;
-    }
-
-    private OnlineRequestProcessor getOnlineProcessor() {
-        if (onlineRequestProcessor == null) {
-            onlineRequestProcessor = new OnlineRequestProcessor();
-        }
-
-        return onlineRequestProcessor;
+        return requestProcessor;
     }
 
     void setOfflineProcessingEnabled(boolean offlineMode) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            this.offlineMode = offlineMode;
+            if (offlineMode) {
+                if (this.requestProcessor == null || this.requestProcessor.getClass() != OfflineRequestProcessor.class) {
+                    this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
+                }
+            } else {
+                if (this.requestProcessor == null || this.requestProcessor.getClass() != OnlineRequestProcessor.class) {
+                    this.requestProcessor = new OnlineRequestProcessor();
+                }
+            }
         }
     }
 

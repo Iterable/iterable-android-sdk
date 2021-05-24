@@ -74,7 +74,7 @@ class IterableTaskStorage {
             }
 
             if (databaseManager == null) {
-                databaseManager = new IterableDatabaseManager(IterableApi.getInstance().getMainActivityContext());
+                databaseManager = new IterableDatabaseManager(context);
             }
             database = databaseManager.getWritableDatabase();
         } catch (SQLException e) {
@@ -255,7 +255,7 @@ class IterableTaskStorage {
         return taskIds;
     }
 
-    long numberOfTasks() throws Exception{
+    long numberOfTasks() throws Exception {
         if (!isDatabaseReady()) {
             notifyDBNotReady();
             throw new Exception("Database is not ready");
@@ -472,7 +472,6 @@ class IterableTaskStorage {
         return true;
     }
 
-    //TODO: This I am thinking of notifier from DB class here to Healthmonitor which will invoke DBerror method in Healthmonitor class. Not sure though.
     public interface IterableDatabaseStatusListeners {
         void isNotReady();
 
