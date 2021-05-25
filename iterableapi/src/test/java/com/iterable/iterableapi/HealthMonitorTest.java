@@ -27,13 +27,6 @@ public class HealthMonitorTest extends BaseTest {
     }
 
     @Test
-    public void testUseOfflineProcessorByDefault() throws Exception {
-        IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
-        assertEquals("Online", request.getProcessorType().toString());
-    }
-
-
-    @Test
     public void canScheduleFailWhenMaxCountReached() throws Exception {
         HealthMonitor healthMonitor = new HealthMonitor(mockTaskStorage);
         when(mockTaskStorage.numberOfTasks()).thenReturn(IterableConstants.MAX_OFFLINE_OPERATION);
@@ -60,5 +53,4 @@ public class HealthMonitorTest extends BaseTest {
         healthMonitor.onNextTaskError();
         assertFalse(healthMonitor.canProcess());
     }
-
 }
