@@ -458,7 +458,6 @@ class IterableTaskStorage {
     private boolean isDatabaseReady() {
         if (database == null) {
             notifyDBNotReady();
-            notifyDBError();
             IterableLogger.e(TAG, "Database not initialized");
             return false;
         }
