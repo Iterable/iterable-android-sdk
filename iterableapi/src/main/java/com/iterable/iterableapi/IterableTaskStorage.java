@@ -258,7 +258,7 @@ class IterableTaskStorage {
     long numberOfTasks() throws Exception {
         if (!isDatabaseReady()) {
             notifyDBNotReady();
-            throw new Exception("Database is not ready");
+            throw new IllegalStateException("Database is not ready");
         }
         return DatabaseUtils.queryNumEntries(database, ITERABLE_TASK_TABLE_NAME);
     }
