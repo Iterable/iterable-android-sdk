@@ -19,6 +19,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     private IterableTaskStorage taskStorage;
     private IterableActivityMonitor activityMonitor;
     private IterableNetworkConnectivityManager networkConnectivityManager;
+    private HealthMonitor healthMonitor;
 
     private static final int RETRY_INTERVAL_SECONDS = 60;
 
@@ -38,10 +39,14 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     private ArrayList<TaskCompletedListener> taskCompletedListeners = new ArrayList<>();
 
-    IterableTaskRunner(IterableTaskStorage taskStorage, IterableActivityMonitor activityMonitor, IterableNetworkConnectivityManager networkConnectivityManager) {
+    IterableTaskRunner(IterableTaskStorage taskStorage,
+                       IterableActivityMonitor activityMonitor,
+                       IterableNetworkConnectivityManager networkConnectivityManager,
+                       HealthMonitor healthMonitor) {
         this.taskStorage = taskStorage;
         this.activityMonitor = activityMonitor;
         this.networkConnectivityManager = networkConnectivityManager;
+        this.healthMonitor = healthMonitor;
         networkThread.start();
         handler = new Handler(networkThread.getLooper(), this);
         taskStorage.addTaskCreatedListener(this);
@@ -109,6 +114,10 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             return;
         }
 
+        if (!healthMonitor.canProcess()) {
+            return;
+        }
+
         while (networkConnectivityManager.isConnected()) {
             IterableTask task = taskStorage.getNextScheduledTask();
 
@@ -135,6 +144,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 response = IterableRequestTask.executeApiRequest(request);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Error while processing request task", e);
+                healthMonitor.onDBError();
             }
 
             if (response != null) {

@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Handler;
@@ -73,7 +74,7 @@ class IterableTaskStorage {
             }
 
             if (databaseManager == null) {
-                databaseManager = new IterableDatabaseManager(IterableApi.getInstance().getMainActivityContext());
+                databaseManager = new IterableDatabaseManager(context);
             }
             database = databaseManager.getWritableDatabase();
         } catch (SQLException e) {
@@ -92,7 +93,7 @@ class IterableTaskStorage {
         taskCreatedListeners.add(listener);
     }
 
-    void removeTaskCreatedListener(TaskCreatedListener listener) {
+    void removeDatabaseStatusListener(TaskCreatedListener listener) {
         taskCreatedListeners.remove(listener);
     }
 
@@ -138,7 +139,11 @@ class IterableTaskStorage {
         contentValues.put(TYPE, iterableTask.taskType.toString());
         contentValues.put(ATTEMPTS, iterableTask.attempts);
 
-        database.insert(ITERABLE_TASK_TABLE_NAME, null, contentValues);
+        long rowId = database.insert(ITERABLE_TASK_TABLE_NAME, null, contentValues);
+        if (rowId == -1) {
+            notifyDBError();
+            return null;
+        }
         contentValues.clear();
 
         // Call through Handler to make sure we don't call the listeners immediately, as the caller may need additional processing
@@ -254,6 +259,13 @@ class IterableTaskStorage {
         return taskIds;
     }
 
+    long getNumberOfTasks() throws IllegalStateException {
+        if (!isDatabaseReady()) {
+            throw new IllegalStateException("Database is not ready");
+        }
+        return DatabaseUtils.queryNumEntries(database, ITERABLE_TASK_TABLE_NAME);
+    }
+
     /**
      * Returns the next scheduled task for processing
      *
@@ -261,6 +273,9 @@ class IterableTaskStorage {
      */
     @Nullable
     IterableTask getNextScheduledTask() {
+        if (!isDatabaseReady()) {
+            return null;
+        }
         Cursor cursor = database.rawQuery("select * from OfflineTask order by scheduled limit 1", null);
         IterableTask task = null;
         if (cursor.moveToFirst()) {
@@ -444,15 +459,42 @@ class IterableTaskStorage {
     }
 
     private boolean isDatabaseReady() {
-        if (database == null) {
-            IterableLogger.e(TAG, "Database not initialized");
-            return false;
-        }
-        if (!database.isOpen()) {
-            IterableLogger.e(TAG, "Database is closed");
+        if (database == null || !database.isOpen()) {
+            notifyDBError();
+            IterableLogger.e(TAG, "Database not initialized or is closed");
             return false;
         }
         return true;
     }
 
+    public interface IterableDatabaseStatusListeners {
+        void onDBError();
+        void isReady();
+    }
+
+    private ArrayList<IterableDatabaseStatusListeners> databaseStatusListeners = new ArrayList<>();
+
+    void addDatabaseStatusListener(IterableDatabaseStatusListeners listener) {
+        if (isDatabaseReady()) {
+            listener.isReady();
+        } else {
+            listener.onDBError();
+        }
+        databaseStatusListeners.add(listener);
+    }
+
+    void removeDatabaseStatusListener(IterableDatabaseStatusListeners listener) {
+        databaseStatusListeners.remove(listener);
+    }
+
+    private void notifyDBError() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
+                    listener.onDBError();
+                }
+            }
+        });
+    }
 }

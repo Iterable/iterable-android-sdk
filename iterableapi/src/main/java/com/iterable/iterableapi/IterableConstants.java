@@ -235,6 +235,9 @@ public final class IterableConstants {
     // Custom actions handled by the SDK
     public static final String ITERABLE_IN_APP_ACTION_DELETE    = "delete";
 
+    //Offline operation
+    public static final long OFFLINE_TASKS_LIMIT                = 1000;
+
     // URL schemes
     public static final String URL_SCHEME_ITBL = "itbl://";
     public static final String URL_SCHEME_ITERABLE = "iterable://";
