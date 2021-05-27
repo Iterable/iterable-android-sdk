@@ -3,7 +3,6 @@
 [![License](https://img.shields.io/github/license/iterable/iterable-android-sdk)](https://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/Iterable/iterable-android-sdk.svg?branch=master)](https://travis-ci.org/Iterable/iterable-android-sdk)
 [![codecov](https://codecov.io/gh/Iterable/iterable-android-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/Iterable/iterable-android-sdk)
-[![Download](https://api.bintray.com/packages/davidtruong/maven/Iterable-SDK/images/download.svg)](https://bintray.com/davidtruong/maven/Iterable-SDK/_latestVersion)
 
 # Iterable's Android SDK
 
