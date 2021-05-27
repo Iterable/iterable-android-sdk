@@ -144,7 +144,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 response = IterableRequestTask.executeApiRequest(request);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Error while processing request task", e);
-                healthMonitor.onNextTaskError();
+                healthMonitor.onDBError();
             }
 
             if (response != null) {

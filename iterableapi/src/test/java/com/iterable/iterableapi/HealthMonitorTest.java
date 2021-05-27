@@ -27,14 +27,14 @@ public class HealthMonitorTest extends BaseTest {
     @Test
     public void canScheduleFailWhenMaxCountReached() throws Exception {
         HealthMonitor healthMonitor = new HealthMonitor(mockTaskStorage);
-        when(mockTaskStorage.numberOfTasks()).thenReturn(IterableConstants.MAX_OFFLINE_OPERATION);
+        when(mockTaskStorage.getNumberOfTasks()).thenReturn(IterableConstants.OFFLINE_TASKS_LIMIT);
         assertFalse(healthMonitor.canSchedule());
     }
 
     @Test
     public void canScheduleWhenMaxCountNotReached() throws Exception {
         HealthMonitor healthMonitor = new HealthMonitor(mockTaskStorage);
-        when(mockTaskStorage.numberOfTasks()).thenReturn(IterableConstants.MAX_OFFLINE_OPERATION - 1);
+        when(mockTaskStorage.getNumberOfTasks()).thenReturn(IterableConstants.OFFLINE_TASKS_LIMIT - 1);
         assertTrue(healthMonitor.canSchedule());
     }
 
@@ -48,7 +48,7 @@ public class HealthMonitorTest extends BaseTest {
     public void canProcessReturnFalseIfDBError() throws Exception {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(getContext());
         HealthMonitor healthMonitor = new HealthMonitor(taskStorage);
-        healthMonitor.onNextTaskError();
+        healthMonitor.onDBError();
         assertFalse(healthMonitor.canProcess());
     }
 }

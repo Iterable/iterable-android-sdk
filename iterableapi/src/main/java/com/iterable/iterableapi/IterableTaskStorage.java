@@ -93,7 +93,7 @@ class IterableTaskStorage {
         taskCreatedListeners.add(listener);
     }
 
-    void removeTaskCreatedListener(TaskCreatedListener listener) {
+    void removeDatabaseStatusListener(TaskCreatedListener listener) {
         taskCreatedListeners.remove(listener);
     }
 
@@ -139,7 +139,11 @@ class IterableTaskStorage {
         contentValues.put(TYPE, iterableTask.taskType.toString());
         contentValues.put(ATTEMPTS, iterableTask.attempts);
 
-        database.insert(ITERABLE_TASK_TABLE_NAME, null, contentValues);
+        long rowId = database.insert(ITERABLE_TASK_TABLE_NAME, null, contentValues);
+        if (rowId == -1) {
+            notifyDBError();
+            return null;
+        }
         contentValues.clear();
 
         // Call through Handler to make sure we don't call the listeners immediately, as the caller may need additional processing
@@ -255,9 +259,8 @@ class IterableTaskStorage {
         return taskIds;
     }
 
-    long numberOfTasks() throws Exception {
+    long getNumberOfTasks() throws IllegalStateException {
         if (!isDatabaseReady()) {
-            notifyDBNotReady();
             throw new IllegalStateException("Database is not ready");
         }
         return DatabaseUtils.queryNumEntries(database, ITERABLE_TASK_TABLE_NAME);
@@ -456,55 +459,32 @@ class IterableTaskStorage {
     }
 
     private boolean isDatabaseReady() {
-        if (database == null) {
-            notifyDBNotReady();
-            IterableLogger.e(TAG, "Database not initialized");
+        if (database == null || !database.isOpen()) {
+            notifyDBError();
+            IterableLogger.e(TAG, "Database not initialized or is closed");
             return false;
         }
-
-        if (!database.isOpen()) {
-            notifyDBClosed();
-            IterableLogger.e(TAG, "Database is closed");
-            return false;
-        }
-
         return true;
     }
 
     public interface IterableDatabaseStatusListeners {
-        void isNotReady();
-
         void onDBError();
-
-        void isClosed();
-
         void isReady();
     }
 
     private ArrayList<IterableDatabaseStatusListeners> databaseStatusListeners = new ArrayList<>();
 
-    void addDataBaseListener(IterableDatabaseStatusListeners listener) {
+    void addDatabaseStatusListener(IterableDatabaseStatusListeners listener) {
         if (isDatabaseReady()) {
             listener.isReady();
         } else {
-            listener.isNotReady();
+            listener.onDBError();
         }
         databaseStatusListeners.add(listener);
     }
 
-    void removeTaskCreatedListener(IterableDatabaseStatusListeners listener) {
+    void removeDatabaseStatusListener(IterableDatabaseStatusListeners listener) {
         databaseStatusListeners.remove(listener);
-    }
-
-    private void notifyDBClosed() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
-                    listener.isClosed();
-                }
-            }
-        });
     }
 
     private void notifyDBError() {
@@ -513,28 +493,6 @@ class IterableTaskStorage {
             public void run() {
                 for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
                     listener.onDBError();
-                }
-            }
-        });
-    }
-
-    private void notifyDBReady() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
-                    listener.isReady();
-                }
-            }
-        });
-    }
-
-    private void notifyDBNotReady() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                for (IterableDatabaseStatusListeners listener : databaseStatusListeners) {
-                    listener.isNotReady();
                 }
             }
         });

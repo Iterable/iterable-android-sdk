@@ -236,7 +236,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_ACTION_DELETE    = "delete";
 
     //Offline operation
-    public static final long MAX_OFFLINE_OPERATION              = 1000;
+    public static final long OFFLINE_TASKS_LIMIT                = 1000;
 
     // URL schemes
     public static final String URL_SCHEME_ITBL = "itbl://";

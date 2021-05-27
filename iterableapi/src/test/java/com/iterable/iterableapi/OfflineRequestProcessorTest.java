@@ -48,6 +48,14 @@ public class OfflineRequestProcessorTest extends BaseTest {
     }
 
     @Test
+    public void testOnlineRequestWhenDBError() {
+        IterableApiRequest request = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, new JSONObject(), "POST", null, null, null);
+        when(mockHealthMonitor.canSchedule()).thenReturn(false);
+        offlineRequestProcessor.processPostRequest(request.apiKey, request.resourcePath, request.json, request.authToken, request.successCallback, request.failureCallback);
+        verifyNoInteractions(mockTaskScheduler);
+    }
+
+    @Test
     public void testAllOfflineApisUseTaskScheduler() {
         String[] offlineApis = new String[]{
                 IterableConstants.ENDPOINT_TRACK,

@@ -78,7 +78,6 @@ class OfflineRequestProcessor implements RequestProcessor {
     }
 }
 
-//Mock TaskScheduler for testing purpose.
 class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
     static HashMap<String, IterableHelper.SuccessHandler> successCallbackMap = new HashMap<>();
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
@@ -102,7 +101,10 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
         }
 
         String taskId = taskStorage.createTask(request.resourcePath, IterableTaskType.API, serializedRequest.toString());
-
+        if (taskId == null) {
+            new IterableRequestTask().execute(request);
+            return;
+        }
         successCallbackMap.put(taskId, onSuccess);
         failureCallbackMap.put(taskId, onFailure);
     }
