@@ -15,6 +15,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0)
+#### Added
+- **Offline events processing** - This feature saves a local copy of events triggered in your app while the device is offline (up to 1000 events). When a connection is re-established and your app is in the foreground, the events will be sent to Iterable.
+This feature is off by default, and we're rolling it out on a customer-by-customer basis. After you start using this version of the SDK, we'll send you a message before we enable the feature on your account (unfortunately, we can't give you an exact timeline for when this will happen). If you have any questions, talk to your Iterable customer success manager.
+
+#### Removed
+- Removed `legacyGCMSenderId` from `IterableConfig`.
+- Removed deprecated functions `spawnInAppNotification` and redirected `getInAppMessages` to be called from `IterableInAppManager`.
+
+#### Changed
+- Updated minimum version for `firebase-messaging` to 19.0.0.
+- Added dependency on Kotlin standard library.
+
 ## [3.2.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.14)
 #### Fixed
 - Non-silent inbox messages will now properly account for the read state.
