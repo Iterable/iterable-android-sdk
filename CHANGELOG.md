@@ -26,6 +26,7 @@ This feature is off by default, and we're rolling it out on a customer-by-custom
 
 #### Changed
 - Updated minimum version for `firebase-messaging` to 19.0.0.
+- Added dependency on Kotlin standard library.
 
 ## [3.2.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.14)
 #### Fixed
