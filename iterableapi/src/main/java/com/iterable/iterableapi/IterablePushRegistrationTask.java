@@ -3,12 +3,6 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.os.AsyncTask;
 
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.messaging.FirebaseMessaging;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
 /**
  * Created by David Truong dt@iterable.com
  */
@@ -89,15 +83,7 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
 
         static class UtilImpl {
             String getFirebaseToken() {
-                try {
-                    return Tasks.await(FirebaseMessaging.getInstance().getToken());
-                } catch (ExecutionException e) {
-                    IterableLogger.e(TAG, e.getLocalizedMessage());
-                    return null;
-                } catch (InterruptedException e) {
-                    IterableLogger.e(TAG, e.getLocalizedMessage());
-                    return null;
-                }
+                return IterableFirebaseMessagingService.getFirebaseToken();
             }
 
             String getSenderId(Context applicationContext) {

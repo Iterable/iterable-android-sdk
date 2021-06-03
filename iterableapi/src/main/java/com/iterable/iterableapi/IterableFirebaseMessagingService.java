@@ -88,18 +88,23 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
      * Call this from a custom {@link FirebaseMessagingService} to register the new token with Iterable
      */
     public static void handleTokenRefresh() {
-        String registrationToken;
+        String registrationToken = getFirebaseToken();
+        IterableLogger.d(TAG, "New Firebase Token generated: " + registrationToken);
+        IterableApi.getInstance().registerForPush();
+    }
+
+    public static String getFirebaseToken() {
+        String registrationToken = null;
         try {
             registrationToken = Tasks.await(FirebaseMessaging.getInstance().getToken());
         } catch (ExecutionException e) {
-            e.printStackTrace();
-            return;
+            IterableLogger.e(TAG, e.getLocalizedMessage());
         } catch (InterruptedException e) {
-            e.printStackTrace();
-            return;
+            IterableLogger.e(TAG, e.getLocalizedMessage());
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Failed to fetch firebase token");
         }
-        IterableLogger.d(TAG, "New Firebase Token generated: " + registrationToken);
-        IterableApi.getInstance().registerForPush();
+        return registrationToken;
     }
 
     /**
