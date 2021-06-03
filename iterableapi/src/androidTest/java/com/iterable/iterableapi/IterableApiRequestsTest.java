@@ -9,6 +9,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,6 +77,36 @@ public class IterableApiRequestsTest {
 
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
+        assertEquals(expectedRequest, request.getBody().readUtf8());
+    }
+
+    @Test
+    public void testTrackPurchaseWithOptionalParameters() throws Exception {
+        CommerceItem item = new CommerceItem("273",
+                "Bow and Arrow",
+                42,
+                1,
+                "",
+                "",
+                "",
+                "placeholderImageUrl",
+                new String[] {""});
+        List<CommerceItem> items = new ArrayList<CommerceItem>();
+        items.add(item);
+
+        IterableApi.sharedInstance.trackPurchase(0, items);
+
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
+
+        String expectedRequest = new StringBuilder(
+                new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
+                        .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"\",\"description\":\"\",\"url\":\"\",\"imageUrl\":\"placeholderImageUrl\",\"categories\":[\"\"]}],")
+                        .append("\"total\":42,")
+                        .append("\"createdAt\":")
+                        .append(new Date().getTime() / 1000)
+                        .append("}")).toString();
+
         assertEquals(expectedRequest, request.getBody().readUtf8());
     }
 
