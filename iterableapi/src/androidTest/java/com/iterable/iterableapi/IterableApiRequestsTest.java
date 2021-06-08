@@ -89,7 +89,7 @@ public class IterableApiRequestsTest {
                 "When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.",
                 "placeholderUrl",
                 "placeholderImageUrl",
-                new String[] {""});
+                new String[] {"bow", "arrow"});
         List<CommerceItem> items = new ArrayList<CommerceItem>();
         items.add(item);
 
@@ -100,7 +100,7 @@ public class IterableApiRequestsTest {
 
         String expectedRequest = new StringBuilder(
                 new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
-                        .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"DIAMOND-IS-UNBREAKABLE\",\"description\":\"When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.\",\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\",\"categories\":[\"\"]}],")
+                        .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"DIAMOND-IS-UNBREAKABLE\",\"description\":\"When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.\",\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\",\"categories\":[\"bow\",\"arrow\"]}],")
                         .append("\"total\":42,")
                         .append("\"createdAt\":")
                         .append(new Date().getTime() / 1000)
