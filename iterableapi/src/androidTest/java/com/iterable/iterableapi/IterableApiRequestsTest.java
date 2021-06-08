@@ -93,7 +93,7 @@ public class IterableApiRequestsTest {
         List<CommerceItem> items = new ArrayList<CommerceItem>();
         items.add(item);
 
-        IterableApi.sharedInstance.trackPurchase(0, items);
+        IterableApi.sharedInstance.trackPurchase(42, items);
 
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
