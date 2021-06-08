@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -107,7 +108,14 @@ public class CommerceItem {
         jsonObject.putOpt("description", description);
         jsonObject.putOpt("url", url);
         jsonObject.putOpt("imageUrl", imageUrl);
-        jsonObject.putOpt("categories", categories);
+
+        JSONArray categoriesArray = new JSONArray();
+        for (String category : categories) {
+            categoriesArray.put(category);
+        }
+
+        jsonObject.put("categories", categoriesArray);
+
         return jsonObject;
     }
 }
