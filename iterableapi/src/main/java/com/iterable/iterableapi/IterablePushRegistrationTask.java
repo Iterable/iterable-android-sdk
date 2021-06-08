@@ -3,10 +3,6 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.os.AsyncTask;
 
-import com.google.firebase.iid.FirebaseInstanceId;
-
-import java.io.IOException;
-
 /**
  * Created by David Truong dt@iterable.com
  */
@@ -81,23 +77,13 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
             return instance.getFirebaseToken();
         }
 
-        static String getFirebaseToken(String senderId, String platform) throws IOException {
-            return instance.getFirebaseToken(senderId, platform);
-        }
-
         static String getSenderId(Context applicationContext) {
             return instance.getSenderId(applicationContext);
         }
 
         static class UtilImpl {
             String getFirebaseToken() {
-                FirebaseInstanceId instanceID = FirebaseInstanceId.getInstance();
-                return instanceID.getToken();
-            }
-
-            String getFirebaseToken(String senderId, String platform) throws IOException {
-                FirebaseInstanceId instanceId = FirebaseInstanceId.getInstance();
-                return instanceId.getToken(senderId, platform);
+                return IterableFirebaseMessagingService.getFirebaseToken();
             }
 
             String getSenderId(Context applicationContext) {
