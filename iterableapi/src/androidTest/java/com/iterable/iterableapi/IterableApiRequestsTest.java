@@ -80,6 +80,36 @@ public class IterableApiRequestsTest {
     }
 
     @Test
+    public void testTrackPurchaseWithOptionalParameters() throws Exception {
+        CommerceItem item = new CommerceItem("273",
+                "Bow and Arrow",
+                42,
+                1,
+                "DIAMOND-IS-UNBREAKABLE",
+                "When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.",
+                "placeholderUrl",
+                "placeholderImageUrl",
+                new String[] {"bow", "arrow"});
+        List<CommerceItem> items = new ArrayList<CommerceItem>();
+        items.add(item);
+
+        IterableApi.sharedInstance.trackPurchase(42, items);
+
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
+
+        String expectedRequest = new StringBuilder(
+                new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
+                        .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"DIAMOND-IS-UNBREAKABLE\",\"description\":\"When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.\",\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\",\"categories\":[\"bow\",\"arrow\"]}],")
+                        .append("\"total\":42,")
+                        .append("\"createdAt\":")
+                        .append(new Date().getTime() / 1000)
+                        .append("}")).toString();
+
+        assertEquals(expectedRequest, request.getBody().readUtf8());
+    }
+
+    @Test
     public void testTrackPurchaseWithDataFields() throws Exception {
         String expectedRequest = new StringBuilder(new StringBuffer("{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100,\"dataFields\":{\"field\":\"testValue\"}").append(",\"createdAt\":").append(new Date().getTime() / 1000).append("}")).toString();
 
