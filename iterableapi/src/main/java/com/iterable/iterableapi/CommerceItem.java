@@ -109,12 +109,13 @@ public class CommerceItem {
         jsonObject.putOpt("url", url);
         jsonObject.putOpt("imageUrl", imageUrl);
 
-        JSONArray categoriesArray = new JSONArray();
-        for (String category : categories) {
-            categoriesArray.put(category);
+        if (categories != null) {
+            JSONArray categoriesArray = new JSONArray();
+            for (String category : categories) {
+                categoriesArray.put(category);
+            }
+            jsonObject.put("categories", categoriesArray);
         }
-
-        jsonObject.put("categories", categoriesArray);
 
         return jsonObject;
     }
