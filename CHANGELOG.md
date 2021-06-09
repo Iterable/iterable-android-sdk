@@ -19,7 +19,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Added
 - The optional fields from the `trackPurchase` API have been added to the SDK's methods.
 
-
+#### Changed
+- Updated minimum version for `firebase-messaging` to 20.3.0 to use `FirebaseMessaging.getToken()` instead of deprecated `FirebaseInstanceId.getToken()`.
 
 ## [3.3.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0)
 #### Added
