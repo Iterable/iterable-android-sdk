@@ -16,7 +16,6 @@ buildscript {
         classpath ('com.hiya:jacoco-android:0.2') {
             exclude group: 'org.codehaus.groovy', module: 'groovy-all'
         }
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0'
         classpath "com.github.dcendents:android-maven-gradle-plugin:2.1"
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

@@ -62,9 +62,6 @@ dependencies {
 }
 
 ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'Iterable-SDK'
-
     publishedGroupId = 'com.iterable'
     libraryName = 'iterableapi'
     artifact = 'iterableapi'
@@ -86,8 +83,6 @@ ext {
 }
 
 
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
 if(hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
