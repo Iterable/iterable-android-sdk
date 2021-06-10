@@ -20,7 +20,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - The following properties have been added to the `CommerceItem` class:
 
   - `sku` - The item's SKU
-  - `itemDescription` - A description of the item
+  - `description` - A description of the item
   - `url` - A URL associated with the item
   - `imageUrl` - A URL that points to an image of the item 
   - `categories` - Categories associated with the item 
