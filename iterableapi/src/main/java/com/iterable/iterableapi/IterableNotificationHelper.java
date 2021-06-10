@@ -140,7 +140,7 @@ class IterableNotificationHelper {
 
             notificationBuilder
                     .setSmallIcon(getIconId(context))
-                    .setTicker(applicationName).setWhen(0)
+                    .setTicker(applicationName)
                     .setAutoCancel(true)
                     .setContentTitle(title)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)

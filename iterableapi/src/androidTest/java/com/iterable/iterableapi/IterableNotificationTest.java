@@ -175,4 +175,16 @@ public class IterableNotificationTest {
         assertEquals("Silent Action", notification.actions[1].title);
         assertEquals("Text input", notification.actions[2].title);
     }
+
+    @Test
+    public void testNotificationTimeStamp() throws Exception {
+        Bundle notificationBundle = new Bundle();
+        notificationBundle.putString(IterableConstants.ITERABLE_DATA_KEY, itbl2);
+        notificationBundle.putString(IterableConstants.ITERABLE_DATA_BODY, body);
+        IterableNotificationBuilder iterableNotification = postNotification(notificationBundle);
+        StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
+        Notification notification = statusBarNotification.getNotification();
+        //Checking if the notification time is close to system time when received. 5000ms is to compensate with delay that might occur during creation, posting and checking the notification.
+        assertTrue(System.currentTimeMillis() - notification.when < 5000);
+    }
 }
