@@ -17,7 +17,32 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.3.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.1)
 #### Added
-- The optional fields from the `trackPurchase` API have been added to the SDK's methods.
+- The following properties have been added to the `CommerceItem` class:
+
+  - `sku` - The item's SKU
+  - `itemDescription` - A description of the item
+  - `url` - A URL associated with the item
+  - `imageUrl` - A URL that points to an image of the item 
+  - `categories` - Categories associated with the item 
+
+  Set these values on `CommerceItem` objects passed to the `IterableApi.trackPurchase` method.
+
+#### Changed
+
+- To resolve a breaking change introduced in Firebase Cloud Messaging [version 22.0.0](https://firebase.google.com/support/release-notes/android#messaging_v22-0-0), [version 3.3.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.1) of Iterable's Android SDK bumps the minimum required version of its Firebase Android dependency to [20.3.0](https://firebase.google.com/support/release-notes/android#messaging_v20-3-0).
+
+  If upgrading to version 3.3.1 causes your app to crash on launch, or your build to fail, add the following lines to your app's `build.gradle` file:
+
+  ```groovy
+  android {
+      ...
+      compileOptions {
+          sourceCompatibility JavaVersion.VERSION_1_8
+          targetCompatibility JavaVersion.VERSION_1_8
+      }
+      ...
+  }
+  ```
 
 #### Changed
 - Updated minimum version for `firebase-messaging` to 20.3.0 to use `FirebaseMessaging.getToken()` instead of deprecated `FirebaseInstanceId.getToken()`.
