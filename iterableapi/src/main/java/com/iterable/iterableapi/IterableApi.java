@@ -310,6 +310,10 @@ private static final String TAG = "IterableApi";
         IterablePushActionReceiver.processPendingAction(context);
     }
 
+    public static void setContext(Context context) {
+        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
+    }
+
     static void loadLastSavedConfiguration(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, false);
