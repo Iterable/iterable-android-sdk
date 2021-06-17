@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.2)
+#### Added
+- Added a new static method - `setContext` to `IterableAPI`. Use this method in your ReactNative project to pass context to IterableSDK from Application - `onCreate` method.
+
 ## [3.3.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.1)
 #### Added
 - The following properties have been added to the `CommerceItem` class:
