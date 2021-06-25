@@ -64,6 +64,11 @@ if(hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
 
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
 // A hack to import the classpath and BuildConfig into the javadoc task
 afterEvaluate {
     javadoc.classpath += files(android.libraryVariants.collect { variant -> variant.javaCompile.classpath.files })

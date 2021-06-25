@@ -87,6 +87,11 @@ if(hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
 
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
 }
