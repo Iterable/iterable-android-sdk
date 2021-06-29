@@ -299,7 +299,7 @@ private static final String TAG = "IterableApi";
             sharedInstance.config = new IterableConfig.Builder().build();
         }
         sharedInstance.retrieveEmailAndUserId();
-        sharedInstance.checkForDeferredDeeplink();
+
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
         if (sharedInstance.inAppManager == null) {
@@ -753,7 +753,6 @@ private static final String TAG = "IterableApi";
         apiClient.trackInAppClick(message, clickedUrl, clickLocation, inboxSessionId);
     }
 
-
     void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
@@ -1063,60 +1062,6 @@ private static final String TAG = "IterableApi";
             registerForPush();
         }
         getInAppManager().syncInApp();
-    }
-
-    private boolean getDDLChecked() {
-        return getPreferences().getBoolean(IterableConstants.SHARED_PREFS_DDL_CHECKED_KEY, false);
-    }
-
-    private void setDDLChecked(boolean value) {
-        getPreferences().edit().putBoolean(IterableConstants.SHARED_PREFS_DDL_CHECKED_KEY, value).apply();
-    }
-
-    private void checkForDeferredDeeplink() {
-        if (!config.checkForDeferredDeeplink) {
-            return;
-        }
-
-        try {
-            if (getDDLChecked()) {
-                return;
-            }
-
-            JSONObject requestJSON = DeviceInfo.createDeviceInfo(_applicationContext).toJSONObject();
-
-            IterableApiRequest request = new IterableApiRequest(_apiKey, IterableConstants.BASE_URL_LINKS,
-                    IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, null, new IterableHelper.SuccessHandler() {
-                @Override
-                public void onSuccess(@NonNull JSONObject data) {
-                    handleDDL(data);
-                }
-            }, new IterableHelper.FailureHandler() {
-                @Override
-                public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
-                    IterableLogger.e(TAG, "Error while checking deferred deep link: " + reason + ", response: " + data);
-                }
-            });
-            new IterableRequestTask().execute(request);
-
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while checking deferred deep link", e);
-        }
-    }
-
-    private void handleDDL(JSONObject response) {
-        IterableLogger.d(TAG, "handleDDL: " + response);
-        try {
-            MatchFpResponse matchFpResponse = MatchFpResponse.fromJSONObject(response);
-
-            if (matchFpResponse.isMatch) {
-                IterableAction action = IterableAction.actionOpenUrl(matchFpResponse.destinationUrl);
-                IterableActionRunner.executeAction(getMainActivityContext(), action, IterableActionSource.APP_LINK);
-            }
-        } catch (JSONException e) {
-            IterableLogger.e(TAG, "Error while handling deferred deep link", e);
-        }
-        setDDLChecked(true);
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

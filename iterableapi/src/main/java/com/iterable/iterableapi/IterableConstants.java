@@ -70,7 +70,6 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER             = "users/update";
     public static final String ENDPOINT_UPDATE_EMAIL            = "users/updateEmail";
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
-    public static final String ENDPOINT_DDL_MATCH               = "a/matchFp";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
     public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
 
@@ -102,7 +101,6 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
     public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
     public static final String SHARED_PREFS_AUTH_TOKEN_KEY = "itbl_authtoken";
-    public static final String SHARED_PREFS_DDL_CHECKED_KEY = "itbl_ddl_checked";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
     public static final String SHARED_PREFS_OBJECT_SUFFIX = "_object";
     public static final String SHARED_PREFS_PAYLOAD_KEY = "itbl_payload";
