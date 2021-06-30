@@ -198,7 +198,7 @@ public class IterableApiTest extends BaseTest {
         when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableActionContext.class))).thenReturn(true);
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
 
-        String url = "https://links.iterable.com/api/docs#!/email";
+        String url = "http://iterable.com";
         IterableApi.handleAppLink(
                 "http://links.iterable.com/a/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0");
 
