@@ -12,9 +12,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
-import com.iterable.iterableapi.ddl.DeviceInfo;
-import com.iterable.iterableapi.ddl.MatchFpResponse;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
