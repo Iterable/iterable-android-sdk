@@ -25,6 +25,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 
@@ -67,56 +68,75 @@ public class IterableApiAuthTests extends BaseTest {
         authHandler = mock(IterableAuthHandler.class);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
     @Test
-    public void testRefreshToken() throws Exception {
-        IterableApi.initialize(getContext(), "apiKey");
-        Timer timer = IterableApi.getInstance().getAuthManager().timer;
-
-        IterableApi api = IterableApi.getInstance();
-        IterableAuthManager authManager = api.getAuthManager();
-
-        String email = "test@example.com";
-        IterableApi.getInstance().setEmail(email);
-        timer = IterableApi.getInstance().getAuthManager().timer;
-
-        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setEmail(email);
-        timer = IterableApi.getInstance().getAuthManager().timer;
-
-        String email2 = "test2@example.com";
-        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setEmail(email2);
-        timer = IterableApi.getInstance().getAuthManager().timer;
-        int timerCounts = timer.purge();
-
-        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setEmail(email2);
-        timer = IterableApi.getInstance().getAuthManager().timer;
-    }
-
-    @Ignore ("Ignoring the JWT Tests")
-    @Test
-    public void testSetEmailWithToken() throws Exception {
-        IterableApi.initialize(getContext(), "apiKey");
-
+    public void testTokenRequestedOnSetEmail() throws Exception {
+        IterableConfig.Builder configBuilder = new IterableConfig.Builder()
+                .setAuthHandler(new IterableAuthHandler() {
+                    @Override
+                    public String onAuthTokenRequested() {
+                        return validJWT;
+                    }
+                });
+        IterableConfig config = configBuilder.build();
+        IterableApi.initialize(getContext(), "apiKey", config);
         String email = "test@example.com";
         IterableApi.getInstance().setEmail(email);
         assertEquals(email, IterableApi.getInstance().getEmail());
-        assertEquals(null, IterableApi.getInstance().getAuthToken());
-
-        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setEmail(email);
         shadowOf(getMainLooper()).runToEndOfTasks();
-        assertEquals(email, IterableApi.getInstance().getEmail());
+        shadowOf(getMainLooper()).idle();
         assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
 
         String email2 = "test2@example.com";
         IterableApi.getInstance().setEmail(email2);
         shadowOf(getMainLooper()).runToEndOfTasks();
+        shadowOf(getMainLooper()).idle();
         assertEquals(email2, IterableApi.getInstance().getEmail());
         assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
+    }
+
+    @Test
+    public void testAuthTokenRequestedOnSetUserId() throws Exception {
+        IterableConfig.Builder configBuilder = new IterableConfig.Builder()
+                .setAuthHandler(new IterableAuthHandler() {
+                    @Override
+                    public String onAuthTokenRequested() {
+                        return validJWT;
+                    }
+                });
+        when(authHandler.onAuthTokenRequested()).thenReturn(validJWT);
+        IterableConfig config = configBuilder.build();
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        String userId = "userId1";
+        IterableApi.getInstance().setUserId(userId);
         shadowOf(getMainLooper()).runToEndOfTasks();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(userId, IterableApi.getInstance().getUserId());
+        assertEquals(validJWT, IterableApi.sharedInstance.getAuthToken());
+    }
+
+    @Test
+    public void testAuthSetToNullOnLogout() throws Exception {
+        IterableConfig.Builder configBuilder = new IterableConfig.Builder()
+                .setAuthHandler(new IterableAuthHandler() {
+                    @Override
+                    public String onAuthTokenRequested() {
+                        return validJWT;
+                    }
+                });
+        IterableConfig config = configBuilder.build();
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        String userId = "userId1";
+        IterableApi.getInstance().setUserId(userId);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(userId, IterableApi.getInstance().getUserId());
+        assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
+
+        IterableApi.getInstance().setEmail(null);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+        assertNull(IterableApi.getInstance().getAuthToken());
     }
 
     @Ignore ("Ignoring the JWT Tests")
@@ -135,50 +155,9 @@ public class IterableApiAuthTests extends BaseTest {
 
     @Ignore ("Ignoring the JWT Tests")
     @Test
-    public void testSetUserIdWithToken() throws Exception {
-        IterableApi.initialize(getContext(), "apiKey");
-
-        String userId = "testUserId";
-        IterableApi.getInstance().setUserId(userId);
-        assertEquals(userId, IterableApi.getInstance().getUserId());
-        assertEquals(null, IterableApi.getInstance().getAuthToken());
-
-        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setUserId(userId);
-        shadowOf(getMainLooper()).runToEndOfTasks();
-        assertEquals(userId, IterableApi.getInstance().getUserId());
-        assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
-
-        String userId2 = "testUserId2";
-        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setUserId(userId2);
-        shadowOf(getMainLooper()).runToEndOfTasks();
-        assertEquals(userId2, IterableApi.getInstance().getUserId());
-        assertEquals(expiredJWT, IterableApi.getInstance().getAuthToken());
-    }
-
-    @Ignore ("Ignoring the JWT Tests")
-    @Test
     public void testSameEmailWithNewToken() throws Exception {
-        IterableApi.initialize(getContext(), "apiKey");
 
-        String email = "test@example.com";
-        IterableApi.getInstance().setEmail(email);
 
-        assertEquals(IterableApi.getInstance().getEmail(), email);
-        assertEquals(IterableApi.getInstance().getAuthToken(), null);
-
-        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setEmail(email);
-        shadowOf(getMainLooper()).runToEndOfTasks();
-        assertEquals(IterableApi.getInstance().getEmail(), email);
-        assertEquals(IterableApi.getInstance().getAuthToken(), validJWT);
-
-        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().setEmail(email);
-        shadowOf(getMainLooper()).runToEndOfTasks();
-        assertEquals(IterableApi.getInstance().getEmail(), email);
-        assertEquals(IterableApi.getInstance().getAuthToken(), newJWT);
     }
 
     @Ignore ("Ignoring the JWT Tests")
@@ -390,6 +369,34 @@ public class IterableApiAuthTests extends BaseTest {
         shadowOf(getMainLooper()).runToEndOfTasks();
         RecordedRequest getMessagesSet2Request = server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals(HEADER_SDK_AUTH_FORMAT + newJWT, getMessagesSet2Request.getHeader("Authorization"));
+    }
+
+    @Ignore ("Ignoring the JWT Tests")
+    @Test
+    public void testRefreshToken() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+        Timer timer = IterableApi.getInstance().getAuthManager().timer;
+
+        IterableApi api = IterableApi.getInstance();
+        IterableAuthManager authManager = api.getAuthManager();
+
+        String email = "test@example.com";
+        IterableApi.getInstance().setEmail(email);
+        timer = IterableApi.getInstance().getAuthManager().timer;
+
+        doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email);
+        timer = IterableApi.getInstance().getAuthManager().timer;
+
+        String email2 = "test2@example.com";
+        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email2);
+        timer = IterableApi.getInstance().getAuthManager().timer;
+        int timerCounts = timer.purge();
+
+        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email2);
+        timer = IterableApi.getInstance().getAuthManager().timer;
     }
 
     @Ignore ("Ignoring the JWT Tests")
