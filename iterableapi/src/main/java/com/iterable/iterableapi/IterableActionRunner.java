@@ -22,8 +22,16 @@ class IterableActionRunner {
         return instance.executeAction(context, action, source);
     }
 
+    static boolean processPendingAction(Context context) {
+        return instance.processPendingAction(context);
+    }
+
     static class IterableActionRunnerImpl {
         private static final String TAG = "IterableActionRunner";
+
+        // Used to hold an action until the SDK is initialized
+        @VisibleForTesting
+        protected PendingAction pendingAction = null;
 
         /**
          * Execute an {@link IterableAction} as a response to push action
@@ -34,6 +42,10 @@ class IterableActionRunner {
          */
         boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
             if (action == null) {
+                return false;
+            }
+            if (context == null) {
+                pendingAction = new PendingAction(action, source);
                 return false;
             }
 
@@ -105,6 +117,26 @@ class IterableActionRunner {
                 }
             }
             return false;
+        }
+
+        public boolean processPendingAction(Context context) {
+            boolean handled = false;
+            if (pendingAction != null) {
+                handled = instance.executeAction(context, pendingAction.iterableAction, pendingAction.iterableActionSource);
+                pendingAction = null;
+            }
+            return handled;
+        }
+    }
+
+    @VisibleForTesting
+    protected static class PendingAction {
+        IterableAction iterableAction;
+        IterableActionSource iterableActionSource;
+
+        PendingAction(IterableAction iterableAction, IterableActionSource iterableActionSource) {
+            this.iterableAction = iterableAction;
+            this.iterableActionSource = iterableActionSource;
         }
     }
 
