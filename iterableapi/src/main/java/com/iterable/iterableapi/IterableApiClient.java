@@ -93,6 +93,31 @@ class IterableApiClient {
         }
     }
 
+    public void updateCart(@NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            JSONArray itemsArray = new JSONArray();
+            for (CommerceItem item : items) {
+                itemsArray.put(item.toJSONObject());
+            }
+
+            JSONObject userObject = new JSONObject();
+            addEmailOrUserIdToJson(userObject);
+            requestJSON.put(IterableConstants.KEY_USER, userObject);
+
+            requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+
+            if (dataFields != null) {
+                requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            }
+
+            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_CART, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
         try {
