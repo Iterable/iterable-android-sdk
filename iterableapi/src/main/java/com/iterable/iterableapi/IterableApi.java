@@ -517,16 +517,16 @@ private static final String TAG = "IterableApi";
         apiClient.track(eventName, campaignId, templateId, dataFields);
     }
 
+    /**
+     * Updates the status of the cart
+     * @param items
+     */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        updateCart(items, null);
-    }
-
-    public void updateCart(@NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
         if (!checkSDKInitialization()) {
             return;
         }
 
-        apiClient.updateCart(items, dataFields);
+        apiClient.updateCart(items);
     }
 
     /**

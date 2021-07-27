@@ -93,7 +93,7 @@ class IterableApiClient {
         }
     }
 
-    public void updateCart(@NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
+    public void updateCart(@NonNull List<CommerceItem> items) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -107,10 +107,6 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_USER, userObject);
 
             requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
-
-            if (dataFields != null) {
-                requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
-            }
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_CART, requestJSON);
         } catch (JSONException e) {
