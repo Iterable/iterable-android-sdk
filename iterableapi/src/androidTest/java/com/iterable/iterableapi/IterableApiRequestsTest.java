@@ -87,31 +87,6 @@ public class IterableApiRequestsTest {
     }
 
     @Test
-    public void testUpdateCartWithDataFields() throws Exception {
-        CommerceItem item1 = new CommerceItem("sku123", "Item", 50.0, 2);
-        List<CommerceItem> items = new ArrayList<CommerceItem>();
-        items.add(item1);
-        JSONObject dataFields = new JSONObject();
-        dataFields.put("field", "testValue");
-
-        IterableApi.sharedInstance.updateCart(items, dataFields);
-
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(request);
-        assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_CART, request.getPath());
-
-        String expectedRequest = new StringBuilder(
-                new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
-                        .append("\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],")
-                        .append("\"dataFields\":{\"field\":\"testValue\"},")
-                        .append("\"createdAt\":")
-                        .append(new Date().getTime() / 1000)
-                        .append("}")).toString();
-
-        assertEquals(expectedRequest, request.getBody().readUtf8());
-    }
-
-    @Test
     public void testTrackPurchase() throws Exception {
         String expectedRequest = new StringBuilder(new StringBuffer("{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100").append(",\"createdAt\":").append(new Date().getTime() / 1000).append("}")).toString();
 
