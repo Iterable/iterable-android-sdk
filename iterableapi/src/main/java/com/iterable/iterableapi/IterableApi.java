@@ -517,6 +517,18 @@ private static final String TAG = "IterableApi";
         apiClient.track(eventName, campaignId, templateId, dataFields);
     }
 
+    public void updateCart(@NonNull List<CommerceItem> items) {
+        updateCart(items, null);
+    }
+
+    public void updateCart(@NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.updateCart(items, dataFields);
+    }
+
     /**
      * Tracks a purchase.
      * @param total total purchase amount
