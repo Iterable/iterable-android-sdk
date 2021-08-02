@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.3)
+
+#### Fixed
+- Devices with Android 11 should now be able to open browser when performing open url actions instead of landing on the app.
+
 ## [3.3.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.2)
 #### Added
 - Added a new static method - `setContext` to `IterableAPI`. Use this method in your ReactNative project to pass context to IterableSDK from Application - `onCreate` method.
