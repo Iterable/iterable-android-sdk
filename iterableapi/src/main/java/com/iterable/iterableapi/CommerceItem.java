@@ -75,7 +75,7 @@ public class CommerceItem {
      * @param url           URL of the product
      * @param imageUrl      URL of the product's image
      * @param categories    categories this product belongs to
-     * @param dataFields
+     * @param dataFields    data fields for this CommerceItem
      */
     public CommerceItem(@NonNull String id,
                         @NonNull String name,
