@@ -65,6 +65,28 @@ public class IterableApiRequestsTest {
     }
 
     @Test
+    public void testUpdateCart() throws Exception {
+        CommerceItem item1 = new CommerceItem("sku123", "Item", 50.0, 2);
+        List<CommerceItem> items = new ArrayList<CommerceItem>();
+        items.add(item1);
+
+        IterableApi.sharedInstance.updateCart(items);
+
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_CART, request.getPath());
+
+        String expectedRequest = new StringBuilder(
+                new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
+                        .append("\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],")
+                        .append("\"createdAt\":")
+                        .append(new Date().getTime() / 1000)
+                        .append("}")).toString();
+
+        assertEquals(expectedRequest, request.getBody().readUtf8());
+    }
+
+    @Test
     public void testTrackPurchase() throws Exception {
         String expectedRequest = new StringBuilder(new StringBuffer("{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100").append(",\"createdAt\":").append(new Date().getTime() / 1000).append("}")).toString();
 
@@ -81,6 +103,10 @@ public class IterableApiRequestsTest {
 
     @Test
     public void testTrackPurchaseWithOptionalParameters() throws Exception {
+        JSONObject dataFields = new JSONObject();
+        dataFields.put("color", "yellow");
+        dataFields.put("count", 8);
+
         CommerceItem item = new CommerceItem("273",
                 "Bow and Arrow",
                 42,
@@ -89,7 +115,8 @@ public class IterableApiRequestsTest {
                 "When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.",
                 "placeholderUrl",
                 "placeholderImageUrl",
-                new String[] {"bow", "arrow"});
+                new String[] {"bow", "arrow"},
+                dataFields);
         List<CommerceItem> items = new ArrayList<CommerceItem>();
         items.add(item);
 
@@ -100,7 +127,7 @@ public class IterableApiRequestsTest {
 
         String expectedRequest = new StringBuilder(
                 new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
-                        .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"DIAMOND-IS-UNBREAKABLE\",\"description\":\"When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.\",\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\",\"categories\":[\"bow\",\"arrow\"]}],")
+                        .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"DIAMOND-IS-UNBREAKABLE\",\"description\":\"When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.\",\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\",\"dataFields\":{\"color\":\"yellow\",\"count\":8},\"categories\":[\"bow\",\"arrow\"]}],")
                         .append("\"total\":42,")
                         .append("\"createdAt\":")
                         .append(new Date().getTime() / 1000)

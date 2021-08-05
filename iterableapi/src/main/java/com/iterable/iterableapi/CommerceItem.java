@@ -46,6 +46,10 @@ public class CommerceItem {
     @Nullable
     public final String[] categories;
 
+    /** data fields as part of this product **/
+    @Nullable
+    public final JSONObject dataFields;
+
     /**
      * Creates a {@link CommerceItem} with the specified properties
      * @param id         id of the product
@@ -57,7 +61,7 @@ public class CommerceItem {
                         @NonNull String name,
                         double price,
                         int quantity) {
-        this(id, name, price, quantity, null, null, null, null, null);
+        this(id, name, price, quantity, null, null, null, null, null, null);
     }
 
     /**
@@ -71,6 +75,7 @@ public class CommerceItem {
      * @param url           URL of the product
      * @param imageUrl      URL of the product's image
      * @param categories    categories this product belongs to
+     * @param dataFields    data fields for this CommerceItem
      */
     public CommerceItem(@NonNull String id,
                         @NonNull String name,
@@ -80,7 +85,8 @@ public class CommerceItem {
                         @Nullable String description,
                         @Nullable String url,
                         @Nullable String imageUrl,
-                        @Nullable String[] categories) {
+                        @Nullable String[] categories,
+                        @Nullable JSONObject dataFields) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -90,6 +96,7 @@ public class CommerceItem {
         this.url = url;
         this.imageUrl = imageUrl;
         this.categories = categories;
+        this.dataFields = dataFields;
     }
 
     /**
@@ -108,6 +115,7 @@ public class CommerceItem {
         jsonObject.putOpt("description", description);
         jsonObject.putOpt("url", url);
         jsonObject.putOpt("imageUrl", imageUrl);
+        jsonObject.putOpt("dataFields", dataFields);
 
         if (categories != null) {
             JSONArray categoriesArray = new JSONArray();

@@ -518,6 +518,18 @@ private static final String TAG = "IterableApi";
     }
 
     /**
+     * Updates the status of the cart
+     * @param items
+     */
+    public void updateCart(@NonNull List<CommerceItem> items) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.updateCart(items);
+    }
+
+    /**
      * Tracks a purchase.
      * @param total total purchase amount
      * @param items list of purchased items

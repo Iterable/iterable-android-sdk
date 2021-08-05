@@ -65,6 +65,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_TRACK_INAPP_OPEN        = "events/trackInAppOpen";
     public static final String ENDPOINT_TRACK_INAPP_DELIVERY    = "events/trackInAppDelivery";
     public static final String ENDPOINT_TRACK_INBOX_SESSION     = "events/trackInboxSession";
+    public static final String ENDPOINT_UPDATE_CART             = "commerce/updateCart";
     public static final String ENDPOINT_TRACK_PURCHASE          = "commerce/trackPurchase";
     public static final String ENDPOINT_TRACK_PUSH_OPEN         = "events/trackPushOpen";
     public static final String ENDPOINT_UPDATE_USER             = "users/update";
