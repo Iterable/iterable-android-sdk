@@ -15,8 +15,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
-## [3.3.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.3)
+## [3.3.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.4)
+#### Added
+- `updateCart` has been added to the SDK
+- `dataFields` have been added as a field to `CommerceItem`
 
+## [3.3.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.3)
 #### Fixed
 - Devices with Android 11 should now be able to open browser when performing open url actions instead of landing on the app.
 
