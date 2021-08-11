@@ -10,6 +10,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
@@ -145,6 +146,9 @@ class IterableNotificationHelper {
                     .setContentTitle(title)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentText(notificationBody);
+            if (Build.VERSION.SDK_INT >= 17) {
+                notificationBuilder.setShowWhen(true);
+            }
             notificationBuilder.setImageUrl(pushImage);
             notificationBuilder.setExpandedContent(notificationBody);
 
