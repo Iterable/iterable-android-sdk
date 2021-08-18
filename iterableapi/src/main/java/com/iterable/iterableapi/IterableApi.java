@@ -308,8 +308,25 @@ private static final String TAG = "IterableApi";
     }
 
     public static void setContext(Context context) {
+        ExternalContext.initialize(context);
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
     }
+
+    @Nullable
+    static Context getContext() {
+        if (getInstance().getMainActivityContext() != null) {
+            IterableLogger.v(TAG, "Normal Flow... Context passed through Iterable API");
+            return getInstance().getMainActivityContext();
+        } else if (IterableActivityMonitor.getInstance().getCurrentActivity() != null) {
+            IterableLogger.v(TAG, "Context gained through IterableActivityMonitor");
+            return IterableActivityMonitor.getInstance().getCurrentActivity();
+        } else if (ExternalContext.sharedInstance.getExternalContext() != null) {
+            IterableLogger.v(TAG, "External context being used ");
+            return ExternalContext.sharedInstance.getExternalContext();
+        }
+        return null;
+    }
+
 
     static void loadLastSavedConfiguration(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
@@ -420,18 +437,22 @@ private static final String TAG = "IterableApi";
      */
     public static boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();
+        if (getContext() == null) {
+            IterableLogger.e(TAG, "SDK unaware of context yet to deep link");
+            return false;
+        }
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
             IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String originalUrl) {
                     IterableAction action = IterableAction.actionOpenUrl(originalUrl);
-                    IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
+                    IterableActionRunner.executeAction(getContext(), action, IterableActionSource.APP_LINK);
                 }
             });
             return true;
         } else {
             IterableAction action = IterableAction.actionOpenUrl(uri);
-            return IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
+            return IterableActionRunner.executeAction(getContext(), action, IterableActionSource.APP_LINK);
         }
     }
 
