@@ -74,7 +74,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         this.displayer = displayer;
         this.activityMonitor = activityMonitor;
         this.activityMonitor.addCallback(this);
-
+        syncInApp();
     }
 
     /**
