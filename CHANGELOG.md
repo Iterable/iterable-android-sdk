@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.5)
+#### Added
+- Push notifications will now have timestamps on devices with SDK 17 and above.
+
 ## [3.3.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.4)
 #### Added
 - `updateCart` has been added to the SDK
