@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.6)
+#### Fixed
+- Added `android:exported` attribute to activities as required in Android 12.
+- Pending intents now specify its mutability as required in Android 12. (Thanks to @sidcpatel!)
+
 ## [3.3.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.5)
 #### Added
 - Push notifications will now have timestamps on devices with SDK 17 and above.
