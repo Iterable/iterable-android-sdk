@@ -4,7 +4,8 @@ package="com.iterable.iterableapi" android:versionName="1.2.3" android:versionCo
     <application
         android:label="IterableAPI"
         android:supportsRtl="true">
-        <activity android:name=".unit.MainActivity">
+        <activity android:name=".unit.MainActivity"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
