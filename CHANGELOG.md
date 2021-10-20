@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.7)
+#### Fixed
+- When syncing in-app queues, new messages that already have `read` set to `true` will not spawn an `InAppDelivery` event.
+
 ## [3.3.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.6)
 #### Fixed
 - Added `android:exported` attribute to activities as required in Android 12.
