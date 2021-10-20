@@ -318,6 +318,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             if (!isInAppStored) {
                 storage.addMessage(message);
                 onMessageAdded(message);
+
                 changed = true;
             }
 
@@ -337,11 +338,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         for (IterableInAppMessage localMessage : storage.getMessages()) {
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 storage.removeMessage(localMessage);
+                
                 changed = true;
             }
         }
 
         scheduleProcessing();
+
         if (changed) {
             notifyOnChange();
         }
@@ -407,7 +410,9 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void onMessageAdded(IterableInAppMessage message) {
-        api.trackInAppDelivery(message);
+        if (!message.isRead()) {
+            api.trackInAppDelivery(message);
+        }
     }
 
     private boolean isShowingInApp() {
