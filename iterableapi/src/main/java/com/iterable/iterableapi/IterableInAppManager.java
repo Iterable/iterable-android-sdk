@@ -338,7 +338,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         for (IterableInAppMessage localMessage : storage.getMessages()) {
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 storage.removeMessage(localMessage);
-                
+
                 changed = true;
             }
         }
