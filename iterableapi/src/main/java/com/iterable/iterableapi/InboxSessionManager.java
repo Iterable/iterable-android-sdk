@@ -9,18 +9,11 @@ import java.util.Map;
 // make package private - maybe @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class InboxSessionManager {
     private static final String TAG = "InboxSessionManager";
-
-    private boolean sessionStarted = false;
+    
     IterableInboxSession session = new IterableInboxSession();
     Map<String, ImpressionData> impressions = new HashMap<>();
 
     public void startSession() {
-        if (sessionStarted) {
-            return;
-        }
-
-        sessionStarted = true;
-
         if (session.sessionStartTime != null) {
             IterableLogger.e(TAG, "Inbox session started twice");
             return;
@@ -39,12 +32,6 @@ public class InboxSessionManager {
     }
 
     public void endSession() {
-        if (!sessionStarted) {
-            return;
-        }
-
-        sessionStarted = false;
-
         if (session.sessionStartTime == null) {
             IterableLogger.e(TAG, "Inbox Session ended without start");
             return;
