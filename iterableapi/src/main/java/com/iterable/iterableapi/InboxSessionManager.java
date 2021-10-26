@@ -8,7 +8,7 @@ import java.util.Map;
 
 import com.iterable.iterableapi.ImpressionData;
 
-// make package private
+// make package private - maybe @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class InboxSessionManager {
     private static final String TAG = "InboxSessionManager";
 
