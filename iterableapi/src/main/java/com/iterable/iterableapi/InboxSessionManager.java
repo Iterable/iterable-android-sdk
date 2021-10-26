@@ -1,15 +1,19 @@
 package com.iterable.iterableapi;
 
+import androidx.annotation.RestrictTo;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// make package private - maybe @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+import com.iterable.iterableapi.IterableInboxSession.Impression;
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class InboxSessionManager {
     private static final String TAG = "InboxSessionManager";
-    
+
     IterableInboxSession session = new IterableInboxSession();
     Map<String, ImpressionData> impressions = new HashMap<>();
 

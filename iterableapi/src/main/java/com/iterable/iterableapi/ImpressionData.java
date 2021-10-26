@@ -1,8 +1,10 @@
 package com.iterable.iterableapi;
 
+import androidx.annotation.RestrictTo;
+
 import java.util.Date;
 
-// make package private - maybe @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ImpressionData {
     final String messageId;
     final boolean silentInbox;
