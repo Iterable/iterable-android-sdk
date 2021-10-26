@@ -11,14 +11,23 @@ import com.iterable.iterableapi.ImpressionData;
 // make package private
 public class InboxSessionManager {
     private static final String TAG = "InboxSessionManager";
+
+    private boolean sessionStarted = false;
     IterableInboxSession session = new IterableInboxSession();
     Map<String, ImpressionData> impressions = new HashMap<>();
 
-    public void onAppDidEnterForeground() {
+    public void startSession() {
+        if (sessionStarted) {
+            return;
+        }
+
+        sessionStarted = true;
+
         if (session.sessionStartTime != null) {
             IterableLogger.e(TAG, "Inbox session started twice");
             return;
         }
+
         session = new IterableInboxSession(
                 new Date(),
                 null,
@@ -27,15 +36,24 @@ public class InboxSessionManager {
                 0,
                 0,
                 null);
+
         IterableApi.getInstance().setInboxSessionId(session.sessionId);
     }
 
-    public void onAppDidEnterBackground() {
+    public void endSession() {
+        if (!sessionStarted) {
+            return;
+        }
+
+        sessionStarted = false;
+
         if (session.sessionStartTime == null) {
             IterableLogger.e(TAG, "Inbox Session ended without start");
             return;
         }
+
         endAllImpressions();
+
         IterableInboxSession sessionToTrack = new IterableInboxSession(
                 session.sessionStartTime,
                 new Date(),
@@ -44,8 +62,10 @@ public class InboxSessionManager {
                 IterableApi.getInstance().getInAppManager().getInboxMessages().size(),
                 IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
                 getImpressionList());
+
         IterableApi.getInstance().trackInboxSession(sessionToTrack);
         IterableApi.getInstance().clearInboxSessionId();
+
         session = new IterableInboxSession();
         impressions = new HashMap<>();
     }

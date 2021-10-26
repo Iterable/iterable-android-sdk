@@ -54,7 +54,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     private IterableInboxComparator comparator = new DefaultInboxComparator();
     private IterableInboxFilter filter = new DefaultInboxFilter();
     private IterableInboxDateMapper dateMapper = new DefaultInboxDateMapper();
-    private boolean sessionStarted = false;
+
 
     /**
      * Create an Inbox fragment with default parameters
@@ -189,7 +189,8 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         super.onResume();
         updateList();
         IterableApi.getInstance().getInAppManager().addListener(this);
-        startSession();
+
+        sessionManager.startSession();
     }
 
     @Override
@@ -203,7 +204,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         super.onDestroy();
         IterableActivityMonitor.getInstance().removeCallback(appStateCallback);
         if (this.getActivity() != null && !this.getActivity().isChangingConfigurations()) {
-            stopSession();
+            sessionManager.endSession();
         }
     }
 
@@ -214,23 +215,9 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
 
         @Override
         public void onSwitchToBackground() {
-            stopSession();
+            sessionManager.endSession();
         }
     };
-
-    private void startSession() {
-        if (!sessionStarted) {
-            sessionStarted = true;
-            sessionManager.onAppDidEnterForeground();
-        }
-    }
-
-    private void stopSession() {
-        if (sessionStarted) {
-            sessionStarted = false;
-            sessionManager.onAppDidEnterBackground();
-        }
-    }
 
     private void updateList() {
         IterableInboxAdapter adapter = (IterableInboxAdapter) recyclerView.getAdapter();
