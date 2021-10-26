@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.iterable.iterableapi.ImpressionData;
-
 // make package private - maybe @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class InboxSessionManager {
     private static final String TAG = "InboxSessionManager";
