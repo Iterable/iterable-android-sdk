@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.iterable.iterableapi.InboxSessionManager;
 import com.iterable.iterableapi.IterableActivityMonitor;
 import com.iterable.iterableapi.IterableApi;
 import com.iterable.iterableapi.IterableConstants;
@@ -22,16 +23,10 @@ import com.iterable.iterableapi.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppLocation;
 import com.iterable.iterableapi.IterableInAppManager;
 import com.iterable.iterableapi.IterableInAppMessage;
-import com.iterable.iterableapi.IterableInboxSession;
 import com.iterable.iterableapi.IterableLogger;
 import com.iterable.iterableapi.ui.R;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * The main class for Inbox UI. Renders the list of Inbox messages and handles touch interaction:
@@ -54,7 +49,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     TextView noMessagesBodyTextView;
     RecyclerView recyclerView;
 
-    private final SessionManager sessionManager = new SessionManager();
+    private final InboxSessionManager sessionManager = new InboxSessionManager();
     private IterableInboxAdapterExtension adapterExtension = new DefaultAdapterExtension();
     private IterableInboxComparator comparator = new DefaultInboxComparator();
     private IterableInboxFilter filter = new DefaultInboxFilter();
@@ -349,115 +344,115 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         }
     }
 
-    private static class SessionManager {
-        IterableInboxSession session = new IterableInboxSession();
-        Map<String, ImpressionData> impressions = new HashMap<>();
+//    private static class SessionManager {
+//        IterableInboxSession session = new IterableInboxSession();
+//        Map<String, ImpressionData> impressions = new HashMap<>();
+//
+//        private void onAppDidEnterForeground() {
+//            if (session.sessionStartTime != null) {
+//                IterableLogger.e(TAG, "Inbox session started twice");
+//                return;
+//            }
+//            session = new IterableInboxSession(
+//                    new Date(),
+//                    null,
+//                    IterableApi.getInstance().getInAppManager().getInboxMessages().size(),
+//                    IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
+//                    0,
+//                    0,
+//                    null);
+//            IterableApi.getInstance().setInboxSessionId(session.sessionId);
+//        }
+//
+//        private void onAppDidEnterBackground() {
+//            if (session.sessionStartTime == null) {
+//                IterableLogger.e(TAG, "Inbox Session ended without start");
+//                return;
+//            }
+//            endAllImpressions();
+//            IterableInboxSession sessionToTrack = new IterableInboxSession(
+//                    session.sessionStartTime,
+//                    new Date(),
+//                    session.startTotalMessageCount,
+//                    session.startUnreadMessageCount,
+//                    IterableApi.getInstance().getInAppManager().getInboxMessages().size(),
+//                    IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
+//                    getImpressionList());
+//            IterableApi.getInstance().trackInboxSession(sessionToTrack);
+//            IterableApi.getInstance().clearInboxSessionId();
+//            session = new IterableInboxSession();
+//            impressions = new HashMap<>();
+//        }
+//
+//        private void onMessageImpressionStarted(IterableInAppMessage message) {
+//            IterableLogger.printInfo();
+//            String messageId = message.getMessageId();
+//            ImpressionData impressionData = impressions.get(messageId);
+//            if (impressionData == null) {
+//                impressionData = new ImpressionData(messageId, message.isSilentInboxMessage());
+//                impressions.put(messageId, impressionData);
+//            }
+//            impressionData.startImpression();
+//        }
+//
+//        private void onMessageImpressionEnded(IterableInAppMessage message) {
+//            IterableLogger.printInfo();
+//            String messageId = message.getMessageId();
+//            ImpressionData impressionData = impressions.get(messageId);
+//            if (impressionData == null) {
+//                IterableLogger.e(TAG, "onMessageImpressionEnded: impressionData not found");
+//                return;
+//            }
+//            if (impressionData.impressionStarted == null) {
+//                IterableLogger.e(TAG, "onMessageImpressionEnded: impressionStarted is null");
+//                return;
+//            }
+//            impressionData.endImpression();
+//        }
+//
+//        private void endAllImpressions() {
+//            for (ImpressionData impressionData : impressions.values()) {
+//                impressionData.endImpression();
+//            }
+//        }
+//
+//        private List<IterableInboxSession.Impression> getImpressionList() {
+//            List<IterableInboxSession.Impression> impressionList = new ArrayList<>();
+//            for (ImpressionData impressionData : impressions.values()) {
+//                impressionList.add(new IterableInboxSession.Impression(
+//                        impressionData.messageId,
+//                        impressionData.silentInbox,
+//                        impressionData.displayCount,
+//                        impressionData.duration
+//                ));
+//            }
+//            return impressionList;
+//        }
+//    }
 
-        private void onAppDidEnterForeground() {
-            if (session.sessionStartTime != null) {
-                IterableLogger.e(TAG, "Inbox session started twice");
-                return;
-            }
-            session = new IterableInboxSession(
-                    new Date(),
-                    null,
-                    IterableApi.getInstance().getInAppManager().getInboxMessages().size(),
-                    IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
-                    0,
-                    0,
-                    null);
-            IterableApi.getInstance().setInboxSessionId(session.sessionId);
-        }
-
-        private void onAppDidEnterBackground() {
-            if (session.sessionStartTime == null) {
-                IterableLogger.e(TAG, "Inbox Session ended without start");
-                return;
-            }
-            endAllImpressions();
-            IterableInboxSession sessionToTrack = new IterableInboxSession(
-                    session.sessionStartTime,
-                    new Date(),
-                    session.startTotalMessageCount,
-                    session.startUnreadMessageCount,
-                    IterableApi.getInstance().getInAppManager().getInboxMessages().size(),
-                    IterableApi.getInstance().getInAppManager().getUnreadInboxMessagesCount(),
-                    getImpressionList());
-            IterableApi.getInstance().trackInboxSession(sessionToTrack);
-            IterableApi.getInstance().clearInboxSessionId();
-            session = new IterableInboxSession();
-            impressions = new HashMap<>();
-        }
-
-        private void onMessageImpressionStarted(IterableInAppMessage message) {
-            IterableLogger.printInfo();
-            String messageId = message.getMessageId();
-            ImpressionData impressionData = impressions.get(messageId);
-            if (impressionData == null) {
-                impressionData = new ImpressionData(messageId, message.isSilentInboxMessage());
-                impressions.put(messageId, impressionData);
-            }
-            impressionData.startImpression();
-        }
-
-        private void onMessageImpressionEnded(IterableInAppMessage message) {
-            IterableLogger.printInfo();
-            String messageId = message.getMessageId();
-            ImpressionData impressionData = impressions.get(messageId);
-            if (impressionData == null) {
-                IterableLogger.e(TAG, "onMessageImpressionEnded: impressionData not found");
-                return;
-            }
-            if (impressionData.impressionStarted == null) {
-                IterableLogger.e(TAG, "onMessageImpressionEnded: impressionStarted is null");
-                return;
-            }
-            impressionData.endImpression();
-        }
-
-        private void endAllImpressions() {
-            for (ImpressionData impressionData : impressions.values()) {
-                impressionData.endImpression();
-            }
-        }
-
-        private List<IterableInboxSession.Impression> getImpressionList() {
-            List<IterableInboxSession.Impression> impressionList = new ArrayList<>();
-            for (ImpressionData impressionData : impressions.values()) {
-                impressionList.add(new IterableInboxSession.Impression(
-                        impressionData.messageId,
-                        impressionData.silentInbox,
-                        impressionData.displayCount,
-                        impressionData.duration
-                ));
-            }
-            return impressionList;
-        }
-    }
-
-    private static class ImpressionData {
-        final String messageId;
-        final boolean silentInbox;
-        int displayCount = 0;
-        float duration = 0.0f;
-
-        Date impressionStarted = null;
-
-        private ImpressionData(String messageId, boolean silentInbox) {
-            this.messageId = messageId;
-            this.silentInbox = silentInbox;
-        }
-
-        private void startImpression() {
-            this.impressionStarted = new Date();
-        }
-
-        private void endImpression() {
-            if (this.impressionStarted != null) {
-                this.displayCount += 1;
-                this.duration += (float) (new Date().getTime() - this.impressionStarted.getTime()) / 1000;
-                this.impressionStarted = null;
-            }
-        }
-    }
+//    private static class ImpressionData {
+//        final String messageId;
+//        final boolean silentInbox;
+//        int displayCount = 0;
+//        float duration = 0.0f;
+//
+//        Date impressionStarted = null;
+//
+//        private ImpressionData(String messageId, boolean silentInbox) {
+//            this.messageId = messageId;
+//            this.silentInbox = silentInbox;
+//        }
+//
+//        private void startImpression() {
+//            this.impressionStarted = new Date();
+//        }
+//
+//        private void endImpression() {
+//            if (this.impressionStarted != null) {
+//                this.displayCount += 1;
+//                this.duration += (float) (new Date().getTime() - this.impressionStarted.getTime()) / 1000;
+//                this.impressionStarted = null;
+//            }
+//        }
+//    }
 }
