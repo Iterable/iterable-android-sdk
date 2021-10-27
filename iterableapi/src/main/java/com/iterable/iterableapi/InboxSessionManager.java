@@ -5,8 +5,10 @@ import androidx.annotation.RestrictTo;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.iterable.iterableapi.IterableInboxSession.Impression;
 
@@ -59,29 +61,69 @@ public class InboxSessionManager {
         impressions = new HashMap<>();
     }
 
+    public void updateVisibleRows(List<IterableInboxSession.Impression> visibleRows) {
+        IterableLogger.printInfo();
+
+        Set<String> previousImpressions = impressions.keySet();
+        HashSet<String> visibleMessageIds = new HashSet();
+
+        for (IterableInboxSession.Impression row : visibleRows) {
+            visibleMessageIds.add(row.messageId);
+        }
+
+        Set<String> impressionsToStart = visibleMessageIds;
+        impressionsToStart.removeAll(previousImpressions);
+
+        Set<String> impressionsToEnd = previousImpressions;
+        impressionsToEnd.removeAll(visibleMessageIds);
+
+        for (String messageId : impressionsToStart) {
+            onMessageImpressionStarted(IterableApi.getInstance().getInAppManager().getMessageById(messageId));
+        }
+
+        for (String messageId : impressionsToEnd) {
+            endImpression(messageId);
+        }
+    }
+
     public void onMessageImpressionStarted(IterableInAppMessage message) {
         IterableLogger.printInfo();
+
         String messageId = message.getMessageId();
-        ImpressionData impressionData = impressions.get(messageId);
-        if (impressionData == null) {
-            impressionData = new ImpressionData(messageId, message.isSilentInboxMessage());
-            impressions.put(messageId, impressionData);
-        }
-        impressionData.startImpression();
+        startImpression(messageId, message.isSilentInboxMessage());
     }
 
     public void onMessageImpressionEnded(IterableInAppMessage message) {
         IterableLogger.printInfo();
+
         String messageId = message.getMessageId();
+        endImpression(messageId);
+    }
+
+    private void startImpression(String messageId, boolean silentInbox) {
         ImpressionData impressionData = impressions.get(messageId);
+
+        if (impressionData == null) {
+            impressionData = new ImpressionData(messageId, silentInbox);
+            impressions.put(messageId, impressionData);
+        }
+
+        impressionData.startImpression();
+    }
+
+    private void endImpression(String messageId) {
+        ImpressionData impressionData = impressions.get(messageId);
+
         if (impressionData == null) {
             IterableLogger.e(TAG, "onMessageImpressionEnded: impressionData not found");
             return;
         }
+
         if (impressionData.impressionStarted == null) {
             IterableLogger.e(TAG, "onMessageImpressionEnded: impressionStarted is null");
             return;
         }
+
         impressionData.endImpression();
     }
 
