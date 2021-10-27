@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.8)
+#### Fixed
+- Fixed an issue where push notifications retained data from previously sent notifications.
+
 ## [3.3.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.7)
 #### Fixed
 - When syncing in-app queues, new messages that already have `read` set to `true` will not spawn an `InAppDelivery` event.
