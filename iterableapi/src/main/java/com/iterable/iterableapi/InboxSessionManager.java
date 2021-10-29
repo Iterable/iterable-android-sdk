@@ -37,6 +37,12 @@ public class InboxSessionManager {
         IterableApi.getInstance().setInboxSessionId(session.sessionId);
     }
 
+    public void startSession(List<IterableInboxSession.Impression> visibleRows) {
+        startSession();
+
+        updateVisibleRows(visibleRows);
+    }
+
     public void endSession() {
         if (session.sessionStartTime == null) {
             IterableLogger.e(TAG, "Inbox Session ended without start");
@@ -64,6 +70,8 @@ public class InboxSessionManager {
     public void updateVisibleRows(List<IterableInboxSession.Impression> visibleRows) {
         IterableLogger.printInfo();
 
+        // this code is basically doing the equivalent of a diff, but manually
+        // sorry, i couldn't find a better/quicker way under the time constraint
         Set<String> previousImpressions = impressions.keySet();
         HashSet<String> visibleMessageIds = new HashSet();
 
