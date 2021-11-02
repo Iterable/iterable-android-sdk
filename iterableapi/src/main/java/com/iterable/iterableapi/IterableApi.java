@@ -716,7 +716,7 @@ private static final String TAG = "IterableApi";
 
         apiClient.trackInAppClick(message, clickedUrl, clickLocation, inboxSessionId);
     }
-    
+
     /**
      * Tracks when an in-app has been closed
      * @param message the in-app message to be tracked
