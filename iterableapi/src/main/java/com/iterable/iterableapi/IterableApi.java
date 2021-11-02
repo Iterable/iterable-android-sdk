@@ -683,6 +683,42 @@ private static final String TAG = "IterableApi";
 
     /**
      * Tracks an in-app open.
+     * @param message in-app message
+     */
+    public void trackInAppOpen(@NonNull IterableInAppMessage message, @NonNull IterableInAppLocation location) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppOpen: message is null");
+            return;
+        }
+
+        apiClient.trackInAppOpen(message, location, inboxSessionId);
+    }
+
+    /**
+     * Tracks when a link inside an in-app is clicked
+     * @param message the in-app message to be tracked
+     * @param clickedUrl the URL of the clicked link
+     * @param clickLocation the location of the in-app for this event
+     */
+    public void trackInAppClick(@NonNull IterableInAppMessage message, @NonNull String clickedUrl, @NonNull IterableInAppLocation clickLocation) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppClick: message is null");
+            return;
+        }
+
+        apiClient.trackInAppClick(message, clickedUrl, clickLocation, inboxSessionId);
+    }
+
+    /**
+     * (DEPRECATED) Tracks an in-app open
      * @param messageId
      */
     public void trackInAppOpen(@NonNull String messageId) {
@@ -707,23 +743,6 @@ private static final String TAG = "IterableApi";
         } else {
             IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
         }
-    }
-
-    /**
-     * Tracks an in-app open.
-     * @param message in-app message
-     */
-    public void trackInAppOpen(@NonNull IterableInAppMessage message, @NonNull IterableInAppLocation location) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        if (message == null) {
-            IterableLogger.e(TAG, "trackInAppOpen: message is null");
-            return;
-        }
-
-        apiClient.trackInAppOpen(message, location, inboxSessionId);
     }
 
     /**
@@ -753,25 +772,6 @@ private static final String TAG = "IterableApi";
         }
 
         apiClient.trackInAppClick(messageId, clickedUrl);
-    }
-
-    /**
-     * Tracks when a link inside an in-app is clicked
-     * @param message the in-app message to be tracked
-     * @param clickedUrl the URL of the clicked link
-     * @param clickLocation the location of the in-app for this event
-     */
-    public void trackInAppClick(@NonNull IterableInAppMessage message, @NonNull String clickedUrl, @NonNull IterableInAppLocation clickLocation) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        if (message == null) {
-            IterableLogger.e(TAG, "trackInAppClick: message is null");
-            return;
-        }
-
-        apiClient.trackInAppClick(message, clickedUrl, clickLocation, inboxSessionId);
     }
 
     /**
