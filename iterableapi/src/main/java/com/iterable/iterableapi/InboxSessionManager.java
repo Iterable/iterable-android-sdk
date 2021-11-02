@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.iterable.iterableapi.IterableInboxSession.Impression;
-
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class InboxSessionManager {
     private static final String TAG = "InboxSessionManager";
