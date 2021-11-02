@@ -694,6 +694,11 @@ private static final String TAG = "IterableApi";
         apiClient.trackInAppOpen(messageId);
     }
 
+    /**
+     * (DEPRECATED) Tracks an in-app open
+     * @param messageId the ID of the in-app message
+     * @param location where the in-app was opened
+     */
     void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
         IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
@@ -721,6 +726,12 @@ private static final String TAG = "IterableApi";
         apiClient.trackInAppOpen(message, location, inboxSessionId);
     }
 
+    /**
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
+     * @param location where the in-app was opened
+     */
     void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
         IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
@@ -732,9 +743,9 @@ private static final String TAG = "IterableApi";
     }
 
     /**
-     * Tracks an InApp click.
-     * @param messageId
-     * @param clickedUrl
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
      */
     public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
         if (!checkSDKInitialization()) {
@@ -745,9 +756,10 @@ private static final String TAG = "IterableApi";
     }
 
     /**
-     * Tracks an InApp click.
-     * @param message in-app message
-     * @param clickedUrl
+     * Tracks when a link inside an in-app is clicked
+     * @param message the in-app message to be tracked
+     * @param clickedUrl the URL of the clicked link
+     * @param clickLocation the location of the in-app for this event
      */
     public void trackInAppClick(@NonNull IterableInAppMessage message, @NonNull String clickedUrl, @NonNull IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
@@ -762,6 +774,13 @@ private static final String TAG = "IterableApi";
         apiClient.trackInAppClick(message, clickedUrl, clickLocation, inboxSessionId);
     }
 
+    /**
+     * (DEPRECATED) Tracks when an in-app has been closed
+     * @param messageId the ID of the in-app message
+     * @param clickedURL the URL of the clicked link
+     * @param closeAction the method of how the in-app was closed
+     * @param clickLocation where the in-app was closed
+     */
     void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
@@ -773,10 +792,11 @@ private static final String TAG = "IterableApi";
     }
 
     /**
-     *Tracks InApp Close events.
-     * @param message in-app message
-     * @param clickedURL clicked Url if available
-     * @param clickLocation location of the click
+     * Tracks when an in-app has been closed
+     * @param message the in-app message to be tracked
+     * @param clickedURL the URL of the clicked link
+     * @param closeAction the method of how the in-app was closed
+     * @param clickLocation the location of the in-app for this event
      */
     void trackInAppClose(@NonNull IterableInAppMessage message, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
@@ -791,6 +811,9 @@ private static final String TAG = "IterableApi";
         apiClient.trackInAppClose(message, clickedURL, closeAction, clickLocation, inboxSessionId);
     }
 
+    /**
+     * Tracks in-app delivery events (per in-app)
+     * @param message the in-app message to be tracked as delivered */
     void trackInAppDelivery(@NonNull IterableInAppMessage message) {
         if (!checkSDKInitialization()) {
             return;
