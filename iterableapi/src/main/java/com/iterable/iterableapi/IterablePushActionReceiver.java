@@ -28,9 +28,6 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.cancel(requestCode);
 
-        // Dismiss the notifications panel
-        context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-
         String actionName = intent.getAction();
         if (IterableConstants.ACTION_PUSH_ACTION.equalsIgnoreCase(actionName)) {
             handlePushAction(context, intent);
