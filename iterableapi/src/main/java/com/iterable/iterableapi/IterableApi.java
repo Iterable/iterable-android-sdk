@@ -716,81 +716,7 @@ private static final String TAG = "IterableApi";
 
         apiClient.trackInAppClick(message, clickedUrl, clickLocation, inboxSessionId);
     }
-
-    /**
-     * (DEPRECATED) Tracks an in-app open
-     * @param messageId
-     */
-    public void trackInAppOpen(@NonNull String messageId) {
-        IterableLogger.printInfo();
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.trackInAppOpen(messageId);
-    }
-
-    /**
-     * (DEPRECATED) Tracks an in-app open
-     * @param messageId the ID of the in-app message
-     * @param location where the in-app was opened
-     */
-    void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
-        IterableLogger.printInfo();
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppOpen(message, location);
-        } else {
-            IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
-        }
-    }
-
-    /**
-     * (DEPRECATED) Tracks when a link inside an in-app is clicked
-     * @param messageId the ID of the in-app message
-     * @param clickedUrl the URL of the clicked link
-     * @param location where the in-app was opened
-     */
-    void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
-        IterableLogger.printInfo();
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppClick(message, clickedUrl, location);
-        } else {
-            trackInAppClick(messageId, clickedUrl);
-        }
-    }
-
-    /**
-     * (DEPRECATED) Tracks when a link inside an in-app is clicked
-     * @param messageId the ID of the in-app message
-     * @param clickedUrl the URL of the clicked link
-     */
-    public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.trackInAppClick(messageId, clickedUrl);
-    }
-
-    /**
-     * (DEPRECATED) Tracks when an in-app has been closed
-     * @param messageId the ID of the in-app message
-     * @param clickedURL the URL of the clicked link
-     * @param closeAction the method of how the in-app was closed
-     * @param clickLocation where the in-app was closed
-     */
-    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppClose(message, clickedURL, closeAction, clickLocation);
-            IterableLogger.printInfo();
-        } else {
-            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
-        }
-    }
-
+    
     /**
      * Tracks when an in-app has been closed
      * @param message the in-app message to be tracked
@@ -875,6 +801,80 @@ private static final String TAG = "IterableApi";
         }
 
         apiClient.trackInboxSession(session, inboxSessionId);
+    }
+
+    /**
+     * (DEPRECATED) Tracks an in-app open
+     * @param messageId
+     */
+    public void trackInAppOpen(@NonNull String messageId) {
+        IterableLogger.printInfo();
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.trackInAppOpen(messageId);
+    }
+
+    /**
+     * (DEPRECATED) Tracks an in-app open
+     * @param messageId the ID of the in-app message
+     * @param location where the in-app was opened
+     */
+    void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
+        IterableLogger.printInfo();
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppOpen(message, location);
+        } else {
+            IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
+        }
+    }
+
+    /**
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
+     * @param location where the in-app was opened
+     */
+    void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
+        IterableLogger.printInfo();
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClick(message, clickedUrl, location);
+        } else {
+            trackInAppClick(messageId, clickedUrl);
+        }
+    }
+
+    /**
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
+     */
+    public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.trackInAppClick(messageId, clickedUrl);
+    }
+
+    /**
+     * (DEPRECATED) Tracks when an in-app has been closed
+     * @param messageId the ID of the in-app message
+     * @param clickedURL the URL of the clicked link
+     * @param closeAction the method of how the in-app was closed
+     * @param clickLocation where the in-app was closed
+     */
+    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClose(message, clickedURL, closeAction, clickLocation);
+            IterableLogger.printInfo();
+        } else {
+            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
+        }
     }
 
 //---------------------------------------------------------------------------------------
