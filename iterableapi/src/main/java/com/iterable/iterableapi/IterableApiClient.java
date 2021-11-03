@@ -275,21 +275,24 @@ class IterableApiClient {
         }
     }
 
-    void trackInAppClose(@NonNull IterableInAppMessage message, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
+    void trackInAppClose(@NonNull IterableInAppMessage message, @Nullable String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail());
-            requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
+//            requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail()); // not needed due to addEmailOrUserIdToJson(requestJSON)?
+//            requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId()); // not needed due to addEmailOrUserIdToJson(requestJSON)?
+            
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
+            requestJSON.putOpt(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
             requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
             if (clickLocation == IterableInAppLocation.INBOX) {
                 addInboxSessionID(requestJSON, inboxSessionId);
             }
+
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
         } catch (JSONException e) {
             e.printStackTrace();

@@ -724,7 +724,7 @@ private static final String TAG = "IterableApi";
      * @param closeAction the method of how the in-app was closed
      * @param clickLocation the location of the in-app for this event
      */
-    void trackInAppClose(@NonNull IterableInAppMessage message, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
+    void trackInAppClose(@NonNull IterableInAppMessage message, @Nullable String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
