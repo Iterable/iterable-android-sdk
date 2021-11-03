@@ -282,7 +282,6 @@ class IterableApiClient {
             addEmailOrUserIdToJson(requestJSON);
 //            requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail()); // not needed due to addEmailOrUserIdToJson(requestJSON)?
 //            requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId()); // not needed due to addEmailOrUserIdToJson(requestJSON)?
-            
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
             requestJSON.putOpt(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
