@@ -5,7 +5,7 @@ import androidx.annotation.RestrictTo;
 import java.util.Date;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ImpressionData {
+class ImpressionData {
     final String messageId;
     final boolean silentInbox;
     int displayCount = 0;
