@@ -14,37 +14,37 @@ public class IterableLogger {
     }
 
     public static void d(String tag, String msg, Throwable tr) {
-        if (isLoggableLevel(Log.DEBUG)) {
+        if (isLoggable(Log.DEBUG)) {
             Log.d(tag, " 💚 " + msg, tr);
         }
     }
 
     public static void v(String tag, String msg) {
-        if (isLoggableLevel(Log.VERBOSE)) {
+        if (isLoggable(Log.VERBOSE)) {
             Log.v(tag, msg);
         }
     }
 
     public static void w(String tag, String msg) {
-        if (isLoggableLevel(Log.WARN)) {
+        if (isLoggable(Log.WARN)) {
             Log.w(tag, " 🧡️ " + msg);
         }
     }
 
     public static void w(String tag, String msg, Throwable tr) {
-        if (isLoggableLevel(Log.WARN)) {
+        if (isLoggable(Log.WARN)) {
             Log.w(tag, " 🧡 " + msg, tr);
         }
     }
 
     public static void e(String tag, String msg) {
-        if (isLoggableLevel(Log.ERROR)) {
+        if (isLoggable(Log.ERROR)) {
             Log.e(tag, " ❤️ " + msg);
         }
     }
 
     public static void e(String tag, String msg, Throwable tr) {
-        if (isLoggableLevel(Log.ERROR)) {
+        if (isLoggable(Log.ERROR)) {
             Log.e(tag, " ❤️ " + msg, tr);
         }
     }
@@ -55,6 +55,15 @@ public class IterableLogger {
         } catch (Exception e) {
             IterableLogger.e("Iterable Call", "Couldn't print info");
         }
+    }
+
+    private static boolean isLoggable(int messageLevel) {
+        boolean isDebug = ((IterableApi.getInstance().getMainActivityContext().getApplicationInfo().flags & IterableApi.getInstance().getMainActivityContext().getApplicationInfo().FLAG_DEBUGGABLE) != 0);
+        if(isDebug){
+            return isLoggableLevel(messageLevel);
+        }
+        // Log level will be set to WARNING and above if in release mode.
+        return messageLevel >= Log.WARN;
     }
 
     private static boolean isLoggableLevel(int messageLevel) {
