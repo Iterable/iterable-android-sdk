@@ -29,7 +29,11 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
         mNotificationManager.cancel(requestCode);
 
         // Dismiss the notifications panel
-        context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        try {
+            context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        } catch (SecurityException e) {
+            IterableLogger.w(TAG, e.getLocalizedMessage());
+        }
 
         String actionName = intent.getAction();
         if (IterableConstants.ACTION_PUSH_ACTION.equalsIgnoreCase(actionName)) {
