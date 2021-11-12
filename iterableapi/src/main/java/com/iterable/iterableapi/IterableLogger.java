@@ -8,7 +8,7 @@ import android.util.Log;
 public class IterableLogger {
 
     public static void d(String tag, String msg) {
-        if (isLoggableLevel(Log.DEBUG)) {
+        if (isLoggable(Log.DEBUG)) {
             Log.d(tag, " 💚 " + msg);
         }
     }
@@ -59,7 +59,7 @@ public class IterableLogger {
 
     private static boolean isLoggable(int messageLevel) {
         boolean isDebug = ((IterableApi.getInstance().getMainActivityContext().getApplicationInfo().flags & IterableApi.getInstance().getMainActivityContext().getApplicationInfo().FLAG_DEBUGGABLE) != 0);
-        if(isDebug){
+        if (isDebug) {
             return isLoggableLevel(messageLevel);
         }
         // Log level will be set to WARNING and above if in release mode.
