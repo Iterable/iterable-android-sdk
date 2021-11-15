@@ -17,8 +17,12 @@ public class InboxSessionManager {
     IterableInboxSession session = new IterableInboxSession();
     Map<String, ImpressionData> impressions = new HashMap<>();
 
+    public boolean isTracking() {
+        return session.sessionStartTime != null;
+    }
+
     public void startSession() {
-        if (session.sessionStartTime != null) {
+        if (isTracking()) {
             IterableLogger.e(TAG, "Inbox session started twice");
             return;
         }
@@ -42,7 +46,7 @@ public class InboxSessionManager {
     }
 
     public void endSession() {
-        if (session.sessionStartTime == null) {
+        if (!isTracking()) {
             IterableLogger.e(TAG, "Inbox Session ended without start");
             return;
         }
