@@ -11,7 +11,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 27
 
-        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.3.8\""
+        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.3.9\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -71,7 +71,7 @@ ext {
     siteUrl = 'https://github.com/Iterable/iterable-android-sdk'
     gitUrl = 'https://github.com/Iterable/iterable-android-sdk.git'
 
-    libraryVersion = '3.3.8'
+    libraryVersion = '3.3.9'
 
     developerId = 'davidtruong'
     developerName = 'David Truong'

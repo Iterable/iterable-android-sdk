@@ -15,6 +15,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.9)
+
+#### Changed
+- Auth keys and API keys will no more be logged in Android Logcat for security reasons.
+
+#### Fixed
+- Crash on closing system dialog is now addressed for Android 12+.
+
 ## [3.3.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.8)
 #### Fixed
 - Fixed an issue where push notifications retained data from previously sent notifications.
