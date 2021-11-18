@@ -245,10 +245,17 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         Iterator<?> headerKeys = urlConnection.getRequestProperties().keySet().iterator();
         while (headerKeys.hasNext()) {
             String key = (String) headerKeys.next();
-            headerString.append(key + " : " + urlConnection.getRequestProperties().get(key) + "\n");
+            if (isSensitive(key)) {
+                continue;
+            }
+            headerString.append(key).append(" : ").append(urlConnection.getRequestProperties().get(key)).append("\n");
         }
         headerString.append("}");
         return headerString.toString();
+    }
+
+    private static boolean isSensitive(String key) {
+        return (key.equals(IterableConstants.HEADER_API_KEY)) || key.equals(IterableConstants.HEADER_SDK_AUTHORIZATION);
     }
 
     @Override

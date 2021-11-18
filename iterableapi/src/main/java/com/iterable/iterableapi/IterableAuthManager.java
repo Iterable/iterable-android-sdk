@@ -82,10 +82,10 @@ public class IterableAuthManager {
             if (triggerExpirationRefreshTime > 0) {
                 scheduleAuthTokenRefresh(triggerExpirationRefreshTime);
             } else {
-                IterableLogger.w(TAG, "The expiringAuthTokenRefreshPeriod has already passed for the current JWT " + encodedJWT);
+                IterableLogger.w(TAG, "The expiringAuthTokenRefreshPeriod has already passed for the current JWT");
             }
         } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while parsing JWT for the expiration: " + encodedJWT, e);
+            IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
         }
     }
 
