@@ -177,10 +177,11 @@ class IterableNotificationHelper {
                 IterableLogger.d(IterableNotificationBuilder.TAG, "Request code = " + notificationBuilder.requestCode);
             }
 
-            Intent pushContentIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
-            pushContentIntent.setClass(context, IterablePushActionReceiver.class);
-            pushContentIntent.putExtras(extras);
-            pushContentIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+            //Create an intent for TrampolineActivity instead of BroadcastReceiver
+            Intent trampolineActivityIntent = new Intent(context, TrampolineActivity.class);
+            trampolineActivityIntent.putExtras(extras);
+            trampolineActivityIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+            trampolineActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
             // Action buttons
             if (notificationData.getActionButtons() != null) {
@@ -192,8 +193,8 @@ class IterableNotificationHelper {
                 }
             }
 
-            PendingIntent notificationClickedIntent = PendingIntent.getBroadcast(context, notificationBuilder.requestCode,
-                    pushContentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
+                    trampolineActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
             notificationBuilder.setContentIntent(notificationClickedIntent);
             notificationBuilder.setIsGhostPush(isGhostPush(extras));

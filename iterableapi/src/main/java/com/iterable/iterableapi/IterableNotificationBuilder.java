@@ -112,14 +112,14 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      */
     public void createNotificationActionButton(Context context, IterableNotificationData.Button button, Bundle extras) {
         Intent buttonIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
-        buttonIntent.setClass(context, IterablePushActionReceiver.class);
+        buttonIntent.setClass(context, TrampolineActivity.class);
         buttonIntent.putExtras(extras);
         buttonIntent.putExtra(IterableConstants.REQUEST_CODE, requestCode);
         buttonIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, button.identifier);
         buttonIntent.putExtra(IterableConstants.ACTION_IDENTIFIER, button.identifier);
 
-        PendingIntent pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
-                buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingButtonIntent = PendingIntent.getActivity(context, buttonIntent.hashCode(),
+                buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action
                 .Builder(NotificationCompat.BADGE_ICON_NONE, button.title, pendingButtonIntent);
