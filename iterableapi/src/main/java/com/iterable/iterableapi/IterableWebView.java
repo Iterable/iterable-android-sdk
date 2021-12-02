@@ -45,6 +45,6 @@ class IterableWebView extends WebView {
         getSettings().setUseWideViewPort(true);
 
         //resize:
-        getSettings().setJavaScriptEnabled(true);
+        getSettings().setJavaScriptEnabled(false);
     }
 }
