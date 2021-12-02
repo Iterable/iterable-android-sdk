@@ -206,6 +206,10 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set what URLs the SDK should allow to open (in addition to `https`)
+         * @param allowedProtocols an array/list of protocols (e.g. `http`, `tel`)
+         */
         @NonNull
         public Builder setAllowedProtocols(@NonNull String[] allowedProtocols) {
             this.allowedProtocols = allowedProtocols;
