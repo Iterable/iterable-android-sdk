@@ -26,7 +26,7 @@
             android:name=".TrampolineActivity"
             android:exported="false"
             android:launchMode="singleInstance"
-            android:theme="@style/Theme.MaterialComponents.Light.DarkActionBar"/>
+            android:theme="@style/TrampolineActivity.Transparent"/>
     </application>
 
     <queries>
