@@ -20,6 +20,7 @@ public final class IterableConstants {
     public static final String HEADER_SDK_VERSION       = "SDK-Version";
     public static final String HEADER_SDK_AUTHORIZATION = "Authorization";
     public static final String HEADER_SDK_AUTH_FORMAT   = "Bearer ";
+    public static final String HEADER_SDK_PROCESSOR_TYPE = "SDK-Request-Processor";
     public static final String KEY_APPLICATION_NAME     = "applicationName";
     public static final String KEY_CAMPAIGN_ID          = "campaignId";
     public static final String KEY_CURRENT_EMAIL        = "currentEmail";
@@ -38,6 +39,8 @@ public final class IterableConstants {
     public static final String KEY_PREFER_USER_ID       = "preferUserId";
     public static final String KEY_RECIPIENT_EMAIL      = "recipientEmail";
     public static final String KEY_SEND_AT              = "sendAt";
+    public static final String KEY_CREATED_AT           = "createdAt";
+    public static final String KEY_SENT_AT              = "Sent-At";
     public static final String KEY_TEMPLATE_ID          = "templateId";
     public static final String KEY_MESSAGE_CONTEXT      = "messageContext";
     public static final String KEY_MESSAGE_ID           = "messageId";
@@ -62,13 +65,14 @@ public final class IterableConstants {
     public static final String ENDPOINT_TRACK_INAPP_OPEN        = "events/trackInAppOpen";
     public static final String ENDPOINT_TRACK_INAPP_DELIVERY    = "events/trackInAppDelivery";
     public static final String ENDPOINT_TRACK_INBOX_SESSION     = "events/trackInboxSession";
+    public static final String ENDPOINT_UPDATE_CART             = "commerce/updateCart";
     public static final String ENDPOINT_TRACK_PURCHASE          = "commerce/trackPurchase";
     public static final String ENDPOINT_TRACK_PUSH_OPEN         = "events/trackPushOpen";
     public static final String ENDPOINT_UPDATE_USER             = "users/update";
     public static final String ENDPOINT_UPDATE_EMAIL            = "users/updateEmail";
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
-    public static final String ENDPOINT_DDL_MATCH               = "a/matchFp";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
+    public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -98,7 +102,6 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
     public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
     public static final String SHARED_PREFS_AUTH_TOKEN_KEY = "itbl_authtoken";
-    public static final String SHARED_PREFS_DDL_CHECKED_KEY = "itbl_ddl_checked";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
     public static final String SHARED_PREFS_OBJECT_SUFFIX = "_object";
     public static final String SHARED_PREFS_PAYLOAD_KEY = "itbl_payload";
@@ -106,6 +109,9 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_ATTRIBUTION_INFO_KEY = "itbl_attribution_info";
     public static final int    SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS = 24;
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
+    public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
+    public static final String SHARED_PREFS_OFFLINE_MODE_BETA_KEY = "offlineModeBeta";
+    public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "offlineMode";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -148,7 +154,6 @@ public final class IterableConstants {
     public static final String USER_INPUT               = "userInput";
 
     //Firebase
-    public static final String FIREBASE_RESOURCE_ID     = "firebase_database_url";
     public static final String FIREBASE_SENDER_ID       = "gcm_defaultSenderId";
     public static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
     public static final String FIREBASE_COMPATIBLE      = "firebaseCompatible";
@@ -161,6 +166,9 @@ public final class IterableConstants {
     public static final String LOCATION_HEADER_FIELD = "Location";
 
     //In-App Constants
+    public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";
+    public static final String ITERABLE_IN_APP_BGCOLOR_HEX      = "hex";
+    public static final String ITERABLE_IN_APP_BGCOLOR          = "bgColor";
     public static final String ITERABLE_IN_APP_BACKGROUND_COLOR = "backgroundColor";
     public static final String ITERABLE_IN_APP_BACKGROUND_ALPHA = "backgroundAlpha";
     public static final String ITERABLE_IN_APP_BODY             = "body";
@@ -183,6 +191,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_CUSTOM_PAYLOAD   = "customPayload";
     public static final String ITERABLE_IN_APP_TRIGGER          = "trigger";
     public static final String ITERABLE_IN_APP_TRIGGER_TYPE     = "type";
+    public static final String ITERABLE_IN_APP_PRIORITY_LEVEL   = "priorityLevel";
     public static final String ITERABLE_IN_APP_SAVE_TO_INBOX    = "saveToInbox";
     public static final String ITERABLE_IN_APP_SILENT_INBOX     = "silentInbox";
     public static final String ITERABLE_IN_APP_INBOX_METADATA   = "inboxMetadata";
@@ -204,6 +213,15 @@ public final class IterableConstants {
     public static final String ITERABLE_INBOX_IMPRESSIONS                = "impressions";
     public static final String ITERABLE_INBOX_IMP_DISPLAY_COUNT          = "displayCount";
     public static final String ITERABLE_INBOX_IMP_DISPLAY_DURATION       = "displayDuration";
+    public static final String ITERABLE_IN_APP_SHOULD_ANIMATE            = "shouldAnimate";
+    public static final int ITERABLE_IN_APP_ANIMATION_DURATION           = 500;
+    public static final int ITERABLE_IN_APP_BACKGROUND_ANIMATION_DURATION = 300;
+
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_LOW           = 400.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_MEDIUM        = 300.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_HIGH          = 200.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_CRITICAL      = 100.0;
+    public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_UNASSIGNED    = 300.5;
 
     public static final String ITERABLE_IN_APP_TYPE_BOTTOM  = "BOTTOM";
     public static final String ITERABLE_IN_APP_TYPE_CENTER  = "MIDDLE";
@@ -217,6 +235,9 @@ public final class IterableConstants {
     // Custom actions handled by the SDK
     public static final String ITERABLE_IN_APP_ACTION_DELETE    = "delete";
 
+    //Offline operation
+    public static final long OFFLINE_TASKS_LIMIT                = 1000;
+
     // URL schemes
     public static final String URL_SCHEME_ITBL = "itbl://";
     public static final String URL_SCHEME_ITERABLE = "iterable://";
@@ -225,4 +246,8 @@ public final class IterableConstants {
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
     public static final String ITBL_PLATFORM_ANDROID = "Android";
     public static final String ITBL_KEY_SDK_VERSION_NUMBER = BuildConfig.ITERABLE_SDK_VERSION;
+    public static final String ITBL_SYSTEM_VERSION = "systemVersion";
+
+    public static final String NO_MESSAGES_TITLE = "noMessagesTitle";
+    public static final String NO_MESSAGES_BODY = "noMessagesBody";
 }

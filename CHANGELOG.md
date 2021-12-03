@@ -15,6 +15,169 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.3.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.9)
+
+#### Changed
+- Auth keys and API keys will no more be logged in Android Logcat for security reasons.
+
+#### Fixed
+- Crash on closing system dialog is now addressed for Android 12+.
+
+## [3.3.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.8)
+#### Fixed
+- Fixed an issue where push notifications retained data from previously sent notifications.
+
+## [3.3.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.7)
+#### Fixed
+- When syncing in-app queues, new messages that already have `read` set to `true` will not spawn an `InAppDelivery` event.
+
+## [3.3.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.6)
+#### Fixed
+- Added `android:exported` attribute to activities as required in Android 12.
+- Pending intents now specify its mutability as required in Android 12. (Thanks to @sidcpatel!)
+
+## [3.3.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.5)
+#### Added
+- Push notifications will now have timestamps on devices with SDK 17 and above.
+
+## [3.3.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.4)
+#### Added
+- `updateCart` has been added to the SDK
+- `dataFields` have been added as a field to `CommerceItem`
+
+## [3.3.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.3)
+#### Fixed
+- Devices with Android 11 should now be able to open browser when performing open url actions instead of landing on the app.
+
+## [3.3.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.2)
+#### Added
+- Added a new static method - `setContext` to `IterableAPI`. Use this method in your ReactNative project to pass context to IterableSDK from Application - `onCreate` method.
+
+## [3.3.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.1)
+#### Added
+- The following properties have been added to the `CommerceItem` class:
+
+  - `sku` - The item's SKU
+  - `description` - A description of the item
+  - `url` - A URL associated with the item
+  - `imageUrl` - A URL that points to an image of the item 
+  - `categories` - Categories associated with the item 
+
+  Set these values on `CommerceItem` objects passed to the `IterableApi.trackPurchase` method.
+
+#### Changed
+
+- To resolve a breaking change introduced in Firebase Cloud Messaging [version 22.0.0](https://firebase.google.com/support/release-notes/android#messaging_v22-0-0), [version 3.3.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.1) of Iterable's Android SDK bumps the minimum required version of its Firebase Android dependency to [20.3.0](https://firebase.google.com/support/release-notes/android#messaging_v20-3-0).
+
+  If upgrading to version 3.3.1 causes your app to crash on launch, or your build to fail, add the following lines to your app's `build.gradle` file:
+
+  ```groovy
+  android {
+      ...
+      compileOptions {
+          sourceCompatibility JavaVersion.VERSION_1_8
+          targetCompatibility JavaVersion.VERSION_1_8
+      }
+      ...
+  }
+  ```
+  
+- Updated minimum version for `firebase-messaging` to 20.3.0 to use `FirebaseMessaging.getToken()` instead of deprecated `FirebaseInstanceId.getToken()`.
+- Notifications will now show timestamp.
+
+## [3.3.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0)
+#### Added
+- **Offline events processing** - This feature saves a local copy of events triggered in your app while the device is offline (up to 1000 events). When a connection is re-established and your app is in the foreground, the events will be sent to Iterable.
+This feature is off by default, and we're rolling it out on a customer-by-customer basis. After you start using this version of the SDK, we'll send you a message before we enable the feature on your account (unfortunately, we can't give you an exact timeline for when this will happen). If you have any questions, talk to your Iterable customer success manager.
+
+#### Removed
+- Removed `legacyGCMSenderId` from `IterableConfig`.
+- Removed deprecated functions `spawnInAppNotification` and redirected `getInAppMessages` to be called from `IterableInAppManager`.
+
+#### Changed
+- Updated minimum version for `firebase-messaging` to 19.0.0.
+- Added dependency on Kotlin standard library.
+
+## [3.2.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.14)
+#### Fixed
+- Non-silent inbox messages will now properly account for the read state.
+
+## [3.2.13](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.13)
+#### Added
+- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
+
+## [3.3.0-beta3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0-beta3)
+#### Added
+- Support for the display of a custom message (title and body) in an empty mobile inbox.
+    For more details, see [Customizing Mobile Inbox on Android](https://iterable.zendesk.com/hc/articles/360039189931#empty-state)
+- Support for syncing in-app message read state across multiple devices:
+  - When the SDK fetches in-app messages from Iterable, it examines each message's `read` field to determine if it has already been read.
+  - The SDK's default implementation no longer automatically displays in-app messages that have already been seen on another device (even if those messages were _not_ configured to go directly to the inbox).
+
+  If you'd like to try out these beta features, talk with your Iterable customer success manager.
+
+## [3.2.12](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.12)
+#### Added
+- Support for the display of a custom message (title and body) in an empty mobile inbox.
+    For more details, see [Customizing Mobile Inbox on Android](https://iterable.zendesk.com/hc/articles/360039189931#empty-state)
+- Support for syncing in-app message read state across multiple devices:
+  - When the SDK fetches in-app messages from Iterable, it examines each message's `read` field to determine if it has already been read.
+  - The SDK's default implementation no longer automatically displays in-app messages that have already been seen on another device (even if those messages were _not_ configured to go directly to the inbox).
+
+## [3.2.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.11)
+#### Changed
+- Changed the timeout for GET calls (`/inApp/getMessages` in particular) from 3 to 10 seconds.
+
+#### Fixed
+- Fixed a crash that would sometimes happen when dismissing an in-app message while the app is in background.
+
+## [3.3.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.0-beta1)
+#### Added
+- This beta SDK release includes support for two new Iterable features (both of which are in beta):
+
+	- Offline events processing - Capturing engagement events when a device is offline and sending them to Iterable when a network connection is reestablished
+	- In-app message prioritization - Ordering the display of in-app messages based on a priority you select in Iterable when creating in-app campaigns
+
+  If you'd like to try out these beta features, talk with your Iterable customer success manager.
+
+## [3.2.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.10)
+#### Fixed
+- Fixed Firebase check to work without a Firebase database URL in `google-services.json` that may not be present in some recently created Firebase projects.
+
+## [3.2.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.9)
+#### Added
+- Added support for delayed initialization of the SDK. While we still recommend calling `IterableApi.initialize` in `Application#onCreate`, apps initializing the Iterable SDK later should now work properly with push actions and background push notifications without issues.
+
+#### Fixed
+- Fixed `IllegalStateException` crash in `IterableInAppFragmentHTMLNotification` by adding safety checks before dismissing the in-app dialog.
+- Fixed a crash in the in-app dialog that could occur in some cases when the device is rotated while the in-app dialog is beginning to load.
+- Fixed a crash in `IterablePushActionReceiver` when `extras` are `null`. This was only happening in automated analysis tools and not in production, but was nevertheless showing up in crash reports.
+
+## [3.2.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.8)
+#### Added
+- Added support for in-app animations. Select the checkbox to use preset animations when creating a template to see this feature in action.
+- Added support to set custom color and transparency for in-app background.
+
+#### Fixed
+- Fixed an issue where closing an in-app could crash the app if the message gets deleted from another logged in device while it is being displayed.
+
+#### Changed
+- The method `getExpiresAt` in `IterableInAppMessage` is now public.
+
+## [3.2.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.7)
+#### Added
+- Added authentication support.
+
+## [3.2.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.6)
+#### Added
+- Added a new method - `setAutoDisplayPaused` to `InAppManager`. This method pauses the display of in-app messages and can be used to prevent interruptions in certain areas of your app.
+
+#### Changed
+- Changed `messageId` argument to be non-null in `trackPushOpen`.
+
+#### Fixed
+- Fixed an issue where the in-app message queue wasn't being refreshed on app launch.
+- Removed warning messages from logs when using string resources for notification channel name.
 
 ## [3.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.2.5)
 #### Changed

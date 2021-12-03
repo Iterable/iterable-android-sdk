@@ -1,8 +1,8 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 28
-
+    compileSdkVersion 29
 
     defaultConfig {
         minSdkVersion 15
@@ -11,7 +11,6 @@ android {
         versionName "1.0"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
     }
 
     buildTypes {
@@ -19,18 +18,18 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+
         debug {
             testCoverageEnabled true
         }
     }
-
 }
 
 dependencies {
     api project(':iterableapi')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.0.0'
-
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
@@ -40,9 +39,6 @@ dependencies {
 }
 
 ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'Iterable-SDK-UI'
-
     publishedGroupId = 'com.iterable'
     libraryName = 'iterableapi-ui'
     artifact = 'iterableapi-ui'
@@ -52,7 +48,7 @@ ext {
     siteUrl = 'https://github.com/Iterable/iterable-android-sdk'
     gitUrl = 'https://github.com/Iterable/iterable-android-sdk.git'
 
-    libraryVersion = '3.2.5'
+    libraryVersion = '3.3.9'
 
     developerId = 'davidtruong'
     developerName = 'David Truong'
@@ -63,9 +59,15 @@ ext {
     allLicenses = ["Apache-2.0"]
 }
 
-
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+if(hasProperty("mavenPublishEnabled")) {
+    apply from: '../maven-push.gradle'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
 
 // A hack to import the classpath and BuildConfig into the javadoc task
 afterEvaluate {

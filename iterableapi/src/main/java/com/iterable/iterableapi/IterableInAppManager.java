@@ -18,6 +18,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +74,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         this.displayer = displayer;
         this.activityMonitor = activityMonitor;
         this.activityMonitor.addCallback(this);
-
+        syncInApp();
     }
 
     /**
@@ -179,6 +181,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                     } catch (JSONException e) {
                         IterableLogger.e(TAG, e.toString());
                     }
+                } else {
+                    scheduleProcessing();
                 }
             }
         });
@@ -235,8 +239,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         })) {
             setRead(message, true);
             if (consume) {
-                // Remove the message without tracking
-                removeMessage(message);
+                message.markForDeletion(true);
             }
         }
     }
@@ -306,24 +309,64 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private void syncWithRemoteQueue(List<IterableInAppMessage> remoteQueue) {
         boolean changed = false;
         Map<String, IterableInAppMessage> remoteQueueMap = new HashMap<>();
+
         for (IterableInAppMessage message : remoteQueue) {
             remoteQueueMap.put(message.getMessageId(), message);
-            if (storage.getMessage(message.getMessageId()) == null) {
+
+            boolean isInAppStored = storage.getMessage(message.getMessageId()) != null;
+
+            if (!isInAppStored) {
                 storage.addMessage(message);
                 onMessageAdded(message);
+
                 changed = true;
             }
+
+            if (isInAppStored) {
+                IterableInAppMessage localMessage = storage.getMessage(message.getMessageId());
+
+                boolean shouldOverwriteInApp = !localMessage.isRead() && message.isRead();
+
+                if (shouldOverwriteInApp) {
+                    localMessage.setRead(message.isRead());
+
+                    changed = true;
+                }
+            }
         }
+
         for (IterableInAppMessage localMessage : storage.getMessages()) {
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 storage.removeMessage(localMessage);
+
                 changed = true;
             }
         }
+
         scheduleProcessing();
+
         if (changed) {
             notifyOnChange();
         }
+    }
+
+    private List<IterableInAppMessage> getMessagesSortedByPriorityLevel(List<IterableInAppMessage> messages) {
+        List<IterableInAppMessage> messagesByPriorityLevel = messages;
+
+        Collections.sort(messagesByPriorityLevel, new Comparator<IterableInAppMessage>() {
+            @Override
+            public int compare(IterableInAppMessage message1, IterableInAppMessage message2) {
+                if (message1.getPriorityLevel() < message2.getPriorityLevel()) {
+                    return -1;
+                } else if (message1.getPriorityLevel() == message2.getPriorityLevel()) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        });
+
+        return messagesByPriorityLevel;
     }
 
     private void processMessages() {
@@ -334,8 +377,11 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         IterableLogger.printInfo();
 
         List<IterableInAppMessage> messages = getMessages();
-        for (IterableInAppMessage message : messages) {
-            if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE) {
+
+        List<IterableInAppMessage> messagesByPriorityLevel = getMessagesSortedByPriorityLevel(messages);
+
+        for (IterableInAppMessage message : messagesByPriorityLevel) {
+            if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE && !message.isRead()) {
                 IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
@@ -364,7 +410,9 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void onMessageAdded(IterableInAppMessage message) {
-        api.trackInAppDelivery(message);
+        if (!message.isRead()) {
+            api.trackInAppDelivery(message);
+        }
     }
 
     private boolean isShowingInApp() {
@@ -387,9 +435,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     @Override
     public void onSwitchToForeground() {
-        scheduleProcessing();
         if (IterableUtil.currentTimeMillis() - lastSyncTime > MOVE_TO_FOREGROUND_SYNC_INTERVAL_MS) {
             syncInApp();
+        } else {
+            scheduleProcessing();
         }
     }
 

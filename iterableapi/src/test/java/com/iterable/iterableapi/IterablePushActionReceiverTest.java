@@ -11,8 +11,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.RuntimeEnvironment;
 
 import java.util.concurrent.TimeUnit;
@@ -27,12 +25,14 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
-@PrepareForTest(IterableActionRunner.class)
-public class IterablePushActionReceiverTest extends BasePowerMockTest {
+public class IterablePushActionReceiverTest extends BaseTest {
 
     private MockWebServer server;
+    private IterableActionRunner.IterableActionRunnerImpl actionRunnerMock;
 
     @Before
     public void setUp() throws Exception {
@@ -40,10 +40,15 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
         IterableTestUtils.createIterableApi();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+
+        actionRunnerMock = mock(IterableActionRunner.IterableActionRunnerImpl.class);
+        IterableActionRunner.instance = actionRunnerMock;
     }
 
     @After
     public void tearDown() throws Exception {
+        IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
+
         server.shutdown();
         server = null;
     }
@@ -70,14 +75,12 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
         intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
         intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
-        PowerMockito.mockStatic(IterableActionRunner.class);
 
         iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
 
         // Verify that IterableActionRunner was called with the proper action
-        PowerMockito.verifyStatic(IterableActionRunner.class);
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        IterableActionRunner.executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("customAction", capturedAction.getValue().getType());
 
         // Verify that the main app activity was launched
@@ -126,14 +129,11 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
         clipDataIntent.putExtra(RemoteInput.EXTRA_RESULTS_DATA, resultsBundle);
         intent.setClipData(ClipData.newIntent(RESULTS_CLIP_LABEL, clipDataIntent));
 
-        PowerMockito.mockStatic(IterableActionRunner.class);
-
         iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
 
         // Verify that IterableActionRunner was called with the proper action
-        PowerMockito.verifyStatic(IterableActionRunner.class);
         ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
-        IterableActionRunner.executeAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).executeAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
         IterableAction capturedAction = actionCaptor.getValue();
         assertEquals("handleTextInput", capturedAction.getType());
         assertEquals("input text", capturedAction.userInput);
@@ -146,14 +146,12 @@ public class IterablePushActionReceiverTest extends BasePowerMockTest {
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
         intent.putExtras(IterableTestUtils.getBundleFromJsonResource("push_payload_legacy_deep_link.json"));
         intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
-        PowerMockito.mockStatic(IterableActionRunner.class);
 
         iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
 
         // Verify that IterableActionRunner was called with openUrl action
-        PowerMockito.verifyStatic(IterableActionRunner.class);
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        IterableActionRunner.executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("openUrl", capturedAction.getValue().getType());
         assertEquals("https://example.com", capturedAction.getValue().getData());
     }

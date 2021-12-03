@@ -5,11 +5,13 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -67,7 +69,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             IterableLogger.d(TAG, "Iterable ghost silent push received");
 
             String notificationType = extras.getString("notificationType");
-            if (notificationType != null) {
+            if (notificationType != null && IterableApi.getInstance().getMainActivityContext() != null) {
                 if (notificationType.equals("InAppUpdate")) {
                     IterableApi.getInstance().getInAppManager().syncInApp();
                 } else if (notificationType.equals("InAppRemove")) {
@@ -86,9 +88,23 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
      * Call this from a custom {@link FirebaseMessagingService} to register the new token with Iterable
      */
     public static void handleTokenRefresh() {
-        String registrationToken = FirebaseInstanceId.getInstance().getToken();
+        String registrationToken = getFirebaseToken();
         IterableLogger.d(TAG, "New Firebase Token generated: " + registrationToken);
         IterableApi.getInstance().registerForPush();
+    }
+
+    public static String getFirebaseToken() {
+        String registrationToken = null;
+        try {
+            registrationToken = Tasks.await(FirebaseMessaging.getInstance().getToken());
+        } catch (ExecutionException e) {
+            IterableLogger.e(TAG, e.getLocalizedMessage());
+        } catch (InterruptedException e) {
+            IterableLogger.e(TAG, e.getLocalizedMessage());
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Failed to fetch firebase token");
+        }
+        return registrationToken;
     }
 
     /**

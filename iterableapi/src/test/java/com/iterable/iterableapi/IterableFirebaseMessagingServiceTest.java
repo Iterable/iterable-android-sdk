@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ServiceController;
 
 import java.util.HashMap;
@@ -47,7 +46,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
         controller = Robolectric.buildService(IterableFirebaseMessagingService.class);
-        Intent intent = new Intent(RuntimeEnvironment.application, IterableFirebaseMessagingService.class);
+        Intent intent = new Intent(getContext(), IterableFirebaseMessagingService.class);
         controller.withIntent(intent).startCommand(0, 0);
 
         originalApi = IterableApi.sharedInstance;
@@ -81,7 +80,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         controller.get().onMessageReceived(builder.build());
 
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
-        verify(notificationHelperSpy).createNotification(eq(RuntimeEnvironment.application), bundleCaptor.capture());
+        verify(notificationHelperSpy).createNotification(eq(getContext()), bundleCaptor.capture());
         Map<String, String> expectedPayload = new HashMap<>();
         expectedPayload.put(IterableConstants.ITERABLE_DATA_BODY, "Message body");
         expectedPayload.put(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));

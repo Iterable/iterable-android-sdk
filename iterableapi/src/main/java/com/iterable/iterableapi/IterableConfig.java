@@ -32,12 +32,6 @@ public class IterableConfig {
     final boolean autoPushRegistration;
 
     /**
-     * GCM sender ID for the previous integration
-     * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
-     */
-    final String legacyGCMSenderId;
-
-    /**
      * When set to true, it will check for deferred deep links on first time app launch
      * after installation.
      */
@@ -60,16 +54,27 @@ public class IterableConfig {
      */
     final double inAppDisplayInterval;
 
+    /**
+     * Custom auth handler that can be used to control retrieving and storing an auth token
+     */
+    final IterableAuthHandler authHandler;
+
+    /**
+     * Duration prior to an auth expiration that a new auth token should be requested.
+     */
+    final long expiringAuthTokenRefreshPeriod;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
         customActionHandler = builder.customActionHandler;
         autoPushRegistration = builder.autoPushRegistration;
-        legacyGCMSenderId = builder.legacyGCMSenderId;
         checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
         logLevel = builder.logLevel;
         inAppHandler = builder.inAppHandler;
         inAppDisplayInterval = builder.inAppDisplayInterval;
+        authHandler = builder.authHandler;
+        expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
     }
 
     public static class Builder {
@@ -77,12 +82,12 @@ public class IterableConfig {
         private IterableUrlHandler urlHandler;
         private IterableCustomActionHandler customActionHandler;
         private boolean autoPushRegistration = true;
-        private String legacyGCMSenderId;
         private boolean checkForDeferredDeeplink;
         private int logLevel = Log.ERROR;
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
         private double inAppDisplayInterval = 30.0;
-
+        private IterableAuthHandler authHandler;
+        private long expiringAuthTokenRefreshPeriod = 60000L;
         public Builder() {}
 
         /**
@@ -131,17 +136,6 @@ public class IterableConfig {
         }
 
         /**
-         * Set the GCM sender ID for the previous integration
-         * Only set this if you're migrating from GCM to FCM and they're in different projects / have different sender IDs
-         * @param legacyGCMSenderId legacy GCM sender ID
-         */
-        @NonNull
-        public Builder setLegacyGCMSenderId(@NonNull String legacyGCMSenderId) {
-            this.legacyGCMSenderId = legacyGCMSenderId;
-            return this;
-        }
-
-        /**
          * When set to true, it will check for deferred deep links on first time app launch
          * after installation.
          * @param checkForDeferredDeeplink Enable deferred deep link checks on first launch
@@ -181,6 +175,26 @@ public class IterableConfig {
         @NonNull
         public Builder setInAppDisplayInterval(double inAppDisplayInterval) {
             this.inAppDisplayInterval = inAppDisplayInterval;
+            return this;
+        }
+
+        /**
+         * Set a custom auth handler that can be used to retrieve a new auth token
+         * @param authHandler Auth handler provided by the app
+         */
+        @NonNull
+        public Builder setAuthHandler(@NonNull IterableAuthHandler authHandler) {
+            this.authHandler = authHandler;
+            return this;
+        }
+
+        /**
+         * Set a custom period before an auth token expires to automatically retrieve a new token
+         * @param period in seconds
+         */
+        @NonNull
+        public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
+            this.expiringAuthTokenRefreshPeriod = period * 1000L;
             return this;
         }
 

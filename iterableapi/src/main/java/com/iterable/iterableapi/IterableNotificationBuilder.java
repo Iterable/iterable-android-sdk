@@ -119,7 +119,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         buttonIntent.putExtra(IterableConstants.ACTION_IDENTIFIER, button.identifier);
 
         PendingIntent pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
-                buttonIntent, 0);
+                buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action
                 .Builder(NotificationCompat.BADGE_ICON_NONE, button.title, pendingButtonIntent);

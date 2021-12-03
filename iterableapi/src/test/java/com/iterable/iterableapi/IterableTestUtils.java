@@ -37,6 +37,10 @@ public class IterableTestUtils {
     }
 
     public static void createIterableApiNew(ConfigBuilderExtender extender) {
+        createIterableApiNew(extender, userEmail);
+    }
+
+    public static void createIterableApiNew(ConfigBuilderExtender extender, String email) {
         IterableConfig.Builder builder = new IterableConfig.Builder()
                 .setAutoPushRegistration(false);
 
@@ -45,7 +49,7 @@ public class IterableTestUtils {
         }
 
         IterableApi.initialize(RuntimeEnvironment.application, apiKey, builder.build());
-        IterableApi.getInstance().setEmail(userEmail);
+        IterableApi.getInstance().setEmail(email);
     }
 
     public static void resetIterableApi() {

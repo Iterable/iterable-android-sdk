@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,30 +18,28 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Date;
 import java.util.Iterator;
 
 /**
  * Async task to handle sending data to the Iterable server
  * Created by David Truong dt@iterable.com
  */
-class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
+class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableApiResponse> {
     static final String TAG = "IterableRequest";
     static final String ITERABLE_BASE_URL = "https://api.iterable.com/api/";
 
     static String overrideUrl;
 
-    static final int DEFAULT_TIMEOUT_MS = 3000;   //3 seconds
+    static final int POST_REQUEST_DEFAULT_TIMEOUT_MS = 3000;    //3 seconds
+    static final int GET_REQUEST_DEFAULT_TIMEOUT_MS = 10000;    //10 seconds
     static final long RETRY_DELAY_MS = 2000;      //2 seconds
     static final int MAX_RETRY_COUNT = 5;
 
+    static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
+
     int retryCount = 0;
     IterableApiRequest iterableApiRequest;
-    boolean retryRequest;
-
-    private boolean success = false;
-    private String failureReason;
-    private String requestResult;
-    private @Nullable JSONObject requestResultJson;
 
     /**
      * Sends the given request to Iterable using a HttpUserConnection
@@ -48,12 +47,19 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
      * @param params
      * @return
      */
-    protected String doInBackground(IterableApiRequest... params) {
+    protected IterableApiResponse doInBackground(IterableApiRequest... params) {
         if (params != null && params.length > 0) {
             iterableApiRequest = params[0];
         }
 
-        requestResult = null;
+        return executeApiRequest(iterableApiRequest);
+    }
+
+    @WorkerThread
+    static IterableApiResponse executeApiRequest(IterableApiRequest iterableApiRequest) {
+        IterableApiResponse apiResponse = null;
+        String requestResult = null;
+
         if (iterableApiRequest != null) {
             URL url;
             HttpURLConnection urlConnection = null;
@@ -77,13 +83,14 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
 
-                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                    urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setReadTimeout(GET_REQUEST_DEFAULT_TIMEOUT_MS);
+                    urlConnection.setConnectTimeout(GET_REQUEST_DEFAULT_TIMEOUT_MS);
 
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-
+                    urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.getProcessorType().toString());
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
                     }
@@ -96,15 +103,16 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     urlConnection.setDoOutput(true);
                     urlConnection.setRequestMethod(iterableApiRequest.requestType);
 
-                    urlConnection.setReadTimeout(DEFAULT_TIMEOUT_MS);
-                    urlConnection.setConnectTimeout(DEFAULT_TIMEOUT_MS);
+                    urlConnection.setReadTimeout(POST_REQUEST_DEFAULT_TIMEOUT_MS);
+                    urlConnection.setConnectTimeout(POST_REQUEST_DEFAULT_TIMEOUT_MS);
 
                     urlConnection.setRequestProperty("Accept", "application/json");
                     urlConnection.setRequestProperty("Content-Type", "application/json");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-
+                    urlConnection.setRequestProperty(IterableConstants.KEY_SENT_AT, String.valueOf(new Date().getTime() / 1000));
+                    urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PROCESSOR_TYPE, iterableApiRequest.getProcessorType().toString());
                     if (iterableApiRequest.authToken != null) {
                         urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_AUTHORIZATION, IterableConstants.HEADER_SDK_AUTH_FORMAT + iterableApiRequest.authToken);
                     }
@@ -142,7 +150,7 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                     in.close();
                     requestResult = response.toString();
                 } catch (IOException e) {
-                    logError(baseUrl, e);
+                    logError(iterableApiRequest, baseUrl, e);
                     error = e.getMessage();
                 }
 
@@ -156,13 +164,17 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                             "Response from : " + baseUrl + iterableApiRequest.resourcePath);
                     IterableLogger.v(TAG, jsonResponse.toString(2));
                 } catch (Exception e) {
-                    logError(baseUrl, e);
+                    logError(iterableApiRequest, baseUrl, e);
                     jsonError = e.getMessage();
                 }
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
-                    handleFailure("Invalid API Key", jsonResponse);
+                    if (matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
+                        apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
+                    } else {
+                        apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
+                    }
                 } else if (responseCode >= 400) {
                     String errorMessage = "Invalid Request";
 
@@ -170,40 +182,39 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
                         errorMessage = jsonResponse.getString("msg");
                     } else if (responseCode >= 500) {
                         errorMessage = "Internal Server Error";
-                        retryRequest = true;
                     }
 
-                    handleFailure(errorMessage, jsonResponse);
+                    apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, errorMessage);
                 } else if (responseCode == 200) {
                     if (error == null && requestResult.length() > 0) {
                         if (jsonError != null) {
-                            handleFailure("Could not parse json: " + jsonError, null);
+                            apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Could not parse json: " + jsonError);
                         } else if (jsonResponse != null) {
-                            handleSuccess(jsonResponse);
+                            apiResponse = IterableApiResponse.success(responseCode, requestResult, jsonResponse);
                         } else {
-                            handleFailure("Response is not a JSON object", jsonResponse);
+                            apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Response is not a JSON object");
                         }
                     } else if (error == null && requestResult.length() == 0) {
-                        handleFailure("No data received", jsonResponse);
+                        apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "No data received");
                     } else if (error != null) {
-                        handleFailure(error, null);
+                        apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, error);
                     }
                 } else {
-                    handleFailure("Received non-200 response: " + responseCode, jsonResponse);
+                    apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Received non-200 response: " + responseCode);
                 }
             } catch (JSONException e) {
-                logError(baseUrl, e);
-                handleFailure(e.getMessage(), null);
+                logError(iterableApiRequest, baseUrl, e);
+                apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (IOException e) {
-                logError(baseUrl, e);
-                handleFailure(e.getMessage(), null);
+                logError(iterableApiRequest, baseUrl, e);
+                apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (ArrayIndexOutOfBoundsException e) {
                 // This exception is sometimes thrown from the inside of HttpUrlConnection/OkHttp
-                logError(baseUrl, e);
-                handleFailure(e.getMessage(), null);
+                logError(iterableApiRequest, baseUrl, e);
+                apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (Exception e) {
-                logError(baseUrl, e);
-                handleFailure(e.getMessage(), null);
+                logError(iterableApiRequest, baseUrl, e);
+                apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -211,43 +222,49 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             }
             IterableLogger.v(TAG, "======================================");
         }
-        return requestResult;
+        return apiResponse;
     }
 
-    private void logError(String baseUrl, Exception e) {
+    private static boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {
+        try {
+            return jsonResponse != null && jsonResponse.has("code") && jsonResponse.getString("code").equals(errorCode);
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+
+    private static void logError(IterableApiRequest iterableApiRequest, String baseUrl, Exception e) {
         IterableLogger.e(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
                 "Exception occurred for : " + baseUrl + iterableApiRequest.resourcePath);
         IterableLogger.e(TAG, e.getMessage(), e);
     }
 
-    private String buildHeaderString(HttpURLConnection urlConnection) {
+    private static String buildHeaderString(HttpURLConnection urlConnection) {
         StringBuilder headerString = new StringBuilder();
         headerString.append("\nHeaders { \n");
         Iterator<?> headerKeys = urlConnection.getRequestProperties().keySet().iterator();
         while (headerKeys.hasNext()) {
             String key = (String) headerKeys.next();
-            headerString.append(key + " : " + urlConnection.getRequestProperties().get(key) + "\n");
+            if (isSensitive(key)) {
+                continue;
+            }
+            headerString.append(key).append(" : ").append(urlConnection.getRequestProperties().get(key)).append("\n");
         }
         headerString.append("}");
         return headerString.toString();
     }
 
-    private void handleSuccess(@NonNull JSONObject data) {
-        requestResultJson = data;
-        success = true;
-    }
-
-    private void handleFailure(@NonNull String reason, @Nullable JSONObject data) {
-        requestResultJson = data;
-        failureReason = reason;
-        success = false;
+    private static boolean isSensitive(String key) {
+        return (key.equals(IterableConstants.HEADER_API_KEY)) || key.equals(IterableConstants.HEADER_SDK_AUTHORIZATION);
     }
 
     @Override
-    protected void onPostExecute(String s) {
+    protected void onPostExecute(IterableApiResponse response) {
+        boolean retryRequest = !response.success && response.responseCode >= 500;
+
         if (retryRequest && retryCount <= MAX_RETRY_COUNT) {
-            final IterableRequest request = new IterableRequest();
-            request.setRetryCount(retryCount + 1);
+            final IterableRequestTask requestTask = new IterableRequestTask();
+            requestTask.setRetryCount(retryCount + 1);
 
             long delay = 0;
             if (retryCount > 2) {
@@ -258,23 +275,27 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    request.execute(iterableApiRequest);
+                    requestTask.execute(iterableApiRequest);
                 }
             }, delay);
             return;
-        } else if (success) {
+        } else if (response.success) {
+            IterableApi.getInstance().getAuthManager().resetFailedAuth();
             if (iterableApiRequest.successCallback != null) {
-                iterableApiRequest.successCallback.onSuccess(requestResultJson);
+                iterableApiRequest.successCallback.onSuccess(response.responseJson);
             }
         } else {
+            if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
+                IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
+            }
             if (iterableApiRequest.failureCallback != null) {
-                iterableApiRequest.failureCallback.onFailure(failureReason, requestResultJson);
+                iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
             }
         }
         if (iterableApiRequest.legacyCallback != null) {
-            iterableApiRequest.legacyCallback.execute(s);
+            iterableApiRequest.legacyCallback.execute(response.responseBody);
         }
-        super.onPostExecute(s);
+        super.onPostExecute(response);
     }
 
     protected void setRetryCount(int count) {
@@ -287,6 +308,8 @@ class IterableRequest extends AsyncTask<IterableApiRequest, Void, String> {
  *  Iterable Request object
  */
 class IterableApiRequest {
+    private static final String TAG = "IterableApiRequest";
+
     static final String GET = "GET";
     static final String POST = "POST";
 
@@ -297,9 +320,35 @@ class IterableApiRequest {
     final String requestType;
     final String authToken;
 
+    private ProcessorType processorType = ProcessorType.ONLINE;
     IterableHelper.IterableActionHandler legacyCallback;
     IterableHelper.SuccessHandler successCallback;
     IterableHelper.FailureHandler failureCallback;
+
+    enum ProcessorType {
+        ONLINE {
+            @NonNull
+            @Override
+            public String toString() {
+                return "Online";
+            }
+        },
+        OFFLINE {
+            @NonNull
+            @Override
+            public String toString() {
+                return "Offline";
+            }
+        }
+    }
+
+    public ProcessorType getProcessorType() {
+        return processorType;
+    }
+
+    void setProcessorType(ProcessorType processorType) {
+        this.processorType = processorType;
+    }
 
     IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
@@ -331,5 +380,56 @@ class IterableApiRequest {
         this.requestType = requestType;
         this.authToken = authToken;
         this.legacyCallback = callback;
+    }
+
+    public JSONObject toJSONObject() throws JSONException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("apiKey", this.apiKey);
+        jsonObject.put("resourcePath", this.resourcePath);
+        jsonObject.put("authToken", this.authToken);
+        jsonObject.put("requestType", this.requestType);
+        jsonObject.put("data", this.json);
+        return jsonObject;
+    }
+
+    static IterableApiRequest fromJSON(JSONObject jsonData, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        try {
+            String apikey = jsonData.getString("apiKey");
+            String resourcePath = jsonData.getString("resourcePath");
+            String requestType = jsonData.getString("requestType");
+            String authToken = "";
+            if (jsonData.has("authToken")) {
+                authToken = jsonData.getString("authToken");
+            }
+            JSONObject json = jsonData.getJSONObject("data");
+            return new IterableApiRequest(apikey, resourcePath, json, requestType, authToken, onSuccess, onFailure);
+        } catch (JSONException e) {
+            IterableLogger.e(TAG, "Failed to create Iterable request from JSON");
+        }
+        return null;
+    }
+}
+
+class IterableApiResponse {
+    final boolean success;
+    final int responseCode;
+    final String responseBody;
+    final JSONObject responseJson;
+    final String errorMessage;
+
+    IterableApiResponse(boolean success, int responseCode, String responseBody, JSONObject responseJson, String errorMessage) {
+        this.success = success;
+        this.responseCode = responseCode;
+        this.responseBody = responseBody;
+        this.responseJson = responseJson;
+        this.errorMessage = errorMessage;
+    }
+
+    static IterableApiResponse success(int responseCode, String body, @NonNull JSONObject json) {
+        return new IterableApiResponse(true, responseCode, body, json, null);
+    }
+
+    static IterableApiResponse failure(int responseCode, String body, @Nullable JSONObject json, String errorMessage) {
+        return new IterableApiResponse(false, responseCode, body, json, errorMessage);
     }
 }

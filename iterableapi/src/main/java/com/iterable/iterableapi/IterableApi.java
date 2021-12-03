@@ -5,23 +5,16 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.app.NotificationManagerCompat;
 
-import com.iterable.iterableapi.ddl.DeviceInfo;
-import com.iterable.iterableapi.ddl.MatchFpResponse;
-
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -52,8 +45,10 @@ private static final String TAG = "IterableApi";
     private String _deviceId;
     private boolean _firstForegroundHandled;
 
-    private IterableInAppManager inAppManager;
+    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    private @Nullable IterableInAppManager inAppManager;
     private String inboxSessionId;
+    private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
 
 //---------------------------------------------------------------------------------------
@@ -61,6 +56,7 @@ private static final String TAG = "IterableApi";
 
 //region Constructor
 //---------------------------------------------------------------------------------------
+
     IterableApi() {
         config = new IterableConfig.Builder().build();
     }
@@ -71,12 +67,20 @@ private static final String TAG = "IterableApi";
         this.inAppManager = inAppManager;
     }
 
+    @VisibleForTesting
+    IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
+        config = new IterableConfig.Builder().build();
+        this.apiClient = apiClient;
+        this.inAppManager = inAppManager;
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
 
 //region Getters/Setters
 //---------------------------------------------------------------------------------------
+
     /**
      * Sets the icon to be displayed in notifications.
      * The icon name should match the resource name stored in the /res/drawable directory.
@@ -115,10 +119,23 @@ private static final String TAG = "IterableApi";
     @NonNull
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
-            inAppManager = new IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval);
-            inAppManager.syncInApp();
+            throw new RuntimeException("IterableApi must be initialized before calling getInAppManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return inAppManager;
+    }
+
+    /**
+     * Returns an {@link IterableAuthManager} that can be used to manage mobile auth.
+     * Make sure the Iterable API is initialized before calling this method.
+     * @return {@link IterableAuthManager} instance
+     */
+    @NonNull
+    IterableAuthManager getAuthManager() {
+        if (authManager == null) {
+            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
+        }
+        return authManager;
     }
 
     /**
@@ -205,6 +222,22 @@ private static final String TAG = "IterableApi";
         }
     }
 
+    void setAuthToken(String authToken) {
+        setAuthToken(authToken, false);
+    }
+
+    void setAuthToken(String authToken, boolean bypassAuth) {
+        if (isInitialized()) {
+            if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
+                _authToken = authToken;
+                storeAuthData();
+                onLogIn();
+            } else if (bypassAuth) {
+                onLogIn();
+            }
+        }
+    }
+
     HashMap getDeviceAttributes() {
         return deviceAttributes;
     }
@@ -263,9 +296,48 @@ private static final String TAG = "IterableApi";
             sharedInstance.config = new IterableConfig.Builder().build();
         }
         sharedInstance.retrieveEmailAndUserId();
-        sharedInstance.checkForDeferredDeeplink();
+
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
+        if (sharedInstance.inAppManager == null) {
+            sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
+                    sharedInstance.config.inAppDisplayInterval);
+        }
+        loadLastSavedConfiguration(context);
+        IterablePushActionReceiver.processPendingAction(context);
+    }
+
+    public static void setContext(Context context) {
+        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
+    }
+
+    static void loadLastSavedConfiguration(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, false);
+        sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+    }
+
+    void fetchRemoteConfiguration() {
+        apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
+            @Override
+            public void execute(@Nullable String data) {
+                if (data == null) {
+                    IterableLogger.e(TAG, "Remote configuration returned null");
+                    return;
+                }
+                try {
+                    JSONObject jsonData = new JSONObject(data);
+                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY);
+                    sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
+                    SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, offlineConfiguration);
+                    editor.apply();
+                } catch (JSONException e) {
+                    IterableLogger.e(TAG, "Failed to read remote configuration");
+                }
+            }
+        });
     }
 
     /**
@@ -276,30 +348,7 @@ private static final String TAG = "IterableApi";
      * @param email User email
      */
     public void setEmail(@Nullable String email) {
-        setEmail(email, null);
-    }
-
-    /**
-     * Set user email used for API calls
-     * Calling this or {@link #setUserId(String)} is required before making any API calls.
-     *
-     * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
-     * @param email User email
-     * @param authToken Authorization token
-     */
-    void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
-            if (_authToken == null && authToken == null) {
-                return;
-            }
-
-            if (_authToken != null && _authToken.equals(authToken)) {
-                return;
-            }
-
-            _authToken = authToken;
-            storeAuthData();
-
             return;
         }
 
@@ -310,9 +359,13 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = email;
         _userId = null;
-        _authToken = authToken;
         storeAuthData();
-        onLogIn();
+
+        if (email != null) {
+            getAuthManager().requestNewAuthToken(false);
+        } else {
+            setAuthToken(null);
+        }
     }
 
     /**
@@ -323,30 +376,7 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null);
-    }
-
-    /**
-     * Set user ID used for API calls
-     * Calling this or {@link #setEmail(String)} is required before making any API calls.
-     *
-     * Note: This clears user email and persists the user ID so you only need to call this once when the user logs in.
-     * @param userId User ID
-     * @param authToken Authorization token
-     */
-    void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
-            if (_authToken == null && authToken == null) {
-                return;
-            }
-
-            if (_authToken != null && _authToken.equals(authToken)) {
-                return;
-            }
-
-            _authToken = authToken;
-            storeAuthData();
-
             return;
         }
 
@@ -357,9 +387,13 @@ private static final String TAG = "IterableApi";
         onLogOut();
         _email = null;
         _userId = userId;
-        _authToken = authToken;
         storeAuthData();
-        onLogIn();
+
+        if (userId != null) {
+            getAuthManager().requestNewAuthToken(false);
+        } else {
+            setAuthToken(null);
+        }
     }
 
     /**
@@ -406,7 +440,7 @@ private static final String TAG = "IterableApi";
      * @param url
      */
     public static void overrideURLEndpointPath(@NonNull String url) {
-        IterableRequest.overrideUrl = url;
+        IterableRequestTask.overrideUrl = url;
     }
 
     /**
@@ -426,14 +460,14 @@ private static final String TAG = "IterableApi";
      * @param deviceToken Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(@NonNull String deviceToken) {
-        registerDeviceToken(_email, _userId, getPushIntegrationName(), deviceToken, deviceAttributes);
+        registerDeviceToken(_email, _userId, _authToken, getPushIntegrationName(), deviceToken, deviceAttributes);
     }
 
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
         if (deviceToken != null) {
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
-                    registerDeviceToken(email, userId, applicationName, deviceToken, null, deviceAttributes);
+                    registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
                 }
             });
             registrationThread.start();
@@ -480,23 +514,19 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_EVENT_NAME, eventName);
+        apiClient.track(eventName, campaignId, templateId, dataFields);
+    }
 
-            if (campaignId != 0) {
-                requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            }
-            if (templateId != 0) {
-                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            }
-            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
-
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
+    /**
+     * Updates the status of the cart
+     * @param items
+     */
+    public void updateCart(@NonNull List<CommerceItem> items) {
+        if (!checkSDKInitialization()) {
+            return;
         }
+
+        apiClient.updateCart(items);
     }
 
     /**
@@ -519,27 +549,7 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-        try {
-            JSONArray itemsArray = new JSONArray();
-            for (CommerceItem item : items) {
-                itemsArray.put(item.toJSONObject());
-            }
-
-            JSONObject userObject = new JSONObject();
-            addEmailOrUserIdToJson(userObject);
-            requestJSON.put(IterableConstants.KEY_USER, userObject);
-
-            requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
-            requestJSON.put(IterableConstants.KEY_TOTAL, total);
-            if (dataFields != null) {
-                requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
-            }
-
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        apiClient.trackPurchase(total, items, dataFields);
     }
 
     /**
@@ -548,20 +558,8 @@ private static final String TAG = "IterableApi";
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        updateEmail(newEmail, null, null, null);
+        updateEmail(newEmail, null, null);
     }
-
-    /**
-     * Updates the current user's email.
-     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
-     *
-     * @param newEmail  New email
-     * @param authToken Authorization token
-     */
-    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken) {
-        updateEmail(newEmail, authToken, null, null);
-    }
-
 
     /**
      * Updates the current user's email.
@@ -571,19 +569,7 @@ private static final String TAG = "IterableApi";
      * @param failureHandler Failure handler. Called when the server call failed.
      */
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        updateEmail(newEmail, _authToken, successHandler, failureHandler);
-    }
-
-    /**
-     * Updates the current user's email.
-     * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
-     * @param newEmail New email
-     * @param authToken
-     * @param successHandler Success handler. Called when the server returns a success code.
-     * @param failureHandler Failure handler. Called when the server call failed.
-     */
-    private void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if (!checkSDKInitialization()) {
+       if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
             if (failureHandler != null) {
@@ -592,35 +578,22 @@ private static final String TAG = "IterableApi";
             }
             return;
         }
-        JSONObject requestJSON = new JSONObject();
 
-        try {
-            if (_email != null) {
-                requestJSON.put(IterableConstants.KEY_CURRENT_EMAIL, _email);
-            } else {
-                requestJSON.put(IterableConstants.KEY_CURRENT_USERID, _userId);
-            }
-            requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
-
-            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON, new IterableHelper.SuccessHandler() {
-                @Override
-                public void onSuccess(@NonNull JSONObject data) {
-                    if (_email != null) {
-                        _email = newEmail;
-                    }
-                    if (_authToken != null) {
-                        _authToken = authToken;
-                    }
-
-                    storeAuthData();
-                    if (successHandler != null) {
-                        successHandler.onSuccess(data);
-                    }
+        apiClient.updateEmail(newEmail, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                if (_email != null) {
+                    _email = newEmail;
                 }
-            }, failureHandler);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+
+                storeAuthData();
+                getAuthManager().requestNewAuthToken(false);
+                if (successHandler != null) {
+                    successHandler.onSuccess(data);
+
+                }
+            }
+        }, failureHandler);
     }
 
     /**
@@ -641,24 +614,7 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-
-            // Create the user by userId if it doesn't exist
-            if (_email == null && _userId != null) {
-                requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
-            }
-
-            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
-            requestJSON.put(IterableConstants.KEY_MERGE_NESTED_OBJECTS, mergeNestedObjects);
-
-            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
+        apiClient.updateUser(dataFields, mergeNestedObjects);
     }
 
     private String getPushIntegrationName() {
@@ -679,16 +635,16 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        new IterablePushRegistration().execute(data);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
      * Disables the device from push notifications
      */
     public void disablePush() {
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        new IterablePushRegistration().execute(data);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
@@ -706,111 +662,23 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-        addEmailOrUserIdToJson(requestJSON);
-
-        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_EMAIL_LIST_IDS, emailListIds);
-        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_UNSUB_CHANNEL, unsubscribedChannelIds);
-        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_UNSUB_MESSAGE, unsubscribedMessageTypeIds);
-        tryAddArrayToJSON(requestJSON, IterableConstants.KEY_SUB_MESSAGE, subscribedMessageTypeIDs);
-        try {
-            if (campaignId != null && campaignId != 0) {
-                requestJSON.putOpt(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            }
-            if (templateId != null && templateId != 0) {
-                requestJSON.putOpt(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            }
-        } catch (JSONException e) {
-            IterableLogger.e(TAG, e.toString());
-        }
-        sendPostRequest(IterableConstants.ENDPOINT_UPDATE_USER_SUBS, requestJSON);
-    }
-
-    /**
-     * Attempts to add an array as a JSONArray to a JSONObject
-     * @param requestJSON
-     * @param key
-     * @param value
-     */
-    void tryAddArrayToJSON(JSONObject requestJSON, String key, Object[] value) {
-        if (requestJSON != null && key != null && value != null)
-            try {
-                JSONArray mJSONArray = new JSONArray(Arrays.asList(value));
-                requestJSON.put(key, mJSONArray);
-            } catch (JSONException e) {
-                IterableLogger.e(TAG, e.toString());
-            }
-    }
-
-    /**
-     * In-app messages are now shown automatically, and you can customize it via {@link IterableInAppHandler}
-     * If you need to show messages manually, see {@link IterableInAppManager#getMessages()} and
-     * {@link IterableInAppManager#showMessage(IterableInAppMessage)}
-     *
-     * @deprecated Please check our migration guide here:
-     * https://github.com/iterable/iterable-android-sdk/#migrating-in-app-messages-from-the-previous-version-of-the-sdk
-     */
-    @Deprecated
-    void spawnInAppNotification(final Context context, final IterableHelper.IterableActionHandler clickCallback) {
+        apiClient.updateSubscriptions(emailListIds, unsubscribedChannelIds, unsubscribedMessageTypeIds, subscribedMessageTypeIDs, campaignId, templateId);
     }
 
     /**
      * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
-     * @deprecated Use {@link IterableInAppManager#getMessages()} instead
-     * @param count the number of messages to fetch
+     * Now package-private. If you were previously using this method, use
+     * {@link IterableInAppManager#getMessages()} instead
+     *
+     * @param count      the number of messages to fetch
      * @param onCallback
      */
-    @Deprecated
-    public void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-        addEmailOrUserIdToJson(requestJSON);
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
-            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
-            requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-            requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, _applicationContext.getPackageName());
-
-            sendGetRequest(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, requestJSON, onCallback);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Tracks an in-app open.
-     * @param messageId
-     */
-    public void trackInAppOpen(@NonNull String messageId) {
-        IterableLogger.printInfo();
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
-
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
-        IterableLogger.printInfo();
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppOpen(message, location);
-        } else {
-            IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
-        }
+        apiClient.getInAppMessages(count, onCallback);
     }
 
     /**
@@ -827,59 +695,14 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
-            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, location));
-            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            if (location == IterableInAppLocation.INBOX) {
-                addInboxSessionID(requestJSON);
-            }
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_OPEN, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
-        IterableLogger.printInfo();
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppClick(message, clickedUrl, location);
-        } else {
-            trackInAppClick(messageId, clickedUrl);
-        }
+        apiClient.trackInAppOpen(message, location, inboxSessionId);
     }
 
     /**
-     * Tracks an InApp click.
-     * @param messageId
-     * @param clickedUrl
-     */
-    public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
-
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Tracks an InApp click.
-     * @param message in-app message
-     * @param clickedUrl
+     * Tracks when a link inside an in-app is clicked
+     * @param message the in-app message to be tracked
+     * @param clickedUrl the URL of the clicked link
+     * @param clickLocation the location of the in-app for this event
      */
     public void trackInAppClick(@NonNull IterableInAppMessage message, @NonNull String clickedUrl, @NonNull IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
@@ -891,41 +714,17 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedUrl);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
-            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            if (clickLocation == IterableInAppLocation.INBOX) {
-                addInboxSessionID(requestJSON);
-            }
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLICK, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppClose(message, clickedURL, closeAction, clickLocation);
-            IterableLogger.printInfo();
-        } else {
-            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
-        }
+        apiClient.trackInAppClick(message, clickedUrl, clickLocation, inboxSessionId);
     }
 
     /**
-     *Tracks InApp Close events.
-     * @param message in-app message
-     * @param clickedURL clicked Url if available
-     * @param clickLocation location of the click
+     * Tracks when an in-app has been closed
+     * @param message the in-app message to be tracked
+     * @param clickedURL the URL of the clicked link
+     * @param closeAction the method of how the in-app was closed
+     * @param clickLocation the location of the in-app for this event
      */
-    void trackInAppClose(@NonNull IterableInAppMessage message, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
+    public void trackInAppClose(@NonNull IterableInAppMessage message, @Nullable String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -935,26 +734,12 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_EMAIL, getEmail());
-            requestJSON.put(IterableConstants.KEY_USER_ID, getUserId());
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLICKED_URL, clickedURL);
-            requestJSON.put(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION, closeAction.toString());
-            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
-            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            if (clickLocation == IterableInAppLocation.INBOX) {
-                addInboxSessionID(requestJSON);
-            }
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        apiClient.trackInAppClose(message, clickedURL, closeAction, clickLocation, inboxSessionId);
     }
 
+    /**
+     * Tracks in-app delivery events (per in-app)
+     * @param message the in-app message to be tracked as delivered */
     void trackInAppDelivery(@NonNull IterableInAppMessage message) {
         if (!checkSDKInitialization()) {
             return;
@@ -965,18 +750,7 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
-            requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, null));
-            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        apiClient.trackInAppDelivery(message);
     }
 
     /**
@@ -1007,30 +781,7 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_USER_ID, getUserId());
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMessageId());
-            if (source != null) {
-                requestJSON.put(IterableConstants.ITERABLE_IN_APP_DELETE_ACTION, source.toString());
-            }
-
-            if (clickLocation != null) {
-                requestJSON.put(IterableConstants.KEY_MESSAGE_CONTEXT, getInAppMessageContext(message, clickLocation));
-                requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            }
-
-            if (clickLocation == IterableInAppLocation.INBOX) {
-                addInboxSessionID(requestJSON);
-            }
-
-            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
+        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId);
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -1049,37 +800,80 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
+        apiClient.trackInboxSession(session, inboxSessionId);
+    }
 
-        try {
-            addEmailOrUserIdToJson(requestJSON);
+    /**
+     * (DEPRECATED) Tracks an in-app open
+     * @param messageId
+     */
+    public void trackInAppOpen(@NonNull String messageId) {
+        IterableLogger.printInfo();
+        if (!checkSDKInitialization()) {
+            return;
+        }
 
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_START, session.sessionStartTime.getTime());
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_END, session.sessionEndTime.getTime());
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_START_TOTAL_MESSAGE_COUNT, session.startTotalMessageCount);
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT, session.startUnreadMessageCount);
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT, session.endTotalMessageCount);
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_END_UNREAD_MESSAGE_COUNT, session.endUnreadMessageCount);
+        apiClient.trackInAppOpen(messageId);
+    }
 
-            if (session.impressions != null) {
-                JSONArray impressionsJsonArray = new JSONArray();
-                for (IterableInboxSession.Impression impression : session.impressions) {
-                    JSONObject impressionJson = new JSONObject();
-                    impressionJson.put(IterableConstants.KEY_MESSAGE_ID, impression.messageId);
-                    impressionJson.put(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX, impression.silentInbox);
-                    impressionJson.put(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_COUNT, impression.displayCount);
-                    impressionJson.put(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_DURATION, impression.duration);
-                    impressionsJsonArray.put(impressionJson);
-                }
-                requestJSON.put(IterableConstants.ITERABLE_INBOX_IMPRESSIONS, impressionsJsonArray);
-            }
+    /**
+     * (DEPRECATED) Tracks an in-app open
+     * @param messageId the ID of the in-app message
+     * @param location where the in-app was opened
+     */
+    void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
+        IterableLogger.printInfo();
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppOpen(message, location);
+        } else {
+            IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
+        }
+    }
 
-            requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-            addInboxSessionID(requestJSON);
+    /**
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
+     * @param location where the in-app was opened
+     */
+    void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
+        IterableLogger.printInfo();
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClick(message, clickedUrl, location);
+        } else {
+            trackInAppClick(messageId, clickedUrl);
+        }
+    }
 
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
+    /**
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
+     */
+    public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.trackInAppClick(messageId, clickedUrl);
+    }
+
+    /**
+     * (DEPRECATED) Tracks when an in-app has been closed
+     * @param messageId the ID of the in-app message
+     * @param clickedURL the URL of the clicked link
+     * @param closeAction the method of how the in-app was closed
+     * @param clickLocation where the in-app was closed
+     */
+    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClose(message, clickedURL, closeAction, clickLocation);
+            IterableLogger.printInfo();
+        } else {
+            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
         }
     }
 
@@ -1153,33 +947,16 @@ private static final String TAG = "IterableApi";
      * @param templateId
      */
     protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
-
         if (messageId == null) {
             IterableLogger.e(TAG, "messageId is null");
             return;
         }
 
-        JSONObject requestJSON = new JSONObject();
-
-        try {
-            if (dataFields == null) {
-                dataFields = new JSONObject();
-            }
-
-            addEmailOrUserIdToJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
-            requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
-            requestJSON.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
-
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, requestJSON);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
     }
 
     protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
-        disableToken(email, userId, token, null, null);
+        disableToken(email, userId, null, token, null, null);
     }
 
     /**
@@ -1187,32 +964,22 @@ private static final String TAG = "IterableApi";
      * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
      * @param email User email for whom to disable the device.
      * @param userId User ID for whom to disable the device.
+     * @param authToken
      * @param deviceToken The device token
      */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        JSONObject requestJSON = new JSONObject();
-        try {
-            requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
-            if (email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, email);
-            } else if (userId != null) {
-                requestJSON.put(IterableConstants.KEY_USER_ID, userId);
-            }
-
-            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, onSuccess, onFailure);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        apiClient.disableToken(email, userId, authToken, deviceToken, onSuccess, onFailure);
     }
 
     /**
      * Registers the GCM registration ID with Iterable.
      *
+     * @param authToken
      * @param applicationName
      * @param deviceToken
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1226,51 +993,7 @@ private static final String TAG = "IterableApi";
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        JSONObject requestJSON = new JSONObject();
-        try {
-            addEmailOrUserIdToJson(requestJSON);
-
-            if (dataFields == null) {
-                dataFields = new JSONObject();
-            }
-
-            for (HashMap.Entry<String, String> entry : deviceAttributes.entrySet()) {
-                dataFields.put(entry.getKey(), entry.getValue());
-            }
-
-            dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
-            dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true);
-            dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
-            dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
-            dataFields.putOpt(IterableConstants.DEVICE_ADID, getAdvertisingId()); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-            dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
-            dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
-            dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
-            dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
-
-            dataFields.put(IterableConstants.DEVICE_ID, getDeviceId()); // Random UUID
-            dataFields.put(IterableConstants.DEVICE_APP_PACKAGE_NAME, _applicationContext.getPackageName());
-            dataFields.put(IterableConstants.DEVICE_APP_VERSION, IterableUtil.getAppVersion(_applicationContext));
-            dataFields.put(IterableConstants.DEVICE_APP_BUILD, IterableUtil.getAppVersionCode(_applicationContext));
-            dataFields.put(IterableConstants.DEVICE_ITERABLE_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-            dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled());
-
-            JSONObject device = new JSONObject();
-            device.put(IterableConstants.KEY_TOKEN, deviceToken);
-            device.put(IterableConstants.KEY_PLATFORM, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
-            device.put(IterableConstants.KEY_APPLICATION_NAME, applicationName);
-            device.putOpt(IterableConstants.KEY_DATA_FIELDS, dataFields);
-            requestJSON.put(IterableConstants.KEY_DEVICE, device);
-
-            // Create the user by userId if it doesn't exist
-            if (email == null && userId != null) {
-                requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
-            }
-
-            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON);
-        } catch (JSONException e) {
-            IterableLogger.e(TAG, "registerDeviceToken: exception", e);
-        }
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1296,6 +1019,7 @@ private static final String TAG = "IterableApi";
                 IterableLogger.d(TAG, "Performing automatic push registration");
                 sharedInstance.registerForPush();
             }
+            fetchRemoteConfiguration();
         }
     }
 
@@ -1313,78 +1037,6 @@ private static final String TAG = "IterableApi";
 
     private SharedPreferences getPreferences() {
         return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-    }
-
-    private void addInboxSessionID(@NonNull JSONObject requestJSON) throws JSONException {
-        if (this.inboxSessionId != null) {
-            requestJSON.put(IterableConstants.KEY_INBOX_SESSION_ID, this.inboxSessionId);
-        }
-    }
-
-    /**
-     * Sends the POST request to Iterable.
-     * Performs network operations on an async thread instead of the main thread.
-     * @param resourcePath
-     * @param json
-     */
-    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, null, null);
-        new IterableRequest().execute(request);
-    }
-
-    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.POST, _authToken, onSuccess, onFailure);
-        new IterableRequest().execute(request);
-    }
-
-    /**
-     * Sends a GET request to Iterable.
-     * Performs network operations on an async thread instead of the main thread.
-     * @param resourcePath
-     * @param json
-     */
-    void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
-        IterableApiRequest request = new IterableApiRequest(_apiKey, resourcePath, json, IterableApiRequest.GET, _authToken, onCallback);
-        new IterableRequest().execute(request);
-    }
-
-    /**
-     * Adds the current email or userID to the json request.
-     * @param requestJSON
-     */
-    private void addEmailOrUserIdToJson(JSONObject requestJSON) {
-        try {
-            if (_email != null) {
-                requestJSON.put(IterableConstants.KEY_EMAIL, _email);
-            } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, _userId);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Gets the advertisingId if available
-     * @return
-     */
-    private String getAdvertisingId() {
-        String advertisingId = null;
-        try {
-            Class adClass = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient");
-            if (adClass != null) {
-                Object advertisingIdInfo = adClass.getMethod("getAdvertisingIdInfo", Context.class).invoke(null, _applicationContext);
-                if (advertisingIdInfo != null) {
-                    advertisingId = (String) advertisingIdInfo.getClass().getMethod("getId").invoke(advertisingIdInfo);
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            IterableLogger.d(TAG, "ClassNotFoundException: Can't track ADID. " +
-                    "Check that play-services-ads is added to the dependencies.", e);
-        } catch (Exception e) {
-            IterableLogger.w(TAG, "Error while fetching advertising ID", e);
-        }
-        return advertisingId;
     }
 
     private String getDeviceId() {
@@ -1416,6 +1068,9 @@ private static final String TAG = "IterableApi";
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+            if (_authToken != null) {
+                getAuthManager().queueExpirationRefresh(_authToken);
+            }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
@@ -1426,6 +1081,8 @@ private static final String TAG = "IterableApi";
             disablePush();
         }
         getInAppManager().reset();
+        getAuthManager().clearRefreshTimer();
+        apiClient.onLogout();
     }
 
     private void onLogIn() {
@@ -1439,89 +1096,6 @@ private static final String TAG = "IterableApi";
         getInAppManager().syncInApp();
     }
 
-    private boolean getDDLChecked() {
-        return getPreferences().getBoolean(IterableConstants.SHARED_PREFS_DDL_CHECKED_KEY, false);
-    }
-
-    private void setDDLChecked(boolean value) {
-        getPreferences().edit().putBoolean(IterableConstants.SHARED_PREFS_DDL_CHECKED_KEY, value).apply();
-    }
-
-    private void checkForDeferredDeeplink() {
-        if (!config.checkForDeferredDeeplink) {
-            return;
-        }
-
-        try {
-            if (getDDLChecked()) {
-                return;
-            }
-
-            JSONObject requestJSON = DeviceInfo.createDeviceInfo(_applicationContext).toJSONObject();
-
-            IterableApiRequest request = new IterableApiRequest(_apiKey, IterableConstants.BASE_URL_LINKS,
-                    IterableConstants.ENDPOINT_DDL_MATCH, requestJSON, IterableApiRequest.POST, null, new IterableHelper.SuccessHandler() {
-                @Override
-                public void onSuccess(@NonNull JSONObject data) {
-                    handleDDL(data);
-                }
-            }, new IterableHelper.FailureHandler() {
-                @Override
-                public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
-                    IterableLogger.e(TAG, "Error while checking deferred deep link: " + reason + ", response: " + data);
-                }
-            });
-            new IterableRequest().execute(request);
-
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while checking deferred deep link", e);
-        }
-    }
-
-    private void handleDDL(JSONObject response) {
-        IterableLogger.d(TAG, "handleDDL: " + response);
-        try {
-            MatchFpResponse matchFpResponse = MatchFpResponse.fromJSONObject(response);
-
-            if (matchFpResponse.isMatch) {
-                IterableAction action = IterableAction.actionOpenUrl(matchFpResponse.destinationUrl);
-                IterableActionRunner.executeAction(getMainActivityContext(), action, IterableActionSource.APP_LINK);
-            }
-        } catch (JSONException e) {
-            IterableLogger.e(TAG, "Error while handling deferred deep link", e);
-        }
-        setDDLChecked(true);
-    }
-
-    private JSONObject getInAppMessageContext(@NonNull IterableInAppMessage message, @Nullable IterableInAppLocation location) {
-        JSONObject messageContext = new JSONObject();
-        try {
-            boolean isSilentInbox = message.isSilentInboxMessage();
-
-            messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX, message.isInboxMessage());
-            messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX, isSilentInbox);
-            if (location != null) {
-                messageContext.putOpt(IterableConstants.ITERABLE_IN_APP_LOCATION, location.toString());
-            }
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Could not populate messageContext JSON", e);
-        }
-        return messageContext;
-    }
-
-    @NonNull
-    private JSONObject getDeviceInfoJson() {
-        JSONObject deviceInfo = new JSONObject();
-        try {
-            deviceInfo.putOpt(IterableConstants.DEVICE_ID, getDeviceId());
-            deviceInfo.putOpt(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
-            deviceInfo.putOpt(IterableConstants.DEVICE_APP_PACKAGE_NAME, _applicationContext.getPackageName());
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Could not populate deviceInfo JSON", e);
-        }
-        return deviceInfo;
-    }
-
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void setInboxSessionId(@Nullable String inboxSessionId) {
         this.inboxSessionId = inboxSessionId;
@@ -1530,6 +1104,42 @@ private static final String TAG = "IterableApi";
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
+    }
+
+
+    private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
+        @Nullable
+        @Override
+        public String getEmail() {
+            return _email;
+        }
+
+        @Nullable
+        @Override
+        public String getUserId() {
+            return _userId;
+        }
+
+        @Nullable
+        @Override
+        public String getAuthToken() {
+            return _authToken;
+        }
+
+        @Override
+        public String getApiKey() {
+            return _apiKey;
+        }
+
+        @Override
+        public String getDeviceId() {
+            return IterableApi.this.getDeviceId();
+        }
+
+        @Override
+        public Context getContext() {
+            return _applicationContext;
+        }
     }
 
 //---------------------------------------------------------------------------------------

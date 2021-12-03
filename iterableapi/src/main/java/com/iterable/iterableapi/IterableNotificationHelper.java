@@ -10,6 +10,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
@@ -140,11 +141,14 @@ class IterableNotificationHelper {
 
             notificationBuilder
                     .setSmallIcon(getIconId(context))
-                    .setTicker(applicationName).setWhen(0)
+                    .setTicker(applicationName)
                     .setAutoCancel(true)
                     .setContentTitle(title)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentText(notificationBody);
+            if (Build.VERSION.SDK_INT >= 17) {
+                notificationBuilder.setShowWhen(true);
+            }
             notificationBuilder.setImageUrl(pushImage);
             notificationBuilder.setExpandedContent(notificationBody);
 
@@ -189,7 +193,7 @@ class IterableNotificationHelper {
             }
 
             PendingIntent notificationClickedIntent = PendingIntent.getBroadcast(context, notificationBuilder.requestCode,
-                    pushContentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    pushContentIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
             notificationBuilder.setContentIntent(notificationClickedIntent);
             notificationBuilder.setIsGhostPush(isGhostPush(extras));

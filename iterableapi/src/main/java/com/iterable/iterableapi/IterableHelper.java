@@ -29,4 +29,8 @@ public class IterableHelper {
     public interface FailureHandler {
         void onFailure(@NonNull String reason, @Nullable JSONObject data);
     }
+
+    public interface SuccessAuthHandler {
+        void onSuccess(@NonNull String authToken);
+    }
 }

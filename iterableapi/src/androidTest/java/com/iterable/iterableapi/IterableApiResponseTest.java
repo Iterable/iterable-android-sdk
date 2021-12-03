@@ -36,9 +36,9 @@ public class IterableApiResponseTest {
 
     @Before
     public void setUp() {
-        createIterableApi();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+        createIterableApi();
     }
 
     @After
@@ -76,7 +76,7 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         }, null);
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onSuccess is called", signal.await(1, TimeUnit.SECONDS));
@@ -95,7 +95,7 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
@@ -114,7 +114,7 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
@@ -133,7 +133,7 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
@@ -154,7 +154,7 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
@@ -173,7 +173,26 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
+
+        server.takeRequest(1, TimeUnit.SECONDS);
+        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testResponseCode401AuthError() throws Exception {
+        final CountDownLatch signal = new CountDownLatch(1);
+
+        stubAnyRequestReturningStatusCode(401, "{\"msg\":\"JWT Authorization header error\",\"code\":\"InvalidJwtPayload\"}");
+
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertEquals("JWT Authorization header error", reason);
+                signal.countDown();
+            }
+        });
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
@@ -186,7 +205,7 @@ public class IterableApiResponseTest {
         }
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, null);
-        IterableRequest task = new IterableRequest();
+        IterableRequestTask task = new IterableRequestTask();
         task.execute(request);
 
         RecordedRequest request1 = server.takeRequest(1, TimeUnit.SECONDS);
@@ -207,7 +226,7 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
@@ -226,7 +245,7 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequest().execute(request);
+        new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));

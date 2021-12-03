@@ -3,8 +3,10 @@
     <application>
         <activity
             android:name=".inbox.IterableInboxActivity"
-            android:label="Inbox"/>
+            android:exported="false"
+            android:label="Inbox" />
         <activity
-            android:name=".inbox.IterableInboxMessageActivity"/>
+            android:name=".inbox.IterableInboxMessageActivity"
+            android:exported="false"/>
     </application>
 </manifest>

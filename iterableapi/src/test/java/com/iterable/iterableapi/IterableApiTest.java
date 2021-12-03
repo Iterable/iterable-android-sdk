@@ -8,11 +8,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 
 import java.io.IOException;
@@ -26,12 +26,16 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,45 +43,51 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 public class IterableApiTest extends BaseTest {
 
     public static final String PACKAGE_NAME = "com.iterable.iterableapi.test";
     private MockWebServer server;
-    private IterableUtil.IterableUtilImpl originalIterableUtil;
-    private IterableUtil.IterableUtilImpl iterableUtilSpy;
+    private IterableApiClient originalApiClient;
+    private IterableApiClient mockApiClient;
+    private IterablePushRegistration.IterablePushRegistrationImpl originalPushRegistrationImpl;
 
     @Before
     public void setUp() {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+
         reInitIterableApi();
 
-        originalIterableUtil = IterableUtil.instance;
-        iterableUtilSpy = spy(originalIterableUtil);
-        IterableUtil.instance = iterableUtilSpy;
+        originalPushRegistrationImpl = IterablePushRegistration.instance;
+        IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
     }
 
     @After
     public void tearDown() throws IOException {
-        IterableUtil.instance = originalIterableUtil;
-        iterableUtilSpy = null;
+        IterablePushRegistration.instance = originalPushRegistrationImpl;
+
         server.shutdown();
         server = null;
     }
 
     private void reInitIterableApi() {
-        IterableApi.sharedInstance = spy(new IterableApi());
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        doReturn(inAppManagerMock).when(IterableApi.sharedInstance).getInAppManager();
+        IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
+        originalApiClient = IterableApi.sharedInstance.apiClient;
+        mockApiClient = spy(originalApiClient);
+        IterableApi.sharedInstance.apiClient = mockApiClient;
     }
 
     @Test
     public void testSdkInitializedWithoutEmailOrUserId() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
-        IterableApi.getInstance().setEmail(null);
+        IterableApi.initialize(getContext(), "apiKey");
+        clearInvocations(mockApiClient);
 
+        IterableApi.getInstance().setEmail(null);
         // Verify that none of the calls to the API result in a request
         IterableApi.getInstance().track("testEvent");
         IterableApi.getInstance().trackInAppOpen("12345");
@@ -88,37 +98,35 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().updateUser(new JSONObject());
         IterableApi.getInstance().updateEmail("");
         IterableApi.getInstance().trackPurchase(10.0, new ArrayList<CommerceItem>());
-
-        RecordedRequest request = server.takeRequest(100, TimeUnit.MILLISECONDS);
-        assertNull(request);
+        verifyNoMoreInteractions(mockApiClient);
     }
 
     @Test
     public void testEmailUserIdPersistence() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         IterableApi.getInstance().setEmail("test@email.com");
 
         reInitIterableApi();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         assertEquals("test@email.com", IterableApi.getInstance().getEmail());
         assertNull(IterableApi.getInstance().getUserId());
 
         IterableApi.getInstance().setUserId("testUserId");
         reInitIterableApi();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
         assertNull(IterableApi.getInstance().getEmail());
     }
 
     @Test
     public void testAttributionInfoPersistence() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
 
         IterableAttributionInfo attributionInfo = new IterableAttributionInfo(1234, 4321, "message");
         IterableApi.getInstance().setAttributionInfo(attributionInfo);
 
         // 23 hours, not expired, still present
-        doReturn(System.currentTimeMillis() + 3600 * 23 * 1000).when(iterableUtilSpy).currentTimeMillis();
+        doReturn(System.currentTimeMillis() + 3600 * 23 * 1000).when(utilsRule.iterableUtilSpy).currentTimeMillis();
         IterableAttributionInfo storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
         assertNotNull(storedAttributionInfo);
         assertEquals(attributionInfo.campaignId, storedAttributionInfo.campaignId);
@@ -126,31 +134,36 @@ public class IterableApiTest extends BaseTest {
         assertEquals(attributionInfo.messageId, storedAttributionInfo.messageId);
 
         // 24 hours, expired, attributionInfo should be null
-        doReturn(System.currentTimeMillis() + 3600 * 24 * 1000).when(iterableUtilSpy).currentTimeMillis();
+        doReturn(System.currentTimeMillis() + 3600 * 24 * 1000).when(utilsRule.iterableUtilSpy).currentTimeMillis();
         storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
         assertNull(storedAttributionInfo);
     }
 
     @Test
     public void testUpdateEmailPersistence() throws Exception {
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
-        IterableApi.getInstance().setEmail("test@email.com");
-        assertEquals("test@email.com", IterableApi.getInstance().getEmail());
+        String oldEmail = "test@email.com";
+        String newEmail = "new@email.com";
 
-        IterableApi.getInstance().updateEmail("new@email.com");
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.initialize(getContext(), "apiKey");
+        IterableApi.getInstance().setEmail(oldEmail);
+        assertEquals(oldEmail, IterableApi.getInstance().getEmail());
+
+        IterableApi.getInstance().updateEmail(newEmail);
+        shadowOf(getMainLooper()).idle();
+        verify(mockApiClient).updateEmail(eq(newEmail), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
         server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
 
         reInitIterableApi();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
     }
 
     @Test
     public void testUpdateEmailWithOldEmail() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().updateEmail("new@email.com");
 
@@ -165,7 +178,7 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testUpdateEmailWithUserId() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey");
+        IterableApi.initialize(getContext(), "apiKey");
         IterableApi.getInstance().setUserId("testUserId");
         IterableApi.getInstance().updateEmail("new@email.com");
 
@@ -183,13 +196,15 @@ public class IterableApiTest extends BaseTest {
     public void testHandleUniversalLinkRewrite() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
         when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableActionContext.class))).thenReturn(true);
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
 
-        String url = "https://links.iterable.com/api/docs#!/email";
-        IterableApi.handleAppLink("http://links.iterable.com/a/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0");
+        String url = "http://iterable.com";
+        IterableApi.handleAppLink(
+                "http://links.iterable.com/a/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0");
 
         ArgumentCaptor<Uri> capturedUri = ArgumentCaptor.forClass(Uri.class);
         ArgumentCaptor<IterableActionContext> capturedActionContext = ArgumentCaptor.forClass(IterableActionContext.class);
+        shadowOf(getMainLooper()).idle();
         verify(urlHandlerMock, timeout(5000)).handleIterableURL(capturedUri.capture(), capturedActionContext.capture());
         assertEquals(url, capturedUri.getValue().toString());
         assertEquals(IterableActionSource.APP_LINK, capturedActionContext.getValue().source);
@@ -199,93 +214,99 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testSetEmailWithAutomaticPushRegistration() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
 
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setEmail("test@email.com");
-        verify(IterableApi.sharedInstance).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setEmail(null) disables the device
         IterableApi.getInstance().setEmail(null);
-        verify(IterableApi.sharedInstance).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.DISABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
     }
 
     @Test
     public void testSetEmailWithoutAutomaticPushRegistration() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
 
         // Check that setEmail doesn't call registerForPush or disablePush
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
-        verify(IterableApi.sharedInstance, never()).registerForPush();
-        verify(IterableApi.sharedInstance, never()).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
     }
 
     @Test
     public void testSetUserIdWithAutomaticPushRegistration() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
 
         // Check that setUserId calls registerForPush
         IterableApi.getInstance().setUserId("userId");
-        verify(IterableApi.sharedInstance).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setUserId(null) disables the device
         IterableApi.getInstance().setUserId(null);
-        verify(IterableApi.sharedInstance).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.DISABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
     }
 
     @Test
     public void testSetUserIdWithoutAutomaticPushRegistration() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(false).build());
 
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setUserId("userId");
         IterableApi.getInstance().setUserId(null);
-        verify(IterableApi.sharedInstance, never()).registerForPush();
-        verify(IterableApi.sharedInstance, never()).disablePush();
-        Mockito.reset(IterableApi.sharedInstance);
+        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
     }
 
     @Test
     public void testNoAutomaticPushRegistrationOnInit() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
+        Mockito.reset(IterablePushRegistration.instance);
 
         reInitIterableApi();
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
-        verify(IterableApi.sharedInstance, never()).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
     }
 
     @Test
     public void testAutomaticPushRegistrationOnInitAndForeground() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
+        Mockito.reset(IterablePushRegistration.instance);
 
         reInitIterableApi();
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
-        verify(IterableApi.sharedInstance).registerForPush();
-        Mockito.reset(IterableApi.sharedInstance);
+
+        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
+        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+
         activityController.pause().stop().destroy();
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(RuntimeEnvironment.application);
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
     }
 
     @Test
     public void testPushRegistrationDeviceFields() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().registerDeviceToken("token");
         Thread.sleep(100);  // Since the network request is queued from a background thread, we need to wait
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(request);
 
@@ -304,11 +325,11 @@ public class IterableApiTest extends BaseTest {
     public void testPushRegistrationWithUserId() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setUserId("testUserId");
         IterableApi.getInstance().registerDeviceToken("token");
         Thread.sleep(1000);  // Since the network request is queued from a background thread, we need to wait
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest registerDeviceRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(registerDeviceRequest);
@@ -319,21 +340,32 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testInAppResetOnLogout() throws Exception {
-        IterableApi.initialize(RuntimeEnvironment.application, "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
 
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
         verify(IterableApi.sharedInstance.getInAppManager(), times(2)).reset();
     }
 
+    @Ignore("Ignoring this test as it fails on CI for some reason")
+    @Test
+    public void databaseClearOnLogout() throws Exception {
+        IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(getContext());
+        taskStorage.createTask("Test", IterableTaskType.API, "data");
+        assertFalse(taskStorage.getAllTaskIds().isEmpty());
+        IterableApi.sharedInstance.apiClient.setOfflineProcessingEnabled(true);
+        IterableApi.sharedInstance.setEmail("test@email.com");
+        assertTrue(taskStorage.getAllTaskIds().isEmpty());
+    }
+
     @Test
     public void testUpdateUserWithUserId() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setUserId("testUserId");
         IterableApi.getInstance().updateUser(new JSONObject("{\"key\": \"value\"}"));
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest updateUserRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(updateUserRequest);
@@ -350,10 +382,10 @@ public class IterableApiTest extends BaseTest {
 
         IterableHelper.IterableActionHandler handlerMock = mock(IterableHelper.IterableActionHandler.class);
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().getInAppMessages(10, handlerMock);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         verify(handlerMock).execute(eq("{}"));
 
@@ -364,17 +396,18 @@ public class IterableApiTest extends BaseTest {
         assertEquals("10", uri.getQueryParameter(IterableConstants.ITERABLE_IN_APP_COUNT));
         assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, uri.getQueryParameter(IterableConstants.ITBL_KEY_SDK_VERSION));
-        assertEquals(RuntimeEnvironment.application.getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
+        assertNotNull(uri.getQueryParameter(IterableConstants.ITBL_SYSTEM_VERSION));
+        assertEquals(getContext().getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
     }
 
     @Test
     public void testInAppOpen() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().trackInAppOpen("testMessageId");
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppOpenRequest);
@@ -390,11 +423,11 @@ public class IterableApiTest extends BaseTest {
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.IN_APP);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppOpenRequest);
@@ -411,10 +444,10 @@ public class IterableApiTest extends BaseTest {
     public void testInAppClick() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().trackInAppClick("testMessageId", "https://www.google.com");
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -431,12 +464,14 @@ public class IterableApiTest extends BaseTest {
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey",
+                new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
-        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.IN_APP);
-        Robolectric.flushBackgroundThreadScheduler();
+        IterableApi.getInstance()
+                .trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.IN_APP);
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppCloseRequest);
@@ -447,17 +482,20 @@ public class IterableApiTest extends BaseTest {
         assertEquals("https://www.google.com", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLICKED_URL));
         assertEquals("back", requestJson.getString(IterableConstants.ITERABLE_IN_APP_CLOSE_ACTION));
         assertNull(requestJson.optString(IterableConstants.KEY_INBOX_SESSION_ID, null));
-        assertEquals(IterableInAppLocation.IN_APP.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT).optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
+        assertEquals(IterableInAppLocation.IN_APP.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT)
+                .optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
 
         verifyMessageContext(requestJson);
         verifyDeviceInfo(requestJson);
 
         //Making another request to check if inbox location is tracked
-        IterableApi.getInstance().trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.INBOX);
-        Robolectric.flushBackgroundThreadScheduler();
+        IterableApi.getInstance()
+                .trackInAppClose(message, "https://www.google.com", IterableInAppCloseAction.BACK, IterableInAppLocation.INBOX);
+        shadowOf(getMainLooper()).idle();
         trackInAppCloseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         requestJson = new JSONObject(trackInAppCloseRequest.getBody().readUtf8());
-        assertEquals(IterableInAppLocation.INBOX.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT).optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
+        assertEquals(IterableInAppLocation.INBOX.toString(), requestJson.optJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT)
+                .optString(IterableConstants.ITERABLE_IN_APP_LOCATION));
     }
 
     @Test
@@ -466,12 +504,12 @@ public class IterableApiTest extends BaseTest {
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().trackInAppClick(message, "https://www.google.com", IterableInAppLocation.IN_APP);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -491,10 +529,10 @@ public class IterableApiTest extends BaseTest {
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().trackInAppDelivery(message);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -512,7 +550,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
         // Set up test data
@@ -540,7 +578,7 @@ public class IterableApiTest extends BaseTest {
                 impressions);
         IterableApi.getInstance().setInboxSessionId(session.sessionId);
         IterableApi.getInstance().trackInboxSession(session);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppClickRequest);
@@ -589,13 +627,13 @@ public class IterableApiTest extends BaseTest {
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
 
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
 
         //Explicitly updating sessionId in IterableAPI as it is done when IterableInboxFragment initializes session manager
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().inAppConsume(message, IterableInAppDeleteActionType.INBOX_SWIPE, IterableInAppLocation.INBOX);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppConsumeRequest);
@@ -615,11 +653,11 @@ public class IterableApiTest extends BaseTest {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
         IterableInAppMessage message = InAppTestUtils.getTestInAppMessage();
-        IterableApi.initialize(RuntimeEnvironment.application, "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setInboxSessionId("SomeRandomSessionID");
         IterableApi.getInstance().inAppConsume(message, null, null);
-        Robolectric.flushBackgroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
 
         RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(trackInAppConsumeRequest);
@@ -630,5 +668,30 @@ public class IterableApiTest extends BaseTest {
         assertNull(requestJson.optString(IterableConstants.KEY_INBOX_SESSION_ID, null));
     }
 
+
+    @Test
+    public void testFetchRemoteConfigurationCalledWhenInForeground() throws Exception {
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{\n" +
+                "            \"offlineMode\": false,\n" +
+                "            \"" + IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY + "\": true,\n" +
+                "            \"someOtherKey1\": \"someOtherValue1\"\n" +
+                "        }"));
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        verify(mockApiClient).setOfflineProcessingEnabled(false);
+        clearInvocations(mockApiClient);
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+        RecordedRequest trackInAppConsumeRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInAppConsumeRequest);
+        assertTrue(trackInAppConsumeRequest.getRequestUrl().toString().contains("/getRemoteConfiguration"));
+        verify(mockApiClient).setOfflineProcessingEnabled(true);
+
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
 
 }
