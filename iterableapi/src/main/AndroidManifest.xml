@@ -23,7 +23,7 @@
         </receiver>
 
         <activity
-            android:name=".TrampolineActivity"
+            android:name=".IterableTrampolineActivity"
             android:exported="false"
             android:launchMode="singleInstance"
             android:theme="@style/TrampolineActivity.Transparent"/>

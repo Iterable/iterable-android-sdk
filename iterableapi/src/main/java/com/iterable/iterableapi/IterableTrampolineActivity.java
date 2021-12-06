@@ -4,9 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
-public class TrampolineActivity extends AppCompatActivity {
+public class IterableTrampolineActivity extends AppCompatActivity {
 
     private static final String TAG = "TrampolineActivity";
 
@@ -32,6 +31,8 @@ public class TrampolineActivity extends AppCompatActivity {
             finish();
             return;
         }
+
+
         Intent pushContentIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
         pushContentIntent.setClass(this, IterablePushActionReceiver.class);
         pushContentIntent.putExtras(notificationIntent.getExtras());
@@ -41,7 +42,8 @@ public class TrampolineActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        super.onPause();  IterableLogger.v(TAG, "Notification Trampoline Activity on pause");
+        super.onPause();
+        IterableLogger.v(TAG, "Notification Trampoline Activity on pause");
 
     }
 
