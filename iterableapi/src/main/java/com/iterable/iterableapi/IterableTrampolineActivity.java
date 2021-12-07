@@ -1,7 +1,11 @@
 package com.iterable.iterableapi;
 
+import static com.iterable.iterableapi.IterablePushNotificationUtil.handlePushAction;
+
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -22,21 +26,35 @@ public class IterableTrampolineActivity extends AppCompatActivity {
 
         Intent notificationIntent = getIntent();
         if (notificationIntent == null) {
+            IterableLogger.d(TAG, "Intent is null. Doing nothing.");
             finish();
             return;
         }
-        String action = notificationIntent.getAction();
-        if (action == null) {
-            IterableLogger.d(TAG, "Notification trampoline activity received intent with null action. Doing nothing.");
+        String actionName = notificationIntent.getAction();
+        if (actionName == null) {
+            IterableLogger.d(TAG, "Intent actino is null. Doing nothing.");
             finish();
             return;
         }
 
 
-        Intent pushContentIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
-        pushContentIntent.setClass(this, IterablePushActionReceiver.class);
-        pushContentIntent.putExtras(notificationIntent.getExtras());
-        this.sendBroadcast(pushContentIntent);
+        // Dismiss the notification
+        int requestCode = notificationIntent.getIntExtra(IterableConstants.REQUEST_CODE, 0);
+        NotificationManager mNotificationManager = (NotificationManager)
+                this.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.cancel(requestCode);
+
+        // Dismiss the notifications panel
+        try {
+            this.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        } catch (SecurityException e) {
+            IterableLogger.w(TAG, e.getLocalizedMessage());
+        }
+
+        if (IterableConstants.ACTION_PUSH_ACTION.equalsIgnoreCase(actionName)) {
+            handlePushAction(this, notificationIntent);
+        }
+
         finish();
     }
 
