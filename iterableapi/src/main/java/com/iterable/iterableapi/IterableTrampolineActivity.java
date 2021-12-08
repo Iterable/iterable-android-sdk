@@ -30,13 +30,13 @@ public class IterableTrampolineActivity extends AppCompatActivity {
             finish();
             return;
         }
+
         String actionName = notificationIntent.getAction();
         if (actionName == null) {
-            IterableLogger.d(TAG, "Intent actino is null. Doing nothing.");
+            IterableLogger.d(TAG, "Intent action is null. Doing nothing.");
             finish();
             return;
         }
-
 
         // Dismiss the notification
         int requestCode = notificationIntent.getIntExtra(IterableConstants.REQUEST_CODE, 0);

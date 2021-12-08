@@ -178,7 +178,8 @@ class IterableNotificationHelper {
             }
 
             //Create an intent for TrampolineActivity instead of BroadcastReceiver
-            Intent trampolineActivityIntent = new Intent(context, IterableTrampolineActivity.class);
+            Intent trampolineActivityIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+            trampolineActivityIntent.setClass(context, IterableTrampolineActivity.class);
             trampolineActivityIntent.putExtras(extras);
             trampolineActivityIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
             trampolineActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
