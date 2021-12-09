@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,7 +10,7 @@ import androidx.core.app.RemoteInput;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class IterablePushNotificationUtil {
+class IterablePushNotificationUtil {
     private static PendingAction pendingAction = null;
     private static final String TAG = "IterablePushNotificationUtil";
 
@@ -120,5 +121,22 @@ public class IterablePushNotificationUtil {
             this.openApp = openApp;
             this.dataFields = dataFields;
         }
+    }
+
+    static void dismissNotificationPanel(Context context) {
+        // Dismiss the notifications panel
+        try {
+            context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        } catch (SecurityException e) {
+            IterableLogger.w(TAG, e.getLocalizedMessage());
+        }
+    }
+
+    static void dismissNotification(Context context, Intent notificationIntent) {
+        // Dismiss the notification
+        int requestCode = notificationIntent.getIntExtra(IterableConstants.REQUEST_CODE, 0);
+        NotificationManager mNotificationManager = (NotificationManager)
+                context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.cancel(requestCode);
     }
 }

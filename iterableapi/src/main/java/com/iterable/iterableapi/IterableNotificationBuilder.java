@@ -111,24 +111,37 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      * @param extras     Notification payload
      */
     public void createNotificationActionButton(Context context, IterableNotificationData.Button button, Bundle extras) {
+        PendingIntent pendingButtonIntent = getPendingIntent(context, button, extras);
+        NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action
+                .Builder(NotificationCompat.BADGE_ICON_NONE, button.title, pendingButtonIntent);
+        if (button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT)) {
+            actionBuilder.addRemoteInput(new RemoteInput.Builder(IterableConstants.USER_INPUT).setLabel(button.inputPlaceholder).build());
+        }
+        addAction(actionBuilder.build());
+    }
+
+    private PendingIntent getPendingIntent(Context context, IterableNotificationData.Button button, Bundle extras) {
+        PendingIntent pendingButtonIntent;
+
         Intent buttonIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
-        buttonIntent.setClass(context, IterableTrampolineActivity.class);
         buttonIntent.putExtras(extras);
         buttonIntent.putExtra(IterableConstants.REQUEST_CODE, requestCode);
         buttonIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, button.identifier);
         buttonIntent.putExtra(IterableConstants.ACTION_IDENTIFIER, button.identifier);
 
-        PendingIntent pendingButtonIntent = PendingIntent.getActivity(context, buttonIntent.hashCode(),
-                buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action
-                .Builder(NotificationCompat.BADGE_ICON_NONE, button.title, pendingButtonIntent);
-
-        if (button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT)) {
-            actionBuilder.addRemoteInput(new RemoteInput.Builder(IterableConstants.USER_INPUT).setLabel(button.inputPlaceholder).build());
+        if (button.openApp) {
+            IterableLogger.d(TAG, "Go through TrampolineActivity");
+            buttonIntent.setClass(context, IterableTrampolineActivity.class);
+            pendingButtonIntent = PendingIntent.getActivity(context, buttonIntent.hashCode(),
+                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        } else {
+            IterableLogger.d(TAG, "Go through IterablePushActionReceiver");
+            buttonIntent.setClass(context, IterablePushActionReceiver.class);
+            pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
+                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
 
-        addAction(actionBuilder.build());
+        return pendingButtonIntent;
     }
 
     /**

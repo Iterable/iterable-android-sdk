@@ -1,11 +1,7 @@
 package com.iterable.iterableapi;
 
-import static com.iterable.iterableapi.IterablePushNotificationUtil.handlePushAction;
-
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.NotificationManager;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -38,23 +34,11 @@ public class IterableTrampolineActivity extends AppCompatActivity {
             return;
         }
 
-        // Dismiss the notification
-        int requestCode = notificationIntent.getIntExtra(IterableConstants.REQUEST_CODE, 0);
-        NotificationManager mNotificationManager = (NotificationManager)
-                this.getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.cancel(requestCode);
-
-        // Dismiss the notifications panel
-        try {
-            this.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-        } catch (SecurityException e) {
-            IterableLogger.w(TAG, e.getLocalizedMessage());
-        }
-
+        IterablePushNotificationUtil.dismissNotification(this, notificationIntent);
+        IterablePushNotificationUtil.dismissNotificationPanel(this);
         if (IterableConstants.ACTION_PUSH_ACTION.equalsIgnoreCase(actionName)) {
-            handlePushAction(this, notificationIntent);
+            IterablePushNotificationUtil.handlePushAction(this, notificationIntent);
         }
-
         finish();
     }
 

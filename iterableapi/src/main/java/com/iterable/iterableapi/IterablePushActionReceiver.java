@@ -13,6 +13,11 @@ public class IterablePushActionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-
+        IterablePushNotificationUtil.dismissNotification(context, intent);
+        IterablePushNotificationUtil.dismissNotificationPanel(context);
+        String actionName = intent.getAction();
+        if (IterableConstants.ACTION_PUSH_ACTION.equalsIgnoreCase(actionName)) {
+            IterablePushNotificationUtil.handlePushAction(context, intent);
+        }
     }
 }
