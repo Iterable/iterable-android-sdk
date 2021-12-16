@@ -15,8 +15,10 @@ import java.util.regex.Pattern;
 class IterableDeepLinkManager {
     private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
 
-    IterableDeepLinkManager() {
+    private String[] allowedProtocols;
 
+    IterableDeepLinkManager(@NonNull String[] allowedProtocols) {
+        this.allowedProtocols = allowedProtocols;
     }
 
     /**

@@ -142,7 +142,7 @@ private static final String TAG = "IterableApi";
     @NonNull
     IterableDeepLinkManager getDeepLinkManager() {
         if (deepLinkManager == null) {
-            deepLinkManager = new IterableDeepLinkManager();
+            deepLinkManager = new IterableDeepLinkManager(config.allowedProtocols);
         }
 
         return deepLinkManager;
@@ -315,7 +315,7 @@ private static final String TAG = "IterableApi";
         }
 
         if (sharedInstance.deepLinkManager == null) {
-            sharedInstance.deepLinkManager = new IterableDeepLinkManager();
+            sharedInstance.deepLinkManager = new IterableDeepLinkManager(config.allowedProtocols);
         }
 
         loadLastSavedConfiguration(context);
@@ -435,6 +435,7 @@ private static final String TAG = "IterableApi";
      */
     public boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();
+
         if (getDeepLinkManager().isIterableDeepLink(uri)) {
             getDeepLinkManager().getAndTrackDeepLink(uri, new IterableHelper.IterableActionHandler() {
                 @Override

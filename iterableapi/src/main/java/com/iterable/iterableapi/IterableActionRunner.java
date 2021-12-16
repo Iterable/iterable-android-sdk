@@ -67,9 +67,10 @@ class IterableActionRunner {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(uri);
 
-            List<ResolveInfo> resolveInfos = context.getPackageManager().queryIntentActivities(intent, 0);
-            if (resolveInfos.size() > 1) {
-                for (ResolveInfo resolveInfo : resolveInfos) {
+            List<ResolveInfo> resolveInfoList = context.getPackageManager().queryIntentActivities(intent, 0);
+
+            if (resolveInfoList.size() > 1) {
+                for (ResolveInfo resolveInfo : resolveInfoList) {
                     if (resolveInfo.activityInfo.packageName.equals(context.getPackageName())) {
                         Log.d(TAG, "The deep link will be handled by the app: " + resolveInfo.activityInfo.packageName);
                         intent.setPackage(resolveInfo.activityInfo.packageName);
