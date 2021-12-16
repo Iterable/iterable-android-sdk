@@ -39,7 +39,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
 
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -61,7 +61,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
 
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -80,7 +80,7 @@ public class IterableApiDeeplinkTest {
                     signal.countDown();
                 }
             };
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             signal.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -99,7 +99,7 @@ public class IterableApiDeeplinkTest {
                     signal.countDown();
                 }
             };
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -119,7 +119,7 @@ public class IterableApiDeeplinkTest {
                     signal.countDown();
                 }
             };
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             signal.await();
         } catch (InterruptedException e) {
             e.printStackTrace();

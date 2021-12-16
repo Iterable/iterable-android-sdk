@@ -12,18 +12,21 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class IterableDeeplinkManager {
-
+class IterableDeepLinkManager {
     private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
+
+    IterableDeepLinkManager() {
+
+    }
 
     /**
      * Tracks a link click and passes the redirected URL to the callback
      * @param url The URL that was clicked
      * @param callback The callback to execute the original URL is retrieved
      */
-    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
+    void getAndTrackDeepLink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
         if (url != null) {
-            if (isIterableDeeplink(url)) {
+            if (isIterableDeepLink(url)) {
                 new RedirectTask(callback).execute(url);
             } else {
                 callback.execute(url);
@@ -38,7 +41,7 @@ class IterableDeeplinkManager {
      * @param url The URL to check
      * @return `true` if it looks like a link rewritten by Iterable, `false` otherwise
      */
-    static boolean isIterableDeeplink(@Nullable String url) {
+    static boolean isIterableDeepLink(@Nullable String url) {
         if (url != null) {
             Matcher m = deeplinkPattern.matcher(url);
             if (m.find()) {

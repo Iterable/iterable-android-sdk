@@ -51,6 +51,8 @@ private static final String TAG = "IterableApi";
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
 
+    private IterableDeepLinkManager deepLinkManager;
+
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -136,6 +138,15 @@ private static final String TAG = "IterableApi";
             authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
         }
         return authManager;
+    }
+
+    @NonNull
+    IterableDeepLinkManager getDeepLinkManager() {
+        if (deepLinkManager == null) {
+            deepLinkManager = new IterableDeepLinkManager();
+        }
+
+        return deepLinkManager;
     }
 
     /**
@@ -295,14 +306,21 @@ private static final String TAG = "IterableApi";
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
+
         sharedInstance.retrieveEmailAndUserId();
 
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
+
         if (sharedInstance.inAppManager == null) {
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
                     sharedInstance.config.inAppDisplayInterval);
         }
+
+        if (sharedInstance.deepLinkManager == null) {
+            sharedInstance.deepLinkManager = new IterableDeepLinkManager();
+        }
+
         loadLastSavedConfiguration(context);
         IterablePushActionReceiver.processPendingAction(context);
     }
@@ -402,8 +420,8 @@ private static final String TAG = "IterableApi";
      * @param onCallback Calls the callback handler with the destination location
      *                   or the original url if it is not an Iterable link.
      */
-    public static void getAndTrackDeeplink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
+    public void getAndTrackDeepLink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
+        getDeepLinkManager().getAndTrackDeepLink(uri, onCallback);
     }
 
     /**
@@ -418,10 +436,10 @@ private static final String TAG = "IterableApi";
      *            handler activity
      * @return whether or not the app link was handled
      */
-    public static boolean handleAppLink(@NonNull String uri) {
+    public boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();
-        if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
-            IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
+        if (getDeepLinkManager().isIterableDeepLink(uri)) {
+            getDeepLinkManager().getAndTrackDeepLink(uri, new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String originalUrl) {
                     IterableAction action = IterableAction.actionOpenUrl(originalUrl);

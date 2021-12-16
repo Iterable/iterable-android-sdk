@@ -136,7 +136,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         notifyOnChange();
     }
 
-
     boolean isAutoDisplayPaused() {
         return autoDisplayPaused;
     }
