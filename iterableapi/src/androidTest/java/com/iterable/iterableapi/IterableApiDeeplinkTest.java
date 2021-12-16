@@ -15,8 +15,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
-public class IterableApiDeeplinkTest {
-
+public class IterableApiDeepLinkTest {
     @Before
     public void setUp() {
     }
