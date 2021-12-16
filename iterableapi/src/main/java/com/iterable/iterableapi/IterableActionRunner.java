@@ -14,7 +14,6 @@ import android.util.Log;
 import java.util.List;
 
 class IterableActionRunner {
-
     @VisibleForTesting
     static IterableActionRunnerImpl instance = new IterableActionRunnerImpl();
 
