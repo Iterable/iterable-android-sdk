@@ -95,7 +95,7 @@ public class IterableConfig {
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
-        private String[] allowedProtocols = {};
+        private String[] allowedProtocols = new String[0];
         public Builder() {}
 
         /**
