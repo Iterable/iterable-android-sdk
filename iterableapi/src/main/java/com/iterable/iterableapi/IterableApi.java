@@ -77,7 +77,6 @@ private static final String TAG = "IterableApi";
 //---------------------------------------------------------------------------------------
 //endregion
 
-
 //region Getters/Setters
 //---------------------------------------------------------------------------------------
 
@@ -252,8 +251,6 @@ private static final String TAG = "IterableApi";
 //---------------------------------------------------------------------------------------
 //endregion
 
-
-
 //region Public Functions
 //---------------------------------------------------------------------------------------
 
@@ -402,8 +399,8 @@ private static final String TAG = "IterableApi";
      * @param onCallback Calls the callback handler with the destination location
      *                   or the original url if it is not an Iterable link.
      */
-    public static void getAndTrackDeeplink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
+    public void getAndTrackDeepLink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
+        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback, config.allowedProtocols);
     }
 
     /**
@@ -418,8 +415,9 @@ private static final String TAG = "IterableApi";
      *            handler activity
      * @return whether or not the app link was handled
      */
-    public static boolean handleAppLink(@NonNull String uri) {
+    public boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();
+
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
             IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
                 @Override
@@ -427,7 +425,7 @@ private static final String TAG = "IterableApi";
                     IterableAction action = IterableAction.actionOpenUrl(originalUrl);
                     IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
                 }
-            });
+            }, config.allowedProtocols);
             return true;
         } else {
             IterableAction action = IterableAction.actionOpenUrl(uri);
@@ -879,7 +877,6 @@ private static final String TAG = "IterableApi";
 
 //---------------------------------------------------------------------------------------
 //endregion
-
 
 //region Package-Protected Functions
 //---------------------------------------------------------------------------------------

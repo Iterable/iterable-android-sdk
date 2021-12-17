@@ -13,15 +13,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class IterableDeeplinkManager {
-
     private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
+
+    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
+        IterableDeeplinkManager.getAndTrackDeeplink(url, callback, new String[1]);
+    }
 
     /**
      * Tracks a link click and passes the redirected URL to the callback
      * @param url The URL that was clicked
      * @param callback The callback to execute the original URL is retrieved
      */
-    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
+    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback, @NonNull String[] allowedProtocols) {
         if (url != null) {
             if (isIterableDeeplink(url)) {
                 new RedirectTask(callback).execute(url);
