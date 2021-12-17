@@ -51,6 +51,6 @@ class IterableWebView extends WebView {
         getSettings().setAllowContentAccess(false);
 
         //resize:
-        getSettings().setJavaScriptEnabled(true);
+        getSettings().setJavaScriptEnabled(false);
     }
 }

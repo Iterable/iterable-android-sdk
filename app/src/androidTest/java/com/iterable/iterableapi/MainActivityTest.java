@@ -145,6 +145,7 @@ public class MainActivityTest {
         onView(withText("Tips and tricks 2")).perform(click());
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
+        onWebView(withId(R.id.webView)).forceJavascriptEnabled();
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
@@ -165,6 +166,7 @@ public class MainActivityTest {
         onView(withText("Tips and tricks 2")).perform(click());
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
+        onWebView(withId(R.id.webView)).forceJavascriptEnabled();
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
@@ -182,6 +184,7 @@ public class MainActivityTest {
         onView(withText("Tips and tricks 2")).perform(click());
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
+        onWebView(withId(R.id.webView)).forceJavascriptEnabled();
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
@@ -203,6 +206,7 @@ public class MainActivityTest {
         onView(withText("Tips and tricks 2")).perform(click());
         intended(allOf(hasComponent(IterableInboxMessageActivity.class.getName())), times(0));
         onView(withId(R.id.webView)).inRoot(isDialog()).check(matches(isDisplayed()));
+        onWebView(withId(R.id.webView)).forceJavascriptEnabled();
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
