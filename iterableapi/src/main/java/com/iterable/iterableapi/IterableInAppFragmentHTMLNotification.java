@@ -35,7 +35,6 @@ import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
-
     private static final String BACK_BUTTON = "itbl://backButton";
     private static final String JAVASCRIPT_INTERFACE = "ITBL";
     private static final String TAG = "IterableInAppFragmentHTMLNotification";
@@ -80,7 +79,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding, @NonNull boolean shouldAnimate, IterableInAppMessage.InAppBgColor inAppBgColor) {
-
         notification = new IterableInAppFragmentHTMLNotification();
         Bundle args = new Bundle();
         args.putString(HTML_STRING, htmlString);
@@ -162,7 +160,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
         return dialog;
     }
-
 
     @Nullable
     @Override

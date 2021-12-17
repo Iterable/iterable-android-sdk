@@ -13,19 +13,31 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class IterableDeeplinkManager {
+    private static final String TAG = "IterableDeeplinkManager";
     private static Pattern deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER);
-
-    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
-        IterableDeeplinkManager.getAndTrackDeeplink(url, callback, new String[1]);
-    }
 
     /**
      * Tracks a link click and passes the redirected URL to the callback
      * @param url The URL that was clicked
      * @param callback The callback to execute the original URL is retrieved
      */
+    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
+        IterableDeeplinkManager.getAndTrackDeeplink(url, callback, new String[0]);
+    }
+
+    /**
+     * Tracks a link click and passes the redirected URL to the callback
+     * @param url The URL that was clicked
+     * @param callback The callback to execute the original URL is retrieved
+     * @param allowedProtocols a list of protocols (on top of `https`) to allow opening
+     */
     static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback, @NonNull String[] allowedProtocols) {
         if (url != null) {
+            if (!isUrlOpenAllowed(url, allowedProtocols)) {
+                IterableLogger.e(TAG, "URL was not in the allowed protocols list");
+                return;
+            }
+
             if (isIterableDeeplink(url)) {
                 new RedirectTask(callback).execute(url);
             } else {
@@ -48,6 +60,20 @@ class IterableDeeplinkManager {
                 return true;
             }
         }
+        return false;
+    }
+
+    private static boolean isUrlOpenAllowed(@NonNull String url, @NonNull String[] allowedProtocols) {
+        if (url.startsWith("https")) {
+            return true;
+        }
+
+        for (String protocol : allowedProtocols) {
+            if (url.startsWith(protocol)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
