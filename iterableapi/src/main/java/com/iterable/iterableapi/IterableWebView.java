@@ -44,7 +44,13 @@ class IterableWebView extends WebView {
         getSettings().setLoadWithOverviewMode(true);
         getSettings().setUseWideViewPort(true);
 
+        // disallow unnecessary access
+        getSettings().setAllowFileAccess(false);
+        getSettings().setAllowFileAccessFromFileURLs(false);
+        getSettings().setAllowUniversalAccessFromFileURLs(false);
+        getSettings().setAllowContentAccess(false);
+
         //resize:
-        getSettings().setJavaScriptEnabled(true);
+        getSettings().setJavaScriptEnabled(false);
     }
 }
