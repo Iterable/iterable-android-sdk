@@ -104,7 +104,6 @@ private static final String TAG = "IterableApi";
      * Retrieves all of the payload as a single Bundle Object
      * @return Bundle
      */
-
     @Nullable
     public Bundle getPayloadData() {
         return _payloadData;
@@ -292,14 +291,17 @@ private static final String TAG = "IterableApi";
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
+
         sharedInstance.retrieveEmailAndUserId();
 
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
+
         if (sharedInstance.inAppManager == null) {
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval);
+                    sharedInstance.config.inAppDisplayInterval, config.allowedProtocols);
         }
+
         loadLastSavedConfiguration(context);
         IterablePushActionReceiver.processPendingAction(context);
     }
