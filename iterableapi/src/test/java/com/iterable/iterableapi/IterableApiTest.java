@@ -199,7 +199,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
 
         String url = "http://iterable.com";
-        IterableApi.handleAppLink(
+        IterableApi.getInstance().handleAppLink(
                 "http://links.iterable.com/a/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0");
 
         ArgumentCaptor<Uri> capturedUri = ArgumentCaptor.forClass(Uri.class);
