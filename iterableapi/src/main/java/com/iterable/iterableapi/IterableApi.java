@@ -299,7 +299,7 @@ private static final String TAG = "IterableApi";
 
         if (sharedInstance.inAppManager == null) {
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval, config.allowedProtocols);
+                    sharedInstance.config.inAppDisplayInterval, sharedInstance.config.allowedProtocols);
         }
 
         loadLastSavedConfiguration(context);
