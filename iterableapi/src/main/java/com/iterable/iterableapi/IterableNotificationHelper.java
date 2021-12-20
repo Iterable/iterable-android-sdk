@@ -193,7 +193,7 @@ class IterableNotificationHelper {
             }
 
             PendingIntent notificationClickedIntent = PendingIntent.getBroadcast(context, notificationBuilder.requestCode,
-                    pushContentIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    pushContentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
             notificationBuilder.setContentIntent(notificationClickedIntent);
             notificationBuilder.setIsGhostPush(isGhostPush(extras));
