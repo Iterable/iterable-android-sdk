@@ -11,7 +11,6 @@ import androidx.annotation.VisibleForTesting;
 
 import android.util.Log;
 
-import java.util.Arrays;
 import java.util.List;
 
 class IterableActionRunner {
@@ -68,7 +67,7 @@ class IterableActionRunner {
          */
         private boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableActionContext actionContext, String[] allowedProtocols) {
             // Handle URL: check for deep links within the app
-            if (!isUrlOpenAllowed(uri.toString(), allowedProtocols)) {
+            if (!IterableUtil.isUrlOpenAllowed(uri.toString(), allowedProtocols)) {
                 IterableLogger.e(TAG, "URL was not in the allowed protocols list");
                 return false;
             }
@@ -118,20 +117,6 @@ class IterableActionRunner {
                     return IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action, actionContext);
                 }
             }
-            return false;
-        }
-
-        private static boolean isUrlOpenAllowed(@NonNull String url, @NonNull String[] allowedProtocols) {
-            if (url.startsWith("https")) {
-                return true;
-            }
-
-            for (String protocol : allowedProtocols) {
-                if (url.startsWith(protocol)) {
-                    return true;
-                }
-            }
-
             return false;
         }
     }

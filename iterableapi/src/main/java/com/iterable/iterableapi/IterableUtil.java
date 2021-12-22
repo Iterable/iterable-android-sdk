@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
@@ -276,5 +277,19 @@ class IterableUtil {
             }
             return false;
         }
+    }
+
+    static boolean isUrlOpenAllowed(@NonNull String url, @NonNull String[] allowedProtocols) {
+        if (url.startsWith("https")) {
+            return true;
+        }
+
+        for (String protocol : allowedProtocols) {
+            if (url.startsWith(protocol)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

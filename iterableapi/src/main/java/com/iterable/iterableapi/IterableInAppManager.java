@@ -43,7 +43,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
     private final IterableInAppDisplayer displayer;
-    private final String[] allowedProtocols;
     private final IterableActivityMonitor activityMonitor;
     private final double inAppDisplayInterval;
     private final List<Listener> listeners = new ArrayList<>();
@@ -51,14 +50,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastInAppShown = 0;
     private boolean autoDisplayPaused = false;
 
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, String[] allowedProtocols) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval) {
         this(iterableApi,
                 handler,
                 inAppDisplayInterval,
                 new IterableInAppFileStorage(iterableApi.getMainActivityContext()),
                 IterableActivityMonitor.getInstance(),
-                new IterableInAppDisplayer(IterableActivityMonitor.getInstance()),
-                allowedProtocols);
+                new IterableInAppDisplayer(IterableActivityMonitor.getInstance()));
     }
 
     @VisibleForTesting
@@ -67,8 +65,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                          double inAppDisplayInterval,
                          IterableInAppStorage storage,
                          IterableActivityMonitor activityMonitor,
-                         IterableInAppDisplayer displayer,
-                         String[] allowedProtocols) {
+                         IterableInAppDisplayer displayer) {
         this.api = iterableApi;
         this.context = iterableApi.getMainActivityContext();
         this.handler = handler;
@@ -77,7 +74,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         this.displayer = displayer;
         this.activityMonitor = activityMonitor;
         this.activityMonitor.addCallback(this);
-        this.allowedProtocols = allowedProtocols;
 
         syncInApp();
     }
@@ -275,17 +271,17 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             if (urlString.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
                 // This is an action:// URL, pass that to the custom action handler
                 String actionName = urlString.replace(IterableConstants.URL_SCHEME_ACTION, "");
-                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP, allowedProtocols);
+                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP, IterableApi.getInstance().config.allowedProtocols);
             } else if (urlString.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
                 // Handle itbl:// URLs, pass that to the custom action handler for compatibility
                 String actionName = urlString.replace(IterableConstants.URL_SCHEME_ITBL, "");
-                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP, allowedProtocols);
+                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP, IterableApi.getInstance().config.allowedProtocols);
             } else if (urlString.startsWith(IterableConstants.URL_SCHEME_ITERABLE)) {
                 // Handle iterable:// URLs - reserved for actions defined by the SDK only
                 String actionName = urlString.replace(IterableConstants.URL_SCHEME_ITERABLE, "");
                 handleIterableCustomAction(actionName, message);
             } else {
-                IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(urlString), IterableActionSource.IN_APP, allowedProtocols);
+                IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(urlString), IterableActionSource.IN_APP, IterableApi.getInstance().config.allowedProtocols);
             }
         }
     }

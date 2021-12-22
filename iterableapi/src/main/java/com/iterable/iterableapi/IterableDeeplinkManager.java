@@ -33,7 +33,7 @@ class IterableDeeplinkManager {
      */
     static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback, @NonNull String[] allowedProtocols) {
         if (url != null) {
-            if (!isUrlOpenAllowed(url, allowedProtocols)) {
+            if (!IterableUtil.isUrlOpenAllowed(url, allowedProtocols)) {
                 IterableLogger.e(TAG, "URL was not in the allowed protocols list");
                 return;
             }
@@ -60,20 +60,6 @@ class IterableDeeplinkManager {
                 return true;
             }
         }
-        return false;
-    }
-
-    private static boolean isUrlOpenAllowed(@NonNull String url, @NonNull String[] allowedProtocols) {
-        if (url.startsWith("https")) {
-            return true;
-        }
-
-        for (String protocol : allowedProtocols) {
-            if (url.startsWith(protocol)) {
-                return true;
-            }
-        }
-
         return false;
     }
 
