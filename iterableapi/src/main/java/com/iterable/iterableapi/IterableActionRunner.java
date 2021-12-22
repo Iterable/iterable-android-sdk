@@ -14,33 +14,25 @@ import android.util.Log;
 import java.util.List;
 
 class IterableActionRunner {
+
     @VisibleForTesting
     static IterableActionRunnerImpl instance = new IterableActionRunnerImpl();
 
     static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
-        return instance.executeAction(context, action, source, new String[0]);
-    }
-
-    static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source, @NonNull String[] allowedProtocols) {
-        return instance.executeAction(context, action, source, allowedProtocols);
+        return instance.executeAction(context, action, source);
     }
 
     static class IterableActionRunnerImpl {
         private static final String TAG = "IterableActionRunner";
-
-        boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
-            return executeAction(context, action, source, new String[0]);
-        }
 
         /**
          * Execute an {@link IterableAction} as a response to push action
          *
          * @param context Context
          * @param action  The original action object
-         * @param allowedProtocols protocols that the SDK is allowed to open in addition to `https`
          * @return `true` if the action was handled, `false` if it was not
          */
-        boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source, @NonNull String[] allowedProtocols) {
+        boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
             if (action == null) {
                 return false;
             }
@@ -48,7 +40,7 @@ class IterableActionRunner {
             IterableActionContext actionContext = new IterableActionContext(action, source);
 
             if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
-                return openUri(context, Uri.parse(action.getData()), actionContext, allowedProtocols);
+                return openUri(context, Uri.parse(action.getData()), actionContext);
             } else {
                 return callCustomActionIfSpecified(action, actionContext);
             }
@@ -65,7 +57,12 @@ class IterableActionRunner {
          * @return `true` if the action was handled, or an activity was found for this URL
          * `false` if the handler did not handle this URL and no activity was found to open it with
          */
-        private boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableActionContext actionContext, String[] allowedProtocols) {
+        private boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableActionContext actionContext) {
+            // Handle URL: check for deep links within the app
+            if (!IterableUtil.isUrlOpenAllowed(uri.toString())) {
+                return false;
+            }
+
             if (IterableApi.sharedInstance.config.urlHandler != null) {
                 if (IterableApi.sharedInstance.config.urlHandler.handleIterableURL(uri, actionContext)) {
                     return true;
@@ -73,11 +70,6 @@ class IterableActionRunner {
             }
 
             // Handle URL: check for deep links within the app
-            if (!isUrlOpenAllowed(uri.toString(), allowedProtocols)) {
-                IterableLogger.e(TAG, "URL was not in the allowed protocols list");
-                return false;
-            }
-
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(uri);
 
@@ -117,20 +109,6 @@ class IterableActionRunner {
                     return IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action, actionContext);
                 }
             }
-            return false;
-        }
-
-        private static boolean isUrlOpenAllowed(@NonNull String url, @NonNull String[] allowedProtocols) {
-            if (url.startsWith("https")) {
-                return true;
-            }
-
-            for (String protocol : allowedProtocols) {
-                if (url.startsWith(protocol)) {
-                    return true;
-                }
-            }
-
             return false;
         }
     }

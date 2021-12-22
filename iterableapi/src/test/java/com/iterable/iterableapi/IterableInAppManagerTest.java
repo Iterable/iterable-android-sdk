@@ -264,7 +264,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock, new String[0]));
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
@@ -328,7 +328,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock, new String[0]));
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override

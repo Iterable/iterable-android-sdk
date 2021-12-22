@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
@@ -276,5 +277,21 @@ class IterableUtil {
             }
             return false;
         }
+    }
+
+    static boolean isUrlOpenAllowed(@NonNull String url) {
+        String urlProtocol = url.split("://")[0];
+        if (urlProtocol.equals("https")) {
+            return true;
+        }
+
+        for (String allowedProtocol : IterableApi.getInstance().config.allowedProtocols) {
+            if (urlProtocol.equals(allowedProtocol)) {
+                return true;
+            }
+        }
+
+        IterableLogger.d(TAG, urlProtocol + " is not in the allowed protocols");
+        return false;
     }
 }

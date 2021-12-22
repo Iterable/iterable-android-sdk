@@ -35,6 +35,7 @@ import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
+
     private static final String BACK_BUTTON = "itbl://backButton";
     private static final String JAVASCRIPT_INTERFACE = "ITBL";
     private static final String TAG = "IterableInAppFragmentHTMLNotification";

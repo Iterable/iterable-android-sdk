@@ -299,7 +299,7 @@ private static final String TAG = "IterableApi";
 
         if (sharedInstance.inAppManager == null) {
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval, sharedInstance.config.allowedProtocols);
+                    sharedInstance.config.inAppDisplayInterval);
         }
 
         loadLastSavedConfiguration(context);
@@ -402,7 +402,7 @@ private static final String TAG = "IterableApi";
      *                   or the original url if it is not an Iterable link.
      */
     public void getAndTrackDeepLink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback, config.allowedProtocols);
+        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
     }
 
     /**
@@ -427,7 +427,7 @@ private static final String TAG = "IterableApi";
                     IterableAction action = IterableAction.actionOpenUrl(originalUrl);
                     IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
                 }
-            }, config.allowedProtocols);
+            });
             return true;
         } else {
             IterableAction action = IterableAction.actionOpenUrl(uri);
