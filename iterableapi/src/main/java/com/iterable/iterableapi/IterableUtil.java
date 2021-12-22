@@ -280,12 +280,12 @@ class IterableUtil {
     }
 
     static boolean isUrlOpenAllowed(@NonNull String url, @NonNull String[] allowedProtocols) {
-        if (url.startsWith("https")) {
+        String urlProtocol = url.split("://")[0];
+        if(urlProtocol.equals("https")){
             return true;
         }
-
-        for (String protocol : allowedProtocols) {
-            if (url.startsWith(protocol)) {
+        for (String allowedProtocol : allowedProtocols) {
+            if (urlProtocol.equals(allowedProtocol)) {
                 return true;
             }
         }
