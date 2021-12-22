@@ -11,6 +11,7 @@ import androidx.annotation.VisibleForTesting;
 
 import android.util.Log;
 
+import java.util.Arrays;
 import java.util.List;
 
 class IterableActionRunner {
@@ -18,7 +19,7 @@ class IterableActionRunner {
     static IterableActionRunnerImpl instance = new IterableActionRunnerImpl();
 
     static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
-        return instance.executeAction(context, action, source, new String[0]);
+        return instance.executeAction(context, action, source, IterableApi.getInstance().config.allowedProtocols);
     }
 
     static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source, @NonNull String[] allowedProtocols) {
@@ -29,7 +30,7 @@ class IterableActionRunner {
         private static final String TAG = "IterableActionRunner";
 
         boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
-            return executeAction(context, action, source, new String[0]);
+            return executeAction(context, action, source, IterableApi.getInstance().config.allowedProtocols);
         }
 
         /**
@@ -66,16 +67,16 @@ class IterableActionRunner {
          * `false` if the handler did not handle this URL and no activity was found to open it with
          */
         private boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableActionContext actionContext, String[] allowedProtocols) {
-            if (IterableApi.sharedInstance.config.urlHandler != null) {
-                if (IterableApi.sharedInstance.config.urlHandler.handleIterableURL(uri, actionContext)) {
-                    return true;
-                }
-            }
-
             // Handle URL: check for deep links within the app
             if (!isUrlOpenAllowed(uri.toString(), allowedProtocols)) {
                 IterableLogger.e(TAG, "URL was not in the allowed protocols list");
                 return false;
+            }
+
+            if (IterableApi.sharedInstance.config.urlHandler != null) {
+                if (IterableApi.sharedInstance.config.urlHandler.handleIterableURL(uri, actionContext)) {
+                    return true;
+                }
             }
 
             Intent intent = new Intent(Intent.ACTION_VIEW);

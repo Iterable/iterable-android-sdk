@@ -427,7 +427,7 @@ private static final String TAG = "IterableApi";
                     IterableAction action = IterableAction.actionOpenUrl(originalUrl);
                     IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
                 }
-            }, config.allowedProtocols);
+            }, sharedInstance.config.allowedProtocols);
             return true;
         } else {
             IterableAction action = IterableAction.actionOpenUrl(uri);
