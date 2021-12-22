@@ -80,7 +80,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH), eq(new String[0]));
+        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("customAction", capturedAction.getValue().getType());
 
         // Verify that the main app activity was launched
@@ -133,7 +133,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH), eq(new String[0]));
+        verify(actionRunnerMock).executeAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
         IterableAction capturedAction = actionCaptor.getValue();
         assertEquals("handleTextInput", capturedAction.getType());
         assertEquals("input text", capturedAction.userInput);
@@ -151,7 +151,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with openUrl action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH), eq(new String[0]));
+        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("openUrl", capturedAction.getValue().getType());
         assertEquals("https://example.com", capturedAction.getValue().getData());
     }

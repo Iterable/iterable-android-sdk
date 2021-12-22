@@ -402,7 +402,7 @@ private static final String TAG = "IterableApi";
      *                   or the original url if it is not an Iterable link.
      */
     public void getAndTrackDeepLink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback, config.allowedProtocols);
+        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
     }
 
     /**
@@ -427,7 +427,7 @@ private static final String TAG = "IterableApi";
                     IterableAction action = IterableAction.actionOpenUrl(originalUrl);
                     IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK);
                 }
-            }, sharedInstance.config.allowedProtocols);
+            });
             return true;
         } else {
             IterableAction action = IterableAction.actionOpenUrl(uri);

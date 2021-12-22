@@ -279,17 +279,19 @@ class IterableUtil {
         }
     }
 
-    static boolean isUrlOpenAllowed(@NonNull String url, @NonNull String[] allowedProtocols) {
+    static boolean isUrlOpenAllowed(@NonNull String url) {
         String urlProtocol = url.split("://")[0];
-        if(urlProtocol.equals("https")){
+        if (urlProtocol.equals("https")) {
             return true;
         }
-        for (String allowedProtocol : allowedProtocols) {
+
+        for (String allowedProtocol : IterableApi.getInstance().config.allowedProtocols) {
             if (urlProtocol.equals(allowedProtocol)) {
                 return true;
             }
         }
 
+        IterableLogger.d(TAG, urlProtocol + " is not in the allowed protocols");
         return false;
     }
 }

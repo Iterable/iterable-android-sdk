@@ -22,19 +22,8 @@ class IterableDeeplinkManager {
      * @param callback The callback to execute the original URL is retrieved
      */
     static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
-        IterableDeeplinkManager.getAndTrackDeeplink(url, callback, new String[0]);
-    }
-
-    /**
-     * Tracks a link click and passes the redirected URL to the callback
-     * @param url The URL that was clicked
-     * @param callback The callback to execute the original URL is retrieved
-     * @param allowedProtocols a list of protocols (on top of `https`) to allow opening
-     */
-    static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback, @NonNull String[] allowedProtocols) {
         if (url != null) {
-            if (!IterableUtil.isUrlOpenAllowed(url, allowedProtocols)) {
-                IterableLogger.e(TAG, "URL was not in the allowed protocols list");
+            if (!IterableUtil.isUrlOpenAllowed(url)) {
                 return;
             }
 
