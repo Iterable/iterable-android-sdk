@@ -74,6 +74,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         this.displayer = displayer;
         this.activityMonitor = activityMonitor;
         this.activityMonitor.addCallback(this);
+
         syncInApp();
     }
 
@@ -135,7 +136,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         message.setRead(read);
         notifyOnChange();
     }
-
 
     boolean isAutoDisplayPaused() {
         return autoDisplayPaused;
@@ -232,6 +232,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 if (clickCallback != null) {
                     clickCallback.execute(url);
                 }
+
                 handleInAppClick(message, url);
                 lastInAppShown = IterableUtil.currentTimeMillis();
                 scheduleProcessing();
@@ -264,6 +265,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void handleInAppClick(@NonNull IterableInAppMessage message, @Nullable Uri url) {
         IterableLogger.printInfo();
+
         if (url != null && !url.toString().isEmpty()) {
             String urlString = url.toString();
             if (urlString.startsWith(IterableConstants.URL_SCHEME_ACTION)) {

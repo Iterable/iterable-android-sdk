@@ -23,6 +23,9 @@ class IterableDeeplinkManager {
      */
     static void getAndTrackDeeplink(@Nullable String url, @NonNull IterableHelper.IterableActionHandler callback) {
         if (url != null) {
+            if (!IterableUtil.isUrlOpenAllowed(url)) {
+                return;
+            }
             if (isIterableDeeplink(url)) {
                 new RedirectTask(callback).execute(url);
             } else {

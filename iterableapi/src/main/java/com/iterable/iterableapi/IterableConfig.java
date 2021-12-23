@@ -64,6 +64,12 @@ public class IterableConfig {
      */
     final long expiringAuthTokenRefreshPeriod;
 
+    /**
+     * By default, the SDK allows navigation/calls to URLs with the `https` protocol (e.g. deep links or external links)
+     * If you'd like to allow other protocols like `http`, `tel`, etc., add them to the `allowedProtocols` array
+     */
+    final String[] allowedProtocols;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -75,6 +81,7 @@ public class IterableConfig {
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
+        allowedProtocols = builder.allowedProtocols;
     }
 
     public static class Builder {
@@ -88,6 +95,7 @@ public class IterableConfig {
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
+        private String[] allowedProtocols = new String[0];
         public Builder() {}
 
         /**
@@ -195,6 +203,16 @@ public class IterableConfig {
         @NonNull
         public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
             this.expiringAuthTokenRefreshPeriod = period * 1000L;
+            return this;
+        }
+
+        /**
+         * Set what URLs the SDK should allow to open (in addition to `https`)
+         * @param allowedProtocols an array/list of protocols (e.g. `http`, `tel`)
+         */
+        @NonNull
+        public Builder setAllowedProtocols(@NonNull String[] allowedProtocols) {
+            this.allowedProtocols = allowedProtocols;
             return this;
         }
 

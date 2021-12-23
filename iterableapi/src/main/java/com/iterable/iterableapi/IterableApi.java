@@ -77,7 +77,6 @@ private static final String TAG = "IterableApi";
 //---------------------------------------------------------------------------------------
 //endregion
 
-
 //region Getters/Setters
 //---------------------------------------------------------------------------------------
 
@@ -105,7 +104,6 @@ private static final String TAG = "IterableApi";
      * Retrieves all of the payload as a single Bundle Object
      * @return Bundle
      */
-
     @Nullable
     public Bundle getPayloadData() {
         return _payloadData;
@@ -252,8 +250,6 @@ private static final String TAG = "IterableApi";
 //---------------------------------------------------------------------------------------
 //endregion
 
-
-
 //region Public Functions
 //---------------------------------------------------------------------------------------
 
@@ -295,14 +291,17 @@ private static final String TAG = "IterableApi";
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
+
         sharedInstance.retrieveEmailAndUserId();
 
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
+
         if (sharedInstance.inAppManager == null) {
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
                     sharedInstance.config.inAppDisplayInterval);
         }
+
         loadLastSavedConfiguration(context);
         IterablePushActionReceiver.processPendingAction(context);
     }
@@ -402,7 +401,7 @@ private static final String TAG = "IterableApi";
      * @param onCallback Calls the callback handler with the destination location
      *                   or the original url if it is not an Iterable link.
      */
-    public static void getAndTrackDeeplink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    public void getAndTrackDeepLink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
         IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
     }
 
@@ -418,8 +417,9 @@ private static final String TAG = "IterableApi";
      *            handler activity
      * @return whether or not the app link was handled
      */
-    public static boolean handleAppLink(@NonNull String uri) {
+    public boolean handleAppLink(@NonNull String uri) {
         IterableLogger.printInfo();
+
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
             IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
                 @Override
@@ -879,7 +879,6 @@ private static final String TAG = "IterableApi";
 
 //---------------------------------------------------------------------------------------
 //endregion
-
 
 //region Package-Protected Functions
 //---------------------------------------------------------------------------------------

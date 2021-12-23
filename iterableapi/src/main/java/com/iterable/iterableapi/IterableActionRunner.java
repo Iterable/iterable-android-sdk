@@ -58,6 +58,11 @@ class IterableActionRunner {
          * `false` if the handler did not handle this URL and no activity was found to open it with
          */
         private boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableActionContext actionContext) {
+            // Handle URL: check for deep links within the app
+            if (!IterableUtil.isUrlOpenAllowed(uri.toString())) {
+                return false;
+            }
+
             if (IterableApi.sharedInstance.config.urlHandler != null) {
                 if (IterableApi.sharedInstance.config.urlHandler.handleIterableURL(uri, actionContext)) {
                     return true;
@@ -107,5 +112,4 @@ class IterableActionRunner {
             return false;
         }
     }
-
 }

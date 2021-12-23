@@ -16,9 +16,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
 public class IterableApiDeeplinkTest {
-
     @Before
     public void setUp() {
+
     }
 
     @After
@@ -30,7 +30,7 @@ public class IterableApiDeeplinkTest {
     public void testUniversalDeepLinkNoRewrite() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
-            final String requestString = "http://links.iterable.com/u/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0";
+            final String requestString = "https://links.iterable.com/u/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0";
             IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String result) {
@@ -39,7 +39,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
 
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -61,7 +61,7 @@ public class IterableApiDeeplinkTest {
                 }
             };
 
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -72,7 +72,7 @@ public class IterableApiDeeplinkTest {
     public void testEmptyRedirect() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
         try {
-            final String requestString = "";
+            final String requestString = "https";
             IterableHelper.IterableActionHandler clickCallback = new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String result) {
@@ -80,7 +80,7 @@ public class IterableApiDeeplinkTest {
                     signal.countDown();
                 }
             };
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             signal.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -99,7 +99,7 @@ public class IterableApiDeeplinkTest {
                     signal.countDown();
                 }
             };
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             assertTrue("callback is called", signal.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -119,7 +119,7 @@ public class IterableApiDeeplinkTest {
                     signal.countDown();
                 }
             };
-            IterableApi.getAndTrackDeeplink(requestString, clickCallback);
+            IterableApi.getInstance().getAndTrackDeepLink(requestString, clickCallback);
             signal.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
