@@ -15,6 +15,54 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.0)
+#### Fixed
+
+- Prevented in-app messages from executing JavaScript code included in their HTML
+  templates.
+- Prevented web views from accessing local files.
+
+#### Changed
+
+- Changed two static methods on the `IterableApi` class, `handleAppLink` and
+  `getAndTrackDeepLink`, to instance methods. To call these methods, grab an
+  instance of the `IterableApi` class by calling `IterableApi.getInstance()`.
+  For example, `IterableApi.getInstance().handleAppLink(...)`.
+
+  > &#x26A0; **WARNING**
+  > This is a breaking change. You'll need to update your code.
+
+#### Added
+
+- Added the `allowedProtocols` field to the `IterableConfig` class.
+
+  Use this array to declare the specific URL protocols that the SDK can expect to
+  see on incoming links (and that it should therefore handle). Doing this will
+  prevent the SDK from opening links that use unexpected URL protocols.
+
+  For example, this code allows the SDK to handle `http` and `custom` links:
+
+  _Java_
+
+  ```java
+  IterableConfig.Builder configBuilder = new IterableConfig.Builder()
+    .setAllowedProtocols(new String[]{"http", "custom"});
+  IterableApi.initialize(context, "<YOUR_API_KEY>", config);
+  ```
+
+  _Kotlin_
+
+  ```kotlin
+  val configBuilder = IterableConfig.Builder()
+    .setAllowedProtocols(arrayOf("http","custom"))
+  IterableApi.initialize(context, "<YOUR_API_KEY>", configBuilder.build());
+  ```
+
+  Iterable's Android SDK handles `https`, `action`, `itbl`, and `iterable` links,
+  regardless of the contents of this array. However, you must explicitly declare any
+  other types of URL protocols you'd like the SDK to handle (otherwise, the SDK
+  won't open them in the web browser or as deep links).
+
 ## [3.3.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.3.9)
 
 #### Changed
