@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.1)
+#### Fixed
+
+- Notification Trampoline restriction is now handled by the SDK allowing push notification to work seamlessly on Android 12+.
+
 ## [3.4.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.0)
 #### Fixed
 
