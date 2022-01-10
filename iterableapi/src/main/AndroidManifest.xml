@@ -22,6 +22,11 @@
             </intent-filter>
         </receiver>
 
+        <activity
+            android:name=".IterableTrampolineActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:theme="@style/TrampolineActivity.Transparent"/>
     </application>
 
     <queries>

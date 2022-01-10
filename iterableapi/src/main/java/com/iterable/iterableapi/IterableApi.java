@@ -303,7 +303,7 @@ private static final String TAG = "IterableApi";
         }
 
         loadLastSavedConfiguration(context);
-        IterablePushActionReceiver.processPendingAction(context);
+        IterablePushNotificationUtil.processPendingAction(context);
     }
 
     public static void setContext(Context context) {
