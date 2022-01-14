@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.2)
+#### Fixed
+- Fixed a regression with pending intents losing immutability that was causing issues on Android 12. (Thanks to @scaires)
+
 ## [3.4.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.1)
 #### Fixed
 
