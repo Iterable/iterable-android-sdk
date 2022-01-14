@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -89,6 +90,21 @@ public class IterableNotificationTest {
         Intent savedIntent = shadowPendingIntent.getSavedIntent();
         assertEquals(IterableConstants.ACTION_PUSH_ACTION, savedIntent.getAction());
         assertEquals("button1", savedIntent.getStringExtra(IterableConstants.ACTION_IDENTIFIER));
+    }
+
+    @Test
+    public void testPendingIntentImmutable() throws Exception {
+        Bundle notif = new Bundle();
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, getResourceString("push_payload_action_buttons.json"));
+
+        IterableNotificationBuilder iterableNotification = postNotification(notif);
+        StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
+        Notification notification = statusBarNotification.getNotification();
+
+        assertTrue((shadowOf(notification.contentIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[0].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[1].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[2].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
     }
 
 }
