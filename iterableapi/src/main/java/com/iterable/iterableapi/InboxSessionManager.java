@@ -79,7 +79,6 @@ public class InboxSessionManager {
 
         // this code is basically doing the equivalent of a diff, but manually
         // sorry, i couldn't find a better/quicker way under the time constraint
-        //Set<String> previousImpressions = impressions.keySet();
         HashSet<String> visibleMessageIds = new HashSet();
 
         //add visible ids to hash set
