@@ -90,7 +90,7 @@ public class InboxSessionManager {
         //removes all visible rows that have impressions that were started
         Set<String> impressionsToStart = new HashSet<String>(visibleMessageIds);
         impressionsToStart.removeAll(previousImpressions);
-        
+
         //list impressions to end
         //removes all visible rows that are still going
         Set<String> impressionsToEnd = new HashSet<String>(previousImpressions);
