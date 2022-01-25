@@ -23,6 +23,7 @@ class ImpressionData {
     }
 
     void endImpression() {
+        //increment count and add to duration if impression has been started
         if (this.impressionStarted != null) {
             this.displayCount += 1;
             this.duration += (float) (new Date().getTime() - this.impressionStarted.getTime()) / 1000;

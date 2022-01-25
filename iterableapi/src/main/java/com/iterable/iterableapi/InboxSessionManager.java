@@ -16,6 +16,7 @@ public class InboxSessionManager {
 
     IterableInboxSession session = new IterableInboxSession();
     Map<String, ImpressionData> impressions = new HashMap<>();
+    Set<String> previousImpressions = new HashSet<String>();
 
     public boolean isTracking() {
         return session.sessionStartTime != null;
@@ -51,6 +52,7 @@ public class InboxSessionManager {
             return;
         }
 
+        //end all impressions that were started,where impressionStarted is non-null
         endAllImpressions();
 
         IterableInboxSession sessionToTrack = new IterableInboxSession(
@@ -67,6 +69,9 @@ public class InboxSessionManager {
 
         session = new IterableInboxSession();
         impressions = new HashMap<>();
+
+        //previous impressions need to be reset to empty for the next session
+        previousImpressions = new HashSet<String>();
     }
 
     public void updateVisibleRows(List<IterableInboxSession.Impression> visibleRows) {
@@ -74,23 +79,33 @@ public class InboxSessionManager {
 
         // this code is basically doing the equivalent of a diff, but manually
         // sorry, i couldn't find a better/quicker way under the time constraint
-        Set<String> previousImpressions = impressions.keySet();
         HashSet<String> visibleMessageIds = new HashSet();
 
+        //add visible ids to hash set
         for (IterableInboxSession.Impression row : visibleRows) {
             visibleMessageIds.add(row.messageId);
         }
 
-        Set<String> impressionsToStart = visibleMessageIds;
+        //lists impressions to start
+        //removes all visible rows that have impressions that were started
+        Set<String> impressionsToStart = new HashSet<String>(visibleMessageIds);
         impressionsToStart.removeAll(previousImpressions);
 
-        Set<String> impressionsToEnd = previousImpressions;
+        //list impressions to end
+        //removes all visible rows that are still going
+        Set<String> impressionsToEnd = new HashSet<String>(previousImpressions);
         impressionsToEnd.removeAll(visibleMessageIds);
 
+        //set previous impressions for next iteration to the current visible messages
+        previousImpressions = new HashSet<String>(visibleMessageIds);
+        previousImpressions.removeAll(impressionsToEnd);
+
+        //start all impressions designated to start
         for (String messageId : impressionsToStart) {
             onMessageImpressionStarted(IterableApi.getInstance().getInAppManager().getMessageById(messageId));
         }
 
+        //end all impressions designated to end
         for (String messageId : impressionsToEnd) {
             endImpression(messageId);
         }
