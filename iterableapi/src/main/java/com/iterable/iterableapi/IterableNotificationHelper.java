@@ -272,6 +272,9 @@ class IterableNotificationHelper {
                 notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
                 notificationChannel.setDescription(channelDescription);
                 notificationChannel.enableLights(true);
+
+                //TODO: Is it a good idea to have the value fetched from config like this? Or should we have the value passed through a utility method? which will basically do the same thing. OR store it in sharedPreferences? and load it next time
+                notificationChannel.setShowBadge(IterableApi.getInstance().config.notificationBadge);
             }
             return notificationChannel;
         }

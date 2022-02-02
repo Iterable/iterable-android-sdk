@@ -70,6 +70,8 @@ public class IterableConfig {
      */
     final String[] allowedProtocols;
 
+    final boolean notificationBadge;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -82,6 +84,7 @@ public class IterableConfig {
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
+        notificationBadge = builder.notificationBadge;
     }
 
     public static class Builder {
@@ -96,6 +99,7 @@ public class IterableConfig {
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
+        private boolean notificationBadge = true;
         public Builder() {}
 
         /**
@@ -215,6 +219,16 @@ public class IterableConfig {
             this.allowedProtocols = allowedProtocols;
             return this;
         }
+
+        /**
+         * Set whether a badge or dot should be displayed for notification or/and on the app icon
+         */
+        @NonNull
+        public Builder setNotificationBadge(boolean notificationBadgeEnabled) {
+            this.notificationBadge = notificationBadgeEnabled;
+            return this;
+        }
+
 
         @NonNull
         public IterableConfig build() {
