@@ -12,6 +12,8 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.service.notification.StatusBarNotification;
+
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 
@@ -22,6 +24,7 @@ import java.util.Map;
 
 class IterableNotificationHelper {
     private static final String DEFAULT_CHANNEL_NAME = "iterable channel";
+    private static final String NO_BADGE = "_noBadge";
 
     @VisibleForTesting
     static IterableNotificationHelperImpl instance = new IterableNotificationHelperImpl();
@@ -100,7 +103,6 @@ class IterableNotificationHelper {
             String pushImage = null;
             //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
             String channelName = getChannelName(context);
-            String channelId = context.getPackageName();
             String channelDescription = "";
 
             if (!extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
@@ -113,8 +115,9 @@ class IterableNotificationHelper {
                 return null;
             }
 
-            registerChannelIfEmpty(context, channelId, channelName, channelDescription);
-            IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, context.getPackageName());
+            removeUnusedChannel(context);
+            registerChannelIfEmpty(context, getChannelId(context), channelName, channelDescription);
+            IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context));
             JSONObject iterableJson = null;
             title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
@@ -261,19 +264,63 @@ class IterableNotificationHelper {
                 if (existingChannel == null || !existingChannel.getName().equals(channelName)) {
                     IterableLogger.d(IterableNotificationBuilder.TAG, "Creating notification: channelId = " + channelId + " channelName = "
                             + channelName + " channelDescription = " + channelDescription);
-                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription));
+                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context));
                 }
             }
         }
 
-        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription) {
+        /**
+         * Removes unused old channel if the configuration for notification badge is changed.
+         */
+        private void removeUnusedChannel(Context context) {
+            NotificationManager mNotificationManager = (NotificationManager)
+                    context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
+                    && mNotificationManager != null) {
+                String channelIdToDelete = isNotificationBadgingEnabled(context) ? context.getPackageName() : context.getPackageName() + NO_BADGE;
+                NotificationChannel unusedChannel = mNotificationManager.getNotificationChannel(channelIdToDelete);
+                if (unusedChannel != null) {
+                    for (StatusBarNotification activeNotification : mNotificationManager.getActiveNotifications()) {
+                        if (activeNotification.getNotification().getChannelId() == channelIdToDelete) {
+                            IterableLogger.d(IterableNotificationBuilder.TAG, "Not Deleting the channel as there are active notification for old channel");
+                            return;
+                        }
+                    }
+                    mNotificationManager.deleteNotificationChannel(channelIdToDelete);
+                }
+            }
+        }
+
+        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context) {
             NotificationChannel notificationChannel = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
                 notificationChannel.setDescription(channelDescription);
                 notificationChannel.enableLights(true);
+                notificationChannel.setShowBadge(isNotificationBadgingEnabled(context));
             }
             return notificationChannel;
+        }
+
+        private static boolean isNotificationBadgingEnabled(Context context) {
+            try {
+                ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                if (info.metaData != null) {
+                    return info.metaData.getBoolean(IterableConstants.NOTIFICAION_BADGING, true);
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+                IterableLogger.e(IterableNotificationBuilder.TAG, e.getLocalizedMessage() + " Defaulting the badging to true");
+            }
+            return true;
+        }
+
+        private String getChannelId(Context context) {
+            String channelId = context.getPackageName();
+            if (!isNotificationBadgingEnabled(context)) {
+                channelId = channelId + NO_BADGE;
+            }
+            return channelId;
         }
 
         private String getChannelName(Context context) {
