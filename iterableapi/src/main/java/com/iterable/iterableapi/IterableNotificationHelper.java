@@ -278,7 +278,7 @@ class IterableNotificationHelper {
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                     && mNotificationManager != null) {
-                String channelIdToDelete = isNotificationBadgingEnabled(context) ? context.getPackageName() : context.getPackageName() + NO_BADGE;
+                String channelIdToDelete = getOldChannelId(context);
                 NotificationChannel unusedChannel = mNotificationManager.getNotificationChannel(channelIdToDelete);
                 if (unusedChannel != null) {
                     for (StatusBarNotification activeNotification : mNotificationManager.getActiveNotifications()) {
@@ -316,6 +316,14 @@ class IterableNotificationHelper {
         }
 
         private String getChannelId(Context context) {
+            getChannelIdName(context, !isNotificationBadgingEnabled(context))
+        }
+        
+        private String getOldChannelId(Context context) {
+            getChannelIdName(context, isNotificationBadgingEnabled(context))
+        }
+        
+        private String getChannelIdName(Context context, boolean badgingEnabled) {
             String channelId = context.getPackageName();
             if (!isNotificationBadgingEnabled(context)) {
                 channelId = channelId + NO_BADGE;
