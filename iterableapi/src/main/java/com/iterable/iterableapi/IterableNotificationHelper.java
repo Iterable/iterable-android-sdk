@@ -270,7 +270,7 @@ class IterableNotificationHelper {
         }
 
         /**
-         * Removes unused old channel if the configuration for notification badge is changed.
+         * Safely removes unused and old channel if the configuration for notification badge is changed.
          */
         private void removeUnusedChannel(Context context) {
             NotificationManager mNotificationManager = (NotificationManager)
@@ -310,23 +310,29 @@ class IterableNotificationHelper {
                     return info.metaData.getBoolean(IterableConstants.NOTIFICAION_BADGING, true);
                 }
             } catch (PackageManager.NameNotFoundException e) {
-                IterableLogger.e(IterableNotificationBuilder.TAG, e.getLocalizedMessage() + " Defaulting the badging to true");
+                IterableLogger.e(IterableNotificationBuilder.TAG, e.getLocalizedMessage() + " Failed to read notification badge settings. Setting to defaults - true");
             }
             return true;
         }
 
         private String getChannelId(Context context) {
-            getChannelIdName(context, !isNotificationBadgingEnabled(context))
+            return getChannelIdName(context, true);
         }
-        
+
         private String getOldChannelId(Context context) {
-            getChannelIdName(context, isNotificationBadgingEnabled(context))
+            return getChannelIdName(context, false);
         }
-        
-        private String getChannelIdName(Context context, boolean badgingEnabled) {
+
+        private String getChannelIdName(Context context, boolean isActive) {
             String channelId = context.getPackageName();
-            if (!isNotificationBadgingEnabled(context)) {
-                channelId = channelId + NO_BADGE;
+            if (isActive) {
+                if (!isNotificationBadgingEnabled(context)) {
+                    channelId = channelId + NO_BADGE;
+                }
+            } else {
+                if (isNotificationBadgingEnabled(context)) {
+                    channelId = channelId + NO_BADGE;
+                }
             }
             return channelId;
         }
