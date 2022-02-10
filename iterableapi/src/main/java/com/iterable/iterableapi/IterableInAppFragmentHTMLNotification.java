@@ -254,6 +254,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         hideWebView();
     }
 
+    @Override
+    public void recalculateHeight(final float height) {
+        IterableLogger.d("", "jay 5 - " + height);
+        resize(height);
+    }
+
     /**
      * Tracks a button click when the back button is pressed
      */

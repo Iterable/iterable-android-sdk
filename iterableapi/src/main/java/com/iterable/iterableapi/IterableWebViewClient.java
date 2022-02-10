@@ -27,6 +27,12 @@ class IterableWebViewClient extends WebViewClient {
         return true;
     }
 
+    @Override
+    public void onLoadResource(WebView view, String url) {
+        view.loadUrl(RESIZE_SCRIPT);
+        inAppHTMLNotification.recalculateHeight(view.getContentHeight());
+    }
+
     /**
      * Resizes the view after the page has loaded
      * @param view
@@ -36,10 +42,13 @@ class IterableWebViewClient extends WebViewClient {
     public void onPageFinished(WebView view, String url) {
         inAppHTMLNotification.setLoaded(true);
         view.loadUrl(RESIZE_SCRIPT);
+
+        inAppHTMLNotification.recalculateHeight(view.getContentHeight());
     }
 
     interface HTMLNotificationCallbacks {
         void onUrlClicked(String url);
         void setLoaded(boolean loaded);
+        void recalculateHeight(final float height);
     }
 }
