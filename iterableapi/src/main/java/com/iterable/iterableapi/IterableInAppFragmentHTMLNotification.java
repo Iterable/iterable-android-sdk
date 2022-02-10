@@ -255,7 +255,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     @Override
-    public void recalculateHeight(final float height) {
+    public void resizeContent(final float height) {
         resize(height);
     }
 
