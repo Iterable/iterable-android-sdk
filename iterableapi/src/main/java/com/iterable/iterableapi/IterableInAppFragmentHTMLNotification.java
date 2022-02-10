@@ -34,7 +34,7 @@ import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.DialogFragment;
 
-public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
+public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
 
     private static final String BACK_BUTTON = "itbl://backButton";
     private static final String JAVASCRIPT_INTERFACE = "ITBL";
@@ -184,7 +184,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                webView.loadUrl(IterableWebViewClient.RESIZE_SCRIPT);
+                                recalculateHeight(webView.getContentHeight());
                             }
                         }, 1000);
                     }

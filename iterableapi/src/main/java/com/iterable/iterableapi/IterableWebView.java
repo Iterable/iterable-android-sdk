@@ -2,10 +2,7 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.webkit.WebChromeClient;
 import android.webkit.WebView;
-
-import static com.iterable.iterableapi.IterableWebViewClient.RESIZE_SCRIPT;
 
 /**
  * The custom html webView
@@ -18,29 +15,21 @@ class IterableWebView extends WebView {
         super(context);
     }
 
-    /**
-     * Loads the html into the webView
-     * @param notificationDialog
-     * @param html
-     */
-    void createWithHtml(IterableWebViewClient.HTMLNotificationCallbacks notificationDialog, String html) {
+    void createWithHtml(IterableWebView.HTMLNotificationCallbacks notificationDialog, String html) {
+        // set up web view clients
         IterableWebViewClient webViewClient = new IterableWebViewClient(notificationDialog);
-        loadDataWithBaseURL("", html, MIME_TYPE, ENCODING, "");
-        setWebViewClient(webViewClient);
-        setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onProgressChanged(WebView view, int newProgress) {
-                loadUrl(RESIZE_SCRIPT);
-            }
-        });
+        IterableWebChromeClient webChromeClient = new IterableWebChromeClient(notificationDialog);
 
-        //don't overscroll
+        setWebViewClient(webViewClient);
+        setWebChromeClient(webChromeClient);
+
+        // don't overscroll
         setOverScrollMode(WebView.OVER_SCROLL_NEVER);
 
-        //transparent
+        // transparent
         setBackgroundColor(Color.TRANSPARENT);
 
-        //Fixes the webView to be the size of the screen
+        // fixes the webView to be the size of the screen
         getSettings().setLoadWithOverviewMode(true);
         getSettings().setUseWideViewPort(true);
 
@@ -50,7 +39,16 @@ class IterableWebView extends WebView {
         getSettings().setAllowUniversalAccessFromFileURLs(false);
         getSettings().setAllowContentAccess(false);
 
-        //resize:
+        // disallow javascript
         getSettings().setJavaScriptEnabled(false);
+
+        // start loading the in-app
+        loadDataWithBaseURL("", html, MIME_TYPE, ENCODING, "");
+    }
+
+    interface HTMLNotificationCallbacks {
+        void onUrlClicked(String url);
+        void setLoaded(boolean loaded);
+        void recalculateHeight(final float height);
     }
 }
