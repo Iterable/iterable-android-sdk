@@ -26,7 +26,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.webkit.JavascriptInterface;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
@@ -35,19 +34,17 @@ import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
-
     private static final String BACK_BUTTON = "itbl://backButton";
-    private static final String JAVASCRIPT_INTERFACE = "ITBL";
     private static final String TAG = "IterableInAppFragmentHTMLNotification";
     private static final String HTML_STRING = "HTML";
     private static final String BACKGROUND_ALPHA = "BackgroundAlpha";
     private static final String INSET_PADDING = "InsetPadding";
     private static final String CALLBACK_ON_CANCEL = "CallbackOnCancel";
     private static final String MESSAGE_ID = "MessageId";
-    private static final String INAPP_OPEN_TRACKED = "InAppOpenTracked";
-    private static final String INAPP_BGALPHA = "InAppBgAlpha";
-    private static final String INAPP_BGCOLOR = "InAppBgColor";
-    private static final String INAPP_SHOULD_ANIMATE = "ShouldAnimate";
+    private static final String IN_APP_OPEN_TRACKED = "InAppOpenTracked";
+    private static final String IN_APP_BG_ALPHA = "InAppBgAlpha";
+    private static final String IN_APP_BG_COLOR = "InAppBgColor";
+    private static final String IN_APP_SHOULD_ANIMATE = "ShouldAnimate";
 
     private static final int DELAY_THRESHOLD_MS = 500;
 
@@ -62,19 +59,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private String htmlString;
     private String messageId;
 
-    //TODO: To delete this variable in future iterations
-    private double backgroundAlpha;
+    private double backgroundAlpha; //TODO: remove in a future version
     private Rect insetPadding;
     private boolean shouldAnimate;
     private double inAppBackgroundAlpha;
     private String inAppBackgroundColor;
 
-    /**
-     * Creates a static instance of the notification
-     *
-     * @param htmlString
-     * @return notification instance
-     */
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
         return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
     }
@@ -87,9 +77,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         args.putString(MESSAGE_ID, messageId);
         args.putDouble(BACKGROUND_ALPHA, backgroundAlpha);
         args.putParcelable(INSET_PADDING, padding);
-        args.putString(INAPP_BGCOLOR, inAppBgColor.bgHexColor);
-        args.putDouble(INAPP_BGALPHA, inAppBgColor.bgAlpha);
-        args.putBoolean(INAPP_SHOULD_ANIMATE, shouldAnimate);
+        args.putString(IN_APP_BG_COLOR, inAppBgColor.bgHexColor);
+        args.putDouble(IN_APP_BG_ALPHA, inAppBgColor.bgAlpha);
+        args.putBoolean(IN_APP_SHOULD_ANIMATE, shouldAnimate);
 
         IterableInAppFragmentHTMLNotification.clickCallback = clickCallback;
         IterableInAppFragmentHTMLNotification.location = location;
@@ -120,16 +110,18 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle args = getArguments();
+
         if (args != null) {
             htmlString = args.getString(HTML_STRING, null);
             callbackOnCancel = args.getBoolean(CALLBACK_ON_CANCEL, false);
             messageId = args.getString(MESSAGE_ID);
             backgroundAlpha = args.getDouble(BACKGROUND_ALPHA);
             insetPadding = args.getParcelable(INSET_PADDING);
-            inAppBackgroundAlpha = args.getDouble(INAPP_BGALPHA);
-            inAppBackgroundColor = args.getString(INAPP_BGCOLOR, null);
-            shouldAnimate = args.getBoolean(INAPP_SHOULD_ANIMATE);
+            inAppBackgroundAlpha = args.getDouble(IN_APP_BG_ALPHA);
+            inAppBackgroundColor = args.getString(IN_APP_BG_COLOR, null);
+            shouldAnimate = args.getBoolean(IN_APP_SHOULD_ANIMATE);
         }
+
         notification = this;
     }
 
@@ -155,7 +147,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
-            // For TOP layout in-app, status bar will be opaque so that the inapp content does not overlap with translucent status bar.
+            // For TOP layout in-app, status bar will be opaque so that the in-app content does not overlap with translucent status bar.
             // For other non-fullscreen in-apps layouts (BOTTOM and CENTER), status bar will be translucent
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
@@ -170,15 +162,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
+
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
-        webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
+                // Resize the webView on device rotation
                 public void onOrientationChanged(int orientation) {
-                    // Resize the webview on device rotation
                     if (loaded) {
                         final Handler handler = new Handler();
                         handler.postDelayed(new Runnable() {
@@ -191,6 +183,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 }
             };
         }
+
         orientationListener.enable();
 
         RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
@@ -198,29 +191,25 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         relativeLayout.setVerticalGravity(getVerticalLocation(insetPadding));
         relativeLayout.addView(webView, layoutParams);
 
-        if (savedInstanceState == null || !savedInstanceState.getBoolean(INAPP_OPEN_TRACKED, false)) {
+        if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
         }
+
         prepareToShowWebView();
         return relativeLayout;
     }
 
-    /**
-     * Sets the loaded flag
-     *
-     * @param loaded
-     */
     public void setLoaded(boolean loaded) {
         this.loaded = loaded;
     }
 
     /**
-     * Sets up the webview and the dialog layout
+     * Sets up the webView and the dialog layout
      */
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean(INAPP_OPEN_TRACKED, true);
+        outState.putBoolean(IN_APP_OPEN_TRACKED, true);
     }
 
     /**
@@ -229,15 +218,18 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onStop() {
         orientationListener.disable();
+
         super.onStop();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+
         if (this.getActivity() != null && this.getActivity().isChangingConfigurations()) {
             return;
         }
+
         notification = null;
         clickCallback = null;
         location = null;
@@ -247,9 +239,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public void onUrlClicked(String url) {
         IterableApi.sharedInstance.trackInAppClick(messageId, url, location);
         IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location);
+
         if (clickCallback != null) {
             clickCallback.execute(Uri.parse(url));
         }
+
         processMessageRemoval();
         hideWebView();
     }
@@ -259,12 +253,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         resize(height);
     }
 
-    /**
-     * Tracks a button click when the back button is pressed
-     */
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
         IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
+
         processMessageRemoval();
     }
 
@@ -313,19 +305,20 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     private ColorDrawable getInAppBackgroundDrawable() {
-
         if (inAppBackgroundColor == null) {
             IterableLogger.d(TAG, "Background Color does not exist. In App background animation will not be performed");
             return null;
         }
 
         int backgroundColorWithAlpha;
+
         try {
             backgroundColorWithAlpha = ColorUtils.setAlphaComponent(Color.parseColor(inAppBackgroundColor), (int) (inAppBackgroundAlpha * 255));
         } catch (IllegalArgumentException e) {
             IterableLogger.e(TAG, "Background color could not be identified for input string \"" + inAppBackgroundColor + "\". Failed to load in-app background.");
             return null;
         }
+
         ColorDrawable backgroundColorDrawable = new ColorDrawable(backgroundColorWithAlpha);
         return backgroundColorDrawable;
     }
@@ -333,6 +326,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private void showAndAnimateWebView() {
         webView.setAlpha(1.0f);
         webView.setVisibility(View.VISIBLE);
+
         if (shouldAnimate) {
             int animationResource;
             InAppLayout inAppLayout = getInAppLayout(insetPadding);
@@ -350,6 +344,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 default:
                     animationResource = R.anim.fade_in_custom;
             }
+
             Animation anim = AnimationUtils.loadAnimation(getContext(), animationResource);
             anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
             webView.startAnimation(anim);
@@ -375,6 +370,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 default:
                     animationResource = R.anim.fade_out_custom;
             }
+
             Animation anim = AnimationUtils.loadAnimation(getContext(),
                     animationResource);
             anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
@@ -382,7 +378,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
 
         hideInAppBackground();
-        Runnable dismissWebviewRunnable = new Runnable() {
+        Runnable dismissWebViewRunnable = new Runnable() {
             @Override
             public void run() {
                 if (getContext() != null && getDialog() != null && getDialog().getWindow() != null) {
@@ -392,11 +388,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         };
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            webView.postOnAnimationDelayed(dismissWebviewRunnable, 400);
+            webView.postOnAnimationDelayed(dismissWebViewRunnable, 400);
         } else {
-            webView.postDelayed(dismissWebviewRunnable, 400);
+            webView.postDelayed(dismissWebViewRunnable, 400);
         }
-
     }
 
     private void processMessageRemoval() {
@@ -412,10 +407,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     /**
-     * Resizes the dialog window based upon the size of its webview html content
+     * Resizes the dialog window based upon the size of its webView HTML content
      * @param height
      */
-    @JavascriptInterface
     public void resize(final float height) {
         final Activity activity = getActivity();
         if (activity == null) {
@@ -447,6 +441,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     } else {
                         display.getSize(size);
                     }
+
                     int webViewWidth = size.x;
                     int webViewHeight = size.y;
 
