@@ -12,6 +12,6 @@ public class IterableWebChromeClient extends WebChromeClient {
 
     @Override
     public void onProgressChanged(WebView view, int newProgress) {
-        inAppHTMLNotification.resizeContent(view.getContentHeight());
+        inAppHTMLNotification.runResizeScript();
     }
 }

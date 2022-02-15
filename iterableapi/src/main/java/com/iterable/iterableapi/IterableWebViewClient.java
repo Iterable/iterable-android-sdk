@@ -18,12 +18,12 @@ class IterableWebViewClient extends WebViewClient {
 
     @Override
     public void onLoadResource(WebView view, String url) {
-        inAppHTMLNotification.resizeContent(view.getContentHeight());
+        inAppHTMLNotification.runResizeScript();
     }
 
     @Override
     public void onPageFinished(WebView view, String url) {
         inAppHTMLNotification.setLoaded(true);
-        inAppHTMLNotification.resizeContent(view.getContentHeight());
+        inAppHTMLNotification.runResizeScript();
     }
 }

@@ -176,7 +176,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                resizeContent(webView.getContentHeight());
+                                runResizeScript();
                             }
                         }, 1000);
                     }
@@ -248,11 +248,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         hideWebView();
     }
 
-    @Override
-    public void resizeContent(float height) {
-        resize(height);
-    }
-
+    /**
+     * Tracks a button click when the back button is pressed
+     */
     public void onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
         IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
@@ -404,6 +402,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (message.isMarkedForDeletion() && !message.isConsumed()) {
             IterableApi.sharedInstance.getInAppManager().removeMessage(message);
         }
+    }
+
+    @Override
+    public void runResizeScript() {
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
+        webView.getSettings().setJavaScriptEnabled(false);
     }
 
     /**
