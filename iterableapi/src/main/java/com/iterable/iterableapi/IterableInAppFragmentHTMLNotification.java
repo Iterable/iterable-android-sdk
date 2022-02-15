@@ -184,9 +184,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                webView.getSettings().setJavaScriptEnabled(true);
-                                webView.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
-                                webView.getSettings().setJavaScriptEnabled(false);
+                                runResizeScript();
                             }
                         }, 1000);
                     }
@@ -406,6 +404,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (message.isMarkedForDeletion() && !message.isConsumed()) {
             IterableApi.sharedInstance.getInAppManager().removeMessage(message);
         }
+    }
+
+    @Override
+    public void runResizeScript() {
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
+        webView.getSettings().setJavaScriptEnabled(false);
     }
 
     /**

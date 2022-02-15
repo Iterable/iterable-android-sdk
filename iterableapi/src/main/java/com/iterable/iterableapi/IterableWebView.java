@@ -49,5 +49,6 @@ class IterableWebView extends WebView {
     interface HTMLNotificationCallbacks {
         void onUrlClicked(String url);
         void setLoaded(boolean loaded);
+        void runResizeScript();
     }
 }
