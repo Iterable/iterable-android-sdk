@@ -184,7 +184,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                resizeContent(webView.getContentHeight());
+                                webView.getSettings().setJavaScriptEnabled(true);
+                                webView.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
+                                webView.getSettings().setJavaScriptEnabled(false);
                             }
                         }, 1000);
                     }
@@ -252,11 +254,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
         processMessageRemoval();
         hideWebView();
-    }
-
-    @Override
-    public void resizeContent(float height) {
-        resize(height);
     }
 
     /**
