@@ -1139,6 +1139,12 @@ private static final String TAG = "IterableApi";
         public Context getContext() {
             return _applicationContext;
         }
+
+        @Override
+        public void resetAuth() {
+            IterableLogger.d(TAG, "Resetting authToken");
+            _authToken = null;
+        }
     }
 
 //---------------------------------------------------------------------------------------
