@@ -22,6 +22,7 @@ import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -166,6 +167,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
+
+        ViewTreeObserver viewTreeObserver = webView.getViewTreeObserver();
+        viewTreeObserver.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                runResizeScript();
+                return false;
+            }
+        });
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
@@ -406,9 +416,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     @Override
     public void runResizeScript() {
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
-        webView.getSettings().setJavaScriptEnabled(false);
+        resize(webView.getContentHeight());
     }
 
     /**
