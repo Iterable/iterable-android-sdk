@@ -22,6 +22,7 @@ import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -37,7 +38,6 @@ import androidx.fragment.app.DialogFragment;
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
 
     private static final String BACK_BUTTON = "itbl://backButton";
-    private static final String JAVASCRIPT_INTERFACE = "ITBL";
     private static final String TAG = "IterableInAppFragmentHTMLNotification";
     private static final String HTML_STRING = "HTML";
     private static final String BACKGROUND_ALPHA = "BackgroundAlpha";
@@ -173,7 +173,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
-        webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
+
+        ViewTreeObserver viewTreeObserver = webView.getViewTreeObserver();
+        viewTreeObserver.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                runResizeScript();
+                return false;
+            }
+        });
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
@@ -408,16 +416,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     @Override
     public void runResizeScript() {
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.loadUrl("javascript:ITBL.resize(document.body.getBoundingClientRect().height)");
-        webView.getSettings().setJavaScriptEnabled(false);
+        resize(webView.getContentHeight());
     }
 
     /**
      * Resizes the dialog window based upon the size of its webview html content
      * @param height
      */
-    @JavascriptInterface
     public void resize(final float height) {
         final Activity activity = getActivity();
         if (activity == null) {
