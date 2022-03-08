@@ -27,7 +27,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.webkit.JavascriptInterface;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
