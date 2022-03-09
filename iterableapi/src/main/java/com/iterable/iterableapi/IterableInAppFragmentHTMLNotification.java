@@ -178,7 +178,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             @Override
             public boolean onPreDraw() {
                 runResizeScript();
-                return false;
+                return true;
             }
         });
 
@@ -462,7 +462,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         window.setLayout(webViewWidth, webViewHeight);
                         getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
-                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
+                        float relativeHeight = height * getResources().getDisplayMetrics().density;
+                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) relativeHeight);
                         webView.setLayoutParams(webViewLayout);
                     }
                 } catch (IllegalArgumentException e) {
