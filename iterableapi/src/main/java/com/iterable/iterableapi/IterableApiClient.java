@@ -33,6 +33,8 @@ class IterableApiClient {
         String getDeviceId();
         @Nullable
         Context getContext();
+
+        void resetAuth();
     }
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
@@ -559,5 +561,6 @@ class IterableApiClient {
 
     void onLogout() {
         getRequestProcessor().onLogout(authProvider.getContext());
+        authProvider.resetAuth();
     }
 }
