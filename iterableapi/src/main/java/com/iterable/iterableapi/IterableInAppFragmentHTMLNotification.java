@@ -68,14 +68,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private double inAppBackgroundAlpha;
     private String inAppBackgroundColor;
 
-    private ViewTreeObserver.OnPreDrawListener preDrawListener = new ViewTreeObserver.OnPreDrawListener() {
-        @Override
-        public boolean onPreDraw() {
-            runResizeScript();
-            return true;
-        }
-    };
-
     /**
      * Creates a static instance of the notification
      *
@@ -181,7 +173,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
 
-        webView.getViewTreeObserver().addOnPreDrawListener(preDrawListener);
+        webView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                runResizeScript();
+                return true;
+            }
+        });
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
@@ -251,8 +249,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         notification = null;
         clickCallback = null;
         location = null;
-
-        webView.getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
     }
 
     @Override
