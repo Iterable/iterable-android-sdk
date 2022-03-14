@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.4)
+#### Fixed
+- Fixed in-app layouts always showing up in the `top` format.
+
 ## [3.4.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.3)
 #### Added
 - Notification Badging/Dots can be explicitly enabled or disabled in AndroidManifest by setting `iterable_notification_badging` value to `true` or `false`. [Read More.](https://support.iterable.com/hc/en-us/articles/115000331943#notification-badging-dots)
