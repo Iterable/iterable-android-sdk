@@ -1,16 +1,25 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.ArraySet;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 public class IterableFirebaseMessagingService extends FirebaseMessagingService {
@@ -33,7 +42,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
      * Call this from a custom {@link FirebaseMessagingService} to pass Iterable push messages to
      * Iterable SDK for tracking and rendering
      * @param remoteMessage Remote message received from Firebase in
-     *        {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)}
+     *                      {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)}
      * @return Boolean indicating whether it was an Iterable message or not
      */
     public static boolean handleMessageReceived(@NonNull Context context, @NonNull RemoteMessage remoteMessage) {
@@ -61,6 +70,11 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
                 IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
                         context.getApplicationContext(), extras);
+                if (isDuplicateMessageId(context, notificationBuilder.iterableNotificationData.getMessageId())) {
+                    IterableLogger.d(TAG, "Notification is duplicate .Proceed to call dedeup API");
+                    //TODO: Probably the right place to call /dupsend api
+                    return false;
+                }
                 new IterableNotificationManager().execute(notificationBuilder);
             } else {
                 IterableLogger.d(TAG, "Iterable OS notification push received");
@@ -81,6 +95,46 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             }
         }
         return true;
+    }
+
+    static boolean isDuplicateMessageId(Context context, String messageId) {
+        SharedPreferences prefs = context.getSharedPreferences("com.iterable.iterableapi", Context.MODE_PRIVATE);
+        String recentMessageIds = prefs.getString("IterableRecentPushMessageIds", null);
+
+        ArrayList<String> recentMessageIdArrayList = new ArrayList<>();
+        if (recentMessageIds != null) {
+            //Only if there are previous messageIds, check for duplicates
+            IterableLogger.d(TAG, "No records of message ids in sharedPreference");
+            recentMessageIdArrayList = new ArrayList<>(Arrays.asList(recentMessageIds.split(",")));
+            if (recentMessageIdArrayList.contains(messageId)) {
+                IterableLogger.d(TAG, "Duplicate message id found");
+                return true;
+            }
+            while (recentMessageIdArrayList.size() > 9) {
+                IterableLogger.d(TAG, "Removing old messageId..");
+                recentMessageIdArrayList.remove(0);
+            }
+        }
+        //Add new messageId to list
+        recentMessageIdArrayList.add(messageId);
+
+        // Traversing the ArrayList
+        StringBuilder str = new StringBuilder();
+        for (String messageIdString : recentMessageIdArrayList) {
+            str.append(messageIdString).append(",");
+        }
+
+        // Condition check to remove the last comma
+        String commaseparatedMessageIds = str.toString();
+        if (commaseparatedMessageIds.length() > 0)
+            commaseparatedMessageIds = commaseparatedMessageIds.substring(0, commaseparatedMessageIds.length() - 1);
+
+        // Writing to shared preference
+        SharedPreferences.Editor e = prefs.edit();
+        e.putString("IterableRecentPushMessageIds", commaseparatedMessageIds);
+        e.apply();
+
+        return false;
     }
 
     /**
@@ -110,7 +164,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
     /**
      * Checks if the message is an Iterable ghost push or silent push message
      * @param remoteMessage Remote message received from Firebase in
-     *        {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)}
+     *                      {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)}
      * @return Boolean indicating whether the message is an Iterable ghost push or silent push
      */
     public static boolean isGhostPush(RemoteMessage remoteMessage) {
