@@ -140,6 +140,17 @@ class IterableApiClient {
         }
     }
 
+    public void trackDuplicatePush(@NonNull String messageId) {
+        JSONObject requestJSON = new JSONObject();
+        try {
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, messageId);
+            requestJSON.put(IterableConstants.KEY_EVENT_TYPE, IterableConstants.ITERABLE_DATA_EVENT_TYPE);
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_DUPLICATE_SEND, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJSON = new JSONObject();
 

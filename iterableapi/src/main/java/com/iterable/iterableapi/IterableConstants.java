@@ -32,6 +32,7 @@ public final class IterableConstants {
     public static final String KEY_EMAIL                = "email";
     public static final String KEY_EMAIL_LIST_IDS       = "emailListIds";
     public static final String KEY_EVENT_NAME           = "eventName";
+    public static final String KEY_EVENT_TYPE           = "eventType";
     public static final String KEY_ITEMS                = "items";
     public static final String KEY_NEW_EMAIL            = "newEmail";
     public static final String KEY_PACKAGE_NAME         = "packageName";
@@ -73,6 +74,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
     public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
+    public static final String ENDPOINT_TRACK_DUPLICATE_SEND    = "events/trackDupSend";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -95,6 +97,7 @@ public final class IterableConstants {
     public static final String ITERABLE_DATA_TITLE  = "title";
     public static final String ITERABLE_DATA_ACTION_BUTTONS  = "actionButtons";
     public static final String ITERABLE_DATA_DEFAULT_ACTION  = "defaultAction";
+    public static final String ITERABLE_DATA_EVENT_TYPE = "pushSend";
 
     //SharedPreferences keys
     public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";

@@ -72,8 +72,12 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
                         context.getApplicationContext(), extras);
                 if (isDuplicateMessageId(context, notificationBuilder.iterableNotificationData.getMessageId())) {
                     IterableLogger.d(TAG, "Notification is duplicate .Proceed to call dedeup API");
-                    //TODO: Probably the right place to call /dupsend api
+                    IterableApi.getInstance().trackDuplicateSend(notificationBuilder.iterableNotificationData.getMessageId());
                     return false;
+                }
+                if(BuildConfig.DEBUG && notificationBuilder.iterableNotificationData.getCampaignId() == 0) {
+                    IterableLogger.d(TAG, "Marking Push proof as duplicates. Proofs still continues to be shown on device. It wont be treated and skipped as duplicates");
+                    IterableApi.getInstance().trackDuplicateSend(notificationBuilder.iterableNotificationData.getMessageId());
                 }
                 new IterableNotificationManager().execute(notificationBuilder);
             } else {

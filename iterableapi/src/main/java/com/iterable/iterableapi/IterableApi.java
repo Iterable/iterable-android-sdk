@@ -753,6 +753,10 @@ private static final String TAG = "IterableApi";
         apiClient.trackInAppDelivery(message);
     }
 
+    void trackDuplicateSend(@NonNull String messageId) {
+        apiClient.trackDuplicatePush(messageId);
+    }
+
     /**
      * Consumes an InApp message.
      * @param messageId
