@@ -73,12 +73,13 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
                 if (isDuplicateMessageId(context, notificationBuilder.iterableNotificationData.getMessageId())) {
                     IterableLogger.d(TAG, "Notification is duplicate .Proceed to call dedeup API");
                     IterableApi.getInstance().trackDuplicateSend(notificationBuilder.iterableNotificationData.getMessageId());
+                    notificationBuilder = null;
                     return false;
                 }
-                if(BuildConfig.DEBUG && notificationBuilder.iterableNotificationData.getCampaignId() == 0) {
-                    IterableLogger.d(TAG, "Marking Push proof as duplicates. Proofs still continues to be shown on device. It wont be treated and skipped as duplicates");
-                    IterableApi.getInstance().trackDuplicateSend(notificationBuilder.iterableNotificationData.getMessageId());
-                }
+//                if(BuildConfig.DEBUG && notificationBuilder.iterableNotificationData.getCampaignId() == 0) {
+//                    IterableLogger.d(TAG, "Marking Push proof as duplicates. Proofs still continues to be shown on device. It wont be treated and skipped as duplicates");
+//                    IterableApi.getInstance().trackDuplicateSend(notificationBuilder.iterableNotificationData.getMessageId());
+//                }
                 new IterableNotificationManager().execute(notificationBuilder);
             } else {
                 IterableLogger.d(TAG, "Iterable OS notification push received");
@@ -108,10 +109,9 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         ArrayList<String> recentMessageIdArrayList = new ArrayList<>();
         if (recentMessageIds != null) {
             //Only if there are previous messageIds, check for duplicates
-            IterableLogger.d(TAG, "No records of message ids in sharedPreference");
             recentMessageIdArrayList = new ArrayList<>(Arrays.asList(recentMessageIds.split(",")));
             if (recentMessageIdArrayList.contains(messageId)) {
-                IterableLogger.d(TAG, "Duplicate message id found");
+                IterableLogger.d(TAG, "Duplicate message id found matching " + messageId);
                 return true;
             }
             while (recentMessageIdArrayList.size() > 9) {
