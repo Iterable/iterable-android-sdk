@@ -58,7 +58,7 @@ public class IterableLogger {
     }
 
     private static boolean isLoggableLevel(int messageLevel) {
-        return messageLevel >= getLogLevel();
+        return BuildConfig.DEBUG && messageLevel >= getLogLevel();
     }
 
     private static int getLogLevel() {
