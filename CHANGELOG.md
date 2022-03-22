@@ -15,6 +15,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.3)
+#### Added
+- Notification Badging/Dots can be explicitly enabled or disabled in AndroidManifest by setting `iterable_notification_badging` value to `true` or `false`. [Read More.](https://support.iterable.com/hc/en-us/articles/115000331943#notification-badging-dots)
+
+#### Fixed
+- Fixed device registration failure users in JWT enabled projects.
+- Fixed an issue where app would hide from app switcher when external links are deep linked from push notification.
+
 ## [3.4.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.2)
 #### Fixed
 - Fixed a regression with pending intents losing immutability that was causing issues on Android 12. (Thanks to @scaires)
