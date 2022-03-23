@@ -129,7 +129,7 @@ public class MainActivityTest {
         intended(hasComponent(IterableInboxMessageActivity.class.getName()));
     }
 
-    @Ignore
+    @Ignore ("Ignoring tests needing to find webView through forceJavascriptEnabled()")
     @Test
     public void checkIfMessageShownAsPopUpForImproperIntent() throws Exception {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("editable_get_messages_response.json"));
@@ -151,7 +151,7 @@ public class MainActivityTest {
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
-    @Ignore
+    @Ignore ("Ignoring tests needing to find webView through forceJavascriptEnabled()")
     @Test
     public void checkIfMessageShownAsPopUpForUnexpectedIntent() throws Exception {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("editable_get_messages_response.json"));
@@ -173,7 +173,7 @@ public class MainActivityTest {
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
-    @Ignore
+    @Ignore ("Ignoring tests needing to find webView through forceJavascriptEnabled()")
     @Test
     public void checkIfMessageShownAsPopUpForNoIntent() throws Exception {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("editable_get_messages_response.json"));
@@ -192,7 +192,7 @@ public class MainActivityTest {
         onWebView().withElement(findElement(Locator.XPATH, "//*[contains(text(),'Ok, got it')]"));
     }
 
-    @Ignore
+    @Ignore ("Ignoring tests needing to find webView through forceJavascriptEnabled()")
     @Test
     public void checkIfMessageShownAsPopUp() throws Exception {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("editable_get_messages_response.json"));
