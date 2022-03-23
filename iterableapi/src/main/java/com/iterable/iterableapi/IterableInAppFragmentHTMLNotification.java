@@ -22,11 +22,11 @@ import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.webkit.JavascriptInterface;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
@@ -34,10 +34,9 @@ import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.DialogFragment;
 
-public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebViewClient.HTMLNotificationCallbacks {
+public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
 
     private static final String BACK_BUTTON = "itbl://backButton";
-    private static final String JAVASCRIPT_INTERFACE = "ITBL";
     private static final String TAG = "IterableInAppFragmentHTMLNotification";
     private static final String HTML_STRING = "HTML";
     private static final String BACKGROUND_ALPHA = "BackgroundAlpha";
@@ -173,7 +172,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
-        webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE);
+
+        webView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                runResizeScript();
+                return true;
+            }
+        });
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
@@ -184,7 +190,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         handler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                webView.loadUrl(IterableWebViewClient.RESIZE_SCRIPT);
+                                runResizeScript();
                             }
                         }, 1000);
                     }
@@ -235,9 +241,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onDestroy() {
         super.onDestroy();
+
         if (this.getActivity() != null && this.getActivity().isChangingConfigurations()) {
             return;
         }
+
         notification = null;
         clickCallback = null;
         location = null;
@@ -406,11 +414,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
     }
 
+    @Override
+    public void runResizeScript() {
+        resize(webView.getContentHeight());
+    }
+
     /**
      * Resizes the dialog window based upon the size of its webview html content
      * @param height
      */
-    @JavascriptInterface
     public void resize(final float height) {
         final Activity activity = getActivity();
         if (activity == null) {
@@ -451,7 +463,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         window.setLayout(webViewWidth, webViewHeight);
                         getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
-                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) (height * getResources().getDisplayMetrics().density));
+                        float relativeHeight = height * getResources().getDisplayMetrics().density;
+                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) relativeHeight);
                         webView.setLayoutParams(webViewLayout);
                     }
                 } catch (IllegalArgumentException e) {
