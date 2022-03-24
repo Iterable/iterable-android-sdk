@@ -2,49 +2,53 @@ package com.iterable.iterableapi;
 
 import android.util.Log;
 
+import androidx.annotation.VisibleForTesting;
+
+import com.iterable.iterableapi.util.LogLevel;
+
 /**
  * Created by David Truong dt@iterable.com.
  */
-public class IterableLogger {
+public final class IterableLogger {
 
     public static void d(String tag, String msg) {
-        if (isLoggableLevel(Log.DEBUG)) {
+        if (isLoggableLevel(LogLevel.DEBUG)) {
             Log.d(tag, " 💚 " + msg);
         }
     }
 
     public static void d(String tag, String msg, Throwable tr) {
-        if (isLoggableLevel(Log.DEBUG)) {
+        if (isLoggableLevel(LogLevel.DEBUG)) {
             Log.d(tag, " 💚 " + msg, tr);
         }
     }
 
     public static void v(String tag, String msg) {
-        if (isLoggableLevel(Log.VERBOSE)) {
+        if (isLoggableLevel(LogLevel.VERBOSE)) {
             Log.v(tag, " 💛 " + msg);
         }
     }
 
     public static void w(String tag, String msg) {
-        if (isLoggableLevel(Log.WARN)) {
+        if (isLoggableLevel(LogLevel.WARN)) {
             Log.w(tag, " 🧡️ " + msg);
         }
     }
 
     public static void w(String tag, String msg, Throwable tr) {
-        if (isLoggableLevel(Log.WARN)) {
+        if (isLoggableLevel(LogLevel.WARN)) {
             Log.w(tag, " 🧡 " + msg, tr);
         }
     }
 
     public static void e(String tag, String msg) {
-        if (isLoggableLevel(Log.ERROR)) {
+        if (isLoggableLevel(LogLevel.ERROR)) {
             Log.e(tag, " ❤️ " + msg);
         }
     }
 
     public static void e(String tag, String msg, Throwable tr) {
-        if (isLoggableLevel(Log.ERROR)) {
+        if (isLoggableLevel(LogLevel.ERROR)) {
             Log.e(tag, " ❤️ " + msg, tr);
         }
     }
@@ -57,18 +61,20 @@ public class IterableLogger {
         }
     }
 
-    private static boolean isLoggableLevel(int messageLevel) {
-        return BuildConfig.DEBUG && messageLevel >= getLogLevel();
+    @VisibleForTesting
+    protected static boolean isLoggableLevel(@LogLevel.Level int messageLevel) {
+        return messageLevel >= getLogLevel();
     }
 
+    @LogLevel.Level
     private static int getLogLevel() {
         if (IterableApi.sharedInstance != null) {
             if (IterableApi.sharedInstance.getDebugMode()) {
-                return Log.VERBOSE;
+                return LogLevel.VERBOSE;
             } else {
                 return IterableApi.sharedInstance.config.logLevel;
             }
         }
-        return Log.ERROR;
+        return LogLevel.NONE;
     }
 }
