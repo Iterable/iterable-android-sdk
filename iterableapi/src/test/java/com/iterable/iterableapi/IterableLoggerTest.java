@@ -56,7 +56,7 @@ public class IterableLoggerTest extends BaseTest {
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
-                return builder.setLogLevel(Log.ERROR);
+                return builder.setLogLevel(LogLevel.ERROR);
             }
         });
 
