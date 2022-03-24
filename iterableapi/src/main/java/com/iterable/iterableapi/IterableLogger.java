@@ -11,6 +11,8 @@ import com.iterable.iterableapi.util.LogLevel;
  */
 public final class IterableLogger {
 
+    private IterableLogger() { }
+
     public static void d(String tag, String msg) {
         if (isLoggableLevel(LogLevel.DEBUG)) {
             Log.d(tag, " 💚 " + msg);
