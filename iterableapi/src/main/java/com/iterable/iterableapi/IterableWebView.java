@@ -43,7 +43,7 @@ class IterableWebView extends WebView {
         getSettings().setJavaScriptEnabled(false);
 
         // start loading the in-app
-        loadData(html, MIME_TYPE, ENCODING);
+        loadDataWithBaseURL("", html, MIME_TYPE, ENCODING, "");
     }
 
     interface HTMLNotificationCallbacks {
