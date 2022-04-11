@@ -168,18 +168,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         webView.setId(R.id.webView);
         webView.createWithHtml(this, htmlString);
 
-//        webView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-//            @Override
-//            public boolean onPreDraw() {
-//                runResizeScript();
-//                return true;
-//            }
-//        });
-
-        webView.getViewTreeObserver().addOnDrawListener(new ViewTreeObserver.OnDrawListener() {
+        webView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
-            public void onDraw() {
+            public boolean onPreDraw() {
                 runResizeScript();
+                return true;
             }
         });
 
