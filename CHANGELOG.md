@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.5)
+#### Fixed
+- Fixed in-apps disappearing due to the functionality of loading HTML changing in Android SDK version 29+.
+
 ## [3.4.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.4)
 #### Fixed
 - Fixed in-app layouts always showing up in the `top` format.
