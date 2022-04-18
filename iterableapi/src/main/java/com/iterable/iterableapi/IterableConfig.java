@@ -60,6 +60,11 @@ public class IterableConfig {
     final IterableAuthHandler authHandler;
 
     /**
+     * JSON handler that can be used to render a JSON-only message.
+     */
+    final IterableRenderJsonHandler renderJsonHandler;
+
+    /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
     final long expiringAuthTokenRefreshPeriod;
@@ -80,6 +85,7 @@ public class IterableConfig {
         inAppHandler = builder.inAppHandler;
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
+        renderJsonHandler = builder.renderJsonHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
     }
@@ -94,6 +100,7 @@ public class IterableConfig {
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
+        private IterableRenderJsonHandler renderJsonHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
         public Builder() {}
@@ -193,6 +200,16 @@ public class IterableConfig {
         @NonNull
         public Builder setAuthHandler(@NonNull IterableAuthHandler authHandler) {
             this.authHandler = authHandler;
+            return this;
+        }
+
+        /**
+         * Set a JSON handler that can be used to render a JSON-only message.
+         * @param renderJsonHandler Auth handler provided by the app
+         */
+        @NonNull
+        public Builder setRenderJsonHandler(@NonNull IterableRenderJsonHandler renderJsonHandler) {
+            this.renderJsonHandler = renderJsonHandler;
             return this;
         }
 
