@@ -246,14 +246,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     @Override
     public void onUrlClicked(String url) {
-        IterableApi.sharedInstance.trackInAppClick(messageId, url, location);
-        IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location);
+        IterableInAppMessage message = IterableApi.sharedInstance.getInAppManager().getMessageById(messageId);
+        IterableInAppManager.processClick(message, url, location);
 
         if (clickCallback != null) {
             clickCallback.execute(Uri.parse(url));
         }
 
-        processMessageRemoval();
         hideWebView();
     }
 
@@ -261,10 +260,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * Tracks a button click when the back button is pressed
      */
     public void onBackPressed() {
-        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON);
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
+        IterableInAppMessage message = IterableApi.sharedInstance.getInAppManager().getMessageById(messageId);
+        IterableApi.sharedInstance.trackInAppClick(message, BACK_BUTTON, null);
+        IterableApi.sharedInstance.trackInAppClose(message, BACK_BUTTON, IterableInAppCloseAction.BACK, location);
 
-        processMessageRemoval();
+        IterableInAppManager.processMessageRemoval(message);
     }
 
     private void prepareToShowWebView() {
@@ -401,17 +401,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
     }
 
-    private void processMessageRemoval() {
-        IterableInAppMessage message = IterableApi.sharedInstance.getInAppManager().getMessageById(messageId);
-        if (message == null) {
-            IterableLogger.e(TAG, "Message with id " + messageId + " does not exist");
-            return;
-        }
 
-        if (message.isMarkedForDeletion() && !message.isConsumed()) {
-            IterableApi.sharedInstance.getInAppManager().removeMessage(message);
-        }
-    }
 
     @Override
     public void runResizeScript() {

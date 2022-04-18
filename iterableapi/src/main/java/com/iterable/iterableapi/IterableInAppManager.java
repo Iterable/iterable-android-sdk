@@ -43,6 +43,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
     private final IterableInAppDisplayer displayer;
+    private final IterableRenderJsonHandler renderJsonHandler;
     private final IterableActivityMonitor activityMonitor;
     private final double inAppDisplayInterval;
     private final List<Listener> listeners = new ArrayList<>();
@@ -50,13 +51,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastInAppShown = 0;
     private boolean autoDisplayPaused = false;
 
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, IterableRenderJsonHandler renderJsonHandler) {
         this(iterableApi,
                 handler,
                 inAppDisplayInterval,
                 new IterableInAppFileStorage(iterableApi.getMainActivityContext()),
                 IterableActivityMonitor.getInstance(),
-                new IterableInAppDisplayer(IterableActivityMonitor.getInstance()));
+                new IterableInAppDisplayer(IterableActivityMonitor.getInstance()),
+                renderJsonHandler);
     }
 
     @VisibleForTesting
@@ -65,13 +67,15 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                          double inAppDisplayInterval,
                          IterableInAppStorage storage,
                          IterableActivityMonitor activityMonitor,
-                         IterableInAppDisplayer displayer) {
+                         IterableInAppDisplayer displayer,
+                         IterableRenderJsonHandler renderJsonHandler) {
         this.api = iterableApi;
         this.context = iterableApi.getMainActivityContext();
         this.handler = handler;
         this.inAppDisplayInterval = inAppDisplayInterval;
         this.storage = storage;
         this.displayer = displayer;
+        this.renderJsonHandler = renderJsonHandler;
         this.activityMonitor = activityMonitor;
         this.activityMonitor.addCallback(this);
 
@@ -225,23 +229,47 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         showMessage(message, consume, clickCallback, IterableInAppLocation.IN_APP);
     }
 
-    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {
-        if (displayer.showMessage(message, inAppLocation, new IterableHelper.IterableUrlCallback() {
+    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull final IterableInAppLocation inAppLocation) {
+        JSONObject messageCustomPayload = message.getCustomPayload();
+        String messageHtml = message.getContent().html;
+        IterableHelper.IterableUrlCallback urlCallback =  new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
                 if (clickCallback != null) {
                     clickCallback.execute(url);
                 }
 
+                processClick(message, url.toString(), inAppLocation);
                 handleInAppClick(message, url);
                 lastInAppShown = IterableUtil.currentTimeMillis();
                 scheduleProcessing();
             }
-        })) {
+        };
+        // JSON-only web in-app messages have a payload but no html
+        if (messageCustomPayload.length() > 0 && messageHtml.length() == 0) {
+            renderJsonHandler.showMessage(messageCustomPayload, urlCallback);
+        } else if (displayer.showMessage(message, inAppLocation, urlCallback)) {
             setRead(message, true);
             if (consume) {
                 message.markForDeletion(true);
             }
+        }
+    }
+
+    static void processClick(@NonNull IterableInAppMessage message, @Nullable String clickedURL, @NonNull IterableInAppLocation clickLocation) {
+        IterableApi.sharedInstance.trackInAppClick(message, clickedURL, clickLocation);
+        IterableApi.sharedInstance.trackInAppClose(message, clickedURL, IterableInAppCloseAction.LINK, clickLocation);
+        processMessageRemoval(message);
+    }
+
+    static void processMessageRemoval(@NonNull IterableInAppMessage message) {
+        String messageId = message.getMessageId();
+        if (message == null) {
+            IterableLogger.e(TAG, "Message with id " + messageId + " does not exist");
+            return;
+        }
+        if (message.isMarkedForDeletion() && !message.isConsumed()) {
+            IterableApi.sharedInstance.getInAppManager().removeMessage(message);
         }
     }
 

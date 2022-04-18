@@ -299,7 +299,7 @@ private static final String TAG = "IterableApi";
 
         if (sharedInstance.inAppManager == null) {
             sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval);
+                    sharedInstance.config.inAppDisplayInterval, sharedInstance.config.renderJsonHandler);
         }
 
         loadLastSavedConfiguration(context);
@@ -704,7 +704,7 @@ private static final String TAG = "IterableApi";
      * @param clickedUrl the URL of the clicked link
      * @param clickLocation the location of the in-app for this event
      */
-    public void trackInAppClick(@NonNull IterableInAppMessage message, @NonNull String clickedUrl, @NonNull IterableInAppLocation clickLocation) {
+    public void trackInAppClick(@NonNull IterableInAppMessage message, @NonNull String clickedUrl, @Nullable IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -858,23 +858,6 @@ private static final String TAG = "IterableApi";
         }
 
         apiClient.trackInAppClick(messageId, clickedUrl);
-    }
-
-    /**
-     * (DEPRECATED) Tracks when an in-app has been closed
-     * @param messageId the ID of the in-app message
-     * @param clickedURL the URL of the clicked link
-     * @param closeAction the method of how the in-app was closed
-     * @param clickLocation where the in-app was closed
-     */
-    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppClose(message, clickedURL, closeAction, clickLocation);
-            IterableLogger.printInfo();
-        } else {
-            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
-        }
     }
 
 //---------------------------------------------------------------------------------------
