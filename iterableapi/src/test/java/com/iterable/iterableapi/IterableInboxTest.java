@@ -118,8 +118,9 @@ public class IterableInboxTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
+        IterableRenderJsonHandler renderJsonHandlerMock = mock(IterableRenderJsonHandler.class);
         when(inAppDisplayerMock.showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class))).thenReturn(true);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock, renderJsonHandlerMock));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override

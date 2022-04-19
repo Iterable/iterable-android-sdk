@@ -268,7 +268,8 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        IterableRenderJsonHandler renderJsonHandlerMock = mock(IterableRenderJsonHandler.class);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock, renderJsonHandlerMock));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
@@ -332,7 +333,8 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        IterableRenderJsonHandler renderJsonHandlerMock = mock(IterableRenderJsonHandler.class);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock, renderJsonHandlerMock));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
