@@ -936,7 +936,7 @@ private static final String TAG = "IterableApi";
         return iconName;
     }
 
-    protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
+    public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
         trackPushOpen(campaignId, templateId, messageId, null);
     }
 
@@ -945,7 +945,7 @@ private static final String TAG = "IterableApi";
      * @param campaignId
      * @param templateId
      */
-    protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
+    public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
         if (messageId == null) {
             IterableLogger.e(TAG, "messageId is null");
             return;
