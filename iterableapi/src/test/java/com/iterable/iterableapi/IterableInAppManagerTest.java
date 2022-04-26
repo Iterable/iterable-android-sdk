@@ -353,7 +353,7 @@ public class IterableInAppManagerTest extends BaseTest {
         reset(inAppDisplayerMock);
         reset(customActionHandler);
         reset(urlHandler);
-        inAppManager.showMessage(message, false, null);
+        inAppManager.showMessage(message, false);
         ArgumentCaptor<IterableHelper.IterableUrlCallback> callbackCaptor = ArgumentCaptor.forClass(IterableHelper.IterableUrlCallback.class);
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("iterable://dismiss"));
