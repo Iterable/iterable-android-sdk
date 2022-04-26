@@ -363,7 +363,7 @@ public class IterableInAppManagerTest extends BaseTest {
         reset(inAppDisplayerMock);
         reset(customActionHandler);
         reset(urlHandler);
-        inAppManager.showMessage(message, false, null, IterableInAppLocation.INBOX);
+        inAppManager.showMessage(message, false, IterableInAppLocation.INBOX);
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.INBOX), callbackCaptor.capture());
         callbackCaptor.getValue().execute(Uri.parse("iterable://delete"));
         assertTrue(message.isConsumed());

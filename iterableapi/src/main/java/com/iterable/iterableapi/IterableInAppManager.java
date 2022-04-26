@@ -211,11 +211,11 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
      */
     public void showMessage(@NonNull IterableInAppMessage message) {
-        showMessage(message, true, null);
+        showMessage(message, true);
     }
 
     public void showMessage(@NonNull IterableInAppMessage message, @NonNull IterableInAppLocation location) {
-        showMessage(message, location == IterableInAppLocation.IN_APP, null, location);
+        showMessage(message, location == IterableInAppLocation.IN_APP, location);
     }
 
     /**
@@ -223,22 +223,18 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * different inAppLocation as paramter, use showMessage method which takes in IterableAppLocation as a parameter.
      * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
      * @param consume A boolean indicating whether to remove the message from the list after showing
-     * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
      */
-    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback) {
-        showMessage(message, consume, clickCallback, IterableInAppLocation.IN_APP);
+    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume) {
+        showMessage(message, consume, IterableInAppLocation.IN_APP);
     }
 
-    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull final IterableInAppLocation inAppLocation) {
+    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, @NonNull final IterableInAppLocation inAppLocation) {
         JSONObject messageCustomPayload = message.getCustomPayload();
         String messageHtml = message.getContent().html;
         IterableHelper.IterableUrlCallback urlCallback =  new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
-                if (clickCallback != null) {
-                    clickCallback.execute(url);
-                }
-
+                assert url != null;
                 processClick(message, url.toString(), inAppLocation);
                 handleInAppClick(message, url);
                 lastInAppShown = IterableUtil.currentTimeMillis();
@@ -418,7 +414,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 message.setProcessed(true);
                 if (response == InAppResponse.SHOW) {
                     boolean consume = !message.isInboxMessage();
-                    showMessage(message, consume, null);
+                    showMessage(message, consume);
                     return;
                 }
             }
