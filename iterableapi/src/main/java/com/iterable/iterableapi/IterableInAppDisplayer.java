@@ -1,39 +1,19 @@
 package com.iterable.iterableapi;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
-class IterableInAppDisplayer {
-
-    private final IterableActivityMonitor activityMonitor;
+class IterableInAppDisplayer extends IterableMessageDisplayer {
 
     IterableInAppDisplayer(IterableActivityMonitor activityMonitor) {
-        this.activityMonitor = activityMonitor;
+        super(activityMonitor);
     }
 
     boolean isShowingInApp() {
         return IterableInAppFragmentHTMLNotification.getInstance() != null;
-    }
-
-    boolean showMessage(@NonNull IterableInAppMessage message, IterableInAppLocation location, @NonNull final IterableHelper.IterableUrlCallback clickCallback) {
-        Activity currentActivity = activityMonitor.getCurrentActivity();
-        // Prevent double display
-        if (currentActivity != null) {
-            return IterableInAppDisplayer.showIterableFragmentNotificationHTML(currentActivity,
-                    message.getContent().html,
-                    message.getMessageId(),
-                    clickCallback,
-                    message.getContent().backgroundAlpha,
-                    message.getContent().padding,
-                    message.getContent().inAppDisplaySettings.shouldAnimate,
-                    message.getContent().inAppDisplaySettings.inAppBgColor,
-                    true, location);
-        }
-        return false;
     }
 
     /**
