@@ -35,6 +35,7 @@ public class IterableConfig {
      * When set to true, it will check for deferred deep links on first time app launch
      * after installation.
      */
+    @Deprecated
     final boolean checkForDeferredDeeplink;
 
     /**

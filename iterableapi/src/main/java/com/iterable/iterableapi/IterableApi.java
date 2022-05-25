@@ -807,6 +807,7 @@ private static final String TAG = "IterableApi";
      * (DEPRECATED) Tracks an in-app open
      * @param messageId
      */
+    @Deprecated
     public void trackInAppOpen(@NonNull String messageId) {
         IterableLogger.printInfo();
         if (!checkSDKInitialization()) {
@@ -821,6 +822,7 @@ private static final String TAG = "IterableApi";
      * @param messageId the ID of the in-app message
      * @param location where the in-app was opened
      */
+    @Deprecated
     void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
         IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
@@ -837,6 +839,7 @@ private static final String TAG = "IterableApi";
      * @param clickedUrl the URL of the clicked link
      * @param location where the in-app was opened
      */
+    @Deprecated
     void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
         IterableLogger.printInfo();
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
@@ -852,6 +855,7 @@ private static final String TAG = "IterableApi";
      * @param messageId the ID of the in-app message
      * @param clickedUrl the URL of the clicked link
      */
+    @Deprecated
     public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
         if (!checkSDKInitialization()) {
             return;
@@ -867,6 +871,7 @@ private static final String TAG = "IterableApi";
      * @param closeAction the method of how the in-app was closed
      * @param clickLocation where the in-app was closed
      */
+    @Deprecated
     void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message != null) {
