@@ -285,7 +285,7 @@ class IterableUtil {
             return true;
         }
 
-        for (String allowedProtocol : IterableApi.getInstance().config.allowedProtocols) {
+        for (String allowedProtocol : IterableApi.sharedInstance.config.allowedProtocols) {
             if (urlProtocol.equals(allowedProtocol)) {
                 return true;
             }
