@@ -229,9 +229,9 @@ private static final String TAG = "IterableApi";
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
                 storeAuthData();
-                onLogIn();
+                completeUserLogin();
             } else if (bypassAuth) {
-                onLogIn();
+                completeUserLogin();
             }
         }
     }
@@ -339,6 +339,10 @@ private static final String TAG = "IterableApi";
         });
     }
 
+    public void setEmail(@Nullable String email) {
+        setEmail(email, null);
+    }
+
     /**
      * Set user email used for API calls
      * Calling this or {@link #setUserId(String)} is required before making any API calls.
@@ -346,7 +350,7 @@ private static final String TAG = "IterableApi";
      * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
      * @param email User email
      */
-    public void setEmail(@Nullable String email) {
+    public void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             return;
         }
@@ -360,11 +364,7 @@ private static final String TAG = "IterableApi";
         _userId = null;
         storeAuthData();
 
-        if (email != null) {
-            getAuthManager().requestNewAuthToken(false);
-        } else {
-            setAuthToken(null);
-        }
+        onLogin(authToken);
     }
 
     /**
@@ -388,11 +388,7 @@ private static final String TAG = "IterableApi";
         _userId = userId;
         storeAuthData();
 
-        if (userId != null) {
-            getAuthManager().requestNewAuthToken(false);
-        } else {
-            setAuthToken(null);
-        }
+        completeUserLogin();
     }
 
     /**
@@ -558,7 +554,15 @@ private static final String TAG = "IterableApi";
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        updateEmail(newEmail, null, null);
+        updateEmail(newEmail, null, null, null);
+    }
+
+    public void updateEmail(final @NonNull String newEmail, final @NonNull String authToken) {
+        updateEmail(newEmail, authToken);
+    }
+
+    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        updateEmail(newEmail, successHandler, failureHandler);
     }
 
     /**
@@ -568,7 +572,7 @@ private static final String TAG = "IterableApi";
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
-    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
        if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
@@ -583,7 +587,7 @@ private static final String TAG = "IterableApi";
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 if (_email != null) {
-                    _email = newEmail;
+                    setEmail(newEmail, authToken);
                 }
 
                 storeAuthData();
@@ -1084,6 +1088,23 @@ private static final String TAG = "IterableApi";
         }
     }
 
+    private void onLogin(@Nullable String authToken) {
+        if (authToken != null) {
+            setAuthToken(authToken);
+            completeUserLogin();
+        } else if (isEitherUserIdOrEmailSet() && config.authHandler != null) {
+            getAuthManager().requestNewAuthToken(false,
+                    new IterableHelper.SuccessAuthHandler() {
+                        @Override
+                        public void onSuccess(@NonNull String authToken) {
+                            completeUserLogin();
+                        }
+                    });
+        } else {
+            completeUserLogin();
+        }
+    }
+
     private void onLogOut() {
         if (config.autoPushRegistration && isInitialized()) {
             disablePush();
@@ -1093,7 +1114,7 @@ private static final String TAG = "IterableApi";
         apiClient.onLogout();
     }
 
-    private void onLogIn() {
+    private void completeUserLogin() {
         if (!isInitialized()) {
             return;
         }
@@ -1101,6 +1122,7 @@ private static final String TAG = "IterableApi";
         if (config.autoPushRegistration) {
             registerForPush();
         }
+
         getInAppManager().syncInApp();
     }
 
@@ -1113,7 +1135,6 @@ private static final String TAG = "IterableApi";
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
     }
-
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
         @Nullable
