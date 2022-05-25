@@ -359,7 +359,8 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        onLogOut();
+        logoutPreviousUser();
+
         _email = email;
         _userId = null;
         storeAuthData();
@@ -383,7 +384,8 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        onLogOut();
+        logoutPreviousUser();
+
         _email = null;
         _userId = userId;
         storeAuthData();
@@ -1058,10 +1060,6 @@ private static final String TAG = "IterableApi";
         return _deviceId;
     }
 
-    private boolean isEitherUserIdOrEmailSet() {
-        return _email != null || _userId != null;
-    }
-
     private void storeAuthData() {
         try {
             SharedPreferences.Editor editor = getPreferences().edit();
@@ -1092,7 +1090,7 @@ private static final String TAG = "IterableApi";
         if (authToken != null) {
             setAuthToken(authToken);
             completeUserLogin();
-        } else if (isEitherUserIdOrEmailSet() && config.authHandler != null) {
+        } else if (isInitialized() && config.authHandler != null) {
             getAuthManager().requestNewAuthToken(false,
                     new IterableHelper.SuccessAuthHandler() {
                         @Override
@@ -1105,12 +1103,14 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    private void onLogOut() {
+    private void logoutPreviousUser() {
         if (config.autoPushRegistration && isInitialized()) {
             disablePush();
         }
+
         getInAppManager().reset();
         getAuthManager().clearRefreshTimer();
+
         apiClient.onLogout();
     }
 
