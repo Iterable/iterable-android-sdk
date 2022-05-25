@@ -1054,6 +1054,10 @@ private static final String TAG = "IterableApi";
         return _deviceId;
     }
 
+    private boolean isEitherUserIdOrEmailSet() {
+        return _email != null || _userId != null;
+    }
+
     private void storeAuthData() {
         try {
             SharedPreferences.Editor editor = getPreferences().edit();
