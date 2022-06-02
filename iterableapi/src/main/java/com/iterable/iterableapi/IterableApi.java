@@ -560,11 +560,11 @@ private static final String TAG = "IterableApi";
     }
 
     public void updateEmail(final @NonNull String newEmail, final @NonNull String authToken) {
-        updateEmail(newEmail, authToken);
+        updateEmail(newEmail, authToken, null, null);
     }
 
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        updateEmail(newEmail, successHandler, failureHandler);
+        updateEmail(newEmail, null, successHandler, failureHandler);
     }
 
     /**
