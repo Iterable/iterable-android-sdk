@@ -192,6 +192,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
     }
 
+    @Ignore
     @Test
     public void testHandleUniversalLinkRewrite() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
