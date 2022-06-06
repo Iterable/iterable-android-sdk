@@ -582,6 +582,7 @@ private static final String TAG = "IterableApi";
                 failureHandler.onFailure("The Iterable SDK must be initialized with email or " +
                         "userId before calling updateEmail", null);
             }
+
             return;
         }
 
@@ -594,9 +595,9 @@ private static final String TAG = "IterableApi";
 
                 storeAuthData();
                 getAuthManager().requestNewAuthToken(false);
+
                 if (successHandler != null) {
                     successHandler.onSuccess(data);
-
                 }
             }
         }, failureHandler);
