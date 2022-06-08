@@ -225,14 +225,16 @@ private static final String TAG = "IterableApi";
     }
 
     void setAuthToken(String authToken, boolean bypassAuth) {
-        if (isInitialized()) {
-            if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
-                _authToken = authToken;
-                storeAuthData();
-                completeUserLogin();
-            } else if (bypassAuth) {
-                completeUserLogin();
-            }
+        if (!isInitialized()) {
+            return;
+        }
+
+        if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
+            _authToken = authToken;
+            storeAuthData();
+            completeUserLogin();
+        } else if (bypassAuth) {
+            completeUserLogin();
         }
     }
 
@@ -376,6 +378,10 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
+        setUserId(userId, null);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
@@ -390,7 +396,7 @@ private static final String TAG = "IterableApi";
         _userId = userId;
         storeAuthData();
 
-        completeUserLogin();
+        onLogin(authToken);
     }
 
     /**
@@ -1088,7 +1094,7 @@ private static final String TAG = "IterableApi";
     }
 
     private void onLogin(@Nullable String authToken) {
-        if (authToken != null) {
+        if (isInitialized() && authToken != null) {
             setAuthToken(authToken);
             completeUserLogin();
         } else if (isInitialized() && config.authHandler != null) {
