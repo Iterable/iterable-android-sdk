@@ -365,11 +365,13 @@ private static final String TAG = "IterableApi";
         _userId = null;
         storeAuthData();
 
-        if (email != null) {
-            getAuthManager().requestNewAuthToken(false);
-        } else {
-            setAuthToken(null);
-        }
+//        if (email != null) {
+//            getAuthManager().requestNewAuthToken(false);
+//        } else {
+//            setAuthToken(null);
+//        }
+
+        onLogin(authToken);
     }
 
     /**
@@ -398,11 +400,13 @@ private static final String TAG = "IterableApi";
         _userId = userId;
         storeAuthData();
 
-        if (userId != null) {
-            getAuthManager().requestNewAuthToken(false);
-        } else {
-            setAuthToken(null);
-        }
+//        if (userId != null) {
+//            getAuthManager().requestNewAuthToken(false);
+//        } else {
+//            setAuthToken(null);
+//        }
+
+        onLogin(authToken);
     }
 
     /**
@@ -1099,6 +1103,14 @@ private static final String TAG = "IterableApi";
         getAuthManager().clearRefreshTimer();
 
         apiClient.onLogout();
+    }
+
+    private void onLogin(@Nullable String authToken) {
+        if (isInitialized()) {
+            getAuthManager().requestNewAuthToken(false);
+        } else {
+            setAuthToken(null);
+        }
     }
 
     private void completeUserLogin() {
