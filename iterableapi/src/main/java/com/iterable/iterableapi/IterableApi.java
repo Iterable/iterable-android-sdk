@@ -365,12 +365,6 @@ private static final String TAG = "IterableApi";
         _userId = null;
         storeAuthData();
 
-//        if (email != null) {
-//            getAuthManager().requestNewAuthToken(false);
-//        } else {
-//            setAuthToken(null);
-//        }
-
         onLogin(authToken);
     }
 
@@ -399,12 +393,6 @@ private static final String TAG = "IterableApi";
         _email = null;
         _userId = userId;
         storeAuthData();
-
-//        if (userId != null) {
-//            getAuthManager().requestNewAuthToken(false);
-//        } else {
-//            setAuthToken(null);
-//        }
 
         onLogin(authToken);
     }
@@ -1106,10 +1094,15 @@ private static final String TAG = "IterableApi";
     }
 
     private void onLogin(@Nullable String authToken) {
-        if (isInitialized()) {
-            getAuthManager().requestNewAuthToken(false);
-        } else {
+        if (!isInitialized()) {
             setAuthToken(null);
+            return;
+        }
+
+        if (authToken != null) {
+            setAuthToken(authToken);
+        } else {
+            getAuthManager().requestNewAuthToken(false);
         }
     }
 
@@ -1134,7 +1127,6 @@ private static final String TAG = "IterableApi";
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
     }
-
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
         @Nullable
