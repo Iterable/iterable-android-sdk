@@ -220,16 +220,28 @@ private static final String TAG = "IterableApi";
         }
     }
 
+    /*
+    Stores and verifies customer passed in auth token
+    * */
+
+    // function call if only authToken is passed in
     void setAuthToken(String authToken) {
         setAuthToken(authToken, false);
     }
 
+    // function call allowing auth to be bypassed
     void setAuthToken(String authToken, boolean bypassAuth) {
+        // if initialized (api key, and email or user id are stored)
         if (isInitialized()) {
+            // if auth token is not null and is not already stored
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
+                // store auth token
                 _authToken = authToken;
+                // persist auth data (email, user id, auth token)
                 storeAuthData();
+                // complete user login process
                 completeUserLogin();
+            // if auth is bypassed, complete user login process
             } else if (bypassAuth) {
                 completeUserLogin();
             }
@@ -351,20 +363,25 @@ private static final String TAG = "IterableApi";
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
+        //if email is already locally stored, exit
         if (_email != null && _email.equals(email)) {
             return;
         }
 
+        //if user is not logged in and email is null, exit
         if (_email == null && _userId == null && email == null) {
             return;
         }
 
+        // log out previous user
         logoutPreviousUser();
 
+        // store and persist auth data
         _email = email;
         _userId = null;
         storeAuthData();
 
+        // process auth token on login
         onLogin(authToken);
     }
 
@@ -380,20 +397,24 @@ private static final String TAG = "IterableApi";
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
+        //if email is already locally stored, exit
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
-
+        //if user is not logged in and user id is null, exit
         if (_email == null && _userId == null && userId == null) {
             return;
         }
 
+        // log out previous user
         logoutPreviousUser();
 
+        // store and persist auth data
         _email = null;
         _userId = userId;
         storeAuthData();
 
+        // process auth token on login
         onLogin(authToken);
     }
 
@@ -1094,11 +1115,14 @@ private static final String TAG = "IterableApi";
     }
 
     private void onLogin(@Nullable String authToken) {
+        // if not initialized (authToken, and email or user id is null), set local auth token to null
         if (!isInitialized()) {
             setAuthToken(null);
             return;
         }
 
+        //if auth token is not null, store auth token locally
+        //otherwise, request a new auth token
         if (authToken != null) {
             setAuthToken(authToken);
         } else {
@@ -1107,14 +1131,17 @@ private static final String TAG = "IterableApi";
     }
 
     private void completeUserLogin() {
+        // if not initialized, exit
         if (!isInitialized()) {
             return;
         }
 
+        // register for push notifications
         if (config.autoPushRegistration) {
             registerForPush();
         }
 
+        // sync in app messages
         getInAppManager().syncInApp();
     }
 
