@@ -229,9 +229,9 @@ private static final String TAG = "IterableApi";
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
                 storeAuthData();
-                onLogIn();
+                completeUserLogin();
             } else if (bypassAuth) {
-                onLogIn();
+                completeUserLogin();
             }
         }
     }
@@ -347,6 +347,10 @@ private static final String TAG = "IterableApi";
      * @param email User email
      */
     public void setEmail(@Nullable String email) {
+        setEmail(email, null);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             return;
         }
@@ -355,16 +359,13 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        onLogOut();
+        logoutPreviousUser();
+
         _email = email;
         _userId = null;
         storeAuthData();
 
-        if (email != null) {
-            getAuthManager().requestNewAuthToken(false);
-        } else {
-            setAuthToken(null);
-        }
+        onLogin(authToken);
     }
 
     /**
@@ -375,6 +376,10 @@ private static final String TAG = "IterableApi";
      * @param userId User ID
      */
     public void setUserId(@Nullable String userId) {
+        setUserId(userId, null);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable String authToken) {
         if (_userId != null && _userId.equals(userId)) {
             return;
         }
@@ -383,16 +388,13 @@ private static final String TAG = "IterableApi";
             return;
         }
 
-        onLogOut();
+        logoutPreviousUser();
+
         _email = null;
         _userId = userId;
         storeAuthData();
 
-        if (userId != null) {
-            getAuthManager().requestNewAuthToken(false);
-        } else {
-            setAuthToken(null);
-        }
+        onLogin(authToken);
     }
 
     /**
@@ -1080,16 +1082,31 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    private void onLogOut() {
+    private void logoutPreviousUser() {
         if (config.autoPushRegistration && isInitialized()) {
             disablePush();
         }
+
         getInAppManager().reset();
         getAuthManager().clearRefreshTimer();
+
         apiClient.onLogout();
     }
 
-    private void onLogIn() {
+    private void onLogin(@Nullable String authToken) {
+        if (!isInitialized()) {
+            setAuthToken(null);
+            return;
+        }
+
+        if (authToken != null) {
+            setAuthToken(authToken);
+        } else {
+            getAuthManager().requestNewAuthToken(false);
+        }
+    }
+
+    private void completeUserLogin() {
         if (!isInitialized()) {
             return;
         }
@@ -1097,6 +1114,7 @@ private static final String TAG = "IterableApi";
         if (config.autoPushRegistration) {
             registerForPush();
         }
+
         getInAppManager().syncInApp();
     }
 
@@ -1109,7 +1127,6 @@ private static final String TAG = "IterableApi";
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
     }
-
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
         @Nullable
