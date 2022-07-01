@@ -225,16 +225,14 @@ private static final String TAG = "IterableApi";
     }
 
     void setAuthToken(String authToken, boolean bypassAuth) {
-        if (!isInitialized()) {
-            return;
-        }
-
-        if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
-            _authToken = authToken;
-            storeAuthData();
-            completeUserLogin();
-        } else if (bypassAuth) {
-            completeUserLogin();
+        if (isInitialized()) {
+            if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
+                _authToken = authToken;
+                storeAuthData();
+                completeUserLogin();
+            } else if (bypassAuth) {
+                completeUserLogin();
+            }
         }
     }
 
@@ -352,6 +350,10 @@ private static final String TAG = "IterableApi";
      * Note: This clears userId and persists the user email so you only need to call this once when the user logs in.
      * @param email User email
      */
+    public void setEmail(@Nullable String email) {
+        setEmail(email, null);
+    }
+
     public void setEmail(@Nullable String email, @Nullable String authToken) {
         if (_email != null && _email.equals(email)) {
             return;
@@ -1093,23 +1095,6 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    private void onLogin(@Nullable String authToken) {
-        if (isInitialized() && authToken != null) {
-            setAuthToken(authToken);
-            completeUserLogin();
-        } else if (isInitialized() && config.authHandler != null) {
-            getAuthManager().requestNewAuthToken(false,
-                    new IterableHelper.SuccessAuthHandler() {
-                        @Override
-                        public void onSuccess(@NonNull String authToken) {
-                            completeUserLogin();
-                        }
-                    });
-        } else {
-            completeUserLogin();
-        }
-    }
-
     private void logoutPreviousUser() {
         if (config.autoPushRegistration && isInitialized()) {
             disablePush();
@@ -1119,6 +1104,19 @@ private static final String TAG = "IterableApi";
         getAuthManager().clearRefreshTimer();
 
         apiClient.onLogout();
+    }
+
+    private void onLogin(@Nullable String authToken) {
+        if (!isInitialized()) {
+            setAuthToken(null);
+            return;
+        }
+
+        if (authToken != null) {
+            setAuthToken(authToken);
+        } else {
+            getAuthManager().requestNewAuthToken(false);
+        }
     }
 
     private void completeUserLogin() {
