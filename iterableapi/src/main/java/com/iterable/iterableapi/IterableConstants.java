@@ -53,6 +53,7 @@ public final class IterableConstants {
     public static final String KEY_USER                 = "user";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
+    public static final String KEY_OFFLINE_MODE         = "offlineMode";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -110,7 +111,7 @@ public final class IterableConstants {
     public static final int    SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS = 24;
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
-    public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "SDKOfflineMode";
+    public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";

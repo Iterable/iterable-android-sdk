@@ -326,7 +326,7 @@ private static final String TAG = "IterableApi";
                 }
                 try {
                     JSONObject jsonData = new JSONObject(data);
-                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY);
+                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
                     sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
                     SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
