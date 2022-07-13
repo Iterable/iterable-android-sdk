@@ -974,6 +974,10 @@ private static final String TAG = "IterableApi";
      * @param deviceToken The device token
      */
     protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        if (deviceToken == null) {
+            IterableLogger.d(TAG, "device token not available");
+            return;
+        }
         apiClient.disableToken(email, userId, authToken, deviceToken, onSuccess, onFailure);
     }
 
