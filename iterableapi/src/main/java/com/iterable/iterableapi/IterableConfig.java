@@ -71,6 +71,11 @@ public class IterableConfig {
      */
     final String[] allowedProtocols;
 
+    /**
+     * Resyncs callbacks for onSwitchToForeground when onActivityResumed is called
+     */
+    final boolean resyncOnResume;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -83,6 +88,7 @@ public class IterableConfig {
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
+        resyncOnResume = builder.resyncOnResume;
     }
 
     public static class Builder {
@@ -97,6 +103,7 @@ public class IterableConfig {
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
+        private boolean resyncOnResume = false;
         public Builder() {}
 
         /**
@@ -214,6 +221,15 @@ public class IterableConfig {
         @NonNull
         public Builder setAllowedProtocols(@NonNull String[] allowedProtocols) {
             this.allowedProtocols = allowedProtocols;
+            return this;
+        }
+
+        /**
+         * Sets if the callbacks for onSwitchToForeground should get called when onActivityResumed
+         * @param resyncOnResume boolean
+         */
+        public Builder setResyncOnResume(boolean resyncOnResume) {
+            this.resyncOnResume = resyncOnResume;
             return this;
         }
 

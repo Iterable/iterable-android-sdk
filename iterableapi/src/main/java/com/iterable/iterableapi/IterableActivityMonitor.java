@@ -56,7 +56,7 @@ public class IterableActivityMonitor {
         @Override
         public void onActivityResumed(Activity activity) {
             currentActivity = new WeakReference<>(activity);
-            if (!inForeground) {
+            if (!inForeground || IterableApi.sharedInstance.config.resyncOnResume) {
                 inForeground = true;
                 for (WeakReference<AppStateCallback> callback : callbacks) {
                     if (callback.get() != null) {
