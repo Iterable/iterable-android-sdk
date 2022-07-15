@@ -312,7 +312,7 @@ private static final String TAG = "IterableApi";
 
     static void loadLastSavedConfiguration(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
-        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, false);
+        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
         sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
     }
 
@@ -326,11 +326,11 @@ private static final String TAG = "IterableApi";
                 }
                 try {
                     JSONObject jsonData = new JSONObject(data);
-                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY);
+                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
                     sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
                     SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY, offlineConfiguration);
+                    editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
                     editor.apply();
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, "Failed to read remote configuration");
@@ -987,6 +987,10 @@ private static final String TAG = "IterableApi";
      * @param deviceToken The device token
      */
     protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        if (deviceToken == null) {
+            IterableLogger.d(TAG, "device token not available");
+            return;
+        }
         apiClient.disableToken(email, userId, authToken, deviceToken, onSuccess, onFailure);
     }
 

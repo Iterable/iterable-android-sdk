@@ -675,7 +675,7 @@ public class IterableApiTest extends BaseTest {
 
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{\n" +
                 "            \"offlineMode\": false,\n" +
-                "            \"" + IterableConstants.SHARED_PREFS_OFFLINE_MODE_BETA_KEY + "\": true,\n" +
+                "            \"" + IterableConstants.KEY_OFFLINE_MODE + "\": true,\n" +
                 "            \"someOtherKey1\": \"someOtherValue1\"\n" +
                 "        }"));
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
