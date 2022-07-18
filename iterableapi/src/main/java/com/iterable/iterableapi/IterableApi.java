@@ -339,10 +339,6 @@ private static final String TAG = "IterableApi";
         });
     }
 
-    public void setEmail(@Nullable String email) {
-        setEmail(email, null);
-    }
-
     /**
      * Set user email used for API calls
      * Calling this or {@link #setUserId(String)} is required before making any API calls.
