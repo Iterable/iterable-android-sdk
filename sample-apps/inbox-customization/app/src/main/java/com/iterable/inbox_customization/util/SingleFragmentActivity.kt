@@ -12,11 +12,13 @@ class SingleFragmentActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val fragmentName = intent.getStringExtra(FRAGMENT_NAME)
-        val fragment: Fragment = Fragment.instantiate(this, fragmentName)
+        val fragment: Fragment? = fragmentName?.let { Fragment.instantiate(this, it) }
         val fragmentArguments = intent.getBundleExtra(FRAGMENT_ARGUMENTS)
-        fragment.arguments = fragmentArguments
-        supportFragmentManager.beginTransaction()
-            .replace(android.R.id.content, fragment, "fragment").commit()
+        fragment?.arguments = fragmentArguments
+        fragment?.let {
+            supportFragmentManager.beginTransaction()
+                .replace(android.R.id.content, it, "fragment").commit()
+        }
     }
 
     companion object {
