@@ -58,6 +58,7 @@ freeline_project_description.json
 
 # MacOS generated files
 .DS_Store
+*.exec
 
 # [Maven] ========================
 target/
