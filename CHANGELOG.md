@@ -14,7 +14,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 #### Fixed
 - nothing yet
-- 
+
+## [3.4.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.8)
+#### Removed
+- Removed collection of advertising ID.
+
+#### Fixed
+- Fixed an issue where `disableDevice` would get called with no device token.
+
 ## [3.4.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.7)
 #### Added
 - This release makes offline events processing available to all Iterable customers who'd like to use it — just ask your customer success manager to enable it for your account. Offline events processing saves a local copy of events triggered in your app while the device is offline (up to 1000 events). When a connection is re-established and your app is in the foreground, the events will be sent to Iterable. For more information, read [Offline events processing](https://support.iterable.com/hc/articles/360035395671#offline-events-processing).
