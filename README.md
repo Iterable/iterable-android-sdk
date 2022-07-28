@@ -13,6 +13,10 @@ message and web push notifications to your customers.
 
 This SDK helps you integrate your Android apps with Iterable.
 
+## Supported Android versions
+
+Iterable's Android SDK supports Android versions 4.1.2 (API level 16) and higher.
+
 ## Installation
 
 For installation instructions, read [Iterable's Android SDK](https://support.iterable.com/hc/articles/360035019712).
