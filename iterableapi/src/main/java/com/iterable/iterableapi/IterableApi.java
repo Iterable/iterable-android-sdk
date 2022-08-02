@@ -594,7 +594,8 @@ private static final String TAG = "IterableApi";
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 if (_email != null) {
-                    setEmail(newEmail, authToken);
+                    _email = newEmail;
+                    _authToken = authToken;
                 }
 
                 storeAuthData();
