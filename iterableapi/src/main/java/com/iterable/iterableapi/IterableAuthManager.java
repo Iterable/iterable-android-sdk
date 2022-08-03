@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import android.util.Base64;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.util.Future;
@@ -35,10 +34,6 @@ public class IterableAuthManager {
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
-        requestNewAuthToken(hasFailedPriorAuth, null);
-    }
-
-    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, @Nullable final IterableHelper.SuccessAuthHandler onSuccess) {
         if (authHandler != null) {
             if (!pendingAuth) {
                 if (!(this.hasFailedPriorAuth && hasFailedPriorAuth)) {
