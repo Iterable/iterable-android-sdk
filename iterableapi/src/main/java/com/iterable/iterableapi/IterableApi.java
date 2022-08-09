@@ -220,7 +220,7 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    void setAuthToken(String authToken) {
+    public void setAuthToken(String authToken) {
         setAuthToken(authToken, false);
     }
 
@@ -351,7 +351,9 @@ private static final String TAG = "IterableApi";
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
+        //Only if passed in same non-null email
         if (_email != null && _email.equals(email)) {
+            checkAndUpdateAuthToken(authToken);
             return;
         }
 
@@ -380,7 +382,9 @@ private static final String TAG = "IterableApi";
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
+        //If same non null userId is passed
         if (_userId != null && _userId.equals(userId)) {
+            checkAndUpdateAuthToken(authToken);
             return;
         }
 
@@ -395,6 +399,13 @@ private static final String TAG = "IterableApi";
         storeAuthData();
 
         onLogin(authToken);
+    }
+
+    private void checkAndUpdateAuthToken(@Nullable String authToken) {
+        // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
+        if (config.authHandler != null && authToken != null && authToken != _authToken) {
+            setAuthToken(authToken);
+        }
     }
 
     /**
