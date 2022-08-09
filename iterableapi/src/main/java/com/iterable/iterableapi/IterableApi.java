@@ -220,7 +220,7 @@ private static final String TAG = "IterableApi";
         }
     }
 
-    void setAuthToken(String authToken) {
+    public void setAuthToken(String authToken) {
         setAuthToken(authToken, false);
     }
 
