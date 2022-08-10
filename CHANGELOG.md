@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.9)
+
+#### Added
+- Added new methods for `setEmail`, `setUserId` and `updateEmail` which accepts `authToken`, providing more ways to pass `authToken` to SDK
+- Added two interface methods - `onTokenRegistrationSuccessful` and `onTokenRegistrationFailed`. Override these methods to see if authToken was successfully received by the SDK.  
+
+#### Changed
+- `setAuthToken` method is now public allowing additional way to provide `authToken` to SDK. 
+
 ## [3.4.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.8)
 #### Removed
 - Removed collection of advertising ID.
