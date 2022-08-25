@@ -23,38 +23,44 @@ import java.util.UUID;
  * Created by David Truong dt@iterable.com
  */
 public class IterableApi {
-
-//region Variables
+//region SDK initialization
 //---------------------------------------------------------------------------------------
-private static final String TAG = "IterableApi";
-    /**
-     * {@link IterableApi} singleton instance
-     */
-    static volatile IterableApi sharedInstance = new IterableApi();
+    @NonNull
+    public static IterableApi getInstance() {
+        return sharedInstance;
+    }
 
-    private Context _applicationContext;
-    IterableConfig config;
-    private String _apiKey;
-    private String _email;
-    private String _userId;
-    private String _authToken;
-    private boolean _debugMode;
-    private Bundle _payloadData;
-    private IterableNotificationData _notificationData;
-    private String _deviceId;
-    private boolean _firstForegroundHandled;
+    public static void initialize(@NonNull Context context, @NonNull String apiKey) {
+        initialize(context, apiKey, null);
+    }
 
-    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
-    private @Nullable IterableInAppManager inAppManager;
-    private String inboxSessionId;
-    private IterableAuthManager authManager;
-    private HashMap<String, String> deviceAttributes = new HashMap<>();
+    public static void initialize(@NonNull Context context, @NonNull String apiKey, @Nullable IterableConfig config) {
+        sharedInstance._applicationContext = context.getApplicationContext();
+        sharedInstance._apiKey = apiKey;
+        sharedInstance.config = config;
 
-//---------------------------------------------------------------------------------------
-//endregion
+        if (sharedInstance.config == null) {
+            sharedInstance.config = new IterableConfig.Builder().build();
+        }
 
-//region Constructor
-//---------------------------------------------------------------------------------------
+        sharedInstance.retrieveEmailAndUserId();
+
+        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
+        IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
+
+        if (sharedInstance.inAppManager == null) {
+            sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
+                    sharedInstance.config.inAppDisplayInterval);
+        }
+
+        loadLastSavedConfiguration(context);
+        IterablePushNotificationUtil.processPendingAction(context);
+    }
+
+    public static void setContext(Context context) {
+        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
+    }
+
     IterableApi() {
         config = new IterableConfig.Builder().build();
     }
@@ -71,12 +77,89 @@ private static final String TAG = "IterableApi";
         this.apiClient = apiClient;
         this.inAppManager = inAppManager;
     }
-
-//---------------------------------------------------------------------------------------
 //endregion
 
-//region Getters/Setters
-//---------------------------------------------------------------------------------------
+//region SDK public functions
+    static volatile IterableApi sharedInstance = new IterableApi();
+
+    /**
+     * Returns an {@link IterableInAppManager} that can be used to manage in-app messages.
+     * Make sure the Iterable API is initialized before calling this method.
+     * @return {@link IterableInAppManager} instance
+     */
+    @NonNull
+    public IterableInAppManager getInAppManager() {
+        if (inAppManager == null) {
+            throw new RuntimeException("IterableApi must be initialized before calling getInAppManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+        }
+        return inAppManager;
+    }
+
+    /**
+     * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
+     * or app link click from an email.
+     * @return {@link IterableAttributionInfo} Object containing
+     */
+    @Nullable
+    public IterableAttributionInfo getAttributionInfo() {
+        return IterableAttributionInfo.fromJSONObject(
+                IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
+        );
+    }
+
+    public void setEmail(@Nullable String email) {
+        setEmail(email, null);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable String authToken) {
+        //Only if passed in same non-null email
+        if (_email != null && _email.equals(email)) {
+            checkAndUpdateAuthToken(authToken);
+            return;
+        }
+
+        if (_email == null && _userId == null && email == null) {
+            return;
+        }
+
+        logoutPreviousUser();
+
+        _email = email;
+        _userId = null;
+        storeAuthData();
+
+        onLogin(authToken);
+    }
+
+    public void setUserId(@Nullable String userId) {
+        setUserId(userId, null);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable String authToken) {
+        //If same non null userId is passed
+        if (_userId != null && _userId.equals(userId)) {
+            checkAndUpdateAuthToken(authToken);
+            return;
+        }
+
+        if (_email == null && _userId == null && userId == null) {
+            return;
+        }
+
+        logoutPreviousUser();
+
+        _email = null;
+        _userId = userId;
+        storeAuthData();
+
+        onLogin(authToken);
+    }
+
+    public void setAuthToken(String authToken) {
+        setAuthToken(authToken, false);
+    }
+
     /**
      * Sets the icon to be displayed in notifications.
      * The icon name should match the resource name stored in the /res/drawable directory.
@@ -106,137 +189,6 @@ private static final String TAG = "IterableApi";
         return _payloadData;
     }
 
-    /**
-     * Returns an {@link IterableInAppManager} that can be used to manage in-app messages.
-     * Make sure the Iterable API is initialized before calling this method.
-     * @return {@link IterableInAppManager} instance
-     */
-    @NonNull
-    public IterableInAppManager getInAppManager() {
-        if (inAppManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getInAppManager(). " +
-                    "Make sure you call IterableApi#initialize() in Application#onCreate");
-        }
-        return inAppManager;
-    }
-
-    /**
-     * Returns an {@link IterableAuthManager} that can be used to manage mobile auth.
-     * Make sure the Iterable API is initialized before calling this method.
-     * @return {@link IterableAuthManager} instance
-     */
-    @NonNull
-    IterableAuthManager getAuthManager() {
-        if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
-        }
-        return authManager;
-    }
-
-    /**
-     * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
-     * or app link click from an email.
-     * @return {@link IterableAttributionInfo} Object containing
-     */
-    @Nullable
-    public IterableAttributionInfo getAttributionInfo() {
-        return IterableAttributionInfo.fromJSONObject(
-                IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
-        );
-    }
-
-    /**
-     * Stores attribution information.
-     * @param attributionInfo Attribution information object
-     */
-    void setAttributionInfo(IterableAttributionInfo attributionInfo) {
-        if (_applicationContext == null) {
-            IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.");
-            return;
-        }
-
-        IterableUtil.saveExpirableJsonObject(
-                getPreferences(),
-                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
-                attributionInfo.toJSONObject(),
-                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
-                );
-    }
-
-    /**
-     * Returns the current context for the application.
-     * @return
-     */
-    Context getMainActivityContext() {
-        return _applicationContext;
-    }
-
-    /**
-     * Sets debug mode.
-     * @param debugMode
-     */
-    void setDebugMode(boolean debugMode) {
-        _debugMode = debugMode;
-    }
-
-    /**
-     * Gets the current state of the debug mode.
-     * @return
-     */
-    boolean getDebugMode() {
-        return _debugMode;
-    }
-
-    /**
-     * Set the payload for a given intent if it is from Iterable.
-     * @param intent
-     */
-    void setPayloadData(Intent intent) {
-        Bundle extras = intent.getExtras();
-        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY) && !IterableNotificationHelper.isGhostPush(extras)) {
-            setPayloadData(extras);
-        }
-    }
-
-    /**
-     * Sets the payload bundle.
-     * @param bundle
-     */
-    void setPayloadData(Bundle bundle) {
-        _payloadData = bundle;
-    }
-
-    /**
-     * Sets the IterableNotification data
-     * @param data
-     */
-    void setNotificationData(IterableNotificationData data) {
-        _notificationData = data;
-        if (data != null) {
-            setAttributionInfo(new IterableAttributionInfo(data.getCampaignId(), data.getTemplateId(), data.getMessageId()));
-        }
-    }
-
-    public void setAuthToken(String authToken) {
-        setAuthToken(authToken, false);
-    }
-
-    void setAuthToken(String authToken, boolean bypassAuth) {
-        if (isInitialized()) {
-            if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
-                _authToken = authToken;
-                storeAuthData();
-                completeUserLogin();
-            } else if (bypassAuth) {
-                completeUserLogin();
-            }
-        }
-    }
-
-    HashMap getDeviceAttributes() {
-        return deviceAttributes;
-    }
-
     public void setDeviceAttribute(String key, String value) {
         deviceAttributes.put(key, value);
     }
@@ -244,22 +196,66 @@ private static final String TAG = "IterableApi";
     public void removeDeviceAttribute(String key) {
         deviceAttributes.remove(key);
     }
-//---------------------------------------------------------------------------------------
 //endregion
 
-//region Public Functions
+//region API public functions
 //---------------------------------------------------------------------------------------
-    static void loadLastSavedConfiguration(Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
-        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
-        sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+    /**
+     * Registers a device token with Iterable.
+     * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
+     * @param deviceToken Push token obtained from GCM or FCM
+     */
+    public void registerDeviceToken(@NonNull String deviceToken) {
+        registerDeviceToken(_email, _userId, _authToken, getPushIntegrationName(), deviceToken, deviceAttributes);
     }
 
-    private void checkAndUpdateAuthToken(@Nullable String authToken) {
-        // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
-        if (config.authHandler != null && authToken != null && authToken != _authToken) {
-            setAuthToken(authToken);
+    public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
+        trackPushOpen(campaignId, templateId, messageId, null);
+    }
+
+    /**
+     * Tracks when a push notification is opened on device.
+     * @param campaignId
+     * @param templateId
+     */
+    public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
+        if (messageId == null) {
+            IterableLogger.e(TAG, "messageId is null");
+            return;
         }
+
+        apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
+    }
+
+    /**
+     * Consumes an InApp message.
+     * @param messageId
+     */
+    public void inAppConsume(@NonNull String messageId) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            return;
+        }
+        inAppConsume(message, null, null);
+        IterableLogger.printInfo();
+    }
+
+    /**
+     * Tracks InApp delete.
+     * This method from informs Iterable about inApp messages deleted with additional paramters.
+     * Call this method from places where inApp deletion are invoked by user. The messages can be swiped to delete or can be deleted using the link to delete button.
+     *
+     * @param message message object
+     * @param source An enum describing how the in App delete was triggered
+     * @param clickLocation The module in which the action happened
+     */
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId);
     }
 
     /**
@@ -424,7 +420,7 @@ private static final String TAG = "IterableApi";
      * @param failureHandler Failure handler. Called when the server call failed.
      */
     public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-       if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
             if (failureHandler != null) {
@@ -515,22 +511,6 @@ private static final String TAG = "IterableApi";
     }
 
     /**
-     * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
-     * Now package-private. If you were previously using this method, use
-     * {@link IterableInAppManager#getMessages()} instead
-     *
-     * @param count      the number of messages to fetch
-     * @param onCallback
-     */
-    void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.getInAppMessages(count, onCallback);
-    }
-
-    /**
      * Tracks an in-app open.
      * @param message in-app message
      */
@@ -585,100 +565,114 @@ private static final String TAG = "IterableApi";
 
         apiClient.trackInAppClose(message, clickedURL, closeAction, clickLocation, inboxSessionId);
     }
+//endregion
 
+//region DEPRECATED - API public functions
+//---------------------------------------------------------------------------------------
     /**
-     * Tracks in-app delivery events (per in-app)
-     * @param message the in-app message to be tracked as delivered */
-    void trackInAppDelivery(@NonNull IterableInAppMessage message) {
+     * (DEPRECATED) Tracks an in-app open
+     * @param messageId
+     */
+    @Deprecated
+    public void trackInAppOpen(@NonNull String messageId) {
+        IterableLogger.printInfo();
         if (!checkSDKInitialization()) {
             return;
         }
 
-        if (message == null) {
-            IterableLogger.e(TAG, "trackInAppDelivery: message is null");
+        apiClient.trackInAppOpen(messageId);
+    }
+
+    /**
+     * (DEPRECATED) Tracks an in-app open
+     * @param messageId the ID of the in-app message
+     * @param location where the in-app was opened
+     */
+    @Deprecated
+    void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
+        IterableLogger.printInfo();
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppOpen(message, location);
+        } else {
+            IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
+        }
+    }
+
+    /**
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
+     * @param location where the in-app was opened
+     */
+    @Deprecated
+    void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
+        IterableLogger.printInfo();
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClick(message, clickedUrl, location);
+        } else {
+            trackInAppClick(messageId, clickedUrl);
+        }
+    }
+
+    /**
+     * (DEPRECATED) Tracks when a link inside an in-app is clicked
+     * @param messageId the ID of the in-app message
+     * @param clickedUrl the URL of the clicked link
+     */
+    @Deprecated
+    public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
+        if (!checkSDKInitialization()) {
             return;
         }
 
-        apiClient.trackInAppDelivery(message);
-    }
-
-
-//---------------------------------------------------------------------------------------
-//endregion
-
-//region Package-Protected Functions
-//---------------------------------------------------------------------------------------
-
-    /**
-     * Get user email
-     * @return user email
-     */
-    String getEmail() {
-        return _email;
+        apiClient.trackInAppClick(messageId, clickedUrl);
     }
 
     /**
-     * Get user ID
-     * @return user ID
+     * (DEPRECATED) Tracks when an in-app has been closed
+     * @param messageId the ID of the in-app message
+     * @param clickedURL the URL of the clicked link
+     * @param closeAction the method of how the in-app was closed
+     * @param clickLocation where the in-app was closed
      */
-    String getUserId() {
-        return _userId;
-    }
-
-    /**
-     * Get the authentication token
-     * @return authentication token
-     */
-    String getAuthToken() {
-        return _authToken;
-    }
-
-//---------------------------------------------------------------------------------------
-//endregion
-
-//region Protected Functions
-//---------------------------------------------------------------------------------------
-
-    /**
-     * Set the notification icon with the given iconName.
-     * @param context
-     * @param iconName
-     */
-    static void setNotificationIcon(Context context, String iconName) {
-        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.NOTIFICATION_ICON_NAME, iconName);
-        editor.commit();
-    }
-
-    /**
-     * Returns the stored notification icon.
-     * @param context
-     * @return
-     */
-    static String getNotificationIcon(Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
-        return iconName;
-    }
-
-    public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
-        trackPushOpen(campaignId, templateId, messageId, null);
-    }
-
-    /**
-     * Tracks when a push notification is opened on device.
-     * @param campaignId
-     * @param templateId
-     */
-    public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
-        if (messageId == null) {
-            IterableLogger.e(TAG, "messageId is null");
-            return;
+    @Deprecated
+    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message != null) {
+            trackInAppClose(message, clickedURL, closeAction, clickLocation);
+            IterableLogger.printInfo();
+        } else {
+            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
         }
-
-        apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
     }
+//endregion
+
+//region API functions (private/internal)
+//---------------------------------------------------------------------------------------
+    void setAuthToken(String authToken, boolean bypassAuth) {
+    if (isInitialized()) {
+        if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
+            _authToken = authToken;
+            storeAuthData();
+            completeUserLogin();
+        } else if (bypassAuth) {
+            completeUserLogin();
+        }
+    }
+}
+
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
+    if (deviceToken != null) {
+        final Thread registrationThread = new Thread(new Runnable() {
+            public void run() {
+                registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
+            }
+        });
+        registrationThread.start();
+    }
+}
 
     protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
         disableToken(email, userId, null, token, null, null);
@@ -724,12 +718,296 @@ private static final String TAG = "IterableApi";
 
         apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes);
     }
-
-//---------------------------------------------------------------------------------------
 //endregion
 
-//region Private Functions
+//region library scoped
 //---------------------------------------------------------------------------------------
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void trackInboxSession(@NonNull IterableInboxSession session) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (session == null) {
+            IterableLogger.e(TAG, "trackInboxSession: session is null");
+            return;
+        }
+
+        if (session.sessionStartTime == null || session.sessionEndTime == null) {
+            IterableLogger.e(TAG, "trackInboxSession: sessionStartTime and sessionEndTime must be set");
+            return;
+        }
+
+        apiClient.trackInboxSession(session, inboxSessionId);
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setInboxSessionId(@Nullable String inboxSessionId) {
+        this.inboxSessionId = inboxSessionId;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void clearInboxSessionId() {
+        this.inboxSessionId = null;
+    }
+//endregion
+
+//region SDK (private/internal)
+//---------------------------------------------------------------------------------------
+    private static final String TAG = "IterableApi";
+    private Context _applicationContext;
+    IterableConfig config;
+    private String _apiKey;
+    private String _email;
+    private String _userId;
+    private String _authToken;
+    private boolean _debugMode;
+    private Bundle _payloadData;
+    private IterableNotificationData _notificationData;
+    private String _deviceId;
+    private boolean _firstForegroundHandled;
+
+    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    private @Nullable IterableInAppManager inAppManager;
+    private String inboxSessionId;
+    private IterableAuthManager authManager;
+    private HashMap<String, String> deviceAttributes = new HashMap<>();
+
+    void fetchRemoteConfiguration() {
+    apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
+        @Override
+        public void execute(@Nullable String data) {
+            if (data == null) {
+                IterableLogger.e(TAG, "Remote configuration returned null");
+                return;
+            }
+            try {
+                JSONObject jsonData = new JSONObject(data);
+                boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
+                sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
+                SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
+                editor.apply();
+            } catch (JSONException e) {
+                IterableLogger.e(TAG, "Failed to read remote configuration");
+            }
+        }
+    });
+}
+
+    String getEmail() {
+        return _email;
+    }
+
+    String getUserId() {
+        return _userId;
+    }
+
+    String getAuthToken() {
+        return _authToken;
+    }
+
+    private void checkAndUpdateAuthToken(@Nullable String authToken) {
+        // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
+        if (config.authHandler != null && authToken != null && authToken != _authToken) {
+            setAuthToken(authToken);
+        }
+    }
+
+    /**
+     * Stores attribution information.
+     * @param attributionInfo Attribution information object
+     */
+    void setAttributionInfo(IterableAttributionInfo attributionInfo) {
+        if (_applicationContext == null) {
+            IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.");
+            return;
+        }
+
+        IterableUtil.saveExpirableJsonObject(
+                getPreferences(),
+                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
+                attributionInfo.toJSONObject(),
+                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+        );
+    }
+
+    HashMap getDeviceAttributes() {
+        return deviceAttributes;
+    }
+
+    /**
+     * Returns the current context for the application.
+     * @return
+     */
+    Context getMainActivityContext() {
+        return _applicationContext;
+    }
+
+    /**
+     * Returns an {@link IterableAuthManager} that can be used to manage mobile auth.
+     * Make sure the Iterable API is initialized before calling this method.
+     * @return {@link IterableAuthManager} instance
+     */
+    @NonNull
+    IterableAuthManager getAuthManager() {
+        if (authManager == null) {
+            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
+        }
+        return authManager;
+    }
+
+    static void loadLastSavedConfiguration(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
+        sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+    }
+
+    /**
+     * Set the notification icon with the given iconName.
+     * @param context
+     * @param iconName
+     */
+    static void setNotificationIcon(Context context, String iconName) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.NOTIFICATION_ICON_NAME, iconName);
+        editor.commit();
+    }
+
+    /**
+     * Returns the stored notification icon.
+     * @param context
+     * @return
+     */
+    static String getNotificationIcon(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
+        return iconName;
+    }
+
+    /**
+     * Sets debug mode.
+     * @param debugMode
+     */
+    void setDebugMode(boolean debugMode) {
+        _debugMode = debugMode;
+    }
+
+    /**
+     * Gets the current state of the debug mode.
+     * @return
+     */
+    boolean getDebugMode() {
+        return _debugMode;
+    }
+
+    /**
+     * Set the payload for a given intent if it is from Iterable.
+     * @param intent
+     */
+    void setPayloadData(Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY) && !IterableNotificationHelper.isGhostPush(extras)) {
+            setPayloadData(extras);
+        }
+    }
+
+    /**
+     * Sets the payload bundle.
+     * @param bundle
+     */
+    void setPayloadData(Bundle bundle) {
+        _payloadData = bundle;
+    }
+
+    /**
+     * Sets the IterableNotification data
+     * @param data
+     */
+    void setNotificationData(IterableNotificationData data) {
+        _notificationData = data;
+        if (data != null) {
+            setAttributionInfo(new IterableAttributionInfo(data.getCampaignId(), data.getTemplateId(), data.getMessageId()));
+        }
+    }
+
+    /**
+     * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
+     * Now package-private. If you were previously using this method, use
+     * {@link IterableInAppManager#getMessages()} instead
+     *
+     * @param count      the number of messages to fetch
+     * @param onCallback
+     */
+    void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.getInAppMessages(count, onCallback);
+    }
+
+    /**
+     * Tracks in-app delivery events (per in-app)
+     * @param message the in-app message to be tracked as delivered */
+    void trackInAppDelivery(@NonNull IterableInAppMessage message) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppDelivery: message is null");
+            return;
+        }
+
+        apiClient.trackInAppDelivery(message);
+    }
+
+    private String getPushIntegrationName() {
+    if (config.pushIntegrationName != null) {
+        return config.pushIntegrationName;
+    } else {
+        return _applicationContext.getPackageName();
+    }
+}
+
+    private void logoutPreviousUser() {
+        if (config.autoPushRegistration && isInitialized()) {
+            disablePush();
+        }
+
+        getInAppManager().reset();
+        getAuthManager().clearRefreshTimer();
+
+        apiClient.onLogout();
+    }
+
+    private void onLogin(@Nullable String authToken) {
+        if (!isInitialized()) {
+            setAuthToken(null);
+            return;
+        }
+
+        if (authToken != null) {
+            setAuthToken(authToken);
+        } else {
+            getAuthManager().requestNewAuthToken(false);
+        }
+    }
+
+    private void completeUserLogin() {
+        if (!isInitialized()) {
+            return;
+        }
+
+        if (config.autoPushRegistration) {
+            registerForPush();
+        }
+
+        getInAppManager().syncInApp();
+    }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
         @Override
@@ -845,341 +1123,5 @@ private static final String TAG = "IterableApi";
             _authToken = null;
         }
     }
-
-//---------------------------------------------------------------------------------------
-//endregion
-
-//region new organization
-//---------------------------------------------------------------------------------------
-//region SDK initialization
-    @NonNull
-    public static IterableApi getInstance() {
-        return sharedInstance;
-    }
-
-    public static void initialize(@NonNull Context context, @NonNull String apiKey) {
-        initialize(context, apiKey, null);
-    }
-
-    public static void initialize(@NonNull Context context, @NonNull String apiKey, @Nullable IterableConfig config) {
-        sharedInstance._applicationContext = context.getApplicationContext();
-        sharedInstance._apiKey = apiKey;
-        sharedInstance.config = config;
-
-        if (sharedInstance.config == null) {
-            sharedInstance.config = new IterableConfig.Builder().build();
-        }
-
-        sharedInstance.retrieveEmailAndUserId();
-
-        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
-        IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
-
-        if (sharedInstance.inAppManager == null) {
-            sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval);
-        }
-
-        loadLastSavedConfiguration(context);
-        IterablePushNotificationUtil.processPendingAction(context);
-    }
-
-    public static void setContext(Context context) {
-        IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
-    }
-//endregion
-
-//region SDK functions
-    public void setEmail(@Nullable String email) {
-        setEmail(email, null);
-    }
-
-    public void setEmail(@Nullable String email, @Nullable String authToken) {
-        //Only if passed in same non-null email
-        if (_email != null && _email.equals(email)) {
-            checkAndUpdateAuthToken(authToken);
-            return;
-        }
-
-        if (_email == null && _userId == null && email == null) {
-            return;
-        }
-
-        logoutPreviousUser();
-
-        _email = email;
-        _userId = null;
-        storeAuthData();
-
-        onLogin(authToken);
-    }
-
-    public void setUserId(@Nullable String userId) {
-        setUserId(userId, null);
-    }
-
-    public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        //If same non null userId is passed
-        if (_userId != null && _userId.equals(userId)) {
-            checkAndUpdateAuthToken(authToken);
-            return;
-        }
-
-        if (_email == null && _userId == null && userId == null) {
-            return;
-        }
-
-        logoutPreviousUser();
-
-        _email = null;
-        _userId = userId;
-        storeAuthData();
-
-        onLogin(authToken);
-    }
-//endregion
-
-//region API public functions
-//---------------------------------------------------------------------------------------
-    /**
-     * Registers a device token with Iterable.
-     * Make sure {@link IterableConfig#pushIntegrationName} is set before calling this.
-     * @param deviceToken Push token obtained from GCM or FCM
-     */
-    public void registerDeviceToken(@NonNull String deviceToken) {
-        registerDeviceToken(_email, _userId, _authToken, getPushIntegrationName(), deviceToken, deviceAttributes);
-    }
-
-    /**
-     * Consumes an InApp message.
-     * @param messageId
-     */
-    public void inAppConsume(@NonNull String messageId) {
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message == null) {
-            IterableLogger.e(TAG, "inAppConsume: message is null");
-            return;
-        }
-        inAppConsume(message, null, null);
-        IterableLogger.printInfo();
-    }
-
-    /**
-     * Tracks InApp delete.
-     * This method from informs Iterable about inApp messages deleted with additional paramters.
-     * Call this method from places where inApp deletion are invoked by user. The messages can be swiped to delete or can be deleted using the link to delete button.
-     *
-     * @param message message object
-     * @param source An enum describing how the in App delete was triggered
-     * @param clickLocation The module in which the action happened
-     */
-    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId);
-    }
-//endregion
-
-//region DEPRECATED - API public functions
-//---------------------------------------------------------------------------------------
-    /**
-     * (DEPRECATED) Tracks an in-app open
-     * @param messageId
-     */
-    @Deprecated
-    public void trackInAppOpen(@NonNull String messageId) {
-        IterableLogger.printInfo();
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.trackInAppOpen(messageId);
-    }
-
-    /**
-     * (DEPRECATED) Tracks an in-app open
-     * @param messageId the ID of the in-app message
-     * @param location where the in-app was opened
-     */
-    @Deprecated
-    void trackInAppOpen(@NonNull String messageId, @NonNull IterableInAppLocation location) {
-        IterableLogger.printInfo();
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppOpen(message, location);
-        } else {
-            IterableLogger.w(TAG, "trackInAppOpen: could not find an in-app message with ID: " + messageId);
-        }
-    }
-
-    /**
-     * (DEPRECATED) Tracks when a link inside an in-app is clicked
-     * @param messageId the ID of the in-app message
-     * @param clickedUrl the URL of the clicked link
-     * @param location where the in-app was opened
-     */
-    @Deprecated
-    void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl, @NonNull IterableInAppLocation location) {
-        IterableLogger.printInfo();
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppClick(message, clickedUrl, location);
-        } else {
-            trackInAppClick(messageId, clickedUrl);
-        }
-    }
-
-    /**
-     * (DEPRECATED) Tracks when a link inside an in-app is clicked
-     * @param messageId the ID of the in-app message
-     * @param clickedUrl the URL of the clicked link
-     */
-    @Deprecated
-    public void trackInAppClick(@NonNull String messageId, @NonNull String clickedUrl) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.trackInAppClick(messageId, clickedUrl);
-    }
-
-    /**
-     * (DEPRECATED) Tracks when an in-app has been closed
-     * @param messageId the ID of the in-app message
-     * @param clickedURL the URL of the clicked link
-     * @param closeAction the method of how the in-app was closed
-     * @param clickLocation where the in-app was closed
-     */
-    @Deprecated
-    void trackInAppClose(@NonNull String messageId, @NonNull String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation) {
-        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message != null) {
-            trackInAppClose(message, clickedURL, closeAction, clickLocation);
-            IterableLogger.printInfo();
-        } else {
-            IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
-        }
-    }
-//endregion
-
-//region API functions (private/internal)
-//---------------------------------------------------------------------------------------
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
-    if (deviceToken != null) {
-        final Thread registrationThread = new Thread(new Runnable() {
-            public void run() {
-                registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
-            }
-        });
-        registrationThread.start();
-    }
-}
-
-
-//endregion
-
-//region library scoped
-//---------------------------------------------------------------------------------------
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void trackInboxSession(@NonNull IterableInboxSession session) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        if (session == null) {
-            IterableLogger.e(TAG, "trackInboxSession: session is null");
-            return;
-        }
-
-        if (session.sessionStartTime == null || session.sessionEndTime == null) {
-            IterableLogger.e(TAG, "trackInboxSession: sessionStartTime and sessionEndTime must be set");
-            return;
-        }
-
-        apiClient.trackInboxSession(session, inboxSessionId);
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void setInboxSessionId(@Nullable String inboxSessionId) {
-        this.inboxSessionId = inboxSessionId;
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void clearInboxSessionId() {
-        this.inboxSessionId = null;
-    }
-//endregion
-
-//region private/internal
-//---------------------------------------------------------------------------------------
-    void fetchRemoteConfiguration() {
-    apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
-        @Override
-        public void execute(@Nullable String data) {
-            if (data == null) {
-                IterableLogger.e(TAG, "Remote configuration returned null");
-                return;
-            }
-            try {
-                JSONObject jsonData = new JSONObject(data);
-                boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
-                sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
-                SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
-                editor.apply();
-            } catch (JSONException e) {
-                IterableLogger.e(TAG, "Failed to read remote configuration");
-            }
-        }
-    });
-}
-
-    private String getPushIntegrationName() {
-    if (config.pushIntegrationName != null) {
-        return config.pushIntegrationName;
-    } else {
-        return _applicationContext.getPackageName();
-    }
-}
-
-    private void logoutPreviousUser() {
-        if (config.autoPushRegistration && isInitialized()) {
-            disablePush();
-        }
-
-        getInAppManager().reset();
-        getAuthManager().clearRefreshTimer();
-
-        apiClient.onLogout();
-    }
-
-    private void onLogin(@Nullable String authToken) {
-        if (!isInitialized()) {
-            setAuthToken(null);
-            return;
-        }
-
-        if (authToken != null) {
-            setAuthToken(authToken);
-        } else {
-            getAuthManager().requestNewAuthToken(false);
-        }
-    }
-
-    private void completeUserLogin() {
-        if (!isInitialized()) {
-            return;
-        }
-
-        if (config.autoPushRegistration) {
-            registerForPush();
-        }
-
-        getInAppManager().syncInApp();
-    }
-//endregion
 //endregion
 }
