@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.security.crypto.EncryptedSharedPreferences;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -1070,6 +1071,10 @@ private static final String TAG = "IterableApi";
         return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
     }
 
+    private IterableKeychain getKeychain() {
+        return new IterableKeychain(_applicationContext);
+    }
+
     private String getDeviceId() {
         if (_deviceId == null) {
             _deviceId = getPreferences().getString(IterableConstants.SHARED_PREFS_DEVICEID_KEY, null);
@@ -1082,6 +1087,11 @@ private static final String TAG = "IterableApi";
     }
 
     private void storeAuthData() {
+        // HIPAA: for now, save to encrypted prefs at the same time to test data integrity
+        getKeychain().saveEmail(_email);
+        getKeychain().saveUserId(_userId);
+        getKeychain().saveAuthToken(_authToken);
+
         try {
             SharedPreferences.Editor editor = getPreferences().edit();
             editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
@@ -1099,6 +1109,10 @@ private static final String TAG = "IterableApi";
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+
+            // HIPAA: for now, also retrieve from encrypted prefs at the same time to test data integrity
+            System.out.println("encrypted prefs email: " + getKeychain().getEmail() + ", user ID: " + getKeychain().getUserId() + ", auth token: " + getKeychain().getAuthToken());
+
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             }
