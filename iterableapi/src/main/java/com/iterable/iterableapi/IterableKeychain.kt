@@ -6,7 +6,6 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 class IterableKeychain {
-    private lateinit var encryptedSharedPreferences: EncryptedSharedPreferences
     private var sharedPrefs: SharedPreferences
 
     private val emailKey = "iterable-email"

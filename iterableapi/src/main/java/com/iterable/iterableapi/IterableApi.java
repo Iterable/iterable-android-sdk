@@ -51,6 +51,7 @@ private static final String TAG = "IterableApi";
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
+    private IterableKeychain keychain;
 
 //---------------------------------------------------------------------------------------
 //endregion
@@ -248,6 +249,16 @@ private static final String TAG = "IterableApi";
     public void removeDeviceAttribute(String key) {
         deviceAttributes.remove(key);
     }
+
+    @NonNull
+    IterableKeychain getKeychain() {
+        if (keychain == null) {
+            keychain = new IterableKeychain(getMainActivityContext());
+        }
+
+        return keychain;
+    }
+
 //---------------------------------------------------------------------------------------
 //endregion
 
@@ -1069,10 +1080,6 @@ private static final String TAG = "IterableApi";
 
     private SharedPreferences getPreferences() {
         return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-    }
-
-    private IterableKeychain getKeychain() {
-        return new IterableKeychain(_applicationContext);
     }
 
     private String getDeviceId() {
