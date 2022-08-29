@@ -366,7 +366,7 @@ public class IterableApi {
 
             // HIPAA: for now, also retrieve from encrypted prefs at the same time to test data integrity
             System.out.println("encrypted prefs email: " + getKeychain().getEmail() + ", user ID: " + getKeychain().getUserId() + ", auth token: " + getKeychain().getAuthToken());
-            
+
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             }
