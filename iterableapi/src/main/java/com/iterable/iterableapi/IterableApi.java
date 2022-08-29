@@ -22,6 +22,450 @@ import java.util.UUID;
  * Created by David Truong dt@iterable.com
  */
 public class IterableApi {
+//region SDK (private/internal)
+//---------------------------------------------------------------------------------------
+    private static final String TAG = "IterableApi";
+    private Context _applicationContext;
+    IterableConfig config;
+    private String _apiKey;
+    private String _email;
+    private String _userId;
+    private String _authToken;
+    private boolean _debugMode;
+    private Bundle _payloadData;
+    private IterableNotificationData _notificationData;
+    private String _deviceId;
+    private boolean _firstForegroundHandled;
+
+    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    private @Nullable IterableInAppManager inAppManager;
+    private String inboxSessionId;
+    private IterableAuthManager authManager;
+    private HashMap<String, String> deviceAttributes = new HashMap<>();
+
+    void fetchRemoteConfiguration() {
+        apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
+            @Override
+            public void execute(@Nullable String data) {
+                if (data == null) {
+                    IterableLogger.e(TAG, "Remote configuration returned null");
+                    return;
+                }
+                try {
+                    JSONObject jsonData = new JSONObject(data);
+                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
+                    sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
+                    SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
+                    editor.apply();
+                } catch (JSONException e) {
+                    IterableLogger.e(TAG, "Failed to read remote configuration");
+                }
+            }
+        });
+    }
+
+    String getEmail() {
+        return _email;
+    }
+
+    String getUserId() {
+        return _userId;
+    }
+
+    String getAuthToken() {
+        return _authToken;
+    }
+
+    private void checkAndUpdateAuthToken(@Nullable String authToken) {
+        // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
+        if (config.authHandler != null && authToken != null && authToken != _authToken) {
+            setAuthToken(authToken);
+        }
+    }
+
+    /**
+     * Stores attribution information.
+     * @param attributionInfo Attribution information object
+     */
+    void setAttributionInfo(IterableAttributionInfo attributionInfo) {
+        if (_applicationContext == null) {
+            IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.");
+            return;
+        }
+
+        IterableUtil.saveExpirableJsonObject(
+                getPreferences(),
+                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
+                attributionInfo.toJSONObject(),
+                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+        );
+    }
+
+    HashMap getDeviceAttributes() {
+        return deviceAttributes;
+    }
+
+    /**
+     * Returns the current context for the application.
+     * @return
+     */
+    Context getMainActivityContext() {
+        return _applicationContext;
+    }
+
+    /**
+     * Returns an {@link IterableAuthManager} that can be used to manage mobile auth.
+     * Make sure the Iterable API is initialized before calling this method.
+     * @return {@link IterableAuthManager} instance
+     */
+    @NonNull
+    IterableAuthManager getAuthManager() {
+        if (authManager == null) {
+            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
+        }
+        return authManager;
+    }
+
+    static void loadLastSavedConfiguration(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
+        sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+    }
+
+    /**
+     * Set the notification icon with the given iconName.
+     * @param context
+     * @param iconName
+     */
+    static void setNotificationIcon(Context context, String iconName) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.NOTIFICATION_ICON_NAME, iconName);
+        editor.commit();
+    }
+
+    /**
+     * Returns the stored notification icon.
+     * @param context
+     * @return
+     */
+    static String getNotificationIcon(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
+        String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
+        return iconName;
+    }
+
+    /**
+     * Sets debug mode.
+     * @param debugMode
+     */
+    void setDebugMode(boolean debugMode) {
+        _debugMode = debugMode;
+    }
+
+    /**
+     * Gets the current state of the debug mode.
+     * @return
+     */
+    boolean getDebugMode() {
+        return _debugMode;
+    }
+
+    /**
+     * Set the payload for a given intent if it is from Iterable.
+     * @param intent
+     */
+    void setPayloadData(Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY) && !IterableNotificationHelper.isGhostPush(extras)) {
+            setPayloadData(extras);
+        }
+    }
+
+    /**
+     * Sets the payload bundle.
+     * @param bundle
+     */
+    void setPayloadData(Bundle bundle) {
+        _payloadData = bundle;
+    }
+
+    /**
+     * Sets the IterableNotification data
+     * @param data
+     */
+    void setNotificationData(IterableNotificationData data) {
+        _notificationData = data;
+        if (data != null) {
+            setAttributionInfo(new IterableAttributionInfo(data.getCampaignId(), data.getTemplateId(), data.getMessageId()));
+        }
+    }
+
+    /**
+     * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
+     * Now package-private. If you were previously using this method, use
+     * {@link IterableInAppManager#getMessages()} instead
+     *
+     * @param count      the number of messages to fetch
+     * @param onCallback
+     */
+    void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.getInAppMessages(count, onCallback);
+    }
+
+    /**
+     * Tracks in-app delivery events (per in-app)
+     * @param message the in-app message to be tracked as delivered */
+    void trackInAppDelivery(@NonNull IterableInAppMessage message) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackInAppDelivery: message is null");
+            return;
+        }
+
+        apiClient.trackInAppDelivery(message);
+    }
+
+    private String getPushIntegrationName() {
+        if (config.pushIntegrationName != null) {
+            return config.pushIntegrationName;
+        } else {
+            return _applicationContext.getPackageName();
+        }
+    }
+
+    private void logoutPreviousUser() {
+        if (config.autoPushRegistration && isInitialized()) {
+            disablePush();
+        }
+
+        getInAppManager().reset();
+        getAuthManager().clearRefreshTimer();
+
+        apiClient.onLogout();
+    }
+
+    private void onLogin(@Nullable String authToken) {
+        if (!isInitialized()) {
+            setAuthToken(null);
+            return;
+        }
+
+        if (authToken != null) {
+            setAuthToken(authToken);
+        } else {
+            getAuthManager().requestNewAuthToken(false);
+        }
+    }
+
+    private void completeUserLogin() {
+        if (!isInitialized()) {
+            return;
+        }
+
+        if (config.autoPushRegistration) {
+            registerForPush();
+        }
+
+        getInAppManager().syncInApp();
+    }
+
+    private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
+        @Override
+        public void onSwitchToForeground() {
+            onForeground();
+        }
+
+        @Override
+        public void onSwitchToBackground() {}
+    };
+
+    private void onForeground() {
+        if (!_firstForegroundHandled) {
+            _firstForegroundHandled = true;
+            if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
+                IterableLogger.d(TAG, "Performing automatic push registration");
+                sharedInstance.registerForPush();
+            }
+            fetchRemoteConfiguration();
+        }
+    }
+
+    private boolean isInitialized() {
+        return _apiKey != null && (_email != null || _userId != null);
+    }
+
+    private boolean checkSDKInitialization() {
+        if (!isInitialized()) {
+            IterableLogger.e(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
+            return false;
+        }
+        return true;
+    }
+
+    private SharedPreferences getPreferences() {
+        return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+    }
+
+    private String getDeviceId() {
+        if (_deviceId == null) {
+            _deviceId = getPreferences().getString(IterableConstants.SHARED_PREFS_DEVICEID_KEY, null);
+            if (_deviceId == null) {
+                _deviceId = UUID.randomUUID().toString();
+                getPreferences().edit().putString(IterableConstants.SHARED_PREFS_DEVICEID_KEY, _deviceId).apply();
+            }
+        }
+        return _deviceId;
+    }
+
+    private void storeAuthData() {
+        try {
+            SharedPreferences.Editor editor = getPreferences().edit();
+            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
+            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
+            editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
+            editor.commit();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while persisting email/userId", e);
+        }
+    }
+
+    private void retrieveEmailAndUserId() {
+        try {
+            SharedPreferences prefs = getPreferences();
+            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
+            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+            if (_authToken != null) {
+                getAuthManager().queueExpirationRefresh(_authToken);
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
+        }
+    }
+
+    private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
+        @Nullable
+        @Override
+        public String getEmail() {
+            return _email;
+        }
+
+        @Nullable
+        @Override
+        public String getUserId() {
+            return _userId;
+        }
+
+        @Nullable
+        @Override
+        public String getAuthToken() {
+            return _authToken;
+        }
+
+        @Override
+        public String getApiKey() {
+            return _apiKey;
+        }
+
+        @Override
+        public String getDeviceId() {
+            return IterableApi.this.getDeviceId();
+        }
+
+        @Override
+        public Context getContext() {
+            return _applicationContext;
+        }
+
+        @Override
+        public void resetAuth() {
+            IterableLogger.d(TAG, "Resetting authToken");
+            _authToken = null;
+        }
+    }
+//endregion
+
+//region API functions (private/internal)
+//---------------------------------------------------------------------------------------
+    void setAuthToken(String authToken, boolean bypassAuth) {
+        if (isInitialized()) {
+            if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
+                _authToken = authToken;
+                storeAuthData();
+                completeUserLogin();
+            } else if (bypassAuth) {
+                completeUserLogin();
+            }
+        }
+    }
+
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
+        if (deviceToken != null) {
+            final Thread registrationThread = new Thread(new Runnable() {
+                public void run() {
+                    registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
+                }
+            });
+            registrationThread.start();
+        }
+    }
+
+    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
+        disableToken(email, userId, null, token, null, null);
+    }
+
+    /**
+     * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
+     * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
+     * @param email User email for whom to disable the device.
+     * @param userId User ID for whom to disable the device.
+     * @param authToken
+     * @param deviceToken The device token
+     */
+    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        if (deviceToken == null) {
+            IterableLogger.d(TAG, "device token not available");
+            return;
+        }
+        apiClient.disableToken(email, userId, authToken, deviceToken, onSuccess, onFailure);
+    }
+
+    /**
+     * Registers the GCM registration ID with Iterable.
+     *
+     * @param authToken
+     * @param applicationName
+     * @param deviceToken
+     * @param dataFields
+     */
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (deviceToken == null) {
+            IterableLogger.e(TAG, "registerDeviceToken: token is null");
+            return;
+        }
+
+        if (applicationName == null) {
+            IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
+        }
+
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes);
+    }
+//endregion
+
 //region SDK initialization
 //---------------------------------------------------------------------------------------
     @NonNull
@@ -648,77 +1092,6 @@ public class IterableApi {
     }
 //endregion
 
-//region API functions (private/internal)
-//---------------------------------------------------------------------------------------
-    void setAuthToken(String authToken, boolean bypassAuth) {
-    if (isInitialized()) {
-        if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
-            _authToken = authToken;
-            storeAuthData();
-            completeUserLogin();
-        } else if (bypassAuth) {
-            completeUserLogin();
-        }
-    }
-}
-
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
-    if (deviceToken != null) {
-        final Thread registrationThread = new Thread(new Runnable() {
-            public void run() {
-                registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
-            }
-        });
-        registrationThread.start();
-    }
-}
-
-    protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
-        disableToken(email, userId, null, token, null, null);
-    }
-
-    /**
-     * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
-     * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
-     * @param email User email for whom to disable the device.
-     * @param userId User ID for whom to disable the device.
-     * @param authToken
-     * @param deviceToken The device token
-     */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        if (deviceToken == null) {
-            IterableLogger.d(TAG, "device token not available");
-            return;
-        }
-        apiClient.disableToken(email, userId, authToken, deviceToken, onSuccess, onFailure);
-    }
-
-    /**
-     * Registers the GCM registration ID with Iterable.
-     *
-     * @param authToken
-     * @param applicationName
-     * @param deviceToken
-     * @param dataFields
-     */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        if (deviceToken == null) {
-            IterableLogger.e(TAG, "registerDeviceToken: token is null");
-            return;
-        }
-
-        if (applicationName == null) {
-            IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
-        }
-
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes);
-    }
-//endregion
-
 //region library scoped
 //---------------------------------------------------------------------------------------
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -748,379 +1121,6 @@ public class IterableApi {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
-    }
-//endregion
-
-//region SDK (private/internal)
-//---------------------------------------------------------------------------------------
-    private static final String TAG = "IterableApi";
-    private Context _applicationContext;
-    IterableConfig config;
-    private String _apiKey;
-    private String _email;
-    private String _userId;
-    private String _authToken;
-    private boolean _debugMode;
-    private Bundle _payloadData;
-    private IterableNotificationData _notificationData;
-    private String _deviceId;
-    private boolean _firstForegroundHandled;
-
-    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
-    private @Nullable IterableInAppManager inAppManager;
-    private String inboxSessionId;
-    private IterableAuthManager authManager;
-    private HashMap<String, String> deviceAttributes = new HashMap<>();
-
-    void fetchRemoteConfiguration() {
-    apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
-        @Override
-        public void execute(@Nullable String data) {
-            if (data == null) {
-                IterableLogger.e(TAG, "Remote configuration returned null");
-                return;
-            }
-            try {
-                JSONObject jsonData = new JSONObject(data);
-                boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
-                sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
-                SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
-                editor.apply();
-            } catch (JSONException e) {
-                IterableLogger.e(TAG, "Failed to read remote configuration");
-            }
-        }
-    });
-}
-
-    String getEmail() {
-        return _email;
-    }
-
-    String getUserId() {
-        return _userId;
-    }
-
-    String getAuthToken() {
-        return _authToken;
-    }
-
-    private void checkAndUpdateAuthToken(@Nullable String authToken) {
-        // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
-        if (config.authHandler != null && authToken != null && authToken != _authToken) {
-            setAuthToken(authToken);
-        }
-    }
-
-    /**
-     * Stores attribution information.
-     * @param attributionInfo Attribution information object
-     */
-    void setAttributionInfo(IterableAttributionInfo attributionInfo) {
-        if (_applicationContext == null) {
-            IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.");
-            return;
-        }
-
-        IterableUtil.saveExpirableJsonObject(
-                getPreferences(),
-                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
-                attributionInfo.toJSONObject(),
-                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
-        );
-    }
-
-    HashMap getDeviceAttributes() {
-        return deviceAttributes;
-    }
-
-    /**
-     * Returns the current context for the application.
-     * @return
-     */
-    Context getMainActivityContext() {
-        return _applicationContext;
-    }
-
-    /**
-     * Returns an {@link IterableAuthManager} that can be used to manage mobile auth.
-     * Make sure the Iterable API is initialized before calling this method.
-     * @return {@link IterableAuthManager} instance
-     */
-    @NonNull
-    IterableAuthManager getAuthManager() {
-        if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
-        }
-        return authManager;
-    }
-
-    static void loadLastSavedConfiguration(Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
-        boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
-        sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
-    }
-
-    /**
-     * Set the notification icon with the given iconName.
-     * @param context
-     * @param iconName
-     */
-    static void setNotificationIcon(Context context, String iconName) {
-        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.NOTIFICATION_ICON_NAME, iconName);
-        editor.commit();
-    }
-
-    /**
-     * Returns the stored notification icon.
-     * @param context
-     * @return
-     */
-    static String getNotificationIcon(Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
-        return iconName;
-    }
-
-    /**
-     * Sets debug mode.
-     * @param debugMode
-     */
-    void setDebugMode(boolean debugMode) {
-        _debugMode = debugMode;
-    }
-
-    /**
-     * Gets the current state of the debug mode.
-     * @return
-     */
-    boolean getDebugMode() {
-        return _debugMode;
-    }
-
-    /**
-     * Set the payload for a given intent if it is from Iterable.
-     * @param intent
-     */
-    void setPayloadData(Intent intent) {
-        Bundle extras = intent.getExtras();
-        if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY) && !IterableNotificationHelper.isGhostPush(extras)) {
-            setPayloadData(extras);
-        }
-    }
-
-    /**
-     * Sets the payload bundle.
-     * @param bundle
-     */
-    void setPayloadData(Bundle bundle) {
-        _payloadData = bundle;
-    }
-
-    /**
-     * Sets the IterableNotification data
-     * @param data
-     */
-    void setNotificationData(IterableNotificationData data) {
-        _notificationData = data;
-        if (data != null) {
-            setAttributionInfo(new IterableAttributionInfo(data.getCampaignId(), data.getTemplateId(), data.getMessageId()));
-        }
-    }
-
-    /**
-     * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
-     * Now package-private. If you were previously using this method, use
-     * {@link IterableInAppManager#getMessages()} instead
-     *
-     * @param count      the number of messages to fetch
-     * @param onCallback
-     */
-    void getInAppMessages(int count, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.getInAppMessages(count, onCallback);
-    }
-
-    /**
-     * Tracks in-app delivery events (per in-app)
-     * @param message the in-app message to be tracked as delivered */
-    void trackInAppDelivery(@NonNull IterableInAppMessage message) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        if (message == null) {
-            IterableLogger.e(TAG, "trackInAppDelivery: message is null");
-            return;
-        }
-
-        apiClient.trackInAppDelivery(message);
-    }
-
-    private String getPushIntegrationName() {
-    if (config.pushIntegrationName != null) {
-        return config.pushIntegrationName;
-    } else {
-        return _applicationContext.getPackageName();
-    }
-}
-
-    private void logoutPreviousUser() {
-        if (config.autoPushRegistration && isInitialized()) {
-            disablePush();
-        }
-
-        getInAppManager().reset();
-        getAuthManager().clearRefreshTimer();
-
-        apiClient.onLogout();
-    }
-
-    private void onLogin(@Nullable String authToken) {
-        if (!isInitialized()) {
-            setAuthToken(null);
-            return;
-        }
-
-        if (authToken != null) {
-            setAuthToken(authToken);
-        } else {
-            getAuthManager().requestNewAuthToken(false);
-        }
-    }
-
-    private void completeUserLogin() {
-        if (!isInitialized()) {
-            return;
-        }
-
-        if (config.autoPushRegistration) {
-            registerForPush();
-        }
-
-        getInAppManager().syncInApp();
-    }
-
-    private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
-        @Override
-        public void onSwitchToForeground() {
-            onForeground();
-        }
-
-        @Override
-        public void onSwitchToBackground() {}
-    };
-
-    private void onForeground() {
-        if (!_firstForegroundHandled) {
-            _firstForegroundHandled = true;
-            if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
-                IterableLogger.d(TAG, "Performing automatic push registration");
-                sharedInstance.registerForPush();
-            }
-            fetchRemoteConfiguration();
-        }
-    }
-
-    private boolean isInitialized() {
-        return _apiKey != null && (_email != null || _userId != null);
-    }
-
-    private boolean checkSDKInitialization() {
-        if (!isInitialized()) {
-            IterableLogger.e(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
-            return false;
-        }
-        return true;
-    }
-
-    private SharedPreferences getPreferences() {
-        return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-    }
-
-    private String getDeviceId() {
-        if (_deviceId == null) {
-            _deviceId = getPreferences().getString(IterableConstants.SHARED_PREFS_DEVICEID_KEY, null);
-            if (_deviceId == null) {
-                _deviceId = UUID.randomUUID().toString();
-                getPreferences().edit().putString(IterableConstants.SHARED_PREFS_DEVICEID_KEY, _deviceId).apply();
-            }
-        }
-        return _deviceId;
-    }
-
-    private void storeAuthData() {
-        try {
-            SharedPreferences.Editor editor = getPreferences().edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
-            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-            editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
-            editor.commit();
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while persisting email/userId", e);
-        }
-    }
-
-    private void retrieveEmailAndUserId() {
-        try {
-            SharedPreferences prefs = getPreferences();
-            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-            if (_authToken != null) {
-                getAuthManager().queueExpirationRefresh(_authToken);
-            }
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
-        }
-    }
-
-    private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
-        @Nullable
-        @Override
-        public String getEmail() {
-            return _email;
-        }
-
-        @Nullable
-        @Override
-        public String getUserId() {
-            return _userId;
-        }
-
-        @Nullable
-        @Override
-        public String getAuthToken() {
-            return _authToken;
-        }
-
-        @Override
-        public String getApiKey() {
-            return _apiKey;
-        }
-
-        @Override
-        public String getDeviceId() {
-            return IterableApi.this.getDeviceId();
-        }
-
-        @Override
-        public Context getContext() {
-            return _applicationContext;
-        }
-
-        @Override
-        public void resetAuth() {
-            IterableLogger.d(TAG, "Resetting authToken");
-            _authToken = null;
-        }
     }
 //endregion
 }
