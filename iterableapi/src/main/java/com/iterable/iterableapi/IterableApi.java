@@ -24,6 +24,8 @@ import java.util.UUID;
 public class IterableApi {
 //region SDK (private/internal)
 //---------------------------------------------------------------------------------------
+    static volatile IterableApi sharedInstance = new IterableApi();
+    
     private static final String TAG = "IterableApi";
     private Context _applicationContext;
     IterableConfig config;
@@ -523,8 +525,6 @@ public class IterableApi {
 //endregion
 
 //region SDK public functions
-    static volatile IterableApi sharedInstance = new IterableApi();
-
     /**
      * Returns an {@link IterableInAppManager} that can be used to manage in-app messages.
      * Make sure the Iterable API is initialized before calling this method.
