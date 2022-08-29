@@ -16,7 +16,7 @@ class IterableKeychain {
         sharedPrefs = EncryptedSharedPreferences.create(
             context,
             "iterable-encrypted-shared-preferences",
-            MasterKey.Builder(context).build(),
+            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
     }
