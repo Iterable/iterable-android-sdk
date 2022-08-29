@@ -25,7 +25,7 @@ public class IterableApi {
 //region SDK (private/internal)
 //---------------------------------------------------------------------------------------
     static volatile IterableApi sharedInstance = new IterableApi();
-    
+
     private static final String TAG = "IterableApi";
     private Context _applicationContext;
     IterableConfig config;
