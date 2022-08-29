@@ -341,6 +341,11 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
+        // HIPAA: for now, save to encrypted prefs at the same time to test data integrity
+        getKeychain().saveEmail(_email);
+        getKeychain().saveUserId(_userId);
+        getKeychain().saveAuthToken(_authToken);
+
         try {
             SharedPreferences.Editor editor = getPreferences().edit();
             editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
@@ -358,6 +363,10 @@ public class IterableApi {
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+
+            // HIPAA: for now, also retrieve from encrypted prefs at the same time to test data integrity
+            System.out.println("encrypted prefs email: " + getKeychain().getEmail() + ", user ID: " + getKeychain().getUserId() + ", auth token: " + getKeychain().getAuthToken());
+            
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             }
