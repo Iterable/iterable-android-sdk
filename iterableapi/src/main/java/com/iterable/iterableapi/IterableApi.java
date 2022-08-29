@@ -365,7 +365,7 @@ public class IterableApi {
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
 
             // HIPAA: for now, also retrieve from encrypted prefs at the same time to test data integrity
-            System.out.println("encrypted prefs email: " + getKeychain().getEmail() + ", user ID: " + getKeychain().getUserId() + ", auth token: " + getKeychain().getAuthToken());
+            System.out.println("jay encrypted prefs GET email: " + getKeychain().getEmail() + ", user ID: " + getKeychain().getUserId() + ", auth token: " + getKeychain().getAuthToken());
 
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
