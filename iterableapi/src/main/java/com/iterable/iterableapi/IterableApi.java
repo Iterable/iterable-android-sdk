@@ -437,11 +437,6 @@ public class IterableApi {
         disableToken(email, userId, null, token, null, null);
     }
 
-//---------------------------------------------------------------------------------------
-//endregion
-
-//region Public Functions
-//---------------------------------------------------------------------------------------
     /**
      * Internal api call made from IterablePushRegistration after a registrationToken is obtained.
      * It disables the device for all users with this device by default. If `email` or `userId` is provided, it will disable the device for the specific user.
