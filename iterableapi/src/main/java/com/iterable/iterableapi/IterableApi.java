@@ -341,37 +341,52 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        // HIPAA: for now, save to encrypted prefs at the same time to test data integrity
         getKeychain().saveEmail(_email);
         getKeychain().saveUserId(_userId);
         getKeychain().saveAuthToken(_authToken);
-
-        try {
-            SharedPreferences.Editor editor = getPreferences().edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
-            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-            editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
-            editor.commit();
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while persisting email/userId", e);
-        }
     }
 
     private void retrieveEmailAndUserId() {
-        try {
-            SharedPreferences prefs = getPreferences();
-            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+        _email = getKeychain().getEmail();
+        _userId = getKeychain().getUserId();
+        _authToken = getKeychain().getAuthToken();
 
-            // HIPAA: for now, also retrieve from encrypted prefs at the same time to test data integrity
-            System.out.println("jay encrypted prefs GET email: " + getKeychain().getEmail() + ", user ID: " + getKeychain().getUserId() + ", auth token: " + getKeychain().getAuthToken());
+        if (_authToken != null) {
+            getAuthManager().queueExpirationRefresh(_authToken);
+        }
+    }
 
-            if (_authToken != null) {
-                getAuthManager().queueExpirationRefresh(_authToken);
-            }
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
+    private void updateSDKVersion() {
+        migrateAuthDataFromSharedPrefsToKeychain();
+    }
+
+    private void migrateAuthDataFromSharedPrefsToKeychain() {
+        SharedPreferences prefs = getPreferences();
+        String sharedPrefsEmail = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
+        String sharedPrefsUserId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+        String sharedPrefsAuthToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+
+        SharedPreferences.Editor editor = getPreferences().edit();
+
+        if (getKeychain().getEmail() == null && sharedPrefsEmail != null) {
+            getKeychain().saveEmail(sharedPrefsEmail);
+            editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY);
+        } else if (sharedPrefsEmail != null) {
+            editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY);
+        }
+
+        if (getKeychain().getUserId() == null && sharedPrefsUserId != null) {
+            getKeychain().saveUserId(sharedPrefsUserId);
+            editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY);
+        } else if (sharedPrefsUserId != null) {
+            editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY);
+        }
+
+        if (getKeychain().getAuthToken() == null && sharedPrefsAuthToken != null) {
+            getKeychain().saveAuthToken(sharedPrefsAuthToken);
+            editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY);
+        } else if (sharedPrefsAuthToken != null) {
+            editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY);
         }
     }
 
@@ -507,6 +522,8 @@ public class IterableApi {
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
+
+        sharedInstance.updateSDKVersion();
 
         sharedInstance.retrieveEmailAndUserId();
 
