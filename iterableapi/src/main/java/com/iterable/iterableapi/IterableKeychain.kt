@@ -26,7 +26,6 @@ class IterableKeychain {
     }
 
     fun saveEmail(email: String?) {
-        println("jay encrypted prefs SAVE email: " + email)
         sharedPrefs.edit()
             .putString(emailKey, email)
             .apply()
@@ -37,7 +36,6 @@ class IterableKeychain {
     }
 
     fun saveUserId(userId: String?) {
-        println("jay encrypted prefs SAVE userId: " + userId)
         sharedPrefs.edit()
             .putString(userIdKey, userId)
             .apply()
@@ -48,7 +46,6 @@ class IterableKeychain {
     }
 
     fun saveAuthToken(authToken: String?) {
-        println("jay encrypted prefs SAVE authToken: " + authToken)
         sharedPrefs.edit()
             .putString(authTokenKey, authToken)
             .apply()
