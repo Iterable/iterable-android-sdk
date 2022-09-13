@@ -371,6 +371,7 @@ public class IterableApi {
         if (getKeychain().getEmail() == null && sharedPrefsEmail != null) {
             getKeychain().saveEmail(sharedPrefsEmail);
             editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY);
+            IterableLogger.v(TAG, "UPDATED: migrated email from SharedPreferences to IterableKeychain");
         } else if (sharedPrefsEmail != null) {
             editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY);
         }
@@ -378,6 +379,7 @@ public class IterableApi {
         if (getKeychain().getUserId() == null && sharedPrefsUserId != null) {
             getKeychain().saveUserId(sharedPrefsUserId);
             editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY);
+            IterableLogger.v(TAG, "UPDATED: migrated userId from SharedPreferences to IterableKeychain");
         } else if (sharedPrefsUserId != null) {
             editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY);
         }
@@ -385,6 +387,7 @@ public class IterableApi {
         if (getKeychain().getAuthToken() == null && sharedPrefsAuthToken != null) {
             getKeychain().saveAuthToken(sharedPrefsAuthToken);
             editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY);
+            IterableLogger.v(TAG, "UPDATED: migrated authToken from SharedPreferences to IterableKeychain");
         } else if (sharedPrefsAuthToken != null) {
             editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY);
         }
