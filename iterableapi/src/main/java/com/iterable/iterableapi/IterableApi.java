@@ -10,7 +10,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.security.crypto.EncryptedSharedPreferences;
 
 import org.json.JSONException;
 import org.json.JSONObject;
