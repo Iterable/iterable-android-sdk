@@ -391,6 +391,8 @@ public class IterableApi {
         } else if (sharedPrefsAuthToken != null) {
             editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY);
         }
+
+        editor.apply();
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
