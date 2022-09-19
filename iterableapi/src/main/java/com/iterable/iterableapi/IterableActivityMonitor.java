@@ -57,10 +57,10 @@ public class IterableActivityMonitor {
         @Override
         public void onActivityResumed(Activity activity) {
             currentActivity = new WeakReference<>(activity);
-            final String AMAZON_FEATURE_FIRE_TV = "amazon.hardware.fire_tv";
-            String AMAZON_MODEL = Build.MODEL;
+            String amazonFireTvHardware = "amazon.hardware.fire_tv";
+            String amazonModel = Build.MODEL;
 
-            if (!inForeground || AMAZON_MODEL.matches("AFTN") || activity.getPackageManager().hasSystemFeature(AMAZON_FEATURE_FIRE_TV)) {
+            if (!inForeground || amazonModel.matches("AFTN") || activity.getPackageManager().hasSystemFeature(amazonFireTvHardware)) {
                 inForeground = true;
                 for (WeakReference<AppStateCallback> callback : callbacks) {
                     if (callback.get() != null) {
