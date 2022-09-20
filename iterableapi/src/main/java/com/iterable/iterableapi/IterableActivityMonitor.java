@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -56,7 +57,10 @@ public class IterableActivityMonitor {
         @Override
         public void onActivityResumed(Activity activity) {
             currentActivity = new WeakReference<>(activity);
-            if (!inForeground) {
+            String amazonFireTvHardware = "amazon.hardware.fire_tv";
+            String amazonModel = Build.MODEL;
+
+            if (!inForeground || amazonModel.matches("AFTN") || activity.getPackageManager().hasSystemFeature(amazonFireTvHardware)) {
                 inForeground = true;
                 for (WeakReference<AppStateCallback> callback : callbacks) {
                     if (callback.get() != null) {
