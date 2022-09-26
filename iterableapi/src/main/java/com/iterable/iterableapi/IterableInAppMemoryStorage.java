@@ -13,6 +13,7 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
 
     }
 
+    //region IterableInAppStorage interface implementation
     @NonNull
     @Override
     public synchronized List<IterableInAppMessage> getMessages() {
@@ -54,4 +55,5 @@ class IterableInAppMemoryStorage implements IterableInAppStorage {
     public void removeHTML(@NonNull String messageID) {
 
     }
+    //endregion
 }
