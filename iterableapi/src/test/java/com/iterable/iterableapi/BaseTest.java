@@ -22,7 +22,7 @@ public abstract class BaseTest {
     @Rule
     public AsyncTaskRule asyncTaskRule = new AsyncTaskRule();
 
-    protected IterableUtil.IterableUtilImpl getIterableUtilSpy() {
+    protected IterableUtilImpl getIterableUtilSpy() {
         return utilsRule.iterableUtilSpy;
     }
 

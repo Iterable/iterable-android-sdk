@@ -6,9 +6,8 @@ import org.junit.runner.Description;
 import static org.mockito.Mockito.spy;
 
 public class IterableUtilRule extends TestWatcher {
-
-    private IterableUtil.IterableUtilImpl originalIterableUtil;
-    public IterableUtil.IterableUtilImpl iterableUtilSpy;
+    private IterableUtilImpl originalIterableUtil;
+    public IterableUtilImpl iterableUtilSpy;
 
     @Override
     protected void starting(Description description) {
