@@ -17,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -437,9 +438,21 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private static IterableInAppStorage getInAppStorageModel(IterableApi iterableApi, boolean useInMemoryForInAppStorage) {
         if (useInMemoryForInAppStorage) {
+            checkAndDeleteUnusedInAppFileStorage(iterableApi.getMainActivityContext());
+
             return new IterableInAppMemoryStorage();
         } else {
             return new IterableInAppFileStorage(iterableApi.getMainActivityContext());
+        }
+    }
+
+    private static void checkAndDeleteUnusedInAppFileStorage(Context context) {
+        File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(context);
+        File inAppContentFolder = IterableUtil.getDirectory(sdkFilesDirectory, "IterableInAppFileStorage");
+        File inAppBlob = new File(inAppContentFolder, "itbl_inapp.json");
+
+        if (inAppBlob.exists()) {
+            inAppBlob.delete();
         }
     }
 
