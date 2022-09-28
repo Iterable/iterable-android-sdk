@@ -72,8 +72,8 @@ public class IterableConfig {
     final String[] allowedProtocols;
 
     /**
-     * 
-     *
+     * This controls whether the in-app content should be saved to disk, or only kept in memory.
+     * By default, the SDK will save in-apps to disk.
      */
     final boolean useInMemoryStorageForInApps;
 
