@@ -71,6 +71,12 @@ public class IterableConfig {
      */
     final String[] allowedProtocols;
 
+    /**
+     * 
+     *
+     */
+    final boolean useInMemoryStorageForInApps;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -83,6 +89,7 @@ public class IterableConfig {
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
+        useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
     }
 
     public static class Builder {
@@ -97,6 +104,8 @@ public class IterableConfig {
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
+        private boolean useInMemoryStorageForInApps = false;
+
         public Builder() {}
 
         /**
@@ -214,6 +223,12 @@ public class IterableConfig {
         @NonNull
         public Builder setAllowedProtocols(@NonNull String[] allowedProtocols) {
             this.allowedProtocols = allowedProtocols;
+            return this;
+        }
+
+        @NonNull
+        public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
+            this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
             return this;
         }
 
