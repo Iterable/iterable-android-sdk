@@ -50,11 +50,11 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastInAppShown = 0;
     private boolean autoDisplayPaused = false;
 
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, boolean useInMemoryStorageForInApps) {
         this(iterableApi,
                 handler,
                 inAppDisplayInterval,
-                new IterableInAppFileStorage(iterableApi.getMainActivityContext()),
+                IterableInAppManager.getInAppStorageModel(iterableApi, useInMemoryStorageForInApps),
                 IterableActivityMonitor.getInstance(),
                 new IterableInAppDisplayer(IterableActivityMonitor.getInstance()));
     }
@@ -432,6 +432,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
         if (IterableConstants.ITERABLE_IN_APP_ACTION_DELETE.equals(actionName)) {
             removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP);
+        }
+    }
+
+    private static IterableInAppStorage getInAppStorageModel(IterableApi iterableApi, boolean useInMemoryForInAppStorage) {
+        if (useInMemoryForInAppStorage) {
+            return new IterableInAppMemoryStorage();
+        } else {
+            return new IterableInAppFileStorage(iterableApi.getMainActivityContext());
         }
     }
 

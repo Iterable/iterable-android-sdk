@@ -226,6 +226,11 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set whether the SDK should store in-apps only in memory, or in file storage
+         * @param useInMemoryStorageForInApps `true` will have in-apps be only in memory
+         */
+
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
