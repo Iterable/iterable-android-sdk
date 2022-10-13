@@ -3,20 +3,24 @@ package com.iterable.iterableapi
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
 
 class IterableKeychain {
     private var sharedPrefs: SharedPreferences
+
+    private val encryptedSharedPrefsFileName = "iterable-encrypted-shared-preferences"
 
     private val emailKey = "iterable-email"
     private val userIdKey = "iterable-user-id"
     private val authTokenKey = "iterable-auth-token"
 
     constructor(context: Context) {
+        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+
         sharedPrefs = EncryptedSharedPreferences.create(
+            encryptedSharedPrefsFileName,
+            masterKeyAlias,
             context,
-            "iterable-encrypted-shared-preferences",
-            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
     }
