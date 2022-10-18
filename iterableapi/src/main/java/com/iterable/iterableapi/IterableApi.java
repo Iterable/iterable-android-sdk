@@ -318,7 +318,7 @@ public class IterableApi {
 
     private boolean checkSDKInitialization() {
         if (!isInitialized()) {
-            IterableLogger.e(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
+            IterableLogger.w(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
             return false;
         }
         return true;
