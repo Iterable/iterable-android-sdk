@@ -356,6 +356,7 @@ public class IterableApi {
     }
 
     private void updateSDKVersion() {
+        IterableLogger.v(TAG, "jay debug - has encryption dependency: " + hasEncryptionDependency());
         migrateAuthDataFromSharedPrefsToKeychain();
     }
 
@@ -392,6 +393,15 @@ public class IterableApi {
         }
 
         editor.apply();
+    }
+
+    private boolean hasEncryptionDependency() {
+        try {
+            Class.forName("androidx.security.crypto.EncryptedSharedPreferences");
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
