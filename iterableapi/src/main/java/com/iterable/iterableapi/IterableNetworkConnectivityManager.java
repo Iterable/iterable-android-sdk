@@ -47,29 +47,35 @@ class IterableNetworkConnectivityManager {
         NetworkRequest.Builder networkBuilder = new NetworkRequest.Builder();
 
         if (connectivityManager != null) {
-            connectivityManager.registerNetworkCallback(networkBuilder.build(), new ConnectivityManager.NetworkCallback() {
-                @Override
-                public void onAvailable(@NonNull Network network) {
-                    super.onAvailable(network);
-                    IterableLogger.v(TAG, "Network Connected");
-                    isConnected = true;
-                    ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
-                    for (IterableNetworkMonitorListener listener : networkListenersCopy) {
-                        listener.onNetworkConnected();
+            try {
+                connectivityManager.registerNetworkCallback(networkBuilder.build(), new ConnectivityManager.NetworkCallback() {
+                    @Override
+                    public void onAvailable(@NonNull Network network) {
+                        super.onAvailable(network);
+                        IterableLogger.v(TAG, "Network Connected");
+                        isConnected = true;
+                        ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
+                        for (IterableNetworkMonitorListener listener : networkListenersCopy) {
+                            listener.onNetworkConnected();
+                        }
                     }
-                }
 
-                @Override
-                public void onLost(@NonNull Network network) {
-                    super.onLost(network);
-                    IterableLogger.v(TAG, "Network Disconnected");
-                    isConnected = false;
-                    ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
-                    for (IterableNetworkMonitorListener listener : networkListenersCopy) {
-                        listener.onNetworkDisconnected();
+                    @Override
+                    public void onLost(@NonNull Network network) {
+                        super.onLost(network);
+                        IterableLogger.v(TAG, "Network Disconnected");
+                        isConnected = false;
+                        ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
+                        for (IterableNetworkMonitorListener listener : networkListenersCopy) {
+                            listener.onNetworkDisconnected();
+                        }
                     }
-                }
-            });
+                });
+            } catch (SecurityException e) {
+                // This security exception seems to be affecting few devices.
+                // More information here: https://issuetracker.google.com/issues/175055271?pli=1
+                IterableLogger.e(TAG, e.getLocalizedMessage());
+            }
         }
     }
 
