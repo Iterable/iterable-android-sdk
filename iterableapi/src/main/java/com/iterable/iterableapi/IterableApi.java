@@ -340,15 +340,34 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        getKeychain().saveEmail(_email);
-        getKeychain().saveUserId(_userId);
-        getKeychain().saveAuthToken(_authToken);
+        if (hasEncryptionDependency()) {
+            getKeychain().saveEmail(_email);
+            getKeychain().saveUserId(_userId);
+            getKeychain().saveAuthToken(_authToken);
+        } else {
+            try {
+                SharedPreferences.Editor editor = getPreferences().edit();
+                editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
+                editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
+                editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
+                editor.commit();
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Error while persisting email/userId", e);
+            }
+        }
     }
 
     private void retrieveEmailAndUserId() {
-        _email = getKeychain().getEmail();
-        _userId = getKeychain().getUserId();
-        _authToken = getKeychain().getAuthToken();
+        if (hasEncryptionDependency()) {
+            _email = getKeychain().getEmail();
+            _userId = getKeychain().getUserId();
+            _authToken = getKeychain().getAuthToken();
+        } else {
+            SharedPreferences prefs = getPreferences();
+            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
+            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+        }
 
         if (_authToken != null) {
             getAuthManager().queueExpirationRefresh(_authToken);
@@ -357,7 +376,10 @@ public class IterableApi {
 
     private void updateSDKVersion() {
         IterableLogger.v(TAG, "jay debug - has encryption dependency: " + hasEncryptionDependency());
-        migrateAuthDataFromSharedPrefsToKeychain();
+
+        if (hasEncryptionDependency()) {
+            migrateAuthDataFromSharedPrefsToKeychain();
+        }
     }
 
     private void migrateAuthDataFromSharedPrefsToKeychain() {
