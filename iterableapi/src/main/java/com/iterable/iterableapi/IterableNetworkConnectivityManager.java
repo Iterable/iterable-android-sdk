@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.os.Build;
 
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 
 class IterableNetworkConnectivityManager {
     private static final String TAG = "NetworkConnectivityManager";
-    private boolean isConnected;
+    private boolean isConnected = true;
 
     private static IterableNetworkConnectivityManager sharedInstance;
 
@@ -44,11 +45,13 @@ class IterableNetworkConnectivityManager {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void startNetworkCallback(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkRequest.Builder networkBuilder = new NetworkRequest.Builder();
-
+        NetworkRequest networkRequest = new NetworkRequest.Builder().build();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            isConnected = networkRequest.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        }
         if (connectivityManager != null) {
             try {
-                connectivityManager.registerNetworkCallback(networkBuilder.build(), new ConnectivityManager.NetworkCallback() {
+                connectivityManager.registerNetworkCallback(networkRequest, new ConnectivityManager.NetworkCallback() {
                     @Override
                     public void onAvailable(@NonNull Network network) {
                         super.onAvailable(network);
@@ -61,6 +64,19 @@ class IterableNetworkConnectivityManager {
                     }
 
                     @Override
+                    public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
+                        super.onCapabilitiesChanged(network, networkCapabilities);
+                        if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && !isConnected) {
+                            IterableLogger.v(TAG, "Network with internet capability available");
+                            isConnected = true;
+                            ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
+                            for (IterableNetworkMonitorListener listener : networkListenersCopy) {
+                                listener.onNetworkConnected();
+                            }
+                        }
+                    }
+
+                    @Override
                     public void onLost(@NonNull Network network) {
                         super.onLost(network);
                         IterableLogger.v(TAG, "Network Disconnected");
@@ -69,6 +85,9 @@ class IterableNetworkConnectivityManager {
                         for (IterableNetworkMonitorListener listener : networkListenersCopy) {
                             listener.onNetworkDisconnected();
                         }
+
+                        //TODO: Have to keep track of which network lost the connection. Could be possible that device is connected to multiple networks.
+                        // One network failing should not turn on offline mode. Only if all the network are lost, isConnected should flip to false.
                     }
                 });
             } catch (SecurityException e) {
