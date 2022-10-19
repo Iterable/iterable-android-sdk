@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -418,12 +419,7 @@ public class IterableApi {
     }
 
     private boolean hasEncryptionDependency() {
-        try {
-            Class.forName("androidx.security.crypto.EncryptedSharedPreferences");
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return Build.VERSION.SDK_INT >= 23;
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
