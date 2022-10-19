@@ -172,6 +172,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             @Override
             public boolean onPreDraw() {
                 runResizeScript();
+                // PreDraw may keep getting called even after the inapp is being displayed. Hence stopping the continuous predraw calls and resizeScript calls after webview is loaded and visible.
+                if (loaded && webView.getVisibility() == View.VISIBLE) {
+                    webView.getViewTreeObserver().removeOnPreDrawListener(this);
+                }
                 return true;
             }
         });
