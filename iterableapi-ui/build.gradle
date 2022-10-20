@@ -60,7 +60,8 @@ ext {
 }
 
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-if(hasProperty("mavenPublishEnabled")) {
+
+if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
 
