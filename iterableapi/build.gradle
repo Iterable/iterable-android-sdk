@@ -94,6 +94,7 @@ if (hasProperty("mavenPublishEnabled")) {
 
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
+    excludes = ['**/*.kt']
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
 }
 
@@ -105,7 +106,6 @@ task checkstyle(type: Checkstyle) {
     configFile file("${project.rootDir}/checkstyle.xml")
     source 'src'
     include '**/*.java'
-    include '**/*.kt'
     exclude '**/gen/**'
 
     classpath = files()
