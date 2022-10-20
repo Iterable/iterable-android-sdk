@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.iterable.iterableapi.testapp">
-    <uses-library android:name="androidx.security" android:required="false" />
+    <!-- <uses-library android:name="androidx.security" android:required="false" /> -->
     <!-- <uses-sdk tools:overrideLibrary="androidx.security" /> -->
     <application
         android:allowBackup="true"
