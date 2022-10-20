@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:tools="http://schemas.android.com/tools" xmlns:android="http://schemas.android.com/apk/res/android" package="iterable.com.iterableapi">
-    <uses-library android:name="androidx.security" android:required="false" />
-    <!-- <uses-sdk tools:overrideLibrary="androidx.security" /> -->
     <uses-sdk tools:overrideLibrary="android_libs.ub_uiautomator"/>
     <application
         android:label="IterableAPI"
-        android:supportsRtl="true"/>
+        android:supportsRtl="true" />
 </manifest>
