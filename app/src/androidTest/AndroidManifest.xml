@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:tools="http://schemas.android.com/tools" package="iterable.com.iterableapi">
     <uses-sdk tools:overrideLibrary="br.com.concretesolutions.kappuccino,android_libs.ub_uiautomator"/>
-    <uses-library android:name="androidx.security" android:required="false" />
+    <!-- <uses-library android:name="androidx.security" android:required="false" /> -->
+    <uses-sdk tools:overrideLibrary="androidx.security" />
 </manifest>
