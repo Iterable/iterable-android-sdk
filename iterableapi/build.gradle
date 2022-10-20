@@ -15,6 +15,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -25,11 +26,13 @@ android {
             multiDexEnabled true
         }
     }
+
     testOptions.unitTests.all {
         testLogging {
             exceptionFormat "full"
         }
     }
+
     testOptions.unitTests.includeAndroidResources = true
 }
 
@@ -84,7 +87,8 @@ ext {
 }
 
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-if(hasProperty("mavenPublishEnabled")) {
+
+if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
 
@@ -101,6 +105,7 @@ task checkstyle(type: Checkstyle) {
     configFile file("${project.rootDir}/checkstyle.xml")
     source 'src'
     include '**/*.java'
+    include '**/*.kt'
     exclude '**/gen/**'
 
     classpath = files()
