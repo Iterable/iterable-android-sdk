@@ -11,6 +11,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 class IterableNetworkConnectivityManager {
     private static final String TAG = "NetworkConnectivityManager";
@@ -19,6 +21,7 @@ class IterableNetworkConnectivityManager {
     private static IterableNetworkConnectivityManager sharedInstance;
 
     private ArrayList<IterableNetworkMonitorListener> networkMonitorListeners = new ArrayList<>();
+    private Set<Network> networkSet = new HashSet<>();
 
     public interface IterableNetworkMonitorListener {
         void onNetworkConnected();
@@ -55,6 +58,7 @@ class IterableNetworkConnectivityManager {
                     @Override
                     public void onAvailable(@NonNull Network network) {
                         super.onAvailable(network);
+                        networkSet.add(network);
                         IterableLogger.v(TAG, "Network Connected");
                         isConnected = true;
                         ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
@@ -64,30 +68,17 @@ class IterableNetworkConnectivityManager {
                     }
 
                     @Override
-                    public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
-                        super.onCapabilitiesChanged(network, networkCapabilities);
-                        if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && !isConnected) {
-                            IterableLogger.v(TAG, "Network with internet capability available");
-                            isConnected = true;
-                            ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
-                            for (IterableNetworkMonitorListener listener : networkListenersCopy) {
-                                listener.onNetworkConnected();
-                            }
-                        }
-                    }
-
-                    @Override
                     public void onLost(@NonNull Network network) {
                         super.onLost(network);
                         IterableLogger.v(TAG, "Network Disconnected");
-                        isConnected = false;
-                        ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
-                        for (IterableNetworkMonitorListener listener : networkListenersCopy) {
-                            listener.onNetworkDisconnected();
+                        networkSet.remove(network);
+                        if (networkSet.isEmpty()) {
+                            isConnected = false;
+                            ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
+                            for (IterableNetworkMonitorListener listener : networkListenersCopy) {
+                                listener.onNetworkDisconnected();
+                            }
                         }
-
-                        //TODO: Have to keep track of which network lost the connection. Could be possible that device is connected to multiple networks.
-                        // One network failing should not turn on offline mode. Only if all the network are lost, isConnected should flip to false.
                     }
                 });
             } catch (SecurityException e) {
