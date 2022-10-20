@@ -376,8 +376,6 @@ public class IterableApi {
     }
 
     private void updateSDKVersion() {
-        IterableLogger.v(TAG, "jay debug - has encryption dependency: " + hasEncryptionDependency());
-
         if (hasEncryptionDependency()) {
             migrateAuthDataFromSharedPrefsToKeychain();
         }
