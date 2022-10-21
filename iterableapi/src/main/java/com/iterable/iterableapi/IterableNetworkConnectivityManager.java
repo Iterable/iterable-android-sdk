@@ -50,7 +50,7 @@ class IterableNetworkConnectivityManager {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkRequest networkRequest = new NetworkRequest.Builder().build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            isConnected = networkRequest.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            isConnected = networkRequest.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ? true : false;
         }
         if (connectivityManager != null) {
             try {
