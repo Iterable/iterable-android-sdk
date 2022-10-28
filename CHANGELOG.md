@@ -15,8 +15,73 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
-## [3.4.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.9)
+## [3.4.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.10)
+This release includes support for encrypting some data at rest, and an option to
+store in-app messages in memory.
 
+#### Encrypted data
+
+In Android apps with `minSdkVersion` 23 or higher ([Android 6.0](https://developer.android.com/studio/releases/platforms#6.0))
+Iterable's Android SDK now encrypts the following fields when storing them at
+rest:
+
+- `email` — The user's email address.
+- `userId` — The user's ID.
+- `authToken` — The JWT used to authenticate the user with Iterable's API.
+
+(Note that Iterable's Android SDK does not store the last push payload at
+rest—before or after this update.)
+
+For more information about this encryption in Android, examine the source code 
+for Iterable's Android SDK: [`IterableKeychain`](https://github.com/Iterable/iterable-android-sdk/blob/master/iterableapi/src/main/java/com/iterable/iterableapi/IterableKeychain.kt).
+
+#### Storing in-app messages in memory
+
+This release also allows you to have your Android apps (regardless of `minSdkVersion`) 
+store in-app messages in memory, rather than in an unencrypted local file.
+However, an unencrypted local file is still the default option.
+
+To store in-app messages in memory, set the `setUseInMemoryStorageForInApps(true)`
+SDK configuration option (defaults to `false`):
+
+_Java_
+
+```java
+IterableConfig.Builder configBuilder = new IterableConfig.Builder()
+   // ... other configuration options ...
+  .setUseInMemoryStorageForInApps(true);
+IterableApi.initialize(context, "<YOUR_API_KEY>", config);
+```
+
+_Kotlin_
+
+```kotlin
+val configBuilder = IterableConfig.Builder()
+   // ... other configuration options ...
+  .setUseInMemoryStorageForInApps(true);
+IterableApi.initialize(context, "<YOUR_API_KEY>", configBuilder.build());
+```
+
+When users upgrade to a version of your Android app that uses this version of
+the SDK (or higher), and you've set this configuration option to `true`, the 
+local file used for in-app message storage (if it already exists) is deleted
+However, no data is lost.
+
+#### Android upgrade instructions
+
+If your app targets API level 23 or higher, this is a standard SDK upgrade, with
+no special instructions. 
+
+If your app targets an API level less than 23, you'll need to make the following
+changes to your project (which allow your app to build, even though it won't
+encrypt data):
+
+1. In `AndroidManifest.xml`, add `<uses-sdk tools:overrideLibrary="androidx.security" />`
+2. In your app's `app/build.gradle`:
+   - Add `multiDexEnabled true` to the `default` object, under `android`.
+   - Add `implementation androidx.multidex:multidex:2.0.1` to the `dependencies`.
+
+## [3.4.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.9)
 #### Added
 - Added new methods for `setEmail`, `setUserId` and `updateEmail` which accepts `authToken`, providing more ways to pass `authToken` to SDK
 - Added two interface methods - `onTokenRegistrationSuccessful` and `onTokenRegistrationFailed`. Override these methods to see if authToken was successfully received by the SDK.  
