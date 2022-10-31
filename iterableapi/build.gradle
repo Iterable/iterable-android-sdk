@@ -25,6 +25,8 @@ android {
         debug {
             testCoverageEnabled true
             multiDexEnabled true
+
+            minSdkVersion 23
         }
     }
 
