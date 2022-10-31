@@ -8,20 +8,18 @@ android {
     buildToolsVersion '29.0.3'
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 23 //revert back to 16 after test
         targetSdkVersion 27
 
         buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.4.9\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        project.logger.lifecycle('JAY - test')
-
         // hacky fix to make our unit tests function
-        if (gradle.startParameter.taskNames.contains(":iterableapi:testDebugUnitTest")) {
-            minSdkVersion 23
-            project.logger.lifecycle('JAY - min SDK version changed')
-        }
+        // if (gradle.startParameter.taskNames.contains(":iterableapi:testDebugUnitTest")) {
+        //     minSdkVersion 23
+        //     project.logger.lifecycle('JAY - min SDK version changed')
+        // }
     }
 
     buildTypes {
