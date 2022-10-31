@@ -18,6 +18,7 @@ android {
         // hacky fix to make our unit tests function
         if (gradle.startParameter.taskNames.contains(":iterableapi:testDebugUnitTest")) {
             minSdkVersion 23
+            project.logger.lifecycle('JAY - min SDK version changed')
         }
     }
 
