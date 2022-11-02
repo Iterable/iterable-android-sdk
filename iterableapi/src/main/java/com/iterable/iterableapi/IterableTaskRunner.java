@@ -87,7 +87,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     }
 
-    synchronized private void runNow() {
+    private synchronized void runNow() {
         handler.removeMessages(OPERATION_PROCESS_TASKS);
         handler.sendEmptyMessage(OPERATION_PROCESS_TASKS);
     }
