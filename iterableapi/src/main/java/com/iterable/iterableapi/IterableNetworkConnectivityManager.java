@@ -16,10 +16,10 @@ import java.util.Set;
 
 class IterableNetworkConnectivityManager {
     private static final String TAG = "NetworkConnectivityManager";
-    private boolean isConnected = true;
+    private boolean isConnected;
 
     private static IterableNetworkConnectivityManager sharedInstance;
-
+    private ConnectivityManager connectivityManager;
     private ArrayList<IterableNetworkMonitorListener> networkMonitorListeners = new ArrayList<>();
     private Set<Network> networkSet = new HashSet<>();
 
@@ -41,17 +41,25 @@ class IterableNetworkConnectivityManager {
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            checkInternetAvailabilityOnActiveNetwork();
             startNetworkCallback(context);
+        }
+    }
+
+    private void checkInternetAvailabilityOnActiveNetwork() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Network activeNetwork = connectivityManager.getActiveNetwork();
+            isConnected = activeNetwork == null ? false : connectivityManager.getNetworkCapabilities(activeNetwork).hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            IterableLogger.v(TAG, "Internet active : " + isConnected);
+        } else {
+            IterableLogger.v(TAG, "Internet capability could not be detected on active network due to Android OS < Marshmallow.");
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void startNetworkCallback(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkRequest networkRequest = new NetworkRequest.Builder().build();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            isConnected = networkRequest.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-        }
         if (connectivityManager != null) {
             try {
                 connectivityManager.registerNetworkCallback(networkRequest, new ConnectivityManager.NetworkCallback() {
