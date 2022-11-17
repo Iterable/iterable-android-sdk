@@ -48,12 +48,16 @@ class IterableNetworkConnectivityManager {
     }
 
     private void checkInternetAvailabilityOnActiveNetwork() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Network activeNetwork = connectivityManager.getActiveNetwork();
-            isConnected = activeNetwork == null ? false : connectivityManager.getNetworkCapabilities(activeNetwork).hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-            IterableLogger.v(TAG, "Internet active : " + isConnected);
-        } else {
-            IterableLogger.v(TAG, "Internet capability could not be detected on active network due to Android OS < Marshmallow.");
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Network activeNetwork = connectivityManager.getActiveNetwork();
+                isConnected = activeNetwork == null ? false : connectivityManager.getNetworkCapabilities(activeNetwork).hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+                IterableLogger.v(TAG, "Internet active : " + isConnected);
+            } else {
+                IterableLogger.v(TAG, "Internet capability could not be detected on active network due to Android OS < Marshmallow.");
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error in detecting network availability");
         }
     }
 
