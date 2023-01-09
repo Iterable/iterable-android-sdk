@@ -115,8 +115,6 @@ class IterableNotificationHelper {
                 return null;
             }
 
-            removeUnusedChannel(context);
-            registerChannelIfEmpty(context, getChannelId(context), channelName, channelDescription);
             IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context));
             JSONObject iterableJson = null;
             title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
@@ -154,23 +152,6 @@ class IterableNotificationHelper {
             }
             notificationBuilder.setImageUrl(pushImage);
             notificationBuilder.setExpandedContent(notificationBody);
-
-            if (soundName != null) {
-                //Removes the file type from the name
-                String[] soundFile = soundName.split("\\.");
-                soundName = soundFile[0];
-
-                if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)) {
-                    int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
-                    Uri soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
-                    notificationBuilder.setSound(soundUri);
-                } else {
-                    notifPermissions.defaults |= Notification.DEFAULT_SOUND;
-                }
-
-            } else {
-                notifPermissions.defaults |= Notification.DEFAULT_SOUND;
-            }
 
             // The notification doesn't cancel properly if requestCode is negative
             notificationBuilder.requestCode = Math.abs((int) System.currentTimeMillis());
@@ -223,6 +204,9 @@ class IterableNotificationHelper {
 
             notificationBuilder.setDefaults(notifPermissions.defaults);
 
+            removeUnusedChannel(context);
+            registerChannelIfEmpty(context, getChannelId(context), channelName, channelDescription, soundName);
+
             return notificationBuilder;
         }
 
@@ -255,7 +239,7 @@ class IterableNotificationHelper {
          * @param channelName        Sets the channel name that is shown to the user.
          * @param channelDescription Sets the channel description that is shown to the user.
          */
-        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription) {
+        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription, String soundName) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
@@ -264,7 +248,7 @@ class IterableNotificationHelper {
                 if (existingChannel == null || !existingChannel.getName().equals(channelName)) {
                     IterableLogger.d(IterableNotificationBuilder.TAG, "Creating notification: channelId = " + channelId + " channelName = "
                             + channelName + " channelDescription = " + channelDescription);
-                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context));
+                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundName));
                 }
             }
         }
@@ -292,13 +276,29 @@ class IterableNotificationHelper {
             }
         }
 
-        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context) {
+        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName) {
             NotificationChannel notificationChannel = null;
+            Uri soundUri = null;
+
+            if (soundName != null) {
+                //Removes the file type from the name
+                String[] soundFile = soundName.split("\\.");
+                soundName = soundFile[0];
+
+                if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)) {
+                    int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
+                    soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
+                }
+            }
+
+
+
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
                 notificationChannel.setDescription(channelDescription);
                 notificationChannel.enableLights(true);
                 notificationChannel.setShowBadge(isNotificationBadgingEnabled(context));
+                notificationChannel.setSound(soundUri, );
             }
             return notificationChannel;
         }
