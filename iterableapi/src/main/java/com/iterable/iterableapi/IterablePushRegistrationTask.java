@@ -6,7 +6,8 @@ import android.os.AsyncTask;
 /**
  * Created by David Truong dt@iterable.com
  */
-class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationData, Void, Void> {
+class
+IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationData, Void, Void> {
     static final String TAG = "IterablePushRegistration";
     IterablePushRegistrationData iterablePushRegistrationData;
 
