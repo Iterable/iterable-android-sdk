@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -291,14 +292,17 @@ class IterableNotificationHelper {
                 }
             }
 
-
-
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                AudioAttributes audioAttributes =  new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+
                 notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
                 notificationChannel.setDescription(channelDescription);
                 notificationChannel.enableLights(true);
                 notificationChannel.setShowBadge(isNotificationBadgingEnabled(context));
-                notificationChannel.setSound(soundUri, );
+                notificationChannel.setSound(soundUri, audioAttributes);
             }
             return notificationChannel;
         }
