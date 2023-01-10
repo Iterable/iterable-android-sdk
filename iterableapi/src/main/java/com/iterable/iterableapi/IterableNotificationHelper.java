@@ -280,6 +280,7 @@ class IterableNotificationHelper {
         private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName) {
             NotificationChannel notificationChannel = null;
             Uri soundUri = null;
+            AudioAttributes audioAttributes = null;
 
             if (soundName != null) {
                 //Removes the file type from the name
@@ -292,12 +293,14 @@ class IterableNotificationHelper {
                 }
             }
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                AudioAttributes audioAttributes =  new AudioAttributes.Builder()
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                audioAttributes = new AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                         .build();
+            }
 
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
                 notificationChannel.setDescription(channelDescription);
                 notificationChannel.enableLights(true);
