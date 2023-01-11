@@ -282,23 +282,8 @@ class IterableNotificationHelper {
             Uri soundUri = null;
             AudioAttributes audioAttributes = null;
 
-            if (soundName != null) {
-                //Removes the file type from the name
-                String[] soundFile = soundName.split("\\.");
-                soundName = soundFile[0];
-
-                if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)) {
-                    int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
-                    soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
-                }
-            }
-
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                audioAttributes = new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build();
-            }
+            soundUri = getSoundUri(context, soundName, soundUri);
+            audioAttributes = getAudioAttributes(audioAttributes);
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 notificationChannel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
@@ -439,6 +424,30 @@ class IterableNotificationHelper {
 
             return notificationBody.isEmpty();
         }
+    }
+
+    private static AudioAttributes getAudioAttributes(AudioAttributes audioAttributes) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            audioAttributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build();
+        }
+        return audioAttributes;
+    }
+
+    private static Uri getSoundUri(Context context, String soundName, Uri soundUri) {
+        if (soundName != null) {
+            //Removes the file type from the name
+            String[] soundFile = soundName.split("\\.");
+            soundName = soundFile[0];
+
+            if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)) {
+                int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
+                soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
+            }
+        }
+        return soundUri;
     }
 
 }
