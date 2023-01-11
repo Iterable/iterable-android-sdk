@@ -31,7 +31,6 @@ class IterableWebView extends WebView {
 
         // fixes the webView to be the size of the screen
         getSettings().setLoadWithOverviewMode(true);
-        getSettings().setUseWideViewPort(true);
 
         // disallow unnecessary access
         getSettings().setAllowFileAccess(false);
