@@ -455,6 +455,9 @@ class IterableNotificationHelper {
         String[] soundFile = soundName.split("\\.");
         soundName = soundFile[0];
 
+        IterableLogger.d(IterableNotificationBuilder.TAG, "sound file name: " + soundName);
+        IterableLogger.d(IterableNotificationBuilder.TAG, "sound file type: " + soundFile[1]);
+
         if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)) {
             int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
             soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
