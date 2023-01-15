@@ -116,11 +116,12 @@ class IterableNotificationHelper {
                 return null;
             }
 
-            IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context));
             JSONObject iterableJson = null;
             title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
             soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
+
+            IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context, soundName));
 
             String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
 
@@ -205,8 +206,8 @@ class IterableNotificationHelper {
 
             notificationBuilder.setDefaults(notifPermissions.defaults);
 
-            removeUnusedChannel(context);
-            registerChannelIfEmpty(context, getChannelId(context), channelName, channelDescription, soundName);
+            removeUnusedChannel(context, soundName);
+            registerChannelIfEmpty(context, getChannelId(context, soundName), soundName, channelDescription, soundName);
 
             return notificationBuilder;
         }
@@ -257,13 +258,13 @@ class IterableNotificationHelper {
         /**
          * Safely removes unused and old channel if the configuration for notification badge is changed.
          */
-        private void removeUnusedChannel(Context context) {
+        private void removeUnusedChannel(Context context, String soundName) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                     && mNotificationManager != null) {
-                String channelIdToDelete = getOldChannelId(context);
+                String channelIdToDelete = getOldChannelId(context, soundName);
                 NotificationChannel unusedChannel = mNotificationManager.getNotificationChannel(channelIdToDelete);
                 if (unusedChannel != null) {
                     for (StatusBarNotification activeNotification : mNotificationManager.getActiveNotifications()) {
@@ -307,16 +308,17 @@ class IterableNotificationHelper {
             return true;
         }
 
-        private String getChannelId(Context context) {
-            return getChannelIdName(context, true);
+        private String getChannelId(Context context, String soundName) {
+            return getChannelIdName(context, true, soundName);
         }
 
-        private String getOldChannelId(Context context) {
-            return getChannelIdName(context, false);
+        private String getOldChannelId(Context context, String soundName) {
+            return getChannelIdName(context, false, soundName);
         }
 
-        private String getChannelIdName(Context context, boolean isActive) {
-            String channelId = context.getPackageName();
+        private String getChannelIdName(Context context, boolean isActive, String soundName) {
+            String channelId = context.getPackageName() + "_" + soundName;
+
             if (isActive) {
                 if (!isNotificationBadgingEnabled(context)) {
                     channelId = channelId + NO_BADGE;
