@@ -321,8 +321,7 @@ class IterableNotificationHelper {
         private String getChannelIdName(Context context, boolean isActive, String soundName) {
             String channelId = context.getPackageName();
 
-            if(!(!soundName.contains(".") ||
-                    soundName.charAt(0) == '.' || soundName.charAt(soundName.length() - 1) == '.')) {
+            if (soundName.contains(".") && soundName.charAt(0) != '.' && soundName.charAt(soundName.length() - 1) != '.') {
                 String[] soundFile = soundName.split("\\.");
                 channelId = context.getPackageName() + "_" + soundFile[0];
             }
@@ -361,8 +360,7 @@ class IterableNotificationHelper {
                 IterableLogger.e(IterableNotificationBuilder.TAG, "Error while retrieving channel name", e);
             }
 
-            if(!(!soundName.contains(".") ||
-                    soundName.charAt(0) == '.' || soundName.charAt(soundName.length() - 1) == '.')) {
+            if (soundName.contains(".") && soundName.charAt(0) != '.' && soundName.charAt(soundName.length() - 1) != '.') {
                 String[] soundFile = soundName.split("\\.");
                 channelName = channelName + "_" + soundFile[0];
             }
@@ -453,8 +451,7 @@ class IterableNotificationHelper {
     }
 
     private static Uri getSoundUri(Context context, String soundName) {
-        if(!soundName.contains(".") ||
-                soundName.charAt(0) == '.' || soundName.charAt(soundName.length() - 1) == '.') {
+        if (!soundName.contains(".") || soundName.charAt(0) == '.' || soundName.charAt(soundName.length() - 1) == '.') {
             return Settings.System.DEFAULT_NOTIFICATION_URI;
         }
 
