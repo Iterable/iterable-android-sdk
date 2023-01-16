@@ -125,13 +125,6 @@ class IterableNotificationHelper {
 
             soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
 
-//            String[] soundFile = soundName.split("\\.");
-//            soundFileName = soundFile[0];
-            //soundFileType = soundFile[1];
-
-            //IterableLogger.d(IterableNotificationBuilder.TAG, "sound name: " + soundFile);
-            //IterableLogger.d(IterableNotificationBuilder.TAG, "sound type: " + soundFileType);
-
             String channelName = getChannelName(context, soundName);
 
             IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context, soundName));
@@ -333,8 +326,10 @@ class IterableNotificationHelper {
         private String getChannelIdName(Context context, boolean isActive, String soundName) {
             String channelId = context.getPackageName();
 
-            if(!Objects.equals(soundName, "")) {
-                channelId = context.getPackageName() + "_" + soundName;
+            if(!(!soundName.contains(".") ||
+                    soundName.charAt(0) == '.' || soundName.charAt(soundName.length() - 1) == '.')) {
+                String[] soundFile = soundName.split("\\.");
+                channelId = context.getPackageName() + "_" + soundFile[0];
             }
 
             if (isActive) {
@@ -371,8 +366,10 @@ class IterableNotificationHelper {
                 IterableLogger.e(IterableNotificationBuilder.TAG, "Error while retrieving channel name", e);
             }
 
-            if(!Objects.equals(soundName, "")) {
-                channelName = channelName + "_" + soundName;
+            if(!(!soundName.contains(".") ||
+                    soundName.charAt(0) == '.' || soundName.charAt(soundName.length() - 1) == '.')) {
+                String[] soundFile = soundName.split("\\.");
+                channelName = channelName + "_" + soundFile[0];
             }
 
             if (channelName != null) {
