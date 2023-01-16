@@ -23,7 +23,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Map;
-import java.util.Objects;
 
 class IterableNotificationHelper {
     private static final String DEFAULT_CHANNEL_NAME = "iterable channel";
