@@ -101,9 +101,7 @@ class IterableNotificationHelper {
             String applicationName = context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
             String title = null;
             String notificationBody = null;
-            String soundFileName = null;
             String soundName = null;
-            String soundFileType = null;
             String messageId = null;
             String pushImage = null;
             //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
@@ -122,11 +120,9 @@ class IterableNotificationHelper {
             JSONObject iterableJson = null;
             title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
-
             soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
 
             String channelName = getChannelName(context, soundName);
-
             IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context, soundName));
 
             String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
