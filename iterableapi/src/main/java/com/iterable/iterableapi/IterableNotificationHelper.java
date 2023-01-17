@@ -328,7 +328,7 @@ class IterableNotificationHelper {
         private String getChannelIdName(Context context, boolean isActive, String soundName, int soundResourceId) {
             String channelId = context.getPackageName();
 
-            if(soundResourceId != 0) {
+            if (soundResourceId != 0) {
                 channelId = context.getPackageName() + "_" + soundName;
             }
 
