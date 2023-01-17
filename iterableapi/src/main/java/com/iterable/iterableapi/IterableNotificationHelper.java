@@ -21,8 +21,6 @@ import androidx.core.app.NotificationCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.File;
 import java.util.Map;
 
 class IterableNotificationHelper {
