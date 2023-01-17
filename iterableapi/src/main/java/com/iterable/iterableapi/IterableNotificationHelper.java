@@ -329,7 +329,7 @@ class IterableNotificationHelper {
             String channelId = context.getPackageName();
 
             if (soundResourceId != 0) {
-                channelId = context.getPackageName() + "_" + soundName;
+                channelId = soundName;
             }
 
             if (isActive) {
@@ -345,29 +345,10 @@ class IterableNotificationHelper {
         }
 
         private String getChannelName(Context context, String soundName, int soundResourceId) {
-            String channelName = null;
-            try {
-                ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-                if (info.metaData != null) {
-                    Object channelNameMetaData = info.metaData.get(IterableConstants.NOTIFICATION_CHANNEL_NAME);
-                    if (channelNameMetaData instanceof String) {
-                        // Literal string value
-                        channelName = (String) channelNameMetaData;
-                    } else if (channelNameMetaData instanceof Integer) {
-                        // Try to read from a string resource
-                        int stringId = (Integer) channelNameMetaData;
-                        if (stringId != 0) {
-                            channelName = context.getString(stringId);
-                        }
-                    }
-                    IterableLogger.d(IterableNotificationBuilder.TAG, "channel name: " + channelName);
-                }
-            } catch (Exception e) {
-                IterableLogger.e(IterableNotificationBuilder.TAG, "Error while retrieving channel name", e);
-            }
+            String channelName = "Default";
 
             if (soundResourceId != 0) {
-                channelName = channelName + "_" + soundName;
+                channelName = soundName;
             }
 
             if (channelName != null) {
