@@ -122,7 +122,7 @@ class IterableNotificationHelper {
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
             soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
 
-            if (soundName.contains(".") && soundName.charAt(0) != '.') {
+            if (soundName != null && soundName.contains(".") && soundName.charAt(0) != '.') {
                 String[] soundFile = soundName.split("\\.");
                 soundName = soundFile[0];
                 soundResourceId = context.getResources().getIdentifier(soundFile[0], "raw", context.getPackageName());
