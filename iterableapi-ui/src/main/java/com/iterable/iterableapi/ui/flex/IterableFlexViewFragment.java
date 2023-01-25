@@ -10,7 +10,7 @@ import com.iterable.iterableapi.ui.R;
 
 public class IterableFlexViewFragment extends Fragment {
 
-    var flexMessages =
+//    var flexMessages =
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
