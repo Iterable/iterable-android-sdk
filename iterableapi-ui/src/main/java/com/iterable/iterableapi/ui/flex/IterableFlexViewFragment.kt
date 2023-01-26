@@ -47,8 +47,8 @@ class IterableFlexViewFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.iterable_flex_view_fragment, container, false)
-//        val flexMessageText: TextView  = view.findViewById<TextView>(R.id.body)
-//        val flexMessageButton: Button = view.findViewById<Button>(R.id.flexMessageButton)
+        val flexMessageText: TextView  = view.findViewById<TextView>(R.id.flexMessageBody)
+        val flexMessageButton: Button = view.findViewById<Button>(R.id.flexMessageButton)
 //
 //        flexMessageText.text = flexMessage.elements.text.find(it)
 
