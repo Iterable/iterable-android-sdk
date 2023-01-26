@@ -20,6 +20,11 @@
         android:orientation="vertical"
         tools:context=".flex.IterableFlexViewFragment">
 
+    <LinearLayout
+
+        >
+        </LinearLayout>
+
 
         <TextView
             android:id="@+id/flexMessageBody"
