@@ -20,7 +20,6 @@
         android:orientation="vertical"
         tools:context=".flex.IterableFlexViewFragment">
 
-
         <TextView
             android:id="@+id/flexMessageBody"
             android:layout_width="0dp"
@@ -36,7 +35,6 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/flexMessageButton"
             app:layout_constraintEnd_toStartOf="@+id/imageView2"
-            app:layout_constraintHorizontal_bias="0.064"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/imageView2" />
 
