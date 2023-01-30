@@ -13,6 +13,7 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
 
 import androidx.annotation.VisibleForTesting;
@@ -102,8 +103,8 @@ class IterableNotificationHelper {
             String soundName = null;
             String messageId = null;
             String pushImage = null;
+            int soundResourceId = 0;
             //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
-            String channelName = getChannelName(context);
             String channelDescription = "";
 
             if (!extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
@@ -116,11 +117,19 @@ class IterableNotificationHelper {
                 return null;
             }
 
-            IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context));
             JSONObject iterableJson = null;
             title = extras.getString(IterableConstants.ITERABLE_DATA_TITLE, applicationName);
             notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY);
             soundName = extras.getString(IterableConstants.ITERABLE_DATA_SOUND);
+
+            if (soundName != null && soundName.contains(".") && soundName.charAt(0) != '.') {
+                String[] soundFile = soundName.split("\\.");
+                soundName = soundFile[0];
+                soundResourceId = context.getResources().getIdentifier(soundFile[0], "raw", context.getPackageName());
+            }
+
+            String channelName = getChannelName(context, soundName, soundResourceId);
+            IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, getChannelId(context, soundName, soundResourceId));
 
             String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
 
@@ -205,8 +214,8 @@ class IterableNotificationHelper {
 
             notificationBuilder.setDefaults(notifPermissions.defaults);
 
-            removeUnusedChannel(context);
-            registerChannelIfEmpty(context, getChannelId(context), channelName, channelDescription, soundName);
+            removeUnusedChannel(context, soundName, soundResourceId);
+            registerChannelIfEmpty(context, getChannelId(context, soundName, soundResourceId), channelName, channelDescription, soundName, soundResourceId);
 
             return notificationBuilder;
         }
@@ -240,7 +249,7 @@ class IterableNotificationHelper {
          * @param channelName        Sets the channel name that is shown to the user.
          * @param channelDescription Sets the channel description that is shown to the user.
          */
-        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription, String soundName) {
+        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription, String soundName, int soundResourceId) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
@@ -249,7 +258,7 @@ class IterableNotificationHelper {
                 if (existingChannel == null || !existingChannel.getName().equals(channelName)) {
                     IterableLogger.d(IterableNotificationBuilder.TAG, "Creating notification: channelId = " + channelId + " channelName = "
                             + channelName + " channelDescription = " + channelDescription);
-                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundName));
+                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundName, soundResourceId));
                 }
             }
         }
@@ -257,13 +266,13 @@ class IterableNotificationHelper {
         /**
          * Safely removes unused and old channel if the configuration for notification badge is changed.
          */
-        private void removeUnusedChannel(Context context) {
+        private void removeUnusedChannel(Context context, String soundName, int soundResourceId) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                     && mNotificationManager != null) {
-                String channelIdToDelete = getOldChannelId(context);
+                String channelIdToDelete = getOldChannelId(context, soundName, soundResourceId);
                 NotificationChannel unusedChannel = mNotificationManager.getNotificationChannel(channelIdToDelete);
                 if (unusedChannel != null) {
                     for (StatusBarNotification activeNotification : mNotificationManager.getActiveNotifications()) {
@@ -277,12 +286,12 @@ class IterableNotificationHelper {
             }
         }
 
-        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName) {
+        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName, int soundResourceId) {
             NotificationChannel notificationChannel = null;
             Uri soundUri = null;
             AudioAttributes audioAttributes = null;
 
-            soundUri = getSoundUri(context, soundName, soundUri);
+            soundUri = getSoundUri(context, soundName, soundResourceId);
             audioAttributes = getAudioAttributes(audioAttributes);
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -292,6 +301,7 @@ class IterableNotificationHelper {
                 notificationChannel.setShowBadge(isNotificationBadgingEnabled(context));
                 notificationChannel.setSound(soundUri, audioAttributes);
             }
+
             return notificationChannel;
         }
 
@@ -307,16 +317,21 @@ class IterableNotificationHelper {
             return true;
         }
 
-        private String getChannelId(Context context) {
-            return getChannelIdName(context, true);
+        private String getChannelId(Context context, String soundName, int soundResourceId) {
+            return getChannelIdName(context, true, soundName, soundResourceId);
         }
 
-        private String getOldChannelId(Context context) {
-            return getChannelIdName(context, false);
+        private String getOldChannelId(Context context, String soundName, int soundResourceId) {
+            return getChannelIdName(context, false, soundName, soundResourceId);
         }
 
-        private String getChannelIdName(Context context, boolean isActive) {
+        private String getChannelIdName(Context context, boolean isActive, String soundName, int soundResourceId) {
             String channelId = context.getPackageName();
+
+            if (soundResourceId != 0) {
+                channelId = soundName;
+            }
+
             if (isActive) {
                 if (!isNotificationBadgingEnabled(context)) {
                     channelId = channelId + NO_BADGE;
@@ -329,26 +344,11 @@ class IterableNotificationHelper {
             return channelId;
         }
 
-        private String getChannelName(Context context) {
-            String channelName = null;
-            try {
-                ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-                if (info.metaData != null) {
-                    Object channelNameMetaData = info.metaData.get(IterableConstants.NOTIFICATION_CHANNEL_NAME);
-                    if (channelNameMetaData instanceof String) {
-                        // Literal string value
-                        channelName = (String) channelNameMetaData;
-                    } else if (channelNameMetaData instanceof Integer) {
-                        // Try to read from a string resource
-                        int stringId = (Integer) channelNameMetaData;
-                        if (stringId != 0) {
-                            channelName = context.getString(stringId);
-                        }
-                    }
-                    IterableLogger.d(IterableNotificationBuilder.TAG, "channel name: " + channelName);
-                }
-            } catch (Exception e) {
-                IterableLogger.e(IterableNotificationBuilder.TAG, "Error while retrieving channel name", e);
+        private String getChannelName(Context context, String soundName, int soundResourceId) {
+            String channelName = "Default";
+
+            if (soundResourceId != 0) {
+                channelName = soundName;
             }
 
             if (channelName != null) {
@@ -436,18 +436,13 @@ class IterableNotificationHelper {
         return audioAttributes;
     }
 
-    private static Uri getSoundUri(Context context, String soundName, Uri soundUri) {
-        if (soundName != null) {
-            //Removes the file type from the name
-            String[] soundFile = soundName.split("\\.");
-            soundName = soundFile[0];
-
-            if (!soundName.equalsIgnoreCase(IterableConstants.DEFAULT_SOUND)) {
-                int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
-                soundUri = Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
-            }
+    private static Uri getSoundUri(Context context, String soundName, int soundResourceId) {
+        if (soundResourceId == 0 || soundName == null) {
+            return Settings.System.DEFAULT_NOTIFICATION_URI;
         }
-        return soundUri;
+
+        int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
+        return Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
     }
 
 }
