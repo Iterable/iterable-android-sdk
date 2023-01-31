@@ -105,6 +105,7 @@ class IterableNotificationHelper {
             String messageId = null;
             String pushImage = null;
             int soundId = 0;
+            Uri soundUri = null;
             //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
             String channelDescription = "";
 
@@ -135,11 +136,19 @@ class IterableNotificationHelper {
 
                 // Remove extension of sound file
                 soundName = soundName.replaceFirst("[.][^.]+$", "");
-                soundId = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
             }
+
+            soundUri = getSoundUri(context, soundName, soundUrl);
 
             String channelName = getChannelName(soundName);
             String channelId = getCurrentChannelId(context, soundName);
+
+            if(soundUri == Settings.System.DEFAULT_NOTIFICATION_URI) {
+                channelName = IterableConstants.NOTIFICATION_CHANNEL_NAME;
+                channelId = context.getPackageName();
+                IterableLogger.w(IterableNotificationBuilder.TAG, "sound not found locally, using default sound");
+            }
+
             IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, channelId);
 
             String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
@@ -226,7 +235,7 @@ class IterableNotificationHelper {
             notificationBuilder.setDefaults(notifPermissions.defaults);
 
             removeAllInactiveChannels(context);
-            registerChannelIfEmpty(context, channelId, channelName, channelDescription, soundName, soundUrl);
+            registerChannelIfEmpty(context, channelId, channelName, channelDescription, soundUri);
 
             return notificationBuilder;
         }
@@ -260,7 +269,7 @@ class IterableNotificationHelper {
          * @param channelName        Sets the channel name that is shown to the user.
          * @param channelDescription Sets the channel description that is shown to the user.
          */
-        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription, String soundName, String soundUrl) {
+        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription, Uri soundUri) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
@@ -269,7 +278,7 @@ class IterableNotificationHelper {
                 if (existingChannel == null || !existingChannel.getName().equals(channelName)) {
                     IterableLogger.d(IterableNotificationBuilder.TAG, "Creating notification: channelId = " + channelId + " channelName = "
                             + channelName + " channelDescription = " + channelDescription);
-                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundName, soundUrl));
+                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundUri));
                 }
             }
         }
@@ -319,19 +328,8 @@ class IterableNotificationHelper {
             }
         }
 
-        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName, String soundURL) {
+        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, Uri soundUri) {
             NotificationChannel notificationChannel = null;
-            Uri soundUri = null;
-            if (soundURL == null) {
-                soundUri = getSoundUri(context, soundName);
-                if(soundUri == Settings.System.DEFAULT_NOTIFICATION_URI) {
-                    channelName = IterableConstants.NOTIFICATION_CHANNEL_NAME;
-                    channelId = context.getPackageName();
-                    IterableLogger.w(IterableNotificationBuilder.TAG, "sound not found locally, using default sound");
-                }
-            } else {
-                soundUri = Uri.parse(soundURL);
-            }
             AudioAttributes audioAttributes = getAudioAttributes();
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -474,8 +472,12 @@ class IterableNotificationHelper {
         return audioAttributes;
     }
 
-    private static Uri getSoundUri(Context context, String soundName) {
+    private static Uri getSoundUri(Context context, String soundName, String soundUrl) {
         int soundId = 0;
+
+        if(soundUrl != null) {
+            return Uri.parse(soundUrl);
+        }
 
         if (soundName != null) {
             soundId = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
