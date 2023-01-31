@@ -381,7 +381,7 @@ class IterableNotificationHelper {
         private String getChannelName(String soundName) {
             String channelName = "Default";
 
-            if (soundName != null || soundName != "") {
+            if (!soundName.equals("")) {
                 channelName = soundName;
             }
 
@@ -469,11 +469,12 @@ class IterableNotificationHelper {
     }
 
     private static Uri getSoundUri(Context context, String soundName) {
-        if (soundName == null) {
+        int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
+
+        if (soundID == 0 || soundName == null) {
             return Settings.System.DEFAULT_NOTIFICATION_URI;
         }
 
-        int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
         return Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
     }
 
