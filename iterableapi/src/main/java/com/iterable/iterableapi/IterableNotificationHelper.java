@@ -226,7 +226,7 @@ class IterableNotificationHelper {
             notificationBuilder.setDefaults(notifPermissions.defaults);
 
             removeAllInactiveChannels(context);
-            registerChannelIfEmpty(context, channelId, channelName, channelDescription, soundName, soundId, soundUrl);
+            registerChannelIfEmpty(context, channelId, channelName, channelDescription, soundName, soundUrl);
 
             return notificationBuilder;
         }
@@ -260,7 +260,7 @@ class IterableNotificationHelper {
          * @param channelName        Sets the channel name that is shown to the user.
          * @param channelDescription Sets the channel description that is shown to the user.
          */
-        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription, String soundName, int soundId, String soundUrl) {
+        private void registerChannelIfEmpty(Context context, String channelId, String channelName, String channelDescription, String soundName, String soundUrl) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
@@ -269,7 +269,7 @@ class IterableNotificationHelper {
                 if (existingChannel == null || !existingChannel.getName().equals(channelName)) {
                     IterableLogger.d(IterableNotificationBuilder.TAG, "Creating notification: channelId = " + channelId + " channelName = "
                             + channelName + " channelDescription = " + channelDescription);
-                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundName, soundId, soundUrl));
+                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundName, soundUrl));
                 }
             }
         }
@@ -319,11 +319,11 @@ class IterableNotificationHelper {
             }
         }
 
-        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName, int soundId, String soundURL) {
+        private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName, String soundURL) {
             NotificationChannel notificationChannel = null;
             Uri soundUri = null;
             if (soundURL == null) {
-                soundUri = getSoundUri(context, soundName, soundId);
+                soundUri = getSoundUri(context, soundName);
             } else {
                 soundUri = Uri.parse(soundURL);
             }
@@ -469,12 +469,13 @@ class IterableNotificationHelper {
         return audioAttributes;
     }
 
-    private static Uri getSoundUri(Context context, String soundName, int soundId) {
+    private static Uri getSoundUri(Context context, String soundName) {
+        int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
 
-        if (soundId == 0 || soundName == null) {
+        if (soundID == 0 || soundName == null) {
             return Settings.System.DEFAULT_NOTIFICATION_URI;
         }
 
-        return Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundId);
+        return Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
     }
 }
