@@ -340,7 +340,7 @@ class IterableNotificationHelper {
         private String getChannelIdName(Context context, boolean isActive, String soundName) {
             String channelId = context.getPackageName();
 
-            if (soundName != null || soundName != "") {
+            if (soundName != null && soundName != "") {
                 channelId = soundName;
             }
 
