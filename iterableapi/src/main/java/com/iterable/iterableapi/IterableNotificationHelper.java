@@ -472,7 +472,7 @@ class IterableNotificationHelper {
     private static Uri getSoundUri(Context context, String soundName) {
         int soundId = 0;
 
-        if(soundName != null) {
+        if (soundName != null) {
             soundId = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
         }
 
