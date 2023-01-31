@@ -125,10 +125,10 @@ class IterableNotificationHelper {
             String soundUrl = null;
 
             //Check if soundName is a remote sound file
-            if(soundName != null) {
+            if (soundName != null) {
 
                 // If soundname contains remote link, store it as a soundUrl and continue to trim soundName to for channel Id and name
-                if(soundName.contains("https")) {
+                if (soundName.contains("https")) {
                     soundUrl = soundName;
                     soundName = soundName.substring(soundName.lastIndexOf('/') + 1);
                 }
@@ -321,7 +321,7 @@ class IterableNotificationHelper {
         private NotificationChannel createNotificationChannel(String channelId, String channelName, String channelDescription, Context context, String soundName, String soundURL) {
             NotificationChannel notificationChannel = null;
             Uri soundUri = null;
-            if(soundURL == null) {
+            if (soundURL == null) {
                 soundUri = getSoundUri(context, soundName);
             } else {
                 soundUri = Uri.parse(soundURL);
