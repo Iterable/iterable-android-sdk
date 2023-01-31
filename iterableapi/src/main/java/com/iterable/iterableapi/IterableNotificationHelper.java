@@ -470,12 +470,16 @@ class IterableNotificationHelper {
     }
 
     private static Uri getSoundUri(Context context, String soundName) {
-        int soundID = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
+        int soundId = 0;
 
-        if (soundID == 0 || soundName == null) {
+        if(soundName != null) {
+            soundId = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
+        }
+
+        if (soundId == 0 || soundName == null) {
             return Settings.System.DEFAULT_NOTIFICATION_URI;
         }
 
-        return Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundID);
+        return Uri.parse(IterableConstants.ANDROID_RESOURCE_PATH + context.getPackageName() + "/" + soundId);
     }
 }
