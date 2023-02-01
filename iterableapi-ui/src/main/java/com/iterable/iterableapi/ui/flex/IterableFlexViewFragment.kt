@@ -28,8 +28,7 @@ class IterableFlexViewFragment : Fragment() {
     )
 
     private val flexMessageText: List<IterableFlexMessageText> = listOf(
-        IterableFlexMessageText("title", "CATS RULE!!!"),
-        IterableFlexMessageText("body", "GET FRESH COFFEE")
+        IterableFlexMessageText("body", "CATS RULE!!!")
     )
 
     private val flexMessageElements: IterableFlexMessageElements = IterableFlexMessageElements(
@@ -49,8 +48,9 @@ class IterableFlexViewFragment : Fragment() {
         val view = inflater.inflate(R.layout.iterable_flex_view_fragment, container, false)
         val flexMessageText: TextView  = view.findViewById<TextView>(R.id.flexMessageBody)
         val flexMessageButton: Button = view.findViewById<Button>(R.id.flexMessageButton)
-//
-//        flexMessageText.text = flexMessage.elements.text.find(it)
+
+        flexMessageText.text = flexMessage.elements.text[0].text
+        flexMessageButton.text = flexMessage.elements.buttons[0].title
 
         return view
     }
