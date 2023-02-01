@@ -4,11 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
+import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import com.iterable.iterableapi.*
 import com.iterable.iterableapi.ui.R
+import com.iterable.iterableapi.ui.databinding.FragmentIterableFlexViewBinding
 
 class IterableFlexViewFragment : Fragment() {
     // example flex message data from a payload
@@ -45,13 +45,10 @@ class IterableFlexViewFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.iterable_flex_view_fragment, container, false)
-        val flexMessageText: TextView  = view.findViewById<TextView>(R.id.flexMessageBody)
-        val flexMessageButton: Button = view.findViewById<Button>(R.id.flexMessageButton)
 
-        flexMessageText.text = flexMessage.elements.text[0].text
-        flexMessageButton.text = flexMessage.elements.buttons[0].title
-
-        return view
+        val binding: FragmentIterableFlexViewBinding = DataBindingUtil.inflate(
+            inflater, R.layout.fragment_iterable_flex_view, container, false)
+        binding.flexMessage = flexMessage
+        return binding.root
     }
 }

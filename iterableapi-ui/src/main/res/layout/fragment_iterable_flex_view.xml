@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--<layout xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:app="http://schemas.android.com/apk/res-auto">-->
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
-<!--    <data>-->
-<!--        <variable-->
-<!--            name="flexMessage"-->
-<!--            type="com.iterable.iterableapi.ui.flex.IterableFlexMessage"/>-->
-<!--    </data>-->
+    <data>
+        <variable
+            name="flexMessage"
+            type="com.iterable.iterableapi.IterableFlexMessage"/>
+    </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
@@ -30,7 +29,7 @@
             android:layout_marginLeft="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
-            android:text="@string/flex_message_body"
+            android:text="@{flexMessage.elements.text[0].text}"
             android:textSize="@dimen/flex_message_body_text_size"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/flexMessageButton"
@@ -48,7 +47,7 @@
             android:layout_marginLeft="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
-            android:text="@string/flex_message_button_text"
+            android:text="@{flexMessage.elements.buttons[0].title}"
             app:layout_constraintBottom_toBottomOf="@+id/imageView2"
             app:layout_constraintEnd_toStartOf="@+id/imageView2"
             app:layout_constraintStart_toStartOf="parent"
@@ -58,10 +57,10 @@
             android:id="@+id/imageView2"
             android:layout_width="200dp"
             android:layout_height="200dp"
-            android:layout_marginTop="0dp"
+            android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
-            android:layout_marginBottom="0dp"
+            android:layout_marginBottom="16dp"
             android:contentDescription="@string/flex_message_image_description"
             android:src="@drawable/rinazula"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -69,4 +68,4 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0" />
     </androidx.constraintlayout.widget.ConstraintLayout>
-<!--</layout>-->
+</layout>
