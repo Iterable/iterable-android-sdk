@@ -143,7 +143,7 @@ class IterableNotificationHelper {
             String channelName = getChannelName(soundName);
             String channelId = getCurrentChannelId(context, soundName);
 
-            if(soundUri == Settings.System.DEFAULT_NOTIFICATION_URI) {
+            if (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI) {
                 channelName = IterableConstants.NOTIFICATION_CHANNEL_NAME;
                 channelId = context.getPackageName();
                 IterableLogger.w(IterableNotificationBuilder.TAG, "sound not found locally, using default sound");
@@ -475,7 +475,7 @@ class IterableNotificationHelper {
     private static Uri getSoundUri(Context context, String soundName, String soundUrl) {
         int soundId = 0;
 
-        if(soundUrl != null) {
+        if (soundUrl != null) {
             return Uri.parse(soundUrl);
         }
 
