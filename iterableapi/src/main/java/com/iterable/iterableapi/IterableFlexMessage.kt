@@ -1,6 +1,6 @@
 package com.iterable.iterableapi
 
-data class IterableFlexMessage(var metadata: IterableFlexMessageMetaData, var elements: IterableFlexMessageElements, var custom: IterableCustomPayload)
+data class IterableFlexMessage(var metadata: IterableFlexMessageMetaData, var elements: IterableFlexMessageElements, var custom: Any)
 
 data class IterableFlexMessageMetaData(var id: String, var placementId: String, var campaignId: String, var isProof: Boolean)
 
@@ -11,5 +11,3 @@ data class IterableFlexMessageButton(var id: String, var title: String, var acti
 data class IterableFlexMessageImage(var id: String, var url: String)
 
 data class IterableFlexMessageText(var title: String, var text: String)
-
-data class IterableCustomPayload(var key: Any)
