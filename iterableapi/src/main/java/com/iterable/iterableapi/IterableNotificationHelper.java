@@ -104,7 +104,6 @@ class IterableNotificationHelper {
             String soundName = null;
             String messageId = null;
             String pushImage = null;
-            int soundId = 0;
             Uri soundUri = null;
             //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
             String channelDescription = "";
@@ -140,14 +139,13 @@ class IterableNotificationHelper {
 
             soundUri = getSoundUri(context, soundName, soundUrl);
 
-            String channelName = getChannelName(soundName);
-            String channelId = getCurrentChannelId(context, soundName);
+            String channelName = (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI)
+                    ? IterableConstants.NOTIFICATION_CHANNEL_NAME
+                    : getChannelName(soundName);
 
-            if (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI) {
-                channelName = IterableConstants.NOTIFICATION_CHANNEL_NAME;
-                channelId = context.getPackageName();
-                IterableLogger.w(IterableNotificationBuilder.TAG, "sound not found locally, using default sound");
-            }
+            String channelId = (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI)
+                    ? context.getPackageName()
+                    : getCurrentChannelId(context, soundName);
 
             IterableNotificationBuilder notificationBuilder = new IterableNotificationBuilder(context, channelId);
 
