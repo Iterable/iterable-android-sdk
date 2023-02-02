@@ -1,6 +1,8 @@
 package com.iterable.iterableapi.ui.flex
 
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.iterable.iterableapi.*
 
@@ -33,14 +35,11 @@ class IterableFlexViewViewModel : ViewModel() {
         flexMessageText
     )
 
-    var flexMessage: IterableFlexMessage = IterableFlexMessage(flexMessageMetaData, flexMessageElements,  "")
+    private var _flexMessage = MutableLiveData<IterableFlexMessage>()
+    val flexMessage: LiveData<IterableFlexMessage>
+        get() = _flexMessage
 
     init {
-        Log.i("ItblFlexViewViewModel", "IterableFlexViewViewModel created!")
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        Log.i("ItblFlexViewViewModel", "IterableFlexViewViewModel destroyed!")
+        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements,  "")
     }
 }
