@@ -232,7 +232,7 @@ class IterableNotificationHelper {
 
             notificationBuilder.setDefaults(notifPermissions.defaults);
 
-            removeAllInactiveChannels(context);
+            removeUnusedChannel(context, soundName);
             registerChannelIfEmpty(context, channelId, channelName, channelDescription, soundUri);
 
             return notificationBuilder;
@@ -285,7 +285,7 @@ class IterableNotificationHelper {
          * TODO: Remove this method if removeAllInactiveChannels is working as expected.
          * Safely removes unused and old channel if the configuration for notification badge is changed.
          */
-        private void removeUnusedChannel(Context context, String soundName, int soundId, String soundUrl) {
+        private void removeUnusedChannel(Context context, String soundName) {
             NotificationManager mNotificationManager = (NotificationManager)
                     context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -301,27 +301,6 @@ class IterableNotificationHelper {
                         }
                     }
                     mNotificationManager.deleteNotificationChannel(channelIdToDelete);
-                }
-            }
-        }
-
-        void removeAllInactiveChannels(Context context) {
-            NotificationManager mNotificationManager = (NotificationManager)
-                    context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
-                    && mNotificationManager != null) {
-                for (NotificationChannel channel : mNotificationManager.getNotificationChannels()) {
-                    boolean isChannelActive = false;
-                    for (StatusBarNotification activeNotification : mNotificationManager.getActiveNotifications()) {
-                        if (activeNotification.getNotification().getChannelId().equalsIgnoreCase(channel.getId())) {
-                            isChannelActive = true;
-                            break;
-                        }
-                    }
-                    if (!isChannelActive) {
-                        mNotificationManager.deleteNotificationChannel(channel.getId());
-                    }
                 }
             }
         }
