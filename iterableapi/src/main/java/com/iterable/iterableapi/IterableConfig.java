@@ -1,7 +1,8 @@
 package com.iterable.iterableapi;
 
 import androidx.annotation.NonNull;
-import android.util.Log;
+
+import com.iterable.iterableapi.util.LogLevel;
 
 /**
  *
@@ -41,7 +42,7 @@ public class IterableConfig {
     /**
      * Log level for Iterable SDK log messages
      */
-    final int logLevel;
+    final @LogLevel.Level int logLevel;
 
     /**
      * Custom in-app handler that can be used to control whether an incoming in-app message should
@@ -91,7 +92,7 @@ public class IterableConfig {
         private IterableCustomActionHandler customActionHandler;
         private boolean autoPushRegistration = true;
         private boolean checkForDeferredDeeplink;
-        private int logLevel = Log.ERROR;
+        private @LogLevel.Level int logLevel = LogLevel.NONE;
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
@@ -157,10 +158,10 @@ public class IterableConfig {
 
         /**
          * Set the log level for Iterable SDK log messages
-         * @param logLevel Log level, defaults to {@link Log#ERROR}
+         * @param logLevel Log level, defaults to {@link LogLevel#NONE}
          */
         @NonNull
-        public Builder setLogLevel(int logLevel) {
+        public Builder setLogLevel(@LogLevel.Level int logLevel) {
             this.logLevel = logLevel;
             return this;
         }
