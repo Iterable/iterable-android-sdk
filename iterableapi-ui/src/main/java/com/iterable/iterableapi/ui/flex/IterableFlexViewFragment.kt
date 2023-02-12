@@ -6,40 +6,15 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import com.iterable.iterableapi.*
 import com.iterable.iterableapi.ui.R
 import com.iterable.iterableapi.ui.databinding.FragmentIterableFlexViewBinding
 
 class IterableFlexViewFragment : Fragment() {
-    // example flex message data from a payload
-    private val flexMessageMetaData: IterableFlexMessageMetaData = IterableFlexMessageMetaData(
-        "doibjo4590340oidiobnw",
-        "mbn8489b7ehycy",
-        "noj9iyjthfvhs",
-        false
-    )
 
-    private val flexMessageButtons: List<IterableFlexMessageButton> = listOf(
-        IterableFlexMessageButton("reward-button", "REDEEM MEOW", "success")
-    )
-
-    private val flexMessageImages: List<IterableFlexMessageImage> = listOf(
-        IterableFlexMessageImage("coffee-image", "https://example-image-url.com/first-image")
-    )
-
-    private val flexMessageText: List<IterableFlexMessageText> = listOf(
-        IterableFlexMessageText("body", "CATS RULE!!!")
-    )
-
-    private val flexMessageElements: IterableFlexMessageElements = IterableFlexMessageElements(
-        "hero",
-        flexMessageButtons,
-        flexMessageImages,
-        flexMessageText
-    )
-
-    private var flexMessage: IterableFlexMessage = IterableFlexMessage(flexMessageMetaData, flexMessageElements,  "")
-
+    private lateinit var viewModel: IterableFlexViewViewModel
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -48,7 +23,13 @@ class IterableFlexViewFragment : Fragment() {
 
         val binding: FragmentIterableFlexViewBinding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_iterable_flex_view, container, false)
-        binding.flexMessage = flexMessage
+
+        viewModel = ViewModelProvider(this).get(IterableFlexViewViewModel::class.java)
+
+        viewModel.flexMessage.observe(viewLifecycleOwner, Observer { newMessage ->
+            binding.flexMessage = newMessage
+        })
+
         return binding.root
     }
 }
