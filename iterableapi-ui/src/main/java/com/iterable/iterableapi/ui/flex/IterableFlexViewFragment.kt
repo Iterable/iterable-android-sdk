@@ -27,6 +27,16 @@ class IterableFlexViewFragment : Fragment() {
         viewModel = ViewModelProvider(this).get(IterableFlexViewViewModel::class.java)
 
         binding.flexViewViewModel = viewModel
+
+        val adapter = IterableFlexViewAdapter()
+        binding.flexMessageList.adapter = adapter
+
+        viewModel.flexMessages.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                adapter.data = it
+            }
+        })
+
         binding.setLifecycleOwner(this)
 
         return binding.root

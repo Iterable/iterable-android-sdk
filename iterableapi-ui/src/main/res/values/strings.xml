@@ -2,4 +2,5 @@
     <string name="flex_message_body">Limited Time Only: Save 10% off your next cup of joe!</string>
     <string name="flex_message_button_text">Redeem Here</string>
     <string name="flex_message_image_description">cup of coffee</string>
+    <string name="redeem_button">redeem button</string>
 </resources>

@@ -12,12 +12,21 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="200dp"
         android:layout_gravity="center_vertical"
         android:layout_margin="@dimen/small_margin"
         android:background="@drawable/flex_message_border"
         android:orientation="vertical"
         tools:context=".flex.IterableFlexViewFragment">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/flex_message_list"
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintBottom_toTopOf="@+id/flexMessageBody"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <TextView
             android:id="@+id/flexMessageBody"
@@ -29,7 +38,7 @@
             android:layout_marginLeft="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
-            android:text="@{flexViewViewModel.flexMessage.elements.text[0].text}"
+            android:text="@{flexViewViewModel.flexMessages[0].elements.text[0].text}"
             android:textSize="@dimen/flex_message_body_text_size"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/flexMessageButton"
@@ -47,26 +56,27 @@
             android:layout_marginLeft="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
+            android:contentDescription="@string/redeem_button"
             android:onClick="@{() -> flexViewViewModel.updateMessage()}"
-            android:text="@{flexViewViewModel.flexMessage.elements.buttons[0].title}"
+            android:text="@{flexViewViewModel.flexMessages[0].elements.buttons[0].title}"
             app:layout_constraintBottom_toBottomOf="@+id/imageView2"
             app:layout_constraintEnd_toStartOf="@+id/imageView2"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/flexMessageBody" />
 
-        <ImageView
-            android:id="@+id/imageView2"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginRight="16dp"
-            android:layout_marginBottom="16dp"
-            android:contentDescription="@string/flex_message_image_description"
-            android:src="@drawable/coffee_cappuccino"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0" />
+        <!--        <ImageView-->
+        <!--            android:id="@+id/imageView2"-->
+        <!--            android:layout_width="200dp"-->
+        <!--            android:layout_height="200dp"-->
+        <!--            android:layout_marginTop="16dp"-->
+        <!--            android:layout_marginEnd="16dp"-->
+        <!--            android:layout_marginRight="16dp"-->
+        <!--            android:layout_marginBottom="16dp"-->
+        <!--            android:contentDescription="@string/flex_message_image_description"-->
+        <!--            android:src="@drawable/coffee_cappuccino"-->
+        <!--            app:layout_constraintBottom_toBottomOf="parent"-->
+        <!--            app:layout_constraintEnd_toEndOf="parent"-->
+        <!--            app:layout_constraintTop_toTopOf="parent"-->
+        <!--            app:layout_constraintVertical_bias="0.0" />-->
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
