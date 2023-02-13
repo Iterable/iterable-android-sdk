@@ -27,10 +27,7 @@ class IterableFlexViewFragment : Fragment() {
         viewModel = ViewModelProvider(this).get(IterableFlexViewViewModel::class.java)
 
         binding.flexViewViewModel = viewModel
-
-        viewModel.flexMessage.observe(viewLifecycleOwner, Observer { newMessage ->
-            binding.flexMessageBody.text = newMessage.elements.text[0].text
-        })
+        binding.setLifecycleOwner(this)
 
         return binding.root
     }
