@@ -24,22 +24,37 @@ class IterableFlexViewViewModel : ViewModel() {
         IterableFlexMessageImage("coffee-image", "https://example-image-url.com/first-image")
     )
 
-    private val flexMessageText: List<IterableFlexMessageText> = listOf(
+    private val flexMessageText1: List<IterableFlexMessageText> = listOf(
         IterableFlexMessageText("body", "CATS RULE!!!")
     )
 
-    private val flexMessageElements: IterableFlexMessageElements = IterableFlexMessageElements(
+    private val flexMessageText2: List<IterableFlexMessageText> = listOf(
+        IterableFlexMessageText("body", "DOGS DROOL!!!")
+    )
+
+    private val flexMessageElements1: IterableFlexMessageElements = IterableFlexMessageElements(
         "hero",
         flexMessageButtons,
         flexMessageImages,
-        flexMessageText
+        flexMessageText1
+    )
+
+    private val flexMessageElements2: IterableFlexMessageElements = IterableFlexMessageElements(
+        "hero",
+        flexMessageButtons,
+        flexMessageImages,
+        flexMessageText2
     )
 
     private var _flexMessage = MutableLiveData<IterableFlexMessage>()
     val flexMessage: LiveData<IterableFlexMessage>
         get() = _flexMessage
 
+    fun updateMessage() {
+        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements2, "")
+    }
+
     init {
-        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements,  "")
+        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements1,  "")
     }
 }
