@@ -50,7 +50,7 @@ class IterableFlexViewViewModel : ViewModel() {
     val flexMessages: LiveData<List<IterableFlexMessage>>
         get() = _flexMessages
 
-    fun updateMessage() {
+    init {
         _flexMessages.value = listOf(
             IterableFlexMessage(flexMessageMetaData, flexMessageElements2, ""),
             IterableFlexMessage(flexMessageMetaData, flexMessageElements2, ""),
@@ -61,9 +61,5 @@ class IterableFlexViewViewModel : ViewModel() {
             IterableFlexMessage(flexMessageMetaData, flexMessageElements2, ""),
             IterableFlexMessage(flexMessageMetaData, flexMessageElements2, "")
         )
-    }
-
-    init {
-        _flexMessages.value = listOf(IterableFlexMessage(flexMessageMetaData, flexMessageElements1,  ""))
     }
 }
