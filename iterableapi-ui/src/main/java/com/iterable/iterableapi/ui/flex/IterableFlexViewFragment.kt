@@ -26,8 +26,6 @@ class IterableFlexViewFragment : Fragment() {
 
         viewModel = ViewModelProvider(this).get(IterableFlexViewViewModel::class.java)
 
-        binding.flexViewViewModel = viewModel
-
         val adapter = IterableFlexViewAdapter()
         binding.flexMessageList.adapter = adapter
 
