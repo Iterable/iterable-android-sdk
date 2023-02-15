@@ -21,8 +21,8 @@ class IterableFlexViewAdapter: ListAdapter<IterableFlexMessage, IterableFlexView
 
     class ViewHolder private constructor(val binding: ListItemFlexMessageBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(item: IterableFlexMessage) {
-            binding.flexMessageBody.text = item.elements.text[0].text
-            binding.flexMessageButton.text = item.elements.buttons[0].title
+            binding.flexMessage = item
+            binding.executePendingBindings()
         }
         companion object {
             fun from(parent: ViewGroup): ViewHolder {
