@@ -33,7 +33,7 @@ class IterableFlexViewFragment : Fragment() {
 
         viewModel.flexMessages.observe(viewLifecycleOwner, Observer {
             it?.let {
-                adapter.data = it
+                adapter.submitList(it)
             }
         })
 
