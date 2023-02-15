@@ -9,6 +9,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
@@ -381,6 +382,7 @@ public class IterableApi {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     private void migrateAuthDataFromSharedPrefsToKeychain() {
         SharedPreferences prefs = getPreferences();
         String sharedPrefsEmail = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
@@ -417,7 +419,7 @@ public class IterableApi {
     }
 
     private boolean hasEncryptionDependency() {
-        return Build.VERSION.SDK_INT >= 23;
+        return Build.VERSION.SDK_INT >= 23 && config.encryptionEnabled;
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
