@@ -44,10 +44,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
-
-
-    implementation 'com.android.databinding:compiler:3.1.4'
-//    implementation 'org.ow2.asm:asm:7.1'
 }
 
 ext {
