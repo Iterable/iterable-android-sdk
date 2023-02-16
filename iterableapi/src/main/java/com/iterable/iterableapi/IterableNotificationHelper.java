@@ -26,7 +26,6 @@ import org.json.JSONObject;
 import java.util.Map;
 
 class IterableNotificationHelper {
-    private static final String DEFAULT_CHANNEL_NAME = "iterable channel";
     private static final String NO_BADGE = "_noBadge";
 
     @VisibleForTesting
@@ -459,7 +458,7 @@ class IterableNotificationHelper {
             soundId = context.getResources().getIdentifier(soundName, IterableConstants.SOUND_FOLDER_IDENTIFIER, context.getPackageName());
         }
 
-        if (soundId == 0 || soundName == null) {
+        if (soundId == 0) {
             return Settings.System.DEFAULT_NOTIFICATION_URI;
         }
 
