@@ -282,7 +282,6 @@ class IterableNotificationHelper {
         }
 
         /**
-         * TODO: Remove this method if removeAllInactiveChannels is working as expected.
          * Safely removes unused and old channel if the configuration for notification badge is changed.
          */
         private void removeUnusedChannel(Context context, String soundName) {
