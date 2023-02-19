@@ -4,12 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
@@ -136,7 +134,11 @@ public class IterableApi {
     @NonNull
     IterableKeychain getKeychain() {
         if (keychain == null) {
-            keychain = new IterableKeychain(getMainActivityContext());
+            try {
+                keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
+            }
         }
 
         return keychain;
@@ -342,34 +344,15 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        if (hasEncryptionDependency()) {
-            getKeychain().saveEmail(_email);
-            getKeychain().saveUserId(_userId);
-            getKeychain().saveAuthToken(_authToken);
-        } else {
-            try {
-                SharedPreferences.Editor editor = getPreferences().edit();
-                editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
-                editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-                editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
-                editor.commit();
-            } catch (Exception e) {
-                IterableLogger.e(TAG, "Error while persisting email/userId", e);
-            }
-        }
+        getKeychain().saveEmail(_email);
+        getKeychain().saveUserId(_userId);
+        getKeychain().saveAuthToken(_authToken);
     }
 
     private void retrieveEmailAndUserId() {
-        if (hasEncryptionDependency()) {
-            _email = getKeychain().getEmail();
-            _userId = getKeychain().getUserId();
-            _authToken = getKeychain().getAuthToken();
-        } else {
-            SharedPreferences prefs = getPreferences();
-            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-        }
+        _email = getKeychain().getEmail();
+        _userId = getKeychain().getUserId();
+        _authToken = getKeychain().getAuthToken();
 
         if (_authToken != null) {
             getAuthManager().queueExpirationRefresh(_authToken);
@@ -377,49 +360,7 @@ public class IterableApi {
     }
 
     private void updateSDKVersion() {
-        if (hasEncryptionDependency()) {
-            migrateAuthDataFromSharedPrefsToKeychain();
-        }
-    }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    private void migrateAuthDataFromSharedPrefsToKeychain() {
-        SharedPreferences prefs = getPreferences();
-        String sharedPrefsEmail = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-        String sharedPrefsUserId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-        String sharedPrefsAuthToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-
-        SharedPreferences.Editor editor = getPreferences().edit();
-
-        if (getKeychain().getEmail() == null && sharedPrefsEmail != null) {
-            getKeychain().saveEmail(sharedPrefsEmail);
-            editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY);
-            IterableLogger.v(TAG, "UPDATED: migrated email from SharedPreferences to IterableKeychain");
-        } else if (sharedPrefsEmail != null) {
-            editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY);
-        }
-
-        if (getKeychain().getUserId() == null && sharedPrefsUserId != null) {
-            getKeychain().saveUserId(sharedPrefsUserId);
-            editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY);
-            IterableLogger.v(TAG, "UPDATED: migrated userId from SharedPreferences to IterableKeychain");
-        } else if (sharedPrefsUserId != null) {
-            editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY);
-        }
-
-        if (getKeychain().getAuthToken() == null && sharedPrefsAuthToken != null) {
-            getKeychain().saveAuthToken(sharedPrefsAuthToken);
-            editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY);
-            IterableLogger.v(TAG, "UPDATED: migrated authToken from SharedPreferences to IterableKeychain");
-        } else if (sharedPrefsAuthToken != null) {
-            editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY);
-        }
-
-        editor.apply();
-    }
-
-    private boolean hasEncryptionDependency() {
-        return Build.VERSION.SDK_INT >= 23 && config.encryptionEnabled;
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {

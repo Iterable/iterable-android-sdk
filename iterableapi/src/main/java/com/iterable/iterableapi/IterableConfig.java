@@ -77,7 +77,7 @@ public class IterableConfig {
      */
     final boolean useInMemoryStorageForInApps;
 
-    final boolean encryptionEnabled;
+    final boolean encryptionEnforced;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -92,7 +92,7 @@ public class IterableConfig {
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
-        encryptionEnabled = builder.encryptionEnabled;
+        encryptionEnforced = builder.encryptionEnforced;
     }
 
     public static class Builder {
@@ -108,7 +108,7 @@ public class IterableConfig {
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
         private boolean useInMemoryStorageForInApps = false;
-        private boolean encryptionEnabled = true;
+        private boolean encryptionEnforced = false;
 
         public Builder() {}
 
@@ -230,8 +230,8 @@ public class IterableConfig {
             return this;
         }
 
-        public Builder setEncryptionEnabled(boolean encryptionEnabled) {
-            this.encryptionEnabled = encryptionEnabled;
+        public Builder setEncryptionEnforced(boolean encryptionEnforced) {
+            this.encryptionEnforced = encryptionEnforced;
             return this;
         }
 
