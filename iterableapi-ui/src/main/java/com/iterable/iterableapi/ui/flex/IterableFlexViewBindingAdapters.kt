@@ -16,7 +16,6 @@ fun TextView.setFlexMessageBodyText(item: IterableFlexMessage?) {
         text = item.elements.text[0].text
     }
 }
-
 @BindingAdapter("flexMessageButton")
 fun Button.setFlexMessageButtonText(item: IterableFlexMessage?) {
     item?.let {
