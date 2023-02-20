@@ -21,7 +21,7 @@ class IterableFlexViewViewModel : ViewModel() {
     )
 
     private val flexMessageImages: List<IterableFlexMessageImage> = listOf(
-        IterableFlexMessageImage("coffee-image", "https://example-image-url.com/first-image")
+        IterableFlexMessageImage("coffee-image", "http://placekitten.com/200/200")
     )
 
     private val flexMessageText1: List<IterableFlexMessageText> = listOf(

@@ -4,7 +4,9 @@ import android.media.Image
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.net.toUri
 import androidx.databinding.BindingAdapter
+import com.bumptech.glide.Glide
 import com.iterable.iterableapi.IterableFlexMessage
 import com.iterable.iterableapi.ui.R
 
@@ -22,9 +24,19 @@ fun Button.setFlexMessageButtonText(item: IterableFlexMessage?) {
     }
 }
 
-@BindingAdapter("flexMessageImage")
-fun ImageView.setFlexMessageImage(item: IterableFlexMessage?) {
-    item?.let {
-        setImageResource(R.drawable.coffee_cappuccino)
+//@BindingAdapter("flexMessageImage")
+//fun ImageView.setFlexMessageImage(item: IterableFlexMessage?) {
+//    item?.let {
+//        setImageResource(R.drawable.coffee_cappuccino)
+//    }
+//}
+
+@BindingAdapter("imageUrl")
+fun bindImage(imgView: ImageView, imgUrl: String?) {
+    imgUrl?.let {
+        val imgUri = it.toUri().buildUpon().scheme("http").build()
+        Glide.with(imgView.context)
+            .load(imgUri)
+            .into(imgView)
     }
 }
