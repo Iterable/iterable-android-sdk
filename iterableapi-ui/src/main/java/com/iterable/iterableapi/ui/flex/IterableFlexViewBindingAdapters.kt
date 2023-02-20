@@ -23,14 +23,6 @@ fun Button.setFlexMessageButtonText(item: IterableFlexMessage?) {
         text = item.elements.buttons[0].title
     }
 }
-
-//@BindingAdapter("flexMessageImage")
-//fun ImageView.setFlexMessageImage(item: IterableFlexMessage?) {
-//    item?.let {
-//        setImageResource(R.drawable.coffee_cappuccino)
-//    }
-//}
-
 @BindingAdapter("imageUrl")
 fun bindImage(imgView: ImageView, imgUrl: String?) {
     imgUrl?.let {
