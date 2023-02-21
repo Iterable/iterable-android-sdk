@@ -165,6 +165,12 @@ public final class IterableConstants {
     public static final String PICASSO_CLASS = "com.squareup.picasso.Picasso";
     public static final String LOCATION_HEADER_FIELD = "Location";
 
+    //Flex Message Constants
+    public static final String ITERABLE_FLEX_MESSAGE_ID = "id";
+    public static final String ITERABLE_FLEX_MESSAGE_PLACEMENT_ID = "placementId";
+    public static final String ITERABLE_FLEX_MESSAGE_CAMPAIGN_ID = "campaignId";
+    public static final String ITERABLE_FLEX_MESSAGE_IS_PROOF = "isProof";
+
     //In-App Constants
     public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";
     public static final String ITERABLE_IN_APP_BGCOLOR_HEX      = "hex";

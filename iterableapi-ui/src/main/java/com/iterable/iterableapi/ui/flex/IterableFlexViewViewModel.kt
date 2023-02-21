@@ -1,10 +1,12 @@
 package com.iterable.iterableapi.ui.flex
 
+import android.util.Log
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.iterable.iterableapi.*
+import org.json.JSONObject
 
 class IterableFlexViewViewModel : ViewModel() {
 
@@ -43,6 +45,19 @@ class IterableFlexViewViewModel : ViewModel() {
         get() = _flexMessage
 
     init {
+        val metadataJson = JSONObject()
+        metadataJson.put("id", "doibjo4590340oidiobnw")
+        metadataJson.put("placementId", "mbn8489b7ehycy")
+        metadataJson.put("campaignId", "noj9iyjthfvhs")
+        metadataJson.put("isProof", false)
+
+        val flexMessageMetadata: FlexMessageMetadata = FlexMessageMetadata.fromJSONObject(metadataJson)
+
+        Log.i(FlexMessageMetadata.TAG, "id - ${flexMessageMetadata.id}")
+        Log.i(FlexMessageMetadata.TAG, "placementId - ${flexMessageMetadata.placementId}")
+        Log.i(FlexMessageMetadata.TAG, "campaignId - ${flexMessageMetadata.campaignId}")
+        Log.i(FlexMessageMetadata.TAG, "isProof - ${flexMessageMetadata.isProof}")
+
         _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements, hashMapOf(1 to "a"))
     }
 }
