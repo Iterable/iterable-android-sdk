@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import java.util.Map;
 
 class IterableNotificationHelper {
+    private static final String DEFAULT_CHANNEL_NAME = "iterable channel";
     private static final String NO_BADGE = "_noBadge";
 
     @VisibleForTesting
@@ -139,8 +140,8 @@ class IterableNotificationHelper {
             soundUri = getSoundUri(context, soundName, soundUrl);
 
             String channelName = (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI)
-                    ? IterableConstants.NOTIFICATION_CHANNEL_NAME
-                    : getChannelName(soundName);
+                    ? getChannelName(context)
+                    : soundName;
 
             String channelId = (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI)
                     ? context.getPackageName()
@@ -357,14 +358,33 @@ class IterableNotificationHelper {
             return channelId;
         }
 
-        private String getChannelName(String soundName) {
-            String channelName = IterableConstants.NOTIFICATION_CHANNEL_NAME;
-
-            if (soundName != null) {
-                channelName = soundName;
+        private String getChannelName(Context context) {
+            String channelName = null;
+            try {
+                ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                if (info.metaData != null) {
+                    Object channelNameMetaData = info.metaData.get(IterableConstants.NOTIFICATION_CHANNEL_NAME);
+                    if (channelNameMetaData instanceof String) {
+                        // Literal string value
+                        channelName = (String) channelNameMetaData;
+                    } else if (channelNameMetaData instanceof Integer) {
+                        // Try to read from a string resource
+                        int stringId = (Integer) channelNameMetaData;
+                        if (stringId != 0) {
+                            channelName = context.getString(stringId);
+                        }
+                    }
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "channel name: " + channelName);
+                }
+            } catch (Exception e) {
+                IterableLogger.e(IterableNotificationBuilder.TAG, "Error while retrieving channel name", e);
             }
 
-            return channelName;
+            if (channelName != null) {
+                return channelName;
+            } else {
+                return DEFAULT_CHANNEL_NAME;
+            }
         }
 
         /**
