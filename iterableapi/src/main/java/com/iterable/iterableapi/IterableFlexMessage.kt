@@ -236,6 +236,5 @@ class FlexMessageElementsText (
 
             return FlexMessageElementsText(id, text, label)
         }
-
     }
 }
