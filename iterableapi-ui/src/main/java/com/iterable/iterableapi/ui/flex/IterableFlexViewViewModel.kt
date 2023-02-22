@@ -45,18 +45,20 @@ class IterableFlexViewViewModel : ViewModel() {
         get() = _flexMessage
 
     init {
-        val metadataJson = JSONObject()
-        metadataJson.put("id", "doibjo4590340oidiobnw")
-        metadataJson.put("placementId", "mbn8489b7ehycy")
-        metadataJson.put("campaignId", "noj9iyjthfvhs")
-        metadataJson.put("isProof", false)
+        var flexMessageMetaData: FlexMessageMetadata = FlexMessageMetadata(
+            "doibjo4590340oidiobnw",
+            "mbn8489b7ehycy",
+            "noj9iyjthfvhs",
+            false
+        )
 
-        val flexMessageMetadata: FlexMessageMetadata = FlexMessageMetadata.fromJSONObject(metadataJson)
+        val metadataJson: JSONObject = FlexMessageMetadata.toJSONObject(flexMessageMetaData)
+        val newFlexMessageMetadata = FlexMessageMetadata.fromJSONObject(metadataJson)
 
-        Log.i(FlexMessageMetadata.TAG, "id - ${flexMessageMetadata.id}")
-        Log.i(FlexMessageMetadata.TAG, "placementId - ${flexMessageMetadata.placementId}")
-        Log.i(FlexMessageMetadata.TAG, "campaignId - ${flexMessageMetadata.campaignId}")
-        Log.i(FlexMessageMetadata.TAG, "isProof - ${flexMessageMetadata.isProof}")
+        Log.i(FlexMessageMetadata.TAG, "id - ${newFlexMessageMetadata.id}")
+        Log.i(FlexMessageMetadata.TAG, "placementId - ${newFlexMessageMetadata.placementId}")
+        Log.i(FlexMessageMetadata.TAG, "campaignId - ${newFlexMessageMetadata.campaignId}")
+        Log.i(FlexMessageMetadata.TAG, "isProof - ${newFlexMessageMetadata.isProof}")
 
         _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements, hashMapOf(1 to "a"))
     }

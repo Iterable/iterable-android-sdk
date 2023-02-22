@@ -170,6 +170,12 @@ public final class IterableConstants {
     public static final String ITERABLE_FLEX_MESSAGE_PLACEMENT_ID = "placementId";
     public static final String ITERABLE_FLEX_MESSAGE_CAMPAIGN_ID = "campaignId";
     public static final String ITERABLE_FLEX_MESSAGE_IS_PROOF = "isProof";
+    public static final String ITERABLE_FLEX_MESSAGE_TITLE = "title";
+    public static final String ITERABLE_FLEX_MESSAGE_BODY = "body";
+    public static final String ITERABLE_FLEX_MESSAGE_MEDIA_URL = "mediaUrl";
+    public static final String ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION = "defaultAction";
+    public static final String ITERABLE_FLEX_MESSAGE_BUTTONS = "buttons";
+    public static final String ITERABLE_FLEX_MESSAGE_TEXT = "text";
 
     //In-App Constants
     public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";
