@@ -14,8 +14,8 @@ class IterableFlexMessage (
 
         try {
             flexMessageJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_METADATA, metadata.toJSONObject())
-            flexMessageJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_ELEMENTS, elements?.toJSONObject())
-            flexMessageJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_PAYLOAD, payload)
+            flexMessageJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_ELEMENTS, elements?.toJSONObject())
+            flexMessageJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_PAYLOAD, payload)
         } catch(e: JSONException) {
             IterableLogger.e(FlexMessageMetadata.TAG, "Error while serializing flex message", e)
         }
@@ -51,7 +51,7 @@ class FlexMessageMetadata(
 
         try {
             metadataJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_ID, id)
-            metadataJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_PLACEMENT_ID, placementId)
+            metadataJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_PLACEMENT_ID, placementId)
             metadataJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_CAMPAIGN_ID, campaignId)
             metadataJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_IS_PROOF, isProof)
         } catch (e: JSONException) {
@@ -66,7 +66,7 @@ class FlexMessageMetadata(
         fun fromJSONObject(flexMessageMetadataJson: JSONObject): FlexMessageMetadata {
             val id: String = flexMessageMetadataJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_ID)
             val placementId: String = flexMessageMetadataJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_PLACEMENT_ID)
-            val campaignId: String = flexMessageMetadataJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_CAMPAIGN_ID)
+            val campaignId: String = flexMessageMetadataJson.optString(IterableConstants.ITERABLE_FLEX_MESSAGE_CAMPAIGN_ID)
             val isProof: Boolean = flexMessageMetadataJson.optBoolean(IterableConstants.ITERABLE_FLEX_MESSAGE_IS_PROOF)
 
             return FlexMessageMetadata(id, placementId, campaignId, isProof)
@@ -89,9 +89,7 @@ class FlexMessageElements (
             elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_BODY, body)
             elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_MEDIA_URL, mediaURL)
 
-//            if(defaultAction != null) {
-                elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION, defaultAction?.toJSONObject())
-//            }
+            elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION, defaultAction?.toJSONObject())
 
             if(buttons != null) {
                 val buttonsJson = JSONArray()
@@ -164,8 +162,8 @@ class FlexMessageElementsButton (
 
         try {
             buttonJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ID, id)
-            buttonJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_TITLE, title)
-            buttonJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ACTION, action)
+            buttonJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_TITLE, title)
+            buttonJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ACTION, action)
         } catch (e: JSONException) {
             IterableLogger.e(TAG, "Error while serializing flex message button", e)
         }
@@ -221,8 +219,8 @@ class FlexMessageElementsText (
 
         try {
             textJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ID, id)
-            textJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_TITLE, text)
-            textJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ACTION, label)
+            textJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_TITLE, text)
+            textJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ACTION, label)
         } catch (e: JSONException) {
             IterableLogger.e(TAG, "Error while serializing flex message text", e)
         }
