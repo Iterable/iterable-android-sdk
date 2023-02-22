@@ -88,13 +88,13 @@ class FlexMessageElements (
             elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_MEDIA_URL, mediaURL)
 
 //            if(defaultAction != null) {
-                elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION, defaultAction?.toJsonObject())
+                elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION, defaultAction?.toJSONObject())
 //            }
 
             if(buttons != null) {
                 val buttonsJson = JSONArray()
                 for(i in 0..buttons.size - 1) {
-                    buttonsJson.put(buttons.get(i).toJsonObject())
+                    buttonsJson.put(buttons.get(i).toJSONObject())
                 }
                 elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTONS, buttonsJson)
             }
@@ -102,7 +102,7 @@ class FlexMessageElements (
             if(text != null) {
                 val textJson = JSONArray()
                 for(i in 0..text.size - 1) {
-                    textJson.put(text.get(i).toJsonObject())
+                    textJson.put(text.get(i).toJSONObject())
                 }
 
                 elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT, textJson)
@@ -157,7 +157,7 @@ class FlexMessageElementsButton (
     val title: String? = null,
     val action: String? = null
 ) {
-    fun toJsonObject(): JSONObject {
+    fun toJSONObject(): JSONObject {
         val buttonJson = JSONObject()
 
         try {
@@ -186,7 +186,7 @@ class FlexMessageElementsDefaultAction (
     val type: String,
     val data: String
 ) {
-    fun toJsonObject(): JSONObject {
+    fun toJSONObject(): JSONObject {
         val defaultActionJson = JSONObject()
 
         try {
@@ -214,7 +214,7 @@ class FlexMessageElementsText (
     val text: String? = null,
     val label: String? = null
 ) {
-    fun toJsonObject(): JSONObject {
+    fun toJSONObject(): JSONObject {
         val textJson = JSONObject()
 
         try {
