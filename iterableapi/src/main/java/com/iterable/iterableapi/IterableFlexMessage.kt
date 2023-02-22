@@ -31,7 +31,7 @@ class FlexMessageMetadata(
             val metadataJson = JSONObject()
 
             try {
-                metadataJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_ID, flexMessageMetadata.id)
+                metadataJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_ID, flexMessageMetadata.id)
                 metadataJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_PLACEMENT_ID, flexMessageMetadata.placementId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_CAMPAIGN_ID, flexMessageMetadata.campaignId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_IS_PROOF, flexMessageMetadata.isProof)
@@ -43,7 +43,7 @@ class FlexMessageMetadata(
         }
     }
 }
-data class FlexMessageElements (
+class FlexMessageElements (
     val title: String? = null,
     val body: String? = null,
     val mediaURL: String? = null,
@@ -52,26 +52,27 @@ data class FlexMessageElements (
     val text: List<FlexMessageElementsText>? = null
 ) {
     companion object {
+        val TAG = "ItblFlexMessageElements"
         fun fromJSONObject(flexMessageElementsJson: JSONObject): FlexMessageElements {
             val title: String = flexMessageElementsJson.optString(IterableConstants.ITERABLE_FLEX_MESSAGE_TITLE)
             val body: String = flexMessageElementsJson.optString(IterableConstants.ITERABLE_FLEX_MESSAGE_BODY)
             val mediaURL: String = flexMessageElementsJson.optString(IterableConstants.ITERABLE_FLEX_MESSAGE_MEDIA_URL)
 
-            val defaultActionJson: JSONObject = flexMessageElementsJson.optJSONObject(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION)
+            val defaultActionJson: JSONObject = flexMessageElementsJson.getJSONObject(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION)
             val defaultAction: FlexMessageElementsDefaultAction = FlexMessageElementsDefaultAction.fromJSONObject(defaultActionJson)
 
-            val buttonsJson: JSONArray = flexMessageElementsJson.optJSONArray(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTONS)
-            var buttons: List<FlexMessageElementsButton> = listOf()
+            val buttonsJson: JSONArray = flexMessageElementsJson.getJSONArray(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTONS)
+            val buttons: List<FlexMessageElementsButton> = listOf()
             for(i in 0..buttonsJson.length()) {
                 val buttonJson: JSONObject = buttonsJson.getJSONObject(i)
                 val button: FlexMessageElementsButton = FlexMessageElementsButton.fromJSONObject(buttonJson)
                 buttons.plus(button)
             }
 
-            val textJson: JSONArray = flexMessageElementsJson.optJSONArray(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT)
-            var texts: List<FlexMessageElementsText> = listOf()
+            val textsJson: JSONArray = flexMessageElementsJson.getJSONArray(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT)
+            val texts: List<FlexMessageElementsText> = listOf()
             for(i in 0..buttonsJson.length()) {
-                val textJson: JSONObject = textJson.getJSONObject(i)
+                val textJson: JSONObject = textsJson.getJSONObject(i)
                 val text: FlexMessageElementsButton = FlexMessageElementsButton.fromJSONObject(textJson)
                 texts.plus(text)
             }
@@ -97,19 +98,88 @@ data class FlexMessageElements (
     }
 
 }
-data class FlexMessageElementsButton (
+class FlexMessageElementsButton (
     val id: String,
     val title: String? = null,
     val action: String? = null
 ) {
+    companion object {
+        val TAG = "ItblFlexMessageButtons"
+        fun fromJSONObject(flexMessageElementsButtonJson: JSONObject): FlexMessageElementsButton {
+            val id: String = flexMessageElementsButtonJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ID)
+            val title: String = flexMessageElementsButtonJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_TITLE)
+            val action: String = flexMessageElementsButtonJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ACTION)
 
+            return FlexMessageElementsButton(id, title, action)
+        }
+        fun toJSONObject(flexMessageElementsButton: FlexMessageElementsButton): JSONObject {
+            val buttonJson = JSONObject()
+
+            try {
+                buttonJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ID, flexMessageElementsButton.id)
+                buttonJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_TITLE, flexMessageElementsButton.title)
+                buttonJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ACTION, flexMessageElementsButton.action)
+            } catch (e: JSONException) {
+                IterableLogger.e(FlexMessageMetadata.TAG, "Error while serializing flex message button", e)
+            }
+
+            return buttonJson
+        }
+    }
 }
-data class FlexMessageElementsDefaultAction (
+class FlexMessageElementsDefaultAction (
     val type: String,
     val data: String
-)
-data class FlexMessageElementsText (
+) {
+    companion object {
+        val TAG = "ItblFlexMessageDefaultAction"
+        fun fromJSONObject(flexMessageElementsDefaultActionJson: JSONObject): FlexMessageElementsDefaultAction {
+            val type: String = flexMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION_TYPE)
+            val data: String = flexMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION_DATA)
+
+            return FlexMessageElementsDefaultAction(type, data)
+        }
+        fun toJSONObject(flexMessageElementsDefaultAction: FlexMessageElementsDefaultAction): JSONObject {
+            val defaultActionJson = JSONObject()
+
+            try {
+                defaultActionJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION_TYPE, flexMessageElementsDefaultAction.type)
+                defaultActionJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION_DATA, flexMessageElementsDefaultAction.data)
+            } catch (e: JSONException) {
+                IterableLogger.e(FlexMessageMetadata.TAG, "Error while serializing flex default action", e)
+            }
+
+            return defaultActionJson
+        }
+    }
+}
+class FlexMessageElementsText (
     val id: String,
     val text: String? = null,
     val label: String? = null
-)
+) {
+    companion object {
+        val TAG = "ItblFlexMessageText"
+        fun fromJSONObject(flexMessageElementsTextJson: JSONObject): FlexMessageElementsText {
+            val id: String = flexMessageElementsTextJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT_ID)
+            val text: String = flexMessageElementsTextJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT_TITLE)
+            val label: String = flexMessageElementsTextJson.getString(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT_LABEL)
+
+            return FlexMessageElementsText(id, text, label)
+        }
+        fun toJSONObject(flexMessageElementsText: FlexMessageElementsText): JSONObject {
+            val textJson = JSONObject()
+
+            try {
+                textJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ID, flexMessageElementsText.id)
+                textJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_TITLE, flexMessageElementsText.text)
+                textJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTON_ACTION, flexMessageElementsText.label)
+            } catch (e: JSONException) {
+                IterableLogger.e(FlexMessageMetadata.TAG, "Error while serializing flex message text", e)
+            }
+
+            return textJson
+        }
+    }
+}
+

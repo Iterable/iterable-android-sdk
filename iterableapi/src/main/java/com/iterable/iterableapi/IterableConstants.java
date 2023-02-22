@@ -176,6 +176,14 @@ public final class IterableConstants {
     public static final String ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION = "defaultAction";
     public static final String ITERABLE_FLEX_MESSAGE_BUTTONS = "buttons";
     public static final String ITERABLE_FLEX_MESSAGE_TEXT = "text";
+    public static final String ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION_TYPE = "type";
+    public static final String ITERABLE_FLEX_MESSAGE_DEFAULT_ACTION_DATA = "data";
+    public static final String ITERABLE_FLEX_MESSAGE_BUTTON_ID = "id";
+    public static final String ITERABLE_FLEX_MESSAGE_BUTTON_TITLE = "title";
+    public static final String ITERABLE_FLEX_MESSAGE_BUTTON_ACTION = "action";
+    public static final String ITERABLE_FLEX_MESSAGE_TEXT_ID = "id";
+    public static final String ITERABLE_FLEX_MESSAGE_TEXT_TITLE = "title";
+    public static final String ITERABLE_FLEX_MESSAGE_TEXT_LABEL = "label";
 
     //In-App Constants
     public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";
