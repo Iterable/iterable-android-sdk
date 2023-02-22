@@ -3,7 +3,8 @@ package com.iterable.iterableapi
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-data class IterableFlexMessage (
+
+class IterableFlexMessage (
     val metadata: FlexMessageMetadata,
     val elements: FlexMessageElements? = null,
     val payload: JSONObject? = null
@@ -38,6 +39,7 @@ data class IterableFlexMessage (
         }
     }
 }
+
 class FlexMessageMetadata(
     var id: String,
     val placementId: String,
