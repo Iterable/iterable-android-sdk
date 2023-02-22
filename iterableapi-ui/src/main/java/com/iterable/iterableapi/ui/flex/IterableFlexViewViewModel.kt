@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.iterable.iterableapi.*
+import org.json.JSONObject
 
 class IterableFlexViewViewModel : ViewModel() {
 
@@ -43,6 +44,6 @@ class IterableFlexViewViewModel : ViewModel() {
         get() = _flexMessage
 
     init {
-        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements, hashMapOf(1 to "a"))
+        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements, JSONObject())
     }
 }
