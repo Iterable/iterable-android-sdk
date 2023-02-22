@@ -1,8 +1,11 @@
 package com.iterable.iterableapi
+
+import org.json.JSONObject
+
 data class IterableFlexMessage (
     val metadata: FlexMessageMetadata,
     val elements: FlexMessageElements? = null,
-    val payload: HashMap<Any, Any>? = null
+    val payload: JSONObject? = null
 )
 data class FlexMessageMetadata (
     val id: String,
