@@ -9,37 +9,43 @@ import androidx.fragment.app.Fragment
 import com.iterable.iterableapi.*
 import com.iterable.iterableapi.ui.R
 import com.iterable.iterableapi.ui.databinding.FragmentIterableFlexViewBinding
+import org.json.JSONObject
 
 class IterableFlexViewFragment : Fragment() {
 
     // example flex message data from a payload
-    private val flexMessageMetaData: IterableFlexMessageMetaData = IterableFlexMessageMetaData(
+    private val flexMessageMetaData = FlexMessageMetadata(
         "doibjo4590340oidiobnw",
         "mbn8489b7ehycy",
         "noj9iyjthfvhs",
         false
     )
 
-    private val flexMessageButtons: List<IterableFlexMessageButton> = listOf(
-        IterableFlexMessageButton("reward-button", "REDEEM MEOW", "success")
+    private val flexMessageDefaultAction = FlexMessageElementsDefaultAction(
+        "someType", "someAction"
     )
 
-    private val flexMessageImages: List<IterableFlexMessageImage> = listOf(
-        IterableFlexMessageImage("coffee-image", "https://example-image-url.com/first-image")
+    private val flexMessageButtons: List<FlexMessageElementsButton> = listOf(
+        FlexMessageElementsButton("reward-button", "REDEEM MEOW", "success")
     )
 
-    private val flexMessageText: List<IterableFlexMessageText> = listOf(
-        IterableFlexMessageText("body", "CATS RULE!!!")
+
+    private val flexMessageText: List<FlexMessageElementsText> = listOf(
+        FlexMessageElementsText("body", "CATS RULE!!!", "label")
     )
 
-    private val flexMessageElements: IterableFlexMessageElements = IterableFlexMessageElements(
-        "hero",
+    private val flexMessageElements = FlexMessageElements(
+        "Iterable Coffee Shoppe",
+        "Get 15% OFF",
+        "http://placekitten.com/200/300",
+        flexMessageDefaultAction,
         flexMessageButtons,
-        flexMessageImages,
         flexMessageText
     )
 
-    private var flexMessage: IterableFlexMessage = IterableFlexMessage(flexMessageMetaData, flexMessageElements,  "")
+    val payload = JSONObject()
+
+    private var flexMessage: IterableFlexMessage = IterableFlexMessage(flexMessageMetaData, flexMessageElements, payload)
 
     override fun onCreateView(
         inflater: LayoutInflater,
