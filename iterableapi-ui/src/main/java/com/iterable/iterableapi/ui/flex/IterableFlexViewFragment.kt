@@ -11,6 +11,7 @@ import com.iterable.iterableapi.ui.R
 import com.iterable.iterableapi.ui.databinding.FragmentIterableFlexViewBinding
 
 class IterableFlexViewFragment : Fragment() {
+
     // example flex message data from a payload
     private val flexMessageMetaData: IterableFlexMessageMetaData = IterableFlexMessageMetaData(
         "doibjo4590340oidiobnw",
