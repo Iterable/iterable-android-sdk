@@ -11,6 +11,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.iterable.iterableapi.*
 import com.iterable.iterableapi.ui.R
+import org.json.JSONObject
 
 class IterableFlexViewFragment : Fragment() {
 
@@ -30,8 +31,8 @@ class IterableFlexViewFragment : Fragment() {
         var flexMessageButton = view.findViewById<Button>(R.id.flexMessageButton)
 
         viewModel.flexMessage.observe(viewLifecycleOwner, Observer { newMessage ->
-            flexMessageText.text = newMessage.elements.text[0].text
-            flexMessageButton.text = newMessage.elements.buttons[0].title
+            flexMessageText.text = newMessage.elements?.text?.get(0)?.text
+            flexMessageButton.text = newMessage.elements?.buttons?.get(0)?.title
         })
 
         return view
