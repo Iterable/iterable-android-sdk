@@ -30,10 +30,13 @@ class IterableFlexMessage (
             val metadataJson: JSONObject = flexMessageJson.getJSONObject(IterableConstants.ITERABLE_FLEX_MESSAGE_METADATA)
             val metadata: FlexMessageMetadata = FlexMessageMetadata.fromJSONObject(metadataJson)
 
-            val elementsJson: JSONObject = flexMessageJson.getJSONObject(IterableConstants.ITERABLE_FLEX_MESSAGE_ELEMENTS)
-            val elements: FlexMessageElements = FlexMessageElements.fromJSONObject(elementsJson)
+            val elementsJson: JSONObject? = flexMessageJson.optJSONObject(IterableConstants.ITERABLE_FLEX_MESSAGE_ELEMENTS)
+            var elements : FlexMessageElements? = null
+            if(elementsJson != null) {
+                elements = FlexMessageElements.fromJSONObject(elementsJson)
+            }
 
-            val payload: JSONObject = flexMessageJson.getJSONObject(IterableConstants.ITERABLE_FLEX_MESSAGE_PAYLOAD)
+            val payload: JSONObject? = flexMessageJson.optJSONObject(IterableConstants.ITERABLE_FLEX_MESSAGE_PAYLOAD)
 
             return IterableFlexMessage(metadata, elements, payload)
         }
@@ -97,7 +100,7 @@ class FlexMessageElements (
                 for(i in 0..buttons.size - 1) {
                     buttonsJson.put(buttons.get(i).toJSONObject())
                 }
-                elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTONS, buttonsJson)
+                elementsJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_BUTTONS, buttonsJson)
             }
 
             if(text != null) {
@@ -106,7 +109,7 @@ class FlexMessageElements (
                     textJson.put(text.get(i).toJSONObject())
                 }
 
-                elementsJson.putOpt(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT, textJson)
+                elementsJson.put(IterableConstants.ITERABLE_FLEX_MESSAGE_TEXT, textJson)
             }
         } catch (e: JSONException) {
             IterableLogger.e(TAG, "Error while serializing flex elements", e)

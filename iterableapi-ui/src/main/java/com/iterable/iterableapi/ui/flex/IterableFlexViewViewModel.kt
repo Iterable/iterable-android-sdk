@@ -11,7 +11,7 @@ import com.iterable.iterableapi.*
 class IterableFlexViewViewModel : ViewModel() {
 
     private var _flexMessages = MutableLiveData<List<IterableFlexMessage>>()
-    val flexMessage: LiveData<List<IterableFlexMessage>>
+    val flexMessages: LiveData<List<IterableFlexMessage>>
         get() = _flexMessages
 
     init {
@@ -38,7 +38,7 @@ class IterableFlexViewViewModel : ViewModel() {
 
         val flexMessageElements = FlexMessageElements(
             "Iterable Coffee Shoppe",
-            "Get 15% OFF",
+            "SAVE 15% OFF NOW",
             "http://placekitten.com/200/300",
             flexMessageDefaultAction,
             flexMessageButtons,
