@@ -56,8 +56,8 @@ class IterableFlexViewFragment : Fragment() {
         var flexMessageText = view.findViewById<TextView>(R.id.flexMessageBody)
         var flexMessageButton = view.findViewById<Button>(R.id.flexMessageButton)
 
-        flexMessageText.text = flexMessage.elements.text[0].text
-        flexMessageButton.text = flexMessage.elements.buttons[0].title
+        flexMessageText.text = flexMessage.elements?.text?.get(0)?.text
+        flexMessageButton.text = flexMessage.elements?.buttons?.get(0)?.title
 
         return view
     }
