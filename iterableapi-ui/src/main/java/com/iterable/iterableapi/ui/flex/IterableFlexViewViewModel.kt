@@ -1,5 +1,7 @@
 package com.iterable.iterableapi.ui.flex
 
+import org.json.JSONObject
+
 import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -9,52 +11,42 @@ import com.iterable.iterableapi.*
 class IterableFlexViewViewModel : ViewModel() {
 
     // example flex message data from a payload
-    private val flexMessageMetaData: IterableFlexMessageMetaData = IterableFlexMessageMetaData(
+    private val flexMessageMetaData = FlexMessageMetadata(
         "doibjo4590340oidiobnw",
         "mbn8489b7ehycy",
         "noj9iyjthfvhs",
         false
     )
 
-    private val flexMessageButtons: List<IterableFlexMessageButton> = listOf(
-        IterableFlexMessageButton("reward-button", "REDEEM MEOW", "success")
+    private val flexMessageDefaultAction = FlexMessageElementsDefaultAction(
+        "someType", "someAction"
     )
 
-    private val flexMessageImages: List<IterableFlexMessageImage> = listOf(
-        IterableFlexMessageImage("coffee-image", "https://example-image-url.com/first-image")
+    private val flexMessageButtons: List<FlexMessageElementsButton> = listOf(
+        FlexMessageElementsButton("reward-button", "REDEEM MEOW", "success")
     )
 
-    private val flexMessageText1: List<IterableFlexMessageText> = listOf(
-        IterableFlexMessageText("body", "CATS RULE!!!")
+
+    private val flexMessageText: List<FlexMessageElementsText> = listOf(
+        FlexMessageElementsText("body", "CATS RULE!!!", "label")
     )
 
-    private val flexMessageText2: List<IterableFlexMessageText> = listOf(
-        IterableFlexMessageText("body", "DOGS DROOL!!!")
-    )
-
-    private val flexMessageElements1: IterableFlexMessageElements = IterableFlexMessageElements(
-        "hero",
+    private val flexMessageElements = FlexMessageElements(
+        "Iterable Coffee Shoppe",
+        "Get 15% OFF",
+        "http://placekitten.com/200/300",
+        flexMessageDefaultAction,
         flexMessageButtons,
-        flexMessageImages,
-        flexMessageText1
+        flexMessageText
     )
 
-    private val flexMessageElements2: IterableFlexMessageElements = IterableFlexMessageElements(
-        "hero",
-        flexMessageButtons,
-        flexMessageImages,
-        flexMessageText2
-    )
+    val payload = JSONObject()
 
     private var _flexMessage = MutableLiveData<IterableFlexMessage>()
     val flexMessage: LiveData<IterableFlexMessage>
         get() = _flexMessage
 
-    fun updateMessage() {
-        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements2, "")
-    }
-
     init {
-        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements1,  "")
+        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements, payload)
     }
 }
