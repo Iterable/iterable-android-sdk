@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.iterable.iterableapi.*
 import com.iterable.iterableapi.ui.R
 import com.iterable.iterableapi.ui.databinding.FragmentIterableFlexViewBinding
+import org.json.JSONObject
 
 class IterableFlexViewFragment : Fragment() {
 

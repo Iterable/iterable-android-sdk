@@ -13,13 +13,13 @@ import com.iterable.iterableapi.ui.R
 @BindingAdapter("flexMessageBody")
 fun TextView.setFlexMessageBodyText(item: IterableFlexMessage?) {
     item?.let {
-        text = item.elements.text[0].text
+        text = item.elements?.body
     }
 }
 @BindingAdapter("flexMessageButton")
 fun Button.setFlexMessageButtonText(item: IterableFlexMessage?) {
     item?.let {
-        text = item.elements.buttons[0].title
+        text = item.elements?.buttons?.get(0)?.title
     }
 }
 @BindingAdapter("imageUrl")
