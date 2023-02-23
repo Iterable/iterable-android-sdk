@@ -68,6 +68,8 @@ if(hasProperty("mavenPublishEnabled")) {
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+
+    exclude '**/*.kt'
 }
 
 // A hack to import the classpath and BuildConfig into the javadoc task
