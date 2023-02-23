@@ -8,7 +8,6 @@ import androidx.fragment.app.Fragment
 import com.iterable.iterableapi.ui.R
 
 class IterableFlexViewFragment : Fragment() {
-    //    var flexMessages =
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
