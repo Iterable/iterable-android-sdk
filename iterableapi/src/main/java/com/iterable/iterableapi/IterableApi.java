@@ -41,6 +41,7 @@ public class IterableApi {
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
+    private @Nullable IterableFlexManager flexManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
@@ -498,6 +499,10 @@ public class IterableApi {
                     sharedInstance.config.inAppDisplayInterval);
         }
 
+        if (sharedInstance.flexManager == null) {
+            sharedInstance.flexManager = new IterableFlexManager();
+        }
+
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
     }
@@ -537,6 +542,15 @@ public class IterableApi {
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return inAppManager;
+    }
+
+    @NonNull
+    public IterableFlexManager getFlexManager() {
+        if (flexManager == null) {
+            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+        }
+        return flexManager;
     }
 
     /**

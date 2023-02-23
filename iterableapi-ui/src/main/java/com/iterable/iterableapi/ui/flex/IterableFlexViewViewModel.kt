@@ -26,7 +26,7 @@ class IterableFlexViewViewModel : ViewModel() {
 
 
     private val flexMessageText: List<FlexMessageElementsText> = listOf(
-        FlexMessageElementsText("body", "CATS RULE!!!", "label")
+        FlexMessageElementsText("body", "DOGS DROOL!!!", "label")
     )
 
     private val flexMessageElements = FlexMessageElements(
@@ -40,11 +40,13 @@ class IterableFlexViewViewModel : ViewModel() {
 
     val payload = JSONObject()
 
-    private var _flexMessage = MutableLiveData<IterableFlexMessage>()
-    val flexMessage: LiveData<IterableFlexMessage>
-        get() = _flexMessage
+    private var _flexMessages = MutableLiveData<List<IterableFlexMessage>>()
+    val flexMessages: LiveData<List<IterableFlexMessage>>
+        get() = _flexMessages
 
     init {
-        _flexMessage.value = IterableFlexMessage(flexMessageMetaData, flexMessageElements, payload)
+        val messages = IterableApi.getInstance().getFlexManager().getMessages()
+
+        _flexMessages.value = messages
     }
 }

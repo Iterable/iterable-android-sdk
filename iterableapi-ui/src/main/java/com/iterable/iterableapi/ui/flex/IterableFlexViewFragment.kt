@@ -30,9 +30,9 @@ class IterableFlexViewFragment : Fragment() {
         var flexMessageText = view.findViewById<TextView>(R.id.flexMessageBody)
         var flexMessageButton = view.findViewById<Button>(R.id.flexMessageButton)
 
-        viewModel.flexMessage.observe(viewLifecycleOwner, Observer { newMessage ->
-            flexMessageText.text = newMessage.elements?.text?.get(0)?.text
-            flexMessageButton.text = newMessage.elements?.buttons?.get(0)?.title
+        viewModel.flexMessages.observe(viewLifecycleOwner, Observer { newMessages ->
+            flexMessageText.text = newMessages.get(0).elements?.text?.get(0)?.text
+            flexMessageButton.text = newMessages.get(0).elements?.buttons?.get(0)?.title
         })
 
         return view
