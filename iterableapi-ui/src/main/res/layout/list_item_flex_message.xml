@@ -53,6 +53,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/coffee_cappuccino"
-            app:imageUrl="@{flexMessage.elements.images[0].url}"/>
+            app:imageUrl="@{flexMessage.elements.mediaURL}"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
