@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="embedded_message_body_text_size">20sp</dimen>
+    <dimen name="flex_message_body_text_size">20sp</dimen>
     <dimen name="small_margin">8dp</dimen>
 </resources>
