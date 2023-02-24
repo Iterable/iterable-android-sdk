@@ -21,7 +21,7 @@ class EmbeddedMessageElements (
     val mediaURL: String? = null,
     val defaultAction: EmbeddedMessageElementsDefaultAction? = null,
     val buttons: List<EmbeddedMessageElementsButton>? = null,
-    val text: List<FlexMessageElementsText>? = null
+    val text: List<EmbeddedMessageElementsText>? = null
 )
 
 class EmbeddedMessageElementsButton (
@@ -35,7 +35,7 @@ class EmbeddedMessageElementsDefaultAction (
     val data: String
 )
 
-class FlexMessageElementsText (
+class EmbeddedMessageElementsText (
     val id: String,
     val text: String? = null,
     val label: String? = null
