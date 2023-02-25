@@ -7,12 +7,12 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center_vertical"
     android:layout_margin="@dimen/small_margin"
-    android:background="@drawable/flex_message_border"
+    android:background="@drawable/embedded_message_border"
     android:orientation="vertical"
-    tools:context=".flex.IterableFlexViewFragment">
+    tools:context=".embedded.IterableEmbeddedViewFragment">
 
     <TextView
-        android:id="@+id/flexMessageBody"
+        android:id="@+id/embeddedMessageBody"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
@@ -30,7 +30,7 @@
         app:layout_constraintTop_toTopOf="@+id/imageView2" />
 
     <Button
-        android:id="@+id/flexMessageButton"
+        android:id="@+id/embeddedMessageButton"
         android:layout_width="0dp"
         android:layout_height="49dp"
         android:layout_gravity="center_horizontal"
@@ -45,7 +45,7 @@
         app:layout_constraintTop_toBottomOf="@+id/flexMessageBody" />
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/embeddedMessageImage"
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:layout_marginTop="0dp"
