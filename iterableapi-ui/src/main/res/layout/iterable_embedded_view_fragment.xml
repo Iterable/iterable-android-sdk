@@ -21,13 +21,13 @@
         android:layout_marginLeft="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
-        android:text="@string/flex_message_body"
-        android:textSize="@dimen/flex_message_body_text_size"
+        android:text="@string/embedded_message_body"
+        android:textSize="@dimen/embedded_message_body_text_size"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/flexMessageButton"
-        app:layout_constraintEnd_toStartOf="@+id/imageView2"
+        app:layout_constraintEnd_toStartOf="@+id/embeddedMessageImage"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/imageView2" />
+        app:layout_constraintTop_toTopOf="@+id/embeddedMessageImage" />
 
     <Button
         android:id="@+id/embeddedMessageButton"
@@ -38,9 +38,9 @@
         android:layout_marginLeft="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
-        android:text="@string/flex_message_button_text"
-        app:layout_constraintBottom_toBottomOf="@+id/imageView2"
-        app:layout_constraintEnd_toStartOf="@+id/imageView2"
+        android:text="@string/embedded_message_button_text"
+        app:layout_constraintBottom_toBottomOf="@+id/embeddedMessageImage"
+        app:layout_constraintEnd_toStartOf="@+id/embeddedMessageImage"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/flexMessageBody" />
 
@@ -52,7 +52,7 @@
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
         android:layout_marginBottom="0dp"
-        android:contentDescription="@string/flex_message_image_description"
+        android:contentDescription="@string/embedded_message_image_description"
         android:src="@drawable/coffee_cappuccino"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
