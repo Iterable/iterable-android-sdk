@@ -24,7 +24,7 @@
         android:text="@string/embedded_message_body"
         android:textSize="@dimen/embedded_message_body_text_size"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/flexMessageButton"
+        app:layout_constraintBottom_toTopOf="@+id/embeddedMessageButton"
         app:layout_constraintEnd_toStartOf="@+id/embeddedMessageImage"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/embeddedMessageImage" />
