@@ -45,7 +45,7 @@ class EmbeddedMessageMetadata(
     var id: String,
     val placementId: String,
     val campaignId: String? = null,
-    val isProof: Boolean? = null
+    val isProof: Boolean? = false
 ) {
     companion object {
         val TAG = "ItblFlexMessageMetadata"
