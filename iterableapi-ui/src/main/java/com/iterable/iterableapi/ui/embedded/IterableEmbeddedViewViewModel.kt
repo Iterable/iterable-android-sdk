@@ -39,11 +39,15 @@ class IterableEmbeddedViewViewModel: ViewModel() {
 
     val payload = JSONObject()
 
-    private var _embeddedMessage = MutableLiveData<IterableEmbeddedMessage>()
-    val embeddedMessage: LiveData<IterableEmbeddedMessage>
-        get() = _embeddedMessage
+    private var _embeddedMessages = MutableLiveData<List<IterableEmbeddedMessage>>()
+    val embeddedMessages: LiveData<List<IterableEmbeddedMessage>>
+        get() = _embeddedMessages
 
     init {
-        _embeddedMessage.value = IterableEmbeddedMessage(embeddedMessageMetaData, embeddedMessageElements, payload)
+        _embeddedMessages.value = listOf(
+            IterableEmbeddedMessage(embeddedMessageMetaData, embeddedMessageElements, payload),
+            IterableEmbeddedMessage(embeddedMessageMetaData, embeddedMessageElements, payload),
+            IterableEmbeddedMessage(embeddedMessageMetaData, embeddedMessageElements, payload)
+        )
     }
 }
