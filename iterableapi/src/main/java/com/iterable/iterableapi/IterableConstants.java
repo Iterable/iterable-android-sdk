@@ -166,6 +166,7 @@ public final class IterableConstants {
     public static final String LOCATION_HEADER_FIELD = "Location";
 
     //Embedded Message Constants
+    public static final String ITERABLE_EMBEDDED_MESSAGE  = "embeddedMessages";
     public static final String ITERABLE_EMBEDDED_MESSAGE_METADATA = "metadata";
     public static final String ITERABLE_EMBEDDED_MESSAGE_ELEMENTS = "elements";
     public static final String ITERABLE_EMBEDDED_MESSAGE_PAYLOAD = "payload";
