@@ -144,4 +144,94 @@ class IterableEmbeddedMessageTest {
             assertNull(message.payload)
         }
     }
+
+    @Test
+    fun embeddedMessageSerialization_elementsAndCustomPayloadDefined() {
+        val embeddedMessageMetadata = EmbeddedMessageMetadata(
+            "doibjo4590340oidiobnw",
+            "mbn8489b7ehycy",
+            "noj9iyjthfvhs",
+            true
+        )
+
+        val embeddedMessageDefaultAction = EmbeddedMessageElementsDefaultAction(
+            "someType", "someData"
+        )
+
+        val embeddedMessageButtons: List<EmbeddedMessageElementsButton> = listOf(
+            EmbeddedMessageElementsButton("reward-button", "REDEEM MEOW", "success")
+        )
+
+        val embeddedMessageText: List<EmbeddedMessageElementsText> = listOf(
+            EmbeddedMessageElementsText("body", "CATS RULE!!!", "label")
+        )
+
+        val embeddedMessageElements = EmbeddedMessageElements(
+            "Iterable Coffee Shoppe",
+            "SAVE 15% OFF NOW",
+            "http://placekitten.com/200/300",
+            embeddedMessageDefaultAction,
+            embeddedMessageButtons,
+            embeddedMessageText
+        )
+
+        val customPayload = JSONObject()
+        customPayload.put("someKey", "someValue")
+
+        val embeddedMessage = IterableEmbeddedMessage(embeddedMessageMetadata, embeddedMessageElements, customPayload)
+
+        val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_optional_elements_and_custom_payload.json"))
+        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+
+        if (jsonArray != null) {
+            // GIVEN an embedded message payload with optional elements
+            val expectedMessageJson = jsonArray.optJSONObject(0)
+
+            // WHEN you serialize the embedded message payload
+            val messageJson = IterableEmbeddedMessage.toJSONObject(embeddedMessage)
+
+            // THEN we get appropriate embedded message object
+            JSONAssert.assertEquals(expectedMessageJson, messageJson, JSONCompareMode.STRICT_ORDER)
+        }
+    }
+
+    @Test
+    fun embeddedMessageSerialization_noMetadata() {
+        val embeddedMessageMetadata = EmbeddedMessageMetadata(
+            "doibjo4590340oidiobnw",
+            "mbn8489b7ehycy",
+            "noj9iyjthfvhs",
+            true
+        )
+
+        val embeddedMessageDefaultAction = EmbeddedMessageElementsDefaultAction(
+            "someType", "someData"
+        )
+
+        val embeddedMessageElements = EmbeddedMessageElements(
+            "Iterable Coffee Shoppe",
+            "SAVE 15% OFF NOW",
+            "http://placekitten.com/200/300",
+            embeddedMessageDefaultAction
+        )
+
+        val customPayload = JSONObject()
+        customPayload.put("someKey", "someValue")
+
+        val embeddedMessage = IterableEmbeddedMessage(embeddedMessageMetadata, embeddedMessageElements, customPayload)
+
+        val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_buttons_no_text.json"))
+        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+
+        if (jsonArray != null) {
+            // GIVEN an embedded message payload with optional elements
+            val expectedMessageJson = jsonArray.optJSONObject(0)
+
+            // WHEN you serialize the embedded message payload
+            val messageJson = IterableEmbeddedMessage.toJSONObject(embeddedMessage)
+
+            // THEN we get appropriate embedded message object
+            JSONAssert.assertEquals(expectedMessageJson, messageJson, JSONCompareMode.STRICT_ORDER)
+        }
+    }
 }
