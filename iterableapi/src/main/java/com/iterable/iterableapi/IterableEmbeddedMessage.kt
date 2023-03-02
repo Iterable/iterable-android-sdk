@@ -11,7 +11,7 @@ data class IterableEmbeddedMessage (
     val payload: JSONObject? = null
 ) {
     companion object {
-        val TAG = "ItblFlexMessage"
+        val TAG = "ItblEmbeddedMessage"
         fun toJSONObject(message: IterableEmbeddedMessage): JSONObject {
             val embeddedMessageJson = JSONObject()
 
@@ -45,10 +45,10 @@ class EmbeddedMessageMetadata(
     var id: String,
     val placementId: String,
     val campaignId: String? = null,
-    val isProof: Boolean? = false
+    val isProof: Boolean = false
 ) {
     companion object {
-        val TAG = "ItblFlexMessageMetadata"
+        val TAG = "ItblEmbeddedMessageMetadata"
 
         fun toJSONObject(metadata: EmbeddedMessageMetadata): JSONObject {
             val metadataJson = JSONObject()
@@ -86,7 +86,7 @@ class EmbeddedMessageElements (
 ) {
 
     companion object {
-        val TAG = "ItblFlexMessageElements"
+        val TAG = "ItblEmbeddedMessageElements"
 
         fun toJSONObject(elements: EmbeddedMessageElements?): JSONObject {
             val elementsJson = JSONObject()
@@ -176,7 +176,7 @@ class EmbeddedMessageElementsButton (
 ) {
 
     companion object {
-        val TAG = "ItblFlexMessageButtons"
+        val TAG = "ItblEmbeddedMessageButtons"
 
         fun toJSONObject(button: EmbeddedMessageElementsButton): JSONObject {
             val buttonJson = JSONObject()
@@ -208,7 +208,7 @@ class EmbeddedMessageElementsDefaultAction (
 ) {
 
     companion object {
-        val TAG = "ItblDefaultAction"
+        val TAG = "ItblEmbeddedDefaultAction"
 
         fun toJSONObject(defaultAction: EmbeddedMessageElementsDefaultAction): JSONObject {
             val defaultActionJson = JSONObject()
@@ -238,7 +238,7 @@ class EmbeddedMessageElementsText (
 ) {
 
     companion object {
-        val TAG = "ItblFlexMessageText"
+        val TAG = "ItblEmbeddedMessageText"
 
         fun toJSONObject(text: EmbeddedMessageElementsText): JSONObject {
             val textJson = JSONObject()
