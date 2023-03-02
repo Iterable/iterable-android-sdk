@@ -116,6 +116,9 @@ class IterableEmbeddedMessageTest {
             assertThat("someType", `is`(message.elements?.defaultAction?.type))
             assertThat("someData", `is` (message.elements?.defaultAction?.data))
 
+            assertNull(message.elements?.buttons)
+            assertNull(message.elements?.text)
+
             JSONAssert.assertEquals(payload, message.payload, JSONCompareMode.STRICT_ORDER)
         }
     }
@@ -140,7 +143,6 @@ class IterableEmbeddedMessageTest {
             assertThat(true, `is` (message.metadata.isProof))
 
             assertNull(message.elements)
-
             assertNull(message.payload)
         }
     }
@@ -196,7 +198,7 @@ class IterableEmbeddedMessageTest {
     }
 
     @Test
-    fun embeddedMessageSerialization_noMetadata() {
+    fun embeddedMessageSerialization_noButtons_noText() {
         val embeddedMessageMetadata = EmbeddedMessageMetadata(
             "doibjo4590340oidiobnw",
             "mbn8489b7ehycy",

@@ -141,23 +141,27 @@ class EmbeddedMessageElements (
             }
 
             val buttonsJson: JSONArray? = elementsJson?.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTONS)
-            val buttons: MutableList<EmbeddedMessageElementsButton> = mutableListOf()
+            var buttons: MutableList<EmbeddedMessageElementsButton>? = mutableListOf()
             if (buttonsJson != null) {
                 for(i in 0..buttonsJson.length() - 1) {
                     val buttonJson: JSONObject = buttonsJson.getJSONObject(i)
                     val button: EmbeddedMessageElementsButton = EmbeddedMessageElementsButton.fromJSONObject(buttonJson)
-                    buttons.add(button)
+                    buttons?.add(button)
                 }
+            } else {
+                buttons = null
             }
 
             val textsJson: JSONArray? = elementsJson?.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TEXT)
-            val texts: MutableList<EmbeddedMessageElementsText> = mutableListOf()
+            var texts: MutableList<EmbeddedMessageElementsText>? = mutableListOf()
             if (textsJson != null) {
                 for(i in 0..textsJson.length() - 1) {
                     val textJson: JSONObject = textsJson.getJSONObject(i)
                     val text: EmbeddedMessageElementsText = EmbeddedMessageElementsText.fromJSONObject(textJson)
-                    texts.add(text)
+                    texts?.add(text)
                 }
+            } else {
+                texts = null
             }
 
             return EmbeddedMessageElements(title, body, mediaURL, defaultAction, buttons, texts)
