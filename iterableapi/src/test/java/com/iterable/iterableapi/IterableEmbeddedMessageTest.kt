@@ -122,7 +122,7 @@ class IterableEmbeddedMessageTest {
 
     @Test
     fun embeddedMessageDeserialization_noElementsOrCustomPayloadDefined() {
-        val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_optional_elements_and_custom_payload.json"))
+        val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_elements_no_custom_payload.json"))
         val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
 
         if (jsonArray != null) {
