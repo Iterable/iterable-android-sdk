@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -322,7 +323,7 @@ public class IterableApi {
 
     private boolean checkSDKInitialization() {
         if (!isInitialized()) {
-            IterableLogger.e(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
+            IterableLogger.w(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
             return false;
         }
         return true;
@@ -344,15 +345,34 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        getKeychain().saveEmail(_email);
-        getKeychain().saveUserId(_userId);
-        getKeychain().saveAuthToken(_authToken);
+        if (hasEncryptionDependency()) {
+            getKeychain().saveEmail(_email);
+            getKeychain().saveUserId(_userId);
+            getKeychain().saveAuthToken(_authToken);
+        } else {
+            try {
+                SharedPreferences.Editor editor = getPreferences().edit();
+                editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
+                editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
+                editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
+                editor.commit();
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Error while persisting email/userId", e);
+            }
+        }
     }
 
     private void retrieveEmailAndUserId() {
-        _email = getKeychain().getEmail();
-        _userId = getKeychain().getUserId();
-        _authToken = getKeychain().getAuthToken();
+        if (hasEncryptionDependency()) {
+            _email = getKeychain().getEmail();
+            _userId = getKeychain().getUserId();
+            _authToken = getKeychain().getAuthToken();
+        } else {
+            SharedPreferences prefs = getPreferences();
+            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
+            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
+            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
+        }
 
         if (_authToken != null) {
             getAuthManager().queueExpirationRefresh(_authToken);
