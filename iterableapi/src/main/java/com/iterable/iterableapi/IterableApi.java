@@ -553,6 +553,15 @@ public class IterableApi {
         return embeddedManager;
     }
 
+    @NonNull
+    public IterableEmbeddedManager embeddedManager() {
+        if (embeddedManager == null) {
+            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+        }
+        return embeddedManager;
+    }
+
     /**
      * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
      * or app link click from an email.
