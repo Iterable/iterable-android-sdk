@@ -172,7 +172,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     // region auto fetch functionality
 
-    fun scheduleSync(){
+    fun scheduleSync() {
         IterableLogger.printInfo()
         if (canSyncEmbeddedMessages()) {
             IterableLogger.v(TAG, "Can sync now.. Syncing now")
@@ -181,7 +181,10 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
         } else {
             if (!isAppInBackground) {
-                IterableLogger.v(TAG, "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds")
+                IterableLogger.v(
+                    TAG,
+                    "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds"
+                )
                 Handler(Looper.getMainLooper()).postDelayed(
                     {
                         getSyncedEmbeddedMessages()
