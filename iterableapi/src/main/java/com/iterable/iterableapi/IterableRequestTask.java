@@ -29,6 +29,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     static final String TAG = "IterableRequest";
     static final String ITERABLE_BASE_URL = "https://api.iterable.com/api/";
 
+    static final String MOCK_SERVER_BASE_URL = "https://api.iterable.com/api/";
+
     static String overrideUrl;
 
     static final int POST_REQUEST_DEFAULT_TIMEOUT_MS = 3000;    //3 seconds
