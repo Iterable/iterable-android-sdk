@@ -233,6 +233,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 IterableLogger.v(TAG, "setting isSyncScheduled to true")
             } else {
                 IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
+                lastSync = autoFetchDuration.toLong()
             }
         }
     }
@@ -273,11 +274,17 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         isAppInBackground = false
         //TODO: resume the timer
         if (IterableUtil.currentTimeMillis() - lastSync > autoFetchDuration * 1000) {
-            IterableLogger.v(TAG, "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync)  +  " > " + autoFetchDuration * 1000)
+            IterableLogger.v(
+                TAG,
+                "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync) + " > " + autoFetchDuration * 1000
+            )
             //Check if looper is already running
             scheduleSync()
         } else {
-            IterableLogger.v(TAG, "Duration passed is lesser than auto fetch duration. Hence not scheduling " + (IterableUtil.currentTimeMillis() - lastSync)  +  " < " + autoFetchDuration * 1000)
+            IterableLogger.v(
+                TAG,
+                "Duration passed is lesser than auto fetch duration. Hence not scheduling " + (IterableUtil.currentTimeMillis() - lastSync) + " < " + autoFetchDuration * 1000
+            )
         }
     }
 
