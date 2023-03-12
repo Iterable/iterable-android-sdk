@@ -180,10 +180,10 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
         // Check for new messages and add them to the local list
         remoteMessageList.forEach {
-            if(!localMessageMap.containsKey(it.metadata.id)) {
-                //TODO: Make a call to the updateHandler to notify that the message has been added
+            if (!localMessageMap.containsKey(it.metadata.id)) {
                 localMessageList.add(it)
             }
+            //TODO: Make a call to the updateHandler to notify that the message has been added
         }
 
         // Check for messages in the local list that are not in the remote list and remove them
