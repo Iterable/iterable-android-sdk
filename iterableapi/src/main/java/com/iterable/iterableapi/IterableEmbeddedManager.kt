@@ -119,14 +119,14 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 if (payload != null && !payload.isEmpty()) {
                     try {
-                        val messages: MutableList<IterableEmbeddedMessage> = ArrayList()
+                        val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
                         val jsonArray = JSONArray(payload)
                         if (jsonArray != null) {
                             for (i in 0 until jsonArray.length()) {
                                 val messageJson = jsonArray.optJSONObject(i)
                                 val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
                                 if (message != null) {
-                                    messages.add(message)
+                                    remoteMessageList.add(message)
                                 } else {
                                     IterableLogger.e(
                                         IterableInAppManager.TAG,
@@ -143,8 +143,8 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 //                    //Directly saving the messages to the list
 //                    //TODO: Check and make note of the changes and call the updateHandler accordinly
 //                    //TODO: Check for new messages and call delivery on the new ones
-                        this.messages = messages
-//
+
+                        updateLocalMessages(remoteMessageList)
 //                    //Saving the time of last sync
                         IterableLogger.v(TAG, "Resetting last sync time")
                         lastSync = IterableUtil.currentTimeMillis()
@@ -166,6 +166,44 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         }
 
         scheduleSync()
+    }
+
+    fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
+        IterableLogger.printInfo()
+
+        // Get local messages in a mutable list
+        val localMessageList = getEmbeddedMessages().toMutableList()
+        val localMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
+        localMessageList.forEach {
+            localMessageMap[it.metadata.id] = it
+        }
+
+        // Check for new messages and add them to the local list
+        remoteMessageList.forEach {
+            if (!localMessageMap.containsKey(it.metadata.id)) {
+                localMessageList.add(it)
+            }
+            //TODO: Make a call to the updateHandler to notify that the message has been added
+        }
+
+        // Check for messages in the local list that are not in the remote list and remove them
+        val remoteMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
+        remoteMessageList.forEach {
+            remoteMessageMap[it.metadata.id] = it
+        }
+        val messagesToRemove = mutableListOf<IterableEmbeddedMessage>()
+        localMessageList.forEach {
+            if(!remoteMessageMap.containsKey(it.metadata.id)) {
+                messagesToRemove.add(it)
+
+                //TODO: Make a call to the updateHandler to notify that the message has been removed
+                //TODO: Make a call to backend if needed
+            }
+        }
+        localMessageList.removeAll(messagesToRemove)
+
+        this.messages = localMessageList
+
     }
 
     // endregion
@@ -195,6 +233,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 IterableLogger.v(TAG, "setting isSyncScheduled to true")
             } else {
                 IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
+                lastSync = autoFetchDuration.toLong()
             }
         }
     }
@@ -235,11 +274,17 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         isAppInBackground = false
         //TODO: resume the timer
         if (IterableUtil.currentTimeMillis() - lastSync > autoFetchDuration * 1000) {
-            IterableLogger.v(TAG, "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync)  +  " > " + autoFetchDuration * 1000)
+            IterableLogger.v(
+                TAG,
+                "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync) + " > " + autoFetchDuration * 1000
+            )
             //Check if looper is already running
             scheduleSync()
         } else {
-            IterableLogger.v(TAG, "Duration passed is lesser than auto fetch duration. Hence not scheduling " + (IterableUtil.currentTimeMillis() - lastSync)  +  " < " + autoFetchDuration * 1000)
+            IterableLogger.v(
+                TAG,
+                "Duration passed is lesser than auto fetch duration. Hence not scheduling " + (IterableUtil.currentTimeMillis() - lastSync) + " < " + autoFetchDuration * 1000
+            )
         }
     }
 
