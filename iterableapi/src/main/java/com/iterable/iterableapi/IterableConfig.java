@@ -74,7 +74,7 @@ public class IterableConfig {
     /**
      * The number of seconds to wait before fetching the next embedded message
      */
-    final double embeddedMessageAutoFetchInterval;
+    final double embeddedMessagingAutoFetchInterval;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -88,7 +88,7 @@ public class IterableConfig {
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
-        embeddedMessageAutoFetchInterval = builder.embeddedMessageAutoFetchInterval;
+        embeddedMessagingAutoFetchInterval = builder.embeddedMessagingAutoFetchInterval;
     }
 
     public static class Builder {
@@ -103,7 +103,7 @@ public class IterableConfig {
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
-        private double embeddedMessageAutoFetchInterval = 30.0;
+        private double embeddedMessagingAutoFetchInterval = 30.0;
         public Builder() {}
 
         /**
@@ -227,11 +227,11 @@ public class IterableConfig {
         /**
          * Set the embedded message auto fetch interval: the number of seconds to wait before fetching
          * the next embedded message
-         * @param embeddedMessageAutoFetchInterval display interval in seconds
+         * @param embeddedMessagingAutoFetchInterval display interval in seconds
          */
         @NonNull
-        public Builder setEmbeddedMessageAutoFetchInterval(double embeddedMessageAutoFetchInterval) {
-            this.embeddedMessageAutoFetchInterval = embeddedMessageAutoFetchInterval;
+        public Builder setEmbeddedMessagingAutoFetchInterval(double embeddedMessagingAutoFetchInterval) {
+            this.embeddedMessagingAutoFetchInterval = embeddedMessagingAutoFetchInterval;
             return this;
         }
 
