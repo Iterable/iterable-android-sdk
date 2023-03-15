@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.iterable.iterableapi.util.BrandUtils;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -204,7 +206,7 @@ class IterableApiClient {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
-            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.put(IterableConstants.KEY_PLATFORM, BrandUtils.isFireTV(authProvider.getContext().getPackageManager()) ? IterableConstants.ITBL_PLATFORM_OTT : IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());

@@ -10,6 +10,8 @@ import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.iterable.iterableapi.util.BrandUtils;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -57,10 +59,8 @@ public class IterableActivityMonitor {
         @Override
         public void onActivityResumed(Activity activity) {
             currentActivity = new WeakReference<>(activity);
-            String amazonFireTvHardware = "amazon.hardware.fire_tv";
-            String amazonModel = Build.MODEL;
 
-            if (!inForeground || amazonModel.matches("AFTN") || activity.getPackageManager().hasSystemFeature(amazonFireTvHardware)) {
+            if (!inForeground || BrandUtils.isFireTV(activity.getPackageManager())) {
                 inForeground = true;
                 for (WeakReference<AppStateCallback> callback : callbacks) {
                     if (callback.get() != null) {
