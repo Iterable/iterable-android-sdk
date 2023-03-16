@@ -39,6 +39,5 @@ public final class DeviceInfoUtils {
         dataFields.put(IterableConstants.DEVICE_APP_VERSION, IterableUtil.getAppVersion(context));
         dataFields.put(IterableConstants.DEVICE_APP_BUILD, IterableUtil.getAppVersionCode(context));
         dataFields.put(IterableConstants.DEVICE_ITERABLE_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
-        dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, !isFireTV(context.getPackageManager()) && NotificationManagerCompat.from(context).areNotificationsEnabled());
     }
 }
