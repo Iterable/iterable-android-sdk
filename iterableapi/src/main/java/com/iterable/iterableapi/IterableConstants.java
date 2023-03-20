@@ -54,6 +54,7 @@ public final class IterableConstants {
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
+    public static final String KEY_FIRETV = "FireTV";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";

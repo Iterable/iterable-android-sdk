@@ -503,9 +503,11 @@ public class IterableApi {
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
-            JSONObject dataFields = new JSONObject();
             try {
-                DeviceInfoUtils.populateDeviceDetails(dataFields, context, sharedInstance.getDeviceId());
+                JSONObject dataFields = new JSONObject();
+                JSONObject deviceDetails = new JSONObject();
+                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
+                dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
                 sharedInstance.apiClient.updateUser(dataFields, false);
             } catch (JSONException e) {
                     IterableLogger.e(TAG, "initialize: exception", e);
