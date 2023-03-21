@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
-import androidx.core.app.NotificationManagerCompat;
-
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableUtil;
 
@@ -20,13 +18,9 @@ public final class DeviceInfoUtils {
     public static boolean isFireTV(PackageManager packageManager) {
         String amazonFireTvHardware = "amazon.hardware.fire_tv";
         String amazonModel = Build.MODEL;
-        if (amazonModel.matches("AFTN") || packageManager.hasSystemFeature(amazonFireTvHardware)) {
-            return true;
-        } else {
-            return false;
-        }
+        return amazonModel.matches("AFTN") || packageManager.hasSystemFeature(amazonFireTvHardware);
     }
-    public static JSONObject populateDeviceDetails(JSONObject dataFields, Context context, String deviceId) throws JSONException {
+    public static void populateDeviceDetails(JSONObject dataFields, Context context, String deviceId) throws JSONException {
         dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
         dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
         dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
