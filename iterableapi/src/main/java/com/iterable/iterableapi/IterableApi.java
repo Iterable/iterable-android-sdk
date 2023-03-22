@@ -69,15 +69,15 @@ public class IterableApi {
         });
     }
 
-    String getEmail() {
+    public String getEmail() {
         return _email;
     }
 
-    String getUserId() {
+    public String getUserId() {
         return _userId;
     }
 
-    String getAuthToken() {
+    public String getAuthToken() {
         return _authToken;
     }
 
@@ -318,7 +318,7 @@ public class IterableApi {
 
     private boolean checkSDKInitialization() {
         if (!isInitialized()) {
-            IterableLogger.e(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
+            IterableLogger.w(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
             return false;
         }
         return true;
