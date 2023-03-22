@@ -7,7 +7,6 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
-import java.util.*
 
 public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
@@ -252,18 +251,23 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     //For testing purpose only
     fun getMessagesFromJson(): List<IterableEmbeddedMessage> {
-        val file = File("data.json")
-        val bufferedReader = file.bufferedReader()
-        val jsonString = bufferedReader.use { it.readText() }
-        val messageJson = JSONObject(jsonString)
+        val file = this.javaClass.getResource("test_embedded_payload.json")?.readText()
+//        val messageJson = JSONObject(IterableUtil.readFile(file))
+        val messages: MutableList<IterableEmbeddedMessage> = ArrayList()
 
-        val embeddedMessages = listOf(
-            IterableEmbeddedMessage.fromJSONObject(messageJson),
-            IterableEmbeddedMessage.fromJSONObject(messageJson),
-            IterableEmbeddedMessage.fromJSONObject(messageJson)
-        )
+        return messages
 
-        return embeddedMessages
+//        val bufferedReader = file.bufferedReader()
+//        val jsonString = bufferedReader.use { it.readText() }
+//
+//
+//        val embeddedMessages = listOf(
+//            IterableEmbeddedMessage.fromJSONObject(messageJson),
+//            IterableEmbeddedMessage.fromJSONObject(messageJson),
+//            IterableEmbeddedMessage.fromJSONObject(messageJson)
+//        )
+//
+//        return embeddedMessages
     }
 
     // endregion
