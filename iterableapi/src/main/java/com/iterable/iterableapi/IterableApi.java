@@ -345,37 +345,23 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        if (hasEncryptionDependency()) {
-            getKeychain().saveEmail(_email);
-            getKeychain().saveUserId(_userId);
-            getKeychain().saveAuthToken(_authToken);
-        } else {
-            try {
-                SharedPreferences.Editor editor = getPreferences().edit();
-                editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
-                editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-                editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
-                editor.commit();
-            } catch (Exception e) {
-                IterableLogger.e(TAG, "Error while persisting email/userId", e);
-            }
-        }
+        getKeychain().saveEmail(_email);
+        getKeychain().saveUserId(_userId);
+        getKeychain().saveAuthToken(_authToken);
     }
 
     private void retrieveEmailAndUserId() {
-        if (hasEncryptionDependency()) {
-            _email = getKeychain().getEmail();
-            _userId = getKeychain().getUserId();
-            _authToken = getKeychain().getAuthToken();
-        } else {
-            SharedPreferences prefs = getPreferences();
-            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-        }
+        _email = getKeychain().getEmail();
+        _userId = getKeychain().getUserId();
+        _authToken = getKeychain().getAuthToken();
 
-        if (_authToken != null) {
-            getAuthManager().queueExpirationRefresh(_authToken);
+        if(config.authHandler != null) {
+            if(_authToken != null) {
+                getAuthManager().queueExpirationRefresh(_authToken);
+            } else {
+                IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
+                getAuthManager().scheduleAuthTokenRefresh(10000);
+            }
         }
     }
 
