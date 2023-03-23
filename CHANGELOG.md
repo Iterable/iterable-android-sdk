@@ -15,6 +15,25 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.11)
+#### Added
+- Custom Push Notification Sounds!
+You can now customize the sound that plays when users receive push notifications.
+To use a custom sound, simply add a sound file to your app's `res` folder and use the same filename when sending the push notification.
+- `getEmail()`, `getUserId()`, and `getAuthToken()` methods are now available to access email, userId, and authToken associated with a user account, respectively.
+
+#### Changed
+- Updated Security Crypto Library and Improved EncryptedSharedPreference Handling
+The androidx security crypto library has been updated from version `1.0.0` to `1.1.0-alpha04` to address a known issue causing crashes when creating `EncryptedSharedPreference`.
+To prevent these crashes, the SDK now uses unencrypted `SharedPreference` as a fallback if `EncryptedSharedPreference` cannot be created.
+However, if your app requires stronger encryption, you can set the `encryptionEnforced` configuration flag to true to enforce encryption and prevent the fallback mechanism from being used.
+Please note that enabling this flag will throw an exception if `EncryptedSharedPreference` cannot be created. This enhancement ensures better data security for your users.
+- Improved the JWT token management to address issues where null values could prevent the token from being refreshed.
+
+#### Fixed
+- In-apps with larger HTMLs don't shrink and appear more consistent across platforms.
+- Fixed crashes occurring due to in-app animation transitions.
+
 ## [3.4.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.10)
 This release includes support for encrypting some data at rest, and an option to
 store in-app messages in memory.
