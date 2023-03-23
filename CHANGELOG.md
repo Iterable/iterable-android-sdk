@@ -16,23 +16,53 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - nothing yet
 
 ## [3.4.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.11)
+
 #### Added
-- Custom Push Notification Sounds!
-You can now customize the sound that plays when users receive push notifications.
-To use a custom sound, simply add a sound file to your app's `res` folder and use the same filename when sending the push notification.
-- `getEmail()`, `getUserId()`, and `getAuthToken()` methods are now available to access email, userId, and authToken associated with a user account, respectively.
+
+- Custom push notification sounds! To play a custom sound for a push notification, add a sound file
+  to your app's `res/raw` folder and specify that same filename when setting up a template in
+  Iterable.
+
+  Some important notes about custom sounds and notification channels:
+
+  - Android API level 26
+    introduced [notification channels](https://developer.android.com/develop/ui/views/notifications/channels)
+    . Every notification must be assigned to a channel.
+  - Each custom sound you add to an Iterable template creates a new Android notification channel.
+    The notification channel's name matches the filename of the sound (without its extension).
+  - To ensure sensible notification channel names for end users, give friendly names to your sound
+    files. For example, a custom sound file with name `Paid.mp3` creates a notification channel
+    called `Paid`. The end user can see this notification channel name in their device's
+    notification channel settings.
+  - Be sure to place the corresponding sound file in your app's `res/raw` directory.
+
+- To help you access a user's `email` address, `userId`, and `authToken`, the SDK now provides
+  convenience methods: `getEmail()`, `getUserId()`, and `getAuthToken()`.
 
 #### Changed
-- Updated Security Crypto Library and Improved EncryptedSharedPreference Handling
-The androidx security crypto library has been updated from version `1.0.0` to `1.1.0-alpha04` to address a known issue causing crashes when creating `EncryptedSharedPreference`.
-To prevent these crashes, the SDK now uses unencrypted `SharedPreference` as a fallback if `EncryptedSharedPreference` cannot be created.
-However, if your app requires stronger encryption, you can set the `encryptionEnforced` configuration flag to true to enforce encryption and prevent the fallback mechanism from being used.
-Please note that enabling this flag will throw an exception if `EncryptedSharedPreference` cannot be created. This enhancement ensures better data security for your users.
-- Improved the JWT token management to address issues where null values could prevent the token from being refreshed.
+
+- Updated the [Security library](https://developer.android.com/topic/security/data) and
+  improved `EncryptedSharedPreferences` handling.
+
+  To work around a [known Android issue](https://issuetracker.google.com/issues/164901843) that can
+  cause crashes when creating `EncryptedSharedPreferences`, we've
+  upgraded `androidx.security.crypto` from version `1.0.0` to `1.1.0-alpha04`.
+  When `EncryptedSharedPreferences` cannot be created, the SDK now uses `SharedPreferences` (
+  unencrypted).
+
+  If your app requires encryption, you can prevent this fallback to `SharedPreferences` by setting
+  the `encryptionEnforced` configuration flag to `true`. However, if you enable this flag
+  and `EncryptedSharedPreferences` cannot be created, an exception will be thrown.
+
+- Improved JWT token management. This change addresses an issue where `null` values could prevent
+  the refresh of a JWT token.
 
 #### Fixed
-- In-apps with larger HTMLs don't shrink and appear more consistent across platforms.
-- Fixed crashes occurring due to in-app animation transitions.
+
+- Fixed an issue which could prevent in-app messages from respecting the **Position** value selected
+  when setting up the template (top / center / bottom / full).
+
+- Fixed crashes that sometimes happened during in-app message animations.
 
 ## [3.4.10](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.10)
 This release includes support for encrypting some data at rest, and an option to
