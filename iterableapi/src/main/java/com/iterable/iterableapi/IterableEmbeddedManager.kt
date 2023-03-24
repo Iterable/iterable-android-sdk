@@ -113,59 +113,53 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     private fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
-        //TODO: Remove if condition once backend is ready
-        if(false) {
-            IterableApi.sharedInstance.apiClient.getEmbeddedMessages { payload ->
-                IterableLogger.v(TAG, "Got response from network call to get embedded messages")
-                if (payload != null && !payload.isEmpty()) {
-                    try {
-                        val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
-                        val jsonArray = JSONArray(payload)
-                        if (jsonArray != null) {
-                            for (i in 0 until jsonArray.length()) {
-                                val messageJson = jsonArray.optJSONObject(i)
-                                val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
-                                if (message != null) {
-                                    remoteMessageList.add(message)
-                                } else {
-                                    IterableLogger.e(
-                                        IterableInAppManager.TAG,
-                                        "message turned out to be null"
-                                    )
-                                }
+        IterableApi.sharedInstance.apiClient.getEmbeddedMessages { payload ->
+            IterableLogger.v(TAG, "Got response from network call to get embedded messages")
+            if (payload != null && !payload.isEmpty()) {
+                try {
+                    val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
+                    val jsonArray = JSONArray(payload)
+                    if (jsonArray != null) {
+                        for (i in 0 until jsonArray.length()) {
+                            val messageJson = jsonArray.optJSONObject(i)
+                            val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
+                            if (message != null) {
+                                remoteMessageList.add(message)
+                            } else {
+                                IterableLogger.e(
+                                    IterableInAppManager.TAG,
+                                    "message turned out to be null"
+                                )
                             }
-                        } else {
-                            IterableLogger.e(
-                                IterableInAppManager.TAG,
-                                "Array not found in embedded message response. Probably a parsing failure"
-                            )
                         }
+                    } else {
+                        IterableLogger.e(
+                            IterableInAppManager.TAG,
+                            "Array not found in embedded message response. Probably a parsing failure"
+                        )
+                    }
 //                    //Directly saving the messages to the list
 //                    //TODO: Check and make note of the changes and call the updateHandler accordinly
 //                    //TODO: Check for new messages and call delivery on the new ones
 
-                        updateLocalMessages(remoteMessageList)
+                    updateLocalMessages(remoteMessageList)
 //                    //Saving the time of last sync
-                        IterableLogger.v(TAG, "Resetting last sync time")
-                        lastSync = IterableUtil.currentTimeMillis()
-                    } catch (e: JSONException) {
-                        IterableLogger.e(IterableInAppManager.TAG, e.toString())
-                    }
-                } else {
-                    IterableLogger.e(
-                        IterableInAppManager.TAG,
-                        "No payload found in embedded message response"
-                    )
-                }
-            }
-        } else {
-            //TODO: Remove this else block once backend is ready
-            //Saving the time of last sync
-            IterableLogger.v(TAG, "Resetting last sync time")
-            lastSync = IterableUtil.currentTimeMillis()
-        }
+                    IterableLogger.v(TAG, "Resetting last sync time")
 
-        scheduleSync()
+                    //TODO: Is this line necessary? Because we are updating it at the end anyways.
+                    lastSync = IterableUtil.currentTimeMillis()
+                } catch (e: JSONException) {
+                    IterableLogger.e(IterableInAppManager.TAG, e.toString())
+                }
+            } else {
+                IterableLogger.e(
+                    IterableInAppManager.TAG,
+                    "No payload found in embedded message response"
+                )
+            }
+            lastSync = IterableUtil.currentTimeMillis()
+            scheduleSync()
+        }
     }
 
     fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
