@@ -224,7 +224,7 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
-            requestJSON.put("userKey", "akshay.ayyanchira@iterable.com");
+            requestJSON.put("userKey", "evan.greer@iterable.com");
             requestJSON.put("placementId", "0");
 
             sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
