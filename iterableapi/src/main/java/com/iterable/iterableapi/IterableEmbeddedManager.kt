@@ -3,7 +3,6 @@ package com.iterable.iterableapi
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
@@ -17,7 +16,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     // region variables
     private var messages: List<IterableEmbeddedMessage> = ArrayList()
 
-    private var autoFetchDuration: Double = 5.0
+    private var autoFetchDuration: Double = 0.0
     private var lastSync: Long = 0
     private var actionHandler: EmbeddedMessageActionHandler? = null
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
