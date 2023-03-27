@@ -3,6 +3,8 @@ package com.iterable.iterableapi
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
@@ -14,7 +16,11 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     // endregion
 
     // region variables
-    private var messages: List<IterableEmbeddedMessage> = ArrayList()
+    private var _messages = MutableLiveData<List<IterableEmbeddedMessage>>()
+    val messages: LiveData<List<IterableEmbeddedMessage>>
+        get() = _messages
+
+    private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
 
     private var autoFetchDuration: Double = 0.0
     private var lastSync: Long = 0
@@ -98,12 +104,12 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
         IterableLogger.v(TAG, "Returning messages")
 
-        return messages
+        return localMessages
     }
 
     //Gets the list of embedded messages in memory without syncing
     fun getEmbeddedMessages(): List<IterableEmbeddedMessage> {
-        return messages
+        return localMessages
     }
 
     //Network call to get the embedded messages
@@ -137,7 +143,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 //                    //TODO: Check for new messages and call delivery on the new ones
 
                     updateLocalMessages(remoteMessageList)
-                    IterableLogger.v(TAG, "$messages")
+                    IterableLogger.v(TAG, "$localMessages")
 
 //                    //Saving the time of last sync
                     IterableLogger.v(TAG, "Resetting last sync time")
@@ -189,8 +195,8 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         }
         localMessageList.removeAll(messagesToRemove)
 
-        this.messages = localMessageList
-
+        this.localMessages = localMessageList
+        _messages.value = localMessageList
     }
 
     // endregion
