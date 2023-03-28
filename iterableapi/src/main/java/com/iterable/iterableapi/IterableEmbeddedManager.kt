@@ -16,6 +16,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     // endregion
 
     // region variables
+    //TODO: See if coalescing all the messages into one list making one source of truth for local messages can be done.
     private var _messages = MutableLiveData<List<IterableEmbeddedMessage>>()
     val messages: LiveData<List<IterableEmbeddedMessage>>
         get() = _messages
