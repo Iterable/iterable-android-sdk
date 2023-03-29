@@ -522,11 +522,19 @@ public class IterableApi {
     }
 
     @VisibleForTesting
+    IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager) {
+        config = new IterableConfig.Builder().build();
+        this.inAppManager = inAppManager;
+        this.embeddedManager = embeddedManager;
+    }
+
+    @VisibleForTesting
     IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
         config = new IterableConfig.Builder().build();
         this.apiClient = apiClient;
         this.inAppManager = inAppManager;
     }
+
 //endregion
 
 //region SDK public functions
