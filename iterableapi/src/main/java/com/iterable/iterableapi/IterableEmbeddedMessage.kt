@@ -131,17 +131,17 @@ class EmbeddedMessageElements (
                 return null
             }
 
-            val title: String? = elementsJson?.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TITLE)
-            val body: String? = elementsJson?.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BODY)
-            val mediaURL: String? = elementsJson?.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL)
+            val title: String? = elementsJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TITLE)
+            val body: String? = elementsJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BODY)
+            val mediaURL: String? = elementsJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL)
 
-            val defaultActionJson: JSONObject? = elementsJson?.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION)
+            val defaultActionJson: JSONObject? = elementsJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION)
             var defaultAction: EmbeddedMessageElementsDefaultAction? = null
             if (defaultActionJson != null) {
                 defaultAction = EmbeddedMessageElementsDefaultAction.fromJSONObject(defaultActionJson)
             }
 
-            val buttonsJson: JSONArray? = elementsJson?.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTONS)
+            val buttonsJson: JSONArray? = elementsJson.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTONS)
             var buttons: MutableList<EmbeddedMessageElementsButton>? = mutableListOf()
             if (buttonsJson != null) {
                 for(i in 0..buttonsJson.length() - 1) {
@@ -153,7 +153,7 @@ class EmbeddedMessageElements (
                 buttons = null
             }
 
-            val textsJson: JSONArray? = elementsJson?.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TEXT)
+            val textsJson: JSONArray? = elementsJson.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TEXT)
             var texts: MutableList<EmbeddedMessageElementsText>? = mutableListOf()
             if (textsJson != null) {
                 for(i in 0..textsJson.length() - 1) {
