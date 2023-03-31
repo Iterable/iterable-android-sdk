@@ -1,6 +1,5 @@
 package com.iterable.iterableapi
 
-import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import androidx.lifecycle.LiveData
@@ -38,7 +37,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
-        context: Context,
         autoFetchInterval: Double,
         actionHandler: EmbeddedMessageActionHandler?,
         updateHandler: EmbeddedMessageUpdateHandler?
@@ -130,27 +128,14 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                         for (i in 0 until jsonArray.length()) {
                             val messageJson = jsonArray.optJSONObject(i)
                             val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
-                            if (message != null) {
-                                remoteMessageList.add(message)
-                            } else {
-                                IterableLogger.e(TAG, "message turned out to be null")
-                            }
+                            remoteMessageList.add(message)
                         }
                     } else {
                         IterableLogger.e(TAG, "Array not found in embedded message response. Probably a parsing failure")
                     }
-//                    //Directly saving the messages to the list
-//                    //TODO: Check and make note of the changes and call the updateHandler accordinly
-//                    //TODO: Check for new messages and call delivery on the new ones
-
                     updateLocalMessages(remoteMessageList)
                     IterableLogger.v(TAG, "$localMessages")
 
-//                    //Saving the time of last sync
-                    IterableLogger.v(TAG, "Resetting last sync time")
-
-                    //TODO: Is this line necessary? Because we are updating it at the end anyways.
-//                    lastSync = IterableUtil.currentTimeMillis()
                 } catch (e: JSONException) {
                     IterableLogger.e(TAG, e.toString())
                 }
@@ -206,10 +191,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             //TODO: Make a call to the updateHandler to notify that the message list has been updated
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
-                if(it == null) {
-                    IterableLogger.d(TAG, "updateHandler is null")
-                    return
-                }
                 it.onMessageUpdate()
             }
         }
