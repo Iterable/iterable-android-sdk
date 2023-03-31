@@ -164,6 +164,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
         IterableLogger.printInfo()
+        var localMessagesChanged = false
 
         // Get local messages in a mutable list
         val localMessageList = getEmbeddedMessages().toMutableList()
@@ -175,6 +176,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         // Check for new messages and add them to the local list
         remoteMessageList.forEach {
             if (!localMessageMap.containsKey(it.metadata.id)) {
+                localMessagesChanged = true
                 localMessageList.add(it)
             }
             //TODO: Make a call to the updateHandler to notify that the message has been added
@@ -192,12 +194,25 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
                 //TODO: Make a call to the updateHandler to notify that the message has been removed
                 //TODO: Make a call to backend if needed
+                localMessagesChanged = true
             }
         }
         localMessageList.removeAll(messagesToRemove)
 
         this.localMessages = localMessageList
         _messages.value = localMessageList
+
+        if(localMessagesChanged) {
+            //TODO: Make a call to the updateHandler to notify that the message list has been updated
+            updateHandleListeners.forEach {
+                IterableLogger.d(TAG, "Calling updateHandler")
+                if(it == null) {
+                    IterableLogger.d(TAG, "updateHandler is null")
+                    return
+                }
+                it.onMessageUpdate()
+            }
+        }
     }
 
     // endregion
