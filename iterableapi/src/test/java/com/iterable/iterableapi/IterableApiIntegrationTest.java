@@ -69,6 +69,7 @@ public class IterableApiIntegrationTest extends BaseTest {
 
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.getInstance().setEmail(null);
+        shadowOf(getMainLooper()).idle();
         request = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(request);
         requestJson = new JSONObject(request.getBody().readUtf8());
