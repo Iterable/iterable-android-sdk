@@ -43,6 +43,7 @@ data class IterableEmbeddedMessage (
 
 class EmbeddedMessageMetadata(
     var id: String,
+    //TODO: Remove this once the placementIDs are implemented in the backend
     val placementId: String? = "",
     val campaignId: String? = null,
     val isProof: Boolean = false
