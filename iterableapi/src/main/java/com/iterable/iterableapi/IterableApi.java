@@ -42,6 +42,7 @@ public class IterableApi {
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
+    private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
@@ -517,6 +518,10 @@ public class IterableApi {
                     sharedInstance.config.useInMemoryStorageForInApps);
         }
 
+        if (sharedInstance.embeddedManager == null) {
+            sharedInstance.embeddedManager = new IterableEmbeddedManager(sharedInstance.config.embeddedMessagingAutoFetchInterval, null, null);
+        }
+
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
     }
@@ -536,11 +541,19 @@ public class IterableApi {
     }
 
     @VisibleForTesting
+    IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager) {
+        config = new IterableConfig.Builder().build();
+        this.inAppManager = inAppManager;
+        this.embeddedManager = embeddedManager;
+    }
+
+    @VisibleForTesting
     IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
         config = new IterableConfig.Builder().build();
         this.apiClient = apiClient;
         this.inAppManager = inAppManager;
     }
+
 //endregion
 
 //region SDK public functions
@@ -556,6 +569,24 @@ public class IterableApi {
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return inAppManager;
+    }
+
+    @NonNull
+    public IterableEmbeddedManager getEmbeddedManager() {
+        if (embeddedManager == null) {
+            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+        }
+        return embeddedManager;
+    }
+
+    @NonNull
+    public IterableEmbeddedManager embeddedManager() {
+        if (embeddedManager == null) {
+            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+        }
+        return embeddedManager;
     }
 
     /**

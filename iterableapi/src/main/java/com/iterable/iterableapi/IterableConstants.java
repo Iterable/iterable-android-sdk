@@ -74,6 +74,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
     public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
+    public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "flex/messages";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -164,6 +165,30 @@ public final class IterableConstants {
     public static final String DATEFORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String PICASSO_CLASS = "com.squareup.picasso.Picasso";
     public static final String LOCATION_HEADER_FIELD = "Location";
+
+    //Embedded Message Constants
+    public static final String ITERABLE_EMBEDDED_MESSAGE  = "embeddedMessages";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_METADATA = "metadata";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_ELEMENTS = "elements";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_PAYLOAD = "payload";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_ID = "id";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID = "placementId";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID = "campaignId";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_IS_PROOF = "isProof";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TITLE = "title";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BODY = "body";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL = "mediaUrl";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION = "defaultAction";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTONS = "buttons";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT = "text";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE = "type";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA = "data";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_ID = "id";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_TITLE = "title";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION = "action";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_ID = "id";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_TEXT = "text";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_LABEL = "label";
 
     //In-App Constants
     public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";

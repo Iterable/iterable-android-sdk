@@ -79,6 +79,11 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    /**
+     * The number of seconds to wait before fetching the next embedded message
+     */
+    final double embeddedMessagingAutoFetchInterval;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -93,6 +98,7 @@ public class IterableConfig {
         allowedProtocols = builder.allowedProtocols;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
+        embeddedMessagingAutoFetchInterval = builder.embeddedMessagingAutoFetchInterval;
     }
 
     public static class Builder {
@@ -110,6 +116,7 @@ public class IterableConfig {
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
 
+        private double embeddedMessagingAutoFetchInterval = 30.0;
         public Builder() {}
 
         /**
@@ -243,6 +250,17 @@ public class IterableConfig {
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
+            return this;
+        }
+
+        /**
+         * Set the embedded message auto fetch interval: the number of seconds to wait before fetching
+         * the next embedded message
+         * @param embeddedMessagingAutoFetchInterval display interval in seconds
+         */
+        @NonNull
+        public Builder setEmbeddedMessagingAutoFetchInterval(double embeddedMessagingAutoFetchInterval) {
+            this.embeddedMessagingAutoFetchInterval = embeddedMessagingAutoFetchInterval;
             return this;
         }
 

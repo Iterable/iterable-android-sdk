@@ -30,6 +30,7 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE,
             IterableConstants.ENDPOINT_TRACK_INBOX_SESSION,
             IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY,
+            IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES,
             IterableConstants.ENDPOINT_INAPP_CONSUME));
 
     OfflineRequestProcessor(Context context) {
