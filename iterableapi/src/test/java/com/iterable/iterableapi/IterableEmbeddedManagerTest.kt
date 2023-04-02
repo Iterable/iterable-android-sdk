@@ -1,13 +1,30 @@
 package com.iterable.iterableapi
 
 import org.hamcrest.Matchers.`is`
+import org.junit.After
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 
 class IterableEmbeddedManagerTest {
 
+    @Before
+    fun setUp() {
+
+    }
+
+    @After
+    fun tearDown() {
+
+    }
+
     @Test
-    fun exampleTest() {
-        assertThat(2 + 2, `is`(4))
+    fun testSyncEmbedded() {
+
+    }
+
+    @Test
+    fun testReset() {
+
     }
 }
