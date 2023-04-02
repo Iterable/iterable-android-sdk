@@ -1,13 +1,12 @@
 package com.iterable.iterableapi
 
-import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import org.json.JSONArray
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
-import java.util.*
 
 public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
@@ -16,7 +15,12 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     // endregion
 
     // region variables
-    private var messages: List<IterableEmbeddedMessage> = ArrayList()
+    //TODO: See if coalescing all the messages into one list making one source of truth for local messages can be done.
+    private var _messages = MutableLiveData<List<IterableEmbeddedMessage>>()
+    val messages: LiveData<List<IterableEmbeddedMessage>>
+        get() = _messages
+
+    private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
 
     private var autoFetchDuration: Double = 0.0
     private var lastSync: Long = 0
@@ -33,7 +37,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
-        context: Context,
         autoFetchInterval: Double,
         actionHandler: EmbeddedMessageActionHandler?,
         updateHandler: EmbeddedMessageUpdateHandler?
@@ -52,7 +55,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     }
 
     // endregion
-
 
     // region getters and setters
 
@@ -101,12 +103,12 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
         IterableLogger.v(TAG, "Returning messages")
 
-        return messages
+        return localMessages
     }
 
     //Gets the list of embedded messages in memory without syncing
     fun getEmbeddedMessages(): List<IterableEmbeddedMessage> {
-        return messages
+        return localMessages
     }
 
     //Network call to get the embedded messages
@@ -118,44 +120,27 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             if (payload != null && !payload.isEmpty()) {
                 try {
                     val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
-                    val jsonArray = JSONArray(payload)
+
+                    val mainObject = JSONObject(payload)
+                    val jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+
                     if (jsonArray != null) {
                         for (i in 0 until jsonArray.length()) {
                             val messageJson = jsonArray.optJSONObject(i)
                             val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
-                            if (message != null) {
-                                remoteMessageList.add(message)
-                            } else {
-                                IterableLogger.e(
-                                    IterableInAppManager.TAG,
-                                    "message turned out to be null"
-                                )
-                            }
+                            remoteMessageList.add(message)
                         }
                     } else {
-                        IterableLogger.e(
-                            IterableInAppManager.TAG,
-                            "Array not found in embedded message response. Probably a parsing failure"
-                        )
+                        IterableLogger.e(TAG, "Array not found in embedded message response. Probably a parsing failure")
                     }
-//                    //Directly saving the messages to the list
-//                    //TODO: Check and make note of the changes and call the updateHandler accordinly
-//                    //TODO: Check for new messages and call delivery on the new ones
-
                     updateLocalMessages(remoteMessageList)
-//                    //Saving the time of last sync
-                    IterableLogger.v(TAG, "Resetting last sync time")
+                    IterableLogger.v(TAG, "$localMessages")
 
-                    //TODO: Is this line necessary? Because we are updating it at the end anyways.
-                    lastSync = IterableUtil.currentTimeMillis()
                 } catch (e: JSONException) {
-                    IterableLogger.e(IterableInAppManager.TAG, e.toString())
+                    IterableLogger.e(TAG, e.toString())
                 }
             } else {
-                IterableLogger.e(
-                    IterableInAppManager.TAG,
-                    "No payload found in embedded message response"
-                )
+                IterableLogger.e(TAG, "No payload found in embedded message response")
             }
             lastSync = IterableUtil.currentTimeMillis()
             scheduleSync()
@@ -164,6 +149,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
         IterableLogger.printInfo()
+        var localMessagesChanged = false
 
         // Get local messages in a mutable list
         val localMessageList = getEmbeddedMessages().toMutableList()
@@ -175,6 +161,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         // Check for new messages and add them to the local list
         remoteMessageList.forEach {
             if (!localMessageMap.containsKey(it.metadata.id)) {
+                localMessagesChanged = true
                 localMessageList.add(it)
             }
             //TODO: Make a call to the updateHandler to notify that the message has been added
@@ -192,12 +179,21 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
                 //TODO: Make a call to the updateHandler to notify that the message has been removed
                 //TODO: Make a call to backend if needed
+                localMessagesChanged = true
             }
         }
         localMessageList.removeAll(messagesToRemove)
 
-        this.messages = localMessageList
+        this.localMessages = localMessageList
+        _messages.value = localMessageList
 
+        if(localMessagesChanged) {
+            //TODO: Make a call to the updateHandler to notify that the message list has been updated
+            updateHandleListeners.forEach {
+                IterableLogger.d(TAG, "Calling updateHandler")
+                it.onMessageUpdate()
+            }
+        }
     }
 
     // endregion
