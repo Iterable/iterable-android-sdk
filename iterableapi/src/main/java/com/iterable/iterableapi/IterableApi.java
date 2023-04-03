@@ -70,15 +70,15 @@ public class IterableApi {
         });
     }
 
-    String getEmail() {
+    public String getEmail() {
         return _email;
     }
 
-    String getUserId() {
+    public String getUserId() {
         return _userId;
     }
 
-    String getAuthToken() {
+    public String getAuthToken() {
         return _authToken;
     }
 
@@ -349,8 +349,13 @@ public class IterableApi {
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-            if (_authToken != null) {
-                getAuthManager().queueExpirationRefresh(_authToken);
+            if (config.authHandler != null) {
+                if (_authToken != null) {
+                    getAuthManager().queueExpirationRefresh(_authToken);
+                } else {
+                    IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
+                    getAuthManager().scheduleAuthTokenRefresh(10000);
+                }
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
