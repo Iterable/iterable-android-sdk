@@ -127,7 +127,6 @@ public final class IterableConstants {
     //Device
     public static final String DEVICE_BRAND             = "brand";
     public static final String DEVICE_MANUFACTURER      = "manufacturer";
-    public static final String DEVICE_ADID              = "advertisingId";
     public static final String DEVICE_SYSTEM_NAME       = "systemName";
     public static final String DEVICE_SYSTEM_VERSION    = "systemVersion";
     public static final String DEVICE_MODEL             = "model";

@@ -26,21 +26,27 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     private static final String FOLDER_PATH = "IterableInAppFileStorage";
     private static final String INDEX_FILE = "index.html";
     private static final int OPERATION_SAVE = 100;
+
     private final Context context;
+
     private Map<String, IterableInAppMessage> messages =
             Collections.synchronizedMap(new LinkedHashMap<String, IterableInAppMessage>());
 
     private final HandlerThread fileOperationThread = new HandlerThread("FileOperationThread");
+
     @VisibleForTesting
     FileOperationHandler fileOperationHandler;
 
     IterableInAppFileStorage(Context context) {
         this.context = context;
+
         fileOperationThread.start();
         fileOperationHandler = new FileOperationHandler(fileOperationThread.getLooper());
+
         load();
     }
 
+    //region IterableInAppStorage interface implementation
     @NonNull
     @Override
     public synchronized List<IterableInAppMessage> getMessages() {
@@ -69,6 +75,45 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
     }
 
     @Override
+    public void saveHTML(@NonNull String messageID, @NonNull String contentHTML) {
+        File folder = createFolderForMessage(messageID);
+        if (folder == null) {
+            IterableLogger.e(TAG, "Failed to create folder for HTML content");
+            return;
+        }
+
+        File file = new File(folder, INDEX_FILE);
+        boolean result = IterableUtil.writeFile(file, contentHTML);
+        if (!result) {
+            IterableLogger.e(TAG, "Failed to store HTML content");
+        }
+    }
+
+    @Nullable
+    @Override
+    public String getHTML(@NonNull String messageID) {
+        File file = getFileForContent(messageID);
+        return IterableUtil.readFile(file);
+    }
+
+    @Override
+    public void removeHTML(@NonNull String messageID) {
+        File folder = getFolderForMessage(messageID);
+
+        File[] files = folder.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            file.delete();
+        }
+        folder.delete();
+    }
+    //endregion
+
+    //region In-App Lifecycle
+    @Override
     public void onInAppMessageChanged(@NonNull IterableInAppMessage message) {
         saveMessagesInBackground();
     }
@@ -80,7 +125,9 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
         messages.clear();
     }
+    //endregion
 
+    //region JSON Parsing
     @NonNull
     private JSONObject serializeMessages() {
         JSONObject jsonData = new JSONObject();
@@ -116,15 +163,9 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             }
         }
     }
+    //endregion
 
-    private File getInAppStorageFile() {
-        return new File(getInAppContentFolder(), "itbl_inapp.json");
-    }
-
-    private File getInAppCacheStorageFile() {
-        return new File(IterableUtil.getSdkCacheDir(context), "itbl_inapp.json");
-    }
-
+    //region File Saving/Loading
     private void load() {
         try {
             File inAppStorageFile = getInAppStorageFile();
@@ -169,20 +210,15 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
             IterableLogger.e(TAG, "Error while saving in-app messages to file", e);
         }
     }
+    //endregion
 
-    @Override
-    public void saveHTML(@NonNull String messageID, @NonNull String contentHTML) {
-        File folder = createFolderForMessage(messageID);
-        if (folder == null) {
-            IterableLogger.e(TAG, "Failed to create folder for HTML content");
-            return;
-        }
+    //region File Management
+    private File getInAppStorageFile() {
+        return new File(getInAppContentFolder(), "itbl_inapp.json");
+    }
 
-        File file = new File(folder, INDEX_FILE);
-        boolean result = IterableUtil.writeFile(file, contentHTML);
-        if (!result) {
-            IterableLogger.e(TAG, "Failed to store HTML content");
-        }
+    private File getInAppCacheStorageFile() {
+        return new File(IterableUtil.getSdkCacheDir(context), "itbl_inapp.json");
     }
 
     @Nullable
@@ -217,28 +253,7 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         File folder = getFolderForMessage(messageID);
         return new File(folder, INDEX_FILE);
     }
-
-    @Nullable
-    @Override
-    public String getHTML(@NonNull String messageID) {
-        File file = getFileForContent(messageID);
-        return IterableUtil.readFile(file);
-    }
-
-    @Override
-    public void removeHTML(@NonNull String messageID) {
-        File folder = getFolderForMessage(messageID);
-
-        File[] files = folder.listFiles();
-        if (files == null) {
-            return;
-        }
-
-        for (File file : files) {
-            file.delete();
-        }
-        folder.delete();
-    }
+    //endregion
 
     class FileOperationHandler extends Handler {
         FileOperationHandler(Looper threadLooper) {

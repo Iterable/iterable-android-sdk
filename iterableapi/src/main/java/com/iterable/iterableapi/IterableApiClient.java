@@ -429,7 +429,6 @@ class IterableApiClient {
             dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true);
             dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
             dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
-            dataFields.putOpt(IterableConstants.DEVICE_ADID, IterableUtil.getAdvertisingId(authProvider.getContext())); //ADID: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
             dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
             dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
             dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus

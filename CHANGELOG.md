@@ -14,7 +14,23 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 #### Fixed
 - nothing yet
-- 
+
+## [3.4.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.9)
+
+#### Added
+- Added new methods for `setEmail`, `setUserId` and `updateEmail` which accepts `authToken`, providing more ways to pass `authToken` to SDK
+- Added two interface methods - `onTokenRegistrationSuccessful` and `onTokenRegistrationFailed`. Override these methods to see if authToken was successfully received by the SDK.  
+
+#### Changed
+- `setAuthToken` method is now public allowing additional way to provide `authToken` to SDK. 
+
+## [3.4.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.8)
+#### Removed
+- Removed collection of advertising ID.
+
+#### Fixed
+- Fixed an issue where `disableDevice` would get called with no device token.
+
 ## [3.4.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.7)
 #### Added
 - This release makes offline events processing available to all Iterable customers who'd like to use it — just ask your customer success manager to enable it for your account. Offline events processing saves a local copy of events triggered in your app while the device is offline (up to 1000 events). When a connection is re-established and your app is in the foreground, the events will be sent to Iterable. For more information, read [Offline events processing](https://support.iterable.com/hc/articles/360035395671#offline-events-processing).

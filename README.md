@@ -13,6 +13,10 @@ message and web push notifications to your customers.
 
 This SDK helps you integrate your Android apps with Iterable.
 
+## Supported Android versions
+
+Iterable's Android SDK supports Android versions 4.1.2 (API level 16) and higher.
+
 ## Installation
 
 For installation instructions, read [Iterable's Android SDK](https://support.iterable.com/hc/articles/360035019712).
@@ -41,14 +45,16 @@ For sample code, take a look at:
 
 Release notes:
 
-- [Android SDK Release Notes](https://support.iterable.com/hc/articles/360027543332) (major releases)
-- [Releases page](https://github.com/Iterable/iterable-android-sdk/releases) on GitHub (minor releases)
+- [Release Notes - Iterable's Android SDK](https://support.iterable.com/hc/articles/360027543332) -
+  Release notes for significant updates to the SDK. Also, information about 
+  deprecation dates and support windows.
+- [GitHub — Releases](https://github.com/Iterable/iterable-android-sdk/releases) -
+  This repository's **Releases** page. Release notes for all versions of the SDK.
 
 Support policies:
 
-- Iterable's [Mobile SDK Support Policy](https://support.iterable.com/hc/articles/360046136171)
-- Iterable's [Android SDK Deprecation and End-of-Life Schedule](https://support.iterable.com/hc/articles/360027543332#deprecation-and-end-of-life-schedule)
-- Iterable's [Beta Mobile SDK Disclaimer](https://support.iterable.com/hc/articles/360034753412)
+- Iterable's [SDK Support Policy](https://support.iterable.com/hc/articles/360046136171)
+- Iterable's [Beta SDK Disclaimer](https://support.iterable.com/hc/articles/360034753412)
 
 Troubleshooting:
 
@@ -56,14 +62,13 @@ Troubleshooting:
 - [Frequently Asked Questions](https://support.iterable.com/hc/articles/360035624191) 
   for mobile developers integrating with Iterable
 
-Please contact your customer success manager with any questions.
+Questions? Contact your Iterable customer success manager.
 
 ## License
 
-This SDK is released under the MIT License. See [LICENSE](https://github.com/Iterable/iterable-android-sdk/blob/master/LICENSE?raw=true)
-for more information.
+This SDK is released under the MIT License. For more information, read [LICENSE](LICENSE.md).
 
 ## Want to contribute?
 
 This library is open source, and we will look at issue reports and pull requests.
-See [CONTRIBUTING](CONTRIBUTING.md) for more information.
+For more information, read [CONTRIBUTING](CONTRIBUTING.md).

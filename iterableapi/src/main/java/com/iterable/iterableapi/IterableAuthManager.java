@@ -49,16 +49,24 @@ public class IterableAuthManager {
                         public void onSuccess(String authToken) {
                             if (authToken != null) {
                                 queueExpirationRefresh(authToken);
+                            } else {
+                                IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
+                                //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
+                                scheduleAuthTokenRefresh(10000);
+                                authHandler.onTokenRegistrationFailed(new Throwable("Auth token null"));
+                                return;
                             }
                             IterableApi.getInstance().setAuthToken(authToken);
                             pendingAuth = false;
                             reSyncAuth();
+                            authHandler.onTokenRegistrationSuccessful(authToken);
                         }
                     })
                     .onFailure(new Future.FailureCallback() {
                         @Override
                         public void onFailure(Throwable throwable) {
                             IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
+                            authHandler.onTokenRegistrationFailed(throwable);
                             pendingAuth = false;
                             reSyncAuth();
                         }
@@ -86,6 +94,9 @@ public class IterableAuthManager {
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
+            authHandler.onTokenRegistrationFailed(new Throwable("Auth token decode failure. Scheduling auth token refresh in 10 seconds..."));
+            //TODO: Sync with configured time duration once feature is available.
+            scheduleAuthTokenRefresh(10000);
         }
     }
 
@@ -100,7 +111,7 @@ public class IterableAuthManager {
         }
     }
 
-    private void scheduleAuthTokenRefresh(long timeDuration) {
+    void scheduleAuthTokenRefresh(long timeDuration) {
         timer = new Timer(true);
         try {
             timer.schedule(new TimerTask() {
