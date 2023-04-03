@@ -553,15 +553,6 @@ public class IterableApi {
     }
 
     @NonNull
-    public IterableEmbeddedManager getEmbeddedManager() {
-        if (embeddedManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
-                    "Make sure you call IterableApi#initialize() in Application#onCreate");
-        }
-        return embeddedManager;
-    }
-
-    @NonNull
     public IterableEmbeddedManager embeddedManager() {
         if (embeddedManager == null) {
             throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
