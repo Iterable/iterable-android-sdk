@@ -8,9 +8,11 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 
-public class IterableEmbeddedManager(        autoFetchInterval: Double,
-                                             actionHandler: EmbeddedMessageActionHandler?,
-                                             updateHandler: EmbeddedMessageUpdateHandler?): IterableActivityMonitor.AppStateCallback {
+public class IterableEmbeddedManager(
+    autoFetchInterval: Double,
+    actionHandler: EmbeddedMessageActionHandler?,
+    updateHandler: EmbeddedMessageUpdateHandler?
+): IterableActivityMonitor.AppStateCallback {
 
     // region constants
     val TAG = "IterableEmbeddedManager"
@@ -39,13 +41,12 @@ public class IterableEmbeddedManager(        autoFetchInterval: Double,
 
     //Constructor of this class with actionHandler and updateHandler
 
-
     init{
-            autoFetchDuration = autoFetchInterval
-            activityMonitor = IterableActivityMonitor.getInstance()
-            activityMonitor?.addCallback(this)
+        autoFetchDuration = autoFetchInterval
+        activityMonitor = IterableActivityMonitor.getInstance()
+        activityMonitor?.addCallback(this)
 
-            postConstruction()
+        postConstruction()
     }
 
     fun postConstruction() {
