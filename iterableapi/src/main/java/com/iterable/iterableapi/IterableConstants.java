@@ -5,15 +5,12 @@ package com.iterable.iterableapi;
  *
  * IterableConstants contains a list of constants used with the Iterable mobile SDK.
  */
-
 public final class IterableConstants {
     public static final String ACTION_NOTIF_OPENED = "com.iterable.push.ACTION_NOTIF_OPENED";
     public static final String ACTION_PUSH_ACTION = "com.iterable.push.ACTION_PUSH_ACTION";
     public static final String ACTION_PUSH_REGISTRATION = "com.iterable.push.ACTION_PUSH_REGISTRATION";
 
     //Hosts
-
-
     public static final String BASE_URL_API = "https://api.iterable.com/api/";
     public static final String BASE_URL_LINKS = "https://links.iterable.com/";
 
