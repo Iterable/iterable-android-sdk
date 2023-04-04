@@ -71,6 +71,11 @@ public class IterableConfig {
      */
     final String[] allowedProtocols;
 
+    /**
+     * Data region determining which data center and endpoints are used by the SDK.
+     */
+    final IterableDataRegion dataRegion;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -83,6 +88,7 @@ public class IterableConfig {
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
+        dataRegion = builder.dataRegion;
     }
 
     public static class Builder {
@@ -97,6 +103,8 @@ public class IterableConfig {
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
+        private IterableDataRegion dataRegion = IterableDataRegion.US;
+
         public Builder() {}
 
         /**
@@ -214,6 +222,16 @@ public class IterableConfig {
         @NonNull
         public Builder setAllowedProtocols(@NonNull String[] allowedProtocols) {
             this.allowedProtocols = allowedProtocols;
+            return this;
+        }
+
+        /**
+         * Set the data region used by the SDK
+         * @param dataRegion enum value that determines which endpoint to use, defaults to IterableDataRegion.US
+         */
+        @NonNull
+        public Builder setDataRegion(@NonNull IterableDataRegion dataRegion) {
+            this.dataRegion = dataRegion;
             return this;
         }
 
