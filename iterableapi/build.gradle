@@ -91,6 +91,8 @@ if(hasProperty("mavenPublishEnabled")) {
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+
+    exclude '**/*.kt'
 }
 
 tasks.withType(Test) {
