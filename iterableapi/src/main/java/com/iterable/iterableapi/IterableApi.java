@@ -507,7 +507,6 @@ public class IterableApi {
         IterablePushNotificationUtil.processPendingAction(context);
 
         if(config.dataRegion == IterableDataRegion.EU) {
-            IterableLogger.d(TAG, String.valueOf(IterableDataRegion.EU));
             IterableApi.overrideURLEndpointPath(String.valueOf(IterableDataRegion.EU));
         }
     }
