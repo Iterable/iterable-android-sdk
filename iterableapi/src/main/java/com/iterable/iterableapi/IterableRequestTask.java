@@ -27,7 +27,6 @@ import java.util.Iterator;
  */
 class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableApiResponse> {
     static final String TAG = "IterableRequest";
-    static final String ITERABLE_BASE_URL = "https://api.iterable.com/api/";
 
     static String overrideUrl;
 
@@ -65,7 +64,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             HttpURLConnection urlConnection = null;
 
             IterableLogger.v(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-            String baseUrl = getBaseUrl(iterableApiRequest);
+            String baseUrl = getBaseUrl();
 
             try {
                 if (overrideUrl != null && !overrideUrl.isEmpty()) {
@@ -225,14 +224,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         return apiResponse;
     }
 
-    private static String getBaseUrl(IterableApiRequest iterableApiRequest) {
-        String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl :
-                ITERABLE_BASE_URL;
-
+    private static String getBaseUrl() {
         IterableConfig config = IterableApi.getInstance().config;
-        if(config.dataRegion == IterableDataRegion.EU) {
-            baseUrl = IterableDataRegion.EU.getEndpoint();
-        }
+        IterableDataRegion dataRegion = config.dataRegion;
+        String baseUrl = dataRegion.getEndpoint();
 
         if (overrideUrl != null && !overrideUrl.isEmpty()) {
             baseUrl = overrideUrl;
