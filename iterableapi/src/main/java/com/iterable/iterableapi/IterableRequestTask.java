@@ -65,8 +65,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             HttpURLConnection urlConnection = null;
 
             IterableLogger.v(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-            String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl :
-                    ITERABLE_BASE_URL;
+            String baseUrl = getBaseUrl(iterableApiRequest);
+
             try {
                 if (overrideUrl != null && !overrideUrl.isEmpty()) {
                     baseUrl = overrideUrl;
@@ -223,6 +223,22 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             IterableLogger.v(TAG, "======================================");
         }
         return apiResponse;
+    }
+
+    private static String getBaseUrl(IterableApiRequest iterableApiRequest) {
+        String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl :
+                ITERABLE_BASE_URL;
+
+        IterableConfig config = IterableApi.getInstance().config;
+        if(config.dataRegion == IterableDataRegion.EU) {
+            baseUrl = IterableDataRegion.EU.getEndpoint();
+        }
+
+        if (overrideUrl != null && !overrideUrl.isEmpty()) {
+            baseUrl = overrideUrl;
+        }
+
+        return baseUrl;
     }
 
     private static boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {

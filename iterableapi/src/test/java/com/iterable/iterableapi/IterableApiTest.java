@@ -695,4 +695,10 @@ public class IterableApiTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
+    @Test
+    public void testBaseUrlWhenSetToUSDataRegion() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setDataRegion(IterableDataRegion.US).build());
+        assertEquals(IterableRequestTask.);
+    }
+
 }
