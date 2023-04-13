@@ -15,6 +15,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.5.0-alpha1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.5.0-alpha1)
+
+
 ## [3.4.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.11)
 
 #### Added
