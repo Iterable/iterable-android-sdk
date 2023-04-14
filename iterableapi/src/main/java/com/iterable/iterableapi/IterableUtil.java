@@ -15,6 +15,8 @@ public class IterableUtil {
     @VisibleForTesting
     static IterableUtilImpl instance = new IterableUtilImpl();
 
+    private IterableUtil() { }
+
     static long currentTimeMillis() {
         return instance.currentTimeMillis();
     }
