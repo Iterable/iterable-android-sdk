@@ -51,7 +51,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     }
 
     fun postConstruction() {
-        scheduleSync()
+        scheduleSync(autoFetchDuration)
     }
 
     // endregion
@@ -143,7 +143,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 IterableLogger.e(TAG, "No payload found in embedded message response")
             }
             lastSync = IterableUtil.currentTimeMillis()
-            scheduleSync()
+            scheduleSync(autoFetchDuration)
         }
     }
 
@@ -200,31 +200,35 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     // region auto fetch functionality
 
-    fun scheduleSync() {
+    fun scheduleSync(autoFetchDuration: Double) {
         IterableLogger.printInfo()
-        if (canSyncEmbeddedMessages()) {
-            IterableLogger.v(TAG, "Can sync now.. Syncing now")
-            IterableLogger.v(TAG, "setting isSyncScheduled to false in first if")
-            getSyncedEmbeddedMessages()
+        if(autoFetchDuration > 0) {
+            if (canSyncEmbeddedMessages()) {
+                IterableLogger.v(TAG, "Can sync now.. Syncing now")
+                IterableLogger.v(TAG, "setting isSyncScheduled to false in first if")
+                getSyncedEmbeddedMessages()
 
-        } else {
-            if (!isAppInBackground) {
-                IterableLogger.v(
-                    TAG,
-                    "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds"
-                )
-                Handler(Looper.getMainLooper()).postDelayed(
-                    {
-                        getSyncedEmbeddedMessages()
-                        IterableLogger.v(TAG, "inside looper setting isSyncScheduled to false")
-                    },
-                    ((autoFetchDuration - getSecondsSinceLastFetch()) * 1000).toLong()
-                )
-                IterableLogger.v(TAG, "setting isSyncScheduled to true")
             } else {
-                IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
-                lastSync = autoFetchDuration.toLong()
+                if (!isAppInBackground) {
+                    IterableLogger.v(
+                        TAG,
+                        "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds"
+                    )
+                    Handler(Looper.getMainLooper()).postDelayed(
+                        {
+                            getSyncedEmbeddedMessages()
+                            IterableLogger.v(TAG, "inside looper setting isSyncScheduled to false")
+                        },
+                        ((autoFetchDuration - getSecondsSinceLastFetch()) * 1000).toLong()
+                    )
+                    IterableLogger.v(TAG, "setting isSyncScheduled to true")
+                } else {
+                    IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
+                    lastSync = autoFetchDuration.toLong()
+                }
             }
+        } else {
+            IterableLogger.v(TAG, "embedded messaging automatic fetching not started since autoFetchDuration is <= 0")
         }
     }
 
@@ -269,7 +273,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync) + " > " + autoFetchDuration * 1000
             )
             //Check if looper is already running
-            scheduleSync()
+            scheduleSync(autoFetchDuration)
         } else {
             IterableLogger.v(
                 TAG,
