@@ -51,7 +51,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     }
 
     fun postConstruction() {
-        scheduleSync(autoFetchDuration)
+        scheduleSync()
     }
 
     // endregion
@@ -143,7 +143,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 IterableLogger.e(TAG, "No payload found in embedded message response")
             }
             lastSync = IterableUtil.currentTimeMillis()
-            scheduleSync(autoFetchDuration)
+            scheduleSync()
         }
     }
 
@@ -200,7 +200,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     // region auto fetch functionality
 
-    fun scheduleSync(autoFetchDuration: Double) {
+    fun scheduleSync() {
         IterableLogger.printInfo()
         if(autoFetchDuration > 0) {
             if (canSyncEmbeddedMessages()) {
@@ -273,7 +273,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync) + " > " + autoFetchDuration * 1000
             )
             //Check if looper is already running
-            scheduleSync(autoFetchDuration)
+            scheduleSync()
         } else {
             IterableLogger.v(
                 TAG,
