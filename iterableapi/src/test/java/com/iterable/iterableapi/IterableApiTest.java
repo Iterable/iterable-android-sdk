@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.net.Uri;
 
