@@ -6,7 +6,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.File
 
 public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
@@ -20,7 +19,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     val messages: LiveData<List<IterableEmbeddedMessage>>
         get() = _messages
 
-    private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
+    private var localMessages: MutableList<IterableEmbeddedMessage> = ArrayList()
 
     private var autoFetchDuration: Double = 0.0
     private var lastSync: Long = 0
@@ -30,6 +29,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
     private var activityMonitor: IterableActivityMonitor? = null
     private var isAppInBackground = false
+    var isFeatureEnabled = true
 
     // endregion
 
@@ -99,7 +99,9 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
         IterableLogger.v(TAG, "Going to sync messages")
 
-        syncMessages()
+        if(isFeatureEnabled) {
+            syncMessages()
+        }
 
         IterableLogger.v(TAG, "Returning messages")
 
@@ -238,6 +240,25 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     private fun canSyncEmbeddedMessages(): Boolean {
         return getSecondsSinceLastFetch() >= autoFetchDuration
+    }
+
+    // endregion
+
+    // region enable/disable functionality
+
+    fun enable() {
+        isFeatureEnabled = true
+        scheduleSync()
+    }
+
+    fun disable() {
+        isFeatureEnabled = false
+        reset()
+    }
+
+    fun reset() {
+//        localMessages.clear()
+        _messages.value = emptyList()
     }
 
     // endregion
