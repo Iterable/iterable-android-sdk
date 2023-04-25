@@ -38,6 +38,7 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private ResultCallbackHandler callbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
@@ -276,6 +277,8 @@ public class IterableApi {
 
         if (config.autoPushRegistration) {
             registerForPush();
+        } else if(callbackHandler != null){
+            callbackHandler.sendResult(true);
         }
 
         getInAppManager().syncInApp();
@@ -469,7 +472,7 @@ public class IterableApi {
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes);
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, callbackHandler);
     }
 //endregion
 
@@ -557,10 +560,10 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        setEmail(email, null);
+        setEmail(email, null, null);
     }
 
-    public void setEmail(@Nullable String email, @Nullable String authToken) {
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable ResultCallbackHandler callbackHandler) {
         //Only if passed in same non-null email
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
@@ -575,16 +578,17 @@ public class IterableApi {
 
         _email = email;
         _userId = null;
+        this.callbackHandler = callbackHandler;
         storeAuthData();
 
         onLogin(authToken);
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null);
+        setUserId(userId, null, null);
     }
 
-    public void setUserId(@Nullable String userId, @Nullable String authToken) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable ResultCallbackHandler callbackHandler) {
         //If same non null userId is passed
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
@@ -599,6 +603,7 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
+        this.callbackHandler = callbackHandler;
         storeAuthData();
 
         onLogin(authToken);

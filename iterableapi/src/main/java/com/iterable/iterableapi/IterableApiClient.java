@@ -411,7 +411,7 @@ class IterableApiClient {
         }
     }
 
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes, final ResultCallbackHandler callbackHandler) {
         Context context = authProvider.getContext();
         JSONObject requestJSON = new JSONObject();
         try {
@@ -453,7 +453,21 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON, authToken);
+            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON, authToken, new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(@NonNull JSONObject data) {
+                    if (callbackHandler != null) {
+                        callbackHandler.sendResult(true);
+                    }
+                }
+            }, new IterableHelper.FailureHandler() {
+                @Override
+                public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                    if (callbackHandler != null) {
+                        callbackHandler.sendResult(true);
+                    }
+                }
+            });
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }
