@@ -464,7 +464,7 @@ class IterableApiClient {
                 @Override
                 public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                     if (callbackHandler != null) {
-                        callbackHandler.sendResult(true);
+                        callbackHandler.sendResult(false);
                     }
                 }
             });
