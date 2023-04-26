@@ -202,29 +202,33 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     fun scheduleSync() {
         IterableLogger.printInfo()
-        if (canSyncEmbeddedMessages()) {
-            IterableLogger.v(TAG, "Can sync now.. Syncing now")
-            IterableLogger.v(TAG, "setting isSyncScheduled to false in first if")
-            getSyncedEmbeddedMessages()
+        if(autoFetchDuration > 0) {
+            if (canSyncEmbeddedMessages()) {
+                IterableLogger.v(TAG, "Can sync now.. Syncing now")
+                IterableLogger.v(TAG, "setting isSyncScheduled to false in first if")
+                getSyncedEmbeddedMessages()
 
-        } else {
-            if (!isAppInBackground) {
-                IterableLogger.v(
-                    TAG,
-                    "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds"
-                )
-                Handler(Looper.getMainLooper()).postDelayed(
-                    {
-                        getSyncedEmbeddedMessages()
-                        IterableLogger.v(TAG, "inside looper setting isSyncScheduled to false")
-                    },
-                    ((autoFetchDuration - getSecondsSinceLastFetch()) * 1000).toLong()
-                )
-                IterableLogger.v(TAG, "setting isSyncScheduled to true")
             } else {
-                IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
-                lastSync = autoFetchDuration.toLong()
+                if (!isAppInBackground) {
+                    IterableLogger.v(
+                        TAG,
+                        "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds"
+                    )
+                    Handler(Looper.getMainLooper()).postDelayed(
+                        {
+                            getSyncedEmbeddedMessages()
+                            IterableLogger.v(TAG, "inside looper setting isSyncScheduled to false")
+                        },
+                        ((autoFetchDuration - getSecondsSinceLastFetch()) * 1000).toLong()
+                    )
+                    IterableLogger.v(TAG, "setting isSyncScheduled to true")
+                } else {
+                    IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
+                    lastSync = autoFetchDuration.toLong()
+                }
             }
+        } else {
+            IterableLogger.v(TAG, "embedded messaging automatic fetching not started since autoFetchDuration is <= 0")
         }
     }
 
@@ -234,26 +238,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     private fun canSyncEmbeddedMessages(): Boolean {
         return getSecondsSinceLastFetch() >= autoFetchDuration
-    }
-
-    // endregion
-
-    // region basic test methods
-
-    //For testing purpose only
-    fun getMessagesFromJson(): List<IterableEmbeddedMessage> {
-        val file = File("data.json")
-        val bufferedReader = file.bufferedReader()
-        val jsonString = bufferedReader.use { it.readText() }
-        val messageJson = JSONObject(jsonString)
-
-        val embeddedMessages = listOf(
-            IterableEmbeddedMessage.fromJSONObject(messageJson),
-            IterableEmbeddedMessage.fromJSONObject(messageJson),
-            IterableEmbeddedMessage.fromJSONObject(messageJson)
-        )
-
-        return embeddedMessages
     }
 
     // endregion
