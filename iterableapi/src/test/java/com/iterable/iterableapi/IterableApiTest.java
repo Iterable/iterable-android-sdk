@@ -161,6 +161,95 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
+    public void testSetEmailWithCallback_success() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String email = "test@example.com";
+        IterableApi.getInstance().setEmail(email, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess() {
+                assertTrue(true); // callback should be called with success
+            }
+        });
+
+        shadowOf(getMainLooper()).runToEndOfTasks(); // Wait for callback to be called
+
+        assertEquals(email, IterableApi.getInstance().getEmail());
+    }
+
+    @Test
+    public void testSetEmailWithCallback_failure() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(400));
+
+        // Initialize IterableApi with the mock server URL
+        IterableApi.initialize(getContext(), "apiKey");
+
+        // Set up the callback
+        boolean[] result = new boolean[1];
+        IterableApi.getInstance().setEmail("test@example.com", new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess() {
+                result[0] = true;
+            }
+            @Override
+            public void onFailure(String errorMessage) {
+                result[0] = false;
+            }
+        });
+
+        // Wait for the callback to be triggered
+        Thread.sleep(1000); // Wait for 1 second
+
+        // Check that the onFailure callback was triggered
+        assertFalse(result[0]);
+    }
+
+    @Test
+    public void testSetUserIdWithCallback_success() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String userId = "test_user_id";
+        IterableApi.getInstance().setUserId(userId, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess() {
+                assertTrue(true); // callback should be called with success
+            }
+        });
+
+        shadowOf(getMainLooper()).runToEndOfTasks(); // Wait for callback to be called
+
+        assertEquals(userId, IterableApi.getInstance().getUserId());
+    }
+
+    @Test
+    public void testSetUserIdWithCallback_failure() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(400));
+
+        // Initialize IterableApi with the mock server URL
+        IterableApi.initialize(getContext(), "apiKey");
+
+        // Set up the callback
+        boolean[] result = new boolean[1];
+        IterableApi.getInstance().setUserId("test_user_id", new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess() {
+                result[0] = true;
+            }
+            @Override
+            public void onFailure(String errorMessage) {
+                result[0] = false;
+            }
+        });
+
+        // Wait for the callback to be triggered
+        Thread.sleep(1000); // Wait for 1 second
+
+        // Check that the onFailure callback was triggered
+        assertFalse(result[0]);
+    }
+
+
+    @Test
     public void testUpdateEmailWithOldEmail() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.initialize(getContext(), "apiKey");
