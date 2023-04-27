@@ -549,6 +549,11 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
+    public void testEmbeddedDelivery() throws Exception {
+
+    }
+
+    @Test
     public void testInboxSession() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 

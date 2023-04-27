@@ -163,6 +163,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             if (!localMessageMap.containsKey(it.metadata.id)) {
                 localMessagesChanged = true
                 localMessageList.add(it)
+                IterableApi.getInstance().trackEmbeddedDelivery(it)
             }
             //TODO: Make a call to the updateHandler to notify that the message has been added
         }
