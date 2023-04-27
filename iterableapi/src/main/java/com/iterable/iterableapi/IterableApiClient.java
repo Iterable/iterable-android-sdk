@@ -315,7 +315,7 @@ class IterableApiClient {
         }
     }
 
-    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId, @Nullable final ResultCallbackHandler callbackHandler) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -333,8 +333,22 @@ class IterableApiClient {
             if (clickLocation == IterableInAppLocation.INBOX) {
                 addInboxSessionID(requestJSON, inboxSessionId);
             }
-
-            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
+            
+            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON, new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(@NonNull JSONObject data) {
+                    if (callbackHandler != null) {
+                        callbackHandler.sendResult(true);
+                    }
+                }
+            }, new IterableHelper.FailureHandler() {
+                @Override
+                public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                    if (callbackHandler != null) {
+                        callbackHandler.sendResult(false);
+                    }
+                }
+            });
         } catch (JSONException e) {
             e.printStackTrace();
         }

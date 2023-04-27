@@ -131,9 +131,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Set the read flag on an inbox message
      * @param message Inbox message object retrieved from {@link IterableInAppManager#getInboxMessages()}
      * @param read Read state flag. true = read, false = unread
+     * @param callbackHandler The callback which returns `success` or `failure`.
      */
-    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read) {
+    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read, @Nullable ResultCallbackHandler callbackHandler) {
         message.setRead(read);
+        if(callbackHandler != null){
+            callbackHandler.sendResult(true);
+        }
         notifyOnChange();
     }
 
@@ -248,17 +252,18 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     /**
      * Remove message from the list
      * @param message The message to be removed
+     * @param callbackHandler The callback which returns `success` or `failure`.
      */
-    public synchronized void removeMessage(@NonNull IterableInAppMessage message) {
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message, @Nullable ResultCallbackHandler callbackHandler) {
         message.setConsumed(true);
-        api.inAppConsume(message.getMessageId());
+        api.inAppConsume(message.getMessageId(), callbackHandler);
         notifyOnChange();
     }
 
-    public synchronized void removeMessage(@NonNull IterableInAppMessage message, @NonNull IterableInAppDeleteActionType source, @NonNull IterableInAppLocation clickLocation) {
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message, @NonNull IterableInAppDeleteActionType source, @NonNull IterableInAppLocation clickLocation, @Nullable ResultCallbackHandler callbackHandler) {
         IterableLogger.printInfo();
         message.setConsumed(true);
-        api.inAppConsume(message, source, clickLocation);
+        api.inAppConsume(message, source, clickLocation, callbackHandler);
         notifyOnChange();
     }
 
