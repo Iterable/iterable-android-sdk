@@ -1035,8 +1035,9 @@ public class IterableApi {
      * Tracks when a link inside an embedded message is clicked
      * @param message the embedded message to be tracked
      * @param clickedUrl the URL of the clicked link
+     * @param buttonIdentifier location of the button click
      */
-    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String clickedUrl) {
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String clickedUrl, @Nullable String buttonIdentifier) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1057,7 +1058,7 @@ public class IterableApi {
             throw new RuntimeException(e);
         }
 
-        track("embedded click", dataFields);
+        track("embedded message click", dataFields);
 //      apiClient.trackEmbeddedClick();
     }
 
