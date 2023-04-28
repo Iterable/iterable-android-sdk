@@ -1037,7 +1037,7 @@ public class IterableApi {
      * @param buttonIdentifier location of the button click
      * @param clickedUrl the URL of the clicked link
      */
-    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @NonNull String buttonIdentifier, @Nullable String clickedUrl) {
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String buttonIdentifier, @Nullable String clickedUrl) {
         if (!checkSDKInitialization()) {
             return;
         }
