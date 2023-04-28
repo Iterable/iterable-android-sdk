@@ -1034,10 +1034,10 @@ public class IterableApi {
     /**
      * Tracks when a link inside an embedded message is clicked
      * @param message the embedded message to be tracked
-     * @param clickedUrl the URL of the clicked link
      * @param buttonIdentifier location of the button click
+     * @param clickedUrl the URL of the clicked link
      */
-    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String clickedUrl, @Nullable String buttonIdentifier) {
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @NonNull String buttonIdentifier, @Nullable String clickedUrl) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1047,12 +1047,11 @@ public class IterableApi {
             return;
         }
 
-        IterableLogger.e(TAG, "trackEmbeddedClick: button is clicked!!!");
-
         JSONObject dataFields = new JSONObject();
         try {
             dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID, message.getMetadata().getId());
             dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TITLE, message.getElements().getTitle());
+            dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ID, buttonIdentifier);
             dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION, clickedUrl);
         } catch (JSONException e) {
             throw new RuntimeException(e);
