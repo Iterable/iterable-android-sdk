@@ -1052,7 +1052,7 @@ public class IterableApi {
         try {
             dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID, message.getMetadata().getId());
             dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TITLE, message.getElements().getTitle());
-            dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION, clickedUrl);
+            dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_DATA, clickedUrl);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
