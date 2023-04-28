@@ -394,7 +394,7 @@ class IterableApiClient {
         }
     }
 
-    public void trackEmbeddedClick(@NonNull String messageId, @NonNull String clickedUrl) {
+    public void trackEmbeddedClick(@NonNull String messageId, @NonNull String buttonIdentifier, @NonNull String clickedUrl) {
 
     }
 
