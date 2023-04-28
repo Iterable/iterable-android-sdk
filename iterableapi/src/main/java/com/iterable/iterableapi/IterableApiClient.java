@@ -394,6 +394,10 @@ class IterableApiClient {
         }
     }
 
+    public void trackEmbeddedClick(@NonNull String messageId, @NonNull String clickedUrl) {
+
+    }
+
     protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
