@@ -334,7 +334,7 @@ class IterableApiClient {
         }
     }
 
-    void trackEmbeddedDelivery(@NonNull IterableEmbeddedMessage message) {
+    void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
 
     }
 

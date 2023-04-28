@@ -549,7 +549,7 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
-    public void testEmbeddedDelivery() throws Exception {
+    public void testEmbeddedMessageReceived() throws Exception {
 
     }
 

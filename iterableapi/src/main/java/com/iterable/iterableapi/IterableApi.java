@@ -238,13 +238,13 @@ public class IterableApi {
         apiClient.trackInAppDelivery(message);
     }
 
-    void trackEmbeddedDelivery(@NonNull IterableEmbeddedMessage message) {
+    void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
         if(!checkSDKInitialization()) {
             return;
         }
 
         if (message == null) {
-            IterableLogger.e(TAG, "trackEmbeddedDelivery: message is null");
+            IterableLogger.e(TAG, "trackEmbeddedMessageReceived: message is null");
             return;
         }
 
@@ -256,7 +256,7 @@ public class IterableApi {
             throw new RuntimeException(e);
         }
 
-        track("embedded delivery", dataFields);
+        track("embedded message received", dataFields);
 //        apiClient.trackEmbeddedDelivery();
     }
 
