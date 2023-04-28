@@ -173,7 +173,7 @@ class EmbeddedMessageElements (
 class EmbeddedMessageElementsButton (
     val id: String,
     val title: String? = null,
-    val action: String? = null
+    val action: EmbeddedMessageElementsButtonAction? = null
 ) {
 
     companion object {
@@ -185,7 +185,14 @@ class EmbeddedMessageElementsButton (
             try {
                 buttonJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ID, button.id)
                 buttonJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TITLE, button.title)
-                buttonJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION, button.action)
+
+                if(button.action != null) {
+                    buttonJson.putOpt(
+                        IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION,
+                        EmbeddedMessageElementsButtonAction.toJSONObject(button.action)
+                    )
+                }
+
             } catch (e: JSONException) {
                 IterableLogger.e(TAG, "Error while serializing flex message button", e)
             }
@@ -195,7 +202,12 @@ class EmbeddedMessageElementsButton (
         fun fromJSONObject(buttonJson: JSONObject): EmbeddedMessageElementsButton {
             val id: String = buttonJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ID)
             val title: String = buttonJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TITLE)
-            val action: String = buttonJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION)
+
+            val buttonActionJson: JSONObject? = buttonJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION)
+            var action: EmbeddedMessageElementsButtonAction? = null
+            if (buttonActionJson != null) {
+                action = EmbeddedMessageElementsButtonAction.fromJSONObject(buttonActionJson)
+            }
 
             return EmbeddedMessageElementsButton(id, title, action)
         }
@@ -223,11 +235,40 @@ class EmbeddedMessageElementsDefaultAction (
 
             return defaultActionJson
         }
-        fun fromJSONObject(flexMessageElementsDefaultActionJson: JSONObject): EmbeddedMessageElementsDefaultAction {
-            val type: String = flexMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE)
-            val data: String = flexMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
+        fun fromJSONObject(embeddedMessageElementsDefaultActionJson: JSONObject): EmbeddedMessageElementsDefaultAction {
+            val type: String = embeddedMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE)
+            val data: String = embeddedMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
 
             return EmbeddedMessageElementsDefaultAction(type, data)
+        }
+    }
+}
+
+class EmbeddedMessageElementsButtonAction (
+    val type: String,
+    val data: String
+) {
+
+    companion object {
+        val TAG = "ItblEmbeddedButtonAction"
+
+        fun toJSONObject(buttonAction: EmbeddedMessageElementsButtonAction): JSONObject {
+            val buttonActionJson = JSONObject()
+
+            try {
+                buttonActionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE, buttonAction.type)
+                buttonActionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_DATA, buttonAction.data)
+            } catch (e: JSONException) {
+                IterableLogger.e(TAG, "Error while serializing flex default action", e)
+            }
+
+            return buttonActionJson
+        }
+        fun fromJSONObject(embeddedMessageElementsButtonActionJson: JSONObject): EmbeddedMessageElementsButtonAction {
+            val type: String = embeddedMessageElementsButtonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE)
+            val data: String = embeddedMessageElementsButtonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
+
+            return EmbeddedMessageElementsButtonAction(type, data)
         }
     }
 }
