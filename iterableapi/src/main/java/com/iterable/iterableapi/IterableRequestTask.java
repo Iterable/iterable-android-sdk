@@ -159,7 +159,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 String jsonError = null;
 
                 try {
-                    IterableLogger.v(TAG, requestResult);
                     jsonResponse = new JSONObject(requestResult);
                     IterableLogger.v(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
                             "Response from : " + baseUrl + iterableApiRequest.resourcePath);
