@@ -238,6 +238,28 @@ public class IterableApi {
         apiClient.trackInAppDelivery(message);
     }
 
+    void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
+        if(!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackEmbeddedMessageReceived: message is null");
+            return;
+        }
+
+        JSONObject dataFields = new JSONObject();
+        try {
+            dataFields.put("name", "received");
+            dataFields.put("messageId", message.getMetadata().getId());
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        track("embedded-messaging", dataFields);
+//        apiClient.trackEmbeddedDelivery();
+    }
+
     private String getPushIntegrationName() {
         if (config.pushIntegrationName != null) {
             return config.pushIntegrationName;

@@ -334,6 +334,10 @@ class IterableApiClient {
         }
     }
 
+    void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
+
+    }
+
     public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
         JSONObject requestJSON = new JSONObject();
 
