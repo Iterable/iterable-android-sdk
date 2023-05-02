@@ -499,8 +499,11 @@ public class IterableApi {
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
         if (sharedInstance.inAppManager == null) {
-            sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval);
+            sharedInstance.inAppManager = new IterableInAppManager(
+                    sharedInstance,
+                    sharedInstance.config.inAppHandler,
+                    sharedInstance.config.inAppDisplayInterval,
+                    sharedInstance.config.useInMemoryStorageForInApps);
         }
 
         loadLastSavedConfiguration(context);
