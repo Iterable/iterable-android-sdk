@@ -250,13 +250,13 @@ public class IterableApi {
 
         JSONObject dataFields = new JSONObject();
         try {
-            dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID, message.getMetadata().getId());
-            dataFields.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TITLE, message.getElements().getTitle());
+            dataFields.put("name", "received");
+            dataFields.put("messageId", message.getMetadata().getId());
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
 
-        track("embedded message received", dataFields);
+        track("embedded-messaging", dataFields);
 //        apiClient.trackEmbeddedDelivery();
     }
 
