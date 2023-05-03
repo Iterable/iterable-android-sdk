@@ -115,7 +115,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     private fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
-        IterableApi.sharedInstance.apiClient.getEmbeddedMessages { payload ->
+        IterableApi.sharedInstance.getEmbeddedMessages { payload ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
             if (payload != null && !payload.isEmpty()) {
                 try {
