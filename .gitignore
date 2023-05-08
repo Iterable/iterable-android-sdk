@@ -67,4 +67,4 @@ pom.xml.versionsBackup
 pom.xml.next
 release.properties
 
-jacoco.exe
+jacoco.exec
