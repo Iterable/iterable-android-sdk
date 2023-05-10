@@ -219,7 +219,7 @@ class IterableApiClient {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            addEmailOrUserIdToUserKey(requestJSON);
+            addEmailOrUserIdToUserKeyJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
@@ -336,7 +336,7 @@ class IterableApiClient {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            addEmailOrUserIdToUserKey(requestJSON);
+            addEmailOrUserIdToUserKeyJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
@@ -511,7 +511,7 @@ class IterableApiClient {
         }
     }
 
-    private void addEmailOrUserIdToUserKey(JSONObject requestJSON) {
+    private void addEmailOrUserIdToUserKeyJson(JSONObject requestJSON) {
         try {
             if (authProvider.getEmail() != null) {
                 requestJSON.put(IterableConstants.KEY_USER_KEY, authProvider.getEmail());
