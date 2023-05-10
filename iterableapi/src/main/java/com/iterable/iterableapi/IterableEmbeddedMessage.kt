@@ -27,14 +27,14 @@ data class IterableEmbeddedMessage (
         }
 
 
-        fun fromJSONObject(embeddedMessageJson: JSONObject): IterableEmbeddedMessage {
-            val metadataJson: JSONObject = embeddedMessageJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA)
+        fun fromJSONObject(messageJson: JSONObject): IterableEmbeddedMessage {
+            val metadataJson: JSONObject = messageJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA)
             val metadata: EmbeddedMessageMetadata = EmbeddedMessageMetadata.fromJSONObject(metadataJson)
 
-            val elementsJson: JSONObject? = embeddedMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS)
+            val elementsJson: JSONObject? = messageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS)
             val elements: EmbeddedMessageElements? = EmbeddedMessageElements.fromJSONObject(elementsJson)
 
-            val payload: JSONObject? = embeddedMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD)
+            val payload: JSONObject? = messageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD)
 
             return IterableEmbeddedMessage(metadata, elements, payload)
         }
@@ -66,11 +66,11 @@ class EmbeddedMessageMetadata(
             return metadataJson
         }
 
-        fun fromJSONObject(flexMessageMetadataJson: JSONObject): EmbeddedMessageMetadata {
-            val id: String = flexMessageMetadataJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID)
-            val placementId: String = flexMessageMetadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
-            val campaignId: String = flexMessageMetadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID)
-            val isProof: Boolean = flexMessageMetadataJson.optBoolean(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF)
+        fun fromJSONObject(metadataJson: JSONObject): EmbeddedMessageMetadata {
+            val id: String = metadataJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID)
+            val placementId: String = metadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
+            val campaignId: String = metadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID)
+            val isProof: Boolean = metadataJson.optBoolean(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF)
 
             return EmbeddedMessageMetadata(id, placementId, campaignId, isProof)
         }
@@ -235,9 +235,9 @@ class EmbeddedMessageElementsDefaultAction (
 
             return defaultActionJson
         }
-        fun fromJSONObject(embeddedMessageElementsDefaultActionJson: JSONObject): EmbeddedMessageElementsDefaultAction {
-            val type: String = embeddedMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE)
-            val data: String = embeddedMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
+        fun fromJSONObject(defaultActionJson: JSONObject): EmbeddedMessageElementsDefaultAction {
+            val type: String = defaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE)
+            val data: String = defaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
 
             return EmbeddedMessageElementsDefaultAction(type, data)
         }
@@ -264,9 +264,9 @@ class EmbeddedMessageElementsButtonAction (
 
             return buttonActionJson
         }
-        fun fromJSONObject(embeddedMessageElementsButtonActionJson: JSONObject): EmbeddedMessageElementsButtonAction {
-            val type: String = embeddedMessageElementsButtonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE)
-            val data: String = embeddedMessageElementsButtonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
+        fun fromJSONObject(buttonActionJson: JSONObject): EmbeddedMessageElementsButtonAction {
+            val type: String = buttonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE)
+            val data: String = buttonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
 
             return EmbeddedMessageElementsButtonAction(type, data)
         }

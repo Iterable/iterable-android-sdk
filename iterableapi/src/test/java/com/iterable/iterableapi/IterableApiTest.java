@@ -528,6 +528,28 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
+    public void testEmbeddedClick() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableEmbeddedMessage message = EmbeddedTestUtils.getTestEmbeddedMessage();
+
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackEmbeddedClick(message, message.getElements().getButtons().get(0).getId(), message.getElements().getButtons().get(0).getAction().getData());
+        shadowOf(getMainLooper()).idle();
+
+        RecordedRequest trackEmbeddedClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackEmbeddedClickRequest);
+        Uri uri = Uri.parse(trackEmbeddedClickRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_EMBEDDED_CLICK, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackEmbeddedClickRequest.getBody().readUtf8());
+        assertEquals(message.getMetadata().getId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(message.getElements().getButtons().get(0).getId(), requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER));
+        assertEquals(message.getElements().getButtons().get(0).getAction().getData(), requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL));
+        verifyDeviceInfo(requestJson);
+    }
+
+    @Test
     public void testInAppDelivery() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
@@ -627,11 +649,6 @@ public class IterableApiTest extends BaseTest {
         assertEquals(true, impressionsJsonArray.getJSONObject(0).getBoolean(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX));
         assertEquals(2, impressionsJsonArray.getJSONObject(0).getInt(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_COUNT));
         assertEquals(5.5, impressionsJsonArray.getJSONObject(0).getDouble(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_DURATION));
-    }
-
-    @Test
-    public void testEmbeddedClick() throws Exception {
-
     }
 
     private void verifyMessageContext(JSONObject requestJson) throws JSONException {

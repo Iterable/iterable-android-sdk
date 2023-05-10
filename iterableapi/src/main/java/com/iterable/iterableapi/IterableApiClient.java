@@ -294,6 +294,22 @@ class IterableApiClient {
         }
     }
 
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String buttonIdentifier, @Nullable String clickedUrl) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToUserKeyJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER, buttonIdentifier);
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL, clickedUrl);
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_CLICK, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     void trackInAppClose(@NonNull IterableInAppMessage message, @Nullable String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
         JSONObject requestJSON = new JSONObject();
 
@@ -405,10 +421,6 @@ class IterableApiClient {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-    }
-
-    public void trackEmbeddedClick(@NonNull String messageId, @NonNull String buttonIdentifier, @NonNull String clickedUrl) {
-
     }
 
     protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
