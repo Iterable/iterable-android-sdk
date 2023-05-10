@@ -1052,6 +1052,33 @@ public class IterableApi {
 
         apiClient.trackInAppClose(message, clickedURL, closeAction, clickLocation, inboxSessionId);
     }
+
+    /**
+     * Tracks when a link inside an embedded message is clicked
+     * @param message the embedded message to be tracked
+     */
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackEmbeddedClick: message is null");
+            return;
+        }
+
+        JSONObject dataFields = new JSONObject();
+        try {
+            dataFields.put("name", "click");
+            dataFields.put("messageId", message.getMetadata().getId());
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        track("embedded-messaging", dataFields);
+//      apiClient.trackEmbeddedClick();
+    }
+
 //endregion
 
 //region DEPRECATED - API public functions

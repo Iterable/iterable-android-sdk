@@ -18,7 +18,10 @@
         "buttons": [{
           "id": "reward-button",
           "title": "REDEEM MEOW",
-          "action": "success"
+          "action": {
+            "type": "openUrl",
+            "data": "https://www.google.com"
+          }
         }],
         "text": [{
           "id": "body",

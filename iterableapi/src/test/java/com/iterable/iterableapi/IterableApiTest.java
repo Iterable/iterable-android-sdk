@@ -614,6 +614,11 @@ public class IterableApiTest extends BaseTest {
         assertEquals(5.5, impressionsJsonArray.getJSONObject(0).getDouble(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_DURATION));
     }
 
+    @Test
+    public void testEmbeddedClick() throws Exception {
+
+    }
+
     private void verifyMessageContext(JSONObject requestJson) throws JSONException {
         JSONObject messageContext = requestJson.getJSONObject(IterableConstants.KEY_MESSAGE_CONTEXT);
         assertNotNull(messageContext);
