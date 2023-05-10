@@ -217,15 +217,13 @@ class IterableApiClient {
 
     void getEmbeddedMessages(@NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
-        addEmailOrUserIdToJson(requestJSON);
+
         try {
-            addEmailOrUserIdToJson(requestJSON);
+            addEmailOrUserIdToUserKey(requestJSON);
             requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
-            //TODO: This will have to be replaced by either userID or email based on what the user is using
-            requestJSON.put("userKey", IterableApi.getInstance().getEmail());
             requestJSON.put("placementId", "0");
 
             sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
@@ -338,7 +336,7 @@ class IterableApiClient {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            requestJSON.put("userKey", IterableApi.getInstance().getEmail());
+            addEmailOrUserIdToUserKey(requestJSON);
             requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
@@ -507,6 +505,18 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail());
             } else {
                 requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addEmailOrUserIdToUserKey(JSONObject requestJSON) {
+        try {
+            if (authProvider.getEmail() != null) {
+                requestJSON.put(IterableConstants.KEY_USER_KEY, authProvider.getEmail());
+            } else {
+                requestJSON.put(IterableConstants.KEY_USER_KEY, authProvider.getUserId());
             }
         } catch (JSONException e) {
             e.printStackTrace();

@@ -238,6 +238,9 @@ public class IterableApi {
         apiClient.trackInAppDelivery(message);
     }
 
+    /**
+     * Tracks embedded message received events (per embedded message)
+     * @param message the embedded message to be tracked as received */
     void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
         if(!checkSDKInitialization()) {
             return;
