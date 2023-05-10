@@ -155,12 +155,12 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         val localMessageList = getEmbeddedMessages().toMutableList()
         val localMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         localMessageList.forEach {
-            localMessageMap[it.metadata.messageId] = it
+            localMessageMap[it.metadata.id] = it
         }
 
         // Check for new messages and add them to the local list
         remoteMessageList.forEach {
-            if (!localMessageMap.containsKey(it.metadata.messageId)) {
+            if (!localMessageMap.containsKey(it.metadata.id)) {
                 localMessagesChanged = true
                 localMessageList.add(it)
                 IterableApi.getInstance().trackEmbeddedMessageReceived(it)
@@ -171,11 +171,11 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         // Check for messages in the local list that are not in the remote list and remove them
         val remoteMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         remoteMessageList.forEach {
-            remoteMessageMap[it.metadata.messageId] = it
+            remoteMessageMap[it.metadata.id] = it
         }
         val messagesToRemove = mutableListOf<IterableEmbeddedMessage>()
         localMessageList.forEach {
-            if(!remoteMessageMap.containsKey(it.metadata.messageId)) {
+            if(!remoteMessageMap.containsKey(it.metadata.id)) {
                 messagesToRemove.add(it)
 
                 //TODO: Make a call to the updateHandler to notify that the message has been removed
