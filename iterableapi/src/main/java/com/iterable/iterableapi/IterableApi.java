@@ -248,16 +248,16 @@ public class IterableApi {
             return;
         }
 
-        JSONObject dataFields = new JSONObject();
-        try {
-            dataFields.put("name", "received");
-            dataFields.put("messageId", message.getMetadata().getId());
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-
-        track("embedded-messaging", dataFields);
-//        apiClient.trackEmbeddedDelivery();
+//        JSONObject dataFields = new JSONObject();
+//        try {
+//            dataFields.put("name", "received");
+//            dataFields.put("messageId", message.getMetadata().getId());
+//        } catch (JSONException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        track("embedded-messaging", dataFields);
+        apiClient.trackEmbeddedMessageReceived(message);
     }
 
     private String getPushIntegrationName() {

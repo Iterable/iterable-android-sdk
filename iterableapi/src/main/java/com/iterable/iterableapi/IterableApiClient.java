@@ -335,6 +335,17 @@ class IterableApiClient {
     }
 
     void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put("userKey", IterableApi.getInstance().getEmail());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
     }
 
