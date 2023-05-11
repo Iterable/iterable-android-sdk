@@ -223,8 +223,9 @@ public class IterableApi {
     }
 
     /**
-     * Gets a list of Embedded Messages from Iterable; passes the result to the callback.
-     * To get list of messages as a list of EmbeddedMessages, use
+     * A package-private method to get a list of Embedded Messages from Iterable;
+     * Passes the result to the callback.
+     * To get list of messages as a list of EmbeddedMessages in memory, use
      * {@link IterableEmbeddedManager#getEmbeddedMessages()} instead
      *
      * @param onCallback
@@ -253,7 +254,7 @@ public class IterableApi {
     }
 
     void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
-        if(!checkSDKInitialization()) {
+        if (!checkSDKInitialization()) {
             return;
         }
 
