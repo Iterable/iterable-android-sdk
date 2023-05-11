@@ -253,6 +253,9 @@ public class IterableApi {
         apiClient.trackInAppDelivery(message);
     }
 
+    /**
+     * Tracks embedded message received events (per embedded message)
+     * @param message the embedded message to be tracked as received */
     void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
         if (!checkSDKInitialization()) {
             return;
@@ -263,16 +266,7 @@ public class IterableApi {
             return;
         }
 
-        JSONObject dataFields = new JSONObject();
-        try {
-            dataFields.put("name", "received");
-            dataFields.put("messageId", message.getMetadata().getId());
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-
-        track("embedded-messaging", dataFields);
-//        apiClient.trackEmbeddedDelivery();
+        apiClient.trackEmbeddedMessageReceived(message);
     }
 
     private String getPushIntegrationName() {

@@ -550,7 +550,22 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testEmbeddedMessageReceived() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
+        IterableEmbeddedMessage message = EmbeddedTestUtils.getTestEmbeddedMessage();
+
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackEmbeddedMessageReceived(message);
+        shadowOf(getMainLooper()).idle();
+
+        RecordedRequest trackEmbeddedDeliveredRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackEmbeddedDeliveredRequest);
+        Uri uri = Uri.parse(trackEmbeddedDeliveredRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackEmbeddedDeliveredRequest.getBody().readUtf8());
+        assertEquals(message.getMetadata().getId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        verifyDeviceInfo(requestJson);
     }
 
     @Test

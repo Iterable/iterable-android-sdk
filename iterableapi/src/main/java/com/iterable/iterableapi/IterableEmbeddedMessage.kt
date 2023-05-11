@@ -27,14 +27,14 @@ data class IterableEmbeddedMessage (
         }
 
 
-        fun fromJSONObject(flexMessageJson: JSONObject): IterableEmbeddedMessage {
-            val metadataJson: JSONObject = flexMessageJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA)
+        fun fromJSONObject(embeddedMessageJson: JSONObject): IterableEmbeddedMessage {
+            val metadataJson: JSONObject = embeddedMessageJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA)
             val metadata: EmbeddedMessageMetadata = EmbeddedMessageMetadata.fromJSONObject(metadataJson)
 
-            val elementsJson: JSONObject? = flexMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS)
+            val elementsJson: JSONObject? = embeddedMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS)
             val elements: EmbeddedMessageElements? = EmbeddedMessageElements.fromJSONObject(elementsJson)
 
-            val payload: JSONObject? = flexMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD)
+            val payload: JSONObject? = embeddedMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD)
 
             return IterableEmbeddedMessage(metadata, elements, payload)
         }

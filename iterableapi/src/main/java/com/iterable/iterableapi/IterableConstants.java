@@ -51,6 +51,7 @@ public final class IterableConstants {
     public static final String KEY_SUB_MESSAGE          = "subscribedMessageTypeIds";
     public static final String KEY_USER_ID              = "userId";
     public static final String KEY_USER                 = "user";
+    public static final String KEY_USER_KEY             = "userKey";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
@@ -74,6 +75,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
     public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
+    public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
     public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "embedded-messaging/messages";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
