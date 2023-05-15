@@ -17,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -50,11 +51,11 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastInAppShown = 0;
     private boolean autoDisplayPaused = false;
 
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, boolean useInMemoryStorageForInApps) {
         this(iterableApi,
                 handler,
                 inAppDisplayInterval,
-                new IterableInAppFileStorage(iterableApi.getMainActivityContext()),
+                IterableInAppManager.getInAppStorageModel(iterableApi, useInMemoryStorageForInApps),
                 IterableActivityMonitor.getInstance(),
                 new IterableInAppDisplayer(IterableActivityMonitor.getInstance()));
     }
@@ -437,6 +438,26 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
         if (IterableConstants.ITERABLE_IN_APP_ACTION_DELETE.equals(actionName)) {
             removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP);
+        }
+    }
+
+    private static IterableInAppStorage getInAppStorageModel(IterableApi iterableApi, boolean useInMemoryForInAppStorage) {
+        if (useInMemoryForInAppStorage) {
+            checkAndDeleteUnusedInAppFileStorage(iterableApi.getMainActivityContext());
+
+            return new IterableInAppMemoryStorage();
+        } else {
+            return new IterableInAppFileStorage(iterableApi.getMainActivityContext());
+        }
+    }
+
+    private static void checkAndDeleteUnusedInAppFileStorage(Context context) {
+        File sdkFilesDirectory = IterableUtil.getSDKFilesDirectory(context);
+        File inAppContentFolder = IterableUtil.getDirectory(sdkFilesDirectory, "IterableInAppFileStorage");
+        File inAppBlob = new File(inAppContentFolder, "itbl_inapp.json");
+
+        if (inAppBlob.exists()) {
+            inAppBlob.delete();
         }
     }
 
