@@ -237,6 +237,13 @@ public class IterableApi {
         apiClient.getEmbeddedMessages(onCallback);
     }
 
+    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(onSuccess, onFailure);
+    }
+
     /**
      * Tracks in-app delivery events (per in-app)
      * @param message the in-app message to be tracked as delivered */

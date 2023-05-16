@@ -232,6 +232,23 @@ class IterableApiClient {
         }
     }
 
+    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addUserKeyToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+            requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
+            requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
+            requestJSON.put("placementId", "0");
+
+            sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void trackInAppOpen(@NonNull String messageId) {
         JSONObject requestJSON = new JSONObject();
 
@@ -608,6 +625,10 @@ class IterableApiClient {
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
         getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onCallback);
+    }
+
+    void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onSuccess, onFailure);
     }
 
     void onLogout() {
