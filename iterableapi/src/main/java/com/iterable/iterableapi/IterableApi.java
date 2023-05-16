@@ -11,6 +11,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
+import com.iterable.iterableapi.util.DeviceInfoUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -508,6 +510,17 @@ public class IterableApi {
 
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
+        if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
+            try {
+                JSONObject dataFields = new JSONObject();
+                JSONObject deviceDetails = new JSONObject();
+                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
+                dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
+                sharedInstance.apiClient.updateUser(dataFields, false);
+            } catch (JSONException e) {
+                    IterableLogger.e(TAG, "initialize: exception", e);
+            }
+        }
     }
 
     public static void setContext(Context context) {
