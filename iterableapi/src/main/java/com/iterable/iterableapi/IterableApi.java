@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -361,8 +360,8 @@ public class IterableApi {
         _userId = getKeychain().getUserId();
         _authToken = getKeychain().getAuthToken();
 
-        if(config.authHandler != null) {
-            if(_authToken != null) {
+        if (config.authHandler != null) {
+            if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
                 IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
