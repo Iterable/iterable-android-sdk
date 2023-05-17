@@ -14,6 +14,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 #### Fixed
 - nothing yet
+- 
+## [3.4.12](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.12)
+#### Added
+- `setEmail` and `setUserId` now accepts `IterableHelper.SuccessHandler successHandler` and `IterableHelper.FailureHandler failureHandler`.
+
+#### Changed
+- OTT devices (FireTV) will now register as `OTT` device instead of `Android` under user's devices.
 
 ## [3.4.11](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.11)
 
