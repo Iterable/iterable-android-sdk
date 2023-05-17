@@ -278,7 +278,7 @@ public class IterableApi {
 
         if (config.autoPushRegistration) {
             registerForPush();
-        } else if(_successCallbackHandler != null){
+        } else if (_successCallbackHandler != null) {
             _successCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
 
