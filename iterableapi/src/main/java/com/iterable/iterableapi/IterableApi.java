@@ -40,6 +40,8 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
+    private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
@@ -278,6 +280,8 @@ public class IterableApi {
 
         if (config.autoPushRegistration) {
             registerForPush();
+        } else if (_setUserSuccessCallbackHandler != null) {
+            _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
 
         getInAppManager().syncInApp();
@@ -471,7 +475,7 @@ public class IterableApi {
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes);
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, _setUserSuccessCallbackHandler, _setUserFailureCallbackHandler);
     }
 //endregion
 
@@ -573,10 +577,18 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        setEmail(email, null);
+        setEmail(email, null, null, null);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        setEmail(email, null, successHandler, failureHandler);
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
+        setEmail(email, authToken, null, null);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         //Only if passed in same non-null email
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
@@ -591,16 +603,26 @@ public class IterableApi {
 
         _email = email;
         _userId = null;
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
         onLogin(authToken);
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null);
+        setUserId(userId, null, null, null);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        setUserId(userId, null, successHandler, failureHandler);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
+        setUserId(userId, authToken, null, null);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         //If same non null userId is passed
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
@@ -615,6 +637,8 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
         onLogin(authToken);

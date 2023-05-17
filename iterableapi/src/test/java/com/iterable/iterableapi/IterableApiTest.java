@@ -4,6 +4,9 @@ import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -159,6 +162,42 @@ public class IterableApiTest extends BaseTest {
         reInitIterableApi();
         IterableApi.initialize(getContext(), "apiKey");
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
+    }
+
+    @Test
+    public void testSetEmailWithCallback() {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String email = "test@example.com";
+        IterableApi.getInstance().setEmail(email, null, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertTrue(true); // callback should be called with success
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertTrue(false); // callback should be called with failure
+            }
+        });
+    }
+
+    @Test
+    public void testSetUserIdWithCallback() {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String userId = "test_user_id";
+        IterableApi.getInstance().setUserId(userId, null, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertTrue(true); // callback should be called with success
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertTrue(false); // callback should be called with failure
+            }
+        });
     }
 
     @Test
