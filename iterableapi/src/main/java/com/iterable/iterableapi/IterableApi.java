@@ -1195,5 +1195,24 @@ public class IterableApi {
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
     }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void trackEmbeddedSession(@NonNull IterableEmbeddedSession session) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (session == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: session is null");
+            return;
+        }
+
+        if (session.getSessionStartTime() == null || session.getSessionEndTime() == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: sessionStartTime and sessionEndTime must be set");
+            return;
+        }
+
+        apiClient.trackEmbeddedSession(session);
+    }
 //endregion
 }
