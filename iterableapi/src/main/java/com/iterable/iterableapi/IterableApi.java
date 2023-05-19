@@ -1065,8 +1065,10 @@ public class IterableApi {
     /**
      * Tracks when a link inside an embedded message is clicked
      * @param message the embedded message to be tracked
+     * @param buttonIdentifier identifier that determines which button or if embedded message itself was clicked
+     * @param clickedUrl the URL of the clicked button or assigned to the embedded message itself
      */
-    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message) {
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String buttonIdentifier, @Nullable String clickedUrl) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1076,16 +1078,7 @@ public class IterableApi {
             return;
         }
 
-        JSONObject dataFields = new JSONObject();
-        try {
-            dataFields.put("name", "click");
-            dataFields.put("messageId", message.getMetadata().getId());
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-
-        track("embedded-messaging", dataFields);
-//      apiClient.trackEmbeddedClick();
+        apiClient.trackEmbeddedClick(message, buttonIdentifier, clickedUrl);
     }
 
 //endregion

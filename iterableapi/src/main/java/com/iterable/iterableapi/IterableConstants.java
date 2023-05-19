@@ -75,8 +75,9 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
     public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
-    public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
     public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "embedded-messaging/messages";
+    public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
+    public static final String ENDPOINT_TRACK_EMBEDDED_CLICK   = "embedded-messaging/events/click";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -182,6 +183,8 @@ public final class IterableConstants {
     public static final String ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL = "mediaUrl";
     public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION = "defaultAction";
     public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTONS = "buttons";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER = "buttonIdentifier";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL = "targetUrl";
     public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT = "text";
     public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE = "type";
     public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA = "data";
