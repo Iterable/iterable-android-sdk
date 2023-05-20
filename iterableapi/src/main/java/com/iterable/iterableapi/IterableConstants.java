@@ -54,7 +54,6 @@ public final class IterableConstants {
     public static final String KEY_USER_KEY             = "userKey";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
-
     public static final String KEY_EMBEDDED_SESSION_ID     = "sessionId";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
 

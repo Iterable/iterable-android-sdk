@@ -626,11 +626,11 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().trackInboxSession(session);
         shadowOf(getMainLooper()).idle();
 
-        RecordedRequest trackInAppClickRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(trackInAppClickRequest);
-        Uri uri = Uri.parse(trackInAppClickRequest.getRequestUrl().toString());
+        RecordedRequest trackInboxSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackInboxSessionRequest);
+        Uri uri = Uri.parse(trackInboxSessionRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, uri.getPath());
-        JSONObject requestJson = new JSONObject(trackInAppClickRequest.getBody().readUtf8());
+        JSONObject requestJson = new JSONObject(trackInboxSessionRequest.getBody().readUtf8());
 
         // Check top-level fields
         assertEquals(sessionStartTime.getTime(), requestJson.getLong(IterableConstants.ITERABLE_INBOX_SESSION_START));
@@ -649,6 +649,56 @@ public class IterableApiTest extends BaseTest {
         assertEquals(true, impressionsJsonArray.getJSONObject(0).getBoolean(IterableConstants.ITERABLE_IN_APP_SILENT_INBOX));
         assertEquals(2, impressionsJsonArray.getJSONObject(0).getInt(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_COUNT));
         assertEquals(5.5, impressionsJsonArray.getJSONObject(0).getDouble(IterableConstants.ITERABLE_INBOX_IMP_DISPLAY_DURATION));
+    }
+
+    @Test
+    public void testEmbeddedSession() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+
+        // Set up test data
+        Date sessionStartTime = new Date();
+        List<IterableEmbeddedImpression> impressions = new ArrayList<>();
+        impressions.add(new IterableEmbeddedImpression(
+                "messageId1",
+                1,
+                2.0f
+        ));
+        impressions.add(new IterableEmbeddedImpression(
+                "messageId2",
+                3,
+                6.5f
+        ));
+
+        IterableEmbeddedSession session = new IterableEmbeddedSession(
+                sessionStartTime,
+                new Date(sessionStartTime.getTime() + 3600),
+                impressions,
+                "CDERFSR");
+
+        IterableApi.getInstance().trackEmbeddedSession(session);
+        shadowOf(getMainLooper()).idle();
+
+        RecordedRequest trackEmbeddedSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackEmbeddedSessionRequest);
+        Uri uri = Uri.parse(trackEmbeddedSessionRequest.getRequestUrl().toString());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION, uri.getPath());
+        JSONObject requestJson = new JSONObject(trackEmbeddedSessionRequest.getBody().readUtf8());
+
+        // Check top-level fields
+        assertEquals(sessionStartTime.getTime(), requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_START));
+        assertEquals(sessionStartTime.getTime() + 3600, requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_END));
+        assertEquals(session.getSessionId(), requestJson.getString(IterableConstants.KEY_EMBEDDED_SESSION_ID));
+        verifyDeviceInfo(requestJson);
+
+        // Check impression data
+        JSONArray impressionsJsonArray = requestJson.getJSONArray(IterableConstants.ITERABLE_EMBEDDED_IMPRESSIONS);
+        assertEquals(2, impressionsJsonArray.length());
+        assertEquals("messageId1", impressionsJsonArray.getJSONObject(0).getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(1, impressionsJsonArray.getJSONObject(0).getInt(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT));
+        assertEquals(2.0, impressionsJsonArray.getJSONObject(0).getDouble(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION));
     }
 
     private void verifyMessageContext(JSONObject requestJson) throws JSONException {
