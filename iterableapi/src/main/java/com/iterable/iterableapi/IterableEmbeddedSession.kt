@@ -10,7 +10,7 @@ data class IterableEmbeddedSession(
     val sessionEndTime: Date,
     val placementId: String?,
     val impressions: List<IterableEmbeddedImpression>,
-    val sessionId: String
+    val embeddedSessionId: String
 ) {
     constructor(
         sessionStartTime: Date,
