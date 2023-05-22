@@ -446,8 +446,8 @@ class IterableApiClient {
 
             requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
-            if (session.getEmbeddedSessionId() != null) {
-                requestJSON.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getEmbeddedSessionId());
+            if (session.getSessionId() != null) {
+                requestJSON.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getSessionId());
             }
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION, requestJSON);

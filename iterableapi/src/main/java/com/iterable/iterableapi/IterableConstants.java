@@ -54,7 +54,7 @@ public final class IterableConstants {
     public static final String KEY_USER_KEY             = "userKey";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
-    public static final String KEY_EMBEDDED_SESSION_ID     = "sessionId";
+    public static final String KEY_EMBEDDED_SESSION_ID     = "embeddedSessionId";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
 
     //API Endpoint Key Constants
@@ -198,8 +198,8 @@ public final class IterableConstants {
     public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_ID = "id";
     public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_TEXT = "text";
     public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_LABEL = "label";
-    public static final String ITERABLE_EMBEDDED_SESSION_START = "sessionStart";
-    public static final String ITERABLE_EMBEDDED_SESSION_END = "sessionEnd";
+    public static final String ITERABLE_EMBEDDED_SESSION_START = "embeddedSessionStart";
+    public static final String ITERABLE_EMBEDDED_SESSION_END = "embeddedSessionEnd";
     public static final String ITERABLE_EMBEDDED_IMPRESSIONS = "impressions";
     public static final String ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT = "displayCount";
     public static final String ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION = "displayDuration";
