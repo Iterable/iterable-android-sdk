@@ -1,6 +1,5 @@
 package com.iterable.iterableapi;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
 import java.util.ArrayList;
@@ -75,7 +74,7 @@ public class InboxSessionManager {
         previousImpressions = new HashSet<String>();
     }
 
-    public void updateVisibleRows(@NonNull List<IterableInboxSession.Impression> visibleRows) {
+    public void updateVisibleRows(List<IterableInboxSession.Impression> visibleRows) {
         IterableLogger.printInfo();
 
         // this code is basically doing the equivalent of a diff, but manually
