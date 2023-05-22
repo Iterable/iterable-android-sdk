@@ -675,8 +675,8 @@ public class IterableApiTest extends BaseTest {
         IterableEmbeddedSession session = new IterableEmbeddedSession(
                 sessionStartTime,
                 new Date(sessionStartTime.getTime() + 3600),
-                impressions,
-                "CDERFSR");
+                "0",
+                impressions);
 
         IterableApi.getInstance().trackEmbeddedSession(session);
         shadowOf(getMainLooper()).idle();
@@ -690,6 +690,7 @@ public class IterableApiTest extends BaseTest {
         // Check top-level fields
         assertEquals(sessionStartTime.getTime(), requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_START));
         assertEquals(sessionStartTime.getTime() + 3600, requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_END));
+        assertEquals("0", requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID));
         assertEquals(session.getSessionId(), requestJson.getString(IterableConstants.KEY_EMBEDDED_SESSION_ID));
         verifyDeviceInfo(requestJson);
 

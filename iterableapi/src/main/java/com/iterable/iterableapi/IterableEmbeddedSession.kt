@@ -6,11 +6,19 @@ import java.util.UUID
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 data class IterableEmbeddedSession(
-    val sessionStartTime: Date?,
-    val sessionEndTime: Date?,
-    val impressions: List<IterableEmbeddedImpression>?,
-    val sessionId: String = UUID.randomUUID().toString()
-)
+    val sessionStartTime: Date,
+    val sessionEndTime: Date,
+    val placementId: String?,
+    val impressions: List<IterableEmbeddedImpression>,
+    val sessionId: String
+) {
+    constructor(
+        sessionStartTime: Date,
+        sessionEndTime: Date,
+        placementId: String,
+        impressions: List<IterableEmbeddedImpression>
+    ) : this(sessionStartTime, sessionEndTime, placementId, impressions, UUID.randomUUID().toString())
+}
 
 class IterableEmbeddedImpression(
     val messageId: String,

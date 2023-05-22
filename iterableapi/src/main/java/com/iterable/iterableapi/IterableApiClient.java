@@ -430,6 +430,7 @@ class IterableApiClient {
             addEmailOrUserIdToUserKeyJson(requestJSON);
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getSessionStartTime().getTime());
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getSessionEndTime().getTime());
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, session.getPlacementId());
 
             if (session.getImpressions() != null) {
                 JSONArray impressionsJsonArray = new JSONArray();
@@ -446,6 +447,7 @@ class IterableApiClient {
             requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
             if (session.getSessionId() != null) {
+                IterableLogger.d(TAG, "Session ID: " + session.getSessionId());
                 requestJSON.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getSessionId());
             }
 
