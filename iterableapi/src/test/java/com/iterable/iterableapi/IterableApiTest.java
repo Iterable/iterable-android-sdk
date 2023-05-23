@@ -1,7 +1,11 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.net.Uri;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -158,6 +162,42 @@ public class IterableApiTest extends BaseTest {
         reInitIterableApi();
         IterableApi.initialize(getContext(), "apiKey");
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
+    }
+
+    @Test
+    public void testSetEmailWithCallback() {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String email = "test@example.com";
+        IterableApi.getInstance().setEmail(email, null, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertTrue(true); // callback should be called with success
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertTrue(false); // callback should be called with failure
+            }
+        });
+    }
+
+    @Test
+    public void testSetUserIdWithCallback() {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String userId = "test_user_id";
+        IterableApi.getInstance().setUserId(userId, null, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertTrue(true); // callback should be called with success
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertTrue(false); // callback should be called with failure
+            }
+        });
     }
 
     @Test
@@ -395,7 +435,8 @@ public class IterableApiTest extends BaseTest {
         Uri uri = Uri.parse(getInAppMessagesRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, uri.getPath());
         assertEquals("10", uri.getQueryParameter(IterableConstants.ITERABLE_IN_APP_COUNT));
-        assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
+        assertEquals(DeviceInfoUtils.isFireTV(getContext().getPackageManager()) ? IterableConstants.ITBL_PLATFORM_OTT : IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
+
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, uri.getQueryParameter(IterableConstants.ITBL_KEY_SDK_VERSION));
         assertNotNull(uri.getQueryParameter(IterableConstants.ITBL_SYSTEM_VERSION));
         assertEquals(getContext().getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
