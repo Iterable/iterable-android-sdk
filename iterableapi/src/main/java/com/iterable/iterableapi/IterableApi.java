@@ -1207,7 +1207,7 @@ public class IterableApi {
             return;
         }
 
-        if (session.getSessionStartTime() == null || session.getSessionEndTime() == null) {
+        if (session.getStart() == null || session.getEnd() == null) {
             IterableLogger.e(TAG, "trackEmbeddedSession: sessionStartTime and sessionEndTime must be set");
             return;
         }

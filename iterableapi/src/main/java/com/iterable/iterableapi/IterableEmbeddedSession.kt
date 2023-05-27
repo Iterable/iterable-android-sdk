@@ -5,19 +5,19 @@ import java.util.Date
 import java.util.UUID
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-data class IterableEmbeddedSession(
-    val sessionStartTime: Date,
-    val sessionEndTime: Date,
+public data class IterableEmbeddedSession(
+    val start: Date,
+    val end: Date,
     val placementId: String?,
     val impressions: List<IterableEmbeddedImpression>,
-    val sessionId: String
+    val id: String
 ) {
     constructor(
-        sessionStartTime: Date,
-        sessionEndTime: Date,
+        start: Date,
+        end: Date,
         placementId: String,
         impressions: List<IterableEmbeddedImpression>
-    ) : this(sessionStartTime, sessionEndTime, placementId, impressions, UUID.randomUUID().toString())
+    ) : this(start, end, placementId, impressions, UUID.randomUUID().toString())
 }
 
 class IterableEmbeddedImpression(

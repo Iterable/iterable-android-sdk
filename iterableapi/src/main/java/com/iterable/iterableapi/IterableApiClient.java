@@ -428,8 +428,15 @@ class IterableApiClient {
 
         try {
             addEmailOrUserIdToUserKeyJson(requestJSON);
-            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getSessionStartTime().getTime());
-            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getSessionEndTime().getTime());
+
+            JSONObject sessionJson = new JSONObject();
+            if (session.getId() != null) {
+                sessionJson.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getId());
+            }
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getStart().getTime());
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getEnd().getTime());
+
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION, sessionJson);
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, session.getPlacementId());
 
             if (session.getImpressions() != null) {
@@ -445,10 +452,6 @@ class IterableApiClient {
             }
 
             requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-
-            if (session.getSessionId() != null) {
-                requestJSON.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getSessionId());
-            }
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION, requestJSON);
         } catch (JSONException e) {
