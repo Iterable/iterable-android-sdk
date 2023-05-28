@@ -16,7 +16,7 @@ public class EmbeddedSessionManager {
     )
 
     fun isTracking(): Boolean {
-        return session.sessionStartTime != null
+        return session.start != null
     }
 
     fun startSession() {
@@ -42,7 +42,7 @@ public class EmbeddedSessionManager {
         }
 
         val sessionToTrack = IterableEmbeddedSession(
-            session.sessionStartTime,
+            session.start,
             Date(),
             "0",
             null
