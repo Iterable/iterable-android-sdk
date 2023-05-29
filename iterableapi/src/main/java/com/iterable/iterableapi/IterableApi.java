@@ -38,7 +38,6 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
-    private ResultCallbackHandler callbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
@@ -682,15 +681,30 @@ public class IterableApi {
     /**
      * Consumes an InApp message.
      * @param messageId
-     * @param callbackHandler The callback which returns `success` or `failure`.
      */
-    public void inAppConsume(@NonNull String messageId, @Nullable ResultCallbackHandler callbackHandler) {
+    public void inAppConsume(@NonNull String messageId) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message == null) {
             IterableLogger.e(TAG, "inAppConsume: message is null");
             return;
         }
-        inAppConsume(message, null, null, callbackHandler);
+        inAppConsume(message, null, null, null, null);
+        IterableLogger.printInfo();
+    }
+
+    /**
+     * Consumes an InApp message.
+     * @param messageId
+     * @param successHandler The callback which returns `success`.
+     * @param failureHandler The callback which returns `failure`.
+     */
+    public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            return;
+        }
+        inAppConsume(message, null, null, successHandler, failureHandler);
         IterableLogger.printInfo();
     }
 
@@ -702,13 +716,30 @@ public class IterableApi {
      * @param message message object
      * @param source An enum describing how the in App delete was triggered
      * @param clickLocation The module in which the action happened
-     * @param callbackHandler The callback which returns `success` or `failure`.
      */
-    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable ResultCallbackHandler callbackHandler) {
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, callbackHandler);
+        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, null, null);
+    }
+
+    /**
+     * Tracks InApp delete.
+     * This method from informs Iterable about inApp messages deleted with additional paramters.
+     * Call this method from places where inApp deletion are invoked by user. The messages can be swiped to delete or can be deleted using the link to delete button.
+     *
+     * @param message message object
+     * @param source An enum describing how the in App delete was triggered
+     * @param clickLocation The module in which the action happened
+     * @param successHandler The callback which returns `success`.
+     * @param failureHandler The callback which returns `failure`.
+     */
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, successHandler, failureHandler);
     }
 
     /**
