@@ -21,11 +21,9 @@ public class EmbeddedSessionManager {
 
     fun startSession() {
         if (isTracking()) {
-            IterableLogger.e(TAG, "Inbox session started twice")
+            IterableLogger.e(TAG, "Embedded session started twice")
             return
         }
-
-        IterableLogger.d(TAG, "Inbox session started!!")
 
         session = IterableEmbeddedSession(
             Date(),
@@ -37,7 +35,7 @@ public class EmbeddedSessionManager {
 
     fun endSession() {
         if (!isTracking()) {
-            IterableLogger.e(TAG, "Inbox Session ended without start")
+            IterableLogger.e(TAG, "Embedded session ended without start")
             return
         }
 
@@ -49,7 +47,7 @@ public class EmbeddedSessionManager {
         )
 
         IterableApi.getInstance().trackEmbeddedSession(sessionToTrack)
-        IterableLogger.d(TAG, "Inbox session ended!!")
+        IterableLogger.d(TAG, "Embedded session ended!!")
 
         //reset session for next session start
         session = IterableEmbeddedSession(
