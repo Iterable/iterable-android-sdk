@@ -136,7 +136,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      */
     public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read, @Nullable IterableHelper.SuccessHandler successHandler) {
         message.setRead(read);
-        if(successHandler != null){
+        if (successHandler != null) {
             successHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
         notifyOnChange();
