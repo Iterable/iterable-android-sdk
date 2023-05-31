@@ -40,12 +40,6 @@ public class InboxSessionManager {
         IterableApi.getInstance().setInboxSessionId(session.sessionId);
     }
 
-    public void startSession(List<IterableInboxSession.Impression> visibleRows) {
-        startSession();
-
-        updateVisibleRows(visibleRows);
-    }
-
     public void endSession() {
         if (!isTracking()) {
             IterableLogger.e(TAG, "Inbox Session ended without start");
@@ -72,43 +66,6 @@ public class InboxSessionManager {
 
         //previous impressions need to be reset to empty for the next session
         previousImpressions = new HashSet<String>();
-    }
-
-    public void updateVisibleRows(List<IterableInboxSession.Impression> visibleRows) {
-        IterableLogger.printInfo();
-
-        // this code is basically doing the equivalent of a diff, but manually
-        // sorry, i couldn't find a better/quicker way under the time constraint
-        HashSet<String> visibleMessageIds = new HashSet();
-
-        //add visible ids to hash set
-        for (IterableInboxSession.Impression row : visibleRows) {
-            visibleMessageIds.add(row.messageId);
-        }
-
-        //lists impressions to start
-        //removes all visible rows that have impressions that were started
-        Set<String> impressionsToStart = new HashSet<String>(visibleMessageIds);
-        impressionsToStart.removeAll(previousImpressions);
-
-        //list impressions to end
-        //removes all visible rows that are still going
-        Set<String> impressionsToEnd = new HashSet<String>(previousImpressions);
-        impressionsToEnd.removeAll(visibleMessageIds);
-
-        //set previous impressions for next iteration to the current visible messages
-        previousImpressions = new HashSet<String>(visibleMessageIds);
-        previousImpressions.removeAll(impressionsToEnd);
-
-        //start all impressions designated to start
-        for (String messageId : impressionsToStart) {
-            onMessageImpressionStarted(IterableApi.getInstance().getInAppManager().getMessageById(messageId));
-        }
-
-        //end all impressions designated to end
-        for (String messageId : impressionsToEnd) {
-            endImpression(messageId);
-        }
     }
 
     public void onMessageImpressionStarted(IterableInAppMessage message) {
