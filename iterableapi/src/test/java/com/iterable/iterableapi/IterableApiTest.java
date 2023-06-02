@@ -691,7 +691,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals(sessionStartTime.getTime(), requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_START));
         assertEquals(sessionStartTime.getTime() + 3600, requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_END));
         assertEquals("0", requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID));
-        assertEquals(session.getSessionId(), requestJson.getString(IterableConstants.KEY_EMBEDDED_SESSION_ID));
+        assertEquals(session.getId(), requestJson.getString(IterableConstants.KEY_EMBEDDED_SESSION_ID));
         verifyDeviceInfo(requestJson);
 
         // Check impression data
