@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 import android.net.Uri;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -688,11 +689,14 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(trackEmbeddedSessionRequest.getBody().readUtf8());
 
         // Check top-level fields
-        assertEquals(sessionStartTime.getTime(), requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_START));
-        assertEquals(sessionStartTime.getTime() + 3600, requestJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_END));
         assertEquals("0", requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID));
-        assertEquals(session.getId(), requestJson.getString(IterableConstants.KEY_EMBEDDED_SESSION_ID));
         verifyDeviceInfo(requestJson);
+
+        // Check session data
+        JSONObject sessionJson = requestJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_SESSION);
+        assertEquals(session.getId(), sessionJson.getString(IterableConstants.KEY_EMBEDDED_SESSION_ID));
+        assertEquals(sessionStartTime.getTime(), sessionJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_START));
+        assertEquals(sessionStartTime.getTime() + 3600, sessionJson.getLong(IterableConstants.ITERABLE_EMBEDDED_SESSION_END));
 
         // Check impression data
         JSONArray impressionsJsonArray = requestJson.getJSONArray(IterableConstants.ITERABLE_EMBEDDED_IMPRESSIONS);
