@@ -54,6 +54,7 @@ public final class IterableConstants {
     public static final String KEY_USER_KEY             = "userKey";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
+    public static final String KEY_EMBEDDED_SESSION_ID     = "id";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
 
     //API Endpoint Key Constants
@@ -78,6 +79,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "embedded-messaging/messages";
     public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
     public static final String ENDPOINT_TRACK_EMBEDDED_CLICK   = "embedded-messaging/events/click";
+    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/impression";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -196,6 +198,13 @@ public final class IterableConstants {
     public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_ID = "id";
     public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_TEXT = "text";
     public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_LABEL = "label";
+
+    public static final String ITERABLE_EMBEDDED_SESSION = "session";
+    public static final String ITERABLE_EMBEDDED_SESSION_START = "start";
+    public static final String ITERABLE_EMBEDDED_SESSION_END = "end";
+    public static final String ITERABLE_EMBEDDED_IMPRESSIONS = "impressions";
+    public static final String ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT = "displayCount";
+    public static final String ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION = "displayDuration";
 
     //In-App Constants
     public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";

@@ -423,6 +423,42 @@ class IterableApiClient {
         }
     }
 
+    public void trackEmbeddedSession(@NonNull IterableEmbeddedSession session) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToUserKeyJson(requestJSON);
+
+            JSONObject sessionJson = new JSONObject();
+            if (session.getId() != null) {
+                sessionJson.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getId());
+            }
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getStart().getTime());
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getEnd().getTime());
+
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION, sessionJson);
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, session.getPlacementId());
+
+            if (session.getImpressions() != null) {
+                JSONArray impressionsJsonArray = new JSONArray();
+                for (IterableEmbeddedImpression impression : session.getImpressions()) {
+                    JSONObject impressionJson = new JSONObject();
+                    impressionJson.put(IterableConstants.KEY_MESSAGE_ID, impression.getMessageId());
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT, impression.getDisplayCount());
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION, impression.getDuration());
+                    impressionsJsonArray.put(impressionJson);
+                }
+                requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_IMPRESSIONS, impressionsJsonArray);
+            }
+
+            requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
