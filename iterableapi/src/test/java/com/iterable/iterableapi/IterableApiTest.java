@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 import android.net.Uri;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
