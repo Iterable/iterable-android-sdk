@@ -58,4 +58,15 @@ public class EmbeddedSessionManager {
         )
     }
 
+    fun onMessageImpressionStarted(message: IterableEmbeddedMessage) {
+        IterableLogger.printInfo()
+        val messageId = message.metadata.id
+        IterableLogger.d(TAG, "Impression Started: " + message.elements?.title)
+    }
+
+    fun onMessageImpressionEnded(message: IterableEmbeddedMessage) {
+        IterableLogger.printInfo()
+        val messageId = message.metadata.id
+        IterableLogger.d(TAG, "Impression Ended: " + message.elements?.title)
+    }
 }
