@@ -8,6 +8,8 @@ public class EmbeddedSessionManager {
 
     private val TAG = "EmbeddedSessionManager"
 
+    private var impressions: MutableMap<String, EmbeddedImpressionData> = mutableMapOf()
+
     var session: IterableEmbeddedSession = IterableEmbeddedSession(
         null,
         null,
@@ -39,11 +41,13 @@ public class EmbeddedSessionManager {
             return
         }
 
+        endAllImpressions()
+
         val sessionToTrack = IterableEmbeddedSession(
             session.start,
             Date(),
             "0",
-            null
+            getImpressionList()
         )
 
         IterableApi.getInstance().trackEmbeddedSession(sessionToTrack)
@@ -69,10 +73,49 @@ public class EmbeddedSessionManager {
     }
 
     fun startImpression(messageId: String) {
+        var impressionData: EmbeddedImpressionData? = impressions[messageId]
 
+        if (impressionData == null) {
+            impressionData = EmbeddedImpressionData(messageId)
+            impressions[messageId] = impressionData
+        }
+
+        impressionData.startImpression()
     }
 
     fun endImpression(messageId: String) {
+        val impressionData: EmbeddedImpressionData? = impressions[messageId]
 
+        if (impressionData == null) {
+            IterableLogger.e(TAG, "onMessageImpressionEnded: impressionData not found")
+            return
+        }
+
+        if (impressionData.start == null) {
+            IterableLogger.e(TAG, "onMessageImpressionEnded: impressionStarted is null")
+            return
+        }
+
+        impressionData.endImpression()
+    }
+
+    private fun endAllImpressions() {
+        for (impressionData in impressions.values) {
+            impressionData.endImpression()
+        }
+    }
+
+    private fun getImpressionList(): List<IterableEmbeddedImpression>? {
+        val impressionList: MutableList<IterableEmbeddedImpression> = ArrayList()
+        for (impressionData in impressions.values) {
+            impressionList.add(
+                IterableEmbeddedImpression(
+                    impressionData.messageId,
+                    impressionData.displayCount,
+                    impressionData.duration
+                )
+            )
+        }
+        return impressionList
     }
 }
