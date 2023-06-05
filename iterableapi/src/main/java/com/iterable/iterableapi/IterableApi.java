@@ -1072,8 +1072,10 @@ public class IterableApi {
     /**
      * Tracks when a link inside an embedded message is clicked
      * @param message the embedded message to be tracked
+     * @param buttonIdentifier identifier that determines which button or if embedded message itself was clicked
+     * @param clickedUrl the URL of the clicked button or assigned to the embedded message itself
      */
-    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message) {
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String buttonIdentifier, @Nullable String clickedUrl) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1083,16 +1085,7 @@ public class IterableApi {
             return;
         }
 
-        JSONObject dataFields = new JSONObject();
-        try {
-            dataFields.put("name", "click");
-            dataFields.put("messageId", message.getMetadata().getId());
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-
-        track("embedded-messaging", dataFields);
-//      apiClient.trackEmbeddedClick();
+        apiClient.trackEmbeddedClick(message, buttonIdentifier, clickedUrl);
     }
 
 //endregion
@@ -1208,6 +1201,25 @@ public class IterableApi {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void trackEmbeddedSession(@NonNull IterableEmbeddedSession session) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (session == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: session is null");
+            return;
+        }
+
+        if (session.getStart() == null || session.getEnd() == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: sessionStartTime and sessionEndTime must be set");
+            return;
+        }
+
+        apiClient.trackEmbeddedSession(session);
     }
 //endregion
 }
