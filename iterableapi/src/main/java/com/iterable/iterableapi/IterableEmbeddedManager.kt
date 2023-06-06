@@ -149,7 +149,9 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                     autoFetchDuration = 0.0
                     return
                 } else {
+                    //TODO: Instead of generic condition, have the retry only in certain situation
                     IterableLogger.e(TAG, "Error while fetching embedded messages: $reason")
+                    lastSync = IterableUtil.currentTimeMillis()
                     scheduleSync()
                 }
             }
