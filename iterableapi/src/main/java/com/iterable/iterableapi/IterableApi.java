@@ -739,6 +739,9 @@ public class IterableApi {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (message == null) {
             IterableLogger.e(TAG, "inAppConsume: message is null");
+            if (failureHandler != null) {
+                failureHandler.onFailure("inAppConsume: message is null", null);
+            }
             return;
         }
         inAppConsume(message, null, null, successHandler, failureHandler);
