@@ -176,7 +176,7 @@ public final class IterableConstants {
     public static final String ITERABLE_EMBEDDED_MESSAGE_METADATA = "metadata";
     public static final String ITERABLE_EMBEDDED_MESSAGE_ELEMENTS = "elements";
     public static final String ITERABLE_EMBEDDED_MESSAGE_PAYLOAD = "payload";
-    public static final String ITERABLE_EMBEDDED_MESSAGE_ID = "messageId";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_ID = "id";
     public static final String ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID = "placementId";
     public static final String ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID = "campaignId";
     public static final String ITERABLE_EMBEDDED_MESSAGE_IS_PROOF = "isProof";

@@ -299,7 +299,7 @@ class IterableApiClient {
 
         try {
             addEmailOrUserIdToUserKeyJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER, buttonIdentifier);
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL, clickedUrl);
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
@@ -353,7 +353,7 @@ class IterableApiClient {
 
         try {
             addEmailOrUserIdToUserKeyJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId());
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED, requestJSON);
