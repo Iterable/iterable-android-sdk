@@ -42,7 +42,7 @@ data class IterableEmbeddedMessage (
 }
 
 class EmbeddedMessageMetadata(
-    var id: String,
+    var messageId: String,
     //TODO: Remove this once the placementIDs are implemented in the backend
     val placementId: String? = "",
     val campaignId: String? = null,
@@ -55,7 +55,7 @@ class EmbeddedMessageMetadata(
             val metadataJson = JSONObject()
 
             try {
-                metadataJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID, metadata.id)
+                metadataJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID, metadata.messageId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, metadata.placementId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID, metadata.campaignId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF, metadata.isProof)
@@ -67,12 +67,12 @@ class EmbeddedMessageMetadata(
         }
 
         fun fromJSONObject(flexMessageMetadataJson: JSONObject): EmbeddedMessageMetadata {
-            val id: String = flexMessageMetadataJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID)
+            val messageId: String = flexMessageMetadataJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID)
             val placementId: String = flexMessageMetadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
             val campaignId: String = flexMessageMetadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID)
             val isProof: Boolean = flexMessageMetadataJson.optBoolean(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF)
 
-            return EmbeddedMessageMetadata(id, placementId, campaignId, isProof)
+            return EmbeddedMessageMetadata(messageId, placementId, campaignId, isProof)
         }
     }
 }
