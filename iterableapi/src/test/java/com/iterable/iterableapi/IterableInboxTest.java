@@ -2,8 +2,12 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,17 +83,64 @@ public class IterableInboxTest extends BaseTest {
     }
 
     @Test
-    public void testSetRead() throws Exception {
+    public void testRemoveMessage() throws Exception {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
-        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        final IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertEquals(2, inboxMessages.size());
+        assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
+        inAppManager.removeMessage(inboxMessages.get(0), new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertEquals(1, inAppManager.getInboxMessages().size());
+                assertEquals("message2", inAppManager.getInboxMessages().get(0).getMessageId());
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertFalse(true);
+            }
+        });
+        assertEquals(1, inAppManager.getInboxMessages().size());
+        assertEquals("message2", inAppManager.getInboxMessages().get(0).getMessageId());
+    }
+
+    @Test
+    public void testSetRead() throws Exception {
+        // Set up mock response
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
+
+        // Initialize in-app manager and wait for messages to be synced
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+
+        // Get inbox messages
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+
+        // Verify initial state
         assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
         assertEquals(2, inboxMessages.size());
         assertFalse(inboxMessages.get(0).isRead());
         assertTrue(inboxMessages.get(1).isRead());
-        inAppManager.setRead(inboxMessages.get(0), true);
+
+        // Set first message as read with a callback
+        final boolean[] callbackCalled = { false };
+        inAppManager.setRead(inboxMessages.get(0), true, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                callbackCalled[0] = true;
+                assertTrue(callbackCalled[0]);
+            }
+        });
+
+        // Wait for callback to be called
+        shadowOf(getMainLooper()).idle();
+
+        // Verify that callback was called and that message is marked as read
+        assertTrue(callbackCalled[0]);
         assertEquals(0, inAppManager.getUnreadInboxMessagesCount());
         assertEquals(2, inAppManager.getInboxMessages().size());
         assertTrue(inboxMessages.get(0).isRead());
