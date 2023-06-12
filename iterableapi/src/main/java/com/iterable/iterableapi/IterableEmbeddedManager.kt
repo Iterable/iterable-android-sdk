@@ -144,7 +144,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             scheduleSync()
         }, object : IterableHelper.FailureHandler {
             override fun onFailure(reason: String, data: JSONObject?) {
-                if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true)) {
+                if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
                     IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
                     autoFetchDuration = 0.0
                     return
