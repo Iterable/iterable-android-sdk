@@ -543,7 +543,7 @@ public class IterableApiTest extends BaseTest {
         Uri uri = Uri.parse(trackEmbeddedClickRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_EMBEDDED_CLICK, uri.getPath());
         JSONObject requestJson = new JSONObject(trackEmbeddedClickRequest.getBody().readUtf8());
-        assertEquals(message.getMetadata().getId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(message.getMetadata().getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         assertEquals(message.getElements().getButtons().get(0).getId(), requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER));
         assertEquals(message.getElements().getButtons().get(0).getAction().getData(), requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL));
         verifyDeviceInfo(requestJson);
@@ -586,7 +586,7 @@ public class IterableApiTest extends BaseTest {
         Uri uri = Uri.parse(trackEmbeddedDeliveredRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED, uri.getPath());
         JSONObject requestJson = new JSONObject(trackEmbeddedDeliveredRequest.getBody().readUtf8());
-        assertEquals(message.getMetadata().getId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(message.getMetadata().getMessageId(), requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
         verifyDeviceInfo(requestJson);
     }
 
