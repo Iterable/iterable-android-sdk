@@ -20,6 +20,10 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     val messages: LiveData<List<IterableEmbeddedMessage>>
         get() = _messages
 
+    private var _isEmbeddedEnabled = MutableLiveData<Boolean>()
+    val isEmbeddedEnabled: LiveData<Boolean>
+        get() = _isEmbeddedEnabled
+
     private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
 
     private var autoFetchDuration: Double = 0.0
@@ -30,6 +34,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
     private var activityMonitor: IterableActivityMonitor? = null
     private var isAppInBackground = false
+
 
     // endregion
 
@@ -46,6 +51,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         autoFetchDuration = autoFetchInterval
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)
+        _isEmbeddedEnabled.value = false
 
         postConstruction()
     }
@@ -142,11 +148,13 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             }
             lastSync = IterableUtil.currentTimeMillis()
             scheduleSync()
+            _isEmbeddedEnabled.value = true
         }, object : IterableHelper.FailureHandler {
             override fun onFailure(reason: String, data: JSONObject?) {
                 if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
                     IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
                     autoFetchDuration = 0.0
+                    _isEmbeddedEnabled.value = false
                     return
                 } else {
                     //TODO: Instead of generic condition, have the retry only in certain situation
