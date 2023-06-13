@@ -15,6 +15,8 @@ import org.robolectric.Robolectric;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -83,7 +85,8 @@ public class IterableInboxTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveMessage() throws Exception {
+    public void testRemoveMessageSuccessCallbackOnSuccessfulResponse() throws Exception {
+        final CountDownLatch signal = new CountDownLatch(1);
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
         final IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         inAppManager.syncInApp();
@@ -91,11 +94,14 @@ public class IterableInboxTest extends BaseTest {
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
         assertEquals(2, inboxMessages.size());
         assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
+
+        final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
+        dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(200).setBody(responseData.toString()));
+
         inAppManager.removeMessage(inboxMessages.get(0), new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
-                assertEquals(1, inAppManager.getInboxMessages().size());
-                assertEquals("message2", inAppManager.getInboxMessages().get(0).getMessageId());
+                signal.countDown();
             }
         }, new IterableHelper.FailureHandler() {
             @Override
@@ -103,8 +109,37 @@ public class IterableInboxTest extends BaseTest {
                 assertFalse(true);
             }
         });
-        assertEquals(1, inAppManager.getInboxMessages().size());
-        assertEquals("message2", inAppManager.getInboxMessages().get(0).getMessageId());
+        shadowOf(getMainLooper()).idle();
+        assertTrue("Message remove success callback called", signal.await(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testRemoveMessageFailureCallbackOnFailedResponse() throws Exception {
+        final CountDownLatch signal = new CountDownLatch(1);
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json")));
+        final IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertEquals(2, inboxMessages.size());
+        assertEquals(1, inAppManager.getUnreadInboxMessagesCount());
+
+        final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
+        dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(500).setBody(responseData.toString()));
+
+        inAppManager.removeMessage(inboxMessages.get(0), new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertFalse(true);
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                signal.countDown();
+            }
+        });
+        shadowOf(getMainLooper()).idle();
+        assertTrue("Message remove failure callback called", signal.await(1, TimeUnit.SECONDS));
     }
 
     @Test
