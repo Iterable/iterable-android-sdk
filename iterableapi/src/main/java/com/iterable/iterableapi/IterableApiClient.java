@@ -381,7 +381,7 @@ class IterableApiClient {
 
     }
 
-    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -400,7 +400,7 @@ class IterableApiClient {
                 addInboxSessionID(requestJSON, inboxSessionId);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
+            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON, successHandler, failureHandler);
         } catch (JSONException e) {
             e.printStackTrace();
         }
