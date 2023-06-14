@@ -147,6 +147,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
                     IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
                     autoFetchDuration = 0.0
+                    broadcastSubscriptionInactive()
                     return
                 } else {
                     //TODO: Instead of generic condition, have the retry only in certain situation
@@ -157,6 +158,13 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             }
         })
 
+    }
+
+    fun broadcastSubscriptionInactive() {
+        updateHandleListeners.forEach {
+            IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
+            it.onFeatureDisabled()
+        }
     }
 
     fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
@@ -290,6 +298,7 @@ public interface EmbeddedMessageActionHandler {
 
 public interface EmbeddedMessageUpdateHandler {
     fun onMessageUpdate()
+    fun onFeatureDisabled()
 }
 
 // endregion
