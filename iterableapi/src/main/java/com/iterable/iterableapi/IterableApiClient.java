@@ -219,7 +219,7 @@ class IterableApiClient {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            addEmailOrUserIdToUserKeyJson(requestJSON);
+            addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
@@ -298,8 +298,8 @@ class IterableApiClient {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            addEmailOrUserIdToUserKeyJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId());
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER, buttonIdentifier);
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL, clickedUrl);
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
@@ -352,10 +352,9 @@ class IterableApiClient {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            addEmailOrUserIdToUserKeyJson(requestJSON);
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getId());
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId());
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
-
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED, requestJSON);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -427,7 +426,7 @@ class IterableApiClient {
         JSONObject requestJSON = new JSONObject();
 
         try {
-            addEmailOrUserIdToUserKeyJson(requestJSON);
+            addEmailOrUserIdToJson(requestJSON);
 
             JSONObject sessionJson = new JSONObject();
             if (session.getId() != null) {
@@ -553,22 +552,6 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail());
             } else {
                 requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Adds the current email or userID to the json request under userKey.
-     * @param requestJSON
-     */
-    private void addEmailOrUserIdToUserKeyJson(JSONObject requestJSON) {
-        try {
-            if (authProvider.getEmail() != null) {
-                requestJSON.put(IterableConstants.KEY_USER_KEY, authProvider.getEmail());
-            } else {
-                requestJSON.put(IterableConstants.KEY_USER_KEY, authProvider.getUserId());
             }
         } catch (JSONException e) {
             e.printStackTrace();

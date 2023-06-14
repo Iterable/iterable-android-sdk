@@ -25,7 +25,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
@@ -64,7 +64,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
@@ -107,7 +107,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
@@ -140,7 +140,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
