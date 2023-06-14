@@ -20,12 +20,13 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     val messages: LiveData<List<IterableEmbeddedMessage>>
         get() = _messages
 
+    private var _isEmbeddedEnabled = MutableLiveData<Boolean>()
+    val isEmbeddedEnabled: LiveData<Boolean>
+        get() = _isEmbeddedEnabled
+
     private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
 
-    private var _autoFetchDuration = MutableLiveData<Double>()
-    val autoFetchDuration: LiveData<Double>
-        get() = _autoFetchDuration
-
+    private var autoFetchDuration: Double = 0.0
     private var lastSync: Long = 0
     private var actionHandler: EmbeddedMessageActionHandler? = null
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
@@ -47,9 +48,10 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     ) {
         this.actionHandler = actionHandler
         this.updateHandler = updateHandler
-        _autoFetchDuration.value = autoFetchInterval
+        autoFetchDuration = autoFetchInterval
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)
+        _isEmbeddedEnabled.value = false
 
         postConstruction()
     }
@@ -146,11 +148,13 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             }
             lastSync = IterableUtil.currentTimeMillis()
             scheduleSync()
+            _isEmbeddedEnabled.value = true
         }, object : IterableHelper.FailureHandler {
             override fun onFailure(reason: String, data: JSONObject?) {
                 if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
                     IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
-                    _autoFetchDuration.value = 0.0
+                    autoFetchDuration = 0.0
+                    _isEmbeddedEnabled.value = false
                     return
                 } else {
                     //TODO: Instead of generic condition, have the retry only in certain situation
@@ -219,7 +223,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     fun scheduleSync() {
         IterableLogger.printInfo()
-        if(_autoFetchDuration.value!! > 0) {
+        if(autoFetchDuration > 0) {
             if (canSyncEmbeddedMessages()) {
                 IterableLogger.v(TAG, "Can sync now.. Syncing now")
                 IterableLogger.v(TAG, "setting isSyncScheduled to false in first if")
@@ -229,19 +233,19 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 if (!isAppInBackground) {
                     IterableLogger.v(
                         TAG,
-                        "Scheduling sync after ${_autoFetchDuration.value!! - getSecondsSinceLastFetch()} seconds"
+                        "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds"
                     )
                     Handler(Looper.getMainLooper()).postDelayed(
                         {
                             getSyncedEmbeddedMessages()
                             IterableLogger.v(TAG, "inside looper setting isSyncScheduled to false")
                         },
-                        ((_autoFetchDuration.value!! - getSecondsSinceLastFetch()) * 1000).toLong()
+                        ((autoFetchDuration - getSecondsSinceLastFetch()) * 1000).toLong()
                     )
                     IterableLogger.v(TAG, "setting isSyncScheduled to true")
                 } else {
                     IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
-                    lastSync = _autoFetchDuration.value!!.toLong()
+                    lastSync = autoFetchDuration.toLong()
                 }
             }
         } else {
@@ -254,7 +258,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     }
 
     private fun canSyncEmbeddedMessages(): Boolean {
-        return getSecondsSinceLastFetch() >= _autoFetchDuration.value!!
+        return getSecondsSinceLastFetch() >= autoFetchDuration
     }
 
     // endregion
@@ -264,17 +268,17 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         IterableLogger.printInfo()
         isAppInBackground = false
         //TODO: resume the timer
-        if (IterableUtil.currentTimeMillis() - lastSync > _autoFetchDuration.value!! * 1000) {
+        if (IterableUtil.currentTimeMillis() - lastSync > autoFetchDuration * 1000) {
             IterableLogger.v(
                 TAG,
-                "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync) + " > " + _autoFetchDuration.value!! * 1000
+                "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync) + " > " + autoFetchDuration * 1000
             )
             //Check if looper is already running
             scheduleSync()
         } else {
             IterableLogger.v(
                 TAG,
-                "Duration passed is lesser than auto fetch duration. Hence not scheduling " + (IterableUtil.currentTimeMillis() - lastSync) + " < " + _autoFetchDuration.value!! * 1000
+                "Duration passed is lesser than auto fetch duration. Hence not scheduling " + (IterableUtil.currentTimeMillis() - lastSync) + " < " + autoFetchDuration * 1000
             )
         }
     }
