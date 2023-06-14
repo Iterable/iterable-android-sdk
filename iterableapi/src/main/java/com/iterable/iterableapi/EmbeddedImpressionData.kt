@@ -13,17 +13,4 @@ data class EmbeddedImpressionData(
     constructor(
         messageId: String
     ) : this(messageId, 0, 0.0f, null)
-
-    fun startImpression() {
-        this.start = Date()
-    }
-
-    fun endImpression() {
-        if(this.start != null) {
-            this.displayCount = this.displayCount?.plus(1)
-            this.duration =
-                this.duration?.plus((Date().time - this.start!!.time) / 1000.0).toFloat()
-            this.start = null
-        }
-    }
 }

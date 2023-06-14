@@ -64,12 +64,12 @@ public class EmbeddedSessionManager {
 
     fun onMessageImpressionStarted(message: IterableEmbeddedMessage) {
         IterableLogger.printInfo()
-        startImpression(message.metadata.id)
+        startImpression(message.metadata.messageId)
     }
 
     fun onMessageImpressionEnded(message: IterableEmbeddedMessage) {
         IterableLogger.printInfo()
-        endImpression(message.metadata.id)
+        endImpression(message.metadata.messageId)
     }
 
     fun startImpression(messageId: String) {
@@ -80,7 +80,7 @@ public class EmbeddedSessionManager {
             impressions[messageId] = impressionData
         }
 
-        impressionData.startImpression()
+        impressionData.start = Date()
     }
 
     fun endImpression(messageId: String) {
@@ -96,12 +96,12 @@ public class EmbeddedSessionManager {
             return
         }
 
-        impressionData.endImpression()
+        updateDisplayCountAndDuration(impressionData)
     }
 
     private fun endAllImpressions() {
         for (impressionData in impressions.values) {
-            impressionData.endImpression()
+            updateDisplayCountAndDuration(impressionData)
         }
     }
 
@@ -117,5 +117,14 @@ public class EmbeddedSessionManager {
             )
         }
         return impressionList
+    }
+
+    private fun updateDisplayCountAndDuration(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
+        if(impressionData.start != null) {
+            impressionData.displayCount = impressionData.displayCount?.plus(1)
+            impressionData.duration = impressionData.duration?.plus((Date().time - impressionData.start!!.time) / 1000.0).toFloat()
+            impressionData.start = null
+        }
+        return impressionData
     }
 }
