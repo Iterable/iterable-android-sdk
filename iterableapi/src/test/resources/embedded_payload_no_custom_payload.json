@@ -2,7 +2,7 @@
   "embeddedMessages": [
     {
       "metadata": {
-        "id": "doibjo4590340oidiobnw",
+        "messageId": "doibjo4590340oidiobnw",
         "placementId": "mbn8489b7ehycy",
         "campaignId": "noj9iyjthfvhs",
         "isProof": true
@@ -18,7 +18,10 @@
         "buttons": [{
           "id": "reward-button",
           "title": "REDEEM MEOW",
-          "action": "success"
+          "action": {
+            "type": "openUrl",
+            "data": "https://www.google.com"
+          }
         }],
         "text": [{
           "id": "body",

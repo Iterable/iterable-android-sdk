@@ -41,6 +41,7 @@ public class IterableApi {
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
+    private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
@@ -222,6 +223,28 @@ public class IterableApi {
     }
 
     /**
+     * A package-private method to get a list of Embedded Messages from Iterable;
+     * Passes the result to the callback.
+     * To get list of messages as a list of EmbeddedMessages in memory, use
+     * {@link IterableEmbeddedManager#getEmbeddedMessages()} instead
+     *
+     * @param onCallback
+     */
+    void getEmbeddedMessages(@NonNull IterableHelper.IterableActionHandler onCallback) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(onCallback);
+    }
+
+    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(onSuccess, onFailure);
+    }
+
+    /**
      * Tracks in-app delivery events (per in-app)
      * @param message the in-app message to be tracked as delivered */
     void trackInAppDelivery(@NonNull IterableInAppMessage message) {
@@ -235,6 +258,22 @@ public class IterableApi {
         }
 
         apiClient.trackInAppDelivery(message);
+    }
+
+    /**
+     * Tracks embedded message received events (per embedded message)
+     * @param message the embedded message to be tracked as received */
+    void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackEmbeddedMessageReceived: message is null");
+            return;
+        }
+
+        apiClient.trackEmbeddedMessageReceived(message);
     }
 
     private String getPushIntegrationName() {
@@ -498,6 +537,10 @@ public class IterableApi {
                     sharedInstance.config.inAppDisplayInterval);
         }
 
+        if (sharedInstance.embeddedManager == null) {
+            sharedInstance.embeddedManager = new IterableEmbeddedManager(sharedInstance.config.embeddedMessagingAutoFetchInterval, null, null);
+        }
+
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
     }
@@ -517,11 +560,19 @@ public class IterableApi {
     }
 
     @VisibleForTesting
+    IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager) {
+        config = new IterableConfig.Builder().build();
+        this.inAppManager = inAppManager;
+        this.embeddedManager = embeddedManager;
+    }
+
+    @VisibleForTesting
     IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
         config = new IterableConfig.Builder().build();
         this.apiClient = apiClient;
         this.inAppManager = inAppManager;
     }
+
 //endregion
 
 //region SDK public functions
@@ -537,6 +588,15 @@ public class IterableApi {
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return inAppManager;
+    }
+
+    @NonNull
+    public IterableEmbeddedManager embeddedManager() {
+        if (embeddedManager == null) {
+            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+        }
+        return embeddedManager;
     }
 
     /**
@@ -1008,6 +1068,26 @@ public class IterableApi {
 
         apiClient.trackInAppClose(message, clickedURL, closeAction, clickLocation, inboxSessionId);
     }
+
+    /**
+     * Tracks when a link inside an embedded message is clicked
+     * @param message the embedded message to be tracked
+     * @param buttonIdentifier identifier that determines which button or if embedded message itself was clicked
+     * @param clickedUrl the URL of the clicked button or assigned to the embedded message itself
+     */
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String buttonIdentifier, @Nullable String clickedUrl) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackEmbeddedClick: message is null");
+            return;
+        }
+
+        apiClient.trackEmbeddedClick(message, buttonIdentifier, clickedUrl);
+    }
+
 //endregion
 
 //region DEPRECATED - API public functions
@@ -1121,6 +1201,25 @@ public class IterableApi {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void trackEmbeddedSession(@NonNull IterableEmbeddedSession session) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (session == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: session is null");
+            return;
+        }
+
+        if (session.getStart() == null || session.getEnd() == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: sessionStartTime and sessionEndTime must be set");
+            return;
+        }
+
+        apiClient.trackEmbeddedSession(session);
     }
 //endregion
 }

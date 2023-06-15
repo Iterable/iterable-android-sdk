@@ -25,7 +25,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
@@ -39,7 +39,8 @@ class IterableEmbeddedMessageTest {
 
             assertThat("reward-button", `is`(message.elements?.buttons?.get(0)?.id))
             assertThat("REDEEM MEOW", `is` (message.elements?.buttons?.get(0)?.title))
-            assertThat("success", `is` (message.elements?.buttons?.get(0)?.action))
+            assertThat("openUrl", `is` (message.elements?.buttons?.get(0)?.action?.type))
+            assertThat("https://www.google.com", `is` (message.elements?.buttons?.get(0)?.action?.data))
 
             assertThat("body", `is`(message.elements?.text?.get(0)?.id))
             assertThat("CATS RULE!!!", `is` (message.elements?.text?.get(0)?.text))
@@ -63,7 +64,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
@@ -77,7 +78,9 @@ class IterableEmbeddedMessageTest {
 
             assertThat("reward-button", `is`(message.elements?.buttons?.get(0)?.id))
             assertThat("REDEEM MEOW", `is` (message.elements?.buttons?.get(0)?.title))
-            assertThat("success", `is` (message.elements?.buttons?.get(0)?.action))
+
+            assertThat("someType", `is`(message.elements?.defaultAction?.type))
+            assertThat("someData", `is` (message.elements?.defaultAction?.data))
 
             assertThat("body", `is`(message.elements?.text?.get(0)?.id))
             assertThat("CATS RULE!!!", `is` (message.elements?.text?.get(0)?.text))
@@ -104,7 +107,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
@@ -137,7 +140,7 @@ class IterableEmbeddedMessageTest {
 
             // THEN we get appropriate embedded message object
             assertNotNull(message)
-            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.id))
+            assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
@@ -160,8 +163,12 @@ class IterableEmbeddedMessageTest {
             "someType", "someData"
         )
 
+        val embeddedMessageElementsButtonAction = EmbeddedMessageElementsButtonAction(
+            "openUrl", "https://www.google.com"
+        )
+
         val embeddedMessageButtons: List<EmbeddedMessageElementsButton> = listOf(
-            EmbeddedMessageElementsButton("reward-button", "REDEEM MEOW", "success")
+            EmbeddedMessageElementsButton("reward-button", "REDEEM MEOW", embeddedMessageElementsButtonAction)
         )
 
         val embeddedMessageText: List<EmbeddedMessageElementsText> = listOf(
