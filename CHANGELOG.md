@@ -14,7 +14,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 #### Fixed
 - nothing yet
-- 
+
+## [3.4.13](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.13)
+#### Added
+- `IterableInAppManager.setRead` now accepts `IterableHelper.SuccessHandler successHandler`.
+- `IterableApi.inAppConsume` now accepts `IterableHelper.SuccessHandler successHandler` and `IterableHelper.FailureHandler failureHandler`.
+
 ## [3.4.12](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.12)
 #### Added
 - `setEmail` and `setUserId` now accepts `IterableHelper.SuccessHandler successHandler` and `IterableHelper.FailureHandler failureHandler`.
