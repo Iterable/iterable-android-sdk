@@ -27,14 +27,14 @@ data class IterableEmbeddedMessage (
         }
 
 
-        fun fromJSONObject(flexMessageJson: JSONObject): IterableEmbeddedMessage {
-            val metadataJson: JSONObject = flexMessageJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA)
+        fun fromJSONObject(messageJson: JSONObject): IterableEmbeddedMessage {
+            val metadataJson: JSONObject = messageJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA)
             val metadata: EmbeddedMessageMetadata = EmbeddedMessageMetadata.fromJSONObject(metadataJson)
 
-            val elementsJson: JSONObject? = flexMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS)
+            val elementsJson: JSONObject? = messageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS)
             val elements: EmbeddedMessageElements? = EmbeddedMessageElements.fromJSONObject(elementsJson)
 
-            val payload: JSONObject? = flexMessageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD)
+            val payload: JSONObject? = messageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD)
 
             return IterableEmbeddedMessage(metadata, elements, payload)
         }
@@ -42,7 +42,7 @@ data class IterableEmbeddedMessage (
 }
 
 class EmbeddedMessageMetadata(
-    var id: String,
+    var messageId: String,
     //TODO: Remove this once the placementIDs are implemented in the backend
     val placementId: String? = "",
     val campaignId: String? = null,
@@ -55,7 +55,7 @@ class EmbeddedMessageMetadata(
             val metadataJson = JSONObject()
 
             try {
-                metadataJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID, metadata.id)
+                metadataJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID, metadata.messageId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, metadata.placementId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID, metadata.campaignId)
                 metadataJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF, metadata.isProof)
@@ -66,13 +66,13 @@ class EmbeddedMessageMetadata(
             return metadataJson
         }
 
-        fun fromJSONObject(flexMessageMetadataJson: JSONObject): EmbeddedMessageMetadata {
-            val id: String = flexMessageMetadataJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID)
-            val placementId: String = flexMessageMetadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
-            val campaignId: String = flexMessageMetadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID)
-            val isProof: Boolean = flexMessageMetadataJson.optBoolean(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF)
+        fun fromJSONObject(metadataJson: JSONObject): EmbeddedMessageMetadata {
+            val messageId: String = metadataJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID)
+            val placementId: String = metadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
+            val campaignId: String = metadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID)
+            val isProof: Boolean = metadataJson.optBoolean(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF)
 
-            return EmbeddedMessageMetadata(id, placementId, campaignId, isProof)
+            return EmbeddedMessageMetadata(messageId, placementId, campaignId, isProof)
         }
     }
 }
@@ -173,7 +173,7 @@ class EmbeddedMessageElements (
 class EmbeddedMessageElementsButton (
     val id: String,
     val title: String? = null,
-    val action: String? = null
+    val action: EmbeddedMessageElementsButtonAction? = null
 ) {
 
     companion object {
@@ -185,7 +185,14 @@ class EmbeddedMessageElementsButton (
             try {
                 buttonJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ID, button.id)
                 buttonJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TITLE, button.title)
-                buttonJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION, button.action)
+
+                if(button.action != null) {
+                    buttonJson.putOpt(
+                        IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION,
+                        EmbeddedMessageElementsButtonAction.toJSONObject(button.action)
+                    )
+                }
+
             } catch (e: JSONException) {
                 IterableLogger.e(TAG, "Error while serializing flex message button", e)
             }
@@ -195,7 +202,12 @@ class EmbeddedMessageElementsButton (
         fun fromJSONObject(buttonJson: JSONObject): EmbeddedMessageElementsButton {
             val id: String = buttonJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ID)
             val title: String = buttonJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TITLE)
-            val action: String = buttonJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION)
+
+            val buttonActionJson: JSONObject? = buttonJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION)
+            var action: EmbeddedMessageElementsButtonAction? = null
+            if (buttonActionJson != null) {
+                action = EmbeddedMessageElementsButtonAction.fromJSONObject(buttonActionJson)
+            }
 
             return EmbeddedMessageElementsButton(id, title, action)
         }
@@ -223,15 +235,43 @@ class EmbeddedMessageElementsDefaultAction (
 
             return defaultActionJson
         }
-        fun fromJSONObject(flexMessageElementsDefaultActionJson: JSONObject): EmbeddedMessageElementsDefaultAction {
-            val type: String = flexMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE)
-            val data: String = flexMessageElementsDefaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
+        fun fromJSONObject(defaultActionJson: JSONObject): EmbeddedMessageElementsDefaultAction {
+            val type: String = defaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE)
+            val data: String = defaultActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
 
             return EmbeddedMessageElementsDefaultAction(type, data)
         }
     }
 }
 
+class EmbeddedMessageElementsButtonAction (
+    val type: String,
+    val data: String
+) {
+
+    companion object {
+        val TAG = "ItblEmbeddedButtonAction"
+
+        fun toJSONObject(buttonAction: EmbeddedMessageElementsButtonAction): JSONObject {
+            val buttonActionJson = JSONObject()
+
+            try {
+                buttonActionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE, buttonAction.type)
+                buttonActionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_DATA, buttonAction.data)
+            } catch (e: JSONException) {
+                IterableLogger.e(TAG, "Error while serializing flex default action", e)
+            }
+
+            return buttonActionJson
+        }
+        fun fromJSONObject(buttonActionJson: JSONObject): EmbeddedMessageElementsButtonAction {
+            val type: String = buttonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE)
+            val data: String = buttonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
+
+            return EmbeddedMessageElementsButtonAction(type, data)
+        }
+    }
+}
 class EmbeddedMessageElementsText (
     val id: String,
     val text: String? = null,

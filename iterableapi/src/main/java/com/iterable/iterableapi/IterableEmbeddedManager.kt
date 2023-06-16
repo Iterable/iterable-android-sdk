@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
@@ -115,35 +116,55 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     private fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
-        IterableApi.sharedInstance.apiClient.getEmbeddedMessages { payload ->
+        IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
-            if (payload != null && !payload.isEmpty()) {
-                try {
-                    val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
+            try {
+                val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
+                val jsonArray =
+                    data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
 
-                    val mainObject = JSONObject(payload)
-                    val jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
-
-                    if (jsonArray != null) {
-                        for (i in 0 until jsonArray.length()) {
-                            val messageJson = jsonArray.optJSONObject(i)
-                            val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
-                            remoteMessageList.add(message)
-                        }
-                    } else {
-                        IterableLogger.e(TAG, "Array not found in embedded message response. Probably a parsing failure")
+                if (jsonArray != null) {
+                    for (i in 0 until jsonArray.length()) {
+                        val messageJson = jsonArray.optJSONObject(i)
+                        val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
+                        remoteMessageList.add(message)
                     }
-                    updateLocalMessages(remoteMessageList)
-                    IterableLogger.v(TAG, "$localMessages")
-
-                } catch (e: JSONException) {
-                    IterableLogger.e(TAG, e.toString())
+                } else {
+                    IterableLogger.e(
+                        TAG,
+                        "Array not found in embedded message response. Probably a parsing failure"
+                    )
                 }
-            } else {
-                IterableLogger.e(TAG, "No payload found in embedded message response")
+                updateLocalMessages(remoteMessageList)
+                IterableLogger.v(TAG, "$localMessages")
+
+            } catch (e: JSONException) {
+                IterableLogger.e(TAG, e.toString())
             }
             lastSync = IterableUtil.currentTimeMillis()
             scheduleSync()
+        }, object : IterableHelper.FailureHandler {
+            override fun onFailure(reason: String, data: JSONObject?) {
+                if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
+                    IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
+                    autoFetchDuration = 0.0
+                    broadcastSubscriptionInactive()
+                    return
+                } else {
+                    //TODO: Instead of generic condition, have the retry only in certain situation
+                    IterableLogger.e(TAG, "Error while fetching embedded messages: $reason")
+                    lastSync = IterableUtil.currentTimeMillis()
+                    scheduleSync()
+                }
+            }
+        })
+
+    }
+
+    fun broadcastSubscriptionInactive() {
+        updateHandleListeners.forEach {
+            IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
+            it.onFeatureDisabled()
         }
     }
 
@@ -155,14 +176,15 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         val localMessageList = getEmbeddedMessages().toMutableList()
         val localMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         localMessageList.forEach {
-            localMessageMap[it.metadata.id] = it
+            localMessageMap[it.metadata.messageId] = it
         }
 
         // Check for new messages and add them to the local list
         remoteMessageList.forEach {
-            if (!localMessageMap.containsKey(it.metadata.id)) {
+            if (!localMessageMap.containsKey(it.metadata.messageId)) {
                 localMessagesChanged = true
                 localMessageList.add(it)
+                IterableApi.getInstance().trackEmbeddedMessageReceived(it)
             }
             //TODO: Make a call to the updateHandler to notify that the message has been added
         }
@@ -170,11 +192,11 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         // Check for messages in the local list that are not in the remote list and remove them
         val remoteMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         remoteMessageList.forEach {
-            remoteMessageMap[it.metadata.id] = it
+            remoteMessageMap[it.metadata.messageId] = it
         }
         val messagesToRemove = mutableListOf<IterableEmbeddedMessage>()
         localMessageList.forEach {
-            if(!remoteMessageMap.containsKey(it.metadata.id)) {
+            if(!remoteMessageMap.containsKey(it.metadata.messageId)) {
                 messagesToRemove.add(it)
 
                 //TODO: Make a call to the updateHandler to notify that the message has been removed
@@ -277,6 +299,7 @@ public interface EmbeddedMessageActionHandler {
 
 public interface EmbeddedMessageUpdateHandler {
     fun onMessageUpdate()
+    fun onFeatureDisabled()
 }
 
 // endregion
