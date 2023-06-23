@@ -61,18 +61,7 @@ public class EmbeddedSessionManager {
             null
         )
     }
-
-    fun onMessageImpressionStarted(message: IterableEmbeddedMessage) {
-        IterableLogger.printInfo()
-        startImpression(message.metadata.messageId)
-    }
-
-    fun onMessageImpressionEnded(message: IterableEmbeddedMessage) {
-        IterableLogger.printInfo()
-        endImpression(message.metadata.messageId)
-    }
-
-    fun startImpression(messageId: String) {
+    fun resumeImpression(messageId: String) {
         var impressionData: EmbeddedImpressionData? = impressions[messageId]
 
         if (impressionData == null) {
@@ -83,7 +72,7 @@ public class EmbeddedSessionManager {
         impressionData.start = Date()
     }
 
-    fun endImpression(messageId: String) {
+    fun pauseImpression(messageId: String) {
         val impressionData: EmbeddedImpressionData? = impressions[messageId]
 
         if (impressionData == null) {
