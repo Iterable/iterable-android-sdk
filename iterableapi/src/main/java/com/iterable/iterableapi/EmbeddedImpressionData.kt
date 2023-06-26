@@ -7,10 +7,10 @@ import java.util.Date
 data class EmbeddedImpressionData(
     val messageId: String,
     var displayCount: Int = 0,
-    var duration: Float = 0.0f,
+    var duration: Double = 0.00,
     var start: Date? = null
 ) {
     constructor(
         messageId: String
-    ) : this(messageId, 0, 0.0f, null)
+    ) : this(messageId, 0, 0.00, null)
 }

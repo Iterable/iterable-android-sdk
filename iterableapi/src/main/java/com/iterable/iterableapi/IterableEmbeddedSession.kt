@@ -23,5 +23,5 @@ public data class IterableEmbeddedSession(
 class IterableEmbeddedImpression(
     val messageId: String,
     val displayCount: Int,
-    val duration: Float
+    val duration: Double
 )

@@ -1,6 +1,7 @@
 package com.iterable.iterableapi
 
 import androidx.annotation.RestrictTo
+import java.lang.Math.round
 import java.util.Date
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -101,7 +102,7 @@ public class EmbeddedSessionManager {
                 IterableEmbeddedImpression(
                     impressionData.messageId,
                     impressionData.displayCount,
-                    impressionData.duration
+                    round(impressionData.duration * 100) / 100.00
                 )
             )
         }
@@ -111,7 +112,8 @@ public class EmbeddedSessionManager {
     private fun updateDisplayCountAndDuration(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
         if(impressionData.start != null) {
             impressionData.displayCount = impressionData.displayCount?.plus(1)
-            impressionData.duration = impressionData.duration?.plus((Date().time - impressionData.start!!.time) / 1000.0).toFloat()
+            impressionData.duration =
+                impressionData.duration?.plus((Date().time - impressionData.start!!.time) / 1000.0).toDouble()
             impressionData.start = null
         }
         return impressionData
