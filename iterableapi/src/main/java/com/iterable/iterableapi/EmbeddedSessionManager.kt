@@ -61,7 +61,7 @@ public class EmbeddedSessionManager {
             null
         )
     }
-    fun resumeImpression(messageId: String) {
+    fun startImpression(messageId: String) {
         var impressionData: EmbeddedImpressionData? = impressions[messageId]
 
         if (impressionData == null) {
