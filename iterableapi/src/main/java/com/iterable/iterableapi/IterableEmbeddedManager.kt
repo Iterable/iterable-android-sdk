@@ -112,7 +112,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     }
 
     //Network call to get the embedded messages
-    private fun syncMessages() {
+    public fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
