@@ -185,7 +185,7 @@ class IterableNotificationHelper {
             trampolineActivityIntent.setClass(context, IterableTrampolineActivity.class);
             trampolineActivityIntent.putExtras(extras);
             trampolineActivityIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
-            trampolineActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            trampolineActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
             // Action buttons
             if (notificationData.getActionButtons() != null) {
