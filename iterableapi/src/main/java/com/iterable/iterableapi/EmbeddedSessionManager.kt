@@ -126,11 +126,10 @@ public class EmbeddedSessionManager(): IterableActivityMonitor.AppStateCallback 
     }
 
     override fun onSwitchToForeground() {
-        IterableLogger.d(TAG, "switch to foreground!!")
+        IterableLogger.printInfo()
     }
 
     override fun onSwitchToBackground() {
-        IterableLogger.d(TAG, "switch to background!!")
         endSession()
     }
 }
