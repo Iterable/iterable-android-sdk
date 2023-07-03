@@ -4,11 +4,17 @@ import androidx.annotation.RestrictTo
 import java.util.Date
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class EmbeddedSessionManager {
+public class EmbeddedSessionManager(): IterableActivityMonitor.AppStateCallback {
 
     private val TAG = "EmbeddedSessionManager"
 
     private var impressions: MutableMap<String, EmbeddedImpressionData> = mutableMapOf()
+    private var activityMonitor: IterableActivityMonitor? = null
+
+    init{
+        activityMonitor = IterableActivityMonitor.getInstance()
+        activityMonitor?.addCallback(this)
+    }
 
     var session: IterableEmbeddedSession = IterableEmbeddedSession(
         null,
@@ -60,6 +66,8 @@ public class EmbeddedSessionManager {
             "0",
             null
         )
+
+        impressions = mutableMapOf()
     }
     fun startImpression(messageId: String) {
         var impressionData: EmbeddedImpressionData? = impressions[messageId]
@@ -115,5 +123,14 @@ public class EmbeddedSessionManager {
             impressionData.start = null
         }
         return impressionData
+    }
+
+    override fun onSwitchToForeground() {
+        IterableLogger.d(TAG, "switch to foreground!!")
+    }
+
+    override fun onSwitchToBackground() {
+        IterableLogger.d(TAG, "switch to background!!")
+        endSession()
     }
 }

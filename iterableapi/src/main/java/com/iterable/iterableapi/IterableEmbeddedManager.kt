@@ -1,7 +1,5 @@
 package com.iterable.iterableapi
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
@@ -26,7 +24,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
     private var activityMonitor: IterableActivityMonitor? = null
-    private var isAppInBackground = false
 
     // endregion
 
@@ -114,8 +111,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             } catch (e: JSONException) {
                 IterableLogger.e(TAG, e.toString())
             }
-            //lastSync = IterableUtil.currentTimeMillis()
-            //scheduleSync()
         }, object : IterableHelper.FailureHandler {
             override fun onFailure(reason: String, data: JSONObject?) {
                 if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
@@ -187,19 +182,15 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             }
         }
     }
-
     // endregion
 
     // region IterableActivityMonitor.AppStateCallback
     override fun onSwitchToForeground() {
         IterableLogger.printInfo()
-        isAppInBackground = false
     }
 
     override fun onSwitchToBackground() {
         IterableLogger.printInfo()
-        isAppInBackground = true
-        syncMessages()
     }
     // endregion
 }
