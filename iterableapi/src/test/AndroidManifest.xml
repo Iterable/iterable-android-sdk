@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.iterable.iterableapi" android:versionName="1.2.3" android:versionCode="321">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.iterable.iterableapi"
+    android:versionName="1.2.3"
+    android:versionCode="321">
+
+    <uses-sdk tools:overrideLibrary="androidx.security" />
     <application
         android:label="IterableAPI"
         android:supportsRtl="true">
@@ -11,4 +17,5 @@
             </intent-filter>
         </activity>
     </application>
+
 </manifest>
