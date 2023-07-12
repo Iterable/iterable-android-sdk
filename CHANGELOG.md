@@ -15,6 +15,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Fixed
 - nothing yet
 
+## [3.4.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.14)
+#### Added
+- `IterableInAppManager.setRead` now accepts `IterableHelper.FailureHandler failureHandler`
+
+#### Fixed
+- Fixes an issue where `IterableInAppManager.removeMessage` caused build failure in React Native SDK pointing to legacy method calls.
+- Fixes an issue where custom action handlers were not invoked when tapping on push notification when the app is in background.
+
 ## [3.4.13](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.13)
 #### Added
 - `IterableInAppManager.setRead` now accepts `IterableHelper.SuccessHandler successHandler`.
