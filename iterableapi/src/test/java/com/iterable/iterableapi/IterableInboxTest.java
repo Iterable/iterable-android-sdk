@@ -98,7 +98,7 @@ public class IterableInboxTest extends BaseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(200).setBody(responseData.toString()));
 
-        inAppManager.removeMessage(inboxMessages.get(0), new IterableHelper.SuccessHandler() {
+        inAppManager.removeMessage(inboxMessages.get(0), null, null, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 signal.countDown();
@@ -127,7 +127,7 @@ public class IterableInboxTest extends BaseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(500).setBody(responseData.toString()));
 
-        inAppManager.removeMessage(inboxMessages.get(0), new IterableHelper.SuccessHandler() {
+        inAppManager.removeMessage(inboxMessages.get(0), null, null, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 assertFalse(true);
@@ -168,6 +168,11 @@ public class IterableInboxTest extends BaseTest {
             public void onSuccess(@NonNull JSONObject data) {
                 callbackCalled[0] = true;
                 assertTrue(callbackCalled[0]);
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertFalse(true);
             }
         });
 
