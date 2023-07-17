@@ -48,7 +48,7 @@ ext {
     siteUrl = 'https://github.com/Iterable/iterable-android-sdk'
     gitUrl = 'https://github.com/Iterable/iterable-android-sdk.git'
 
-    libraryVersion = '3.4.9'
+    libraryVersion = '3.4.14'
 
     developerId = 'davidtruong'
     developerName = 'David Truong'
@@ -60,7 +60,8 @@ ext {
 }
 
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-if(hasProperty("mavenPublishEnabled")) {
+
+if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
 

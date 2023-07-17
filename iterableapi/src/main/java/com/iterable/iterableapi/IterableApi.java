@@ -48,6 +48,7 @@ public class IterableApi {
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
+    private IterableKeychain keychain;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -132,6 +133,19 @@ public class IterableApi {
             authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
         }
         return authManager;
+    }
+
+    @NonNull
+    IterableKeychain getKeychain() {
+        if (keychain == null) {
+            try {
+                keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
+            }
+        }
+
+        return keychain;
     }
 
     static void loadLastSavedConfiguration(Context context) {
@@ -336,34 +350,28 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        try {
-            SharedPreferences.Editor editor = getPreferences().edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
-            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-            editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
-            editor.commit();
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while persisting email/userId", e);
-        }
+        getKeychain().saveEmail(_email);
+        getKeychain().saveUserId(_userId);
+        getKeychain().saveAuthToken(_authToken);
     }
 
     private void retrieveEmailAndUserId() {
-        try {
-            SharedPreferences prefs = getPreferences();
-            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-            if (config.authHandler != null) {
-                if (_authToken != null) {
-                    getAuthManager().queueExpirationRefresh(_authToken);
-                } else {
-                    IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
-                    getAuthManager().scheduleAuthTokenRefresh(10000);
-                }
+        _email = getKeychain().getEmail();
+        _userId = getKeychain().getUserId();
+        _authToken = getKeychain().getAuthToken();
+
+        if (config.authHandler != null) {
+            if (_authToken != null) {
+                getAuthManager().queueExpirationRefresh(_authToken);
+            } else {
+                IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
+                getAuthManager().scheduleAuthTokenRefresh(10000);
             }
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
+    }
+
+    private void updateSDKVersion() {
+
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
@@ -498,6 +506,8 @@ public class IterableApi {
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
+
+        sharedInstance.updateSDKVersion();
 
         sharedInstance.retrieveEmailAndUserId();
 
