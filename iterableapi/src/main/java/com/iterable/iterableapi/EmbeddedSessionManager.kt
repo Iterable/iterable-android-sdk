@@ -118,8 +118,8 @@ public class EmbeddedSessionManager(): IterableActivityMonitor.AppStateCallback 
 
     private fun updateDisplayCountAndDuration(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
         if(impressionData.start != null) {
-            impressionData.displayCount = impressionData.displayCount?.plus(1)
-            impressionData.duration = impressionData.duration?.plus((Date().time - impressionData.start!!.time) / 1000.0).toFloat()
+            impressionData.displayCount = impressionData.displayCount.plus(1)
+            impressionData.duration = impressionData.duration.plus((Date().time - impressionData.start!!.time) / 1000.0).toFloat()
             impressionData.start = null
         }
         return impressionData
