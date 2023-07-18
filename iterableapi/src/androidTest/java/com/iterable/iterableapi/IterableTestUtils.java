@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 public class IterableTestUtils {
     public static void createIterableApi() {
         IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class));
-        IterableConfig config = new IterableConfig.Builder().setEmbeddedMessagingAutoFetchInterval(0).build();
+        IterableConfig config = new IterableConfig.Builder().build();
         initIterableApi(config);
         IterableApi.getInstance().setEmail("test_email");
     }

@@ -1,14 +1,12 @@
 package com.iterable.iterableapi
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
 
-public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
+public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback {
 
     // region constants
     val TAG = "IterableEmbeddedManager"
@@ -21,15 +19,14 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         get() = _messages
 
     private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
-
-    private var autoFetchDuration: Double = 0.0
-    private var lastSync: Long = 0
     private var actionHandler: EmbeddedMessageActionHandler? = null
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
+
+    var embeddedSessionManager = EmbeddedSessionManager()
+
     private var activityMonitor: IterableActivityMonitor? = null
-    private var isAppInBackground = false
 
     // endregion
 
@@ -37,23 +34,14 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
-        autoFetchInterval: Double,
         actionHandler: EmbeddedMessageActionHandler?,
         updateHandler: EmbeddedMessageUpdateHandler?
     ) {
         this.actionHandler = actionHandler
         this.updateHandler = updateHandler
-        autoFetchDuration = autoFetchInterval
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)
-
-        postConstruction()
     }
-
-    fun postConstruction() {
-        scheduleSync()
-    }
-
     // endregion
 
     // region getters and setters
@@ -66,6 +54,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     //Add updateHandler to the list
     public fun addUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
+        embeddedSessionManager.startSession()
     }
 
     //Remove actionHandler from the list
@@ -76,6 +65,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     //Remove updateHandler from the list
     public fun removeUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
+        embeddedSessionManager.endSession()
     }
 
     //Get the list of actionHandlers
@@ -92,27 +82,13 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
 
     // region public methods
 
-    //Get the list of embedded messages after syncing
-    //TODO: Still not a proper async call. It will still return the message in memory
-    // but the sync will happen in background.
-    fun getSyncedEmbeddedMessages(): List<IterableEmbeddedMessage> {
-
-        IterableLogger.v(TAG, "Going to sync messages")
-
-        syncMessages()
-
-        IterableLogger.v(TAG, "Returning messages")
-
-        return localMessages
-    }
-
     //Gets the list of embedded messages in memory without syncing
     fun getEmbeddedMessages(): List<IterableEmbeddedMessage> {
         return localMessages
     }
 
     //Network call to get the embedded messages
-    private fun syncMessages() {
+    fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
@@ -140,34 +116,33 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             } catch (e: JSONException) {
                 IterableLogger.e(TAG, e.toString())
             }
-            lastSync = IterableUtil.currentTimeMillis()
-            scheduleSync()
         }, object : IterableHelper.FailureHandler {
             override fun onFailure(reason: String, data: JSONObject?) {
-                if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
+                if (reason.equals(
+                        "SUBSCRIPTION_INACTIVE",
+                        ignoreCase = true
+                    ) || reason.equals("Invalid API Key", ignoreCase = true)
+                ) {
                     IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
-                    autoFetchDuration = 0.0
                     broadcastSubscriptionInactive()
                     return
                 } else {
                     //TODO: Instead of generic condition, have the retry only in certain situation
                     IterableLogger.e(TAG, "Error while fetching embedded messages: $reason")
-                    lastSync = IterableUtil.currentTimeMillis()
-                    scheduleSync()
                 }
             }
         })
 
     }
 
-    fun broadcastSubscriptionInactive() {
+    private fun broadcastSubscriptionInactive() {
         updateHandleListeners.forEach {
             IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
             it.onFeatureDisabled()
         }
     }
 
-    fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
+    private fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
         IterableLogger.printInfo()
         var localMessagesChanged = false
 
@@ -195,7 +170,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         }
         val messagesToRemove = mutableListOf<IterableEmbeddedMessage>()
         localMessageList.forEach {
-            if(!remoteMessageMap.containsKey(it.metadata.messageId)) {
+            if (!remoteMessageMap.containsKey(it.metadata.messageId)) {
                 messagesToRemove.add(it)
 
                 //TODO: Make a call to the updateHandler to notify that the message has been removed
@@ -208,7 +183,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
         this.localMessages = localMessageList
         _messages.value = localMessageList
 
-        if(localMessagesChanged) {
+        if (localMessagesChanged) {
             //TODO: Make a call to the updateHandler to notify that the message list has been updated
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
@@ -216,78 +191,17 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
             }
         }
     }
-
     // endregion
 
-    // region auto fetch functionality
-
-    fun scheduleSync() {
-        IterableLogger.printInfo()
-        if(autoFetchDuration > 0) {
-            if (canSyncEmbeddedMessages()) {
-                IterableLogger.v(TAG, "Can sync now.. Syncing now")
-                IterableLogger.v(TAG, "setting isSyncScheduled to false in first if")
-                getSyncedEmbeddedMessages()
-
-            } else {
-                if (!isAppInBackground) {
-                    IterableLogger.v(
-                        TAG,
-                        "Scheduling sync after ${autoFetchDuration - getSecondsSinceLastFetch()} seconds"
-                    )
-                    Handler(Looper.getMainLooper()).postDelayed(
-                        {
-                            getSyncedEmbeddedMessages()
-                            IterableLogger.v(TAG, "inside looper setting isSyncScheduled to false")
-                        },
-                        ((autoFetchDuration - getSecondsSinceLastFetch()) * 1000).toLong()
-                    )
-                    IterableLogger.v(TAG, "setting isSyncScheduled to true")
-                } else {
-                    IterableLogger.v(TAG, "Not scheduling a sync.. App is in background")
-                    lastSync = autoFetchDuration.toLong()
-                }
-            }
-        } else {
-            IterableLogger.v(TAG, "embedded messaging automatic fetching not started since autoFetchDuration is <= 0")
-        }
-    }
-
-    private fun getSecondsSinceLastFetch(): Double {
-        return (IterableUtil.currentTimeMillis() - lastSync) / 1000.0
-    }
-
-    private fun canSyncEmbeddedMessages(): Boolean {
-        return getSecondsSinceLastFetch() >= autoFetchDuration
-    }
-
-    // endregion
-
-    // region IterableActivityMonitor.AppStateCallback
     override fun onSwitchToForeground() {
         IterableLogger.printInfo()
-        isAppInBackground = false
-        //TODO: resume the timer
-        if (IterableUtil.currentTimeMillis() - lastSync > autoFetchDuration * 1000) {
-            IterableLogger.v(
-                TAG,
-                "Duration passed is greater than auto fetch duration. Syncing now... " + (IterableUtil.currentTimeMillis() - lastSync) + " > " + autoFetchDuration * 1000
-            )
-            //Check if looper is already running
-            scheduleSync()
-        } else {
-            IterableLogger.v(
-                TAG,
-                "Duration passed is lesser than auto fetch duration. Hence not scheduling " + (IterableUtil.currentTimeMillis() - lastSync) + " < " + autoFetchDuration * 1000
-            )
-        }
+        embeddedSessionManager.startSession()
+        syncMessages()
     }
 
     override fun onSwitchToBackground() {
-        IterableLogger.printInfo()
-        isAppInBackground = true
+        embeddedSessionManager.endSession()
     }
-    // endregion
 }
 
 // region interfaces
