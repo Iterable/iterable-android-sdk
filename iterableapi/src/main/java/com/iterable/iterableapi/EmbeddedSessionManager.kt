@@ -4,12 +4,11 @@ import androidx.annotation.RestrictTo
 import java.util.Date
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class EmbeddedSessionManager() {
+public class EmbeddedSessionManager {
 
     private val TAG = "EmbeddedSessionManager"
 
     private var impressions: MutableMap<String, EmbeddedImpressionData> = mutableMapOf()
-    private var activityMonitor: IterableActivityMonitor? = null
 
     var session: IterableEmbeddedSession = IterableEmbeddedSession(
         null,

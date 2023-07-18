@@ -88,7 +88,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
     }
 
     //Network call to get the embedded messages
-    public fun syncMessages() {
+    fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
@@ -131,14 +131,14 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
 
     }
 
-    fun broadcastSubscriptionInactive() {
+   private fun broadcastSubscriptionInactive() {
         updateHandleListeners.forEach {
             IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
             it.onFeatureDisabled()
         }
     }
 
-    fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
+    private fun updateLocalMessages(remoteMessageList: List<IterableEmbeddedMessage>) {
         IterableLogger.printInfo()
         var localMessagesChanged = false
 
