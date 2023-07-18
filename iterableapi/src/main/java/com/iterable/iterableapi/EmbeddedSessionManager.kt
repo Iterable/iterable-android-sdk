@@ -4,17 +4,12 @@ import androidx.annotation.RestrictTo
 import java.util.Date
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class EmbeddedSessionManager(): IterableActivityMonitor.AppStateCallback {
+public class EmbeddedSessionManager() {
 
     private val TAG = "EmbeddedSessionManager"
 
     private var impressions: MutableMap<String, EmbeddedImpressionData> = mutableMapOf()
     private var activityMonitor: IterableActivityMonitor? = null
-
-    init{
-        activityMonitor = IterableActivityMonitor.getInstance()
-        activityMonitor?.addCallback(this)
-    }
 
     var session: IterableEmbeddedSession = IterableEmbeddedSession(
         null,
@@ -123,13 +118,5 @@ public class EmbeddedSessionManager(): IterableActivityMonitor.AppStateCallback 
             impressionData.start = null
         }
         return impressionData
-    }
-
-    override fun onSwitchToForeground() {
-        IterableLogger.printInfo()
-    }
-
-    override fun onSwitchToBackground() {
-        endSession()
     }
 }

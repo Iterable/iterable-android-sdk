@@ -6,7 +6,7 @@ import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
 
-public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
+public class IterableEmbeddedManager{
 
     // region constants
     val TAG = "IterableEmbeddedManager"
@@ -23,7 +23,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
-    private var activityMonitor: IterableActivityMonitor? = null
 
     // endregion
 
@@ -36,8 +35,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
     ) {
         this.actionHandler = actionHandler
         this.updateHandler = updateHandler
-        activityMonitor = IterableActivityMonitor.getInstance()
-        activityMonitor?.addCallback(this)
     }
     // endregion
 
@@ -181,16 +178,6 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback{
                 it.onMessageUpdate()
             }
         }
-    }
-    // endregion
-
-    // region IterableActivityMonitor.AppStateCallback
-    override fun onSwitchToForeground() {
-        IterableLogger.printInfo()
-    }
-
-    override fun onSwitchToBackground() {
-        IterableLogger.printInfo()
     }
     // endregion
 }
