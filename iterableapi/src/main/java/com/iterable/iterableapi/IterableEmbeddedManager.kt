@@ -6,7 +6,7 @@ import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
 
-public class IterableEmbeddedManager{
+public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
 
     // region constants
     val TAG = "IterableEmbeddedManager"
@@ -24,6 +24,10 @@ public class IterableEmbeddedManager{
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
 
+    var embeddedSessionManager = EmbeddedSessionManager()
+
+    private var activityMonitor: IterableActivityMonitor? = null
+
     // endregion
 
     // region constructor
@@ -35,6 +39,8 @@ public class IterableEmbeddedManager{
     ) {
         this.actionHandler = actionHandler
         this.updateHandler = updateHandler
+        activityMonitor = IterableActivityMonitor.getInstance()
+        activityMonitor?.addCallback(this)
     }
     // endregion
 
@@ -48,6 +54,7 @@ public class IterableEmbeddedManager{
     //Add updateHandler to the list
     public fun addUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
+        embeddedSessionManager.startSession()
     }
 
     //Remove actionHandler from the list
@@ -58,6 +65,7 @@ public class IterableEmbeddedManager{
     //Remove updateHandler from the list
     public fun removeUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
+        embeddedSessionManager.endSession()
     }
 
     //Get the list of actionHandlers
@@ -180,6 +188,16 @@ public class IterableEmbeddedManager{
         }
     }
     // endregion
+
+    override fun onSwitchToForeground() {
+        IterableLogger.printInfo()
+        embeddedSessionManager.startSession()
+        syncMessages()
+    }
+
+    override fun onSwitchToBackground() {
+        embeddedSessionManager.endSession()
+    }
 }
 
 // region interfaces
