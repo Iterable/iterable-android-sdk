@@ -6,7 +6,7 @@ import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
 
-public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
+public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback {
 
     // region constants
     val TAG = "IterableEmbeddedManager"
@@ -118,7 +118,11 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
             }
         }, object : IterableHelper.FailureHandler {
             override fun onFailure(reason: String, data: JSONObject?) {
-                if(reason.equals("SUBSCRIPTION_INACTIVE", ignoreCase = true) || reason.equals("Invalid API Key", ignoreCase = true)) {
+                if (reason.equals(
+                        "SUBSCRIPTION_INACTIVE",
+                        ignoreCase = true
+                    ) || reason.equals("Invalid API Key", ignoreCase = true)
+                ) {
                     IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
                     broadcastSubscriptionInactive()
                     return
@@ -131,7 +135,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
 
     }
 
-   private fun broadcastSubscriptionInactive() {
+    private fun broadcastSubscriptionInactive() {
         updateHandleListeners.forEach {
             IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
             it.onFeatureDisabled()
@@ -166,7 +170,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
         }
         val messagesToRemove = mutableListOf<IterableEmbeddedMessage>()
         localMessageList.forEach {
-            if(!remoteMessageMap.containsKey(it.metadata.messageId)) {
+            if (!remoteMessageMap.containsKey(it.metadata.messageId)) {
                 messagesToRemove.add(it)
 
                 //TODO: Make a call to the updateHandler to notify that the message has been removed
@@ -179,7 +183,7 @@ public class IterableEmbeddedManager: IterableActivityMonitor.AppStateCallback {
         this.localMessages = localMessageList
         _messages.value = localMessageList
 
-        if(localMessagesChanged) {
+        if (localMessagesChanged) {
             //TODO: Make a call to the updateHandler to notify that the message list has been updated
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")

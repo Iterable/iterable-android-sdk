@@ -63,6 +63,7 @@ public class EmbeddedSessionManager {
 
         impressions = mutableMapOf()
     }
+
     fun startImpression(messageId: String) {
         var impressionData: EmbeddedImpressionData? = impressions[messageId]
 
@@ -111,9 +112,11 @@ public class EmbeddedSessionManager {
     }
 
     private fun updateDisplayCountAndDuration(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
-        if(impressionData.start != null) {
+        if (impressionData.start != null) {
             impressionData.displayCount = impressionData.displayCount.plus(1)
-            impressionData.duration = impressionData.duration.plus((Date().time - impressionData.start!!.time) / 1000.0).toFloat()
+            impressionData.duration =
+                impressionData.duration.plus((Date().time - impressionData.start!!.time) / 1000.0)
+                    .toFloat()
             impressionData.start = null
         }
         return impressionData
