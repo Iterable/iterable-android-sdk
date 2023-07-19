@@ -54,10 +54,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Add updateHandler to the list
     public fun addUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
-        if(localMessages.isNotEmpty()) {
-            embeddedSessionManager.startSession()
-            IterableLogger.d(TAG, "switch to foreground - start session")
-        }
+        embeddedSessionManager.startSession(localMessages)
     }
 
     //Remove actionHandler from the list
@@ -68,10 +65,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Remove updateHandler from the list
     public fun removeUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
-        if(localMessages.isNotEmpty()) {
-            embeddedSessionManager.endSession()
-            IterableLogger.d(TAG, "switch to background - end session")
-        }
+        embeddedSessionManager.endSession()
     }
 
     //Get the list of actionHandlers
@@ -138,7 +132,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 }
             }
         })
-
     }
 
     private fun broadcastSubscriptionInactive() {
@@ -201,19 +194,12 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     override fun onSwitchToForeground() {
         IterableLogger.printInfo()
-        if(localMessages.isNotEmpty()) {
-            embeddedSessionManager.startSession()
-            IterableLogger.d(TAG, "switch to foreground - start session")
-        }
-
+        embeddedSessionManager.startSession(localMessages)
         syncMessages()
     }
 
     override fun onSwitchToBackground() {
-        if(localMessages.isNotEmpty()) {
-            embeddedSessionManager.endSession()
-            IterableLogger.d(TAG, "switch to background - end session")
-        }
+        embeddedSessionManager.endSession()
     }
 }
 
