@@ -97,11 +97,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
-
-
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
-
             try {
                 val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
                 val jsonArray =
