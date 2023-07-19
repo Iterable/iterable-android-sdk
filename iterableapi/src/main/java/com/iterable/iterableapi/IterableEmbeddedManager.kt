@@ -54,7 +54,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Add updateHandler to the list
     public fun addUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
-        embeddedSessionManager.startSession()
+        if(localMessages.isNotEmpty()) {
+            embeddedSessionManager.startSession()
+            IterableLogger.d(TAG, "switch to foreground - start session")
+        }
     }
 
     //Remove actionHandler from the list
@@ -65,7 +68,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Remove updateHandler from the list
     public fun removeUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
-        embeddedSessionManager.endSession()
+        if(localMessages.isNotEmpty()) {
+            embeddedSessionManager.endSession()
+            IterableLogger.d(TAG, "switch to background - end session")
+        }
     }
 
     //Get the list of actionHandlers
@@ -91,8 +97,11 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
+
+
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
+
             try {
                 val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
                 val jsonArray =
@@ -195,12 +204,19 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     override fun onSwitchToForeground() {
         IterableLogger.printInfo()
-        embeddedSessionManager.startSession()
+        if(localMessages.isNotEmpty()) {
+            embeddedSessionManager.startSession()
+            IterableLogger.d(TAG, "switch to foreground - start session")
+        }
+
         syncMessages()
     }
 
     override fun onSwitchToBackground() {
-        embeddedSessionManager.endSession()
+        if(localMessages.isNotEmpty()) {
+            embeddedSessionManager.endSession()
+            IterableLogger.d(TAG, "switch to background - end session")
+        }
     }
 }
 
