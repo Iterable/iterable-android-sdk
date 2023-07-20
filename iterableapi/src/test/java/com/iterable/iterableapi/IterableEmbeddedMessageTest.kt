@@ -27,7 +27,7 @@ class IterableEmbeddedMessageTest {
             assertNotNull(message)
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
-            assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
+            assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
             assertThat("Iterable Coffee Shoppe", `is`(message.elements?.title))
@@ -66,7 +66,7 @@ class IterableEmbeddedMessageTest {
             assertNotNull(message)
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
-            assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
+            assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
             assertThat("Iterable Coffee Shoppe", `is`(message.elements?.title))
@@ -109,7 +109,7 @@ class IterableEmbeddedMessageTest {
             assertNotNull(message)
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
-            assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
+            assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
             assertThat("Iterable Coffee Shoppe", `is`(message.elements?.title))
@@ -142,7 +142,7 @@ class IterableEmbeddedMessageTest {
             assertNotNull(message)
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
-            assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
+            assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
             assertNull(message.elements)
@@ -155,7 +155,7 @@ class IterableEmbeddedMessageTest {
         val embeddedMessageMetadata = EmbeddedMessageMetadata(
             "doibjo4590340oidiobnw",
             "mbn8489b7ehycy",
-            "noj9iyjthfvhs",
+            2324,
             true
         )
 
@@ -209,7 +209,7 @@ class IterableEmbeddedMessageTest {
         val embeddedMessageMetadata = EmbeddedMessageMetadata(
             "doibjo4590340oidiobnw",
             "mbn8489b7ehycy",
-            "noj9iyjthfvhs",
+            2324,
             true
         )
 
