@@ -15,7 +15,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [[3.4.15](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.15)
 #### Added
 #
-This release allows you to use project's hosted on Iterable's EU data center. If your project is hosted on Iterable's [European data center (EUDC)](https://support.iterable.com/hc/articles/17572750887444), configure the SDK to use Iterable's EU-based API endpoints:
+This release allows you to use projects hosted on Iterable's EU data center. If your project is hosted on Iterable's [European data center (EUDC)](https://support.iterable.com/hc/articles/17572750887444), configure the SDK to use Iterable's EU-based API endpoints:
 
 _Java_
 
