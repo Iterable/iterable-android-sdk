@@ -187,7 +187,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             //TODO: Make a call to the updateHandler to notify that the message list has been updated
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
-                it.onMessageUpdate()
+                it.onMessagesUpdated()
             }
         }
     }
@@ -211,7 +211,7 @@ public interface EmbeddedMessageActionHandler {
 }
 
 public interface EmbeddedMessageUpdateHandler {
-    fun onMessageUpdate()
+    fun onMessagesUpdated()
     fun onFeatureDisabled()
 }
 
