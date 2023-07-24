@@ -2,9 +2,38 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+#### Added
+- nothing yet
+
+#### Removed
+- nothing yet
+
+#### Changed
+- nothing yet
+
 ## [[3.4.15](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.15)
 #### Added
-- `IterableConfig.IterableDataRegion` which configures the Android SDK to use API endpoints for the Iterable EU data center. This configuration defaults to API endpoints for the US data center.
+#
+This release allows you to use project's hosted on Iterable's EU data center. If your project is hosted on Iterable's [European data center (EUDC)](https://support.iterable.com/hc/articles/17572750887444), configure the SDK to use Iterable's EU-based API endpoints:
+
+_Java_
+
+```java
+IterableConfig config = new IterableConfig.Builder()
+  // ... other configuration options ...
+  .setDataRegion(IterableDataRegion.EU).build();
+IterableApi.initialize(context, "<YOUR_API_KEY>", config);
+```
+
+_Kotlin_
+
+```kotlin
+val configBuilder = IterableConfig.Builder()
+   // ... other configuration options ...
+  .setUseInMemoryStorageForInApps(true);
+IterableApi.initialize(context, "<YOUR_API_KEY>", configBuilder.build());
+```
 
 #### Fixed
 - nothing yet
