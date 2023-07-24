@@ -2,15 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [[3.4.15](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.15)
 #### Added
-- nothing yet
-
-#### Removed
-- nothing yet
-
-#### Changed
-- nothing yet
+- `IterableConfig.IterableDataRegion` which configures the Android SDK to use API endpoints for the Iterable EU data center. This configuration defaults to API endpoints for the US data center.
 
 #### Fixed
 - nothing yet
