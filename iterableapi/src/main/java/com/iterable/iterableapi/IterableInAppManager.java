@@ -128,13 +128,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         return unreadInboxMessageCount;
     }
 
+    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read) {
+        setRead(message, read, null, null);
+    }
     /**
      * Set the read flag on an inbox message
      * @param message Inbox message object retrieved from {@link IterableInAppManager#getInboxMessages()}
      * @param read Read state flag. true = read, false = unread
+     * @param successHandler The callback which returns `success`.
      */
-    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read) {
+    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         message.setRead(read);
+        if (successHandler != null) {
+            successHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
+        }
         notifyOnChange();
     }
 
@@ -239,7 +246,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 scheduleProcessing();
             }
         })) {
-            setRead(message, true);
+            setRead(message, true, null, null);
             if (consume) {
                 message.markForDeletion(true);
             }
@@ -251,15 +258,31 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param message The message to be removed
      */
     public synchronized void removeMessage(@NonNull IterableInAppMessage message) {
-        message.setConsumed(true);
-        api.inAppConsume(message.getMessageId());
-        notifyOnChange();
+        removeMessage(message, null, null, null, null);
     }
 
+    /**
+     * Remove message from the list
+     * @param message The message to be removed
+     * @param source Source from where the message removal occured. Use IterableInAppDeleteActionType for available sources
+     * @param clickLocation Where was the message clicked. Use IterableInAppLocation for available Click Locations
+     */
     public synchronized void removeMessage(@NonNull IterableInAppMessage message, @NonNull IterableInAppDeleteActionType source, @NonNull IterableInAppLocation clickLocation) {
+        removeMessage(message, source, clickLocation, null, null);
+    }
+
+    /**
+     * Remove message from the list
+     * @param message The message to be removed
+     * @param source Source from where the message removal occured. Use IterableInAppDeleteActionType for available sources
+     * @param clickLocation Where was the message clicked. Use IterableInAppLocation for available Click Locations
+     * @param successHandler The callback which returns `success`.
+     * @param failureHandler The callback which returns `failure`.
+     */
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableLogger.printInfo();
         message.setConsumed(true);
-        api.inAppConsume(message, source, clickLocation);
+        api.inAppConsume(message, source, clickLocation, successHandler, failureHandler);
         notifyOnChange();
     }
 
@@ -432,7 +455,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
         if (IterableConstants.ITERABLE_IN_APP_ACTION_DELETE.equals(actionName)) {
-            removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP);
+            removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP, null, null);
         }
     }
 
