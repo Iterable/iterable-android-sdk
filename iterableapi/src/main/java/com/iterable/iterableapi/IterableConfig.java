@@ -72,11 +72,6 @@ public class IterableConfig {
     final String[] allowedProtocols;
 
     /**
-     * Data region determining which data center and endpoints are used by the SDK.
-     */
-    final IterableDataRegion dataRegion;
-
-    /**
      * This controls whether the in-app content should be saved to disk, or only kept in memory.
      * By default, the SDK will save in-apps to disk.
      */
@@ -96,7 +91,6 @@ public class IterableConfig {
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
-        dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
     }
@@ -113,7 +107,6 @@ public class IterableConfig {
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
-        private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
 
@@ -243,16 +236,6 @@ public class IterableConfig {
         }
 
         /**
-         * Set the data region used by the SDK
-         * @param dataRegion enum value that determines which endpoint to use, defaults to IterableDataRegion.US
-         */
-        @NonNull
-        public Builder setDataRegion(@NonNull IterableDataRegion dataRegion) {
-            this.dataRegion = dataRegion;
-            return this;
-        }
-
-        /**
          * Set whether the SDK should store in-apps only in memory, or in file storage
          * @param useInMemoryStorageForInApps `true` will have in-apps be only in memory
          */
@@ -268,4 +251,5 @@ public class IterableConfig {
             return new IterableConfig(this);
         }
     }
+
 }
