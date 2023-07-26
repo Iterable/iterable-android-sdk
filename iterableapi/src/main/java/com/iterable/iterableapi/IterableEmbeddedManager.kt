@@ -82,7 +82,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // region public methods
 
     //Gets the list of embedded messages in memory without syncing
-    fun getEmbeddedMessages(): List<IterableEmbeddedMessage> {
+    fun getMessages(): List<IterableEmbeddedMessage> {
         return localMessages
     }
 
@@ -150,7 +150,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         var localMessagesChanged = false
 
         // Get local messages in a mutable list
-        val localMessageList = getEmbeddedMessages().toMutableList()
+        val localMessageList = getMessages().toMutableList()
         val localMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         localMessageList.forEach {
             localMessageMap[it.metadata.messageId] = it
