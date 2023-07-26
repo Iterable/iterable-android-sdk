@@ -54,7 +54,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Add updateHandler to the list
     public fun addUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
-        embeddedSessionManager.startSession(localMessages)
     }
 
     //Remove actionHandler from the list
@@ -85,6 +84,11 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Gets the list of embedded messages in memory without syncing
     fun getEmbeddedMessages(): List<IterableEmbeddedMessage> {
         return localMessages
+    }
+
+    fun reset() {
+        val emptyMessages = listOf<IterableEmbeddedMessage>()
+        updateLocalMessages(emptyMessages)
     }
 
     //Network call to get the embedded messages
@@ -186,7 +190,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             //TODO: Make a call to the updateHandler to notify that the message list has been updated
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
-                it.onMessageUpdate()
+                it.onMessagesUpdated()
             }
         }
     }
@@ -194,7 +198,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     override fun onSwitchToForeground() {
         IterableLogger.printInfo()
-        embeddedSessionManager.startSession(localMessages)
+        embeddedSessionManager.startSession()
         syncMessages()
     }
 
@@ -210,7 +214,7 @@ public interface EmbeddedMessageActionHandler {
 }
 
 public interface EmbeddedMessageUpdateHandler {
-    fun onMessageUpdate()
+    fun onMessagesUpdated()
     fun onFeatureDisabled()
 }
 

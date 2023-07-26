@@ -21,20 +21,18 @@ public class EmbeddedSessionManager {
         return session.start != null
     }
 
-    fun startSession(messages: List<IterableEmbeddedMessage>) {
+    fun startSession() {
         if (isTracking()) {
             IterableLogger.e(TAG, "Embedded session started twice")
             return
         }
 
-        if(messages.isNotEmpty()) {
-            session = IterableEmbeddedSession(
-                Date(),
-                null,
-                "0",
-                null
-            )
-        }
+        session = IterableEmbeddedSession(
+            Date(),
+            null,
+            "0",
+            null
+        )
     }
 
     fun endSession() {
