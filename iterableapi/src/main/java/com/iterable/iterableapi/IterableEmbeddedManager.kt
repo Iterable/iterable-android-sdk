@@ -52,7 +52,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     //Add updateHandler to the list
-    public fun addUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun addUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
     }
 
@@ -62,7 +62,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     //Remove updateHandler from the list
-    public fun removeUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun removeUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
     }
@@ -141,7 +141,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private fun broadcastSubscriptionInactive() {
         updateHandleListeners.forEach {
             IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
-            it.onFeatureDisabled()
+            it.onEmbeddedMessagingDisabled()
         }
     }
 
@@ -215,7 +215,7 @@ public interface EmbeddedMessageActionHandler {
 
 public interface EmbeddedMessageUpdateHandler {
     fun onMessagesUpdated()
-    fun onFeatureDisabled()
+    fun onEmbeddedMessagingDisabled()
 }
 
 // endregion
