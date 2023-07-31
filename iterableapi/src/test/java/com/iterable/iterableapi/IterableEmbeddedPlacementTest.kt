@@ -7,9 +7,9 @@ import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
 
-class IterableEmbeddedMessageTest {
+class IterableEmbeddedPlacementTest {
     @Test
-    fun embeddedMessageDeserialization_elementsAndCustomPayloadDefined() {
+    fun embeddedPlacementDeserialization_elementsAndCustomPayloadDefined() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_optional_elements_and_custom_payload.json"))
         val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
@@ -55,7 +55,7 @@ class IterableEmbeddedMessageTest {
     }
 
     @Test
-    fun embeddedMessageDeserialization_noCustomPayloadDefined() {
+    fun embeddedPlacementDeserialization_noCustomPayloadDefined() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_custom_payload.json"))
         val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
@@ -99,7 +99,7 @@ class IterableEmbeddedMessageTest {
     }
 
     @Test
-    fun embeddedMessageDeserialization_noButtonsOrText() {
+    fun embeddedPlacementDeserialization_noButtonsOrText() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_buttons_no_text.json"))
         val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
@@ -139,7 +139,7 @@ class IterableEmbeddedMessageTest {
     }
 
     @Test
-    fun embeddedMessageDeserialization_noElementsOrCustomPayloadDefined() {
+    fun embeddedPlacementDeserialization_noElementsOrCustomPayloadDefined() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_elements_no_custom_payload.json"))
         val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
@@ -167,7 +167,7 @@ class IterableEmbeddedMessageTest {
     }
 
     @Test
-    fun embeddedMessageSerialization_elementsAndCustomPayloadDefined() {
+    fun embeddedPlacementSerialization_elementsAndCustomPayloadDefined() {
         val embeddedMessageMetadata = EmbeddedMessageMetadata(
             "doibjo4590340oidiobnw",
             "mbn8489b7ehycy",
@@ -226,7 +226,7 @@ class IterableEmbeddedMessageTest {
     }
 
     @Test
-    fun embeddedMessageSerialization_noButtons_noText() {
+    fun embeddedPlacementSerialization_noButtons_noText() {
         val embeddedMessageMetadata = EmbeddedMessageMetadata(
             "doibjo4590340oidiobnw",
             "mbn8489b7ehycy",
