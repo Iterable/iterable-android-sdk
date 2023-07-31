@@ -11,20 +11,24 @@ class IterableEmbeddedMessageTest {
     @Test
     fun embeddedMessageDeserialization_elementsAndCustomPayloadDefined() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_optional_elements_and_custom_payload.json"))
-        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
         if (jsonArray != null) {
-            // GIVEN an embedded message payload with optional elements
-            val messageJson = jsonArray.optJSONObject(0)
+            // GIVEN an embedded message placement payload
+            val placementJson = jsonArray.optJSONObject(0)
 
-            // WHEN you deserialize the embedded message payload
-            val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
+            // WHEN you deserialize the embedded message placement payload
+            val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
+
+            val message = placement.messages[0]
 
             val payload = JSONObject()
             payload.put("someKey", "someValue")
 
-            // THEN we get appropriate embedded message object
-            assertNotNull(message)
+            // THEN we get appropriate embedded message object and associated placement id
+            assertNotNull(placement)
+            assertThat("0", `is` (placement.placementId))
+
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
@@ -53,17 +57,21 @@ class IterableEmbeddedMessageTest {
     @Test
     fun embeddedMessageDeserialization_noCustomPayloadDefined() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_custom_payload.json"))
-        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
         if (jsonArray != null) {
-            // GIVEN an embedded message payload with optional elements
-            val messageJson = jsonArray.optJSONObject(0)
+            // GIVEN an embedded message placement payload
+            val placementJson = jsonArray.optJSONObject(0)
 
-            // WHEN you deserialize the embedded message payload
-            val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
+            // WHEN you deserialize the embedded message placement payload
+            val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
 
-            // THEN we get appropriate embedded message object
-            assertNotNull(message)
+            val message = placement.messages[0]
+
+            // THEN we get appropriate embedded message object and associated placement id
+            assertNotNull(placement)
+            assertThat("0", `is` (placement.placementId))
+
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
@@ -93,20 +101,24 @@ class IterableEmbeddedMessageTest {
     @Test
     fun embeddedMessageDeserialization_noButtonsOrText() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_buttons_no_text.json"))
-        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
         if (jsonArray != null) {
-            // GIVEN an embedded message payload with optional elements
-            val messageJson = jsonArray.optJSONObject(0)
+            // GIVEN an embedded message placement payload
+            val placementJson = jsonArray.optJSONObject(0)
 
-            // WHEN you deserialize the embedded message payload
-            val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
+            // WHEN you deserialize the embedded message placement payload
+            val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
+
+            val message = placement.messages[0]
 
             val payload = JSONObject()
             payload.put("someKey", "someValue")
 
-            // THEN we get appropriate embedded message object
-            assertNotNull(message)
+            // THEN we get appropriate embedded message object and associated placement id
+            assertNotNull(placement)
+            assertThat("0", `is` (placement.placementId))
+
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
@@ -129,17 +141,21 @@ class IterableEmbeddedMessageTest {
     @Test
     fun embeddedMessageDeserialization_noElementsOrCustomPayloadDefined() {
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_elements_no_custom_payload.json"))
-        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
         if (jsonArray != null) {
-            // GIVEN an embedded message payload with optional elements
-            val messageJson = jsonArray.optJSONObject(0)
+            // GIVEN an embedded message placement payload with optional elements
+            val placementJson = jsonArray.optJSONObject(0)
 
-            // WHEN you deserialize the embedded message payload
-            val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
+            // WHEN you deserialize the embedded message placement payload
+            val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
 
-            // THEN we get appropriate embedded message object
-            assertNotNull(message)
+            val message = placement.messages[0]
+
+            // THEN we get appropriate embedded message object and associated placement id
+            assertNotNull(placement)
+            assertThat("0", `is` (placement.placementId))
+
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
             assertThat("noj9iyjthfvhs",`is` (message.metadata.campaignId))
@@ -189,18 +205,23 @@ class IterableEmbeddedMessageTest {
 
         val embeddedMessage = IterableEmbeddedMessage(embeddedMessageMetadata, embeddedMessageElements, customPayload)
 
+        val placementId: String = "0"
+        val messages: List<IterableEmbeddedMessage> = listOf(embeddedMessage)
+
+        val embeddedMessagePlacement = IterableEmbeddedPlacement(placementId, messages)
+
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_optional_elements_and_custom_payload.json"))
-        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+        val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
 
         if (jsonArray != null) {
-            // GIVEN an embedded message payload with optional elements
-            val expectedMessageJson = jsonArray.optJSONObject(0)
+            // GIVEN an embedded message placement payload
+            val expectedPlacementJson = jsonArray.optJSONObject(0)
 
             // WHEN you serialize the embedded message payload
-            val messageJson = IterableEmbeddedMessage.toJSONObject(embeddedMessage)
+            val placementJson = IterableEmbeddedPlacement.toJSONObject(embeddedMessagePlacement)
 
             // THEN we get appropriate embedded message object
-            JSONAssert.assertEquals(expectedMessageJson, messageJson, JSONCompareMode.STRICT_ORDER)
+            JSONAssert.assertEquals(expectedPlacementJson, placementJson, JSONCompareMode.STRICT_ORDER)
         }
     }
 
@@ -229,18 +250,23 @@ class IterableEmbeddedMessageTest {
 
         val embeddedMessage = IterableEmbeddedMessage(embeddedMessageMetadata, embeddedMessageElements, customPayload)
 
+        val placementId: String = "0"
+        val messages: List<IterableEmbeddedMessage> = listOf(embeddedMessage)
+
+        val embeddedMessagePlacement = IterableEmbeddedPlacement(placementId, messages)
+
         val payload = JSONObject(IterableTestUtils.getResourceString("embedded_payload_no_buttons_no_text.json"))
         val jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
 
         if (jsonArray != null) {
-            // GIVEN an embedded message payload with optional elements
-            val expectedMessageJson = jsonArray.optJSONObject(0)
+            // GIVEN an embedded message placement payload
+            val expectedPlacementJson = jsonArray.optJSONObject(0)
 
             // WHEN you serialize the embedded message payload
-            val messageJson = IterableEmbeddedMessage.toJSONObject(embeddedMessage)
+            val placementJson = IterableEmbeddedPlacement.toJSONObject(embeddedMessagePlacement)
 
             // THEN we get appropriate embedded message object
-            JSONAssert.assertEquals(expectedMessageJson, messageJson, JSONCompareMode.STRICT_ORDER)
+            JSONAssert.assertEquals(expectedPlacementJson, placementJson, JSONCompareMode.STRICT_ORDER)
         }
     }
 }
