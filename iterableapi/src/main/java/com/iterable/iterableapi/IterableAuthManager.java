@@ -47,6 +47,7 @@ public class IterableAuthManager {
                     }).onSuccess(new Future.SuccessCallback<String>() {
                         @Override
                         public void onSuccess(String authToken) {
+                            pendingAuth = false;
                             if (authToken != null) {
                                 queueExpirationRefresh(authToken);
                             } else {
@@ -57,7 +58,6 @@ public class IterableAuthManager {
                                 return;
                             }
                             IterableApi.getInstance().setAuthToken(authToken);
-                            pendingAuth = false;
                             reSyncAuth();
                             authHandler.onTokenRegistrationSuccessful(authToken);
                         }
