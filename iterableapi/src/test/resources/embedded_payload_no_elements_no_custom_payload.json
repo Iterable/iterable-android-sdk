@@ -1,12 +1,17 @@
 {
-  "embeddedMessages": [
+  "placements": [
     {
-      "metadata": {
-        "messageId": "doibjo4590340oidiobnw",
-        "placementId": "mbn8489b7ehycy",
-        "campaignId": "noj9iyjthfvhs",
-        "isProof": true
-      }
+      "placementId": "0",
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "doibjo4590340oidiobnw",
+            "placementId": "mbn8489b7ehycy",
+            "campaignId": "noj9iyjthfvhs",
+            "isProof": true
+          }
+        }
+      ]
     }
   ]
 }

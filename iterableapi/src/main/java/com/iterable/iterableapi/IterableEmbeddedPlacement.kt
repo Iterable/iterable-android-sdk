@@ -1,9 +1,52 @@
 package com.iterable.iterableapi
 
-import com.iterable.iterableapi.EmbeddedMessageElements.Companion.TAG
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+
+data class IterableEmbeddedPlacement(
+    val placementId: String,
+    val messages: List<IterableEmbeddedMessage>
+) {
+    companion object {
+        val TAG = "ItblEmbeddedPlacement"
+        fun toJSONObject(placement: IterableEmbeddedPlacement): JSONObject {
+
+            val embeddedPlacementJson = JSONObject()
+
+            try {
+                embeddedPlacementJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, placement.placementId)
+
+                if(placement?.messages != null) {
+                    val messagesJson = JSONArray()
+                    for(i in 0 until placement.messages.size) {
+                        messagesJson.put(IterableEmbeddedMessage.toJSONObject(placement.messages[i]))
+                    }
+                    embeddedPlacementJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE, messagesJson)
+                }
+            } catch(e: JSONException) {
+                IterableLogger.e(TAG, "Error while serializing flex message", e)
+            }
+
+            return embeddedPlacementJson
+        }
+
+        fun fromJSONObject(placementJson: JSONObject): IterableEmbeddedPlacement {
+            val placementId: String = placementJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
+
+            val messagesJson: JSONArray = placementJson.getJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+            var messages: MutableList<IterableEmbeddedMessage> = mutableListOf()
+
+            for(i in 0 until messagesJson.length()) {
+                val messageJson: JSONObject = messagesJson.getJSONObject(i)
+                val message: IterableEmbeddedMessage = IterableEmbeddedMessage.fromJSONObject(messageJson)
+                messages.add(message)
+            }
+
+            return IterableEmbeddedPlacement(placementId, messages)
+        }
+    }
+}
 
 data class IterableEmbeddedMessage (
     val metadata: EmbeddedMessageMetadata,
