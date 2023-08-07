@@ -1,24 +1,29 @@
 {
-  "embeddedMessages": [
+  "placements": [
     {
-      "metadata": {
-        "messageId": "doibjo4590340oidiobnw",
-        "placementId": "mbn8489b7ehycy",
-        "campaignId": 2324,
-        "isProof": true
-      },
-      "elements": {
-        "title": "Iterable Coffee Shoppe",
-        "body": "SAVE 15% OFF NOW",
-        "mediaUrl": "http://placekitten.com/200/300",
-        "defaultAction": {
-          "type": "someType",
-          "data": "someData"
+      "placementId": "0",
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "doibjo4590340oidiobnw",
+            "placementId": "mbn8489b7ehycy",
+            "campaignId": "noj9iyjthfvhs",
+            "isProof": true
+          },
+          "elements": {
+            "title": "Iterable Coffee Shoppe",
+            "body": "SAVE 15% OFF NOW",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            }
+          },
+          "payload": {
+            "someKey": "someValue"
+          }
         }
-      },
-      "payload" : {
-        "someKey": "someValue"
-      }
+      ]
     }
   ]
 }
