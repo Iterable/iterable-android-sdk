@@ -95,12 +95,14 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
             try {
                 val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
-                val jsonArray =
-                    data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
 
-                if (jsonArray != null) {
-                    for (i in 0 until jsonArray.length()) {
-                        val messageJson = jsonArray.optJSONObject(i)
+                val placementArray = data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
+                val placement = placementArray.getJSONObject(0)
+                val messagesArray = placement.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+
+                if (messagesArray != null) {
+                    for (i in 0 until messagesArray.length()) {
+                        val messageJson = messagesArray.optJSONObject(i)
                         val message = IterableEmbeddedMessage.fromJSONObject(messageJson)
                         remoteMessageList.add(message)
                     }
