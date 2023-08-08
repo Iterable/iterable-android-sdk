@@ -52,9 +52,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     //Add updateHandler to the list
-    public fun addUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun addUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
-        embeddedSessionManager.startSession()
     }
 
     //Remove actionHandler from the list
@@ -63,7 +62,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     //Remove updateHandler from the list
-    public fun removeUpdateHandler(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun removeUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
     }
@@ -83,8 +82,13 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // region public methods
 
     //Gets the list of embedded messages in memory without syncing
-    fun getEmbeddedMessages(): List<IterableEmbeddedMessage> {
+    fun getMessages(): List<IterableEmbeddedMessage> {
         return localMessages
+    }
+
+    fun reset() {
+        val emptyMessages = listOf<IterableEmbeddedMessage>()
+        updateLocalMessages(emptyMessages)
     }
 
     //Network call to get the embedded messages
@@ -134,13 +138,12 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 }
             }
         })
-
     }
 
     private fun broadcastSubscriptionInactive() {
         updateHandleListeners.forEach {
             IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
-            it.onFeatureDisabled()
+            it.onEmbeddedMessagingDisabled()
         }
     }
 
@@ -149,7 +152,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         var localMessagesChanged = false
 
         // Get local messages in a mutable list
-        val localMessageList = getEmbeddedMessages().toMutableList()
+        val localMessageList = getMessages().toMutableList()
         val localMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         localMessageList.forEach {
             localMessageMap[it.metadata.messageId] = it
@@ -189,7 +192,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             //TODO: Make a call to the updateHandler to notify that the message list has been updated
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
-                it.onMessageUpdate()
+                it.onMessagesUpdated()
             }
         }
     }
@@ -213,8 +216,8 @@ public interface EmbeddedMessageActionHandler {
 }
 
 public interface EmbeddedMessageUpdateHandler {
-    fun onMessageUpdate()
-    fun onFeatureDisabled()
+    fun onMessagesUpdated()
+    fun onEmbeddedMessagingDisabled()
 }
 
 // endregion

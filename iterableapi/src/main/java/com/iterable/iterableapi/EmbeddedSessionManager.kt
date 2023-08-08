@@ -41,27 +41,28 @@ public class EmbeddedSessionManager {
             return
         }
 
-        endAllImpressions()
+        if(impressions.isNotEmpty()) {
+            endAllImpressions()
 
-        val sessionToTrack = IterableEmbeddedSession(
-            session.start,
-            Date(),
-            "0",
-            getImpressionList()
-        )
+            val sessionToTrack = IterableEmbeddedSession(
+                session.start,
+                Date(),
+                "0",
+                getImpressionList()
+            )
 
-        IterableApi.getInstance().trackEmbeddedSession(sessionToTrack)
-        IterableLogger.d(TAG, "Embedded session ended!!")
+            IterableApi.getInstance().trackEmbeddedSession(sessionToTrack)
 
-        //reset session for next session start
-        session = IterableEmbeddedSession(
-            null,
-            null,
-            "0",
-            null
-        )
+            //reset session for next session start
+            session = IterableEmbeddedSession(
+                null,
+                null,
+                "0",
+                null
+            )
 
-        impressions = mutableMapOf()
+            impressions = mutableMapOf()
+        }
     }
 
     fun startImpression(messageId: String) {
