@@ -88,7 +88,7 @@ class EmbeddedMessageMetadata(
     var messageId: String,
     //TODO: Remove this once the placementIDs are implemented in the backend
     val placementId: String? = "",
-    val campaignId: String? = null,
+    val campaignId: Int? = null,
     val isProof: Boolean = false
 ) {
     companion object {
@@ -112,7 +112,7 @@ class EmbeddedMessageMetadata(
         fun fromJSONObject(metadataJson: JSONObject): EmbeddedMessageMetadata {
             val messageId: String = metadataJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ID)
             val placementId: String = metadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
-            val campaignId: String = metadataJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID)
+            val campaignId: Int = metadataJson.optInt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID)
             val isProof: Boolean = metadataJson.optBoolean(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_IS_PROOF)
 
             return EmbeddedMessageMetadata(messageId, placementId, campaignId, isProof)
