@@ -25,32 +25,32 @@ import java.util.UUID;
 
 public class AnonymousUserManager implements IterableActivityMonitor.AppStateCallback {
 
-    private final String TAG = "RNIterableAPIModule";
+    private final String tag = "RNIterableAPIModule";
 
     void updateAnonSession() {
-        IterableLogger.v(TAG, "updateAnonSession");
+        IterableLogger.v(tag, "updateAnonSession");
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String previousData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
 
         try {
-            int _sessionNo = 0;
-            String _firstSessionDate = "";
+            int sessionNo = 0;
+            String firstSessionDate = "";
 
             if (!previousData.isEmpty()) {
                 JSONObject previousDataJson = new JSONObject(previousData);
                 JSONObject sessionObject = previousDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
-                _sessionNo = sessionObject.getInt(IterableConstants.SHARED_PREFS_SESSION_NO);
-                _firstSessionDate = sessionObject.getString(IterableConstants.SHARED_PREFS_FIRST_SESSION);
+                sessionNo = sessionObject.getInt(IterableConstants.SHARED_PREFS_SESSION_NO);
+                firstSessionDate = sessionObject.getString(IterableConstants.SHARED_PREFS_FIRST_SESSION);
             }
 
             JSONObject newDataObject = new JSONObject();
-            newDataObject.put(IterableConstants.SHARED_PREFS_SESSION_NO, _sessionNo + 1);
+            newDataObject.put(IterableConstants.SHARED_PREFS_SESSION_NO, sessionNo + 1);
             newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentDateTime());
 
-            if (_firstSessionDate.isEmpty()) {
+            if (firstSessionDate.isEmpty()) {
                 newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentDateTime());
             } else {
-                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, _firstSessionDate);
+                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, firstSessionDate);
             }
 
             JSONObject anonSessionData = new JSONObject();
@@ -66,7 +66,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
     }
 
     void trackAnonEvent(String eventName, JSONObject dataFields) {
-        IterableLogger.v(TAG, "trackAnonEvent");
+        IterableLogger.v(tag, "trackAnonEvent");
 
         try {
             JSONObject newDataObject = new JSONObject();
@@ -94,7 +94,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
 
     void trackAnonPurchaseEvent(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
 
-        IterableLogger.v(TAG, "trackAnonPurchaseEvent");
+        IterableLogger.v(tag, "trackAnonPurchaseEvent");
 
         try {
             JSONObject newDataObject = new JSONObject();
@@ -124,7 +124,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
 
     void trackAnonUpdateCart(@NonNull List<CommerceItem> items) {
 
-        IterableLogger.v(TAG, "trackAnonUpdateCart");
+        IterableLogger.v(tag, "trackAnonUpdateCart");
 
         try {
             Gson gson = new GsonBuilder().create();
@@ -313,6 +313,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
                             IterableApi.getInstance().updateCart(list, userObject, createdAt);
                             break;
                         }
+                        default:
+                            break;
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
