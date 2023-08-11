@@ -55,6 +55,7 @@ public final class IterableConstants {
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
     public static final String KEY_FIRETV = "FireTV";
+    public static final String KEY_CREATE_NEW_FIELDS    = "createNewFields";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -113,6 +114,16 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
+    public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
+    public static final String SHARED_PREFS_ANON_SESSIONS = "itbl_anon_sessions";
+    public static final String SHARED_PREFS_SESSION_NO = "number_of_sessions";
+    public static final String SHARED_PREFS_LAST_SESSION = "last_session";
+    public static final String SHARED_PREFS_FIRST_SESSION = "first_session";
+    public static final String SHARED_PREFS_TRACKING_TYPE = "tracking_type";
+    public static final String SHARED_PREFS_CRITERIA = "criteria";
+    public static final String SHARED_PREFS_CRITERIA_LIST = "criteriaList";
+    public static final String SHARED_PREFS_CRITERIA_TYPE = "criteriaType";
+    public static final String SHARED_PREFS_AGGREGATE_COUNT = "aggregateCount";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -252,4 +263,10 @@ public final class IterableConstants {
 
     public static final String NO_MESSAGES_TITLE = "noMessagesTitle";
     public static final String NO_MESSAGES_BODY = "noMessagesBody";
+
+    //Tracking types
+    public static final String TRACK_EVENT = "track";
+    public static final String TRACK_PURCHASE = "trackPurchase";
+    public static final String TRACK_UPDATE_CART = "cartUpdate";
+    public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
 }
