@@ -44,7 +44,7 @@ public class IterableApi {
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
-    private static AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
+    private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
     private @Nullable IterableInAppManager inAppManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
@@ -897,10 +897,6 @@ public class IterableApi {
      */
     public void track(@NonNull String eventName, int campaignId, int templateId,  @Nullable JSONObject dataFields, String createdAt) {
         IterableLogger.printInfo();
-        if (!checkSDKInitialization()) {
-            anonymousUserManager.trackAnonEvent(eventName, dataFields);
-            return;
-        }
         apiClient.track(eventName, campaignId, templateId, dataFields, createdAt);
     }
 
@@ -925,11 +921,6 @@ public class IterableApi {
      * @param createdAt
      */
     public void updateCart(@NonNull List<CommerceItem> items, JSONObject userObject, String createdAt) {
-        if (!checkSDKInitialization()) {
-            anonymousUserManager.trackAnonUpdateCart(items);
-            return;
-        }
-
         apiClient.updateCart(items, userObject, createdAt);
     }
 
@@ -967,11 +958,6 @@ public class IterableApi {
      *
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, JSONObject userObject, String createdAt) {
-        if (!checkSDKInitialization()) {
-            anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
-            return;
-        }
-
         apiClient.trackPurchase(total, items, dataFields, userObject, createdAt);
     }
 

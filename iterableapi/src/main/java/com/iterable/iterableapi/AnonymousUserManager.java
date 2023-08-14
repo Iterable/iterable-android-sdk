@@ -23,12 +23,12 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
 
-public class AnonymousUserManager implements IterableActivityMonitor.AppStateCallback {
+public class AnonymousUserManager {
 
-    private final String tag = "RNIterableAPIModule";
+    private static final String TAG = "RNIterableAPIModule";
 
     void updateAnonSession() {
-        IterableLogger.v(tag, "updateAnonSession");
+        IterableLogger.v(TAG, "updateAnonSession");
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String previousData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
 
@@ -66,7 +66,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
     }
 
     void trackAnonEvent(String eventName, JSONObject dataFields) {
-        IterableLogger.v(tag, "trackAnonEvent");
+        IterableLogger.v(TAG, "trackAnonEvent");
 
         try {
             JSONObject newDataObject = new JSONObject();
@@ -75,13 +75,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
             newDataObject.put(IterableConstants.SHARED_PREFS_TRACKING_TYPE, IterableConstants.TRACK_EVENT);
-
-            JSONArray previousDataArray = getEventListFromLocalStorage();
-            previousDataArray.put(newDataObject);
-            SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
-            editor.apply();
+            storeEventListToLocalStorage(newDataObject);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -94,7 +88,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
 
     void trackAnonPurchaseEvent(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
 
-        IterableLogger.v(tag, "trackAnonPurchaseEvent");
+        IterableLogger.v(TAG, "trackAnonPurchaseEvent");
 
         try {
             JSONObject newDataObject = new JSONObject();
@@ -104,14 +98,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.KEY_TOTAL, total);
             newDataObject.put(IterableConstants.SHARED_PREFS_TRACKING_TYPE, IterableConstants.TRACK_PURCHASE);
-
-            JSONArray previousDataArray = getEventListFromLocalStorage();
-            previousDataArray.put(newDataObject);
-
-            SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
-            editor.apply();
+            storeEventListToLocalStorage(newDataObject);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -124,7 +111,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
 
     void trackAnonUpdateCart(@NonNull List<CommerceItem> items) {
 
-        IterableLogger.v(tag, "trackAnonUpdateCart");
+        IterableLogger.v(TAG, "trackAnonUpdateCart");
 
         try {
             Gson gson = new GsonBuilder().create();
@@ -132,14 +119,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
             newDataObject.put(IterableConstants.KEY_ITEMS, gson.toJsonTree(items).getAsJsonArray().toString());
             newDataObject.put(IterableConstants.SHARED_PREFS_TRACKING_TYPE, IterableConstants.TRACK_UPDATE_CART);
             newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
-
-            JSONArray previousDataArray = getEventListFromLocalStorage();
-            previousDataArray.put(newDataObject);
-
-            SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
-            editor.apply();
+            storeEventListToLocalStorage(newDataObject);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -254,7 +234,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         syncEvents();
     }
 
-    public void syncEvents() {
+    private void syncEvents() {
 
         JSONArray trackEventList = getEventListFromLocalStorage();
         if (trackEventList.length() > 0) {
@@ -333,6 +313,15 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         editor.apply();
     }
 
+    private void storeEventListToLocalStorage(JSONObject newDataObject) {
+        JSONArray previousDataArray = getEventListFromLocalStorage();
+        previousDataArray.put(newDataObject);
+        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
+        editor.apply();
+    }
+
     private JSONArray getEventListFromLocalStorage() {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String eventListJson = sharedPref.getString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
@@ -356,15 +345,5 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(new Date());
-    }
-
-    @Override
-    public void onSwitchToForeground() {
-
-    }
-
-    @Override
-    public void onSwitchToBackground() {
-
     }
 }
