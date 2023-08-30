@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import androidx.annotation.NonNull;
+
 public enum IterableInAppLocation {
     IN_APP {
         @Override
@@ -11,6 +13,13 @@ public enum IterableInAppLocation {
         @Override
         public String toString() {
             return "inbox";
+        }
+    },
+    EMBEDDED {
+        @NonNull
+        @Override
+        public String toString() {
+            return super.toString();
         }
     }
 }
