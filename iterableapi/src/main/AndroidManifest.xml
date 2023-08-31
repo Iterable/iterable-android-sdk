@@ -26,7 +26,8 @@
         <activity
             android:name=".IterableTrampolineActivity"
             android:exported="false"
-            android:launchMode="singleTop"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
             android:theme="@style/TrampolineActivity.Transparent"/>
 
         <uses-library android:name="androidx.security" android:required="false" />
