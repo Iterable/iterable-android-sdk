@@ -253,16 +253,6 @@ public class IterableConfig {
         }
 
         /**
-         * Set the data region used by the SDK
-         * @param dataRegion enum value that determines which endpoint to use, defaults to IterableDataRegion.US
-         */
-        @NonNull
-        public Builder setDataRegion(@NonNull IterableDataRegion dataRegion) {
-            this.dataRegion = dataRegion;
-            return this;
-        }
-
-        /**
          * Set whether the SDK should store in-apps only in memory, or in file storage
          * @param useInMemoryStorageForInApps `true` will have in-apps be only in memory
          */
