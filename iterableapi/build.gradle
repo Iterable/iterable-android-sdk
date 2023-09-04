@@ -51,6 +51,7 @@ dependencies {
     testImplementation 'org.khronos:opengl-api:gl1.1-android-2.1_r1'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.2.2'
     testImplementation 'org.skyscreamer:jsonassert:1.5.0'
+    testImplementation project(path: ':iterableapi')
 
     androidTestImplementation 'androidx.test:runner:1.3.0'
     androidTestImplementation 'androidx.test:rules:1.3.0'
@@ -83,7 +84,6 @@ ext {
     allLicenses = ["Apache-2.0"]
 }
 
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
 if(hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
@@ -97,6 +97,7 @@ task javadoc(type: Javadoc) {
 
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
 }
 
 task checkstyle(type: Checkstyle) {
