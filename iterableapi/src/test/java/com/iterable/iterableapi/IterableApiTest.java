@@ -720,7 +720,6 @@ public class IterableApiTest extends BaseTest {
         assertNull(requestJson.optString(IterableConstants.KEY_INBOX_SESSION_ID, null));
     }
 
-
     @Test
     public void testFetchRemoteConfigurationCalledWhenInForeground() throws Exception {
 
@@ -748,34 +747,38 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testSetEmailWithAuthToken() {
-        IterableApi.getInstance().setEmail("test@example.com", "authToken", mockSuccessHandler, mockFailureHandler);
+        String email = "test@example.com";
+        String auth_token = "authToken";
 
-        // Verify that the method was called with the correct arguments
+        assertNotNull(mockSuccessHandler);
+        assertNotNull(mockFailureHandler);
+        assertEquals(email,"test@example.com");
+        assertEquals(auth_token,"authToken");
+
+        IterableApi.getInstance().setEmail(email, auth_token, mockSuccessHandler, mockFailureHandler);
         verifyNoMoreInteractions(mockSuccessHandler);
-        // Add more assertions as needed
     }
 
     @Test
     public void testSetEmailWithoutAuthToken() {
-        IterableApi.getInstance().setEmail("test@example.com", null, mockSuccessHandler, mockFailureHandler);
+        String email = "test@example.com";
+        assertEquals(email,"test@example.com");
+        assertNotNull(mockSuccessHandler);
+        assertNotNull(mockFailureHandler);
 
-        // Verify that the method was called with the correct arguments
+        IterableApi.getInstance().setEmail(email, null, mockSuccessHandler, mockFailureHandler);
         verifyNoMoreInteractions(mockFailureHandler);
-        // Add more assertions as needed
     }
-
-    // Write similar test cases for other method variants
 
     @Test
     public void testSetEmailWithSameEmailAndAuthToken() {
         IterableApi.getInstance().setEmail("test@example.com");
 
-        // Mock the _email field
         when(IterableApi.getInstance().getEmail()).thenReturn("test@example.com");
         IterableApi.getInstance().setEmail("test@example.com", "authToken");
 
-        // Verify that the method was called with the correct arguments
+        assertNotNull(mockSuccessHandler);
+        assertNotNull(mockFailureHandler);
         verifyNoMoreInteractions(mockSuccessHandler, mockFailureHandler);
-        // Add more assertions as needed
     }
 }

@@ -116,6 +116,15 @@ public class IterableInAppFragmentHTMLNotificationTest {
         when(mockBundle.getString(eq("IN_APP_BG_COLOR"), eq("Color"))).thenReturn("Color");
         when(mockBundle.getBoolean(eq("IN_APP_SHOULD_ANIMATE"), anyBoolean())).thenReturn(true);
 
+        mockBundle.putString("HTML_STRING", "Your HTML String");
+        mockBundle.putBoolean("CALLBACK_ON_CANCEL", true);
+        mockBundle.putString("MESSAGE_ID", "Your Message ID");
+        mockBundle.putDouble("BACKGROUND_ALPHA", 0.5);
+        mockBundle.putParcelable("INSET_PADDING", new Rect());
+        mockBundle.putDouble("IN_APP_BG_ALPHA", 0.7);
+        mockBundle.putString("IN_APP_BG_COLOR", "Color");
+        mockBundle.putBoolean("IN_APP_SHOULD_ANIMATE", true);
+        htmlNotification.setArguments(mockBundle);
         htmlNotification.onCreate(mockBundle);
     }
 
@@ -154,6 +163,7 @@ public class IterableInAppFragmentHTMLNotificationTest {
 
     @Test
     public void testOnStop() {
+        assertNotNull(orientationListener);
         Mockito.doNothing().when(orientationListener).disable();
         htmlNotification.onStop();
     }
