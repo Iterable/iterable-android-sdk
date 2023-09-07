@@ -30,6 +30,7 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE,
             IterableConstants.ENDPOINT_TRACK_INBOX_SESSION,
             IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY,
+            IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES,
             IterableConstants.ENDPOINT_INAPP_CONSUME));
 
     OfflineRequestProcessor(Context context) {
@@ -54,6 +55,12 @@ class OfflineRequestProcessor implements RequestProcessor {
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback);
+        new IterableRequestTask().execute(request);
+    }
+
+    @Override
+    public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken,  @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onSuccess, onFailure);
         new IterableRequestTask().execute(request);
     }
 
