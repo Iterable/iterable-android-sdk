@@ -3,13 +3,12 @@ package com.iterable.iterableapi;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.iterable.iterableapi.util.DeviceInfoUtils;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -58,8 +57,10 @@ public class IterableActivityMonitor {
         @Override
         public void onActivityResumed(Activity activity) {
             currentActivity = new WeakReference<>(activity);
+            String amazonFireTvHardware = "amazon.hardware.fire_tv";
+            String amazonModel = Build.MODEL;
 
-            if (!inForeground || DeviceInfoUtils.isFireTV(activity.getPackageManager())) {
+            if (!inForeground || amazonModel.matches("AFTN") || activity.getPackageManager().hasSystemFeature(amazonFireTvHardware)) {
                 inForeground = true;
                 for (WeakReference<AppStateCallback> callback : callbacks) {
                     if (callback.get() != null) {

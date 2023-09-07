@@ -244,7 +244,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
 
     @Override
     public void onListItemTapped(@NonNull IterableInAppMessage message) {
-        IterableApi.getInstance().getInAppManager().setRead(message, true, null, null);
+        IterableApi.getInstance().getInAppManager().setRead(message, true);
 
         if (inboxMode == InboxMode.ACTIVITY) {
             startActivity(new Intent(getContext(), IterableInboxMessageActivity.class).putExtra(IterableInboxMessageActivity.ARG_MESSAGE_ID, message.getMessageId()));

@@ -351,13 +351,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 default:
                     animationResource = R.anim.fade_in_custom;
             }
-            try {
-                Animation anim = AnimationUtils.loadAnimation(getContext(), animationResource);
-                anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
-                webView.startAnimation(anim);
-            } catch (Exception e) {
-                IterableLogger.e(TAG, "Failed to show inapp with animation");
-            }
+
+            Animation anim = AnimationUtils.loadAnimation(getContext(), animationResource);
+            anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
+            webView.startAnimation(anim);
         }
     }
 
@@ -381,15 +378,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     animationResource = R.anim.fade_out_custom;
             }
 
-            try {
-                Animation anim = AnimationUtils.loadAnimation(getContext(),
-                        animationResource);
-                anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
-                webView.startAnimation(anim);
-            } catch (Exception e) {
-                IterableLogger.e(TAG, "Failed to hide inapp with animation");
-            }
-
+            Animation anim = AnimationUtils.loadAnimation(getContext(),
+                    animationResource);
+            anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
+            webView.startAnimation(anim);
         }
 
         hideInAppBackground();
@@ -417,7 +409,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
 
         if (message.isMarkedForDeletion() && !message.isConsumed()) {
-            IterableApi.sharedInstance.getInAppManager().removeMessage(message, null, null);
+            IterableApi.sharedInstance.getInAppManager().removeMessage(message);
         }
     }
 

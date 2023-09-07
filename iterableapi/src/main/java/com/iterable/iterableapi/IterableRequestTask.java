@@ -27,6 +27,7 @@ import java.util.Iterator;
  */
 class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableApiResponse> {
     static final String TAG = "IterableRequest";
+    static final String ITERABLE_BASE_URL = "https://api.iterable.com/api/";
 
     static String overrideUrl;
 
@@ -64,8 +65,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             HttpURLConnection urlConnection = null;
 
             IterableLogger.v(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-            String baseUrl = getBaseUrl();
-
+            String baseUrl = (iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) ? iterableApiRequest.baseUrl :
+                    ITERABLE_BASE_URL;
             try {
                 if (overrideUrl != null && !overrideUrl.isEmpty()) {
                     baseUrl = overrideUrl;
@@ -222,18 +223,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             IterableLogger.v(TAG, "======================================");
         }
         return apiResponse;
-    }
-
-    private static String getBaseUrl() {
-        IterableConfig config = IterableApi.getInstance().config;
-        IterableDataRegion dataRegion = config.dataRegion;
-        String baseUrl = dataRegion.getEndpoint();
-
-        if (overrideUrl != null && !overrideUrl.isEmpty()) {
-            baseUrl = overrideUrl;
-        }
-
-        return baseUrl;
     }
 
     private static boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {

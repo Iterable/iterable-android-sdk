@@ -45,16 +45,14 @@ For sample code, take a look at:
 
 Release notes:
 
-- [Release Notes - Iterable's Android SDK](https://support.iterable.com/hc/articles/360027543332) -
-  Release notes for significant updates to the SDK. Also, information about 
-  deprecation dates and support windows.
-- [GitHub — Releases](https://github.com/Iterable/iterable-android-sdk/releases) -
-  This repository's **Releases** page. Release notes for all versions of the SDK.
+- [Android SDK Release Notes](https://support.iterable.com/hc/articles/360027543332) (major releases)
+- [Releases page](https://github.com/Iterable/iterable-android-sdk/releases) on GitHub (minor releases)
 
 Support policies:
 
-- Iterable's [SDK Support Policy](https://support.iterable.com/hc/articles/360046136171)
-- Iterable's [Beta SDK Disclaimer](https://support.iterable.com/hc/articles/360034753412)
+- Iterable's [Mobile SDK Support Policy](https://support.iterable.com/hc/articles/360046136171)
+- Iterable's [Android SDK Deprecation and End-of-Life Schedule](https://support.iterable.com/hc/articles/360027543332#deprecation-and-end-of-life-schedule)
+- Iterable's [Beta Mobile SDK Disclaimer](https://support.iterable.com/hc/articles/360034753412)
 
 Troubleshooting:
 
@@ -62,13 +60,14 @@ Troubleshooting:
 - [Frequently Asked Questions](https://support.iterable.com/hc/articles/360035624191) 
   for mobile developers integrating with Iterable
 
-Questions? Contact your Iterable customer success manager.
+Please contact your customer success manager with any questions.
 
 ## License
 
-This SDK is released under the MIT License. For more information, read [LICENSE](LICENSE.md).
+This SDK is released under the MIT License. See [LICENSE](https://github.com/Iterable/iterable-android-sdk/blob/master/LICENSE?raw=true)
+for more information.
 
 ## Want to contribute?
 
 This library is open source, and we will look at issue reports and pull requests.
-For more information, read [CONTRIBUTING](CONTRIBUTING.md).
+See [CONTRIBUTING](CONTRIBUTING.md) for more information.
