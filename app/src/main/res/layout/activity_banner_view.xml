@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.example.filterable_android_sdk.BannerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/banner_view_activity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Customize the layout of your CustomCardView activity here -->
+
+</com.example.filterable_android_sdk.BannerView>
