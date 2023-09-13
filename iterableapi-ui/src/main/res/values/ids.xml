@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="embedded_message_title" type="id" />
+    <item name="embedded_message_body" type="id" />
+    <item name="embedded_message_button_container" type="id" />
+    <item name="embedded_message_first_button" type="id" />
+    <item name="embedded_message_second_button" type="id" />
+</resources>
