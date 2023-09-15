@@ -7,8 +7,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.iterable.iterableapi.ui.R
 
-class IterableBannerView(): Fragment() {
-//    var style = style
+class IterableEmbeddedView(style: String): Fragment() {
+    var style = style
 //    var message = message
 
     override fun onCreateView(
@@ -16,14 +16,13 @@ class IterableBannerView(): Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val rootView = inflater.inflate(R.layout.banner_view, container, false)
 
-//        val rootView = when (style) {
-//            "banner" -> inflater.inflate(R.layout.banner_view, container, false)
-//            "card" -> inflater.inflate(R.layout.card_view, container, false)
-//            "notification" -> inflater.inflate(R.layout.notification_view, container, false)
-//            else -> inflater.inflate(R.layout.banner_view, container, false)
-//        }
+        val rootView = when (style) {
+            "banner" -> inflater.inflate(R.layout.banner_view, container, false)
+            "card" -> inflater.inflate(R.layout.card_view, container, false)
+            "notification" -> inflater.inflate(R.layout.notification_view, container, false)
+            else -> inflater.inflate(R.layout.banner_view, container, false)
+        }
 
 //        bind(rootView, message)
 
