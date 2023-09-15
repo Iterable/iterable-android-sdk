@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="358dp"
+    android:layout_height="378dp"
+    android:layout_gravity="center_vertical"
+    android:layout_marginTop="8dp"
+    android:layout_marginLeft="16dp"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="8dp"
+    android:background="@drawable/banner_card_border"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="358dp"
+            android:layout_height="230dp"
+            android:layout_marginBottom="16dp"
+            android:src="@drawable/fiterable_boxing" />
+
+        <TextView
+            android:id="@+id/embedded_message_title"
+            android:layout_width="240dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="0dp"
+            android:layout_marginLeft="16dp"
+            android:text="Intro to Kickboxing"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/embedded_message_body"
+            android:layout_width="326dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginLeft="16dp"
+            android:text="Our no-equipment boxing workout is cardio forward designed to bring out your inner warrior." />
+
+        <LinearLayout
+            android:id="@+id/embedded_message_button_container"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginTop="32dp"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/embedded_message_first_button"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:background="@android:color/transparent"
+                android:stateListAnimator="@null"
+                android:text="Turn On"
+                android:textAllCaps="false"
+                android:textColor="#79347F"
+                app:cornerRadius="32dp" />
+
+            <Button
+                android:id="@+id/embedded_message_second_button"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:background="@android:color/transparent"
+                android:stateListAnimator="@null"
+                android:text="Not now"
+                android:textAllCaps="false"
+                android:textColor="#79347F"
+                app:cornerRadius="32dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#ff8f00</color>
+    <color name="colorPrimaryDark">#c56000</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="white">#FFFFFF</color>
+    <color name="red">#ff3d00</color>
+    <color name="blue">#1565c0</color>
+    <color name="green">#64dd17</color>
+
+    <!--    New Iterable Colors-->
+    <color name="Primary_Red">#EF3D55</color>
+    <color name="Primary_Purple">#6A266D</color>
+    <color name="Primary_Cool_Green">#59C1A7</color>
+    <color name="Primary_Cyan">#34C3F2</color>
+
+    <color name="Secondary_Lavender">#C29DC9</color>
+    <color name="Secondary_Mustard">#F2CA1B</color>
+    <color name="Secondary_Salmon">#F36F4C</color>
+    <color name="Secondary_Gray">#999094</color>
+    <color name="Secondary_Not_Black">#4D4D4D</color>
+
+    <color name="sign_in_button_color">#6A266D</color>
+
+    <color name="no_messages_background">#ECE5E8</color>
+    <color name="no_messages_border">#999094</color>
+
+    <color name="embedded_message_background_red">#FFE9E9</color>
+    <color name="embedded_message_border_red">#FFC4C4</color>
+    <color name="embedded_message_text_color_red">#A92424</color>
+
+    <color name="embedded_message_background_yellow">#FDFBE6</color>
+    <color name="embedded_message_border_yellow">#FFF599</color>
+    <color name="embedded_message_text_color_yellow">#FFEB3B</color>
+
+    <color name="embedded_message_background_green">#D4FFD9</color>
+    <color name="embedded_message_border_green">#9FFF9C</color>
+    <color name="embedded_message_text_color_green">#42FF3B</color>
+
+    <color name="notification_card_border_color">#C2F0FC</color>
+    <color name="notification_card_background_color">#E6FBFF</color>
+    <color name="notification_card_text_color">#2489A9</color>
+    <color name="banner_button">#6A266D</color>
+
+</resources>

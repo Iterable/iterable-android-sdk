@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="358dp"
+    android:layout_height="118dp"
+    android:layout_gravity="center"
+    android:layout_marginLeft="16dp"
+    android:layout_marginTop="24dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginBottom="24dp"
+    android:background="@drawable/notification_view_border"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/embedded_message_title"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:text="Turn on notifications"
+        android:textColor="@color/notification_card_text_color"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/embedded_message_body"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/embedded_message_body"
+        android:layout_width="301dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="8dp"
+        android:text="Get updates on scheduled and trending classes"
+        android:textColor="@color/notification_card_text_color"
+        app:layout_constraintBottom_toTopOf="@+id/embedded_message_button_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/embedded_message_title" />
+
+    <LinearLayout
+        android:id="@+id/embedded_message_button_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/embedded_message_body"
+        app:layout_constraintVertical_bias="0.444">
+
+        <Button
+            android:id="@+id/embedded_message_first_button"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="0dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/notification_button_background"
+            android:stateListAnimator="@null"
+            android:text="Turn On"
+            android:textAllCaps="false"
+            android:textColor="@color/notification_card_text_color"
+            app:cornerRadius="32dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/embedded_message_body"
+            app:layout_constraintVertical_bias="0.45" />
+
+        <Button
+            android:id="@+id/embedded_message_second_button"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@android:color/transparent"
+            android:stateListAnimator="@null"
+            android:text="Not now"
+            android:textAllCaps="false"
+            android:textColor="@color/notification_card_text_color"
+            app:cornerRadius="32dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/embedded_message_body"
+            app:layout_constraintVertical_bias="0.45"
+            android:layout_marginLeft="0dp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
