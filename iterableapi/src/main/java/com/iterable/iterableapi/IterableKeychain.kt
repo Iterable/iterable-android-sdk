@@ -26,7 +26,8 @@ class IterableKeychain {
             encryptionEnabled = false
             sharedPrefs = context.getSharedPreferences(
                 IterableConstants.SHARED_PREFS_FILE,
-                Context.MODE_PRIVATE)
+                Context.MODE_PRIVATE
+            )
             IterableLogger.v(TAG, "SharedPreferences being used")
         } else {
             // See if EncryptedSharedPreferences can be created successfully
@@ -39,7 +40,8 @@ class IterableKeychain {
                     encryptedSharedPrefsFileName,
                     masterKeyAlias,
                     EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
                 encryptionEnabled = true
             } catch (e: Exception) {
                 if (encryptionEnforced) {
@@ -49,34 +51,15 @@ class IterableKeychain {
                 } else {
                     sharedPrefs = context.getSharedPreferences(
                         IterableConstants.SHARED_PREFS_FILE,
-                        Context.MODE_PRIVATE)
+                        Context.MODE_PRIVATE
+                    )
                     encryptionEnabled = false
                 }
             }
 
             //Try to migrate data from SharedPreferences to EncryptedSharedPreferences
-            if(encryptionEnabled) {
+            if (encryptionEnabled) {
                 migrateAuthDataFromSharedPrefsToKeychain(context)
-            }
-
-        }
-        val masterKeyAlias = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        sharedPrefs = try {
-            EncryptedSharedPreferences.create(
-                context,
-                encryptedSharedPrefsFileName,
-                masterKeyAlias,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
-        } catch (e: Exception) {
-            if (encryptionEnforced) {
-                IterableLogger.e(TAG, "Error creating EncryptedSharedPreferences", e)
-                throw e.fillInStackTrace()
-            } else {
-                context.getSharedPreferences(encryptedSharedPrefsFileName, Context.MODE_PRIVATE)
             }
         }
     }
@@ -113,17 +96,20 @@ class IterableKeychain {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private fun migrateAuthDataFromSharedPrefsToKeychain(context: Context) {
-        val oldPrefs: SharedPreferences =  context.getSharedPreferences(
+        val oldPrefs: SharedPreferences = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
-            Context.MODE_PRIVATE)
+            Context.MODE_PRIVATE
+        )
         val sharedPrefsEmail = oldPrefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null)
         val sharedPrefsUserId = oldPrefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null)
-        val sharedPrefsAuthToken = oldPrefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null)
+        val sharedPrefsAuthToken =
+            oldPrefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null)
         val editor: SharedPreferences.Editor = oldPrefs.edit()
         if (getEmail() == null && sharedPrefsEmail != null) {
             saveEmail(sharedPrefsEmail)
             editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY)
-            IterableLogger.v(TAG,
+            IterableLogger.v(
+                TAG,
                 "UPDATED: migrated email from SharedPreferences to IterableKeychain"
             )
         } else if (sharedPrefsEmail != null) {
@@ -132,7 +118,8 @@ class IterableKeychain {
         if (getUserId() == null && sharedPrefsUserId != null) {
             saveUserId(sharedPrefsUserId)
             editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY)
-            IterableLogger.v(TAG,
+            IterableLogger.v(
+                TAG,
                 "UPDATED: migrated userId from SharedPreferences to IterableKeychain"
             )
         } else if (sharedPrefsUserId != null) {
@@ -141,7 +128,8 @@ class IterableKeychain {
         if (getAuthToken() == null && sharedPrefsAuthToken != null) {
             saveAuthToken(sharedPrefsAuthToken)
             editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY)
-            IterableLogger.v(TAG,
+            IterableLogger.v(
+                TAG,
                 "UPDATED: migrated authToken from SharedPreferences to IterableKeychain"
             )
         } else if (sharedPrefsAuthToken != null) {
