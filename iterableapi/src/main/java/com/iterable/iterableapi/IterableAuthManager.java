@@ -54,6 +54,7 @@ public class IterableAuthManager {
                                 //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
                                 scheduleAuthTokenRefresh(10000);
                                 authHandler.onTokenRegistrationFailed(new Throwable("Auth token null"));
+                                pendingAuth = false;
                                 return;
                             }
                             IterableApi.getInstance().setAuthToken(authToken);
