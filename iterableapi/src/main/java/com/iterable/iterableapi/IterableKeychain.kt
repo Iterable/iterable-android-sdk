@@ -43,15 +43,30 @@ class IterableKeychain {
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
                 )
                 encryptionEnabled = true
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                if (e is Error) {
+                    IterableLogger.e(
+                        TAG,
+                        "EncryptionSharedPreference creation failed with Error. Attempting to continue"
+                    )
+                }
+
                 if (encryptionEnforced) {
-                    //TODO: In memory Or similar solution needs to be implemented in future.
-                    IterableLogger.e(TAG, "Error creating EncryptedSharedPreferences", e)
+                    //TODO: In-memory or similar solution needs to be implemented in the future.
+                    IterableLogger.w(
+                        TAG,
+                        "Encryption is enforced. PII will not be persisted due to EncryptionSharedPreference failure. Email/UserId and Auth token will have to be passed for every app session.",
+                        e
+                    )
                     throw e.fillInStackTrace()
                 } else {
                     sharedPrefs = context.getSharedPreferences(
                         IterableConstants.SHARED_PREFS_FILE,
                         Context.MODE_PRIVATE
+                    )
+                    IterableLogger.w(
+                        TAG,
+                        "Using SharedPreference as EncryptionSharedPreference creation failed."
                     )
                     encryptionEnabled = false
                 }
