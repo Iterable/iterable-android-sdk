@@ -619,7 +619,7 @@ public class IterableApi {
     @NonNull
     public IterableEmbeddedManager getEmbeddedManager() {
         if (embeddedManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling geEmbeddedManager(). " +
+            throw new RuntimeException("IterableApi must be initialized before calling getEmbeddedManager(). " +
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return embeddedManager;
