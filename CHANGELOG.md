@@ -12,6 +12,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.4.16](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.16)
+#### Fixed
+- SDK now handles `null` scenarios preventing crashes when `IterableEncryptedSharedPreference` creation fails.
+- Updated crypto library to version [1.1.0-alpha06](https://developer.android.com/jetpack/androidx/releases/security#1.1.0-alpha06). [1.1.0-alpha05](https://developer.android.com/jetpack/androidx/releases/security#1.1.0-alpha05) solves a race condition during creation process.
+
 ## [3.4.15](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.15)
 #### Added
 
