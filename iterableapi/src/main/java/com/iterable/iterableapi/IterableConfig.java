@@ -237,6 +237,12 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set whether the SDK should enforce encryption. If set to `true`, the SDK will not use fallback mechanism
+         * of storing data in un-encrypted shared preferences if encrypted database is not available. Set this to `true`
+         * if PII confidentiality is a concern for your app.
+         * @param encryptionEnforced `true` will have the SDK enforce encryption.
+         */
         public Builder setEncryptionEnforced(boolean encryptionEnforced) {
             this.encryptionEnforced = encryptionEnforced;
             return this;
