@@ -294,6 +294,7 @@ public class IterableApi {
         }
 
         getInAppManager().reset();
+        getEmbeddedManager().reset();
         getAuthManager().clearRefreshTimer();
 
         apiClient.onLogout();
@@ -616,9 +617,9 @@ public class IterableApi {
     }
 
     @NonNull
-    public IterableEmbeddedManager embeddedManager() {
+    public IterableEmbeddedManager getEmbeddedManager() {
         if (embeddedManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
+            throw new RuntimeException("IterableApi must be initialized before calling geEmbeddedManager(). " +
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return embeddedManager;
