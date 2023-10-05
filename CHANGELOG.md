@@ -12,8 +12,39 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.4.16](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.16)
 #### Fixed
-- nothing yet
+- SDK now handles `null` scenarios preventing crashes when `IterableEncryptedSharedPreference` creation fails.
+- Updated crypto library to version [1.1.0-alpha06](https://developer.android.com/jetpack/androidx/releases/security#1.1.0-alpha06). [1.1.0-alpha05](https://developer.android.com/jetpack/androidx/releases/security#1.1.0-alpha05) solves a race condition during creation process.
+
+## [3.4.15](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.15)
+#### Added
+
+This release allows you to use projects hosted on Iterable's EU data center. If your project is hosted on Iterable's [European data center (EUDC)](https://support.iterable.com/hc/articles/17572750887444), configure the SDK to use Iterable's EU-based API endpoints:
+
+_Java_
+
+```java
+IterableConfig config = new IterableConfig.Builder()
+  // ... other configuration options ...
+  .setDataRegion(IterableDataRegion.EU)
+  .build();
+IterableApi.initialize(context, "<YOUR_API_KEY>", config);
+```
+
+_Kotlin_
+
+```kotlin
+val configBuilder = IterableConfig.Builder()
+   // ... other configuration options ...
+  .setDataRegion(IterableDataRegion.EU)
+  .build();
+IterableApi.initialize(context, "<YOUR_API_KEY>", config);
+```
+
+#### Fixed
+- Addressed React Native SDK push notification deep linking issues where the app would restart instead of resuming the last activity upon being backgrounded.
+- Resolves an additional push notification problem wherein the customActionHandler and urlHandler were not being invoked in specific scenarios, as documented in issue #470. (Credit to @tnortman-jabra for the report and the fix)
 
 ## [3.4.14](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.14)
 #### Added

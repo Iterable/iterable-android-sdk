@@ -135,7 +135,7 @@ public class IterableApi {
         return authManager;
     }
 
-    @NonNull
+    @Nullable
     IterableKeychain getKeychain() {
         if (keychain == null) {
             try {
@@ -350,15 +350,25 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        getKeychain().saveEmail(_email);
-        getKeychain().saveUserId(_userId);
-        getKeychain().saveAuthToken(_authToken);
+        IterableKeychain iterableKeychain = getKeychain();
+        if (iterableKeychain != null) {
+            iterableKeychain.saveEmail(_email);
+            iterableKeychain.saveUserId(_userId);
+            iterableKeychain.saveAuthToken(_authToken);
+        } else {
+            IterableLogger.e(TAG, "Shared preference creation failed. ");
+        }
     }
 
     private void retrieveEmailAndUserId() {
-        _email = getKeychain().getEmail();
-        _userId = getKeychain().getUserId();
-        _authToken = getKeychain().getAuthToken();
+        IterableKeychain iterableKeychain = getKeychain();
+        if (iterableKeychain != null) {
+            _email = iterableKeychain.getEmail();
+            _userId = iterableKeychain.getUserId();
+            _authToken = iterableKeychain.getAuthToken();
+        } else {
+            IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
+        }
 
         if (config.authHandler != null) {
             if (_authToken != null) {
@@ -368,10 +378,6 @@ public class IterableApi {
                 getAuthManager().scheduleAuthTokenRefresh(10000);
             }
         }
-    }
-
-    private void updateSDKVersion() {
-
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
@@ -506,8 +512,6 @@ public class IterableApi {
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
-
-        sharedInstance.updateSDKVersion();
 
         sharedInstance.retrieveEmailAndUserId();
 
