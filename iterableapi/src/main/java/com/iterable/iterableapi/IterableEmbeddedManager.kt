@@ -201,6 +201,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     override fun onSwitchToForeground() {
         IterableLogger.printInfo()
         embeddedSessionManager.startSession()
+        IterableLogger.d(TAG, "Calling start session")
         syncMessages()
     }
 
