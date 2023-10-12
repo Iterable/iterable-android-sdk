@@ -371,7 +371,7 @@ public class IterableApiAuthTests extends BaseTest {
 //        assertEquals(HEADER_SDK_AUTH_FORMAT + expiredJWT, getMessagesAuthenticatedRequest2.getHeader("Authorization"));
 
         doReturn(validJWT).when(authHandler).onAuthTokenRequested();
-        IterableApi.getInstance().updateEmail("newEmail@gmail.com", null, null);
+        IterableApi.getInstance().updateEmail("newEmail@gmail.com", null, null, null);
         shadowOf(getMainLooper()).runToEndOfTasks();
         shadowOf(getMainLooper()).idle();
         RecordedRequest updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);

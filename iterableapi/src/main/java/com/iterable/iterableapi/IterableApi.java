@@ -925,25 +925,72 @@ public class IterableApi {
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        updateEmail(newEmail, null, null, null);
+        updateEmail(newEmail, null, null, null, null);
     }
 
+    /**
+     * Updates the current user's email.
+     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param merge Merge user profiles in email-based projects if set.
+     */
+    public void updateEmail(final @NonNull String newEmail, final @Nullable Boolean merge) {
+        updateEmail(newEmail, merge, null, null, null);
+    }
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param authToken Authentication token
+     */
     public void updateEmail(final @NonNull String newEmail, final @NonNull String authToken) {
-        updateEmail(newEmail, authToken, null, null);
+        updateEmail(newEmail, null, authToken, null, null);
     }
 
+    /**
+     * Updates the current user's email.
+     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param merge Merge user profiles in email-based projects if set.
+     * @param authToken Authentication token
+     */
+    public void updateEmail(final @NonNull String newEmail, final @Nullable Boolean merge, final @NonNull String authToken) {
+        updateEmail(newEmail, merge, authToken, null, null);
+    }
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param successHandler Success handler. Called when the server returns a success code.
+     * @param failureHandler Failure handler. Called when the server call failed.
+     */
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        updateEmail(newEmail, null, successHandler, failureHandler);
+        updateEmail(newEmail, null, null, successHandler, failureHandler);
+    }
+
+    /**
+     * Updates the current user's email.
+     * Also updates the current email in this IterableAPI instance if the API call was successful.
+     * @param newEmail New email
+     * @param merge Merge user profiles in email-based projects if set.
+     * @param successHandler Success handler. Called when the server returns a success code.
+     * @param failureHandler Failure handler. Called when the server call failed.
+     */
+    public void updateEmail(final @NonNull String newEmail, final @Nullable Boolean merge, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        updateEmail(newEmail, merge, null, successHandler, failureHandler);
     }
 
     /**
      * Updates the current user's email.
      * Also updates the current email and authToken in this IterableAPI instance if the API call was successful.
      * @param newEmail New email
+     * @param merge Optional. Merge user profiles in email-based projects if set.
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
-    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable Boolean merge, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
@@ -955,7 +1002,7 @@ public class IterableApi {
             return;
         }
 
-        apiClient.updateEmail(newEmail, new IterableHelper.SuccessHandler() {
+        apiClient.updateEmail(newEmail, merge, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 if (_email != null) {
