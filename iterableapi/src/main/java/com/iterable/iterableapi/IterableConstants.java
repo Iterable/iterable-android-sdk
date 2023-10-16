@@ -44,6 +44,7 @@ public final class IterableConstants {
     public static final String KEY_TEMPLATE_ID          = "templateId";
     public static final String KEY_MESSAGE_CONTEXT      = "messageContext";
     public static final String KEY_MESSAGE_ID           = "messageId";
+    public static final String KEY_PLACEMENT_ID           = "placementId";
     public static final String KEY_TOKEN                = "token";
     public static final String KEY_TOTAL                = "total";
     public static final String KEY_UNSUB_CHANNEL        = "unsubscribedChannelIds";
