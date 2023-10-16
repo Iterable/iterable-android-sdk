@@ -44,7 +44,6 @@ public final class IterableConstants {
     public static final String KEY_TEMPLATE_ID          = "templateId";
     public static final String KEY_MESSAGE_CONTEXT      = "messageContext";
     public static final String KEY_MESSAGE_ID           = "messageId";
-    public static final String KEY_PLACEMENT_ID           = "placementId";
     public static final String KEY_TOKEN                = "token";
     public static final String KEY_TOTAL                = "total";
     public static final String KEY_UNSUB_CHANNEL        = "unsubscribedChannelIds";
@@ -52,7 +51,6 @@ public final class IterableConstants {
     public static final String KEY_SUB_MESSAGE          = "subscribedMessageTypeIds";
     public static final String KEY_USER_ID              = "userId";
     public static final String KEY_USER                 = "user";
-    public static final String KEY_USER_KEY             = "userKey";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_EMBEDDED_SESSION_ID     = "id";
