@@ -10,14 +10,13 @@ public class EmbeddedSessionManager {
 
     private var impressions: MutableMap<String, EmbeddedImpressionData> = mutableMapOf()
 
-    var session: IterableEmbeddedSession = IterableEmbeddedSession(
+    private var session: IterableEmbeddedSession = IterableEmbeddedSession(
         null,
         null,
-        "0",
         null
     )
 
-    fun isTracking(): Boolean {
+    private fun isTracking(): Boolean {
         return session.start != null
     }
 
@@ -30,7 +29,6 @@ public class EmbeddedSessionManager {
         session = IterableEmbeddedSession(
             Date(),
             null,
-            "0",
             null
         )
     }
@@ -47,7 +45,6 @@ public class EmbeddedSessionManager {
             val sessionToTrack = IterableEmbeddedSession(
                 session.start,
                 Date(),
-                "0",
                 getImpressionList()
             )
 
@@ -57,7 +54,6 @@ public class EmbeddedSessionManager {
             session = IterableEmbeddedSession(
                 null,
                 null,
-                "0",
                 null
             )
 
@@ -104,6 +100,7 @@ public class EmbeddedSessionManager {
             impressionList.add(
                 IterableEmbeddedImpression(
                     impressionData.messageId,
+                    impressionData.placementId,
                     impressionData.displayCount,
                     impressionData.duration
                 )
