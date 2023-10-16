@@ -31,10 +31,10 @@ class IterableKeychain {
             IterableLogger.v(TAG, "SharedPreferences being used")
         } else {
             // See if EncryptedSharedPreferences can be created successfully
-            val masterKeyAlias = MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
             try {
+                val masterKeyAlias = MasterKey.Builder(context)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
                 sharedPrefs = EncryptedSharedPreferences.create(
                     context,
                     encryptedSharedPrefsFileName,
