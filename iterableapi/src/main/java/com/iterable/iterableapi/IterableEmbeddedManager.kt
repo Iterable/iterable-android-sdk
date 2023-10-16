@@ -87,10 +87,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         IterableLogger.d(TAG, "$localMessages")
     }
 
-    fun reset() {
-        val emptyMessages = listOf<IterableEmbeddedMessage>()
-    }
-
     //Network call to get the embedded messages
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")

@@ -17,13 +17,11 @@ data class IterableEmbeddedPlacement(
             try {
                 embeddedPlacementJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, placement.placementId)
 
-                if(placement?.messages != null) {
-                    val messagesJson = JSONArray()
-                    for(i in 0 until placement.messages.size) {
-                        messagesJson.put(IterableEmbeddedMessage.toJSONObject(placement.messages[i]))
-                    }
-                    embeddedPlacementJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE, messagesJson)
+                val messagesJson = JSONArray()
+                for(i in 0 until placement.messages.size) {
+                    messagesJson.put(IterableEmbeddedMessage.toJSONObject(placement.messages[i]))
                 }
+                embeddedPlacementJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE, messagesJson)
             } catch(e: JSONException) {
                 IterableLogger.e(TAG, "Error while serializing flex message", e)
             }
@@ -86,8 +84,7 @@ data class IterableEmbeddedMessage (
 
 class EmbeddedMessageMetadata(
     var messageId: String,
-    //TODO: Remove this once the placementIDs are implemented in the backend
-    val placementId: String? = "",
+    val placementId: String = "",
     val campaignId: Int? = null,
     val isProof: Boolean = false
 ) {
