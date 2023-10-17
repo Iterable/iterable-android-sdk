@@ -8,20 +8,19 @@ import java.util.UUID
 public data class IterableEmbeddedSession(
     val start: Date?,
     val end: Date?,
-    val placementId: String?,
     val impressions: List<IterableEmbeddedImpression>?,
     val id: String
 ) {
     constructor(
         start: Date?,
         end: Date?,
-        placementId: String,
         impressions: List<IterableEmbeddedImpression>?
-    ) : this(start, end, placementId, impressions, UUID.randomUUID().toString())
+    ) : this(start, end, impressions, UUID.randomUUID().toString())
 }
 
 class IterableEmbeddedImpression(
     val messageId: String,
+    val placementId: String,
     val displayCount: Int,
     val duration: Float
 )
