@@ -39,8 +39,8 @@ class IterableEmbeddedView(style: String, message: IterableEmbeddedMessage): Fra
 
         embeddedMessageViewTitle.text = message.elements?.title
         embeddedMessageViewBody.text = message.elements?.body
-        embeddedMessageViewButton1?.text = message.elements?.buttons?.get(0)?.title
-        embeddedMessageViewButton2?.text = message.elements?.buttons?.get(1)?.title
+        //embeddedMessageViewButton1?.text = message.elements?.buttons?.get(0)?.title
+        //embeddedMessageViewButton2?.text = message.elements?.buttons?.get(1)?.title
 
         return view
     }
