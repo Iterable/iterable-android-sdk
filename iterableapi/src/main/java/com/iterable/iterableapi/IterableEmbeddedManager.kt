@@ -81,15 +81,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         return localMessages[placementId]
     }
 
-    //for testing purposes
-    fun updatePlacementMessages(placementId: String, messages: List<IterableEmbeddedMessage>) {
-        updateLocalMessages(placementId, messages)
-        IterableLogger.d(TAG, "$localMessages")
-    }
-
-    fun reset() {
-        val emptyMessages = listOf<IterableEmbeddedMessage>()
-    }
+//    fun reset() {
+//        val emptyMessages = listOf<IterableEmbeddedMessage>()
+//    }
 
     //Network call to get the embedded messages
     fun syncMessages() {
