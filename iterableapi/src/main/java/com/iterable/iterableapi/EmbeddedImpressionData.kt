@@ -13,5 +13,5 @@ data class EmbeddedImpressionData(
 ) {
     constructor(
         messageId: String
-    ) : this(messageId, "0",0, 0.0f, null)
+    ) : this(messageId, "",0, 0.0f, null)
 }
