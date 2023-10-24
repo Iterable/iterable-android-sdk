@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.iterable.iterableapi.util.DeviceInfoUtils;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -204,7 +206,7 @@ class IterableApiClient {
         try {
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.ITERABLE_IN_APP_COUNT, count);
-            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.put(IterableConstants.KEY_PLATFORM, DeviceInfoUtils.isFireTV(authProvider.getContext().getPackageManager()) ? IterableConstants.ITBL_PLATFORM_OTT : IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
@@ -379,7 +381,7 @@ class IterableApiClient {
 
     }
 
-    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -398,7 +400,7 @@ class IterableApiClient {
                 addInboxSessionID(requestJSON, inboxSessionId);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON);
+            sendPostRequest(IterableConstants.ENDPOINT_INAPP_CONSUME, requestJSON, successHandler, failureHandler);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -511,7 +513,7 @@ class IterableApiClient {
         }
     }
 
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
         Context context = authProvider.getContext();
         JSONObject requestJSON = new JSONObject();
         try {
@@ -527,18 +529,7 @@ class IterableApiClient {
 
             dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
             dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true);
-            dataFields.put(IterableConstants.DEVICE_BRAND, Build.BRAND); //brand: google
-            dataFields.put(IterableConstants.DEVICE_MANUFACTURER, Build.MANUFACTURER); //manufacturer: samsung
-            dataFields.put(IterableConstants.DEVICE_SYSTEM_NAME, Build.DEVICE); //device name: toro
-            dataFields.put(IterableConstants.DEVICE_SYSTEM_VERSION, Build.VERSION.RELEASE); //version: 4.0.4
-            dataFields.put(IterableConstants.DEVICE_MODEL, Build.MODEL); //device model: Galaxy Nexus
-            dataFields.put(IterableConstants.DEVICE_SDK_VERSION, Build.VERSION.SDK_INT); //sdk version/api level: 15
-
-            dataFields.put(IterableConstants.DEVICE_ID, authProvider.getDeviceId()); // Random UUID
-            dataFields.put(IterableConstants.DEVICE_APP_PACKAGE_NAME, context.getPackageName());
-            dataFields.put(IterableConstants.DEVICE_APP_VERSION, IterableUtil.getAppVersion(context));
-            dataFields.put(IterableConstants.DEVICE_APP_BUILD, IterableUtil.getAppVersionCode(context));
-            dataFields.put(IterableConstants.DEVICE_ITERABLE_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId());
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(context).areNotificationsEnabled());
 
             JSONObject device = new JSONObject();
@@ -553,7 +544,7 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON, authToken);
+            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON, authToken, successHandler, failureHandler);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }

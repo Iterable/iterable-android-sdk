@@ -11,19 +11,21 @@ import org.json.JSONObject;
 
 import java.io.File;
 
-class IterableUtil {
+public class IterableUtil {
     @VisibleForTesting
     static IterableUtilImpl instance = new IterableUtilImpl();
+
+    private IterableUtil() { }
 
     static long currentTimeMillis() {
         return instance.currentTimeMillis();
     }
 
-    static String getAppVersion(Context context) {
+    public static String getAppVersion(Context context) {
         return instance.getAppVersion(context);
     }
 
-    static String getAppVersionCode(Context context) {
+    public static String getAppVersionCode(Context context) {
         return instance.getAppVersionCode(context);
     }
 
