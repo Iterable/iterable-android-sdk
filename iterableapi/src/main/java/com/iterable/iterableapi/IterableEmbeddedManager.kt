@@ -24,7 +24,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
 
-    var embeddedSessionManager = EmbeddedSessionManager()
+    private var embeddedSessionManager = EmbeddedSessionManager()
 
     private var activityMonitor: IterableActivityMonitor? = null
 
@@ -75,6 +75,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Get the list of updateHandlers
     public fun getUpdateHandlers(): List<EmbeddedMessageUpdateHandler> {
         return updateHandleListeners
+    }
+
+    public fun getEmbeddedSessionManager(): EmbeddedSessionManager {
+        return embeddedSessionManager
     }
 
     // endregion
