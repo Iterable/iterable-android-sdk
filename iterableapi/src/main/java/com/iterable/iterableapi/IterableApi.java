@@ -11,6 +11,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
+import com.iterable.iterableapi.util.DeviceInfoUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,6 +40,8 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
+    private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
@@ -69,15 +73,15 @@ public class IterableApi {
         });
     }
 
-    String getEmail() {
+    public String getEmail() {
         return _email;
     }
 
-    String getUserId() {
+    public String getUserId() {
         return _userId;
     }
 
-    String getAuthToken() {
+    public String getAuthToken() {
         return _authToken;
     }
 
@@ -315,6 +319,8 @@ public class IterableApi {
 
         if (config.autoPushRegistration) {
             registerForPush();
+        } else if (_setUserSuccessCallbackHandler != null) {
+            _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
 
         getInAppManager().syncInApp();
@@ -347,7 +353,7 @@ public class IterableApi {
 
     private boolean checkSDKInitialization() {
         if (!isInitialized()) {
-            IterableLogger.e(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
+            IterableLogger.w(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
             return false;
         }
         return true;
@@ -386,8 +392,13 @@ public class IterableApi {
             _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
             _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
             _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-            if (_authToken != null) {
-                getAuthManager().queueExpirationRefresh(_authToken);
+            if (config.authHandler != null) {
+                if (_authToken != null) {
+                    getAuthManager().queueExpirationRefresh(_authToken);
+                } else {
+                    IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
+                    getAuthManager().scheduleAuthTokenRefresh(10000);
+                }
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
@@ -503,7 +514,7 @@ public class IterableApi {
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes);
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, _setUserSuccessCallbackHandler, _setUserFailureCallbackHandler);
     }
 //endregion
 
@@ -533,8 +544,11 @@ public class IterableApi {
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
         if (sharedInstance.inAppManager == null) {
-            sharedInstance.inAppManager = new IterableInAppManager(sharedInstance, sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval);
+            sharedInstance.inAppManager = new IterableInAppManager(
+                    sharedInstance,
+                    sharedInstance.config.inAppHandler,
+                    sharedInstance.config.inAppDisplayInterval,
+                    sharedInstance.config.useInMemoryStorageForInApps);
         }
 
         if (sharedInstance.embeddedManager == null) {
@@ -543,6 +557,17 @@ public class IterableApi {
 
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
+        if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
+            try {
+                JSONObject dataFields = new JSONObject();
+                JSONObject deviceDetails = new JSONObject();
+                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
+                dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
+                sharedInstance.apiClient.updateUser(dataFields, false);
+            } catch (JSONException e) {
+                    IterableLogger.e(TAG, "initialize: exception", e);
+            }
+        }
     }
 
     public static void setContext(Context context) {
@@ -612,10 +637,18 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        setEmail(email, null);
+        setEmail(email, null, null, null);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        setEmail(email, null, successHandler, failureHandler);
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
+        setEmail(email, authToken, null, null);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         //Only if passed in same non-null email
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
@@ -630,16 +663,26 @@ public class IterableApi {
 
         _email = email;
         _userId = null;
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
         onLogin(authToken);
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null);
+        setUserId(userId, null, null, null);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        setUserId(userId, null, successHandler, failureHandler);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
+        setUserId(userId, authToken, null, null);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         //If same non null userId is passed
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
@@ -654,6 +697,8 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
         onLogin(authToken);
@@ -740,7 +785,26 @@ public class IterableApi {
             IterableLogger.e(TAG, "inAppConsume: message is null");
             return;
         }
-        inAppConsume(message, null, null);
+        inAppConsume(message, null, null, null, null);
+        IterableLogger.printInfo();
+    }
+
+    /**
+     * Consumes an InApp message.
+     * @param messageId
+     * @param successHandler The callback which returns `success`.
+     * @param failureHandler The callback which returns `failure`.
+     */
+    public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        IterableInAppMessage message = getInAppManager().getMessageById(messageId);
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            if (failureHandler != null) {
+                failureHandler.onFailure("inAppConsume: message is null", null);
+            }
+            return;
+        }
+        inAppConsume(message, null, null, successHandler, failureHandler);
         IterableLogger.printInfo();
     }
 
@@ -757,8 +821,25 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
+        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, null, null);
+    }
 
-        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId);
+    /**
+     * Tracks InApp delete.
+     * This method from informs Iterable about inApp messages deleted with additional paramters.
+     * Call this method from places where inApp deletion are invoked by user. The messages can be swiped to delete or can be deleted using the link to delete button.
+     *
+     * @param message message object
+     * @param source An enum describing how the in App delete was triggered
+     * @param clickLocation The module in which the action happened
+     * @param successHandler The callback which returns `success`.
+     * @param failureHandler The callback which returns `failure`.
+     */
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, successHandler, failureHandler);
     }
 
     /**

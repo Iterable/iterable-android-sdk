@@ -55,6 +55,7 @@ public final class IterableConstants {
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_EMBEDDED_SESSION_ID     = "id";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
+    public static final String KEY_FIRETV = "FireTV";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -286,6 +287,7 @@ public final class IterableConstants {
 
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
     public static final String ITBL_PLATFORM_ANDROID = "Android";
+    public static final String ITBL_PLATFORM_OTT = "OTT";
     public static final String ITBL_KEY_SDK_VERSION_NUMBER = BuildConfig.ITERABLE_SDK_VERSION;
     public static final String ITBL_SYSTEM_VERSION = "systemVersion";
 
