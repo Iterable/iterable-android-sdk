@@ -80,7 +80,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "embedded-messaging/messages";
     public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
     public static final String ENDPOINT_TRACK_EMBEDDED_CLICK   = "embedded-messaging/events/click";
-    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/impression";
+    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/embeddedSession";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
