@@ -12,6 +12,7 @@ data class EmbeddedImpressionData(
     var start: Date? = null
 ) {
     constructor(
-        messageId: String
-    ) : this(messageId, "",0, 0.0f, null)
+        messageId: String,
+        placementId: String
+    ) : this(messageId, placementId,0, 0.0f, null)
 }

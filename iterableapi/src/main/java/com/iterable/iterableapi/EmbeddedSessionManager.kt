@@ -61,11 +61,11 @@ public class EmbeddedSessionManager {
         }
     }
 
-    fun startImpression(messageId: String) {
+    fun startImpression(messageId: String, placementId: String) {
         var impressionData: EmbeddedImpressionData? = impressions[messageId]
 
         if (impressionData == null) {
-            impressionData = EmbeddedImpressionData(messageId)
+            impressionData = EmbeddedImpressionData(messageId, placementId)
             impressions[messageId] = impressionData
         }
 
