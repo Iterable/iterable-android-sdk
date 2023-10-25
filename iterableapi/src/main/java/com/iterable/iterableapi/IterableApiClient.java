@@ -231,18 +231,19 @@ class IterableApiClient {
             StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
 
             if (authProvider.getEmail() != null) {
-                pathBuilder.append("&").append(authProvider.getEmail());
+                pathBuilder.append("email=").append(authProvider.getEmail());
             } else {
-                pathBuilder.append("&").append(authProvider.getUserId());
+                pathBuilder.append("userId=").append(authProvider.getUserId());
             }
 
             if (placementIds != null) {
                 for(String placementId : placementIds) {
-                    pathBuilder.append("&").append(placementId);
+                    pathBuilder.append("&placementIds=").append(placementId);
                 }
             }
 
             String path = pathBuilder.toString();
+            IterableLogger.d("IterableApiClient", path);
             sendGetRequest(path, requestJSON, onCallback);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -263,18 +264,19 @@ class IterableApiClient {
             StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
 
             if (authProvider.getEmail() != null) {
-                pathBuilder.append("&").append(authProvider.getEmail());
+                pathBuilder.append("email=").append(authProvider.getEmail());
             } else {
-                pathBuilder.append("&").append(authProvider.getUserId());
+                pathBuilder.append("userId=").append(authProvider.getUserId());
             }
 
             if (placementIds != null) {
                 for(String placementId : placementIds) {
-                    pathBuilder.append("&").append(placementId);
+                    pathBuilder.append("&placementIds=").append(placementId);
                 }
             }
 
             String path = pathBuilder.toString();
+            IterableLogger.d("IterableApiClient", path);
             sendGetRequest(path, requestJSON, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
