@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
@@ -217,7 +218,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -226,15 +227,29 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
-            requestJSON.put("placementId", "0");
 
-            sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
+            StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
+            if (authProvider.getEmail() != null) {
+                pathBuilder.append("&").append(authProvider.getEmail());
+            } else {
+                pathBuilder.append("&").append(authProvider.getUserId());
+            }
+
+            if (placementIds != null) {
+                for(String placementId : placementIds) {
+                    pathBuilder.append("&").append(placementId);
+                }
+            }
+
+            String path = pathBuilder.toString();
+            sendGetRequest(path, requestJSON, onCallback);
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -245,7 +260,22 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
             requestJSON.put("placementId", "0");
 
-            sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
+            StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
+            if (authProvider.getEmail() != null) {
+                pathBuilder.append("&").append(authProvider.getEmail());
+            } else {
+                pathBuilder.append("&").append(authProvider.getUserId());
+            }
+
+            if (placementIds != null) {
+                for(String placementId : placementIds) {
+                    pathBuilder.append("&").append(placementId);
+                }
+            }
+
+            String path = pathBuilder.toString();
+            sendGetRequest(path, requestJSON, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }

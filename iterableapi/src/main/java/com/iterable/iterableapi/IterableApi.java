@@ -234,18 +234,18 @@ public class IterableApi {
      *
      * @param onCallback
      */
-    void getEmbeddedMessages(@NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(onCallback);
+        apiClient.getEmbeddedMessages(placementIds, onCallback);
     }
 
-    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(placementIds, onSuccess, onFailure);
     }
 
     /**
