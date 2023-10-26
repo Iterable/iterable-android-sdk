@@ -13,7 +13,6 @@ public class EmbeddedSessionManager {
     var session: IterableEmbeddedSession = IterableEmbeddedSession(
         null,
         null,
-        "0",
         null
     )
 
@@ -30,7 +29,6 @@ public class EmbeddedSessionManager {
         session = IterableEmbeddedSession(
             Date(),
             null,
-            "0",
             null
         )
     }
@@ -47,7 +45,6 @@ public class EmbeddedSessionManager {
             val sessionToTrack = IterableEmbeddedSession(
                 session.start,
                 Date(),
-                "0",
                 getImpressionList()
             )
 
@@ -57,7 +54,6 @@ public class EmbeddedSessionManager {
             session = IterableEmbeddedSession(
                 null,
                 null,
-                "0",
                 null
             )
 
@@ -65,11 +61,11 @@ public class EmbeddedSessionManager {
         }
     }
 
-    fun startImpression(messageId: String) {
+    fun startImpression(messageId: String, placementId: Long) {
         var impressionData: EmbeddedImpressionData? = impressions[messageId]
 
         if (impressionData == null) {
-            impressionData = EmbeddedImpressionData(messageId)
+            impressionData = EmbeddedImpressionData(messageId, placementId)
             impressions[messageId] = impressionData
         }
 
@@ -104,6 +100,7 @@ public class EmbeddedSessionManager {
             impressionList.add(
                 IterableEmbeddedImpression(
                     impressionData.messageId,
+                    impressionData.placementId,
                     impressionData.displayCount,
                     impressionData.duration
                 )

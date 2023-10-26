@@ -51,7 +51,6 @@ public final class IterableConstants {
     public static final String KEY_SUB_MESSAGE          = "subscribedMessageTypeIds";
     public static final String KEY_USER_ID              = "userId";
     public static final String KEY_USER                 = "user";
-    public static final String KEY_USER_KEY             = "userKey";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_EMBEDDED_SESSION_ID     = "id";
@@ -80,7 +79,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "embedded-messaging/messages";
     public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
     public static final String ENDPOINT_TRACK_EMBEDDED_CLICK   = "embedded-messaging/events/click";
-    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/embeddedSession";
+    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/session";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
