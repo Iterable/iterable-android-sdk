@@ -1,7 +1,5 @@
 package com.iterable.iterableapi
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
@@ -13,7 +11,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // endregion
 
     // region variables
-    private var localMessages = mutableMapOf<String, List<IterableEmbeddedMessage>>()
+    private var localPlacementMessagesMap = mutableMapOf<String, List<IterableEmbeddedMessage>>()
     private var actionHandler: EmbeddedMessageActionHandler? = null
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
@@ -78,7 +76,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     //Gets the list of embedded messages in memory without syncing
     fun getMessages(placementId: String?): List<IterableEmbeddedMessage>? {
-        return localMessages[placementId]
+        return localPlacementMessagesMap[placementId]
     }
 
 //    fun reset() {
@@ -160,13 +158,13 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             remoteMessageMap[it.metadata.messageId] = it
         }
 
-        localMessages[placementId]?.forEach {
+        localPlacementMessagesMap[placementId]?.forEach {
             if (!remoteMessageMap.containsKey(it.metadata.messageId)) {
                 localMessagesChanged = true
             }
         }
 
-        localMessages[placementId] = remoteMessageList
+        localPlacementMessagesMap[placementId] = remoteMessageList
 
         if (localMessagesChanged) {
             updateHandleListeners.forEach {
