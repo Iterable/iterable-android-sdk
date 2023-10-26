@@ -84,7 +84,7 @@ data class IterableEmbeddedMessage (
 
 class EmbeddedMessageMetadata(
     var messageId: String,
-    val placementId: Long = 0,
+    val placementId: Long,
     val campaignId: Int? = null,
     val isProof: Boolean = false
 ) {
