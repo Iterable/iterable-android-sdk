@@ -5,7 +5,7 @@ import org.json.JSONException
 import org.json.JSONObject
 
 data class IterableEmbeddedPlacement(
-    val placementId: String,
+    val placementId: Long,
     val messages: List<IterableEmbeddedMessage>
 ) {
     companion object {
@@ -30,7 +30,7 @@ data class IterableEmbeddedPlacement(
         }
 
         fun fromJSONObject(placementJson: JSONObject): IterableEmbeddedPlacement {
-            val placementId: String = placementJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
+            val placementId: Long = placementJson.getLong(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID)
 
             val messagesJson: JSONArray = placementJson.getJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
             var messages: MutableList<IterableEmbeddedMessage> = mutableListOf()
@@ -84,7 +84,6 @@ data class IterableEmbeddedMessage (
 
 class EmbeddedMessageMetadata(
     var messageId: String,
-    //TODO: Remove this once the placementIDs are implemented in the backend
     val placementId: Long = 0,
     val campaignId: Int? = null,
     val isProof: Boolean = false

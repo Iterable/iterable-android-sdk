@@ -27,10 +27,10 @@ class IterableEmbeddedPlacementTest {
 
             // THEN we get appropriate embedded message object and associated placement id
             assertNotNull(placement)
-            assertThat("0", `is` (placement.placementId))
+            assertThat(411, `is` (placement.placementId))
 
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
-            assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
+            assertThat(411, `is` (message.metadata.placementId))
             assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
@@ -73,7 +73,7 @@ class IterableEmbeddedPlacementTest {
             assertThat("0", `is` (placement.placementId))
 
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
-            assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
+            assertThat(411, `is` (message.metadata.placementId))
             assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
@@ -117,10 +117,10 @@ class IterableEmbeddedPlacementTest {
 
             // THEN we get appropriate embedded message object and associated placement id
             assertNotNull(placement)
-            assertThat("0", `is` (placement.placementId))
+            assertThat(411, `is` (placement.placementId))
 
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
-            assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
+            assertThat(411, `is` (message.metadata.placementId))
             assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
@@ -154,10 +154,10 @@ class IterableEmbeddedPlacementTest {
 
             // THEN we get appropriate embedded message object and associated placement id
             assertNotNull(placement)
-            assertThat("0", `is` (placement.placementId))
+            assertThat(411, `is` (placement.placementId))
 
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
-            assertThat("mbn8489b7ehycy", `is` (message.metadata.placementId))
+            assertThat(411, `is` (message.metadata.placementId))
             assertThat(2324,`is` (message.metadata.campaignId))
             assertThat(true, `is` (message.metadata.isProof))
 
@@ -170,7 +170,7 @@ class IterableEmbeddedPlacementTest {
     fun embeddedPlacementSerialization_elementsAndCustomPayloadDefined() {
         val embeddedMessageMetadata = EmbeddedMessageMetadata(
             "doibjo4590340oidiobnw",
-            "mbn8489b7ehycy",
+            411,
             2324,
             true
         )
@@ -205,7 +205,7 @@ class IterableEmbeddedPlacementTest {
 
         val embeddedMessage = IterableEmbeddedMessage(embeddedMessageMetadata, embeddedMessageElements, customPayload)
 
-        val placementId: String = "0"
+        val placementId: Long = 411
         val messages: List<IterableEmbeddedMessage> = listOf(embeddedMessage)
 
         val embeddedMessagePlacement = IterableEmbeddedPlacement(placementId, messages)
@@ -229,7 +229,7 @@ class IterableEmbeddedPlacementTest {
     fun embeddedPlacementSerialization_noButtons_noText() {
         val embeddedMessageMetadata = EmbeddedMessageMetadata(
             "doibjo4590340oidiobnw",
-            "mbn8489b7ehycy",
+            411,
             2324,
             true
         )
@@ -250,7 +250,7 @@ class IterableEmbeddedPlacementTest {
 
         val embeddedMessage = IterableEmbeddedMessage(embeddedMessageMetadata, embeddedMessageElements, customPayload)
 
-        val placementId: String = "0"
+        val placementId: Long = 411
         val messages: List<IterableEmbeddedMessage> = listOf(embeddedMessage)
 
         val embeddedMessagePlacement = IterableEmbeddedPlacement(placementId, messages)
