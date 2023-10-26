@@ -70,7 +70,7 @@ class IterableEmbeddedPlacementTest {
 
             // THEN we get appropriate embedded message object and associated placement id
             assertNotNull(placement)
-            assertThat("0", `is` (placement.placementId))
+            assertThat(411, `is` (placement.placementId))
 
             assertThat("doibjo4590340oidiobnw", `is` (message.metadata.messageId))
             assertThat(411, `is` (message.metadata.placementId))
