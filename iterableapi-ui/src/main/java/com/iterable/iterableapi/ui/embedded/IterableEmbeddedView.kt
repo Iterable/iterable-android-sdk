@@ -5,11 +5,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.iterable.iterableapi.EmbeddedMessageUpdateHandler
+import com.iterable.iterableapi.IterableEmbeddedManager
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.iterableapi.ui.R
 
 class IterableEmbeddedView(style: String, message: IterableEmbeddedMessage): Fragment() {
+
     var style = style
     var message = message
 
@@ -19,16 +23,16 @@ class IterableEmbeddedView(style: String, message: IterableEmbeddedMessage): Fra
         savedInstanceState: Bundle?
     ): View? {
 
-        val rootView = when (style) {
+        val view = when (style) {
             "banner" -> inflater.inflate(R.layout.banner_view, container, false)
             "card" -> inflater.inflate(R.layout.card_view, container, false)
             "notification" -> inflater.inflate(R.layout.notification_view, container, false)
             else -> inflater.inflate(R.layout.banner_view, container, false)
         }
 
-        bind(rootView, message)
+        bind(view, message)
 
-        return rootView
+        return view
     }
 
     fun bind(view: View, message: IterableEmbeddedMessage): View  {
