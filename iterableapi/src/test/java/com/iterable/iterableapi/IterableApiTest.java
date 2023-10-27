@@ -704,11 +704,13 @@ public class IterableApiTest extends BaseTest {
         List<IterableEmbeddedImpression> impressions = new ArrayList<>();
         impressions.add(new IterableEmbeddedImpression(
                 "messageId1",
+                0,
                 1,
                 2.0f
         ));
         impressions.add(new IterableEmbeddedImpression(
                 "messageId2",
+                0,
                 3,
                 6.5f
         ));
@@ -716,7 +718,6 @@ public class IterableApiTest extends BaseTest {
         IterableEmbeddedSession session = new IterableEmbeddedSession(
                 sessionStartTime,
                 new Date(sessionStartTime.getTime() + 3600),
-                "0",
                 impressions);
 
         IterableApi.getInstance().trackEmbeddedSession(session);
@@ -729,7 +730,6 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(trackEmbeddedSessionRequest.getBody().readUtf8());
 
         // Check top-level fields
-        assertEquals("0", requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID));
         verifyDeviceInfo(requestJson);
 
         // Check session data
@@ -742,6 +742,7 @@ public class IterableApiTest extends BaseTest {
         JSONArray impressionsJsonArray = requestJson.getJSONArray(IterableConstants.ITERABLE_EMBEDDED_IMPRESSIONS);
         assertEquals(2, impressionsJsonArray.length());
         assertEquals("messageId1", impressionsJsonArray.getJSONObject(0).getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(0, impressionsJsonArray.getJSONObject(0).getLong(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID));
         assertEquals(1, impressionsJsonArray.getJSONObject(0).getInt(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT));
         assertEquals(2.0, impressionsJsonArray.getJSONObject(0).getDouble(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION));
     }
