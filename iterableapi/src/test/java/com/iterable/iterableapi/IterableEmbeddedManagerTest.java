@@ -79,4 +79,18 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         assertEquals(1, embeddedManager.getMessages("2").size());
         assertEquals("grewdvb54ut87y", embeddedManager.getMessages("2").get(0).getMetadata().getMessageId());
     }
+
+    @Test
+    public void testReset() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().embeddedManager();
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, embeddedManager.getMessages("0").size());
+        assertEquals(1, embeddedManager.getMessages("1").size());
+        embeddedManager.reset();
+        assertEquals(0, embeddedManager.getMessages("0").size());
+        assertEquals(0, embeddedManager.getMessages("1").size());
+    }
 }

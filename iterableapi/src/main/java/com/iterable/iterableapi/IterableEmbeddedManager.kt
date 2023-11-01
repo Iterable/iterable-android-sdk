@@ -12,6 +12,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region variables
     private var localPlacementMessagesMap = mutableMapOf<String, List<IterableEmbeddedMessage>>()
+    private var placementIds = mutableListOf<String>()
+
     private var actionHandler: EmbeddedMessageActionHandler? = null
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
@@ -79,9 +81,18 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         return localPlacementMessagesMap[placementId]
     }
 
-//    fun reset() {
-//        val emptyMessages = listOf<IterableEmbeddedMessage>()
-//    }
+    fun reset() {
+        val emptyMessages = listOf<IterableEmbeddedMessage>()
+        val placementIds = getPlacementIds()
+        for (i in placementIds.indices) {
+            val placementId = placementIds[i]
+            localPlacementMessagesMap[placementId] = emptyMessages
+        }
+    }
+
+    fun getPlacementIds(): List<String> {
+        return placementIds
+    }
 
     //Network call to get the embedded messages
     fun syncMessages() {
@@ -99,6 +110,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                         val messages = placement.messages
                         IterableLogger.d(TAG, "placement id: $placementId")
 
+                        placementIds.add(placementId)
                         updateLocalMessages(placementId, messages)
                     }
                 }
