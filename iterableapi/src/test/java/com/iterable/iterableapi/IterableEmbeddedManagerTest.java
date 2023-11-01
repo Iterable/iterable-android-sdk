@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.robolectric.Shadows.shadowOf;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
@@ -10,7 +9,6 @@ import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.robolectric.android.util.concurrent.PausedExecutorService;
 
 import java.io.IOException;
 
