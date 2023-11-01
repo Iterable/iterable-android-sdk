@@ -14,7 +14,7 @@ import com.iterable.iterableapi.ui.R
 class IterableEmbeddedView(
     private var viewType: String,
     private var message: IterableEmbeddedMessage,
-    private var config: IterableEmbeddedViewConfig
+    private var config: IterableEmbeddedViewConfig?
 ): Fragment() {
 
     override fun onCreateView(
@@ -31,23 +31,24 @@ class IterableEmbeddedView(
         }
 
         bind(view, message)
+
         configure(view, config)
 
         return view
     }
 
-    private fun configure(view: View, config: IterableEmbeddedViewConfig) {
+    private fun configure(view: View, config: IterableEmbeddedViewConfig?) {
 
-        val backgroundColor = config.backgroundColor ?: "#FFFFFF"
-        val borderWidth = config.borderWidth ?: 1
-        val borderColor = config.borderColor ?: "#E0DEDF"
-        val borderCornerRadius = config.borderCornerRadius ?: 8f
+        val backgroundColor = config?.backgroundColor ?: "#FFFFFF"
+        val borderWidth = config?.borderWidth ?: 1
+        val borderColor = config?.borderColor ?: "#E0DEDF"
+        val borderCornerRadius = config?.borderCornerRadius ?: 8f
 
         val gradientDrawable = GradientDrawable()
 
-        gradientDrawable.setColor(Color.parseColor(backgroundColor.toString()))
-        gradientDrawable.setStroke(borderWidth as Int, Color.parseColor(borderColor.toString()))
-        gradientDrawable.cornerRadius = borderCornerRadius as Float
+        gradientDrawable.setColor(Color.parseColor(backgroundColor))
+        gradientDrawable.setStroke(borderWidth, Color.parseColor(borderColor))
+        gradientDrawable.cornerRadius = borderCornerRadius
         view.setBackgroundDrawable(gradientDrawable)
     }
 
