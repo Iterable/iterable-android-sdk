@@ -1,5 +1,6 @@
 package com.iterable.iterableapi
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
@@ -23,6 +24,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
+    private var iterableApi: IterableApi
+    private var context: Context
 
     private var embeddedSessionManager = EmbeddedSessionManager()
 
@@ -34,14 +37,18 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
+        iterableApi: IterableApi,
         actionHandler: EmbeddedMessageActionHandler?,
-        updateHandler: EmbeddedMessageUpdateHandler?
+        updateHandler: EmbeddedMessageUpdateHandler?,
     ) {
+        this.iterableApi = iterableApi
         this.actionHandler = actionHandler
         this.updateHandler = updateHandler
+        this.context = iterableApi.mainActivityContext
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)
     }
+
     // endregion
 
     // region getters and setters
@@ -144,6 +151,13 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         })
     }
 
+    fun handleEmbeddedClick(action: EmbeddedMessageElementsButtonAction?) {
+        actionHandleListeners.forEach {
+            IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(action?.data), IterableActionSource.EMBEDDED)
+            it.onTapAction(action)
+        }
+    }
+
     private fun broadcastSubscriptionInactive() {
         updateHandleListeners.forEach {
             IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
@@ -217,7 +231,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 // region interfaces
 
 public interface EmbeddedMessageActionHandler {
-    fun onTapAction(action: IterableAction)
+    fun onTapAction(action: EmbeddedMessageElementsButtonAction?)
 }
 
 public interface EmbeddedMessageUpdateHandler {
