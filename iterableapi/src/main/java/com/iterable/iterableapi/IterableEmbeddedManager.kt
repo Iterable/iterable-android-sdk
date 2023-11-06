@@ -151,7 +151,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         })
     }
 
-    fun handleEmbeddedClick(action: EmbeddedMessageElementsButtonAction?) {
+    fun handleEmbeddedClick(action: EmbeddedMessageClickAction?) {
         actionHandleListeners.forEach {
             IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(action?.data), IterableActionSource.EMBEDDED)
             it.onTapAction(action)
@@ -231,7 +231,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 // region interfaces
 
 public interface EmbeddedMessageActionHandler {
-    fun onTapAction(action: EmbeddedMessageElementsButtonAction?)
+    fun onTapAction(action: EmbeddedMessageClickAction?)
 }
 
 public interface EmbeddedMessageUpdateHandler {
