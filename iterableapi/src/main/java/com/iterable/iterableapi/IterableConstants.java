@@ -122,7 +122,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_TRACKING_TYPE = "tracking_type";
     public static final String SHARED_PREFS_CRITERIA = "criteria";
     public static final String SHARED_PREFS_CRITERIA_LIST = "criteriaList";
-    public static final String SHARED_PREFS_CRITERIA_TYPE = "criteriaType";
+    public static final String SHARED_PREFS_CRITERIA_TYPE = "dataType";
     public static final String SHARED_PREFS_AGGREGATE_COUNT = "aggregateCount";
 
     //Action buttons
@@ -266,7 +266,7 @@ public final class IterableConstants {
 
     //Tracking types
     public static final String TRACK_EVENT = "track";
-    public static final String TRACK_PURCHASE = "trackPurchase";
+    public static final String TRACK_PURCHASE = "purchase";
     public static final String TRACK_UPDATE_CART = "cartUpdate";
     public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
 }
