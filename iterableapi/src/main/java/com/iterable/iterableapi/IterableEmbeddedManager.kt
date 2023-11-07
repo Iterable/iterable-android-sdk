@@ -25,6 +25,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
     private var iterableApi: IterableApi
+    private var embeddedBaseUrl: String
     private var context: Context
 
     private var embeddedSessionManager = EmbeddedSessionManager()
@@ -38,10 +39,12 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
         iterableApi: IterableApi,
+        embeddedBaseUrl: String,
         actionHandler: EmbeddedMessageActionHandler?,
-        updateHandler: EmbeddedMessageUpdateHandler?,
+        updateHandler: EmbeddedMessageUpdateHandler?
     ) {
         this.iterableApi = iterableApi
+        this.embeddedBaseUrl = embeddedBaseUrl
         this.actionHandler = actionHandler
         this.updateHandler = updateHandler
         this.context = iterableApi.mainActivityContext
@@ -151,9 +154,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         })
     }
 
-    fun handleEmbeddedClick(action: EmbeddedMessageClickAction?, url: String) {
+    fun handleEmbeddedClick(action: EmbeddedMessageClickAction?) {
         actionHandleListeners.forEach {
-            if(action !== null && action.data.startsWith(url)) {
+            if(action !== null && action.data.startsWith(this.embeddedBaseUrl)) {
                 it.onTapAction(action)
             } else {
                 IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(action?.data), IterableActionSource.EMBEDDED)
