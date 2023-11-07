@@ -1,9 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.iterable.iterableapi">
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <application>
 
+    <application>
         <!--FCM-->
         <service
             android:name="com.iterable.iterableapi.IterableFirebaseMessagingService"
@@ -25,8 +26,11 @@
         <activity
             android:name=".IterableTrampolineActivity"
             android:exported="false"
-            android:launchMode="singleTop"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
             android:theme="@style/TrampolineActivity.Transparent"/>
+
+        <uses-library android:name="androidx.security" android:required="false" />
     </application>
 
     <queries>
