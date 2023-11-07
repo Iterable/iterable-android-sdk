@@ -34,6 +34,13 @@ public class LogicalExpressionEvaluator {
                         return false;
                     }
                 }
+            } else if (node.has("searchQueries")) {
+                JSONArray searchQueries = node.getJSONArray("searchQueries");
+                for (int i = 0; i < searchQueries.length(); i++) {
+                    if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                        return false;
+                    }
+                }
             } else if (node.has("searchCombo")) {
                 JSONObject searchCombo = node.getJSONObject("searchCombo");
                 return evaluateTree(searchCombo, localEventData);
@@ -42,7 +49,6 @@ public class LogicalExpressionEvaluator {
                 String comparatorType = node.getString("comparatorType");
                 String field = node.getString("field");
                 String fieldType = node.getString("fieldType");
-                double valueToMatch = node.getDouble("value");
                 double matchedCount = 0;
                 boolean isCriteriaMatch = false;
 
@@ -54,26 +60,32 @@ public class LogicalExpressionEvaluator {
 
                 if (comparatorType.equals(ComparatorType.Equals.toString())) {
                     if (fieldType.equals("string")) {
+                        String valueToMatch = node.getString("value");
 
                     } else {
+                        double valueToMatch = node.getDouble("value");
                         if (matchedCount == valueToMatch) {
                             isCriteriaMatch = true;
                         }
                     }
 
                 } else if (comparatorType.equals(ComparatorType.GreaterThan.toString())) {
+                    double valueToMatch = node.getDouble("value");
                     if (matchedCount > valueToMatch) {
                         isCriteriaMatch = true;
                     }
                 } else if (comparatorType.equals(ComparatorType.LessThan.toString())) {
+                    double valueToMatch = node.getDouble("value");
                     if (matchedCount < valueToMatch) {
                         isCriteriaMatch = true;
                     }
                 } else if (comparatorType.equals(ComparatorType.GreaterThanOrEqualTo.toString())) {
+                    double valueToMatch = node.getDouble("value");
                     if (matchedCount >= valueToMatch) {
                         isCriteriaMatch = true;
                     }
                 } else if (comparatorType.equals(ComparatorType.LessThanOrEqualTo.toString())) {
+                    double valueToMatch = node.getDouble("value");
                     if (matchedCount <= valueToMatch) {
                         isCriteriaMatch = true;
                     }

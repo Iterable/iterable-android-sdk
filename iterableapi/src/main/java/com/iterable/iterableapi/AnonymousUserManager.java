@@ -434,7 +434,6 @@ public class AnonymousUserManager {
                     Type listType = new TypeToken<List<CommerceItem>>() {
                     }.getType();
                     List<CommerceItem> itemList = gson.fromJson(localEventData.getString(IterableConstants.KEY_ITEMS), listType);
-                    IterableLogger.e(TAG, itemList.size() + "");
                     for (int j = 0; j < itemList.size(); j++) {
                         for (int k = 0; k < criteriaList.length(); k++) {
                             boolean result = evaluator.evaluateTree(criteriaList.getJSONObject(k), itemList.get(j));
