@@ -151,10 +151,13 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         })
     }
 
-    fun handleEmbeddedClick(action: EmbeddedMessageClickAction?) {
+    fun handleEmbeddedClick(action: EmbeddedMessageClickAction?, url: String) {
         actionHandleListeners.forEach {
-            IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(action?.data), IterableActionSource.EMBEDDED)
-            it.onTapAction(action)
+            if(action !== null && action.data.startsWith(url)) {
+                it.onTapAction(action)
+            } else {
+                IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(action?.data), IterableActionSource.EMBEDDED)
+            }
         }
     }
 

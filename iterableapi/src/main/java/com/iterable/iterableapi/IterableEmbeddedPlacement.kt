@@ -284,35 +284,6 @@ class EmbeddedMessageClickAction (
     }
 }
 
-//class EmbeddedMessageElementsButtonAction (
-//    val type: String,
-//    val data: String
-//) {
-//
-//    companion object {
-//        val TAG = "ItblEmbeddedButtonAction"
-//
-//        fun toJSONObject(buttonAction: EmbeddedMessageElementsButtonAction): JSONObject {
-//            val buttonActionJson = JSONObject()
-//
-//            try {
-//                buttonActionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE, buttonAction.type)
-//                buttonActionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_DATA, buttonAction.data)
-//            } catch (e: JSONException) {
-//                IterableLogger.e(TAG, "Error while serializing flex default action", e)
-//            }
-//
-//            return buttonActionJson
-//        }
-//        fun fromJSONObject(buttonActionJson: JSONObject): EmbeddedMessageElementsButtonAction {
-//            val type: String = buttonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE)
-//            val data: String = buttonActionJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA)
-//
-//            return EmbeddedMessageElementsButtonAction(type, data)
-//        }
-//    }
-//}
-
 class EmbeddedMessageElementsText (
     val id: String,
     val text: String? = null,
