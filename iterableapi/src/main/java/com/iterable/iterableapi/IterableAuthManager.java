@@ -38,7 +38,19 @@ public class IterableAuthManager {
         requestNewAuthToken(hasFailedPriorAuth, null);
     }
 
-    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, final IterableHelper.SuccessHandler successCallback) {
+    private void handleSuccessForAuthToken(String authToken, IterableHelper.SuccessHandler successCallback) {
+        try {
+            JSONObject object = new JSONObject();
+            object.put("newAuthToken", authToken);
+            successCallback.onSuccess(object);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public synchronized void requestNewAuthToken(
+            boolean hasFailedPriorAuth,
+            final IterableHelper.SuccessHandler successCallback) {
         if (authHandler != null) {
             if (!pendingAuth) {
                 if (!(this.hasFailedPriorAuth && hasFailedPriorAuth)) {
@@ -54,13 +66,7 @@ public class IterableAuthManager {
                         public void onSuccess(String authToken) {
                             if (authToken != null) {
                                 if (successCallback != null) {
-                                    try {
-                                        JSONObject object = new JSONObject();
-                                        object.put("newAuthToken", authToken);
-                                        successCallback.onSuccess(object);
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
+                                    handleSuccessForAuthToken(authToken, successCallback);
                                 }
                                 queueExpirationRefresh(authToken);
                             } else {
