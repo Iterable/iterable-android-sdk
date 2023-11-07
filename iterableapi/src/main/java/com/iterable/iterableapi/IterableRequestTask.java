@@ -54,6 +54,17 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         return executeApiRequest(iterableApiRequest);
     }
 
+    private void retryRequestWithNewAuthToken(String newAuthToken) {
+        IterableApiRequest request = new IterableApiRequest
+                (iterableApiRequest.apiKey,
+                        iterableApiRequest.resourcePath,
+                        iterableApiRequest.json,
+                        iterableApiRequest.requestType,
+                        newAuthToken,
+                        iterableApiRequest.legacyCallback);
+        new IterableRequestTask().execute(request);
+    }
+
     @WorkerThread
     static IterableApiResponse executeApiRequest(IterableApiRequest iterableApiRequest) {
         IterableApiResponse apiResponse = null;
@@ -297,7 +308,18 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             }
         } else {
             if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
-                IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
+                IterableApi.getInstance().getAuthManager().requestNewAuthToken(false,
+                        new IterableHelper.SuccessHandler() {
+                            @Override
+                            public void onSuccess(@NonNull JSONObject data) {
+                                try {
+                                    String newAuthToken = data.getString("newAuthToken");
+                                    retryRequestWithNewAuthToken(newAuthToken);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
             }
             if (iterableApiRequest.failureCallback != null) {
                 iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);

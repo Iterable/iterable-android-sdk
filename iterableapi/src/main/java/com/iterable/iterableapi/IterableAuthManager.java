@@ -6,6 +6,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.util.Future;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -34,6 +35,10 @@ public class IterableAuthManager {
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
+        requestNewAuthToken(hasFailedPriorAuth, null);
+    }
+
+    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, final IterableHelper.SuccessHandler successCallback) {
         if (authHandler != null) {
             if (!pendingAuth) {
                 if (!(this.hasFailedPriorAuth && hasFailedPriorAuth)) {
@@ -48,6 +53,15 @@ public class IterableAuthManager {
                         @Override
                         public void onSuccess(String authToken) {
                             if (authToken != null) {
+                                if (successCallback != null) {
+                                    try {
+                                        JSONObject object = new JSONObject();
+                                        object.put("newAuthToken", authToken);
+                                        successCallback.onSuccess(object);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                                 queueExpirationRefresh(authToken);
                             } else {
                                 IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
