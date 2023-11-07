@@ -55,13 +55,13 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     private void retryRequestWithNewAuthToken(String newAuthToken) {
-        IterableApiRequest request = new IterableApiRequest
-                (iterableApiRequest.apiKey,
-                        iterableApiRequest.resourcePath,
-                        iterableApiRequest.json,
-                        iterableApiRequest.requestType,
-                        newAuthToken,
-                        iterableApiRequest.legacyCallback);
+        IterableApiRequest request = new IterableApiRequest(
+                iterableApiRequest.apiKey,
+                iterableApiRequest.resourcePath,
+                iterableApiRequest.json,
+                iterableApiRequest.requestType,
+                newAuthToken,
+                iterableApiRequest.legacyCallback);
         new IterableRequestTask().execute(request);
     }
 
