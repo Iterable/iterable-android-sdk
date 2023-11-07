@@ -17,7 +17,6 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -247,177 +246,6 @@ public class AnonymousUserManager {
 
     private boolean checkCriteriaCompletion() {
         boolean isCompleted = false;
-
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
-        JSONArray localStoredEventList = getEventListFromLocalStorage();
-
-        try {
-            if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
-                JSONArray criteriaJsonArray = new JSONArray(criteriaData);
-
-                for (int j = 0; j < criteriaJsonArray.length(); j++) {
-                    JSONObject criteriaJsonObject = criteriaJsonArray.getJSONObject(j);
-                    JSONArray criteriaListJsonArray = criteriaJsonObject.getJSONArray(IterableConstants.SHARED_PREFS_CRITERIA_LIST);
-
-                    for (int k = 0; k < criteriaListJsonArray.length(); k++) {
-                        JSONObject criteriaToBeMatched = criteriaListJsonArray.getJSONObject(k);
-                        int countToMatch = criteriaToBeMatched.has(IterableConstants.SHARED_PREFS_AGGREGATE_COUNT) ? criteriaToBeMatched.getInt(IterableConstants.SHARED_PREFS_AGGREGATE_COUNT) : 1;
-                        int matchedCount = 0;
-
-                        for (int i = 0; i < localStoredEventList.length(); i++) {
-                            JSONObject localEventData = localStoredEventList.getJSONObject(i);
-                            if (criteriaToBeMatched.getString(IterableConstants.SHARED_PREFS_CRITERIA_TYPE).equals(localEventData.optString(IterableConstants.SHARED_PREFS_TRACKING_TYPE))) {
-                                matchedCount++;
-                            }
-
-                            if (matchedCount >= countToMatch) {
-                                isCompleted = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return isCompleted;
-    }
-
-    private boolean checkCriteriaCompletion1() {
-        boolean isCompleted = false;
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
-        JSONArray localStoredEventList = getEventListFromLocalStorage();
-
-        try {
-            if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
-                JSONObject criteriaJsonObject = new JSONObject(criteriaData);
-                JSONArray criteriaJsonArray = criteriaJsonObject.getJSONArray("criteriaList");
-
-                for (int i = 0; i < criteriaJsonArray.length(); i++) {
-                    JSONObject searchQuery1 = criteriaJsonArray.getJSONObject(i).getJSONObject("searchQuery");
-                    JSONArray searchQueries1 = searchQuery1.getJSONArray("searchQueries");
-
-                    for (int j = 0; j < searchQueries1.length(); j++) {
-                        JSONObject searchQuery2 = searchQueries1.getJSONObject(j);
-                        JSONArray searchQueries2 = searchQuery2.getJSONArray("searchQueries");
-
-                        for (int k = 0; k < searchQueries2.length(); k++) {
-                            JSONObject searchQuery3 = searchQueries2.getJSONObject(k);
-                            JSONObject searchCombo = searchQuery3.getJSONObject("searchCombo");
-                            String combinator = searchCombo.getString("combinator");
-                            JSONArray searchQueriesFinal = searchCombo.getJSONArray("searchQueries");
-                            ArrayList<Boolean> basicQueriesResult = new ArrayList<>();
-
-                            for (int l = 0; l < searchQueriesFinal.length(); l++) {
-                                JSONObject searchQueryData = searchQueriesFinal.getJSONObject(l);
-                                String comparatorType = searchQueryData.getString("comparatorType");
-                                String fieldType = searchQueryData.getString("fieldType");
-                                double valueToMatch = searchQueryData.getDouble("value");
-                                double matchedCount = 0;
-                                boolean isCriteriaMatch = false;
-
-                                for (int m = 0; m < localStoredEventList.length(); m++) {
-                                    JSONObject localEventData = localStoredEventList.getJSONObject(m);
-                                    if (searchQueryData.getString(IterableConstants.SHARED_PREFS_CRITERIA_TYPE).equals(localEventData.optString(IterableConstants.SHARED_PREFS_TRACKING_TYPE))) {
-                                        matchedCount++;
-                                    }
-
-                                    if (comparatorType.equals(ComparatorType1.Equals.toString())) {
-                                        if (fieldType.equals("string")) {
-
-                                        } else {
-                                            if (matchedCount == valueToMatch) {
-                                                isCriteriaMatch = true;
-                                                break;
-                                            }
-                                        }
-
-                                    } else if (comparatorType.equals(ComparatorType1.GreaterThan.toString())) {
-                                        if (matchedCount > valueToMatch) {
-                                            isCriteriaMatch = true;
-                                            break;
-                                        }
-                                    } else if (comparatorType.equals(ComparatorType1.LessThan.toString())) {
-                                        if (matchedCount < valueToMatch) {
-                                            isCriteriaMatch = true;
-                                            break;
-                                        }
-                                    } else if (comparatorType.equals(ComparatorType1.GreaterThanOrEqualTo.toString())) {
-                                        if (matchedCount >= valueToMatch) {
-                                            isCriteriaMatch = true;
-                                            break;
-                                        }
-                                    } else if (comparatorType.equals(ComparatorType1.LessThanOrEqualTo.toString())) {
-                                        if (matchedCount <= valueToMatch) {
-                                            isCriteriaMatch = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                basicQueriesResult.add(isCriteriaMatch);
-                            }
-
-                            if (combinator.equals(CombinatorType.And.toString())) {
-                                boolean allTrue = true;
-                                for (Boolean value : basicQueriesResult) {
-                                    if (!value) {
-                                        allTrue = false;
-                                        break;
-                                    }
-                                }
-                                isCompleted = allTrue;
-                            } else {
-                                boolean isAnyTrue = false;
-                                for (boolean value : basicQueriesResult) {
-                                    if (value) {
-                                        isAnyTrue = true;
-                                        break;
-                                    }
-                                }
-                                isCompleted = isAnyTrue;
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return isCompleted;
-    }
-
-//    private boolean checkCriteriaCompletion2() {
-//        boolean isCompleted = false;
-//        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-//        String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
-//        JSONArray localStoredEventList = getEventListFromLocalStorage();
-//
-//        try {
-//            if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
-//                JSONObject criteriaJsonObject = new JSONObject(criteriaData);
-//                JSONArray criteriaList = criteriaJsonObject.getJSONArray("criteriaList");
-//                LogicalExpressionEvaluator evaluator = new LogicalExpressionEvaluator();
-//
-//                for (int i = 0; i < criteriaList.length(); i++) {
-//                    boolean result = evaluator.evaluateTree(criteriaList.getJSONObject(i), localStoredEventList);
-//                    System.out.println("Result for criteria " + i + ": " + result);
-//                    IterableLogger.e("Result for criteria ", i + ": " + result);
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        return isCompleted;
-//    }
-
-    private boolean checkCriteriaCompletion3() {
-        boolean isCompleted = false;
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
@@ -436,8 +264,10 @@ public class AnonymousUserManager {
                     List<CommerceItem> itemList = gson.fromJson(localEventData.getString(IterableConstants.KEY_ITEMS), listType);
                     for (int j = 0; j < itemList.size(); j++) {
                         for (int k = 0; k < criteriaList.length(); k++) {
-                            boolean result = evaluator.evaluateTree(criteriaList.getJSONObject(k), itemList.get(j));
-                            IterableLogger.e(TAG, "Result for criteria " + result);
+                            boolean result = evaluator.evaluateTree(
+                                    criteriaList.getJSONObject(k).getJSONObject("searchQuery"),
+                                    itemList.get(j));
+                            isCompleted = result;
                             if (result) {
                                 break;
                             }
@@ -581,60 +411,5 @@ public class AnonymousUserManager {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(new Date());
-    }
-}
-
-enum CombinatorType {
-    And {
-        @NonNull
-        @Override
-        public String toString() {
-            return "And";
-        }
-    },
-    Or {
-        @NonNull
-        @Override
-        public String toString() {
-            return "Or";
-        }
-    }
-}
-
-enum ComparatorType1 {
-    Equals {
-        @NonNull
-        @Override
-        public String toString() {
-            return "Equals";
-        }
-    },
-    GreaterThanOrEqualTo {
-        @NonNull
-        @Override
-        public String toString() {
-            return "GreaterThanOrEqualTo";
-        }
-    },
-    LessThanOrEqualTo {
-        @NonNull
-        @Override
-        public String toString() {
-            return "LessThanOrEqualTo";
-        }
-    },
-    GreaterThan {
-        @NonNull
-        @Override
-        public String toString() {
-            return "GreaterThan";
-        }
-    },
-    LessThan {
-        @NonNull
-        @Override
-        public String toString() {
-            return "LessThan";
-        }
     }
 }

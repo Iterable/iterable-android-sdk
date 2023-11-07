@@ -12,34 +12,23 @@ public class LogicalExpressionEvaluator {
 
     public boolean evaluateTree(JSONObject node, CommerceItem localEventData) {
         try {
-            if (node.has("searchQuery")) {
-                JSONObject searchQuery = node.getJSONObject("searchQuery");
-                String combinator = searchQuery.getString("combinator");
-
-                if (searchQuery.has("searchQueries")) {
-                    JSONArray searchQueries = searchQuery.getJSONArray("searchQueries");
-                    if (combinator.equals("And")) {
-                        for (int i = 0; i < searchQueries.length(); i++) {
-                            if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    } else if (combinator.equals("Or")) {
-                        for (int i = 0; i < searchQueries.length(); i++) {
-                            if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                }
-            } else if (node.has("searchQueries")) {
+            if (node.has("searchQueries")) {
+                String combinator = node.getString("combinator");
                 JSONArray searchQueries = node.getJSONArray("searchQueries");
-                for (int i = 0; i < searchQueries.length(); i++) {
-                    if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                        return false;
+                if (combinator.equals("And")) {
+                    for (int i = 0; i < searchQueries.length(); i++) {
+                        if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                            return false;
+                        }
                     }
+                    return true;
+                } else if (combinator.equals("Or")) {
+                    for (int i = 0; i < searchQueries.length(); i++) {
+                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 }
             } else if (node.has("searchCombo")) {
                 JSONObject searchCombo = node.getJSONObject("searchCombo");

@@ -29,7 +29,6 @@ public class MainActivity extends AppCompatActivity {
         List<CommerceItem> items = new ArrayList<>();
         CommerceItem item = new CommerceItem("12", "Mocha", 3.5, 1);
         items.add(item);
-        IterableApi.getInstance().trackPurchase(3.5, items, null);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> {
