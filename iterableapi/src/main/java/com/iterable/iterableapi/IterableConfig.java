@@ -82,6 +82,8 @@ public class IterableConfig {
      */
     final boolean useInMemoryStorageForInApps;
 
+    final boolean encryptionEnforced;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -96,6 +98,7 @@ public class IterableConfig {
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
+        encryptionEnforced = builder.encryptionEnforced;
     }
 
     public static class Builder {
@@ -112,6 +115,7 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
+        private boolean encryptionEnforced = false;
 
         public Builder() {}
 
@@ -230,6 +234,17 @@ public class IterableConfig {
         @NonNull
         public Builder setAllowedProtocols(@NonNull String[] allowedProtocols) {
             this.allowedProtocols = allowedProtocols;
+            return this;
+        }
+
+        /**
+         * Set whether the SDK should enforce encryption. If set to `true`, the SDK will not use fallback mechanism
+         * of storing data in un-encrypted shared preferences if encrypted database is not available. Set this to `true`
+         * if PII confidentiality is a concern for your app.
+         * @param encryptionEnforced `true` will have the SDK enforce encryption.
+         */
+        public Builder setEncryptionEnforced(boolean encryptionEnforced) {
+            this.encryptionEnforced = encryptionEnforced;
             return this;
         }
 
