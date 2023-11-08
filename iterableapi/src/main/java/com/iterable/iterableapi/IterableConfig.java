@@ -82,8 +82,6 @@ public class IterableConfig {
      */
     final boolean useInMemoryStorageForInApps;
 
-    final String embeddedBaseUrl;
-
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -98,7 +96,6 @@ public class IterableConfig {
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
-        embeddedBaseUrl = builder.embeddedBaseUrl;
     }
 
     public static class Builder {
@@ -115,7 +112,6 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
-        private String embeddedBaseUrl = "";
         public Builder() {}
 
         /**
@@ -254,12 +250,6 @@ public class IterableConfig {
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
-            return this;
-        }
-
-        @NonNull
-        public Builder setEmbeddedBaseUrl(@NonNull String embeddedBaseUrl) {
-            this.embeddedBaseUrl = embeddedBaseUrl;
             return this;
         }
 
