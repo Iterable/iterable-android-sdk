@@ -258,15 +258,12 @@ public class AnonymousUserManager {
 
                 for (int i = 0; i < localStoredEventList.length(); i++) {
                     JSONObject localEventData = localStoredEventList.getJSONObject(i);
-                    Gson gson = new GsonBuilder().create();
-                    Type listType = new TypeToken<List<CommerceItem>>() {
-                    }.getType();
-                    List<CommerceItem> itemList = gson.fromJson(localEventData.getString(IterableConstants.KEY_ITEMS), listType);
-                    for (int j = 0; j < itemList.size(); j++) {
+                    JSONArray jsonArray = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
+                    for (int j = 0; j < jsonArray.length(); j++) {
                         for (int k = 0; k < criteriaList.length(); k++) {
-                            boolean result = evaluator.evaluateTree(
+                            boolean result = evaluator.compareData(
                                     criteriaList.getJSONObject(k).getJSONObject("searchQuery"),
-                                    itemList.get(j));
+                                    jsonArray.getJSONObject(j), localEventData);
                             isCompleted = result;
                             if (result) {
                                 break;

@@ -2,29 +2,55 @@ package com.iterable.iterableapi.util;
 
 import androidx.annotation.NonNull;
 
-import com.iterable.iterableapi.CommerceItem;
+import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 public class LogicalExpressionEvaluator {
 
-    public boolean evaluateTree(JSONObject node, CommerceItem localEventData) {
+    private ArrayList<String> localDataKeys;
+
+    public boolean compareData(JSONObject node, JSONObject eventItem, JSONObject localEventData) {
+        try {
+            localDataKeys = new ArrayList<>();
+
+            Iterator<String> keys = localEventData.keys();
+            while (keys.hasNext()) {
+                localDataKeys.add(keys.next());
+            }
+            keys = eventItem.keys();
+            while (keys.hasNext()) {
+                localDataKeys.add(keys.next());
+            }
+            return evaluateTree(node, eventItem, localEventData.getString(IterableConstants.SHARED_PREFS_TRACKING_TYPE));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean evaluateTree(JSONObject node, JSONObject localEventData, String trackingType) {
         try {
             if (node.has("searchQueries")) {
                 String combinator = node.getString("combinator");
                 JSONArray searchQueries = node.getJSONArray("searchQueries");
                 if (combinator.equals("And")) {
                     for (int i = 0; i < searchQueries.length(); i++) {
-                        if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                        if (!evaluateTree(searchQueries.getJSONObject(i), localEventData, trackingType)) {
                             return false;
                         }
                     }
                     return true;
                 } else if (combinator.equals("Or")) {
                     for (int i = 0; i < searchQueries.length(); i++) {
-                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData, trackingType)) {
                             return true;
                         }
                     }
@@ -32,32 +58,45 @@ public class LogicalExpressionEvaluator {
                 }
             } else if (node.has("searchCombo")) {
                 JSONObject searchCombo = node.getJSONObject("searchCombo");
-                return evaluateTree(searchCombo, localEventData);
+                return evaluateTree(searchCombo, localEventData, trackingType);
             } else if (node.has("field")) {
-
+                String dataType = node.getString("dataType");
+                if (!dataType.equals(trackingType)) {
+                    return false;
+                }
                 String comparatorType = node.getString("comparatorType");
                 String field = node.getString("field");
                 String fieldType = node.getString("fieldType");
-                double matchedCount = 0;
+                Object matchedCountObj = null;
                 boolean isCriteriaMatch = false;
 
-                if (field.endsWith("price")) {
-                    matchedCount = localEventData.price;
-                } else if (field.endsWith("quantity")) {
-                    matchedCount = localEventData.quantity;
+                for (int i = 0; i < localDataKeys.size(); i++) {
+                    if (field.endsWith(localDataKeys.get(i))) {
+                        matchedCountObj = localEventData.get(localDataKeys.get(i));
+                    }
+                }
+
+                if (matchedCountObj == null) {
+                    return false;
+                }
+
+                double matchedCount = 0.0;
+
+                if (fieldType.equals("string") && matchedCountObj instanceof String) {
+                    isCriteriaMatch = matchedCountObj.equals(node.getString("value"));
+                } else if (matchedCountObj instanceof Integer) {
+                    matchedCount = (double) (int) matchedCountObj;
+                } else if (matchedCountObj instanceof Long) {
+                    matchedCount = (double) (long) matchedCountObj;
+                } else if (matchedCountObj instanceof Double) {
+                    matchedCount = (double) matchedCountObj;
                 }
 
                 if (comparatorType.equals(ComparatorType.Equals.toString())) {
-                    if (fieldType.equals("string")) {
-                        String valueToMatch = node.getString("value");
-
-                    } else {
-                        double valueToMatch = node.getDouble("value");
-                        if (matchedCount == valueToMatch) {
-                            isCriteriaMatch = true;
-                        }
+                    double valueToMatch = node.getDouble("value");
+                    if (matchedCount == valueToMatch) {
+                        isCriteriaMatch = true;
                     }
-
                 } else if (comparatorType.equals(ComparatorType.GreaterThan.toString())) {
                     double valueToMatch = node.getDouble("value");
                     if (matchedCount > valueToMatch) {
@@ -86,7 +125,7 @@ public class LogicalExpressionEvaluator {
             IterableLogger.e("Exception", e.toString());
             e.printStackTrace();
         }
-        return true;
+        return false;
     }
 }
 
