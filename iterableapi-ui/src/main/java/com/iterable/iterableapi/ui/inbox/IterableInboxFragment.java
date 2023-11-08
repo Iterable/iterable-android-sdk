@@ -255,7 +255,7 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
 
     @Override
     public void onListItemDeleted(@NonNull IterableInAppMessage message, @NonNull IterableInAppDeleteActionType source) {
-        IterableApi.getInstance().getInAppManager().removeMessage(message, source, IterableInAppLocation.INBOX);
+        IterableApi.getInstance().getInAppManager().removeMessage(message, source, IterableInAppLocation.INBOX, null, null);
     }
 
     @Override
