@@ -1,11 +1,10 @@
 package com.iterable.iterableapi.util;
 
-import androidx.annotation.NonNull;
-
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -17,23 +16,25 @@ public class LogicalExpressionEvaluator {
 
     public boolean compareData(JSONObject node, JSONObject eventItem, JSONObject localEventData) {
         try {
-            localDataKeys = new ArrayList<>();
+            localDataKeys = extractKeys(localEventData);
+            localDataKeys.addAll(extractKeys(eventItem));
 
-            Iterator<String> keys = localEventData.keys();
-            while (keys.hasNext()) {
-                localDataKeys.add(keys.next());
-            }
-            keys = eventItem.keys();
-            while (keys.hasNext()) {
-                localDataKeys.add(keys.next());
-            }
-            return evaluateTree(node, eventItem, localEventData.getString(IterableConstants.SHARED_PREFS_TRACKING_TYPE));
+            String trackingType = localEventData.getString(IterableConstants.SHARED_PREFS_TRACKING_TYPE);
+            return evaluateTree(node, eventItem, trackingType);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            handleException(e);
         }
-
         return false;
+    }
+
+    private ArrayList<String> extractKeys(JSONObject jsonObject) {
+        ArrayList<String> keys = new ArrayList<>();
+        Iterator<String> jsonKeys = jsonObject.keys();
+        while (jsonKeys.hasNext()) {
+            keys.add(jsonKeys.next());
+        }
+        return keys;
     }
 
     public boolean evaluateTree(JSONObject node, JSONObject localEventData, String trackingType) {
@@ -60,109 +61,83 @@ public class LogicalExpressionEvaluator {
                 JSONObject searchCombo = node.getJSONObject("searchCombo");
                 return evaluateTree(searchCombo, localEventData, trackingType);
             } else if (node.has("field")) {
-                String dataType = node.getString("dataType");
-                if (!dataType.equals(trackingType)) {
-                    return false;
-                }
-                String comparatorType = node.getString("comparatorType");
-                String field = node.getString("field");
-                String fieldType = node.getString("fieldType");
-                Object matchedCountObj = null;
-                boolean isCriteriaMatch = false;
-
-                for (int i = 0; i < localDataKeys.size(); i++) {
-                    if (field.endsWith(localDataKeys.get(i))) {
-                        matchedCountObj = localEventData.get(localDataKeys.get(i));
-                    }
-                }
-
-                if (matchedCountObj == null) {
-                    return false;
-                }
-
-                double matchedCount = 0.0;
-
-                if (fieldType.equals("string") && matchedCountObj instanceof String) {
-                    isCriteriaMatch = matchedCountObj.equals(node.getString("value"));
-                } else if (matchedCountObj instanceof Integer) {
-                    matchedCount = (double) (int) matchedCountObj;
-                } else if (matchedCountObj instanceof Long) {
-                    matchedCount = (double) (long) matchedCountObj;
-                } else if (matchedCountObj instanceof Double) {
-                    matchedCount = (double) matchedCountObj;
-                }
-
-                if (comparatorType.equals(ComparatorType.Equals.toString())) {
-                    double valueToMatch = node.getDouble("value");
-                    if (matchedCount == valueToMatch) {
-                        isCriteriaMatch = true;
-                    }
-                } else if (comparatorType.equals(ComparatorType.GreaterThan.toString())) {
-                    double valueToMatch = node.getDouble("value");
-                    if (matchedCount > valueToMatch) {
-                        isCriteriaMatch = true;
-                    }
-                } else if (comparatorType.equals(ComparatorType.LessThan.toString())) {
-                    double valueToMatch = node.getDouble("value");
-                    if (matchedCount < valueToMatch) {
-                        isCriteriaMatch = true;
-                    }
-                } else if (comparatorType.equals(ComparatorType.GreaterThanOrEqualTo.toString())) {
-                    double valueToMatch = node.getDouble("value");
-                    if (matchedCount >= valueToMatch) {
-                        isCriteriaMatch = true;
-                    }
-                } else if (comparatorType.equals(ComparatorType.LessThanOrEqualTo.toString())) {
-                    double valueToMatch = node.getDouble("value");
-                    if (matchedCount <= valueToMatch) {
-                        isCriteriaMatch = true;
-                    }
-                }
-
-                return isCriteriaMatch;
+                return evaluateField(node, localEventData, trackingType);
             }
         } catch (Exception e) {
-            IterableLogger.e("Exception", e.toString());
-            e.printStackTrace();
+            handleException(e);
         }
         return false;
     }
-}
 
-enum ComparatorType {
-    Equals {
-        @NonNull
-        @Override
-        public String toString() {
-            return "Equals";
+    private boolean evaluateField(JSONObject node, JSONObject localEventData, String trackingType) {
+        try {
+            return evaluateFieldLogic(node, localEventData, trackingType);
+        } catch (JSONException e) {
+            handleJSONException(e);
         }
-    },
-    GreaterThanOrEqualTo {
-        @NonNull
-        @Override
-        public String toString() {
-            return "GreaterThanOrEqualTo";
+        return false;
+    }
+
+    private boolean evaluateFieldLogic(JSONObject node, JSONObject localEventData, String trackingType) throws JSONException {
+        String dataType = node.getString("dataType");
+        if (!dataType.equals(trackingType)) {
+            return false;
         }
-    },
-    LessThanOrEqualTo {
-        @NonNull
-        @Override
-        public String toString() {
-            return "LessThanOrEqualTo";
+
+        String field = node.getString("field");
+        String comparatorType = node.getString("comparatorType");
+        String fieldType = node.getString("fieldType");
+
+        for (String key : localDataKeys) {
+            if (field.endsWith(key)) {
+                Object matchedCountObj = localEventData.get(key);
+                if (evaluateComparison(comparatorType, fieldType, matchedCountObj, node)) {
+                    return true;
+                }
+            }
         }
-    },
-    GreaterThan {
-        @NonNull
-        @Override
-        public String toString() {
-            return "GreaterThan";
+        return false;
+    }
+
+    private boolean evaluateComparison(String comparatorType, String fieldType, Object matchedCountObj, JSONObject node) {
+        try {
+            double matchedCount = 0.0;
+
+            if (fieldType.equals("string") && matchedCountObj instanceof String) {
+                return matchedCountObj.equals(node.getString("value"));
+            } else if (matchedCountObj instanceof Number) {
+                matchedCount = ((Number) matchedCountObj).doubleValue();
+            }
+
+            double valueToMatch = node.getDouble("value");
+
+            switch (comparatorType) {
+                case "Equals":
+                    return matchedCount == valueToMatch;
+                case "GreaterThan":
+                    return matchedCount > valueToMatch;
+                case "LessThan":
+                    return matchedCount < valueToMatch;
+                case "GreaterThanOrEqualTo":
+                    return matchedCount >= valueToMatch;
+                case "LessThanOrEqualTo":
+                    return matchedCount <= valueToMatch;
+                default:
+                    return false;
+            }
+        } catch (JSONException e) {
+            handleJSONException(e);
+            return false;
         }
-    },
-    LessThan {
-        @NonNull
-        @Override
-        public String toString() {
-            return "LessThan";
-        }
+    }
+
+    private void handleException(Exception e) {
+        IterableLogger.e("Exception occurred", e.toString());
+        e.printStackTrace();
+    }
+
+    private void handleJSONException(JSONException e) {
+        IterableLogger.e("JSONException occurred", e.toString());
+        e.printStackTrace();
     }
 }
