@@ -127,7 +127,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
         IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(clickedUrl), IterableActionSource.EMBEDDED)
-        IterableApi.getInstance().trackEmbeddedClick(message, buttonIdentifier, clickedUrl)
     }
 
     private fun broadcastSubscriptionInactive() {
