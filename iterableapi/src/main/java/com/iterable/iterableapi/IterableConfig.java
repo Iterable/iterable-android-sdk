@@ -112,6 +112,7 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
+
         public Builder() {}
 
         /**

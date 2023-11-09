@@ -1,8 +1,6 @@
 package com.iterable.iterableapi
 
 import android.content.Context
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
@@ -15,9 +13,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region variables
     private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
-    private var actionHandler: EmbeddedMessageActionHandler? = null
     private var updateHandler: EmbeddedMessageUpdateHandler? = null
-    private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
     private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
     private var iterableApi: IterableApi
     private var context: Context
@@ -33,11 +29,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
         iterableApi: IterableApi,
-        actionHandler: EmbeddedMessageActionHandler?,
         updateHandler: EmbeddedMessageUpdateHandler?
     ) {
         this.iterableApi = iterableApi
-        this.actionHandler = actionHandler
         this.updateHandler = updateHandler
         this.context = iterableApi.mainActivityContext
         activityMonitor = IterableActivityMonitor.getInstance()
@@ -48,30 +42,15 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region getters and setters
 
-    //Add actionHandler to the list
-    public fun addActionHandler(actionHandler: EmbeddedMessageActionHandler) {
-        actionHandleListeners.add(actionHandler)
-    }
-
     //Add updateHandler to the list
     public fun addUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.add(updateHandler)
-    }
-
-    //Remove actionHandler from the list
-    public fun removeActionHandler(actionHandler: EmbeddedMessageActionHandler) {
-        actionHandleListeners.remove(actionHandler)
     }
 
     //Remove updateHandler from the list
     public fun removeUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
-    }
-
-    //Get the list of actionHandlers
-    public fun getActionHandlers(): List<EmbeddedMessageActionHandler> {
-        return actionHandleListeners
     }
 
     //Get the list of updateHandlers
@@ -219,10 +198,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 }
 
 // region interfaces
-
-public interface EmbeddedMessageActionHandler {
-    fun onTapAction()
-}
 
 public interface EmbeddedMessageUpdateHandler {
     fun onMessagesUpdated()
