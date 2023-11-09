@@ -555,8 +555,8 @@ public class IterableApi {
         if (sharedInstance.embeddedManager == null) {
             sharedInstance.embeddedManager = new IterableEmbeddedManager(
                     sharedInstance,
-                    null,
-                    null);
+                    null
+            );
         }
 
         loadLastSavedConfiguration(context);
