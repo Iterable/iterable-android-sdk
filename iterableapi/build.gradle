@@ -92,7 +92,6 @@ ext {
     allLicenses = ["Apache-2.0"]
 }
 
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
 
 if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
