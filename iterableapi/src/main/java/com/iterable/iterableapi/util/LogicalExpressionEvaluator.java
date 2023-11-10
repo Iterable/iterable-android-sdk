@@ -69,7 +69,7 @@ public class LogicalExpressionEvaluator {
         return false;
     }
 
-    private boolean evaluateField(JSONObject node, JSONObject localEventData, String trackingType) {
+    boolean evaluateField(JSONObject node, JSONObject localEventData, String trackingType) {
         try {
             return evaluateFieldLogic(node, localEventData, trackingType);
         } catch (JSONException e) {
@@ -99,7 +99,7 @@ public class LogicalExpressionEvaluator {
         return false;
     }
 
-    private boolean evaluateComparison(String comparatorType, String fieldType, Object matchedCountObj, JSONObject node) {
+    boolean evaluateComparison(String comparatorType, String fieldType, Object matchedCountObj, JSONObject node) {
         try {
             double matchedCount = 0.0;
 
