@@ -13,8 +13,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region variables
     private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
-    private var updateHandler: EmbeddedMessageUpdateHandler? = null
-    private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
+    private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
     private var iterableApi: IterableApi
     private var context: Context
 
@@ -28,11 +27,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
-        iterableApi: IterableApi,
-        updateHandler: EmbeddedMessageUpdateHandler?
+        iterableApi: IterableApi
     ) {
         this.iterableApi = iterableApi
-        this.updateHandler = updateHandler
         this.context = iterableApi.mainActivityContext
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)
@@ -43,18 +40,18 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // region getters and setters
 
     //Add updateHandler to the list
-    public fun addUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun addUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.add(updateHandler)
     }
 
     //Remove updateHandler from the list
-    public fun removeUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun removeUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
     }
 
     //Get the list of updateHandlers
-    public fun getUpdateHandlers(): List<EmbeddedMessageUpdateHandler> {
+    public fun getUpdateHandlers(): List<IterableEmbeddedUpdateHandler> {
         return updateHandleListeners
     }
 
@@ -198,7 +195,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
 // region interfaces
 
-public interface EmbeddedMessageUpdateHandler {
+public interface IterableEmbeddedUpdateHandler {
     fun onMessagesUpdated()
     fun onEmbeddedMessagingDisabled()
 }
