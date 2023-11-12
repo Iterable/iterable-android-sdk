@@ -38,6 +38,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
 
     int retryCount = 0;
+    boolean shouldRetryWhileJwtInvalid = true;
     IterableApiRequest iterableApiRequest;
 
     /**
@@ -52,6 +53,23 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         }
 
         return executeApiRequest(iterableApiRequest);
+    }
+
+    public void setShouldRetryWhileJwtInvalid(boolean shouldRetryWhileJwtInvalid) {
+        this.shouldRetryWhileJwtInvalid = shouldRetryWhileJwtInvalid;
+    }
+
+    private void retryRequestWithNewAuthToken(String newAuthToken) {
+        IterableApiRequest request = new IterableApiRequest(
+                iterableApiRequest.apiKey,
+                iterableApiRequest.resourcePath,
+                iterableApiRequest.json,
+                iterableApiRequest.requestType,
+                newAuthToken,
+                iterableApiRequest.legacyCallback);
+        IterableRequestTask requestTask = new IterableRequestTask();
+        requestTask.setShouldRetryWhileJwtInvalid(false);
+        requestTask.execute(request);
     }
 
     @WorkerThread
@@ -296,8 +314,19 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 iterableApiRequest.successCallback.onSuccess(response.responseJson);
             }
         } else {
-            if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
-                IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
+            if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD) && shouldRetryWhileJwtInvalid) {
+                IterableApi.getInstance().getAuthManager().requestNewAuthToken(false,
+                        new IterableHelper.SuccessHandler() {
+                            @Override
+                            public void onSuccess(@NonNull JSONObject data) {
+                                try {
+                                    String newAuthToken = data.getString("newAuthToken");
+                                    retryRequestWithNewAuthToken(newAuthToken);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
             }
             if (iterableApiRequest.failureCallback != null) {
                 iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
