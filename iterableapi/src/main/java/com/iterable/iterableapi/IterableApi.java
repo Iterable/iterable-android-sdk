@@ -1044,9 +1044,9 @@ public class IterableApi {
      */
     public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
         if (!checkSDKInitialization()) {
+            anonymousUserManager.trackAnonUpdateUser(dataFields);
             return;
         }
-
         apiClient.updateUser(dataFields, mergeNestedObjects);
     }
 

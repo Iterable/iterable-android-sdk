@@ -164,6 +164,7 @@ public final class IterableConstants {
     public static final String REQUEST_CODE             = "requestCode";
     public static final String ACTION_IDENTIFIER        = "actionIdentifier";
     public static final String USER_INPUT               = "userInput";
+    public static final String DATA_REPLACE             = "dataReplace";
 
     //Firebase
     public static final String FIREBASE_SENDER_ID       = "gcm_defaultSenderId";
@@ -269,4 +270,5 @@ public final class IterableConstants {
     public static final String TRACK_PURCHASE = "purchase";
     public static final String TRACK_UPDATE_CART = "cartUpdate";
     public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
+    public static final String UPDATE_USER = "updateUser";
 }

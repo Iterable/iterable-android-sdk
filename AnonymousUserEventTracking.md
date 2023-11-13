@@ -15,6 +15,7 @@ The `AnonymousUserManager` class includes the following key components:
 - **Methods:**
     - `updateAnonSession()`: Updates the anonymous user session.
     - `trackAnonEvent(String eventName, JSONObject dataFields)`: Tracks an anonymous event.
+    - `trackAnonUpdateUser(JSONObject dataFields)`: Tracks an anonymous user update event.
     - `trackAnonPurchaseEvent(double total, List<CommerceItem> items, JSONObject dataFields)`: Tracks an anonymous purchase event.
     - `trackAnonUpdateCart(List<CommerceItem> items)`: Tracks an anonymous cart update.
     - `getCriteria()`: Retrieves criteria for user transition.
@@ -43,6 +44,14 @@ This method tracks an anonymous event. It does the following:
 
 * Creates a JSON object with event details, including the event name, timestamp, data fields, and tracking type.
 * Stores the event data in local storage.
+* Checks criteria completion and creates a known user if criteria are met.
+
+### `trackAnonUpdateUser(dataFields)`
+
+This method tracks an anonymous user update event. It does the following:
+
+* Creates a JSON object with event details, including the provided user data as data fields, and tracking type.
+* Stores the event data in local storage or modified data if already exists.
 * Checks criteria completion and creates a known user if criteria are met.
 
 ### `trackAnonPurchaseEvent(total, items, dataFields)`
@@ -122,3 +131,11 @@ AnonymousUserManager userManager = new AnonymousUserManager();
 userManager.updateAnonSession();
 userManager.trackAnonEvent("UserLoggedIn", userData);
 userManager.trackAnonPurchaseEvent(100.0, items, otherData);
+JSONObject jsonObject = new JSONObject();
+try {
+    jsonObject.put("Name", "user_name");
+    jsonObject.put("email", "example@gmail.com");
+} catch (JSONException e) {
+    e.printStackTrace();
+}
+IterableApi.getInstance().updateUser(jsonObject);
