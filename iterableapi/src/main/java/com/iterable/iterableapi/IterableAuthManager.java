@@ -4,15 +4,12 @@ import android.util.Base64;
 
 import androidx.annotation.VisibleForTesting;
 
-import com.iterable.iterableapi.util.Future;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
