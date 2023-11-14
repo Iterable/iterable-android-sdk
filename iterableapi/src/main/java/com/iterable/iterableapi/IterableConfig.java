@@ -60,8 +60,6 @@ public class IterableConfig {
      */
     final IterableAuthHandler authHandler;
 
-    final IterableEmbeddedUpdateHandler embeddedUpdateHandler;
-
     /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
@@ -94,7 +92,6 @@ public class IterableConfig {
         inAppHandler = builder.inAppHandler;
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
-        embeddedUpdateHandler = builder.embeddedUpdateHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
@@ -111,7 +108,6 @@ public class IterableConfig {
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
-        private IterableEmbeddedUpdateHandler embeddedUpdateHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
@@ -255,11 +251,6 @@ public class IterableConfig {
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
-            return this;
-        }
-
-        Builder setEmbeddedUpdateHandler(@NonNull IterableEmbeddedUpdateHandler embeddedUpdateHandler) {
-            this.embeddedUpdateHandler = embeddedUpdateHandler;
             return this;
         }
 
