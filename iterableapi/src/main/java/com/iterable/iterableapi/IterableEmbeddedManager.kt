@@ -19,6 +19,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     private var embeddedSessionManager = EmbeddedSessionManager()
 
+    private var updateHandler: IterableEmbeddedUpdateHandler? = null
     private var activityMonitor: IterableActivityMonitor? = null
 
     // endregion
@@ -27,9 +28,11 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
-        iterableApi: IterableApi
+        iterableApi: IterableApi,
+        updateHandler: IterableEmbeddedUpdateHandler?
     ) {
         this.iterableApi = iterableApi
+        this.updateHandler = updateHandler
         this.context = iterableApi.mainActivityContext
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)

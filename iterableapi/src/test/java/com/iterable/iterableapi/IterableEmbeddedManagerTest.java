@@ -2,6 +2,9 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
@@ -19,6 +22,12 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     private MockWebServer server;
     private PathBasedQueueDispatcher dispatcher;
 
+    private IterableEmbeddedUpdateHandler mockHandler;
+
+    private IterableEmbeddedManager embeddedManager;
+
+    private IterableApi iterableApi;
+
     @Before
     public void setUp() throws IOException {
         server = new MockWebServer();
@@ -26,7 +35,6 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         server.setDispatcher(dispatcher);
 
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableApi.sharedInstance = new IterableApi();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -68,5 +76,38 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         assertEquals(1, embeddedManager.getMessages().size());
         embeddedManager.reset();
         assertEquals(0, embeddedManager.getMessages().size());
+    }
+
+    @Test
+    public void testOnMessagesUpdated() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler1 = mock(IterableEmbeddedUpdateHandler.class);
+        IterableEmbeddedUpdateHandler mockHandler2 = mock(IterableEmbeddedUpdateHandler.class);
+
+        embeddedManager.addUpdateListener(mockHandler1);
+        embeddedManager.addUpdateListener(mockHandler2);
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_2.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        // Verify that the onMessagesUpdated method was called on the mock
+        verify(mockHandler1, times(2)).onMessagesUpdated();
+        verify(mockHandler2, times(2)).onMessagesUpdated();
+    }
+
+    @Test
+    public void testTrackEmbeddedMessageReceived() throws Exception {
+
+    }
+
+    @Test
+    public void testOnEmbeddedMessagingDisabled() throws Exception {
+
     }
 }

@@ -554,7 +554,8 @@ public class IterableApi {
 
         if (sharedInstance.embeddedManager == null) {
             sharedInstance.embeddedManager = new IterableEmbeddedManager(
-                    sharedInstance
+                    sharedInstance,
+                    sharedInstance.config.embeddedUpdateHandler
             );
         }
 
@@ -585,6 +586,12 @@ public class IterableApi {
     IterableApi(IterableInAppManager inAppManager) {
         config = new IterableConfig.Builder().build();
         this.inAppManager = inAppManager;
+    }
+
+    @VisibleForTesting
+    IterableApi(IterableEmbeddedManager embeddedManager) {
+        config = new IterableConfig.Builder().build();
+        this.embeddedManager = embeddedManager;
     }
 
     @VisibleForTesting
