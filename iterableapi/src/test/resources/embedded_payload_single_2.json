@@ -1,0 +1,42 @@
+{
+  "placements": [
+    {
+      "placementId": "1",
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "dffe4fgfrews3f",
+            "placementId": "1",
+            "campaignId": 2324,
+            "isProof": true
+          },
+          "elements": {
+            "title": "Iterable Coffee Shoppe",
+            "body": "SAVE 15% OFF NOW",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [{
+              "id": "reward-button",
+              "title": "REDEEM MEOW",
+              "action": {
+                "type": "openUrl",
+                "data": "https://www.google.com"
+              }
+            }],
+            "text": [{
+              "id": "body",
+              "text": "CATS RULE!!!",
+              "label": "label"
+            }]
+          },
+          "payload": {
+            "someKey": "someValue"
+          }
+        }
+      ]
+    }
+  ]
+}
