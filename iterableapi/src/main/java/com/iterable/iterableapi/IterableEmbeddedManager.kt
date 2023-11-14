@@ -1,7 +1,6 @@
 package com.iterable.iterableapi
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import android.content.Context
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
@@ -13,16 +12,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // endregion
 
     // region variables
-    //TODO: See if coalescing all the messages into one list making one source of truth for local messages can be done.
-    private var _messages = MutableLiveData<List<IterableEmbeddedMessage>>()
-    val messages: LiveData<List<IterableEmbeddedMessage>>
-        get() = _messages
-
     private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
-    private var actionHandler: EmbeddedMessageActionHandler? = null
-    private var updateHandler: EmbeddedMessageUpdateHandler? = null
-    private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
-    private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
+    private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
+    private var iterableApi: IterableApi
+    private var context: Context
 
     private var embeddedSessionManager = EmbeddedSessionManager()
 
@@ -34,46 +27,31 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
-        actionHandler: EmbeddedMessageActionHandler?,
-        updateHandler: EmbeddedMessageUpdateHandler?
+        iterableApi: IterableApi
     ) {
-        this.actionHandler = actionHandler
-        this.updateHandler = updateHandler
+        this.iterableApi = iterableApi
+        this.context = iterableApi.mainActivityContext
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)
     }
+
     // endregion
 
     // region getters and setters
 
-    //Add actionHandler to the list
-    public fun addActionHandler(actionHandler: EmbeddedMessageActionHandler) {
-        actionHandleListeners.add(actionHandler)
-    }
-
     //Add updateHandler to the list
-    public fun addUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun addUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.add(updateHandler)
     }
 
-    //Remove actionHandler from the list
-    public fun removeActionHandler(actionHandler: EmbeddedMessageActionHandler) {
-        actionHandleListeners.remove(actionHandler)
-    }
-
     //Remove updateHandler from the list
-    public fun removeUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun removeUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
     }
 
-    //Get the list of actionHandlers
-    public fun getActionHandlers(): List<EmbeddedMessageActionHandler> {
-        return actionHandleListeners
-    }
-
     //Get the list of updateHandlers
-    public fun getUpdateHandlers(): List<EmbeddedMessageUpdateHandler> {
+    public fun getUpdateHandlers(): List<IterableEmbeddedUpdateHandler> {
         return updateHandleListeners
     }
 
@@ -144,6 +122,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         })
     }
 
+    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
+        IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(clickedUrl), IterableActionSource.EMBEDDED)
+    }
+
     private fun broadcastSubscriptionInactive() {
         updateHandleListeners.forEach {
             IterableLogger.d(TAG, "Broadcasting subscription inactive to the views")
@@ -169,7 +151,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 localMessageList.add(it)
                 IterableApi.getInstance().trackEmbeddedMessageReceived(it)
             }
-            //TODO: Make a call to the updateHandler to notify that the message has been added
         }
 
         // Check for messages in the local list that are not in the remote list and remove them
@@ -190,10 +171,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         localMessageList.removeAll(messagesToRemove)
 
         this.localMessages = localMessageList
-        _messages.value = localMessageList
 
         if (localMessagesChanged) {
-            //TODO: Make a call to the updateHandler to notify that the message list has been updated
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
                 it.onMessagesUpdated()
@@ -216,11 +195,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
 // region interfaces
 
-public interface EmbeddedMessageActionHandler {
-    fun onTapAction(action: IterableAction)
-}
-
-public interface EmbeddedMessageUpdateHandler {
+public interface IterableEmbeddedUpdateHandler {
     fun onMessagesUpdated()
     fun onEmbeddedMessagingDisabled()
 }

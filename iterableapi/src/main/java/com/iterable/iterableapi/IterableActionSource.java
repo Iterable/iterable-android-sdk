@@ -11,5 +11,8 @@ public enum IterableActionSource {
     APP_LINK,
 
     /** In-App Message */
-    IN_APP
+    IN_APP,
+
+    /** Embedded Message */
+    EMBEDDED
 }
