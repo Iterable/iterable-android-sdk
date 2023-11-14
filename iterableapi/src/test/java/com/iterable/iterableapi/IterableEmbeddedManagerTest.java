@@ -90,18 +90,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
 
-        // Verify that the onMessagesUpdated method was called on the mock
         verify(mockHandler1, times(2)).onMessagesUpdated();
         verify(mockHandler2, times(2)).onMessagesUpdated();
-    }
-
-    @Test
-    public void testTrackEmbeddedMessageReceived() throws Exception {
-
-    }
-
-    @Test
-    public void testOnEmbeddedMessagingDisabled() throws Exception {
-
     }
 }
