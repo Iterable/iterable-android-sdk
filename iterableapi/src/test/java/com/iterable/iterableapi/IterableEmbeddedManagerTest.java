@@ -22,12 +22,6 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     private MockWebServer server;
     private PathBasedQueueDispatcher dispatcher;
 
-    private IterableEmbeddedUpdateHandler mockHandler;
-
-    private IterableEmbeddedManager embeddedManager;
-
-    private IterableApi iterableApi;
-
     @Before
     public void setUp() throws IOException {
         server = new MockWebServer();
