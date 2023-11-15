@@ -20,7 +20,7 @@ public class IterableAuthManager {
     private final IterableApi api;
     private final IterableAuthHandler authHandler;
     private final long expiringAuthTokenRefreshPeriod;
-
+    private final long scheduledRefreshPeriod = 10000;
     @VisibleForTesting
     Timer timer;
     private boolean hasFailedPriorAuth;
@@ -89,7 +89,7 @@ public class IterableAuthManager {
         } else {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
-            scheduleAuthTokenRefresh(10000);
+            scheduleAuthTokenRefresh(scheduledRefreshPeriod);
             authHandler.onTokenRegistrationFailed(new Throwable("Auth token null"));
             return;
         }
@@ -120,7 +120,7 @@ public class IterableAuthManager {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
             authHandler.onTokenRegistrationFailed(new Throwable("Auth token decode failure. Scheduling auth token refresh in 10 seconds..."));
             //TODO: Sync with configured time duration once feature is available.
-            scheduleAuthTokenRefresh(10000);
+            scheduleAuthTokenRefresh(scheduledRefreshPeriod);
         }
     }
 
