@@ -26,6 +26,7 @@ import okhttp3.mockwebserver.SocketPolicy;
 import static com.iterable.iterableapi.IterableTestUtils.createIterableApi;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
 
@@ -244,6 +245,26 @@ public class IterableApiResponseTest {
 
         // Await for the background tasks to complete
         signal.await(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testMaxRetriesOnMultipleInvalidJwtPayloads() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            stubAnyRequestReturningStatusCode(401, "{\"msg\":\"JWT Authorization header error\",\"code\":\"InvalidJwtPayload\"}");
+        }
+
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, null);
+        IterableRequestTask task = new IterableRequestTask();
+        task.execute(request);
+
+        RecordedRequest request1 = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest request3 = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest request4 = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest request5 = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest request6 = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest request7 = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNull("Request should be null since retries hit the max of 5", request7);
     }
 
     @Test
