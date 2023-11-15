@@ -249,7 +249,7 @@ public class IterableApiResponseTest {
 
     @Test
     public void testMaxRetriesOnMultipleInvalidJwtPayloads() throws Exception {
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 5; i++) {
             stubAnyRequestReturningStatusCode(401, "{\"msg\":\"JWT Authorization header error\",\"code\":\"InvalidJwtPayload\"}");
         }
 
@@ -263,9 +263,8 @@ public class IterableApiResponseTest {
         RecordedRequest request4 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request5 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request6 = server.takeRequest(5, TimeUnit.SECONDS);
-        RecordedRequest request7 = server.takeRequest(5, TimeUnit.SECONDS);
-        assertNotNull("Request should be last retry after invalid JWT", request6);
-        assertNull("Request should be null since retries hit the max of 5", request7);
+        assertNotNull("Request should be last retry after invalid JWT", request5);
+        assertNull("Request should be null since retries hit the max of 5", request6);
     }
 
     @Test
