@@ -110,7 +110,7 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
             }
             if (dataFields != null) {
-                dataFields.remove(IterableConstants.SHARED_PREFS_TRACKING_TYPE);
+                dataFields.remove(IterableConstants.SHARED_PREFS_EVENT_TYPE);
                 dataFields.remove(IterableConstants.KEY_EVENT_NAME);
             }
             requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
@@ -202,7 +202,7 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_TOTAL, total);
             requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
             if (dataFields != null) {
-                dataFields.remove(IterableConstants.SHARED_PREFS_TRACKING_TYPE);
+                dataFields.remove(IterableConstants.SHARED_PREFS_EVENT_TYPE);
                 requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             }
 

@@ -9,7 +9,7 @@ import androidx.annotation.Nullable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.iterable.iterableapi.util.LogicalExpressionEvaluator;
+import com.iterable.iterableapi.util.CriteriaCompletionChecker;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -75,15 +75,11 @@ public class AnonymousUserManager {
             newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
-            newDataObject.put(IterableConstants.SHARED_PREFS_TRACKING_TYPE, IterableConstants.TRACK_EVENT);
+            newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
             storeEventListToLocalStorage(newDataObject);
 
         } catch (JSONException e) {
             e.printStackTrace();
-        }
-
-        if (checkCriteriaCompletion()) {
-            createKnownUser();
         }
     }
 
@@ -97,15 +93,11 @@ public class AnonymousUserManager {
             newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.KEY_TOTAL, total);
-            newDataObject.put(IterableConstants.SHARED_PREFS_TRACKING_TYPE, IterableConstants.TRACK_PURCHASE);
+            newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_PURCHASE);
             storeEventListToLocalStorage(newDataObject);
 
         } catch (JSONException e) {
             e.printStackTrace();
-        }
-
-        if (checkCriteriaCompletion()) {
-            createKnownUser();
         }
     }
 
@@ -117,16 +109,12 @@ public class AnonymousUserManager {
             Gson gson = new GsonBuilder().create();
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_ITEMS, gson.toJsonTree(items).getAsJsonArray().toString());
-            newDataObject.put(IterableConstants.SHARED_PREFS_TRACKING_TYPE, IterableConstants.TRACK_UPDATE_CART);
+            newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_UPDATE_CART);
             newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
             storeEventListToLocalStorage(newDataObject);
 
         } catch (JSONException e) {
             e.printStackTrace();
-        }
-
-        if (checkCriteriaCompletion()) {
-            createKnownUser();
         }
     }
 
@@ -245,38 +233,20 @@ public class AnonymousUserManager {
     }
 
     private boolean checkCriteriaCompletion() {
-        boolean isCompleted = false;
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
 
         try {
             if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
-                JSONObject criteriaJsonObject = new JSONObject(criteriaData);
-                JSONArray criteriaList = criteriaJsonObject.getJSONArray("criteriaList");
-                LogicalExpressionEvaluator evaluator = new LogicalExpressionEvaluator();
-
-                for (int i = 0; i < localStoredEventList.length(); i++) {
-                    JSONObject localEventData = localStoredEventList.getJSONObject(i);
-                    JSONArray jsonArray = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
-                    for (int j = 0; j < jsonArray.length(); j++) {
-                        for (int k = 0; k < criteriaList.length(); k++) {
-                            boolean result = evaluator.compareData(
-                                    criteriaList.getJSONObject(k).getJSONObject("searchQuery"),
-                                    jsonArray.getJSONObject(j), localEventData);
-                            isCompleted = result;
-                            if (result) {
-                                break;
-                            }
-                        }
-                    }
-                }
+                CriteriaCompletionChecker checker = new CriteriaCompletionChecker();
+                return checker.getMatchedCriteria(criteriaData, localStoredEventList) != null;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return isCompleted;
+        return false;
     }
 
     private void createKnownUser() {
@@ -304,7 +274,7 @@ public class AnonymousUserManager {
             for (int i = 0; i < trackEventList.length(); i++) {
                 try {
                     JSONObject event = trackEventList.getJSONObject(i);
-                    String eventType = event.getString(IterableConstants.SHARED_PREFS_TRACKING_TYPE);
+                    String eventType = event.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
 
                     switch (eventType) {
                         case IterableConstants.TRACK_EVENT: {
@@ -383,6 +353,10 @@ public class AnonymousUserManager {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
         editor.apply();
+
+        if (checkCriteriaCompletion()) {
+            createKnownUser();
+        }
     }
 
     private JSONArray getEventListFromLocalStorage() {
