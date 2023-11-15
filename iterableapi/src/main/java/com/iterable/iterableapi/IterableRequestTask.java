@@ -340,7 +340,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             requestNewAuthTokenAndRetry(response);
         }
 
-        if(iterableApiRequest.failureCallback != null) {
+        if (iterableApiRequest.failureCallback != null) {
             iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
         }
     }
