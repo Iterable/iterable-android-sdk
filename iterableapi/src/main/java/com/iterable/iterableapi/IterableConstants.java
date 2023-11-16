@@ -119,7 +119,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_SESSION_NO = "number_of_sessions";
     public static final String SHARED_PREFS_LAST_SESSION = "last_session";
     public static final String SHARED_PREFS_FIRST_SESSION = "first_session";
-    public static final String SHARED_PREFS_EVENT_TYPE = "eventType";
+    public static final String SHARED_PREFS_EVENT_TYPE = "dataType";
     public static final String SHARED_PREFS_CRITERIA = "criteria";
     public static final String SHARED_PREFS_CRITERIA_LIST = "criteriaList";
     public static final String SHARED_PREFS_CRITERIA_TYPE = "dataType";
