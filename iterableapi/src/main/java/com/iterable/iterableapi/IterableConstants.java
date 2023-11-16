@@ -124,6 +124,8 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_CRITERIA_LIST = "criteriaList";
     public static final String SHARED_PREFS_CRITERIA_TYPE = "dataType";
     public static final String SHARED_PREFS_AGGREGATE_COUNT = "aggregateCount";
+    public static final String SHARED_PREFS_CRITERIA_ID = "anon_criteria_id";
+    public static final String SHARED_PREFS_PUSH_OPT_IN = "pushOptIn";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";

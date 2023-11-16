@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -232,7 +233,7 @@ public class AnonymousUserManager {
         }
     }
 
-    private boolean checkCriteriaCompletion() {
+    private Integer checkCriteriaCompletion() {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
@@ -240,24 +241,28 @@ public class AnonymousUserManager {
         try {
             if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
                 CriteriaCompletionChecker checker = new CriteriaCompletionChecker();
-                return checker.getMatchedCriteria(criteriaData, localStoredEventList) != null;
+                return checker.getMatchedCriteria(criteriaData, localStoredEventList);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return false;
+        return null;
     }
 
-    private void createKnownUser() {
+    private void createKnownUser(Integer criteriaId) {
         IterableApi.getInstance().setUserId(UUID.randomUUID().toString());
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
 
         try {
             if (!userData.isEmpty()) {
-                JSONObject userDataJson = new JSONObject(userData);
-                IterableApi.getInstance().updateUser(userDataJson);
+                JSONObject userSessionDataJson = new JSONObject(userData);
+                JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, criteriaId);
+                userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
+                userDataJson.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
+                IterableApi.getInstance().track(IterableConstants.SHARED_PREFS_ANON_SESSIONS, userDataJson);
             }
 
         } catch (JSONException e) {
@@ -354,8 +359,9 @@ public class AnonymousUserManager {
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
         editor.apply();
 
-        if (checkCriteriaCompletion()) {
-            createKnownUser();
+        Integer criteriaId = checkCriteriaCompletion();
+        if (criteriaId != null) {
+            createKnownUser(criteriaId);
         }
     }
 
@@ -382,5 +388,10 @@ public class AnonymousUserManager {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(new Date());
+    }
+
+    private boolean getPushStatus() {
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(IterableApi.getInstance().getMainActivityContext());
+        return notificationManagerCompat.areNotificationsEnabled();
     }
 }
