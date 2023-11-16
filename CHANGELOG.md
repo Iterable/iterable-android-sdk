@@ -14,7 +14,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.4.17](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.17)
 #### Added
-- `IterableAuthManager` now fetches and stores locally new JWT token
+- when JWT is invalid, `IterableAuthManager` is updated to fetch and store a new JWT token locally 
 - `IterableRequestTask` now has a retry mechanism that fetches a new JWT token and retries the request if JWT is invalid
 - retries are capped at a max of 5
 
