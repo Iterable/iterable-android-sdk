@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.5.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.5.0-beta1)
+
 ## [3.4.17](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.17)
 #### Added
 - when JWT is invalid, `IterableAuthManager` is updated to fetch and store a new JWT token locally 

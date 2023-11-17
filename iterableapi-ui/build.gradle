@@ -48,7 +48,7 @@ ext {
     siteUrl = 'https://github.com/Iterable/iterable-android-sdk'
     gitUrl = 'https://github.com/Iterable/iterable-android-sdk.git'
 
-    libraryVersion = '3.4.17'
+    libraryVersion = '3.5.0-beta1'
 
     developerId = 'davidtruong'
     developerName = 'David Truong'
