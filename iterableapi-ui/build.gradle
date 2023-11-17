@@ -13,6 +13,13 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    publishing {
+        multipleVariants {
+            allVariants()
+            withJavadocJar()
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -39,24 +46,8 @@ dependencies {
 }
 
 ext {
-    publishedGroupId = 'com.iterable'
     libraryName = 'iterableapi-ui'
-    artifact = 'iterableapi-ui'
-
-    libraryDescription = 'Iterable Android SDK - UI'
-
-    siteUrl = 'https://github.com/Iterable/iterable-android-sdk'
-    gitUrl = 'https://github.com/Iterable/iterable-android-sdk.git'
-
     libraryVersion = '3.4.17'
-
-    developerId = 'davidtruong'
-    developerName = 'David Truong'
-    developerEmail = 'dt@iterable.com'
-
-    licenseName = 'The Apache Software License, Version 2.0'
-    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-    allLicenses = ["Apache-2.0"]
 }
 
 if (hasProperty("mavenPublishEnabled")) {

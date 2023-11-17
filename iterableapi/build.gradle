@@ -5,7 +5,7 @@ apply plugin: 'checkstyle'
 
 android {
     compileSdkVersion 33
-    buildToolsVersion '30.0.3'
+    buildToolsVersion '33.0.2'
 
     namespace 'com.iterable.iterableapi'
     testNamespace 'iterable.com.iterableapi'
@@ -22,6 +22,13 @@ android {
         buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.4.17\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    publishing {
+        multipleVariants {
+            allVariants()
+            withJavadocJar()
+        }
     }
 
     buildTypes {
@@ -75,24 +82,8 @@ dependencies {
 }
 
 ext {
-    publishedGroupId = 'com.iterable'
     libraryName = 'iterableapi'
-    artifact = 'iterableapi'
-
-    libraryDescription = 'Iterable Android SDK'
-
-    siteUrl = 'https://github.com/Iterable/iterable-android-sdk'
-    gitUrl = 'https://github.com/Iterable/iterable-android-sdk.git'
-
     libraryVersion = '3.4.17'
-
-    developerId = 'davidtruong'
-    developerName = 'David Truong'
-    developerEmail = 'dt@iterable.com'
-
-    licenseName = 'The Apache Software License, Version 2.0'
-    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-    allLicenses = ["Apache-2.0"]
 }
 
 if (hasProperty("mavenPublishEnabled")) {
