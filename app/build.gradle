@@ -83,6 +83,7 @@ dependencies {
 
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
 }
 
 task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
