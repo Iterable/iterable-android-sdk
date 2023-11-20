@@ -31,7 +31,6 @@ android {
         }
 
         debug {
-            testCoverageEnabled true
         }
     }
 
