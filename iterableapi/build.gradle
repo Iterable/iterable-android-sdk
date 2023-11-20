@@ -37,6 +37,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
+            enableAndroidTestCoverage true
             multiDexEnabled true
         }
     }
