@@ -118,7 +118,7 @@ jobs:
 
       - run: bash <(curl -s https://codecov.io/bash)
       - run: ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugTestReport/jacocoDebugTestReport.xml --input-type jacoco -d
-      - run: ./cc-test-reporter format-coverage iterableapi/build/reports/coverage/debug/report.xml --input-type jacoco -d
+      - run: ./cc-test-reporter format-coverage iterableapi/build/reports/coverage/androidTest/debug/connected/report.xml --input-type jacoco -d
       - run: ./cc-test-reporter format-coverage iterableapi/build/jacoco/jacoco.xml --input-type jacoco -d
       - run: ./cc-test-reporter format-coverage app/build/reports/jacoco/jacocoDebugAndroidTestReport/jacocoDebugAndroidTestReport.xml --input-type jacoco -d
       - run: ./cc-test-reporter upload-coverage

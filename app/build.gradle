@@ -171,5 +171,5 @@ task jacocoDebugAndroidTestReport(type: JacocoReport, dependsOn: ['connectedChec
     classDirectories.from = files([debugTree])
     additionalSourceDirs.from = files([sdkSrc, sdkUiSrc])
     additionalClassDirs.from = files([sdkTree, sdkUiTree])
-    executionData.from = fileTree(dir: "$buildDir", include: "outputs/code_coverage/debugAndroidTest/connected/*.ec")
+    executionData.from = fileTree(dir: "$buildDir", include: "outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
 }
