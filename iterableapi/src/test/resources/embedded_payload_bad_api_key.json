@@ -1,0 +1,8 @@
+{
+  "msg": "Invalid API key",
+  "code": "BadApiKey",
+  "params": {
+    "ip": "174.29.133.166",
+    "endpoint": "\/api\/inApp\/getMessages"
+  }
+}
