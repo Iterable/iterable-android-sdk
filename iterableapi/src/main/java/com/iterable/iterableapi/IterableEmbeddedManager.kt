@@ -83,8 +83,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 val remoteMessageList: MutableList<IterableEmbeddedMessage> = ArrayList()
 
                 val placementArray = data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
-                val placement = placementArray.getJSONObject(0)
-                val messagesArray = placement.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
+                val placement = placementArray?.getJSONObject(0)
+                val messagesArray = placement?.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE)
 
                 if (messagesArray != null) {
                     for (i in 0 until messagesArray.length()) {
