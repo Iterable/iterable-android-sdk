@@ -48,15 +48,15 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
-        assertEquals(1, embeddedManager.getMessages("0").size());
-        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages("0").get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
 
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_2.json")));
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
 
-        assertEquals(1, embeddedManager.getMessages("1").size());
-        assertEquals("dffe4fgfrews3f", embeddedManager.getMessages("1").get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("dffe4fgfrews3f", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
     }
 
     @Test
@@ -66,19 +66,19 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
-        assertEquals(1, embeddedManager.getMessages("0").size());
-        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages("0").get(0).getMetadata().getMessageId());
-        assertEquals(1, embeddedManager.getMessages("1").size());
-        assertEquals("faert442rjasiri99", embeddedManager.getMessages("1").get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("faert442rjasiri99", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
 
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_2.json")));
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
-        assertEquals(1, embeddedManager.getMessages("1").size());
-        assertEquals("ewsd3fdrtj6ty", embeddedManager.getMessages("1").get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("ewsd3fdrtj6ty", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
 
-        assertEquals(1, embeddedManager.getMessages("2").size());
-        assertEquals("grewdvb54ut87y", embeddedManager.getMessages("2").get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(2L).size());
+        assertEquals("grewdvb54ut87y", embeddedManager.getMessages(2L).get(0).getMetadata().getMessageId());
     }
 
     @Test
@@ -88,10 +88,10 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
-        assertEquals(1, embeddedManager.getMessages("0").size());
-        assertEquals(1, embeddedManager.getMessages("1").size());
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
         embeddedManager.reset();
-        assertEquals(0, embeddedManager.getMessages("0").size());
-        assertEquals(0, embeddedManager.getMessages("1").size());
+        assertEquals(0, embeddedManager.getMessages(0L).size());
+        assertEquals(0, embeddedManager.getMessages(1L).size());
     }
 }

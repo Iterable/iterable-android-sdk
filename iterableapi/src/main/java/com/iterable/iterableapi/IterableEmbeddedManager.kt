@@ -12,8 +12,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // endregion
 
     // region variables
-    private var localPlacementMessagesMap = mutableMapOf<String, List<IterableEmbeddedMessage>>()
-    private var placementIds = mutableListOf<String>()
+    private var localPlacementMessagesMap = mutableMapOf<Long, List<IterableEmbeddedMessage>>()
+    private var placementIds = mutableListOf<Long>()
 
     private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
     private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
@@ -67,7 +67,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // region public methods
 
     //Gets the list of embedded messages in memory without syncing
-    fun getMessages(placementId: String?): List<IterableEmbeddedMessage>? {
+    fun getMessages(placementId: Long?): List<IterableEmbeddedMessage>? {
         return localPlacementMessagesMap[placementId]
     }
 
@@ -80,7 +80,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    fun getPlacementIds(): List<String> {
+    private fun getPlacementIds(): List<Long> {
         return placementIds
     }
 
@@ -138,7 +138,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     private fun updateLocalMessages(
-        placementId: String,
+        placementId: Long,
         remoteMessageList: List<IterableEmbeddedMessage>
     ) {
         IterableLogger.printInfo()
