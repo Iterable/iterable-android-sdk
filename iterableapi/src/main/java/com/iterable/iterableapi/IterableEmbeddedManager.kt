@@ -1,5 +1,6 @@
 package com.iterable.iterableapi
 
+import android.content.Context
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
@@ -14,12 +15,12 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var localPlacementMessagesMap = mutableMapOf<String, List<IterableEmbeddedMessage>>()
     private var placementIds = mutableListOf<String>()
 
-    private var actionHandler: EmbeddedMessageActionHandler? = null
-    private var updateHandler: EmbeddedMessageUpdateHandler? = null
-    private var actionHandleListeners = mutableListOf<EmbeddedMessageActionHandler>()
-    private var updateHandleListeners = mutableListOf<EmbeddedMessageUpdateHandler>()
+    private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
+    private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
+    private var iterableApi: IterableApi
+    private var context: Context
 
-    var embeddedSessionManager = EmbeddedSessionManager()
+    private var embeddedSessionManager = EmbeddedSessionManager()
 
     private var activityMonitor: IterableActivityMonitor? = null
 
@@ -29,47 +30,36 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     //Constructor of this class with actionHandler and updateHandler
     public constructor(
-        actionHandler: EmbeddedMessageActionHandler?,
-        updateHandler: EmbeddedMessageUpdateHandler?
+        iterableApi: IterableApi
     ) {
-        this.actionHandler = actionHandler
-        this.updateHandler = updateHandler
+        this.iterableApi = iterableApi
+        this.context = iterableApi.mainActivityContext
         activityMonitor = IterableActivityMonitor.getInstance()
         activityMonitor?.addCallback(this)
     }
+
     // endregion
 
     // region getters and setters
 
-    //Add actionHandler to the list
-    public fun addActionHandler(actionHandler: EmbeddedMessageActionHandler) {
-        actionHandleListeners.add(actionHandler)
-    }
-
     //Add updateHandler to the list
-    public fun addUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun addUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.add(updateHandler)
     }
 
-    //Remove actionHandler from the list
-    public fun removeActionHandler(actionHandler: EmbeddedMessageActionHandler) {
-        actionHandleListeners.remove(actionHandler)
-    }
-
     //Remove updateHandler from the list
-    public fun removeUpdateListener(updateHandler: EmbeddedMessageUpdateHandler) {
+    public fun removeUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
     }
 
-    //Get the list of actionHandlers
-    public fun getActionHandlers(): List<EmbeddedMessageActionHandler> {
-        return actionHandleListeners
+    //Get the list of updateHandlers
+    public fun getUpdateHandlers(): List<IterableEmbeddedUpdateHandler> {
+        return updateHandleListeners
     }
 
-    //Get the list of updateHandlers
-    public fun getUpdateHandlers(): List<EmbeddedMessageUpdateHandler> {
-        return updateHandleListeners
+    public fun getEmbeddedSessionManager(): EmbeddedSessionManager {
+        return embeddedSessionManager
     }
 
     // endregion
@@ -134,6 +124,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 }
             }
         })
+    }
+
+    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
+        IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(clickedUrl), IterableActionSource.EMBEDDED)
     }
 
     private fun broadcastSubscriptionInactive() {
@@ -201,11 +195,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
 // region interfaces
 
-public interface EmbeddedMessageActionHandler {
-    fun onTapAction(action: IterableAction)
-}
-
-public interface EmbeddedMessageUpdateHandler {
+public interface IterableEmbeddedUpdateHandler {
     fun onMessagesUpdated()
     fun onEmbeddedMessagingDisabled()
 }

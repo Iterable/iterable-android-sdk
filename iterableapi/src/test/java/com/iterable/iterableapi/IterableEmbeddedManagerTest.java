@@ -44,7 +44,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     @Test
     public void testSyncEmbeddedSinglePlacement() throws Exception {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_1.json")));
-        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().embeddedManager();
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
 
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
@@ -54,6 +54,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_2.json")));
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
+
         assertEquals(1, embeddedManager.getMessages("1").size());
         assertEquals("dffe4fgfrews3f", embeddedManager.getMessages("1").get(0).getMetadata().getMessageId());
     }
@@ -61,7 +62,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     @Test
     public void testSyncEmbeddedMultiplePlacements() throws Exception {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
-        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().embeddedManager();
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
 
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
@@ -83,7 +84,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     @Test
     public void testReset() throws Exception {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
-        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().embeddedManager();
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
 
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();

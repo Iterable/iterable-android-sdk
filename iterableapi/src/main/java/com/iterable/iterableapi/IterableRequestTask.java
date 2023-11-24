@@ -3,6 +3,8 @@ package com.iterable.iterableapi;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
@@ -38,11 +40,13 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
 
     int retryCount = 0;
+    boolean shouldRetryWhileJwtInvalid = true;
     IterableApiRequest iterableApiRequest;
 
     /**
      * Sends the given request to Iterable using a HttpUserConnection
      * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
+     *
      * @param params
      * @return
      */
@@ -52,6 +56,23 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         }
 
         return executeApiRequest(iterableApiRequest);
+    }
+
+    public void setShouldRetryWhileJwtInvalid(boolean shouldRetryWhileJwtInvalid) {
+        this.shouldRetryWhileJwtInvalid = shouldRetryWhileJwtInvalid;
+    }
+
+    private void retryRequestWithNewAuthToken(String newAuthToken) {
+        IterableApiRequest request = new IterableApiRequest(
+                iterableApiRequest.apiKey,
+                iterableApiRequest.resourcePath,
+                iterableApiRequest.json,
+                iterableApiRequest.requestType,
+                newAuthToken,
+                iterableApiRequest.legacyCallback);
+        IterableRequestTask requestTask = new IterableRequestTask();
+        requestTask.setShouldRetryWhileJwtInvalid(false);
+        requestTask.execute(request);
     }
 
     @WorkerThread
@@ -269,50 +290,75 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         return (key.equals(IterableConstants.HEADER_API_KEY)) || key.equals(IterableConstants.HEADER_SDK_AUTHORIZATION);
     }
 
+    private static final Handler handler = new Handler(Looper.getMainLooper());
+
     @Override
     protected void onPostExecute(IterableApiResponse response) {
-        boolean retryRequest = !response.success && response.responseCode >= 500;
 
-        if (retryRequest && retryCount <= MAX_RETRY_COUNT) {
-            final IterableRequestTask requestTask = new IterableRequestTask();
-            requestTask.setRetryCount(retryCount + 1);
-
-            long delay = 0;
-            if (retryCount > 2) {
-                delay = RETRY_DELAY_MS * retryCount;
-            }
-
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    requestTask.execute(iterableApiRequest);
-                }
-            }, delay);
+        if (shouldRetry(response)) {
+            retryRequestWithDelay();
             return;
         } else if (response.success) {
-            IterableApi.getInstance().getAuthManager().resetFailedAuth();
-            if (iterableApiRequest.successCallback != null) {
-                iterableApiRequest.successCallback.onSuccess(response.responseJson);
-            }
+            handleSuccessResponse(response);
         } else {
-            if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
-                IterableApi.getInstance().getAuthManager().requestNewAuthToken(true);
-            }
-            if (iterableApiRequest.failureCallback != null) {
-                iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
-            }
+            handleErrorResponse(response);
         }
+
         if (iterableApiRequest.legacyCallback != null) {
             iterableApiRequest.legacyCallback.execute(response.responseBody);
         }
         super.onPostExecute(response);
     }
 
+    private boolean shouldRetry(IterableApiResponse response) {
+        return !response.success && response.responseCode >= 500 && retryCount <= MAX_RETRY_COUNT;
+    }
+
+    private void retryRequestWithDelay() {
+        final IterableRequestTask requestTask = new IterableRequestTask();
+        requestTask.setRetryCount(retryCount + 1);
+
+        long delay = (retryCount > 2) ? RETRY_DELAY_MS * retryCount : 0;
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                requestTask.execute(iterableApiRequest);
+            }
+        }, delay);
+    }
+
+    private void handleSuccessResponse(IterableApiResponse response) {
+        IterableApi.getInstance().getAuthManager().resetFailedAuth();
+        if (iterableApiRequest.successCallback != null) {
+            iterableApiRequest.successCallback.onSuccess(response.responseJson);
+        }
+    }
+
+    private void handleErrorResponse(IterableApiResponse response) {
+        if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD) && shouldRetryWhileJwtInvalid) {
+            requestNewAuthTokenAndRetry(response);
+        }
+
+        if (iterableApiRequest.failureCallback != null) {
+            iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
+        }
+    }
+
+    private void requestNewAuthTokenAndRetry(IterableApiResponse response) {
+        IterableApi.getInstance().getAuthManager().requestNewAuthToken(false, data -> {
+            try {
+                String newAuthToken = data.getString("newAuthToken");
+                retryRequestWithNewAuthToken(newAuthToken);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     protected void setRetryCount(int count) {
         retryCount = count;
     }
-
 }
 
 /**
