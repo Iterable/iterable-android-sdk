@@ -49,6 +49,7 @@ public class IterableApi {
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
+    private IterableKeychain keychain;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -133,6 +134,19 @@ public class IterableApi {
             authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
         }
         return authManager;
+    }
+
+    @Nullable
+    IterableKeychain getKeychain() {
+        if (keychain == null) {
+            try {
+                keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
+            }
+        }
+
+        return keychain;
     }
 
     static void loadLastSavedConfiguration(Context context) {
@@ -321,6 +335,7 @@ public class IterableApi {
         }
 
         getInAppManager().reset();
+        getEmbeddedManager().reset();
         getAuthManager().clearRefreshTimer();
 
         apiClient.onLogout();
@@ -402,33 +417,33 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        try {
-            SharedPreferences.Editor editor = getPreferences().edit();
-            editor.putString(IterableConstants.SHARED_PREFS_EMAIL_KEY, _email);
-            editor.putString(IterableConstants.SHARED_PREFS_USERID_KEY, _userId);
-            editor.putString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, _authToken);
-            editor.commit();
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while persisting email/userId", e);
+        IterableKeychain iterableKeychain = getKeychain();
+        if (iterableKeychain != null) {
+            iterableKeychain.saveEmail(_email);
+            iterableKeychain.saveUserId(_userId);
+            iterableKeychain.saveAuthToken(_authToken);
+        } else {
+            IterableLogger.e(TAG, "Shared preference creation failed. ");
         }
     }
 
     private void retrieveEmailAndUserId() {
-        try {
-            SharedPreferences prefs = getPreferences();
-            _email = prefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null);
-            _userId = prefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null);
-            _authToken = prefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null);
-            if (config.authHandler != null) {
-                if (_authToken != null) {
-                    getAuthManager().queueExpirationRefresh(_authToken);
-                } else {
-                    IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
-                    getAuthManager().scheduleAuthTokenRefresh(10000);
-                }
+        IterableKeychain iterableKeychain = getKeychain();
+        if (iterableKeychain != null) {
+            _email = iterableKeychain.getEmail();
+            _userId = iterableKeychain.getUserId();
+            _authToken = iterableKeychain.getAuthToken();
+        } else {
+            IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
+        }
+
+        if (config.authHandler != null) {
+            if (_authToken != null) {
+                getAuthManager().queueExpirationRefresh(_authToken);
+            } else {
+                IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
+                getAuthManager().scheduleAuthTokenRefresh(10000);
             }
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error while retrieving email/userId/authToken", e);
         }
     }
 
@@ -579,7 +594,9 @@ public class IterableApi {
         }
 
         if (sharedInstance.embeddedManager == null) {
-            sharedInstance.embeddedManager = new IterableEmbeddedManager(null, null);
+            sharedInstance.embeddedManager = new IterableEmbeddedManager(
+                    sharedInstance
+            );
         }
 
         loadLastSavedConfiguration(context);
@@ -643,9 +660,9 @@ public class IterableApi {
     }
 
     @NonNull
-    public IterableEmbeddedManager embeddedManager() {
+    public IterableEmbeddedManager getEmbeddedManager() {
         if (embeddedManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getFlexManager(). " +
+            throw new RuntimeException("IterableApi must be initialized before calling getEmbeddedManager(). " +
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return embeddedManager;

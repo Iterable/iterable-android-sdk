@@ -486,13 +486,13 @@ class IterableApiClient {
             sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getEnd().getTime());
 
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION, sessionJson);
-            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, session.getPlacementId());
 
             if (session.getImpressions() != null) {
                 JSONArray impressionsJsonArray = new JSONArray();
                 for (IterableEmbeddedImpression impression : session.getImpressions()) {
                     JSONObject impressionJson = new JSONObject();
                     impressionJson.put(IterableConstants.KEY_MESSAGE_ID, impression.getMessageId());
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, impression.getPlacementId());
                     impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT, impression.getDisplayCount());
                     impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION, impression.getDuration());
                     impressionsJsonArray.put(impressionJson);

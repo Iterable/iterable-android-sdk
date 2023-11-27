@@ -1,0 +1,80 @@
+{
+  "placements": [
+    {
+      "placementId": "1",
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "ewsd3fdrtj6ty",
+            "placementId": "1",
+            "campaignId": 19853,
+            "isProof": true
+          },
+          "elements": {
+            "title": "Subscribe to the newsletter",
+            "body": "Learn all about colorado kittens",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [{
+              "id": "reward-button",
+              "title": "REDEEM MEOW",
+              "action": {
+                "type": "openUrl",
+                "data": "https://www.google.com"
+              }
+            }],
+            "text": [{
+              "id": "body",
+              "text": "CATS RULE!!!",
+              "label": "label"
+            }]
+          },
+          "payload": {
+            "someKey": "someValue"
+          }
+        }
+      ]
+    },
+    {
+      "placementId": "2",
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "grewdvb54ut87y",
+            "placementId": "0",
+            "campaignId": 1910,
+            "isProof": true
+          },
+          "elements": {
+            "title": "Experience the great outdoors",
+            "body": "Trips are going fast!",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [{
+              "id": "reward-button",
+              "title": "REDEEM MEOW",
+              "action": {
+                "type": "openUrl",
+                "data": "https://www.google.com"
+              }
+            }],
+            "text": [{
+              "id": "body",
+              "text": "CATS RULE!!!",
+              "label": "label"
+            }]
+          },
+          "payload": {
+            "someKey": "someValue"
+          }
+        }
+      ]
+    }
+  ]
+}
