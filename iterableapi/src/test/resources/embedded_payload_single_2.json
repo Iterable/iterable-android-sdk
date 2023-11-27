@@ -1,12 +1,12 @@
 {
   "placements": [
     {
-      "placementId": "1",
+      "placementId": 1,
       "embeddedMessages": [
         {
           "metadata": {
             "messageId": "dffe4fgfrews3f",
-            "placementId": "1",
+            "placementId": 1,
             "campaignId": 2324,
             "isProof": true
           },
