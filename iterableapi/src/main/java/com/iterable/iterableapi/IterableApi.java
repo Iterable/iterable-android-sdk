@@ -227,25 +227,52 @@ public class IterableApi {
     }
 
     /**
-     * A package-private method to get a list of Embedded Messages from Iterable;
-     * Passes the result to the callback.
-     * To get list of messages as a list of EmbeddedMessages in memory, use
-     * {@link IterableEmbeddedManager#getEmbeddedMessages()} instead
+     * Gets a list of placements for the list of placement ids passed in from Iterable;
+     * passes the result to the callback.
      *
+     * @param placementIds array of placement ids
      * @param onCallback
      */
-    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+
+    public void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
         apiClient.getEmbeddedMessages(placementIds, onCallback);
     }
 
-    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    /**
+     * Gets a list of placements for the list of placement ids passed in from Iterable;
+     * passes the result to the success or failure callback.
+     *
+     * @param placementIds
+     * @param onSuccess
+     * @param onFailure
+     */
+
+    public void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
         apiClient.getEmbeddedMessages(placementIds, onSuccess, onFailure);
+    }
+
+    /**
+     * A package-private method to get a list of Embedded Messages from Iterable;
+     * Passes the result to the success or failure callback.
+     * Used by the IterableEmbeddedManager.
+     *
+     * To get list of messages as a list of EmbeddedMessages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(String)} instead
+     *
+     * @param onSuccess
+     * @param onFailure
+     */
+    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(null, onSuccess, onFailure);
     }
 
     /**

@@ -243,7 +243,6 @@ class IterableApiClient {
             }
 
             String path = pathBuilder.toString();
-            IterableLogger.d("IterableApiClient", path);
             sendGetRequest(path, requestJSON, onCallback);
         } catch (JSONException e) {
             e.printStackTrace();
