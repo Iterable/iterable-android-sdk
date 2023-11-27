@@ -2,6 +2,11 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
@@ -93,5 +98,65 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         embeddedManager.reset();
         assertEquals(0, embeddedManager.getMessages(0L).size());
         assertEquals(0, embeddedManager.getMessages(1L).size());
+    }
+
+    @Test
+    public void testOnMessagesUpdated() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler1 = mock(IterableEmbeddedUpdateHandler.class);
+        IterableEmbeddedUpdateHandler mockHandler2 = mock(IterableEmbeddedUpdateHandler.class);
+
+        embeddedManager.addUpdateListener(mockHandler1);
+        embeddedManager.addUpdateListener(mockHandler2);
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_2.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        verify(mockHandler1, times(4)).onMessagesUpdated();
+        verify(mockHandler2, times(4)).onMessagesUpdated();
+    }
+
+    @Test
+    public void testTrackEmbeddedMessageReceived() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+
+        IterableApi iterableApiSpy = spy(IterableApi.getInstance());
+        IterableApi.sharedInstance = iterableApiSpy;
+
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        verify(iterableApiSpy).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(0));
+        verify(iterableApiSpy).trackEmbeddedMessageReceived(embeddedManager.getMessages(1L).get(0));
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_3.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        verify(iterableApiSpy).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(1));
+        verify(iterableApiSpy, never()).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(0));
+        verify(iterableApiSpy, never()).trackEmbeddedMessageReceived(embeddedManager.getMessages(1L).get(0));
+    }
+
+    @Test
+    public void testOnEmbeddedMessagingDisabled() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(401).setBody(IterableTestUtils.getResourceString("embedded_payload_bad_api_key.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler1 = mock(IterableEmbeddedUpdateHandler.class);
+
+        embeddedManager.addUpdateListener(mockHandler1);
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        verify(mockHandler1).onEmbeddedMessagingDisabled();
     }
 }
