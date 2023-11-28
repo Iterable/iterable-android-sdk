@@ -127,6 +127,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
                 // This is an action:// URL, pass that to the custom action handler
                 val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ACTION, "")
+                IterableLogger.d("IterableEmbeddedManager", "ACTION NAME: " + actionName)
                 IterableActionRunner.executeAction(
                     context,
                     IterableAction.actionCustomAction(actionName),
