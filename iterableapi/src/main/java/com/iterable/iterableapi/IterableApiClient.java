@@ -218,7 +218,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -237,7 +237,7 @@ class IterableApiClient {
             }
 
             if (placementIds != null) {
-                for(String placementId : placementIds) {
+                for(Long placementId : placementIds) {
                     pathBuilder.append("&placementIds=").append(placementId);
                 }
             }
@@ -249,7 +249,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -269,7 +269,7 @@ class IterableApiClient {
             }
 
             if (placementIds != null) {
-                for(String placementId : placementIds) {
+                for(Long placementId : placementIds) {
                     pathBuilder.append("&placementIds=").append(placementId);
                 }
             }

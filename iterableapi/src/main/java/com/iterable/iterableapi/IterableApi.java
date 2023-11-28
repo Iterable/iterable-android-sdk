@@ -248,7 +248,7 @@ public class IterableApi {
      * @param onCallback
      */
 
-    public void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -264,7 +264,7 @@ public class IterableApi {
      * @param onFailure
      */
 
-    public void getEmbeddedMessages(@Nullable String[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -277,7 +277,7 @@ public class IterableApi {
      * Used by the IterableEmbeddedManager.
      *
      * To get list of messages as a list of EmbeddedMessages in memory, use
-     * {@link IterableEmbeddedManager#getMessages(String)} instead
+     * {@link IterableEmbeddedManager#getMessages(Long)} instead
      *
      * @param onSuccess
      * @param onFailure
