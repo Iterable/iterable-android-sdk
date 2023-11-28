@@ -1,12 +1,12 @@
 {
   "placements": [
     {
-      "placementId": "0",
+      "placementId": 0,
       "embeddedMessages": [
         {
           "metadata": {
             "messageId": "doibjo4590340oidiobnw",
-            "placementId": "0",
+            "placementId": 0,
             "campaignId": 2324,
             "isProof": true
           },
@@ -39,12 +39,12 @@
       ]
     },
     {
-      "placementId": "1",
+      "placementId": 1,
       "embeddedMessages": [
         {
           "metadata": {
             "messageId": "faert442rjasiri99",
-            "placementId": "0",
+            "placementId": 1,
             "campaignId": 132,
             "isProof": true
           },

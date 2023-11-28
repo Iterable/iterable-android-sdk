@@ -1,12 +1,12 @@
 {
   "placements": [
     {
-      "placementId": "1",
+      "placementId": 1,
       "embeddedMessages": [
         {
           "metadata": {
             "messageId": "ewsd3fdrtj6ty",
-            "placementId": "1",
+            "placementId": 1,
             "campaignId": 19853,
             "isProof": true
           },
@@ -39,12 +39,12 @@
       ]
     },
     {
-      "placementId": "2",
+      "placementId": 2,
       "embeddedMessages": [
         {
           "metadata": {
             "messageId": "grewdvb54ut87y",
-            "placementId": "0",
+            "placementId": 2,
             "campaignId": 1910,
             "isProof": true
           },
