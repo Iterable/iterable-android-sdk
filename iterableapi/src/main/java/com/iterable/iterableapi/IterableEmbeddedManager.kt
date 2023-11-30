@@ -88,9 +88,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
-        var testPlacements: Array<Long> = arrayOf(83)
+        //var testPlacements: Array<Long> = arrayOf(83)
 
-        IterableApi.sharedInstance.getEmbeddedMessages(testPlacements,SuccessHandler { data ->
+        IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
             try {
                 val placementsArray = data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
