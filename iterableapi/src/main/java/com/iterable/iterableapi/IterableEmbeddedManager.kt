@@ -88,6 +88,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
+        //var testPlacements: Array<Long> = arrayOf(83, 84)
+
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
             try {

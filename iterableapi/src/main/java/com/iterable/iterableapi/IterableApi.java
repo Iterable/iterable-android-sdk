@@ -269,7 +269,7 @@ public class IterableApi {
             return;
         }
         apiClient.getEmbeddedMessages(placementIds, onSuccess, onFailure);
-    }
+    }q
 
     /**
      * A package-private method to get a list of Embedded Messages from Iterable;
