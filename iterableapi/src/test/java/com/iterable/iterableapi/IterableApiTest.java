@@ -748,21 +748,21 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSetEmailWithAuthToken() {
         String email = "test@example.com";
-        String auth_token = "authToken";
+        String authToken = "authToken";
 
         assertNotNull(mockSuccessHandler);
         assertNotNull(mockFailureHandler);
-        assertEquals(email,"test@example.com");
-        assertEquals(auth_token,"authToken");
+        assertEquals(email, "test@example.com");
+        assertEquals(authToken, "authToken");
 
-        IterableApi.getInstance().setEmail(email, auth_token, mockSuccessHandler, mockFailureHandler);
+        IterableApi.getInstance().setEmail(email, authToken, mockSuccessHandler, mockFailureHandler);
         verifyNoMoreInteractions(mockSuccessHandler);
     }
 
     @Test
     public void testSetEmailWithoutAuthToken() {
         String email = "test@example.com";
-        assertEquals(email,"test@example.com");
+        assertEquals(email, "test@example.com");
         assertNotNull(mockSuccessHandler);
         assertNotNull(mockFailureHandler);
 
