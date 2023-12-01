@@ -51,11 +51,11 @@ public final class IterableConstants {
     public static final String KEY_SUB_MESSAGE          = "subscribedMessageTypeIds";
     public static final String KEY_USER_ID              = "userId";
     public static final String KEY_USER                 = "user";
-    public static final String KEY_USER_KEY             = "userKey";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_EMBEDDED_SESSION_ID     = "id";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
+    public static final String KEY_FIRETV = "FireTV";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -79,7 +79,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "embedded-messaging/messages";
     public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
     public static final String ENDPOINT_TRACK_EMBEDDED_CLICK   = "embedded-messaging/events/click";
-    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/impression";
+    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/session";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -287,6 +287,7 @@ public final class IterableConstants {
 
     public static final String ITBL_KEY_SDK_VERSION = "SDKVersion";
     public static final String ITBL_PLATFORM_ANDROID = "Android";
+    public static final String ITBL_PLATFORM_OTT = "OTT";
     public static final String ITBL_KEY_SDK_VERSION_NUMBER = BuildConfig.ITERABLE_SDK_VERSION;
     public static final String ITBL_SYSTEM_VERSION = "systemVersion";
 

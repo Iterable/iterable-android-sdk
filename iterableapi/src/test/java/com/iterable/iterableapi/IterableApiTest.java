@@ -1,7 +1,11 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.net.Uri;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -161,6 +165,42 @@ public class IterableApiTest extends BaseTest {
         reInitIterableApi();
         IterableApi.initialize(getContext(), "apiKey");
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
+    }
+
+    @Test
+    public void testSetEmailWithCallback() {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String email = "test@example.com";
+        IterableApi.getInstance().setEmail(email, null, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertTrue(true); // callback should be called with success
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertTrue(false); // callback should be called with failure
+            }
+        });
+    }
+
+    @Test
+    public void testSetUserIdWithCallback() {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        String userId = "test_user_id";
+        IterableApi.getInstance().setUserId(userId, null, new IterableHelper.SuccessHandler() {
+            @Override
+            public void onSuccess(@NonNull JSONObject data) {
+                assertTrue(true); // callback should be called with success
+            }
+        }, new IterableHelper.FailureHandler() {
+            @Override
+            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                assertTrue(false); // callback should be called with failure
+            }
+        });
     }
 
     @Test
@@ -398,7 +438,8 @@ public class IterableApiTest extends BaseTest {
         Uri uri = Uri.parse(getInAppMessagesRequest.getRequestUrl().toString());
         assertEquals("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, uri.getPath());
         assertEquals("10", uri.getQueryParameter(IterableConstants.ITERABLE_IN_APP_COUNT));
-        assertEquals(IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
+        assertEquals(DeviceInfoUtils.isFireTV(getContext().getPackageManager()) ? IterableConstants.ITBL_PLATFORM_OTT : IterableConstants.ITBL_PLATFORM_ANDROID, uri.getQueryParameter(IterableConstants.KEY_PLATFORM));
+
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, uri.getQueryParameter(IterableConstants.ITBL_KEY_SDK_VERSION));
         assertNotNull(uri.getQueryParameter(IterableConstants.ITBL_SYSTEM_VERSION));
         assertEquals(getContext().getPackageName(), uri.getQueryParameter(IterableConstants.KEY_PACKAGE_NAME));
@@ -663,11 +704,13 @@ public class IterableApiTest extends BaseTest {
         List<IterableEmbeddedImpression> impressions = new ArrayList<>();
         impressions.add(new IterableEmbeddedImpression(
                 "messageId1",
+                0,
                 1,
                 2.0f
         ));
         impressions.add(new IterableEmbeddedImpression(
                 "messageId2",
+                0,
                 3,
                 6.5f
         ));
@@ -675,7 +718,6 @@ public class IterableApiTest extends BaseTest {
         IterableEmbeddedSession session = new IterableEmbeddedSession(
                 sessionStartTime,
                 new Date(sessionStartTime.getTime() + 3600),
-                "0",
                 impressions);
 
         IterableApi.getInstance().trackEmbeddedSession(session);
@@ -688,7 +730,6 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(trackEmbeddedSessionRequest.getBody().readUtf8());
 
         // Check top-level fields
-        assertEquals("0", requestJson.getString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID));
         verifyDeviceInfo(requestJson);
 
         // Check session data
@@ -701,6 +742,7 @@ public class IterableApiTest extends BaseTest {
         JSONArray impressionsJsonArray = requestJson.getJSONArray(IterableConstants.ITERABLE_EMBEDDED_IMPRESSIONS);
         assertEquals(2, impressionsJsonArray.length());
         assertEquals("messageId1", impressionsJsonArray.getJSONObject(0).getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(0, impressionsJsonArray.getJSONObject(0).getLong(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID));
         assertEquals(1, impressionsJsonArray.getJSONObject(0).getInt(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT));
         assertEquals(2.0, impressionsJsonArray.getJSONObject(0).getDouble(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION));
     }

@@ -1,12 +1,12 @@
 {
   "placements": [
     {
-      "placementId": "0",
+      "placementId": 411,
       "embeddedMessages": [
         {
           "metadata": {
             "messageId": "doibjo4590340oidiobnw",
-            "placementId": "mbn8489b7ehycy",
+            "placementId": 411,
             "campaignId": 2324,
             "isProof": true
           }
