@@ -80,7 +80,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    private fun getPlacementIds(): List<Long> {
+    fun getPlacementIds(): List<Long> {
         return placementIds
     }
 
