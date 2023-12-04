@@ -44,10 +44,10 @@ class IterableEmbeddedView(
 
     private fun configure(view: View, config: IterableEmbeddedViewConfig?) {
 
-        val backgroundColor = config?.backgroundColor ?: defaultBackgroundColor
-        val borderWidth = config?.borderWidth ?: defaultBorderWidth
-        val borderColor = config?.borderColor ?: defaultBorderColor
-        val borderCornerRadius = config?.borderCornerRadius ?: defaultBorderCornerRadius
+        val backgroundColor = config?.backgroundColor.takeIf { it?.isNotEmpty() == true } ?: defaultBackgroundColor
+        val borderWidth = config?.borderWidth.takeIf { it != null && it > 0 } ?: defaultBorderWidth
+        val borderColor = config?.borderColor.takeIf { it?.isNotEmpty() == true } ?: defaultBorderColor
+        val borderCornerRadius = config?.borderCornerRadius.takeIf { it != null && it > 0 } ?: defaultBorderCornerRadius
 
         val gradientDrawable = GradientDrawable()
 
@@ -60,8 +60,8 @@ class IterableEmbeddedView(
     private fun bind(view: View, message: IterableEmbeddedMessage): View  {
         val embeddedMessageViewTitle: TextView = view.findViewById(R.id.embedded_message_title)
         val embeddedMessageViewBody: TextView = view.findViewById(R.id.embedded_message_body)
-        var embeddedMessageViewButton: TextView = view.findViewById(R.id.embedded_message_first_button)
-        var embeddedMessageViewButton2: TextView = view.findViewById(R.id.embedded_message_second_button)
+        val embeddedMessageViewButton: TextView = view.findViewById(R.id.embedded_message_first_button)
+        val embeddedMessageViewButton2: TextView = view.findViewById(R.id.embedded_message_second_button)
 
         embeddedMessageViewTitle.text = message.elements?.title
         embeddedMessageViewBody.text = message.elements?.body
