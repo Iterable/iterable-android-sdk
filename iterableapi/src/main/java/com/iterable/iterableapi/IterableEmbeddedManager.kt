@@ -15,7 +15,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var localPlacementMessagesMap = mutableMapOf<Long, List<IterableEmbeddedMessage>>()
     private var placementIds = mutableListOf<Long>()
 
-    private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
     private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
     private var iterableApi: IterableApi
     private var context: Context
