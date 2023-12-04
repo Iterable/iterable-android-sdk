@@ -1,102 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="358dp"
-    android:layout_height="150dp"
-    android:layout_gravity="center"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:layout_marginTop="12dp"
     android:layout_marginLeft="16dp"
-    android:layout_marginTop="24dp"
-    android:layout_marginRight="16dp"
-    android:layout_marginBottom="24dp"
+    android:layout_marginBottom="12dp"
     android:background="@drawable/banner_card_border"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/embedded_message_title"
-        android:layout_width="240dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="Try Premium"
-        android:textColor="@color/Secondary_Gray"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/embedded_message_body"
-        android:layout_width="179dp"
-        android:layout_height="32dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:text="Enjoy 14 days of Premium Subscription free"
-        android:textColor="@color/Secondary_Gray"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/embedded_message_title" />
-
-    <ImageView
-        android:layout_width="70dp"
-        android:layout_height="70dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
-        android:src="@drawable/fiterable_entertainment_popper"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <LinearLayout
-        android:id="@+id/embedded_message_button_container"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent">
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/embedded_message_title"
+                android:layout_width="240dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="Try Premium"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/embedded_message_body"
+                android:layout_width="179dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:text="Enjoy 14 days of Premium Subscription free" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/embedded_message_image"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:layout_marginEnd="16dp"
+            android:contentDescription="Flex kittens"
+            android:src="@drawable/fiterable_entertainment_popper" />
+
+    </LinearLayout>
+
+    <com.google.android.flexbox.FlexboxLayout
         android:layout_width="wrap_content"
-        android:layout_height="32dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/embedded_message_body"
-        app:layout_constraintVertical_bias="0.444">
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:flexWrap="wrap"
+        app:alignContent="flex_start"
+        app:alignItems="flex_start">
 
         <Button
             android:id="@+id/embedded_message_first_button"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginLeft="0dp"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/banner_button_background"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:backgroundTint="#6A266D"
             android:stateListAnimator="@null"
-            android:text="Turn On"
+            android:text="Try subscription"
             android:textAllCaps="false"
-            android:textColor="@color/white"
             app:cornerRadius="32dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/embedded_message_body"
-            app:layout_constraintVertical_bias="0.45" />
+            app:layout_flexBasisPercent="50%" />
 
         <Button
             android:id="@+id/embedded_message_second_button"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp"
-            android:background="@android:color/transparent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@android:color/transparent"
             android:stateListAnimator="@null"
-            android:text="Not now"
+            android:textColor="#6A266D"
+            android:text="Try subscription"
+            android:gravity="left"
             android:textAllCaps="false"
-            android:textColor="@color/banner_button"
-            app:cornerRadius="32dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/embedded_message_body"
-            app:layout_constraintVertical_bias="0.45"
-            android:layout_marginLeft="0dp" />
-    </LinearLayout>
+            app:cornerRadius="32dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.flexbox.FlexboxLayout>
+
+</LinearLayout>
