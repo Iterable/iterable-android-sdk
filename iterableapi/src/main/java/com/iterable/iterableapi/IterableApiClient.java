@@ -16,7 +16,6 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
@@ -237,7 +236,7 @@ class IterableApiClient {
             }
 
             if (placementIds != null) {
-                for(Long placementId : placementIds) {
+                for (Long placementId : placementIds) {
                     pathBuilder.append("&placementIds=").append(placementId);
                 }
             }
@@ -269,7 +268,7 @@ class IterableApiClient {
             }
 
             if (placementIds != null) {
-                for(Long placementId : placementIds) {
+                for (Long placementId : placementIds) {
                     pathBuilder.append("&placementIds=").append(placementId);
                 }
             }
