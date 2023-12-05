@@ -22,7 +22,7 @@ class IterableEmbeddedView(
     private val defaultBackgroundColor : Int by lazy  {
         when(viewType) {
             IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_background_color)
-            else -> ContextCompat.getColor(requireContext(), R.color.banner_border_color)
+            else -> ContextCompat.getColor(requireContext(), R.color.banner_background_color)
         }
     }
 
@@ -42,13 +42,23 @@ class IterableEmbeddedView(
         savedInstanceState: Bundle?
     ): View? {
 
-        val view = when (viewType) {
-            IterableEmbeddedViewType.BANNER -> inflater.inflate(R.layout.banner_view, container, false)
-            IterableEmbeddedViewType.CARD -> inflater.inflate(R.layout.card_view, container, false)
-            IterableEmbeddedViewType.NOTIFICATION -> inflater.inflate(R.layout.notification_view, container, false)
+         val view = when (viewType) {
+            IterableEmbeddedViewType.BANNER -> {
+                val bannerView = inflater.inflate(R.layout.banner_view, container, false)
+                bind(bannerView, message)
+                bannerView
+            }
+            IterableEmbeddedViewType.CARD -> {
+                val cardView = inflater.inflate(R.layout.banner_view, container, false)
+                bind(cardView, message)
+                cardView
+            }
+            IterableEmbeddedViewType.NOTIFICATION -> {
+                val notificationView = inflater.inflate(R.layout.notification_view, container, false)
+                bindNotificationView(notificationView, message)
+                notificationView
+            }
         }
-
-        bind(view, message)
 
         configure(view, config)
 
@@ -124,6 +134,65 @@ class IterableEmbeddedView(
         } else {
             embeddedMessageViewButton.visibility = View.GONE
             embeddedMessageViewButton2.visibility = View.GONE
+        }
+
+        return view
+    }
+
+    private fun bindNotificationView(view: View, message: IterableEmbeddedMessage): View  {
+        val embeddedMessageViewTitle: TextView = view.findViewById(R.id.embedded_message_title)
+        val embeddedMessageViewBody: TextView = view.findViewById(R.id.embedded_message_body)
+        val notificationButton: TextView = view.findViewById(R.id.notification_first_button)
+        val notificationButton2: TextView = view.findViewById(R.id.notification_second_button)
+
+        embeddedMessageViewTitle.text = message.elements?.title
+        embeddedMessageViewBody.text = message.elements?.body
+
+        val buttons = message.elements?.buttons
+
+        if (buttons != null) {
+            notificationButton.visibility = if (buttons.getOrNull(0)?.title == null) View.GONE else View.VISIBLE
+            notificationButton.text = buttons.getOrNull(0)?.title.orEmpty()
+
+            notificationButton.setOnClickListener {
+                IterableApi.getInstance().embeddedManager.handleEmbeddedClick(
+                    message,
+                    message.elements?.buttons?.get(0)?.id,
+                    message.elements?.buttons?.get(0)?.action?.data
+                )
+
+                IterableApi.getInstance().trackEmbeddedClick(
+                    message,
+                    message.elements?.buttons?.get(0)?.id,
+                    message.elements?.buttons?.get(0)?.action?.data
+                )
+            }
+
+            if (buttons.size > 1) {
+                notificationButton2.visibility = if (buttons[1].title == null) View.GONE else View.VISIBLE
+                notificationButton2.text = buttons[1].title.orEmpty()
+
+                notificationButton2.setOnClickListener {
+                    IterableApi.getInstance().embeddedManager.handleEmbeddedClick(
+                        message,
+                        message.elements?.buttons?.get(1)?.id,
+                        message.elements?.buttons?.get(1)?.action?.data
+                    )
+
+                    IterableApi.getInstance().trackEmbeddedClick(
+                        message,
+                        message.elements?.buttons?.get(1)?.id,
+                        message.elements?.defaultAction?.data
+                    )
+                }
+
+            } else {
+                notificationButton2.visibility = View.GONE
+            }
+
+        } else {
+            notificationButton.visibility = View.GONE
+            notificationButton2.visibility = View.GONE
         }
 
         return view

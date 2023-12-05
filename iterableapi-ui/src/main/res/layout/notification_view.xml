@@ -6,41 +6,35 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center_vertical"
     android:layout_marginTop="12dp"
-    android:layout_marginLeft="16dp"
     android:layout_marginBottom="12dp"
+    android:layout_marginStart="16dp"
     android:background="@drawable/notification_view_border"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_height="wrap_content"
-        android:layout_width="match_parent">
+        android:layout_width="wrap_content"
+        android:orientation="vertical">
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/embedded_message_title"
+            android:layout_width="240dp"
             android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/notification_default_title"
+            android:textSize="16sp"
+            android:textColor="@color/notification_text_color"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/embedded_message_title"
-                android:layout_width="240dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:text="Try Premium"
-                android:textSize="16sp"
-                android:textColor="@color/notification_text_color"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/embedded_message_body"
-                android:layout_width="179dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/notification_text_color"
-                android:text="Enjoy 14 days of Premium Subscription free" />
-
-        </LinearLayout>
+        <TextView
+            android:id="@+id/embedded_message_body"
+            android:layout_width="179dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/notification_text_color"
+            android:text="@string/notification_default_body" />
 
     </LinearLayout>
 
@@ -53,25 +47,25 @@
         app:alignItems="flex_start">
 
         <Button
-            android:id="@+id/embedded_message_first_button"
+            android:id="@+id/notification_first_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:background="@color/white"
             android:stateListAnimator="@null"
-            android:text="Try subscription"
+            android:text="@string/notification_first_button_default_text"
             android:textAllCaps="false"
             android:textColor="@color/notification_text_color"
             app:cornerRadius="32dp"
             app:layout_flexBasisPercent="50%" />
 
         <Button
-            android:id="@+id/embedded_message_second_button"
+            android:id="@+id/notification_second_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="@android:color/transparent"
             android:stateListAnimator="@null"
-            android:text="Try subscription"
+            android:text="@string/notification_second_button_default_text"
             android:textColor="@color/notification_text_color"
             android:gravity="left"
             android:textAllCaps="false"
