@@ -37,9 +37,12 @@
     <color name="embedded_message_border_green">#9FFF9C</color>
     <color name="embedded_message_text_color_green">#42FF3B</color>
 
-    <color name="notification_card_border_color">#C2F0FC</color>
-    <color name="notification_card_background_color">#E6FBFF</color>
-    <color name="notification_card_text_color">#2489A9</color>
+    <color name="notification_border_color">#C2F0FC</color>
+    <color name="notification_background_color">#E6FBFF</color>
+    <color name="notification_text_color">#2489A9</color>
+
     <color name="banner_button">#6A266D</color>
+    <color name="banner_background_color">#FFFFFF</color>
+    <color name="banner_border_color">#E0DEDF</color>
 
 </resources>

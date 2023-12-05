@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
@@ -18,9 +19,21 @@ class IterableEmbeddedView(
     private var config: IterableEmbeddedViewConfig?
 ): Fragment() {
 
-    private val defaultBackgroundColor = "#FFFFFF"
+    private val defaultBackgroundColor : Int by lazy  {
+        when(viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_background_color)
+            else -> ContextCompat.getColor(requireContext(), R.color.banner_border_color)
+        }
+    }
+
+    private val defaultBorderColor : Int by lazy {
+        when(viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_border_color)
+            else -> ContextCompat.getColor(requireContext(), R.color.banner_border_color)
+        }
+    }
+
     private val defaultBorderWidth = 1
-    private val defaultBorderColor = "#E0DEDF"
     private val defaultBorderCornerRadius = 8f
 
     override fun onCreateView(
@@ -44,15 +57,15 @@ class IterableEmbeddedView(
 
     private fun configure(view: View, config: IterableEmbeddedViewConfig?) {
 
-        val backgroundColor = config?.backgroundColor.takeIf { it?.isNotEmpty() == true } ?: defaultBackgroundColor
+        val backgroundColor = config?.backgroundColor.takeIf { it != null && it > 0 } ?: defaultBackgroundColor
         val borderWidth = config?.borderWidth.takeIf { it != null && it > 0 } ?: defaultBorderWidth
-        val borderColor = config?.borderColor.takeIf { it?.isNotEmpty() == true } ?: defaultBorderColor
+        val borderColor = config?.borderColor.takeIf { it != null && it > 0 } ?: defaultBorderColor
         val borderCornerRadius = config?.borderCornerRadius.takeIf { it != null && it > 0 } ?: defaultBorderCornerRadius
 
         val gradientDrawable = GradientDrawable()
 
-        gradientDrawable.setColor(Color.parseColor(backgroundColor))
-        gradientDrawable.setStroke(borderWidth, Color.parseColor(borderColor))
+        gradientDrawable.setColor(backgroundColor)
+        gradientDrawable.setStroke(borderWidth, borderColor)
         gradientDrawable.cornerRadius = borderCornerRadius
         view.setBackgroundDrawable(gradientDrawable)
     }
