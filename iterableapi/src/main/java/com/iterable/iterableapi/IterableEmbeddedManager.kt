@@ -15,7 +15,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var localPlacementMessagesMap = mutableMapOf<Long, List<IterableEmbeddedMessage>>()
     private var placementIds = mutableListOf<Long>()
 
-    private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
     private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
     private var iterableApi: IterableApi
     private var context: Context
@@ -80,13 +79,15 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    private fun getPlacementIds(): List<Long> {
+    fun getPlacementIds(): List<Long> {
         return placementIds
     }
 
     //Network call to get the embedded messages
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
+
+        //var testPlacements: Array<Long> = arrayOf(83)
 
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
