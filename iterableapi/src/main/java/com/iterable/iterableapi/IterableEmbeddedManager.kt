@@ -66,17 +66,12 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // region public methods
 
     //Gets the list of embedded messages in memory without syncing
-    fun getMessages(placementId: Long?): List<IterableEmbeddedMessage>? {
+    fun getMessages(placementId: Long): List<IterableEmbeddedMessage>? {
         return localPlacementMessagesMap[placementId]
     }
 
     fun reset() {
-        val emptyMessages = listOf<IterableEmbeddedMessage>()
-        val placementIds = getPlacementIds()
-        for (i in placementIds.indices) {
-            val placementId = placementIds[i]
-            localPlacementMessagesMap[placementId] = emptyMessages
-        }
+        localPlacementMessagesMap = mutableMapOf()
     }
 
     fun getPlacementIds(): List<Long> {
@@ -87,22 +82,50 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
+        //val testPlacementIds: Array<Long> = arrayOf(88)
+
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
             try {
+                val previousPlacementIds = getPlacementIds()
+                val currentPlacementIds: MutableList<Long> = mutableListOf()
+
                 val placementsArray = data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
                 if (placementsArray != null) {
-                    for (i in 0 until placementsArray.length()) {
-                        val placementJson = placementsArray.optJSONObject(i)
-                        val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
-                        val placementId = placement.placementId
-                        val messages = placement.messages
-                        IterableLogger.d(TAG, "placement id: $placementId")
+                    if(placementsArray.length() == 0) {
+                        reset()
+                        updateHandleListeners.forEach {
+                            IterableLogger.d(TAG, "Calling updateHandler")
+                            it.onMessagesUpdated()
+                        }
+                    } else {
+                        for (i in 0 until placementsArray.length()) {
+                            val placementJson = placementsArray.optJSONObject(i)
+                            val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
+                            val placementId = placement.placementId
+                            val messages = placement.messages
 
-                        placementIds.add(placementId)
-                        updateLocalMessages(placementId, messages)
+                            currentPlacementIds.add(placementId)
+
+                            updateLocalMessages(placementId, messages)
+                        }
                     }
                 }
+
+                val removedPlacementIds = previousPlacementIds.subtract(currentPlacementIds.toSet())
+
+                if(removedPlacementIds.isNotEmpty()) {
+                    removedPlacementIds.forEach {
+                        localPlacementMessagesMap.remove(it)
+                    }
+
+                    updateHandleListeners.forEach {
+                        IterableLogger.d(TAG, "Calling updateHandler")
+                        it.onMessagesUpdated()
+                    }
+                }
+
+                placementIds = currentPlacementIds
 
             } catch (e: JSONException) {
                 IterableLogger.e(TAG, e.toString())

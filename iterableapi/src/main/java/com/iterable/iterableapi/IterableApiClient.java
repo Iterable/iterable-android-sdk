@@ -227,22 +227,19 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
-
-            if (authProvider.getEmail() != null) {
-                pathBuilder.append("email=").append(authProvider.getEmail());
-            } else {
-                pathBuilder.append("userId=").append(authProvider.getUserId());
-            }
-
             if (placementIds != null) {
+                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
                 for (Long placementId : placementIds) {
                     pathBuilder.append("&placementIds=").append(placementId);
                 }
+
+                String path = pathBuilder.toString();
+                sendGetRequest(path, requestJSON, onCallback);
+            } else {
+                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
             }
 
-            String path = pathBuilder.toString();
-            sendGetRequest(path, requestJSON, onCallback);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -258,23 +255,19 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
-
-            if (authProvider.getEmail() != null) {
-                pathBuilder.append("email=").append(authProvider.getEmail());
-            } else {
-                pathBuilder.append("userId=").append(authProvider.getUserId());
-            }
-
             if (placementIds != null) {
+                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
                 for (Long placementId : placementIds) {
                     pathBuilder.append("&placementIds=").append(placementId);
                 }
+
+                String path = pathBuilder.toString();
+                sendGetRequest(path, requestJSON, onSuccess, onFailure);
+            } else {
+                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
             }
 
-            String path = pathBuilder.toString();
-            IterableLogger.d("IterableApiClient", path);
-            sendGetRequest(path, requestJSON, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }

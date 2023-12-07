@@ -241,10 +241,13 @@ public class IterableApi {
     }
 
     /**
-     * Gets a list of placements for the list of placement ids passed in from Iterable;
-     * passes the result to the callback.
+     * Gets a list of placements for the list of placement ids passed in from Iterable and
+     * passes the result to the callback;
+     * To get list of messages as a list of Embedded Messages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(Long)} instead.
+     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
      *
-     * @param placementIds array of placement ids
+     * @param placementIds array of placement ids - optional
      * @param onCallback
      */
 
@@ -256,10 +259,13 @@ public class IterableApi {
     }
 
     /**
-     * Gets a list of placements for the list of placement ids passed in from Iterable;
-     * passes the result to the success or failure callback.
+     * Gets a list of placements for the list of placement ids passed in from Iterable and
+     * passes the result to the success or failure callback;
+     * To get list of messages as a list of Embedded Messages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(Long)} instead.
+     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
      *
-     * @param placementIds
+     * @param placementIds array of placement ids - optional
      * @param onSuccess
      * @param onFailure
      */

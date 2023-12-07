@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -87,6 +88,32 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     }
 
     @Test
+    public void testSyncEmptyPlacementsPayload() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler1 = mock(IterableEmbeddedUpdateHandler.class);
+        IterableEmbeddedUpdateHandler mockHandler2 = mock(IterableEmbeddedUpdateHandler.class);
+
+        embeddedManager.addUpdateListener(mockHandler1);
+        embeddedManager.addUpdateListener(mockHandler2);
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_empty.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertNull(embeddedManager.getMessages(0L));
+        assertNull(embeddedManager.getMessages(1L));
+
+        verify(mockHandler1, times(4)).onMessagesUpdated();
+        verify(mockHandler2, times(4)).onMessagesUpdated();
+    }
+
+    @Test
     public void testReset() throws Exception {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
         IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
@@ -96,8 +123,8 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         assertEquals(1, embeddedManager.getMessages(0L).size());
         assertEquals(1, embeddedManager.getMessages(1L).size());
         embeddedManager.reset();
-        assertEquals(0, embeddedManager.getMessages(0L).size());
-        assertEquals(0, embeddedManager.getMessages(1L).size());
+        assertNull(embeddedManager.getMessages(0L));
+        assertNull(embeddedManager.getMessages(1L));
     }
 
     @Test
@@ -118,8 +145,8 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
 
-        verify(mockHandler1, times(4)).onMessagesUpdated();
-        verify(mockHandler2, times(4)).onMessagesUpdated();
+        verify(mockHandler1, times(5)).onMessagesUpdated();
+        verify(mockHandler2, times(5)).onMessagesUpdated();
     }
 
     @Test
@@ -146,6 +173,23 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     }
 
     @Test
+    public void testPlacementRemoval() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_2.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        assertNull(embeddedManager.getMessages(0L));
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals(1, embeddedManager.getMessages(2L).size());
+    }
+
+    @Test
     public void testOnEmbeddedMessagingDisabled() throws Exception {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(401).setBody(IterableTestUtils.getResourceString("embedded_payload_bad_api_key.json")));
         IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
@@ -159,4 +203,5 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
         verify(mockHandler1).onEmbeddedMessagingDisabled();
     }
+
 }
