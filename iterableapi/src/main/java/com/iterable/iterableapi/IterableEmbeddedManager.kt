@@ -82,8 +82,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     fun syncMessages() {
         IterableLogger.v(TAG, "Syncing messages...")
 
-        //val testPlacementIds: Array<Long> = arrayOf(88)
-
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
             try {
@@ -92,6 +90,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
                 val placementsArray = data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
                 if (placementsArray != null) {
+                    //if there are no placements in the payload
+                    //reset the local message storage and trigger a UI update
                     if(placementsArray.length() == 0) {
                         reset()
                         updateHandleListeners.forEach {
@@ -112,8 +112,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                     }
                 }
 
+                // compare previous placements to the current placement payload
                 val removedPlacementIds = previousPlacementIds.subtract(currentPlacementIds.toSet())
 
+                //if there are placements removed, update the local storage and trigger UI update
                 if(removedPlacementIds.isNotEmpty()) {
                     removedPlacementIds.forEach {
                         localPlacementMessagesMap.remove(it)
@@ -125,6 +127,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                     }
                 }
 
+                //store placements from payload for next comparison
                 placementIds = currentPlacementIds
 
             } catch (e: JSONException) {
@@ -172,7 +175,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             localMessageMap[it.metadata.messageId] = it
         }
 
-        // Check for new messages and add them to the local list
+        // Compare the remote list to local list
+        // if there are new messages, trigger a message update in UI and send out received events
         remoteMessageList.forEach {
             if (!localMessageMap.containsKey(it.metadata.messageId)) {
                 localMessagesChanged = true
@@ -180,7 +184,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             }
         }
 
-        // Check for messages in the local list that are not in the remote list and remove them
+        // Compare the local list to remote list
+        // if there are messages to remove, trigger a message update in UI
         val remoteMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         remoteMessageList.forEach {
             remoteMessageMap[it.metadata.messageId] = it
@@ -192,8 +197,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             }
         }
 
+        // update local message map for placement with remote message list
         localPlacementMessagesMap[placementId] = remoteMessageList
 
+        //if local messages changed, trigger a message update in UI
         if (localMessagesChanged) {
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
