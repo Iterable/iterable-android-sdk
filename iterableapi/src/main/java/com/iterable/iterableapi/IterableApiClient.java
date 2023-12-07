@@ -217,7 +217,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -226,15 +226,26 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
-            requestJSON.put("placementId", "0");
 
-            sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
+            if (placementIds != null) {
+                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
+                for (Long placementId : placementIds) {
+                    pathBuilder.append("&placementIds=").append(placementId);
+                }
+
+                String path = pathBuilder.toString();
+                sendGetRequest(path, requestJSON, onCallback);
+            } else {
+                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -243,9 +254,20 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
-            requestJSON.put("placementId", "0");
 
-            sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
+            if (placementIds != null) {
+                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
+                for (Long placementId : placementIds) {
+                    pathBuilder.append("&placementIds=").append(placementId);
+                }
+
+                String path = pathBuilder.toString();
+                sendGetRequest(path, requestJSON, onSuccess, onFailure);
+            } else {
+                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }

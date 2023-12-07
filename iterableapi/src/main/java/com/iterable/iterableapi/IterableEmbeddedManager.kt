@@ -15,7 +15,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var localPlacementMessagesMap = mutableMapOf<Long, List<IterableEmbeddedMessage>>()
     private var placementIds = mutableListOf<Long>()
 
-    private var localMessages: List<IterableEmbeddedMessage> = ArrayList()
     private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
     private var iterableApi: IterableApi
     private var context: Context
@@ -67,20 +66,15 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // region public methods
 
     //Gets the list of embedded messages in memory without syncing
-    fun getMessages(placementId: Long?): List<IterableEmbeddedMessage>? {
+    fun getMessages(placementId: Long): List<IterableEmbeddedMessage>? {
         return localPlacementMessagesMap[placementId]
     }
 
     fun reset() {
-        val emptyMessages = listOf<IterableEmbeddedMessage>()
-        val placementIds = getPlacementIds()
-        for (i in placementIds.indices) {
-            val placementId = placementIds[i]
-            localPlacementMessagesMap[placementId] = emptyMessages
-        }
+        localPlacementMessagesMap = mutableMapOf()
     }
 
-    private fun getPlacementIds(): List<Long> {
+    fun getPlacementIds(): List<Long> {
         return placementIds
     }
 
@@ -91,19 +85,50 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
             IterableLogger.v(TAG, "Got response from network call to get embedded messages")
             try {
+                val previousPlacementIds = getPlacementIds()
+                val currentPlacementIds: MutableList<Long> = mutableListOf()
+
                 val placementsArray = data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
                 if (placementsArray != null) {
-                    for (i in 0 until placementsArray.length()) {
-                        val placementJson = placementsArray.optJSONObject(i)
-                        val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
-                        val placementId = placement.placementId
-                        val messages = placement.messages
-                        IterableLogger.d(TAG, "placement id: $placementId")
+                    //if there are no placements in the payload
+                    //reset the local message storage and trigger a UI update
+                    if(placementsArray.length() == 0) {
+                        reset()
+                        updateHandleListeners.forEach {
+                            IterableLogger.d(TAG, "Calling updateHandler")
+                            it.onMessagesUpdated()
+                        }
+                    } else {
+                        for (i in 0 until placementsArray.length()) {
+                            val placementJson = placementsArray.optJSONObject(i)
+                            val placement = IterableEmbeddedPlacement.fromJSONObject(placementJson)
+                            val placementId = placement.placementId
+                            val messages = placement.messages
 
-                        placementIds.add(placementId)
-                        updateLocalMessages(placementId, messages)
+                            currentPlacementIds.add(placementId)
+
+                            updateLocalMessages(placementId, messages)
+                        }
                     }
                 }
+
+                // compare previous placements to the current placement payload
+                val removedPlacementIds = previousPlacementIds.subtract(currentPlacementIds.toSet())
+
+                //if there are placements removed, update the local storage and trigger UI update
+                if(removedPlacementIds.isNotEmpty()) {
+                    removedPlacementIds.forEach {
+                        localPlacementMessagesMap.remove(it)
+                    }
+
+                    updateHandleListeners.forEach {
+                        IterableLogger.d(TAG, "Calling updateHandler")
+                        it.onMessagesUpdated()
+                    }
+                }
+
+                //store placements from payload for next comparison
+                placementIds = currentPlacementIds
 
             } catch (e: JSONException) {
                 IterableLogger.e(TAG, e.toString())
@@ -127,7 +152,31 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
-        IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(clickedUrl), IterableActionSource.EMBEDDED)
+        if ((clickedUrl != null) && clickedUrl.toString().isNotEmpty()) {
+            if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
+                // This is an action:// URL, pass that to the custom action handler
+                val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ACTION, "")
+                IterableActionRunner.executeAction(
+                    context,
+                    IterableAction.actionCustomAction(actionName),
+                    IterableActionSource.EMBEDDED
+                )
+            } else if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
+                // Handle itbl:// URLs, pass that to the custom action handler for compatibility
+                val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ITBL, "")
+                IterableActionRunner.executeAction(
+                    context,
+                    IterableAction.actionCustomAction(actionName),
+                    IterableActionSource.EMBEDDED
+                )
+            } else {
+                IterableActionRunner.executeAction(
+                    context,
+                    IterableAction.actionOpenUrl(clickedUrl),
+                    IterableActionSource.EMBEDDED
+                )
+            }
+        }
     }
 
     private fun broadcastSubscriptionInactive() {
@@ -150,7 +199,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             localMessageMap[it.metadata.messageId] = it
         }
 
-        // Check for new messages and add them to the local list
+        // Compare the remote list to local list
+        // if there are new messages, trigger a message update in UI and send out received events
         remoteMessageList.forEach {
             if (!localMessageMap.containsKey(it.metadata.messageId)) {
                 localMessagesChanged = true
@@ -158,7 +208,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             }
         }
 
-        // Check for messages in the local list that are not in the remote list and remove them
+        // Compare the local list to remote list
+        // if there are messages to remove, trigger a message update in UI
         val remoteMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
         remoteMessageList.forEach {
             remoteMessageMap[it.metadata.messageId] = it
@@ -170,8 +221,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             }
         }
 
+        // update local message map for placement with remote message list
         localPlacementMessagesMap[placementId] = remoteMessageList
 
+        //if local messages changed, trigger a message update in UI
         if (localMessagesChanged) {
             updateHandleListeners.forEach {
                 IterableLogger.d(TAG, "Calling updateHandler")
