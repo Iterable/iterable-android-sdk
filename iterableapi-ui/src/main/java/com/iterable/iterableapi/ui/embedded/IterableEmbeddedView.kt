@@ -49,7 +49,7 @@ class IterableEmbeddedView(
                 bannerView
             }
             IterableEmbeddedViewType.CARD -> {
-                val cardView = inflater.inflate(R.layout.banner_view, container, false)
+                val cardView = inflater.inflate(R.layout.card_view, container, false)
                 bind(cardView, message)
                 cardView
             }
