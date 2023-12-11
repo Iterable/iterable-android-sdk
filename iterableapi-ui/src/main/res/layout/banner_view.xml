@@ -63,11 +63,12 @@
         <Button
             android:id="@+id/embedded_message_first_button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
             android:layout_marginStart="16dp"
             android:background="@drawable/banner_button_background"
             android:stateListAnimator="@null"
             android:text="Try subscription"
+            android:textColor="@color/white"
             android:textAllCaps="false"
             app:cornerRadius="32dp"
             app:layout_flexBasisPercent="50%" />
@@ -78,7 +79,7 @@
             android:layout_height="wrap_content"
             android:backgroundTint="@android:color/transparent"
             android:stateListAnimator="@null"
-            android:textColor="@color/banner_button_color"
+            android:textColor="@color/white"
             android:text="Try subscription"
             android:gravity="left"
             android:textAllCaps="false"

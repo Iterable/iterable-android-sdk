@@ -42,7 +42,6 @@
             android:layout_marginLeft="16dp"
             android:text="Our no-equipment boxing workout is cardio forward designed to bring out your inner warrior." />
 
-
         <com.google.android.flexbox.FlexboxLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -54,9 +53,10 @@
             <Button
                 android:id="@+id/embedded_message_first_button"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="36dp"
                 android:layout_marginStart="16dp"
-                android:backgroundTint="#6A266D"
+                android:textColor="@color/white"
+                android:background="@drawable/banner_button_background"
                 android:stateListAnimator="@null"
                 android:text="Try subscription"
                 android:textAllCaps="false"
@@ -66,7 +66,7 @@
             <Button
                 android:id="@+id/embedded_message_second_button"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="36dp"
                 android:backgroundTint="@android:color/transparent"
                 android:stateListAnimator="@null"
                 android:textColor="#6A266D"

@@ -6,11 +6,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
+import com.iterable.iterableapi.IterableLogger
 import com.iterable.iterableapi.ui.R
 
 class IterableEmbeddedView(
@@ -30,6 +32,41 @@ class IterableEmbeddedView(
         when(viewType) {
             IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_border_color)
             else -> ContextCompat.getColor(requireContext(), R.color.banner_border_color)
+        }
+    }
+
+    private val defaultFirstButtonBackgroundColor: Int by lazy {
+        when(viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.white)
+            else -> ContextCompat.getColor(requireContext(), R.color.banner_button_color)
+        }
+    }
+
+    private val defaultFirstButtonTextColor: Int by lazy {
+        when(viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
+            else -> ContextCompat.getColor(requireContext(), R.color.white)
+        }
+    }
+
+    private val defaultSecondButtonTextColor: Int by lazy {
+        when(viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
+            else -> ContextCompat.getColor(requireContext(), R.color.banner_button_color)
+        }
+    }
+
+    private val defaultTitleTextColor: Int by lazy {
+        when(viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
+            else -> ContextCompat.getColor(requireContext(), R.color.title_text_color)
+        }
+    }
+
+    private val defaultBodyTextColor: Int by lazy {
+        when(viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
+            else -> ContextCompat.getColor(requireContext(), R.color.body_text_color)
         }
     }
 
@@ -55,7 +92,7 @@ class IterableEmbeddedView(
             }
             IterableEmbeddedViewType.NOTIFICATION -> {
                 val notificationView = inflater.inflate(R.layout.notification_view, container, false)
-                bindNotificationView(notificationView, message)
+                bind(notificationView, message)
                 notificationView
             }
         }
@@ -67,10 +104,17 @@ class IterableEmbeddedView(
 
     private fun configure(view: View, config: IterableEmbeddedViewConfig?) {
 
-        val backgroundColor = config?.backgroundColor.takeIf { it != null && it > 0 } ?: defaultBackgroundColor
-        val borderWidth = config?.borderWidth.takeIf { it != null && it > 0 } ?: defaultBorderWidth
-        val borderColor = config?.borderColor.takeIf { it != null && it > 0 } ?: defaultBorderColor
-        val borderCornerRadius = config?.borderCornerRadius.takeIf { it != null && it > 0 } ?: defaultBorderCornerRadius
+        val backgroundColor = config?.backgroundColor.takeIf { it != null } ?: defaultBackgroundColor
+        val borderColor = config?.borderColor.takeIf { it != null } ?: defaultBorderColor
+        val borderWidth = config?.borderWidth.takeIf { it != null } ?: defaultBorderWidth
+        val borderCornerRadius = config?.borderCornerRadius.takeIf { it != null } ?: defaultBorderCornerRadius
+
+        val firstButtonBackgroundColor = config?.firstButtonBackgroundColor.takeIf { it != null } ?: defaultFirstButtonBackgroundColor
+        val firstButtonTextColor = config?.firstButtonTextColor.takeIf { it != null } ?: defaultFirstButtonTextColor
+        val secondButtonTextColor = config?.secondButtonTextColor.takeIf { it != null } ?: defaultSecondButtonTextColor
+
+        val titleTextColor = config?.titleTextColor.takeIf { it != null } ?: defaultTitleTextColor
+        val bodyTextColor = config?.bodyTextColor.takeIf { it != null } ?: defaultBodyTextColor
 
         val gradientDrawable = GradientDrawable()
 
@@ -78,6 +122,22 @@ class IterableEmbeddedView(
         gradientDrawable.setStroke(borderWidth, borderColor)
         gradientDrawable.cornerRadius = borderCornerRadius
         view.setBackgroundDrawable(gradientDrawable)
+
+        val firstButton = view.findViewById<Button>(R.id.embedded_message_first_button)
+        val secondButton = view.findViewById<Button>(R.id.embedded_message_second_button)
+
+        val titleText = view.findViewById<TextView>(R.id.embedded_message_title)
+        val bodyText = view.findViewById<TextView>(R.id.embedded_message_body)
+
+        val buttonBackgroundDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
+        buttonBackgroundDrawable?.setColor(firstButtonBackgroundColor)
+
+        firstButton.setBackgroundDrawable(buttonBackgroundDrawable)
+        firstButton.setTextColor(firstButtonTextColor)
+        secondButton.setTextColor(secondButtonTextColor)
+
+        titleText.setTextColor(titleTextColor)
+        bodyText.setTextColor(bodyTextColor)
     }
 
     private fun bind(view: View, message: IterableEmbeddedMessage): View  {
@@ -134,65 +194,6 @@ class IterableEmbeddedView(
         } else {
             embeddedMessageViewButton.visibility = View.GONE
             embeddedMessageViewButton2.visibility = View.GONE
-        }
-
-        return view
-    }
-
-    private fun bindNotificationView(view: View, message: IterableEmbeddedMessage): View  {
-        val embeddedMessageViewTitle: TextView = view.findViewById(R.id.embedded_message_title)
-        val embeddedMessageViewBody: TextView = view.findViewById(R.id.embedded_message_body)
-        val notificationButton: TextView = view.findViewById(R.id.notification_first_button)
-        val notificationButton2: TextView = view.findViewById(R.id.notification_second_button)
-
-        embeddedMessageViewTitle.text = message.elements?.title
-        embeddedMessageViewBody.text = message.elements?.body
-
-        val buttons = message.elements?.buttons
-
-        if (buttons != null) {
-            notificationButton.visibility = if (buttons.getOrNull(0)?.title == null) View.GONE else View.VISIBLE
-            notificationButton.text = buttons.getOrNull(0)?.title.orEmpty()
-
-            notificationButton.setOnClickListener {
-                IterableApi.getInstance().embeddedManager.handleEmbeddedClick(
-                    message,
-                    message.elements?.buttons?.get(0)?.id,
-                    message.elements?.buttons?.get(0)?.action?.data
-                )
-
-                IterableApi.getInstance().trackEmbeddedClick(
-                    message,
-                    message.elements?.buttons?.get(0)?.id,
-                    message.elements?.buttons?.get(0)?.action?.data
-                )
-            }
-
-            if (buttons.size > 1) {
-                notificationButton2.visibility = if (buttons[1].title == null) View.GONE else View.VISIBLE
-                notificationButton2.text = buttons[1].title.orEmpty()
-
-                notificationButton2.setOnClickListener {
-                    IterableApi.getInstance().embeddedManager.handleEmbeddedClick(
-                        message,
-                        message.elements?.buttons?.get(1)?.id,
-                        message.elements?.buttons?.get(1)?.action?.data
-                    )
-
-                    IterableApi.getInstance().trackEmbeddedClick(
-                        message,
-                        message.elements?.buttons?.get(1)?.id,
-                        message.elements?.defaultAction?.data
-                    )
-                }
-
-            } else {
-                notificationButton2.visibility = View.GONE
-            }
-
-        } else {
-            notificationButton.visibility = View.GONE
-            notificationButton2.visibility = View.GONE
         }
 
         return view
