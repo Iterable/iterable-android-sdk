@@ -98,10 +98,16 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         embeddedManager.addUpdateListener(mockHandler1);
         embeddedManager.addUpdateListener(mockHandler2);
 
+        verify(mockHandler1, times(0)).onMessagesUpdated();
+        verify(mockHandler2, times(0)).onMessagesUpdated();
+
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
         assertEquals(1, embeddedManager.getMessages(0L).size());
         assertEquals(1, embeddedManager.getMessages(1L).size());
+
+        verify(mockHandler1, times(2)).onMessagesUpdated();
+        verify(mockHandler2, times(2)).onMessagesUpdated();
 
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_empty.json")));
         embeddedManager.syncMessages();
@@ -138,8 +144,13 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         embeddedManager.addUpdateListener(mockHandler1);
         embeddedManager.addUpdateListener(mockHandler2);
 
+        verify(mockHandler1, times(0)).onMessagesUpdated();
+        verify(mockHandler2, times(0)).onMessagesUpdated();
+
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
+        verify(mockHandler1, times(2)).onMessagesUpdated();
+        verify(mockHandler2, times(2)).onMessagesUpdated();
 
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_2.json")));
         embeddedManager.syncMessages();

@@ -94,9 +94,11 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                     //reset the local message storage and trigger a UI update
                     if(placementsArray.length() == 0) {
                         reset()
-                        updateHandleListeners.forEach {
-                            IterableLogger.d(TAG, "Calling updateHandler")
-                            it.onMessagesUpdated()
+                        if(previousPlacementIds.isNotEmpty()) {
+                            updateHandleListeners.forEach {
+                                IterableLogger.d(TAG, "Calling updateHandler")
+                                it.onMessagesUpdated()
+                            }
                         }
                     } else {
                         for (i in 0 until placementsArray.length()) {
@@ -106,8 +108,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                             val messages = placement.messages
 
                             currentPlacementIds.add(placementId)
-
-                            updateLocalMessages(placementId, messages)
+                            updateLocalMessageMap(placementId, messages)
                         }
                     }
                 }
@@ -186,7 +187,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    private fun updateLocalMessages(
+    private fun updateLocalMessageMap(
         placementId: Long,
         remoteMessageList: List<IterableEmbeddedMessage>
     ) {
