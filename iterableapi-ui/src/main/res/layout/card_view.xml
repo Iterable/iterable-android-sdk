@@ -19,6 +19,7 @@
         android:orientation="vertical">
 
         <ImageView
+            android:id="@+id/embedded_message_image"
             android:layout_width="358dp"
             android:layout_height="230dp"
             android:layout_marginBottom="16dp"
