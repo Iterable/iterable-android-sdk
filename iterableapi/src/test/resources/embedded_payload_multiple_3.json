@@ -35,6 +35,39 @@
           "payload": {
             "someKey": "someValue"
           }
+        },
+        {
+          "metadata": {
+            "messageId": "gret45ydkht5fewty",
+            "placementId": 0,
+            "campaignId": 2326,
+            "isProof": true
+          },
+          "elements": {
+            "title": "Ski Chalet at Copper Mountain",
+            "body": "THE SEASON IS NOW",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [{
+              "id": "reward-button",
+              "title": "REDEEM",
+              "action": {
+                "type": "openUrl",
+                "data": "https://www.google.com"
+              }
+            }],
+            "text": [{
+              "id": "body",
+              "text": "CATS RULE!!!",
+              "label": "label"
+            }]
+          },
+          "payload": {
+            "someKey": "someValue"
+          }
         }
       ]
     },

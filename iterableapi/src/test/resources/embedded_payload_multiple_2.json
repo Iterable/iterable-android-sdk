@@ -1,18 +1,18 @@
 {
   "placements": [
     {
-      "placementId": 0,
+      "placementId": 1,
       "embeddedMessages": [
         {
           "metadata": {
-            "messageId": "doibjo4590340oidiobnw",
-            "placementId": 0,
-            "campaignId": 2324,
+            "messageId": "ewsd3fdrtj6ty",
+            "placementId": 1,
+            "campaignId": 19853,
             "isProof": true
           },
           "elements": {
-            "title": "Iterable Coffee Shoppe",
-            "body": "SAVE 15% OFF NOW",
+            "title": "Subscribe to the newsletter",
+            "body": "Learn all about colorado kittens",
             "mediaUrl": "http://placekitten.com/200/300",
             "defaultAction": {
               "type": "someType",
@@ -39,18 +39,18 @@
       ]
     },
     {
-      "placementId": 1,
+      "placementId": 2,
       "embeddedMessages": [
         {
           "metadata": {
-            "messageId": "faert442rjasiri99",
-            "placementId": 1,
-            "campaignId": 132,
+            "messageId": "grewdvb54ut87y",
+            "placementId": 2,
+            "campaignId": 1910,
             "isProof": true
           },
           "elements": {
-            "title": "DEALS DEALS DEALS",
-            "body": "ACT NOW! FIRST ONE FREE",
+            "title": "Experience the great outdoors",
+            "body": "Trips are going fast!",
             "mediaUrl": "http://placekitten.com/200/300",
             "defaultAction": {
               "type": "someType",
