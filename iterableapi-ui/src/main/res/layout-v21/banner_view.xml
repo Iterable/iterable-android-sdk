@@ -79,7 +79,7 @@
             android:layout_height="wrap_content"
             android:backgroundTint="@android:color/transparent"
             android:stateListAnimator="@null"
-            android:textColor="@color/banner_button_color"
+            android:textColor="@color/white"
             android:text="Try subscription"
             android:gravity="left"
             android:textAllCaps="false"

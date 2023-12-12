@@ -89,10 +89,13 @@ class IterableEmbeddedView(
         val titleText = view.findViewById<TextView>(R.id.embedded_message_title)
         val bodyText = view.findViewById<TextView>(R.id.embedded_message_body)
 
-        val buttonBackgroundDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
-        buttonBackgroundDrawable?.setColor(firstButtonBackgroundColor)
+        if(firstButtonBackgroundColor != defaultFirstButtonBackgroundColor) {
+            val buttonBackgroundDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
+            buttonBackgroundDrawable?.setColor(firstButtonBackgroundColor)
 
-        firstButton.setBackgroundDrawable(buttonBackgroundDrawable)
+            firstButton.setBackgroundDrawable(buttonBackgroundDrawable)
+        }
+
         firstButton.setTextColor(firstButtonTextColor)
         secondButton.setTextColor(secondButtonTextColor)
 

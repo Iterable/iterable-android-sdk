@@ -40,6 +40,7 @@
     <color name="notification_border_color">#C2F0FC</color>
     <color name="notification_background_color">#E6FBFF</color>
     <color name="notification_text_color">#2489A9</color>
+    <color name="notification_button_border_color">#E0DEDF</color>
 
     <color name="banner_button_color">#6A266D</color>
     <color name="banner_background_color">#FFFFFF</color>

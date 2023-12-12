@@ -51,12 +51,12 @@
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:layout_marginStart="16dp"
-            android:stateListAnimator="@null"
-            android:text="@string/notification_first_button_default_text"
-            android:textAllCaps="false"
             android:textColor="@color/notification_text_color"
             android:background="@drawable/notification_button_background"
-            app:cornerRadius="16dp"
+            android:stateListAnimator="@null"
+            android:text="Try subscription"
+            android:textAllCaps="false"
+            app:cornerRadius="32dp"
             app:layout_flexBasisPercent="50%" />
 
         <Button
@@ -65,8 +65,8 @@
             android:layout_height="36dp"
             android:backgroundTint="@android:color/transparent"
             android:stateListAnimator="@null"
-            android:text="@string/notification_second_button_default_text"
-            android:textColor="@color/notification_text_color"
+            android:textColor="@color/white"
+            android:text="Try subscription"
             android:gravity="left"
             android:textAllCaps="false"
             app:cornerRadius="32dp" />
