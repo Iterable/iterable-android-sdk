@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.iterableapi.ui.R
@@ -21,55 +22,13 @@ class IterableEmbeddedView(
     private var config: IterableEmbeddedViewConfig?
 ): Fragment() {
 
-    private val defaultBackgroundColor : Int by lazy  {
-        when(viewType) {
-            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_background_color)
-            else -> ContextCompat.getColor(requireContext(), R.color.banner_background_color)
-        }
-    }
-
-    private val defaultBorderColor : Int by lazy {
-        when(viewType) {
-            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_border_color)
-            else -> ContextCompat.getColor(requireContext(), R.color.banner_border_color)
-        }
-    }
-
-    private val defaultFirstButtonBackgroundColor: Int by lazy {
-        when(viewType) {
-            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.white)
-            else -> ContextCompat.getColor(requireContext(), R.color.banner_button_color)
-        }
-    }
-
-    private val defaultFirstButtonTextColor: Int by lazy {
-        when(viewType) {
-            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
-            else -> ContextCompat.getColor(requireContext(), R.color.white)
-        }
-    }
-
-    private val defaultSecondButtonTextColor: Int by lazy {
-        when(viewType) {
-            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
-            else -> ContextCompat.getColor(requireContext(), R.color.banner_button_color)
-        }
-    }
-
-    private val defaultTitleTextColor: Int by lazy {
-        when(viewType) {
-            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
-            else -> ContextCompat.getColor(requireContext(), R.color.title_text_color)
-        }
-    }
-
-    private val defaultBodyTextColor: Int by lazy {
-        when(viewType) {
-            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), R.color.notification_text_color)
-            else -> ContextCompat.getColor(requireContext(), R.color.body_text_color)
-        }
-    }
-
+    private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color) }
+    private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color) }
+    private val defaultFirstButtonBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.banner_button_color) }
+    private val defaultFirstButtonTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.white) }
+    private val defaultSecondButtonTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color) }
+    private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color) }
+    private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color) }
     private val defaultBorderWidth = 1
     private val defaultBorderCornerRadius = 8f
 
@@ -79,24 +38,25 @@ class IterableEmbeddedView(
         savedInstanceState: Bundle?
     ): View? {
 
-         val view = when (viewType) {
+        val view = when (viewType) {
             IterableEmbeddedViewType.BANNER -> {
                 val bannerView = inflater.inflate(R.layout.banner_view, container, false)
-                bind(bannerView, message)
+                bind(viewType, bannerView, message)
                 bannerView
             }
             IterableEmbeddedViewType.CARD -> {
                 val cardView = inflater.inflate(R.layout.card_view, container, false)
-                bind(cardView, message)
+                bind(viewType, cardView, message)
                 cardView
             }
             IterableEmbeddedViewType.NOTIFICATION -> {
                 val notificationView = inflater.inflate(R.layout.notification_view, container, false)
-                bind(notificationView, message)
+                bind(viewType, notificationView, message)
                 notificationView
             }
         }
 
+        setDefaultAction(view, message)
         configure(view, config)
 
         return view
@@ -140,13 +100,16 @@ class IterableEmbeddedView(
         bodyText.setTextColor(bodyTextColor)
     }
 
-    private fun bind(view: View, message: IterableEmbeddedMessage): View  {
+    private fun bind(viewType: IterableEmbeddedViewType, view: View, message: IterableEmbeddedMessage): View  {
         val embeddedMessageViewTitle: TextView = view.findViewById(R.id.embedded_message_title)
         val embeddedMessageViewBody: TextView = view.findViewById(R.id.embedded_message_body)
-        val embeddedMessageViewButton: TextView = view.findViewById(R.id.embedded_message_first_button)
-        val embeddedMessageViewButton2: TextView = view.findViewById(R.id.embedded_message_second_button)
+        val embeddedMessageViewButton: Button = view.findViewById(R.id.embedded_message_first_button)
+        val embeddedMessageViewButton2: Button = view.findViewById(R.id.embedded_message_second_button)
 
-        val embeddedMessageImageView: ImageView = view.findViewById(R.id.embedded_message_image)
+        if(viewType != IterableEmbeddedViewType.NOTIFICATION) {
+            val embeddedMessageImageView: ImageView = view.findViewById(R.id.embedded_message_image)
+            Glide.with(view.context).load(message.elements?.mediaURL).into(embeddedMessageImageView)
+        }
 
         embeddedMessageViewTitle.text = message.elements?.title
         embeddedMessageViewBody.text = message.elements?.body
@@ -154,41 +117,10 @@ class IterableEmbeddedView(
         val buttons = message.elements?.buttons
 
         if (buttons != null) {
-            embeddedMessageViewButton.visibility = if (buttons.getOrNull(0)?.title == null) View.GONE else View.VISIBLE
-            embeddedMessageViewButton.text = buttons.getOrNull(0)?.title.orEmpty()
-
-            embeddedMessageViewButton.setOnClickListener {
-                IterableApi.getInstance().embeddedManager.handleEmbeddedClick(
-                    message,
-                    message.elements?.buttons?.get(0)?.id,
-                    message.elements?.buttons?.get(0)?.action?.data
-                )
-
-                IterableApi.getInstance().trackEmbeddedClick(
-                    message,
-                    message.elements?.buttons?.get(0)?.id,
-                    message.elements?.buttons?.get(0)?.action?.data
-                )
-            }
+            setButton(embeddedMessageViewButton, buttons.getOrNull(0), message)
 
             if (buttons.size > 1) {
-                embeddedMessageViewButton2.visibility = if (buttons[1].title == null) View.GONE else View.VISIBLE
-                embeddedMessageViewButton2.text = buttons[1].title.orEmpty()
-
-                embeddedMessageViewButton2.setOnClickListener {
-                    IterableApi.getInstance().embeddedManager.handleEmbeddedClick(
-                        message,
-                        message.elements?.buttons?.get(1)?.id,
-                        message.elements?.buttons?.get(1)?.action?.data
-                    )
-
-                    IterableApi.getInstance().trackEmbeddedClick(
-                        message,
-                        message.elements?.buttons?.get(1)?.id,
-                        message.elements?.defaultAction?.data
-                    )
-                }
-
+                setButton(embeddedMessageViewButton2, buttons.getOrNull(1), message)
             } else {
                 embeddedMessageViewButton2.visibility = View.GONE
             }
@@ -198,10 +130,36 @@ class IterableEmbeddedView(
             embeddedMessageViewButton2.visibility = View.GONE
         }
 
-        Glide.with(view.context)
-                .load(message.elements?.mediaURL)
-                .into(embeddedMessageImageView)
-
         return view
+    }
+
+    private fun setDefaultAction(view: View, message: IterableEmbeddedMessage) {
+        if(message.elements?.defaultAction != null) {
+            val clickedUrl = message.elements?.defaultAction?.data.takeIf { it?.isNotEmpty() == true } ?: message.elements?.defaultAction?.type
+
+            view.setOnClickListener {
+                IterableApi.getInstance().embeddedManager.handleEmbeddedClick(message, null, clickedUrl)
+                IterableApi.getInstance().trackEmbeddedClick(message, null, clickedUrl)
+            }
+        }
+    }
+
+    private fun setButton(buttonView: Button, button: EmbeddedMessageElementsButton?, message: IterableEmbeddedMessage) {
+        buttonView.visibility = if (button?.title == null) View.GONE else View.VISIBLE
+        buttonView.text = button?.title.orEmpty()
+
+        val clickedUrl = if (button?.action?.data != null) button.action?.data else button?.action?.type
+
+        buttonView.setOnClickListener {
+            IterableApi.getInstance().embeddedManager.handleEmbeddedClick(message, button?.id, clickedUrl)
+            IterableApi.getInstance().trackEmbeddedClick(message, button?.id, clickedUrl)
+        }
+    }
+
+    private fun getDefaultColor(viewType: IterableEmbeddedViewType, notificationColor: Int, bannerColor: Int): Int {
+        return when (viewType) {
+            IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), notificationColor)
+            else -> ContextCompat.getColor(requireContext(), bannerColor)
+        }
     }
 }
