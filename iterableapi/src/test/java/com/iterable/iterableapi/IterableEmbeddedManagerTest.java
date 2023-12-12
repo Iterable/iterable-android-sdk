@@ -120,14 +120,44 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     }
 
     @Test
-    public void testReset() throws Exception {
-        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+    public void testOnMessagesUpdatedWithEmptyLocalStorage() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_empty.json")));
         IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler1 = mock(IterableEmbeddedUpdateHandler.class);
+        IterableEmbeddedUpdateHandler mockHandler2 = mock(IterableEmbeddedUpdateHandler.class);
+
+        embeddedManager.addUpdateListener(mockHandler1);
+        embeddedManager.addUpdateListener(mockHandler2);
+
+        verify(mockHandler1, times(0)).onMessagesUpdated();
+        verify(mockHandler2, times(0)).onMessagesUpdated();
 
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
-        assertEquals(1, embeddedManager.getMessages(0L).size());
-        assertEquals(1, embeddedManager.getMessages(1L).size());
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_empty.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        verify(mockHandler1, times(0)).onMessagesUpdated();
+        verify(mockHandler2, times(0)).onMessagesUpdated();
+    }
+
+    @Test
+    public void testReset() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_empty.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler1 = mock(IterableEmbeddedUpdateHandler.class);
+        IterableEmbeddedUpdateHandler mockHandler2 = mock(IterableEmbeddedUpdateHandler.class);
+
+        embeddedManager.addUpdateListener(mockHandler1);
+        embeddedManager.addUpdateListener(mockHandler2);
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
         embeddedManager.reset();
         assertNull(embeddedManager.getMessages(0L));
         assertNull(embeddedManager.getMessages(1L));
