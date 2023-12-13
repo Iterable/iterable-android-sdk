@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="358dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:layout_marginTop="12dp"
+    android:layout_marginLeft="16dp"
+    android:layout_marginBottom="12dp"
+    android:background="@drawable/banner_card_border"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent">
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/embedded_message_title"
+                android:layout_width="240dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text=""
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/embedded_message_body"
+                android:layout_width="179dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:text="" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/embedded_message_image"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:layout_marginEnd="16dp"
+            android:contentDescription="Enter Here" />
+
+    </LinearLayout>
+
+    <com.google.android.flexbox.FlexboxLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:flexWrap="wrap"
+        app:alignContent="flex_start"
+        app:alignItems="flex_start">
+
+        <Button
+            android:id="@+id/embedded_message_first_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/banner_button_background"
+            android:stateListAnimator="@null"
+            android:text=""
+            android:textColor="@color/white"
+            android:textAllCaps="false"
+            app:cornerRadius="32dp"
+            app:layout_flexBasisPercent="50%" />
+
+        <Button
+            android:id="@+id/embedded_message_second_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@android:color/transparent"
+            android:stateListAnimator="@null"
+            android:textColor="@color/white"
+            android:text=""
+            android:gravity="left"
+            android:textAllCaps="false"
+            app:cornerRadius="32dp" />
+
+    </com.google.android.flexbox.FlexboxLayout>
+
+</LinearLayout>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="358dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="0dp"
+    android:background="@drawable/banner_card_border"
+    android:orientation="vertical"
+    android:layout_marginStart="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/embedded_message_image"
+            android:layout_width="358dp"
+            android:layout_height="230dp"
+            android:contentDescription="Enter Here" />
+
+        <TextView
+            android:id="@+id/embedded_message_title"
+            android:layout_width="240dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text=""
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginStart="16dp" />
+
+        <TextView
+            android:id="@+id/embedded_message_body"
+            android:layout_width="326dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="8dp"
+            android:text=""
+            android:layout_marginStart="16dp" />
+
+        <com.google.android.flexbox.FlexboxLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:flexWrap="wrap"
+            app:alignContent="flex_start"
+            app:alignItems="flex_start">
+
+            <Button
+                android:id="@+id/embedded_message_first_button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginStart="16dp"
+                android:textColor="@color/white"
+                android:background="@drawable/banner_button_background"
+                android:stateListAnimator="@null"
+                android:text=""
+                android:textAllCaps="false"
+                app:cornerRadius="32dp"
+                app:layout_flexBasisPercent="50%" />
+
+            <Button
+                android:id="@+id/embedded_message_second_button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:backgroundTint="@android:color/transparent"
+                android:stateListAnimator="@null"
+                android:textColor="#6A266D"
+                android:text=""
+                android:gravity="left"
+                android:textAllCaps="false"
+                app:cornerRadius="32dp" />
+        </com.google.android.flexbox.FlexboxLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
