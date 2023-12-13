@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide
 import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
+import com.iterable.iterableapi.IterableLogger
 import com.iterable.iterableapi.ui.R
 
 class IterableEmbeddedView(
@@ -25,6 +26,7 @@ class IterableEmbeddedView(
     private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color) }
     private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color) }
     private val defaultFirstButtonBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.banner_button_color) }
+    private val defaultFirstButtonBorderColor: Int by lazy { getDefaultColor(viewType, R.color.notification_button_border_color, R.color.banner_button_color) }
     private val defaultFirstButtonTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.white) }
     private val defaultSecondButtonTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color) }
     private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color) }
@@ -70,6 +72,7 @@ class IterableEmbeddedView(
         val borderCornerRadius = config?.borderCornerRadius.takeIf { it != null } ?: defaultBorderCornerRadius
 
         val firstButtonBackgroundColor = config?.firstButtonBackgroundColor.takeIf { it != null } ?: defaultFirstButtonBackgroundColor
+        val firstButtonBorderColor = config?.firstButtonBorderColor.takeIf { it != null } ?: defaultFirstButtonBorderColor
         val firstButtonTextColor = config?.firstButtonTextColor.takeIf { it != null } ?: defaultFirstButtonTextColor
         val secondButtonTextColor = config?.secondButtonTextColor.takeIf { it != null } ?: defaultSecondButtonTextColor
 
@@ -89,9 +92,10 @@ class IterableEmbeddedView(
         val titleText = view.findViewById<TextView>(R.id.embedded_message_title)
         val bodyText = view.findViewById<TextView>(R.id.embedded_message_body)
 
-        if(firstButtonBackgroundColor != defaultFirstButtonBackgroundColor) {
+        if(config?.firstButtonBackgroundColor != null || config?.firstButtonBorderColor != null) {
             val buttonBackgroundDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
             buttonBackgroundDrawable?.setColor(firstButtonBackgroundColor)
+            buttonBackgroundDrawable?.setStroke(1, firstButtonBorderColor)
 
             firstButton.setBackgroundDrawable(buttonBackgroundDrawable)
         }
@@ -151,7 +155,7 @@ class IterableEmbeddedView(
         buttonView.visibility = if (button?.title == null) View.GONE else View.VISIBLE
         buttonView.text = button?.title.orEmpty()
 
-        val clickedUrl = if (button?.action?.data != null) button.action?.data else button?.action?.type
+        val clickedUrl = if (button?.action?.data?.isNotEmpty() == true) button.action?.data else button?.action?.type
 
         buttonView.setOnClickListener {
             IterableApi.getInstance().embeddedManager.handleEmbeddedClick(message, button?.id, clickedUrl)
