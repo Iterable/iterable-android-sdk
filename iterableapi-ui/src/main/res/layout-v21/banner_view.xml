@@ -26,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="Try Premium"
+                android:text=""
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -36,7 +36,7 @@
                 android:layout_height="32dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="8dp"
-                android:text="Enjoy 14 days of Premium Subscription free" />
+                android:text="" />
 
         </LinearLayout>
 
@@ -47,8 +47,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp"
             android:layout_marginEnd="16dp"
-            android:contentDescription="Flex kittens"
-            android:src="@drawable/fiterable_entertainment_popper" />
+            android:contentDescription="Enter Here" />
 
     </LinearLayout>
 
@@ -67,7 +66,7 @@
             android:layout_marginStart="16dp"
             android:background="@drawable/banner_button_background"
             android:stateListAnimator="@null"
-            android:text="Try subscription"
+            android:text=""
             android:textColor="@color/white"
             android:textAllCaps="false"
             app:cornerRadius="32dp"
@@ -80,7 +79,7 @@
             android:backgroundTint="@android:color/transparent"
             android:stateListAnimator="@null"
             android:textColor="@color/white"
-            android:text="Try subscription"
+            android:text=""
             android:gravity="left"
             android:textAllCaps="false"
             app:cornerRadius="32dp" />

@@ -22,21 +22,6 @@
 
     <color name="sign_in_button_color">#6A266D</color>
 
-    <color name="no_messages_background">#ECE5E8</color>
-    <color name="no_messages_border">#999094</color>
-
-    <color name="embedded_message_background_red">#FFE9E9</color>
-    <color name="embedded_message_border_red">#FFC4C4</color>
-    <color name="embedded_message_text_color_red">#A92424</color>
-
-    <color name="embedded_message_background_yellow">#FDFBE6</color>
-    <color name="embedded_message_border_yellow">#FFF599</color>
-    <color name="embedded_message_text_color_yellow">#FFEB3B</color>
-
-    <color name="embedded_message_background_green">#D4FFD9</color>
-    <color name="embedded_message_border_green">#9FFF9C</color>
-    <color name="embedded_message_text_color_green">#42FF3B</color>
-
     <color name="notification_border_color">#C2F0FC</color>
     <color name="notification_background_color">#E6FBFF</color>
     <color name="notification_text_color">#2489A9</color>

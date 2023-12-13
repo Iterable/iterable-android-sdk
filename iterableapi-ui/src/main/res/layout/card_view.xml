@@ -6,12 +6,12 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center_vertical"
     android:layout_marginTop="8dp"
-    android:layout_marginLeft="16dp"
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="0dp"
     android:background="@drawable/banner_card_border"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:layout_marginStart="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -22,25 +22,25 @@
             android:id="@+id/embedded_message_image"
             android:layout_width="358dp"
             android:layout_height="230dp"
-            android:src="@drawable/fiterable_boxing" />
+            android:contentDescription="TODO" />
 
         <TextView
             android:id="@+id/embedded_message_title"
             android:layout_width="240dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:layout_marginLeft="16dp"
-            android:text="Intro to Kickboxing"
+            android:text=""
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_marginStart="16dp" />
 
         <TextView
             android:id="@+id/embedded_message_body"
             android:layout_width="326dp"
             android:layout_height="32dp"
             android:layout_marginTop="8dp"
-            android:layout_marginLeft="16dp"
-            android:text="Our no-equipment boxing workout is cardio forward designed to bring out your inner warrior." />
+            android:text=""
+            android:layout_marginStart="16dp" />
 
         <com.google.android.flexbox.FlexboxLayout
             android:layout_width="wrap_content"
@@ -58,7 +58,7 @@
                 android:textColor="@color/white"
                 android:background="@drawable/banner_button_background"
                 android:stateListAnimator="@null"
-                android:text="Try subscription"
+                android:text=""
                 android:textAllCaps="false"
                 app:cornerRadius="32dp"
                 app:layout_flexBasisPercent="50%" />
@@ -70,7 +70,7 @@
                 android:backgroundTint="@android:color/transparent"
                 android:stateListAnimator="@null"
                 android:textColor="#6A266D"
-                android:text="Try subscription"
+                android:text=""
                 android:gravity="left"
                 android:textAllCaps="false"
                 app:cornerRadius="32dp" />

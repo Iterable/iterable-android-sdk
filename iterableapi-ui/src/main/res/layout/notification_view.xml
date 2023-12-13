@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
-            android:text="@string/notification_default_title"
+            android:text=""
             android:textSize="16sp"
             android:textColor="@color/notification_text_color"
             android:textStyle="bold" />
@@ -34,7 +34,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:textColor="@color/notification_text_color"
-            android:text="@string/notification_default_body" />
+            android:text="" />
 
     </LinearLayout>
 
@@ -54,7 +54,7 @@
             android:textColor="@color/notification_text_color"
             android:background="@drawable/notification_button_background"
             android:stateListAnimator="@null"
-            android:text="Try subscription"
+            android:text=""
             android:textAllCaps="false"
             app:cornerRadius="32dp"
             app:layout_flexBasisPercent="50%" />
@@ -66,7 +66,7 @@
             android:backgroundTint="@android:color/transparent"
             android:stateListAnimator="@null"
             android:textColor="@color/white"
-            android:text="Try subscription"
+            android:text=""
             android:gravity="left"
             android:textAllCaps="false"
             app:cornerRadius="32dp" />
