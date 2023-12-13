@@ -20,8 +20,6 @@
     <color name="Secondary_Gray">#999094</color>
     <color name="Secondary_Not_Black">#4D4D4D</color>
 
-    <color name="sign_in_button_color">#6A266D</color>
-
     <color name="notification_border_color">#C2F0FC</color>
     <color name="notification_background_color">#E6FBFF</color>
     <color name="notification_text_color">#2489A9</color>

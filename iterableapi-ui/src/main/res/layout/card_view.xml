@@ -22,7 +22,7 @@
             android:id="@+id/embedded_message_image"
             android:layout_width="358dp"
             android:layout_height="230dp"
-            android:contentDescription="TODO" />
+            android:contentDescription="Enter Here" />
 
         <TextView
             android:id="@+id/embedded_message_title"
