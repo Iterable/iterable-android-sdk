@@ -22,14 +22,13 @@
             android:id="@+id/embedded_message_image"
             android:layout_width="358dp"
             android:layout_height="230dp"
-            android:layout_marginBottom="16dp"
             android:src="@drawable/fiterable_boxing" />
 
         <TextView
             android:id="@+id/embedded_message_title"
             android:layout_width="240dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="0dp"
+            android:layout_marginTop="16dp"
             android:layout_marginLeft="16dp"
             android:text="Intro to Kickboxing"
             android:textSize="16sp"

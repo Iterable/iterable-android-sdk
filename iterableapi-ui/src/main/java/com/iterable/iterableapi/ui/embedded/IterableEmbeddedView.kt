@@ -115,7 +115,12 @@ class IterableEmbeddedView(
 
         if(viewType != IterableEmbeddedViewType.NOTIFICATION) {
             val embeddedMessageImageView: ImageView = view.findViewById(R.id.embedded_message_image)
-            Glide.with(view.context).load(message.elements?.mediaURL).into(embeddedMessageImageView)
+
+            if(message.elements?.mediaURL?.isEmpty() == true) {
+                embeddedMessageImageView.visibility = View.GONE
+            } else {
+                Glide.with(view.context).load(message.elements?.mediaURL).into(embeddedMessageImageView)
+            }
         }
 
         embeddedMessageViewTitle.text = message.elements?.title
