@@ -623,4 +623,40 @@ class IterableApiClient {
         getRequestProcessor().onLogout(authProvider.getContext());
         authProvider.resetAuth();
     }
+
+    void getUserByUserID(String userId, @Nullable IterableHelper.IterableActionHandler actionHandler) {
+        JSONObject requestJson = new JSONObject();
+        try {
+            requestJson.put(IterableConstants.ANON_USER_ID, userId);
+            sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_USERID, requestJson, actionHandler);
+        }
+        catch(JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void getUserByEmail(String email, @Nullable IterableHelper.IterableActionHandler actionHandler) {
+        JSONObject requestJson = new JSONObject();
+        try {
+            requestJson.put(IterableConstants.ANON_USER_EMAIL, email);
+            sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_EMAIL, requestJson, actionHandler);
+        }
+        catch(JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        JSONObject requestJson = new JSONObject();
+        try {
+            requestJson.put(IterableConstants.SOURCE_EMAIL, sourceEmail);
+            requestJson.put(IterableConstants.SOURCE_USER_ID, sourceUserId);
+            requestJson.put(IterableConstants.DESTINATION_EMAIL, destinationEmail);
+            requestJson.put(IterableConstants.DESTINATION_USER_ID, destinationUserId);
+            sendPostRequest(IterableConstants.ENDPOINT_MERGE_USER, requestJson, successHandler, failureHandler);
+        }
+        catch(JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

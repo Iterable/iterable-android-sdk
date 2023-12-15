@@ -267,7 +267,7 @@ public class AnonymousUserManager {
         syncEvents();
     }
 
-    private void syncEvents() {
+    void syncEvents() {
 
         JSONArray trackEventList = getEventListFromLocalStorage();
         if (trackEventList.length() > 0) {

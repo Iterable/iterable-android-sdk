@@ -76,6 +76,9 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
     public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
+    public static final String ENDPOINT_GET_USER_BY_USERID      = "users/byUserId";
+    public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
+    public static final String ENDPOINT_MERGE_USER              = "users/merge";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -269,4 +272,11 @@ public final class IterableConstants {
     public static final String TRACK_PURCHASE = "purchase";
     public static final String TRACK_UPDATE_CART = "cartUpdate";
     public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
+
+    public static final String ANON_USER_ID = "userId";
+    public static  final String ANON_USER_EMAIL = "email";
+    public static final String SOURCE_EMAIL = "sourceEmail";
+    public static final String SOURCE_USER_ID = "sourceUserId";
+    public static final String DESTINATION_EMAIL = "destinationEmail";
+    public static final String DESTINATION_USER_ID = "destinationUserId";
 }
