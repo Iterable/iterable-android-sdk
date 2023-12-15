@@ -9,11 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.google.android.flexbox.FlexboxLayout
 import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
@@ -116,6 +118,10 @@ class IterableEmbeddedView(
                 else ContextCompat.getDrawable(requireContext(), R.drawable.second_banner_button_background) as? GradientDrawable
             secondButtonBackgroundDrawable?.setColor(secondButtonBackgroundColor)
             secondButtonBackgroundDrawable?.setStroke(1, secondButtonBorderColor)
+
+            val params = secondButton.layoutParams as FlexboxLayout.LayoutParams
+            params.leftMargin = (8 * resources.displayMetrics.density).toInt()
+            secondButton.layoutParams = params
 
             secondButton.setBackgroundDrawable(secondButtonBackgroundDrawable)
         }
