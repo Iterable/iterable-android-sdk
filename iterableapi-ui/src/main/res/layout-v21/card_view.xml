@@ -67,7 +67,6 @@
                 android:id="@+id/embedded_message_second_button"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:layout_marginStart="8dp"
                 android:textColor="@color/white"
                 android:background="@drawable/second_banner_button_background"
                 android:stateListAnimator="@null"

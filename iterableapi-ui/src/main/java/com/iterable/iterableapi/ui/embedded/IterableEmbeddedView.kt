@@ -28,11 +28,11 @@ class IterableEmbeddedView(
 
     private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color) }
     private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color) }
-    private val defaultFirstButtonBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.banner_button_color) }
-    private val defaultFirstButtonBorderColor: Int by lazy { getDefaultColor(viewType, R.color.notification_button_border_color, R.color.banner_button_color) }
+    private val defaultFirstButtonBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.notification_button_border_color, R.color.banner_button_color) }
+    private val defaultFirstButtonBorderColor: Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_button_color) }
     private val defaultFirstButtonTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.white) }
-    private val defaultSecondButtonBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.white) }
-    private val defaultSecondButtonBorderColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.white) }
+    private val defaultSecondButtonBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.notification_background_color, R.color.white) }
+    private val defaultSecondButtonBorderColor: Int by lazy { getDefaultColor(viewType, R.color.notification_background_color, R.color.white) }
     private val defaultSecondButtonTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color) }
     private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color) }
     private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color) }
@@ -64,12 +64,12 @@ class IterableEmbeddedView(
         }
 
         setDefaultAction(view, message)
-        configure(view, config)
+        configure(view, viewType, config)
 
         return view
     }
 
-    private fun configure(view: View, config: IterableEmbeddedViewConfig?) {
+    private fun configure(view: View, viewType: IterableEmbeddedViewType, config: IterableEmbeddedViewConfig?) {
 
         val backgroundColor = config?.backgroundColor.takeIf { it != null } ?: defaultBackgroundColor
         val borderColor = config?.borderColor.takeIf { it != null } ?: defaultBorderColor
@@ -101,7 +101,9 @@ class IterableEmbeddedView(
         val bodyText = view.findViewById<TextView>(R.id.embedded_message_body)
 
         if(config?.firstButtonBackgroundColor != null || config?.firstButtonBorderColor != null) {
-            val buttonBackgroundDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
+            val buttonBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
+                ContextCompat.getDrawable(requireContext(), R.drawable.notification_button_background) as? GradientDrawable
+                else ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
             buttonBackgroundDrawable?.setColor(firstButtonBackgroundColor)
             buttonBackgroundDrawable?.setStroke(1, firstButtonBorderColor)
 
@@ -109,7 +111,9 @@ class IterableEmbeddedView(
         }
 
         if(config?.secondButtonBackgroundColor != null || config?.secondButtonBorderColor != null) {
-            val secondButtonBackgroundDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
+            val secondButtonBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
+                ContextCompat.getDrawable(requireContext(), R.drawable.second_notification_button_background) as? GradientDrawable
+                else ContextCompat.getDrawable(requireContext(), R.drawable.second_banner_button_background) as? GradientDrawable
             secondButtonBackgroundDrawable?.setColor(secondButtonBackgroundColor)
             secondButtonBackgroundDrawable?.setStroke(1, secondButtonBorderColor)
 
