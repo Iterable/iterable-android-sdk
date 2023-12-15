@@ -67,11 +67,11 @@
                 android:id="@+id/embedded_message_second_button"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:backgroundTint="@android:color/transparent"
+                android:layout_marginStart="8dp"
+                android:textColor="@color/white"
+                android:background="@drawable/second_banner_button_background"
                 android:stateListAnimator="@null"
-                android:textColor="#6A266D"
                 android:text=""
-                android:gravity="left"
                 android:textAllCaps="false"
                 app:cornerRadius="32dp" />
         </com.google.android.flexbox.FlexboxLayout>
