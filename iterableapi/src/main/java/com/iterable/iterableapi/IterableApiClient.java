@@ -217,7 +217,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable String[] messageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -245,7 +245,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable List<String> messageIds, @Nullable List<Long> placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
