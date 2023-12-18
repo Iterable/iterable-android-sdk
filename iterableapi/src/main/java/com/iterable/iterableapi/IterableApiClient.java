@@ -97,6 +97,31 @@ class IterableApiClient {
         }
     }
 
+    public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields, String createdAt) {
+        JSONObject requestJSON = new JSONObject();
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_EVENT_NAME, eventName);
+
+            if (campaignId != 0) {
+                requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            }
+            if (templateId != 0) {
+                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            }
+            if (dataFields != null) {
+                dataFields.remove(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+                dataFields.remove(IterableConstants.KEY_EVENT_NAME);
+            }
+            requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void updateCart(@NonNull List<CommerceItem> items) {
         JSONObject requestJSON = new JSONObject();
 
@@ -111,6 +136,26 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_USER, userObject);
 
             requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+
+            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_CART, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateCart(@NonNull List<CommerceItem> items, JSONObject userObject, String createdAt) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            JSONArray itemsArray = new JSONArray();
+            for (CommerceItem item : items) {
+                itemsArray.put(item.toJSONObject());
+            }
+
+            addEmailOrUserIdToJson(userObject);
+            requestJSON.put(IterableConstants.KEY_USER, userObject);
+            requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+            requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_CART, requestJSON);
         } catch (JSONException e) {
@@ -133,6 +178,31 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
             requestJSON.put(IterableConstants.KEY_TOTAL, total);
             if (dataFields != null) {
+                requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            }
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, JSONObject userObject, String createdAt) {
+        JSONObject requestJSON = new JSONObject();
+        try {
+            JSONArray itemsArray = new JSONArray();
+            for (CommerceItem item : items) {
+                itemsArray.put(item.toJSONObject());
+            }
+
+            addEmailOrUserIdToJson(userObject);
+            requestJSON.put(IterableConstants.KEY_USER, userObject);
+
+            requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+            requestJSON.put(IterableConstants.KEY_TOTAL, total);
+            requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
+            if (dataFields != null) {
+                dataFields.remove(IterableConstants.SHARED_PREFS_EVENT_TYPE);
                 requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             }
 
@@ -552,5 +622,41 @@ class IterableApiClient {
     void onLogout() {
         getRequestProcessor().onLogout(authProvider.getContext());
         authProvider.resetAuth();
+    }
+
+    void getUserByUserID(String userId, @Nullable IterableHelper.IterableActionHandler actionHandler) {
+        JSONObject requestJson = new JSONObject();
+        try {
+            requestJson.put(IterableConstants.ANON_USER_ID, userId);
+            sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_USERID, requestJson, actionHandler);
+        }
+        catch(JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void getUserByEmail(String email, @Nullable IterableHelper.IterableActionHandler actionHandler) {
+        JSONObject requestJson = new JSONObject();
+        try {
+            requestJson.put(IterableConstants.ANON_USER_EMAIL, email);
+            sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_EMAIL, requestJson, actionHandler);
+        }
+        catch(JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        JSONObject requestJson = new JSONObject();
+        try {
+            requestJson.put(IterableConstants.SOURCE_EMAIL, sourceEmail);
+            requestJson.put(IterableConstants.SOURCE_USER_ID, sourceUserId);
+            requestJson.put(IterableConstants.DESTINATION_EMAIL, destinationEmail);
+            requestJson.put(IterableConstants.DESTINATION_USER_ID, destinationUserId);
+            sendPostRequest(IterableConstants.ENDPOINT_MERGE_USER, requestJson, successHandler, failureHandler);
+        }
+        catch(JSONException e) {
+            e.printStackTrace();
+        }
     }
 }
