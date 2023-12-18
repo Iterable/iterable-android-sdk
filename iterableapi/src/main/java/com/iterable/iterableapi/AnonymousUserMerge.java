@@ -16,10 +16,10 @@ public class AnonymousUserMerge {
         apiClient.getUserByUserID(sourceUserId, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(@Nullable String data) {
-                if(data != null) {
+                if (data != null) {
                     try {
                         JSONObject dataObj = new JSONObject(data);
-                        if (dataObj.has("user")){
+                        if (dataObj.has("user")) {
                             callMergeApi(apiClient, "", sourceUserId, IterableApi.getInstance().getEmail(), destinationUserId);
                         }
                     } catch (JSONException e) {
@@ -38,7 +38,7 @@ public class AnonymousUserMerge {
         apiClient.getUserByEmail(sourceEmail, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(@Nullable String data) {
-                if(data != null) {
+                if (data != null) {
                     callMergeApi(apiClient, destinationEmail, "", destinationEmail, IterableApi.getInstance().getUserId());
                 }
             }

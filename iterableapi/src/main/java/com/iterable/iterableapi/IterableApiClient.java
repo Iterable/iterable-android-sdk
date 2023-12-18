@@ -629,8 +629,7 @@ class IterableApiClient {
         try {
             requestJson.put(IterableConstants.ANON_USER_ID, userId);
             sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_USERID, requestJson, actionHandler);
-        }
-        catch(JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -640,8 +639,7 @@ class IterableApiClient {
         try {
             requestJson.put(IterableConstants.ANON_USER_EMAIL, email);
             sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_EMAIL, requestJson, actionHandler);
-        }
-        catch(JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -654,8 +652,7 @@ class IterableApiClient {
             requestJson.put(IterableConstants.DESTINATION_EMAIL, destinationEmail);
             requestJson.put(IterableConstants.DESTINATION_USER_ID, destinationUserId);
             sendPostRequest(IterableConstants.ENDPOINT_MERGE_USER, requestJson, successHandler, failureHandler);
-        }
-        catch(JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
