@@ -44,6 +44,8 @@ public class IterableApi {
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
+    private static final AnonymousUserMerge anonymousUserMerge = new AnonymousUserMerge();
     private @Nullable IterableInAppManager inAppManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
@@ -536,9 +538,12 @@ public class IterableApi {
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
                 sharedInstance.apiClient.updateUser(dataFields, false);
             } catch (JSONException e) {
-                    IterableLogger.e(TAG, "initialize: exception", e);
+                IterableLogger.e(TAG, "initialize: exception", e);
             }
         }
+
+        anonymousUserManager.updateAnonSession();
+        anonymousUserManager.getCriteria();
     }
 
     public static void setContext(Context context) {
@@ -603,6 +608,7 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        anonymousUserMerge.mergeUserUsingEmail(apiClient, email);
         //Only if passed in same non-null email
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
@@ -637,6 +643,7 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        anonymousUserMerge.mergeUserUsingUserId(apiClient, userId);
         //If same non null userId is passed
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
@@ -892,10 +899,22 @@ public class IterableApi {
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
         if (!checkSDKInitialization()) {
+            anonymousUserManager.trackAnonEvent(eventName, dataFields);
             return;
         }
 
         apiClient.track(eventName, campaignId, templateId, dataFields);
+    }
+
+    /**
+     * Track an event.
+     *
+     * @param eventName
+     * @param dataFields
+     */
+    public void track(@NonNull String eventName, int campaignId, int templateId,  @Nullable JSONObject dataFields, String createdAt) {
+        IterableLogger.printInfo();
+        apiClient.track(eventName, campaignId, templateId, dataFields, createdAt);
     }
 
     /**
@@ -904,10 +923,22 @@ public class IterableApi {
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
         if (!checkSDKInitialization()) {
+            anonymousUserManager.trackAnonUpdateCart(items);
             return;
         }
 
         apiClient.updateCart(items);
+    }
+
+    /**
+     * Updates the status of the cart
+     *
+     * @param items
+     * @param userObject
+     * @param createdAt
+     */
+    public void updateCart(@NonNull List<CommerceItem> items, JSONObject userObject, String createdAt) {
+        apiClient.updateCart(items, userObject, createdAt);
     }
 
     /**
@@ -927,10 +958,24 @@ public class IterableApi {
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
         if (!checkSDKInitialization()) {
+            anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
             return;
         }
 
         apiClient.trackPurchase(total, items, dataFields);
+    }
+
+    /**
+     * Tracks a purchase.
+     *
+     * @param total      total purchase amount
+     * @param items      list of purchased items
+     * @param dataFields a `JSONObject` containing any additional information to save along with the event
+     * @param userObject a `JSONObject` containing user data
+     *
+     */
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, JSONObject userObject, String createdAt) {
+        apiClient.trackPurchase(total, items, dataFields, userObject, createdAt);
     }
 
     /**
