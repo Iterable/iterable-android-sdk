@@ -8,10 +8,8 @@ data class IterableEmbeddedViewConfig(
         val borderWidth: Int?,
         val borderCornerRadius: Float?,
         val firstButtonBackgroundColor: Int?,
-        val firstButtonBorderColor: Int?,
-        val secondButtonBackgroundColor: Int?,
-        val secondButtonBorderColor: Int?,
         val firstButtonTextColor: Int?,
+        val secondButtonBackgroundColor: Int?,
         val secondButtonTextColor: Int?,
         val titleTextColor: Int?,
         val bodyTextColor: Int?
