@@ -8,12 +8,15 @@ import org.json.JSONObject;
 
 public class AnonymousUserMerge {
     private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
+    private static final String TAG = "AnonymousUserMerge";
+
     void mergeUserUsingUserId(IterableApiClient apiClient, String destinationUserId) {
         String sourceUserId = IterableApi.getInstance().getUserId();
-        if (sourceUserId == null || sourceUserId.isEmpty()) {
+        if (sourceUserId == null || sourceUserId.isEmpty() || sourceUserId.equals(destinationUserId)) {
+            IterableLogger.d(TAG, "sourceUserId is null or same as destinationUserId");
             return;
         }
-        apiClient.getUserByUserID(sourceUserId, new IterableHelper.IterableActionHandler() {
+        apiClient.getUserByUserID(destinationUserId, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(@Nullable String data) {
                 if (data != null) {
@@ -31,13 +34,15 @@ public class AnonymousUserMerge {
     }
 
     void mergeUserUsingEmail(IterableApiClient apiClient, String destinationEmail) {
-        String sourceEmail = IterableApi.getInstance().getUserId();
-        if (sourceEmail == null || sourceEmail.isEmpty()) {
+        String sourceEmail = IterableApi.getInstance().getEmail();
+        if (sourceEmail == null || sourceEmail.isEmpty() || sourceEmail.equals(destinationEmail)) {
+            IterableLogger.d(TAG, "sourceEmail is null or same as destinationEmail");
             return;
         }
-        apiClient.getUserByEmail(sourceEmail, new IterableHelper.IterableActionHandler() {
+        apiClient.getUserByEmail(destinationEmail, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(@Nullable String data) {
+                IterableLogger.d(TAG, "data of email: " + data);
                 if (data != null) {
                     callMergeApi(apiClient, destinationEmail, "", destinationEmail, IterableApi.getInstance().getUserId());
                 }

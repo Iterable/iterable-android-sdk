@@ -26,7 +26,7 @@ import java.util.UUID;
 
 public class AnonymousUserManager {
 
-    private static final String TAG = "RNIterableAPIModule";
+    private static final String TAG = "AnonymousUserManager";
 
     void updateAnonSession() {
         IterableLogger.v(TAG, "updateAnonSession");

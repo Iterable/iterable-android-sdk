@@ -647,10 +647,18 @@ class IterableApiClient {
     void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJson = new JSONObject();
         try {
-            requestJson.put(IterableConstants.SOURCE_EMAIL, sourceEmail);
-            requestJson.put(IterableConstants.SOURCE_USER_ID, sourceUserId);
-            requestJson.put(IterableConstants.DESTINATION_EMAIL, destinationEmail);
-            requestJson.put(IterableConstants.DESTINATION_USER_ID, destinationUserId);
+            if (sourceEmail != null && !sourceEmail.isEmpty()) {
+                requestJson.put(IterableConstants.SOURCE_EMAIL, sourceEmail);
+            }
+            if (sourceUserId != null && !sourceUserId.isEmpty()) {
+                requestJson.put(IterableConstants.SOURCE_USER_ID, sourceUserId);
+            }
+            if (destinationEmail != null && !destinationEmail.isEmpty()) {
+                requestJson.put(IterableConstants.DESTINATION_EMAIL, destinationEmail);
+            }
+            if (destinationUserId != null && !destinationUserId.isEmpty()) {
+                requestJson.put(IterableConstants.DESTINATION_USER_ID, destinationUserId);
+            }
             sendPostRequest(IterableConstants.ENDPOINT_MERGE_USER, requestJson, successHandler, failureHandler);
         } catch (JSONException e) {
             e.printStackTrace();
