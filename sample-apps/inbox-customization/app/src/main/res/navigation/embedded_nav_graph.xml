@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/embedded_nav_graph"
+    app:startDestination="@id/embeddedMessageFragment">
+
+    <fragment
+        android:id="@+id/embeddedMessageFragment"
+        android:name="com.iterable.embedded_messaging.EmbeddedMessageFragment"
+        android:label="Single Embedded Message" >
+        <action
+            android:id="@+id/action_embeddedMessageFragment_to_embeddedMessageSettingsFragment"
+            app:destination="@id/embeddedMessageSettingsFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageFragment_to_embeddedMessageCarouselFragment"
+            app:destination="@id/embeddedMessageCarouselFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/embeddedMessageCarouselFragment"
+        android:name="com.iterable.embedded_messaging.EmbeddedMessageCarouselFragment"
+        android:label="Embedded Message Carousel" >
+        <action
+            android:id="@+id/action_embeddedMessageCarouselFragment_to_embeddedMessageSettingsFragment"
+            app:destination="@id/embeddedMessageSettingsFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageCarouselFragment_to_embeddedMessageFragment"
+            app:destination="@id/embeddedMessageFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/embeddedMessageSettingsFragment"
+        android:name="com.iterable.embedded_messaging.EmbeddedMessageSettingsFragment"
+        android:label="Settings" >
+        <action
+            android:id="@+id/action_embeddedMessageSettingsFragment_to_embeddedMessageCarouselFragment"
+            app:destination="@id/embeddedMessageCarouselFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageSettingsFragment_to_embeddedMessageFragment"
+            app:destination="@id/embeddedMessageFragment" />
+    </fragment>
+</navigation>

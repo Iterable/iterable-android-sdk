@@ -72,5 +72,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Additional Fields" />
+
+        <Button
+            android:id="@+id/embeddedMessagingButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:color="@color/colorPrimary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="224dp"
+            android:text="Embedded Messaging" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

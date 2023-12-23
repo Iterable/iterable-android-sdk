@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@id/embeddedMessageFragment"
+        android:icon="@drawable/message_tab"
+        android:title="Single Message" />
+
+    <item
+        android:id="@id/embeddedMessageCarouselFragment"
+        android:icon="@drawable/carousel_tab"
+        android:title="Carousel" />
+
+    <item
+        android:id="@id/embeddedMessageSettingsFragment"
+        android:icon="@drawable/settings_tab"
+        android:title="Settings" />
+
+</menu>
