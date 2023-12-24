@@ -1,0 +1,82 @@
+{
+  "placements": [
+    {
+      "placementId": 0,
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "doibjo4590340oidiobnw",
+            "placementId": 0,
+            "campaignId": 2324,
+            "isProof": true
+          },
+          "elements": {
+            "title": "CATS RULE EVERYTHING",
+            "body": "SAVE 15% OFF NOW",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [{
+              "id": "reward-button",
+              "title": "REDEEM MEOW",
+              "action": {
+                "type": "openUrl",
+                "data": "https://www.google.com"
+              }},
+              {
+                "id": "reward-button",
+                "title": "Sign Up",
+                "action": {
+                  "type": "openUrl",
+                  "data": "https://www.google.com"
+                }}
+            ],
+            "text": [{
+              "id": "body",
+              "text": "CATS RULE!!!",
+              "label": "label"
+            }]
+          },
+          "payload": {
+            "someKey": "someValue"
+          }
+        },
+        {
+          "metadata": {
+            "messageId": "faert442rjasiri99",
+            "placementId": 0,
+            "campaignId": 132,
+            "isProof": true
+          },
+          "elements": {
+            "title": "DEALS DEALS DEALS",
+            "body": "ACT NOW! FIRST ONE FREE",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [{
+              "id": "reward-button",
+              "title": "REDEEM MEOW",
+              "action": {
+                "type": "openUrl",
+                "data": "https://www.google.com"
+              }
+            }],
+            "text": [{
+              "id": "body",
+              "text": "CATS RULE!!!",
+              "label": "label"
+            }]
+          },
+          "payload": {
+            "someKey": "someValue"
+          }
+        }
+      ]
+    }
+  ]
+}

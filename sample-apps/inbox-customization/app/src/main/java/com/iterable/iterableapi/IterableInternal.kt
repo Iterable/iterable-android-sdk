@@ -5,5 +5,9 @@ class IterableInternal {
         fun syncInApp() {
             IterableApi.getInstance().inAppManager.syncInApp()
         }
+
+        fun syncEmbedded() {
+            IterableApi.getInstance().embeddedManager.syncMessages()
+        }
     }
 }

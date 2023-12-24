@@ -31,6 +31,7 @@ class DataManager {
         IterableApi.initialize(context, "apiKey")
         IterableApi.getInstance().setEmail("user@example.com")
         loadData("simple-inbox-messages.json")
+        loadDataEmbedded("simple-embedded-messages.json")
     }
 
     fun initHttpMocks() {
@@ -59,6 +60,12 @@ class DataManager {
             val body = getAssetString(resourceName).replace("https://somewhere.com/", instance.serverUrl)
             instance.dispatcher.setResponse("/inApp/getMessages", MockResponse().setBody(body))
             IterableInternal.syncInApp()
+        }
+
+        fun loadDataEmbedded(resourceName: String) {
+            val body = getAssetString(resourceName).replace("https://somewhere.com/", instance.serverUrl)
+            instance.dispatcher.setResponse("/embedded-messaging/messages", MockResponse().setBody(body))
+            IterableInternal.syncEmbedded()
         }
 
         private fun getAssetString(fileName: String): String {
