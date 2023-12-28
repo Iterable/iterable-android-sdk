@@ -3,6 +3,7 @@ package com.iterable.inbox_customization.util
 import android.content.Context
 import android.os.StrictMode
 import com.iterable.iterableapi.IterableApi
+import com.iterable.iterableapi.IterableConfig
 import com.iterable.iterableapi.IterableInternal
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
