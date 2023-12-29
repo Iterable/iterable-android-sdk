@@ -1,0 +1,134 @@
+{
+  "placements": [
+    {
+      "placementId": 0,
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "doibjo4590340oidiobnw"
+          }
+        },
+        {
+          "metadata": {
+            "messageId": "bbv3dwfqhbt54rfrtjktu",
+            "placementId": 0,
+            "campaignId": 1037,
+            "isProof": true
+          },
+          "elements": {
+            "title": "Nuttcracker ballet at the theatre",
+            "body": "Tickets on sale now!!",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [
+              {
+                "id": "reward-button",
+                "title": "REDEEM MEOW",
+                "action": {
+                  "type": "openUrl",
+                  "data": "https://www.google.com"
+                }
+              },
+              {
+                "id": "buy-ticket-button",
+                "title": "Buy Ticket",
+                "action": {
+                  "type": "action://buy",
+                  "data": ""
+                }
+              }
+            ]
+          }
+        },
+        {
+          "metadata": {
+            "messageId": "cdsw3frtyhj544rfryu",
+            "placementId": 0,
+            "campaignId": 1038,
+            "isProof": true
+          },
+          "elements": {
+            "title": "Nuggets are in the playoffs",
+            "body": "Tickets on sale now!!",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [
+              {
+                "id": "reward-button",
+                "title": "REDEEM MEOW",
+                "action": {
+                  "type": "openUrl",
+                  "data": "https://www.google.com"
+                }
+              },
+              {
+                "id": "buy-ticket-button",
+                "title": "Buy Ticket",
+                "action": {
+                  "type": "action://buy",
+                  "data": ""
+                }
+              }
+            ]
+          }
+        },
+        {
+          "metadata": {
+            "messageId": "gere453tsfkh698sfreqd"
+          }
+        }
+      ]
+    },
+    {
+      "placementId": 1,
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "dwef4gtrh5ewq2ryiort5t",
+            "placementId": 1,
+            "campaignId": 1039,
+            "isProof": true
+          },
+          "elements": {
+            "title": "Baseball season is in the spring",
+            "body": "Tickets on sale now!!",
+            "mediaUrl": "http://placekitten.com/200/300",
+            "defaultAction": {
+              "type": "someType",
+              "data": "someData"
+            },
+            "buttons": [
+              {
+                "id": "reward-button",
+                "title": "REDEEM MEOW",
+                "action": {
+                  "type": "openUrl",
+                  "data": "https://www.google.com"
+                }
+              },
+              {
+                "id": "buy-ticket-button",
+                "title": "Buy Ticket",
+                "action": {
+                  "type": "action://buy",
+                  "data": ""
+                }
+              }
+            ]
+          }
+        },
+        {
+          "metadata": {
+            "messageId": "faert442rjasiri99"
+          }
+        }
+      ]
+    }
+  ]
+}

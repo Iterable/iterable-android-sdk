@@ -70,6 +70,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
             String notificationType = extras.getString("notificationType");
             if (notificationType != null && IterableApi.getInstance().getMainActivityContext() != null) {
+                IterableLogger.d(TAG, "Notification Type: " + notificationType);
                 if (notificationType.equals("InAppUpdate")) {
                     IterableApi.getInstance().getInAppManager().syncInApp();
                 } else if (notificationType.equals("InAppRemove")) {
@@ -85,7 +86,8 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
     /**
      * Handles token refresh
-     * Call this from a custom {@link FirebaseMessagingService} to register the new token with Iterable
+     * Call this from a custom {@link FirebaseMessaging
+     * ngService} to register the new token with Iterable
      */
     public static void handleTokenRefresh() {
         String registrationToken = getFirebaseToken();

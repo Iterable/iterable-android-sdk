@@ -241,6 +241,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
 
         // update local message map for placement with remote message list
+        IterableLogger.d(TAG, "remote message list: $remoteMessageList")
         localPlacementMessagesMap[placementId] = remoteMessageList
 
         //if local messages changed, trigger a message update in UI
