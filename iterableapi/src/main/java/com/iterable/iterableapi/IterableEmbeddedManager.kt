@@ -22,6 +22,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var embeddedSessionManager = EmbeddedSessionManager()
 
     private var activityMonitor: IterableActivityMonitor? = null
+    private var currentMessageIds: Array<String>  = arrayOf()
 
     // endregion
 
@@ -202,12 +203,23 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
         // Compare the remote list to local list
         // if there are new messages, trigger a message update in UI and send out received events
-        remoteMessageList.forEach {
-            if (!localMessageMap.containsKey(it.metadata.messageId)) {
+        remoteMessageList.forEach { embeddedMessage ->
+            if (!localMessageMap.containsKey(embeddedMessage.metadata.messageId)) {
+                embeddedMessage.metadata.let { metadata ->
+                    val messageId: String = metadata.messageId
+                    messageId.let {
+                        currentMessageIds = currentMessageIds.plus(it)
+                    }
+                }
                 localMessagesChanged = true
-                IterableApi.getInstance().trackEmbeddedMessageReceived(it)
+                IterableApi.getInstance().trackEmbeddedMessageReceived(embeddedMessage)
             }
         }
+
+        val sharedPref = IterableApi.sharedInstance.mainActivityContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE)
+        val editor = sharedPref.edit()
+        editor.putStringSet(IterableConstants.SHARED_PREFS_CURRENT_EMBEDDED_MSGS, currentMessageIds.toSet())
+        editor.apply()
 
         // Compare the local list to remote list
         // if there are messages to remove, trigger a message update in UI
