@@ -70,13 +70,19 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
             String notificationType = extras.getString("notificationType");
             if (notificationType != null && IterableApi.getInstance().getMainActivityContext() != null) {
-                if (notificationType.equals("InAppUpdate")) {
-                    IterableApi.getInstance().getInAppManager().syncInApp();
-                } else if (notificationType.equals("InAppRemove")) {
-                    String messageId = extras.getString("messageId");
-                    if (messageId != null) {
-                        IterableApi.getInstance().getInAppManager().removeMessage(messageId);
-                    }
+                switch (notificationType) {
+                    case "InAppUpdate":
+                        IterableApi.getInstance().getInAppManager().syncInApp();
+                        break;
+                    case "InAppRemove":
+                        String messageId = extras.getString("messageId");
+                        if (messageId != null) {
+                            IterableApi.getInstance().getInAppManager().removeMessage(messageId);
+                        }
+                        break;
+                    case "UpdateEmbedded":
+                        IterableApi.getInstance().getEmbeddedManager().syncMessages();
+                        break;
                 }
             }
         }
