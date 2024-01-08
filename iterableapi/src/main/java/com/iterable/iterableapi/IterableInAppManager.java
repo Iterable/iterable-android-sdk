@@ -164,7 +164,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Trigger a manual sync. This method is called automatically by the SDK, so there should be no
      * need to call this method from your app.
      */
-    void syncInApp() {
+    public void syncInApp() {
         IterableLogger.printInfo();
         this.api.getInAppMessages(MESSAGES_TO_FETCH, new IterableHelper.IterableActionHandler() {
             @Override
