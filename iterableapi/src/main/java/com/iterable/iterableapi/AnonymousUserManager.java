@@ -119,117 +119,19 @@ public class AnonymousUserManager {
     }
 
     void getCriteria() {
-        try {
-            // call API when it is available and save data in SharedPreferences, until then just save the data using static data
-            String mockData = "{" +
-                    "    \"count\":2," +
-                    "    \"criteriaList\":[" +
-                    "        {" +
-                    "            \"criteriaId\":12345," +
-                    "            \"searchQuery\":{" +
-                    "                \"combinator\":\"Or\"," +
-                    "                \"searchQueries\":[" +
-                    "                    {" +
-                    "                        \"combinator\":\"And\"," +
-                    "                        \"searchQueries\":[" +
-                    "                            {" +
-                    "                                \"dataType\":\"purchase\"," +
-                    "                                \"searchCombo\":{" +
-                    "                                    \"combinator\":\"And\"," +
-                    "                                    \"searchQueries\":[" +
-                    "                                        {" +
-                    "                                            \"field\":\"shoppingCartItems.price\"," +
-                    "                                            \"fieldType\":\"double\"," +
-                    "                                            \"comparatorType\":\"Equals\"," +
-                    "                                            \"dataType\":\"purchase\"," +
-                    "                                            \"id\":2," +
-                    "                                            \"value\":\"4.67\"" +
-                    "                                        }," +
-                    "                                        {" +
-                    "                                            \"field\":\"shoppingCartItems.quantity\"," +
-                    "                                            \"fieldType\":\"long\"," +
-                    "                                            \"comparatorType\":\"GreaterThanOrEqualTo\"," +
-                    "                                            \"dataType\":\"purchase\"," +
-                    "                                            \"id\":3," +
-                    "                                            \"valueLong\":2," +
-                    "                                            \"value\":\"2\"" +
-                    "                                        }" +
-                    "                                    ]" +
-                    "                                }" +
-                    "                            }" +
-                    "                        ]" +
-                    "                    }" +
-                    "                ]" +
-                    "            }" +
-                    "        }," +
-                    "        {" +
-                    "            \"criteriaId\":5678," +
-                    "            \"searchQuery\":{" +
-                    "                \"combinator\":\"Or\"," +
-                    "                \"searchQueries\":[" +
-                    "                    {" +
-                    "                        \"combinator\":\"Or\"," +
-                    "                        \"searchQueries\":[" +
-                    "                            {" +
-                    "                                \"dataType\":\"user\"," +
-                    "                                \"searchCombo\":{" +
-                    "                                    \"combinator\":\"And\"," +
-                    "                                    \"searchQueries\":[" +
-                    "                                        {" +
-                    "                                            \"field\":\"itblInternal.emailDomain\"," +
-                    "                                            \"fieldType\":\"string\"," +
-                    "                                            \"comparatorType\":\"Equals\"," +
-                    "                                            \"dataType\":\"user\"," +
-                    "                                            \"id\":6," +
-                    "                                            \"value\":\"gmail.com\"" +
-                    "                                        }" +
-                    "                                    ]" +
-                    "                                }" +
-                    "                            }," +
-                    "                            {" +
-                    "                                \"dataType\":\"customEvent\"," +
-                    "                                \"searchCombo\":{" +
-                    "                                    \"combinator\":\"And\"," +
-                    "                                    \"searchQueries\":[" +
-                    "                                        {" +
-                    "                                            \"field\":\"eventName\"," +
-                    "                                            \"fieldType\":\"string\"," +
-                    "                                            \"comparatorType\":\"Equals\"," +
-                    "                                            \"dataType\":\"customEvent\"," +
-                    "                                            \"id\":9," +
-                    "                                            \"value\":\"processing_cancelled\"" +
-                    "                                        }," +
-                    "                                        {" +
-                    "                                            \"field\":\"createdAt\"," +
-                    "                                            \"fieldType\":\"date\"," +
-                    "                                            \"comparatorType\":\"GreaterThan\"," +
-                    "                                            \"dataType\":\"customEvent\"," +
-                    "                                            \"id\":10," +
-                    "                                            \"dateRange\":{" +
-                    "                                            }," +
-                    "                                            \"isRelativeDate\":false," +
-                    "                                            \"value\":\"1688194800000\"" +
-                    "                                        }" +
-                    "                                    ]" +
-                    "                                }" +
-                    "                            }" +
-                    "                        ]" +
-                    "                    }" +
-                    "                ]" +
-                    "            }" +
-                    "        }" +
-                    "    ]" +
-                    "}";
-
-            JSONObject mockDataObject = new JSONObject(mockData);
-            SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
-            editor.apply();
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        IterableApi.getInstance().apiClient.getCriteriaList(data -> {
+            if (data != null) {
+                try {
+                    JSONObject mockDataObject = new JSONObject(data);
+                    SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
+                    editor.apply();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private boolean checkCriteriaCompletion() {

@@ -79,6 +79,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_USER_BY_USERID      = "users/byUserId";
     public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
     public static final String ENDPOINT_MERGE_USER              = "users/merge";
+    public static final String ENDPOINT_CRITERIA_LIST           = "anonymoususer/list";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -268,7 +269,7 @@ public final class IterableConstants {
     public static final String NO_MESSAGES_BODY = "noMessagesBody";
 
     //Tracking types
-    public static final String TRACK_EVENT = "track";
+    public static final String TRACK_EVENT = "customEvent";
     public static final String TRACK_PURCHASE = "purchase";
     public static final String TRACK_UPDATE_CART = "cartUpdate";
     public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";

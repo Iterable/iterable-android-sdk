@@ -22,8 +22,8 @@ public class CriteriaCompletionChecker {
 
         try {
             JSONObject json = new JSONObject(criteriaData);
-            if (json.has("criteriaList")) {
-                JSONArray criteriaList = json.getJSONArray("criteriaList");
+            if (json.has("criterias")) {
+                JSONArray criteriaList = json.getJSONArray("criterias");
                 for (int i = 0; i < criteriaList.length(); i++) {
                     JSONObject criteria = criteriaList.getJSONObject(i);
                     if (criteria.has("searchQuery") && criteria.has("criteriaId")) {
