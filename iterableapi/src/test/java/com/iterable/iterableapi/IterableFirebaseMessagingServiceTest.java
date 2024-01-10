@@ -128,4 +128,14 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         verify(notificationHelperSpy).isGhostPush(any(Bundle.class));
     }
 
+    @Test
+    public void testUpdateMessagesIsCalled() throws Exception {
+        IterableEmbeddedManager embeddedManagerSpy = spy(IterableApi.getInstance().getEmbeddedManager());
+        when(apiMock.getEmbeddedManager()).thenReturn(embeddedManagerSpy);
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_embedded_update.json"));
+        controller.get().onMessageReceived(builder.build());
+        verify(embeddedManagerSpy).syncMessages();
+    }
 }
