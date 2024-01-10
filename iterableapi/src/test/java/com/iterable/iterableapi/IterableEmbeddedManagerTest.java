@@ -17,6 +17,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Objects;
+import java.util.Optional;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -142,6 +144,43 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
         verify(mockHandler1, times(0)).onMessagesUpdated();
         verify(mockHandler2, times(0)).onMessagesUpdated();
+    }
+
+    @Test
+    public void testMessagesUpdatedWithMessagesDiff() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("faert442rjasiri99", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_4.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        assertEquals(2, embeddedManager.getMessages(0L).size());
+        assertEquals(0, embeddedManager.getMessages(0L).get(0).getMetadata().getPlacementId());
+        assertEquals(0, embeddedManager.getMessages(0L).get(1).getMetadata().getPlacementId());
+        assertEquals("gere453tsfkh698sfreqd", embeddedManager.getMessages(0L).get(1).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("faert442rjasiri99", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_5.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        assertEquals(4, embeddedManager.getMessages(0L).size());
+        assertEquals(0, embeddedManager.getMessages(0L).get(1).getMetadata().getPlacementId());
+        assertEquals("bbv3dwfqhbt54rfrtjktu", embeddedManager.getMessages(0L).get(1).getMetadata().getMessageId());
+        assertEquals("cdsw3frtyhj544rfryu", embeddedManager.getMessages(0L).get(2).getMetadata().getMessageId());
+
+        assertEquals(2, embeddedManager.getMessages(1L).size());
+        assertEquals(1, embeddedManager.getMessages(1L).get(0).getMetadata().getPlacementId());
+        assertEquals("dwef4gtrh5ewq2ryiort5t", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
     }
 
     @Test

@@ -93,7 +93,8 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
     /**
      * Handles token refresh
-     * Call this from a custom {@link FirebaseMessagingService} to register the new token with Iterable
+     * Call this from a custom {@link FirebaseMessaging
+     * ngService} to register the new token with Iterable
      */
     public static void handleTokenRefresh() {
         String registrationToken = getFirebaseToken();

@@ -255,7 +255,7 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(placementIds, onCallback);
+        apiClient.getEmbeddedMessages(null, placementIds, onCallback);
     }
 
     /**
@@ -270,11 +270,11 @@ public class IterableApi {
      * @param onFailure
      */
 
-    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    public void getEmbeddedMessages(@Nullable List<Long> placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(placementIds, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(null, placementIds, onSuccess, onFailure);
     }
 
     /**
@@ -285,14 +285,15 @@ public class IterableApi {
      * To get list of messages as a list of EmbeddedMessages in memory, use
      * {@link IterableEmbeddedManager#getMessages(long)} instead
      *
+     * @param messageIds list of current message ids
      * @param onSuccess
      * @param onFailure
      */
-    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable List<String> messageIds, @Nullable List<Long> placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(null, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(messageIds, placementIds, onSuccess, onFailure);
     }
 
     /**

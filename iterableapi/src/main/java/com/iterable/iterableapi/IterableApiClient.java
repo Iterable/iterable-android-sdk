@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
@@ -15,7 +16,9 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
@@ -217,7 +220,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable String[] messageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -245,7 +248,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable List<String> messageIds, @Nullable List<Long> placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -255,19 +258,25 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null) {
-                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+            SharedPreferences sharedPreferences = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+            Set<String> retrievedIdsSet = sharedPreferences.getStringSet(IterableConstants.SHARED_PREFS_CURRENT_EMBEDDED_MSGS, new HashSet<>());
+            String[] currentMessageIds = retrievedIdsSet.toArray(new String[0]);
+            StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
 
+            if (placementIds != null) {
                 for (Long placementId : placementIds) {
                     pathBuilder.append("&placementIds=").append(placementId);
                 }
-
-                String path = pathBuilder.toString();
-                sendGetRequest(path, requestJSON, onSuccess, onFailure);
-            } else {
-                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
             }
 
+            if (currentMessageIds.length > 0) {
+                for (String currentMessageId : currentMessageIds) {
+                    pathBuilder.append("&currentMessageIds=").append(currentMessageId);
+                }
+            }
+
+            String path = pathBuilder.toString();
+            sendGetRequest(path.isEmpty() ? IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES : path, requestJSON, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }
