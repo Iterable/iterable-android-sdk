@@ -657,7 +657,12 @@ public class IterableApi {
         logoutPreviousUser();
 
         _email = null;
-        _userId = userId;
+        if (_userId == null) {
+            _userId = userId;
+            anonymousUserManager.syncEvents();
+        } else {
+            _userId = userId;
+        }
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
