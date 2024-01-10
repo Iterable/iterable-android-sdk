@@ -271,7 +271,7 @@ class IterableApiClient {
 
             if (currentMessageIds.length > 0) {
                 for (String currentMessageId : currentMessageIds) {
-                    pathBuilder.append("&currentMessageId=").append(currentMessageId);
+                    pathBuilder.append("&currentMessageIds=").append(currentMessageId);
                 }
             }
 
