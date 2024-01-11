@@ -248,7 +248,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable List<String> messageIds, @Nullable List<Long> placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable List<String> currentMessageIds, @Nullable List<Long> placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -258,9 +258,10 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            SharedPreferences sharedPreferences = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-            Set<String> retrievedIdsSet = sharedPreferences.getStringSet(IterableConstants.SHARED_PREFS_CURRENT_EMBEDDED_MSGS, new HashSet<>());
-            String[] currentMessageIds = retrievedIdsSet.toArray(new String[0]);
+//            SharedPreferences sharedPreferences = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+//            Set<String> retrievedIdsSet = sharedPreferences.getStringSet(IterableConstants.SHARED_PREFS_CURRENT_EMBEDDED_MSGS, new HashSet<>());
+//            String[] currentMessageIds = retrievedIdsSet.toArray(new String[0]);
+
             StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
 
             if (placementIds != null) {
@@ -269,7 +270,7 @@ class IterableApiClient {
                 }
             }
 
-            if (currentMessageIds.length > 0) {
+            if (currentMessageIds != null && !currentMessageIds.isEmpty()) {
                 for (String currentMessageId : currentMessageIds) {
                     pathBuilder.append("&currentMessageIds=").append(currentMessageId);
                 }
