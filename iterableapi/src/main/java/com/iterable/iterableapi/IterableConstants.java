@@ -185,6 +185,7 @@ public final class IterableConstants {
     public static final String ITERABLE_EMBEDDED_MESSAGE_TITLE = "title";
     public static final String ITERABLE_EMBEDDED_MESSAGE_BODY = "body";
     public static final String ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL = "mediaUrl";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL_CAPTION = "mediaUrlCaption";
     public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION = "defaultAction";
     public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTONS = "buttons";
     public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER = "buttonIdentifier";

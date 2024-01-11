@@ -263,6 +263,7 @@ class IterableEmbeddedPlacementTest {
             "Iterable Coffee Shoppe",
             "SAVE 15% OFF NOW",
             "http://placekitten.com/200/300",
+            "Cappuccino art of a cat",
             embeddedMessageDefaultAction,
             embeddedMessageButtons,
             embeddedMessageText
@@ -310,6 +311,7 @@ class IterableEmbeddedPlacementTest {
             "Iterable Coffee Shoppe",
             "SAVE 15% OFF NOW",
             "http://placekitten.com/200/300",
+            "Cappuccino art of a cat",
             embeddedMessageDefaultAction
         )
 
@@ -367,6 +369,7 @@ class IterableEmbeddedPlacementTest {
             "Subscribe to the newsletter",
             "Learn all about colorado kittens",
             "http://placekitten.com/200/300",
+            "Cappuccino art of a cat",
             embeddedMessageDefaultAction1,
             embeddedMessageButtons1,
             embeddedMessageText1
@@ -409,6 +412,7 @@ class IterableEmbeddedPlacementTest {
             "Experience the great outdoors",
             "Trips are going fast!",
             "http://placekitten.com/200/300",
+            "Cappuccino art of a cat",
             embeddedMessageDefaultAction2,
             embeddedMessageButtons2,
             embeddedMessageText2

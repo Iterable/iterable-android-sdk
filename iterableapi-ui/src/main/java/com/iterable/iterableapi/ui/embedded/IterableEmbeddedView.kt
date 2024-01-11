@@ -120,6 +120,7 @@ class IterableEmbeddedView(
                 embeddedMessageImageView.visibility = View.GONE
             } else {
                 Glide.with(view.context).load(message.elements?.mediaURL).into(embeddedMessageImageView)
+                embeddedMessageImageView.contentDescription = message.elements?.mediaUrlCaption
             }
         }
 

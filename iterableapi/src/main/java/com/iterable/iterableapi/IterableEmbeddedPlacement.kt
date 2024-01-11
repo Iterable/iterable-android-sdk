@@ -121,6 +121,7 @@ class EmbeddedMessageElements (
     val title: String? = null,
     val body: String? = null,
     val mediaURL: String? = null,
+    val mediaUrlCaption: String? = null,
     val defaultAction: EmbeddedMessageElementsDefaultAction? = null,
     val buttons: List<EmbeddedMessageElementsButton>? = null,
     val text: List<EmbeddedMessageElementsText>? = null
@@ -136,6 +137,7 @@ class EmbeddedMessageElements (
                 elementsJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TITLE, elements?.title)
                 elementsJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BODY, elements?.body)
                 elementsJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL, elements?.mediaURL)
+                elementsJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL_CAPTION, elements?.mediaUrlCaption)
 
                 if(elements?.defaultAction != null) {
                     elementsJson.putOpt(
@@ -174,6 +176,7 @@ class EmbeddedMessageElements (
             val title: String? = elementsJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_TITLE)
             val body: String? = elementsJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BODY)
             val mediaURL: String? = elementsJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL)
+            val mediaUrlCaption: String? = elementsJson.optString(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL)
 
             val defaultActionJson: JSONObject? = elementsJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION)
             var defaultAction: EmbeddedMessageElementsDefaultAction? = null
@@ -205,7 +208,7 @@ class EmbeddedMessageElements (
                 texts = null
             }
 
-            return EmbeddedMessageElements(title, body, mediaURL, defaultAction, buttons, texts)
+            return EmbeddedMessageElements(title, body, mediaURL, mediaUrlCaption, defaultAction, buttons, texts)
         }
     }
 }
