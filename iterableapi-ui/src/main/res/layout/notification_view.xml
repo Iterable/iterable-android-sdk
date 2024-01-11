@@ -52,7 +52,7 @@
             android:layout_height="36dp"
             android:layout_marginStart="16dp"
             android:textColor="@color/notification_text_color"
-            android:background="@drawable/notification_button_background"
+            android:background="@drawable/primary_notification_button_background"
             android:stateListAnimator="@null"
             android:text=""
             android:textAllCaps="false"
@@ -63,11 +63,10 @@
             android:id="@+id/embedded_message_second_button"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
-            android:backgroundTint="@android:color/transparent"
+            android:textColor="@color/notification_text_color"
+            android:background="@drawable/secondary_notification_button_background"
             android:stateListAnimator="@null"
-            android:textColor="@color/white"
             android:text=""
-            android:gravity="left"
             android:textAllCaps="false"
             app:cornerRadius="32dp" />
 
