@@ -81,7 +81,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
                         }
                         break;
                     case "UpdateEmbedded":
-                        IterableApi.getInstance().getEmbeddedManager().syncMessages();
+c                         IterableApi.getInstance().getEmbeddedManager().syncMessages();
                         break;
                     default:
                         break;

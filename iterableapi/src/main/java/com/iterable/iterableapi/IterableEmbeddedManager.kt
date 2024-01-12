@@ -13,7 +13,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region variables
     private var localPlacementMessagesMap = mutableMapOf<Long, MutableList<IterableEmbeddedMessage>>()
-    private var messageIdsMap = mutableMapOf<Long, MutableList<IterableEmbeddedMessage>>()
 
     private var placementIds = mutableListOf<Long>()
     private var messageIds = mutableListOf<String>()
@@ -25,7 +24,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var embeddedSessionManager = EmbeddedSessionManager()
 
     private var activityMonitor: IterableActivityMonitor? = null
-    //private var currentMessageIds: Array<String>  = arrayOf()
 
     // endregion
 
@@ -233,11 +231,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             }
         }
 
-//        val sharedPref = IterableApi.sharedInstance.mainActivityContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE)
-//        val editor = sharedPref.edit()
-//        editor.putStringSet(IterableConstants.SHARED_PREFS_CURRENT_EMBEDDED_MSGS, currentMessageIds.toSet())
-//        editor.apply()
-
         // Compare the local list to remote list
         // if there are messages to remove, trigger a message update in UI
         val remoteMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
@@ -245,12 +238,14 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             remoteMessageMap[it.metadata.messageId] = it
         }
 
+        //iterate through current messages and remove the messages that are not in the remote list
         val iterator = localMessages?.iterator()
         while (iterator?.hasNext() == true) {
             val embeddedMessage = iterator.next()
             if (!remoteMessageMap.containsKey(embeddedMessage.metadata.messageId)) {
                 localMessagesChanged = true
                 iterator.remove()
+                //remove from local messages to allow message payload to be re-fetched
                 localMessages?.remove(embeddedMessage)
             }
         }
