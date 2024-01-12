@@ -258,17 +258,21 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+            StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES);
 
-            if (placementIds != null) {
-                for (Long placementId : placementIds) {
-                    pathBuilder.append("&placementIds=").append(placementId);
+            if(placementIds != null || (currentMessageIds != null && !currentMessageIds.isEmpty())) {
+                pathBuilder.append("?");
+
+                if (placementIds != null) {
+                    for (Long placementId : placementIds) {
+                        pathBuilder.append("&placementIds=").append(placementId);
+                    }
                 }
-            }
 
-            if (currentMessageIds != null && !currentMessageIds.isEmpty()) {
-                for (String currentMessageId : currentMessageIds) {
-                    pathBuilder.append("&currentMessageIds=").append(currentMessageId);
+                if (currentMessageIds != null && !currentMessageIds.isEmpty()) {
+                    for (String currentMessageId : currentMessageIds) {
+                        pathBuilder.append("&currentMessageIds=").append(currentMessageId);
+                    }
                 }
             }
 
