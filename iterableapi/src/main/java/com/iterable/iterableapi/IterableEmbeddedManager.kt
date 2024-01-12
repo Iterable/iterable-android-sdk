@@ -13,6 +13,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region variables
     private var localPlacementMessagesMap = mutableMapOf<Long, MutableList<IterableEmbeddedMessage>>()
+    private var messageIdsMap = mutableMapOf<Long, MutableList<IterableEmbeddedMessage>>()
+
     private var placementIds = mutableListOf<Long>()
     private var messageIds = mutableListOf<String>()
 
@@ -23,7 +25,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var embeddedSessionManager = EmbeddedSessionManager()
 
     private var activityMonitor: IterableActivityMonitor? = null
-    private var currentMessageIds: Array<String>  = arrayOf()
+    //private var currentMessageIds: Array<String>  = arrayOf()
 
     // endregion
 
@@ -74,6 +76,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     fun reset() {
         localPlacementMessagesMap = mutableMapOf()
+        messageIds = mutableListOf<String>()
     }
 
     fun getPlacementIds(): List<Long> {
@@ -248,6 +251,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             if (!remoteMessageMap.containsKey(embeddedMessage.metadata.messageId)) {
                 localMessagesChanged = true
                 iterator.remove()
+                localMessages?.remove(embeddedMessage)
             }
         }
 
