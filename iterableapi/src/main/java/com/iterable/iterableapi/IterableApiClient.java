@@ -258,10 +258,6 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-//            SharedPreferences sharedPreferences = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-//            Set<String> retrievedIdsSet = sharedPreferences.getStringSet(IterableConstants.SHARED_PREFS_CURRENT_EMBEDDED_MSGS, new HashSet<>());
-//            String[] currentMessageIds = retrievedIdsSet.toArray(new String[0]);
-
             StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
 
             if (placementIds != null) {
