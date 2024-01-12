@@ -11,10 +11,10 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.google.android.flexbox.FlexboxLayout
 import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
-import com.iterable.iterableapi.IterableLogger
 import com.iterable.iterableapi.ui.R
 
 class IterableEmbeddedView(
@@ -26,8 +26,8 @@ class IterableEmbeddedView(
     private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color) }
     private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color) }
     private val defaultPrimaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.banner_button_color) }
-    private val defaultPrimaryBtnBorderColor: Int by lazy { getDefaultColor(viewType, R.color.notification_button_border_color, R.color.banner_button_color) }
     private val defaultPrimaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.white) }
+    private val defaultSecondaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.notification_background_color, R.color.white) }
     private val defaultSecondaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color) }
     private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color) }
     private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color) }
@@ -59,22 +59,23 @@ class IterableEmbeddedView(
         }
 
         setDefaultAction(view, message)
-        configure(view, config)
+        configure(view, viewType, config)
 
         return view
     }
 
-    private fun configure(view: View, config: IterableEmbeddedViewConfig?) {
+    private fun configure(view: View, viewType: IterableEmbeddedViewType, config: IterableEmbeddedViewConfig?) {
 
         val backgroundColor = config?.backgroundColor.takeIf { it != null } ?: defaultBackgroundColor
         val borderColor = config?.borderColor.takeIf { it != null } ?: defaultBorderColor
         val borderWidth = config?.borderWidth.takeIf { it != null } ?: defaultBorderWidth
         val borderCornerRadius = config?.borderCornerRadius.takeIf { it != null } ?: defaultBorderCornerRadius
 
-        val firstButtonBackgroundColor = config?.primaryBtnBackgroundColor.takeIf { it != null } ?: defaultPrimaryBtnBackgroundColor
-        val firstButtonBorderColor = config?.primaryBtnBorderColor.takeIf { it != null } ?: defaultPrimaryBtnBorderColor
-        val firstButtonTextColor = config?.primaryBtnTextColor.takeIf { it != null } ?: defaultPrimaryBtnTextColor
-        val secondButtonTextColor = config?.secondaryBtnTextColor.takeIf { it != null } ?: defaultSecondaryBtnTextColor
+        val primaryBtnBackgroundColor = config?.primaryBtnBackgroundColor.takeIf { it != null } ?: defaultPrimaryBtnBackgroundColor
+        val primaryBtnTextColor = config?.primaryBtnTextColor.takeIf { it != null } ?: defaultPrimaryBtnTextColor
+
+        val secondaryBtnBackgroundColor = config?.secondaryBtnBackgroundColor.takeIf { it != null } ?: defaultSecondaryBtnBackgroundColor
+        val secondaryBtnTextColor = config?.secondaryBtnTextColor.takeIf { it != null } ?: defaultSecondaryBtnTextColor
 
         val titleTextColor = config?.titleTextColor.takeIf { it != null } ?: defaultTitleTextColor
         val bodyTextColor = config?.bodyTextColor.takeIf { it != null } ?: defaultBodyTextColor
@@ -92,16 +93,30 @@ class IterableEmbeddedView(
         val titleText = view.findViewById<TextView>(R.id.embedded_message_title)
         val bodyText = view.findViewById<TextView>(R.id.embedded_message_body)
 
-        if(config?.primaryBtnBackgroundColor != null || config?.primaryBtnBorderColor != null) {
-            val buttonBackgroundDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.banner_button_background) as? GradientDrawable
-            buttonBackgroundDrawable?.setColor(firstButtonBackgroundColor)
-            buttonBackgroundDrawable?.setStroke(1, firstButtonBorderColor)
+        if(config?.primaryBtnBackgroundColor != null) {
+            val primaryBtnBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
+                ContextCompat.getDrawable(requireContext(), R.drawable.primary_notification_button_background) as? GradientDrawable
+                else ContextCompat.getDrawable(requireContext(), R.drawable.primary_banner_button_background) as? GradientDrawable
+            primaryBtnBackgroundDrawable?.setColor(primaryBtnBackgroundColor)
 
-            firstButton.setBackgroundDrawable(buttonBackgroundDrawable)
+            firstButton.setBackgroundDrawable(primaryBtnBackgroundDrawable)
         }
 
-        firstButton.setTextColor(firstButtonTextColor)
-        secondButton.setTextColor(secondButtonTextColor)
+        if(config?.secondaryBtnBackgroundColor != null) {
+            val secondaryBtnBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
+                ContextCompat.getDrawable(requireContext(), R.drawable.secondary_notification_button_background) as? GradientDrawable
+                else ContextCompat.getDrawable(requireContext(), R.drawable.secondary_banner_button_background) as? GradientDrawable
+            secondaryBtnBackgroundDrawable?.setColor(secondaryBtnBackgroundColor)
+
+            val params = secondButton.layoutParams as FlexboxLayout.LayoutParams
+            params.leftMargin = (8 * resources.displayMetrics.density).toInt()
+            secondButton.layoutParams = params
+
+            secondButton.setBackgroundDrawable(secondaryBtnBackgroundDrawable)
+        }
+
+        firstButton.setTextColor(primaryBtnTextColor)
+        secondButton.setTextColor(secondaryBtnTextColor)
 
         titleText.setTextColor(titleTextColor)
         bodyText.setTextColor(bodyTextColor)
