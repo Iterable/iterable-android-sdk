@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation_graph"
+    app:startDestination="@id/mainFragment">
+
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.iterable.androidsdk.inboxCustomization.MainFragment"
+        android:label="Inbox Customization"
+        tools:layout="@layout/fragment_main" />
+    <fragment
+        android:id="@+id/simpleInboxFragment"
+        android:name="com.iterable.androidsdk.inboxCustomization.tabs.SimpleInbox"
+        android:label="Simple Inbox"
+        tools:layout="@layout/iterable_inbox_fragment" />
+    <fragment
+        android:id="@+id/customInboxFragment"
+        android:name="com.iterable.androidsdk.inboxCustomization.tabs.CustomInbox"
+        android:label="Custom Inbox"
+        tools:layout="@layout/iterable_inbox_fragment" />
+</navigation>
