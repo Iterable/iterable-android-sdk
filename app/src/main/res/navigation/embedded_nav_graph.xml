@@ -15,6 +15,9 @@
         <action
             android:id="@+id/action_embeddedMessageFragment_to_embeddedMessageCarouselFragment"
             app:destination="@id/embeddedMessageCarouselFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageSettingsFragment_to_embeddedMessageAllViewFragment"
+            app:destination="@id/embeddedMessageAllViewFragment" />
     </fragment>
     <fragment
         android:id="@+id/embeddedMessageCarouselFragment"
@@ -26,6 +29,23 @@
         <action
             android:id="@+id/action_embeddedMessageCarouselFragment_to_embeddedMessageFragment"
             app:destination="@id/embeddedMessageFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageSettingsFragment_to_embeddedMessageAllViewFragment"
+            app:destination="@id/embeddedMessageAllViewFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/embeddedMessageAllViewFragment"
+        android:name="com.iterable.androidsdk.embeddedMessaging.EmbeddedMessageAllViewFragment"
+        android:label="Embedded Message All View" >
+        <action
+            android:id="@+id/action_embeddedMessageAllViewFragment_to_embeddedMessageCarouselFragment"
+            app:destination="@id/embeddedMessageCarouselFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageAllViewFragment_to_embeddedMessageFragment"
+            app:destination="@id/embeddedMessageFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageAllViewFragment_to_embeddedMessageSettingsFragment"
+            app:destination="@id/embeddedMessageSettingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/embeddedMessageSettingsFragment"
@@ -37,5 +57,8 @@
         <action
             android:id="@+id/action_embeddedMessageSettingsFragment_to_embeddedMessageFragment"
             app:destination="@id/embeddedMessageFragment" />
+        <action
+            android:id="@+id/action_embeddedMessageSettingsFragment_to_embeddedMessageAllViewFragment"
+            app:destination="@id/embeddedMessageAllViewFragment" />
     </fragment>
 </navigation>

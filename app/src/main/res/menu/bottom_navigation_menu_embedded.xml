@@ -12,6 +12,11 @@
         android:title="Carousel" />
 
     <item
+        android:id="@id/embeddedMessageAllViewFragment"
+        android:icon="@drawable/carousel_tab"
+        android:title="All View" />
+
+    <item
         android:id="@id/embeddedMessageSettingsFragment"
         android:icon="@drawable/settings_tab"
         android:title="Settings" />
