@@ -664,4 +664,9 @@ class IterableApiClient {
             e.printStackTrace();
         }
     }
+
+    void getCriteriaList(@Nullable IterableHelper.IterableActionHandler actionHandler) {
+        sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
+    }
+
 }
