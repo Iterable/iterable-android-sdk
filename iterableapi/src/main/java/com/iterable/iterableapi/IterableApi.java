@@ -608,7 +608,9 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        anonymousUserMerge.mergeUserUsingEmail(apiClient, email);
+        if (email != null && !email.isEmpty()) {
+            anonymousUserMerge.mergeUserUsingEmail(apiClient, email);
+        }
         //Only if passed in same non-null email
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
@@ -643,7 +645,9 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        anonymousUserMerge.mergeUserUsingUserId(apiClient, userId);
+        if (userId != null && !userId.isEmpty()) {
+            anonymousUserMerge.mergeUserUsingUserId(apiClient, userId);
+        }
         //If same non null userId is passed
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
