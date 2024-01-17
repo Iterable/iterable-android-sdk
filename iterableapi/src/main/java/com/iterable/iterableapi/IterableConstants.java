@@ -123,11 +123,10 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_SESSION_NO = "number_of_sessions";
     public static final String SHARED_PREFS_LAST_SESSION = "last_session";
     public static final String SHARED_PREFS_FIRST_SESSION = "first_session";
-    public static final String SHARED_PREFS_EVENT_TYPE = "dataType";
+    public static final String SHARED_PREFS_EVENT_TYPE = "eventType";
     public static final String SHARED_PREFS_CRITERIA = "criteria";
-    public static final String SHARED_PREFS_CRITERIA_LIST = "criteriaList";
-    public static final String SHARED_PREFS_CRITERIA_TYPE = "dataType";
-    public static final String SHARED_PREFS_AGGREGATE_COUNT = "aggregateCount";
+    public static final String SHARED_PREFS_CRITERIA_ID = "anon_criteria_id";
+    public static final String SHARED_PREFS_PUSH_OPT_IN = "pushOptIn";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -168,6 +167,7 @@ public final class IterableConstants {
     public static final String REQUEST_CODE             = "requestCode";
     public static final String ACTION_IDENTIFIER        = "actionIdentifier";
     public static final String USER_INPUT               = "userInput";
+    public static final String DATA_REPLACE             = "dataReplace";
 
     //Firebase
     public static final String FIREBASE_SENDER_ID       = "gcm_defaultSenderId";
@@ -273,6 +273,7 @@ public final class IterableConstants {
     public static final String TRACK_PURCHASE = "purchase";
     public static final String TRACK_UPDATE_CART = "cartUpdate";
     public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
+    public static final String UPDATE_USER = "updateUser";
 
     public static final String ANON_USER_ID = "userId";
     public static  final String ANON_USER_EMAIL = "email";

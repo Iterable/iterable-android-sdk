@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -83,6 +84,17 @@ public class AnonymousUserManager {
         }
     }
 
+    void trackAnonUpdateUser(JSONObject dataFields) {
+        try {
+            JSONObject newDataObject = new JSONObject();
+            newDataObject.put(IterableConstants.DATA_REPLACE, dataFields);
+            newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.UPDATE_USER);
+            storeEventListToLocalStorage(newDataObject, true);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     void trackAnonPurchaseEvent(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
 
         IterableLogger.v(TAG, "trackAnonPurchaseEvent");
@@ -134,7 +146,7 @@ public class AnonymousUserManager {
         });
     }
 
-    private boolean checkCriteriaCompletion() {
+    private Integer checkCriteriaCompletion() {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
@@ -142,24 +154,28 @@ public class AnonymousUserManager {
         try {
             if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
                 CriteriaCompletionChecker checker = new CriteriaCompletionChecker();
-                return checker.getMatchedCriteria(criteriaData, localStoredEventList) != null;
+                return checker.getMatchedCriteria(criteriaData, localStoredEventList);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return false;
+        return null;
     }
 
-    private void createKnownUser() {
+    private void createKnownUser(Integer criteriaId) {
         IterableApi.getInstance().setUserId(UUID.randomUUID().toString());
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
 
         try {
             if (!userData.isEmpty()) {
-                JSONObject userDataJson = new JSONObject(userData);
-                IterableApi.getInstance().updateUser(userDataJson);
+                JSONObject userSessionDataJson = new JSONObject(userData);
+                JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, criteriaId);
+                userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
+                userDataJson.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
+                IterableApi.getInstance().track(IterableConstants.SHARED_PREFS_ANON_SESSIONS, userDataJson);
             }
 
         } catch (JSONException e) {
@@ -228,6 +244,10 @@ public class AnonymousUserManager {
                             IterableApi.getInstance().updateCart(list, userObject, createdAt);
                             break;
                         }
+                        case IterableConstants.UPDATE_USER: {
+                            IterableApi.getInstance().updateUser(event.getJSONObject(IterableConstants.DATA_REPLACE));
+                            break;
+                        }
                         default:
                             break;
                     }
@@ -249,15 +269,47 @@ public class AnonymousUserManager {
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
+        storeEventListToLocalStorage(newDataObject, false);
+    }
+
+    private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
         JSONArray previousDataArray = getEventListFromLocalStorage();
+        try {
+            if (shouldOverWrite) {
+                int indexToRemove = -1;
+                String trackingType = newDataObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+                for (int i = 0; i < previousDataArray.length(); i++) {
+                    JSONObject jsonObject = previousDataArray.getJSONObject(i);
+                    if (jsonObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(trackingType)) {
+                        indexToRemove = i;
+                        break;
+                    }
+                }
+
+                if (indexToRemove >= 0) {
+                    JSONArray newDataArray = new JSONArray();
+                    for (int j = 0; j < previousDataArray.length(); j++) {
+                        if (j != indexToRemove) {
+                            newDataArray.put(previousDataArray.get(j));
+                        }
+                    }
+
+                    previousDataArray = newDataArray;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         previousDataArray.put(newDataObject);
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
         editor.apply();
 
-        if (checkCriteriaCompletion()) {
-            createKnownUser();
+        Integer criteriaId = checkCriteriaCompletion();
+        if (criteriaId != null) {
+            createKnownUser(criteriaId);
         }
     }
 
@@ -284,5 +336,10 @@ public class AnonymousUserManager {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(new Date());
+    }
+
+    private boolean getPushStatus() {
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(IterableApi.getInstance().getMainActivityContext());
+        return notificationManagerCompat.areNotificationsEnabled();
     }
 }
