@@ -85,6 +85,7 @@ public class AnonymousUserManager {
     }
 
     void trackAnonUpdateUser(JSONObject dataFields) {
+        IterableLogger.v(TAG, "updateAnonUser");
         try {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.DATA_REPLACE, dataFields);
@@ -164,9 +165,9 @@ public class AnonymousUserManager {
     }
 
     private void createKnownUser(Integer criteriaId) {
-        IterableApi.getInstance().setUserId(UUID.randomUUID().toString());
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
+        IterableApi.getInstance().setUserId(UUID.randomUUID().toString());
 
         try {
             if (!userData.isEmpty()) {

@@ -31,7 +31,9 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        IterableApi.initialize(this, "1c4b47f3177b44c6b9bc1524b21d1ba7");
+//        IterableApi.initialize(this, "1c4b47f3177b44c6b9bc1524b21d1ba7");
+        //Below api key is used to display merge user feature
+        IterableApi.initialize(this, "289895aa038648ee9e4ce60bd0a46e9c");
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
