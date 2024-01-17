@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        IterableApi.initialize(this, "17886a58ef2148b0a7b4f3ea9d958e7f");
+        IterableApi.initialize(this, "1c4b47f3177b44c6b9bc1524b21d1ba7");
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
