@@ -26,21 +26,26 @@
 
         <TextView
             android:id="@+id/embedded_message_title"
-            android:layout_width="240dp"
+            android:layout_width="326dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text=""
             android:textSize="16sp"
             android:textStyle="bold"
-            android:layout_marginStart="16dp" />
+            android:layout_marginStart="16dp"
+            android:maxLines="2"
+            android:ellipsize="end" />
 
         <TextView
             android:id="@+id/embedded_message_body"
             android:layout_width="326dp"
-            android:layout_height="32dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
             android:text=""
-            android:layout_marginStart="16dp" />
+            android:layout_marginStart="16dp"
+            android:maxLines="3"
+            android:ellipsize="end" />
 
         <com.google.android.flexbox.FlexboxLayout
             android:layout_width="wrap_content"
