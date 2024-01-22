@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -15,24 +17,29 @@ import com.google.android.flexbox.FlexboxLayout
 import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
+import com.iterable.iterableapi.IterableLogger
 import com.iterable.iterableapi.ui.R
 
 class IterableEmbeddedView(
-    private var viewType: IterableEmbeddedViewType,
+    private var   viewType: IterableEmbeddedViewType,
     private var message: IterableEmbeddedMessage,
-    private var config: IterableEmbeddedViewConfig?
+    private var config: IterableEmbeddedViewConfig?,
+    private var frameLayoutHeight: Int
 ): Fragment() {
 
-    private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color) }
-    private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color) }
-    private val defaultPrimaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.banner_button_color) }
-    private val defaultPrimaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.white) }
-    private val defaultSecondaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.notification_background_color, R.color.white) }
-    private val defaultSecondaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color) }
-    private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color) }
-    private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color) }
+    private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color, R.color.banner_background_color) }
+    private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color, R.color.banner_border_color) }
+    private val defaultPrimaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.white, R.color.banner_button_color) }
+    private val defaultPrimaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color, R.color.white) }
+    private val defaultSecondaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.notification_background_color, R.color.white, R.color.white) }
+    private val defaultSecondaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color, R.color.banner_button_color) }
+    private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color, R.color.title_text_color) }
+    private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color, R.color.body_text_color) }
     private val defaultBorderWidth = 1
     private val defaultBorderCornerRadius = 8f
+
+    private var textContainerHeight: Int = 0
+    private var buttonsContainerHeight: Int = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,10 +65,46 @@ class IterableEmbeddedView(
             }
         }
 
+//        val textContainer = view.findViewById<LinearLayout>(R.id.embedded_message_text_container)
+//        val buttonsContainer = view.findViewById<LinearLayout>(R.id.embedded_message_buttons_container)
+//        val imageView = view.findViewById<ImageView>(R.id.embedded_message_image)
+//
+//        textContainer.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+//            override fun onPreDraw(): Boolean {
+//                textContainer.viewTreeObserver.removeOnPreDrawListener(this)
+//                textContainerHeight = textContainer.height
+//                // Now you can use textAndButtonsLayoutHeight as needed
+//                return true
+//            }
+//        })
+//
+//        buttonsContainer.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+//            override fun onPreDraw(): Boolean {
+//                buttonsContainer.viewTreeObserver.removeOnPreDrawListener(this)
+//                buttonsContainerHeight = buttonsContainer.height
+//
+//                val imageHeight = frameLayoutHeight - textContainerHeight - buttonsContainerHeight
+//                updateImageviewHeight(imageView, imageHeight)
+//
+//                // Now you can use buttonsContainerHeight as needed
+//                return true
+//            }
+//        })
+
         setDefaultAction(view, message)
         configure(view, viewType, config)
 
         return view
+    }
+
+    private fun updateImageviewHeight(imageView: ImageView, height: Int) {
+        // Set the new height for the ImageView
+        val layoutParams = imageView.layoutParams
+        layoutParams.height = height
+        imageView.layoutParams = layoutParams
+
+        // If you want the changes to take effect immediately, request a layout pass
+        imageView.requestLayout()
     }
 
     private fun configure(view: View, viewType: IterableEmbeddedViewType, config: IterableEmbeddedViewConfig?) {
@@ -92,6 +135,15 @@ class IterableEmbeddedView(
 
         val titleText = view.findViewById<TextView>(R.id.embedded_message_title)
         val bodyText = view.findViewById<TextView>(R.id.embedded_message_body)
+
+//        if(viewType == IterableEmbeddedViewType.CARD) {
+//            val image = view.findViewById<ImageView>(R.id.embedded_message_image)
+//            val layoutParams = image.layoutParams
+//            val density = resources.displayMetrics.density
+//
+//            layoutParams.height = (frameLayoutHeight * density).toInt() - textContainerHeight - buttonsContainerHeight
+//            image.layoutParams = layoutParams
+//        }
 
         if(config?.primaryBtnBackgroundColor != null) {
             val primaryBtnBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
@@ -184,9 +236,10 @@ class IterableEmbeddedView(
         }
     }
 
-    private fun getDefaultColor(viewType: IterableEmbeddedViewType, notificationColor: Int, bannerColor: Int): Int {
+    private fun getDefaultColor(viewType: IterableEmbeddedViewType, notificationColor: Int, cardColor: Int, bannerColor: Int): Int {
         return when (viewType) {
             IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), notificationColor)
+            IterableEmbeddedViewType.CARD -> ContextCompat.getColor(requireContext(), cardColor)
             else -> ContextCompat.getColor(requireContext(), bannerColor)
         }
     }

@@ -47,38 +47,76 @@
             android:maxLines="3"
             android:ellipsize="end" />
 
-        <com.google.android.flexbox.FlexboxLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:flexWrap="wrap"
-            app:alignContent="flex_start"
-            app:alignItems="flex_start">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/embedded_message_first_button"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_marginStart="16dp"
-                android:textColor="@color/white"
-                android:background="@drawable/primary_banner_button_background"
-                android:stateListAnimator="@null"
-                android:text=""
-                android:textAllCaps="false"
-                app:cornerRadius="32dp"
-                app:layout_flexBasisPercent="50%" />
+        <Button
+            android:id="@+id/embedded_message_first_button"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:textColor="@color/white"
+            android:background="@drawable/primary_banner_button_background"
+            android:stateListAnimator="@null"
+            android:text="Your Button Text Here"
+            android:textAllCaps="false"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:maxWidth="200dp"
+            app:cornerRadius="32dp" />
 
-            <Button
-                android:id="@+id/embedded_message_second_button"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:textColor="@color/white"
-                android:background="@drawable/secondary_banner_button_background"
-                android:stateListAnimator="@null"
-                android:text=""
-                android:textAllCaps="false"
-                app:cornerRadius="32dp" />
-        </com.google.android.flexbox.FlexboxLayout>
+        <Button
+            android:id="@+id/embedded_message_second_button"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:textColor="@color/white"
+            android:background="@drawable/secondary_banner_button_background"
+            android:stateListAnimator="@null"
+            android:text="Your Button Text Here"
+            android:textAllCaps="false"
+            android:ellipsize="end"
+            android:singleLine="true"
+            app:cornerRadius="32dp" />
+
+    </LinearLayout>
+
+<!--        <com.google.android.flexbox.FlexboxLayout-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginBottom="16dp"-->
+<!--            app:flexWrap="wrap"-->
+<!--            app:alignContent="flex_start"-->
+<!--            app:alignItems="flex_start">-->
+
+<!--            <Button-->
+<!--                android:id="@+id/embedded_message_first_button"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="36dp"-->
+<!--                android:layout_marginStart="16dp"-->
+<!--                android:textColor="@color/white"-->
+<!--                android:background="@drawable/primary_banner_button_background"-->
+<!--                android:stateListAnimator="@null"-->
+<!--                android:text=""-->
+<!--                android:textAllCaps="false"-->
+<!--                app:cornerRadius="32dp"-->
+<!--                app:layout_flexBasisPercent="50%" />-->
+
+<!--            <Button-->
+<!--                android:id="@+id/embedded_message_second_button"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="36dp"-->
+<!--                android:textColor="@color/white"-->
+<!--                android:background="@drawable/secondary_banner_button_background"-->
+<!--                android:stateListAnimator="@null"-->
+<!--                android:text=""-->
+<!--                android:textAllCaps="false"-->
+<!--                app:cornerRadius="32dp" />-->
+<!--        </com.google.android.flexbox.FlexboxLayout>-->
 
     </LinearLayout>
 
