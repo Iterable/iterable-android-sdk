@@ -13,7 +13,7 @@
     android:background="@drawable/banner_card_border"
     android:orientation="vertical">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/embedded_message_image"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -22,7 +22,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/embedded_message_text_container"/>
+        app:layout_constraintBottom_toTopOf="@id/embedded_message_text_container"
+        app:shapeAppearanceOverlay="@style/classCardStyle" />
 
     <LinearLayout
         android:id="@+id/embedded_message_text_container"
@@ -75,32 +76,37 @@
 
         <Button
             android:id="@+id/embedded_message_first_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="36dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
             android:background="@drawable/primary_card_button_background"
             android:ellipsize="end"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:layout_marginStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:singleLine="true"
             android:stateListAnimator="@null"
             android:textAllCaps="false"
+            android:textSize="14sp"
             android:textColor="@color/white"
             app:cornerRadius="32dp" />
 
         <Button
             android:id="@+id/embedded_message_second_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:layout_marginEnd="16dp"
-            android:layout_weight="1"
             android:background="@drawable/secondary_card_button_background"
             android:ellipsize="end"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:singleLine="true"
             android:stateListAnimator="@null"
             android:textAllCaps="false"
+            android:textSize="14sp"
             android:textColor="@color/white"
             app:cornerRadius="32dp" />
 
