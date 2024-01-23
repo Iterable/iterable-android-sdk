@@ -137,7 +137,7 @@ public class IterableApi {
 
     @Nullable
     IterableKeychain getKeychain() {
-        if (!checkSDKInitialization()) {
+        if (_applicationContext == null) {
             return null;
         }
         if (keychain == null) {
@@ -266,7 +266,7 @@ public class IterableApi {
     }
 
     private void logoutPreviousUser() {
-        if (isInitialized() && config.autoPushRegistration) {
+        if (config.autoPushRegistration && isInitialized()) {
             disablePush();
         }
 
@@ -352,7 +352,7 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
-        if (!checkSDKInitialization()) {
+        if (_applicationContext == null) {
             return;
         }
         IterableKeychain iterableKeychain = getKeychain();
@@ -366,7 +366,7 @@ public class IterableApi {
     }
 
     private void retrieveEmailAndUserId() {
-        if (!checkSDKInitialization()) {
+        if (_applicationContext == null) {
             return;
         }
         IterableKeychain iterableKeychain = getKeychain();
@@ -596,7 +596,7 @@ public class IterableApi {
      */
     @Nullable
     public IterableAttributionInfo getAttributionInfo() {
-        if (!checkSDKInitialization()) {
+        if (_applicationContext == null) {
             return null;
         }
         return IterableAttributionInfo.fromJSONObject(
@@ -835,7 +835,7 @@ public class IterableApi {
      * @return whether or not the app link was handled
      */
     public boolean handleAppLink(@NonNull String uri) {
-        if (!checkSDKInitialization()) {
+        if (_applicationContext == null) {
             return false;
         }
         IterableLogger.printInfo();
@@ -1033,23 +1033,20 @@ public class IterableApi {
      * user email or user ID is set before calling this method.
      */
     public void registerForPush() {
-        if (!checkSDKInitialization()) {
-            return;
+        if (checkSDKInitialization()) {
+            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+            IterablePushRegistration.executePushRegistrationTask(data);
         }
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
      * Disables the device from push notifications
      */
     public void disablePush() {
-        if (!checkSDKInitialization()) {
-            return;
+        if (checkSDKInitialization()) {
+            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+            IterablePushRegistration.executePushRegistrationTask(data);
         }
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
