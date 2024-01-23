@@ -97,7 +97,7 @@ class IterableEmbeddedView(
         if(config?.primaryBtnBackgroundColor != null) {
             val primaryBtnBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
                 ContextCompat.getDrawable(requireContext(), R.drawable.primary_notification_button_background) as? GradientDrawable
-                else ContextCompat.getDrawable(requireContext(), R.drawable.primary_card_button_background) as? GradientDrawable
+                else ContextCompat.getDrawable(requireContext(), R.drawable.primary_banner_button_background) as? GradientDrawable
             primaryBtnBackgroundDrawable?.setColor(primaryBtnBackgroundColor)
 
             firstButton.setBackgroundDrawable(primaryBtnBackgroundDrawable)
@@ -108,10 +108,6 @@ class IterableEmbeddedView(
                 ContextCompat.getDrawable(requireContext(), R.drawable.secondary_notification_button_background) as? GradientDrawable
                 else ContextCompat.getDrawable(requireContext(), R.drawable.secondary_banner_button_background) as? GradientDrawable
             secondaryBtnBackgroundDrawable?.setColor(secondaryBtnBackgroundColor)
-
-//            val params = secondButton.layoutParams
-//            params.leftMargin = (8 * resources.displayMetrics.density).toInt()
-//            secondButton.layoutParams = params
 
             secondButton.setBackgroundDrawable(secondaryBtnBackgroundDrawable)
         }
@@ -129,8 +125,6 @@ class IterableEmbeddedView(
         val embeddedMessageViewButton: Button = view.findViewById(R.id.embedded_message_first_button)
         val embeddedMessageViewButton2: Button = view.findViewById(R.id.embedded_message_second_button)
 
-//        val embeddedMessageButtonsContainer: LinearLayout = view.findViewById(R.id.embedded_message_buttons_container)
-
         if(viewType != IterableEmbeddedViewType.NOTIFICATION) {
             val embeddedMessageImageView: ImageView = view.findViewById(R.id.embedded_message_image)
 
@@ -144,12 +138,6 @@ class IterableEmbeddedView(
 
         embeddedMessageViewTitle.text = message.elements?.title
         embeddedMessageViewBody.text = message.elements?.body
-
-        if(embeddedMessageViewButton.width * 2 > view.width) {
-            val params = embeddedMessageViewButton.layoutParams as LinearLayout.LayoutParams
-            params.weight = 1.0f
-            embeddedMessageViewButton.layoutParams = params
-        }
 
         val buttons = message.elements?.buttons
 
