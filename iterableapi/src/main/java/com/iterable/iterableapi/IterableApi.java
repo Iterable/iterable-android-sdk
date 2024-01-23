@@ -487,10 +487,6 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        if (_applicationContext == null) {
-            IterableLogger.e(TAG, "registerDeviceToken: Iterable SDK is not initialized with a context.");
-            return;
-        }
         if (deviceToken == null) {
             IterableLogger.e(TAG, "registerDeviceToken: token is null");
             return;
@@ -706,9 +702,7 @@ public class IterableApi {
     }
 
     public void setDeviceAttribute(String key, String value) {
-        if (deviceAttributes.containsKey(key)) {
-            deviceAttributes.put(key, value);
-        }
+        deviceAttributes.put(key, value);
     }
 
     public void removeDeviceAttribute(String key) {
