@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -23,14 +24,14 @@ class IterableEmbeddedView(
     private var config: IterableEmbeddedViewConfig?
 ): Fragment() {
 
-    private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color) }
-    private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color) }
-    private val defaultPrimaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.banner_button_color) }
-    private val defaultPrimaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.white) }
-    private val defaultSecondaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.notification_background_color, R.color.white) }
-    private val defaultSecondaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color) }
-    private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color) }
-    private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color) }
+    private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color, R.color.banner_background_color) }
+    private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color, R.color.banner_border_color) }
+    private val defaultPrimaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.white, R.color.white, R.color.banner_button_color) }
+    private val defaultPrimaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color, R.color.white) }
+    private val defaultSecondaryBtnBackgroundColor: Int by lazy { getDefaultColor(viewType, R.color.notification_background_color, R.color.white, R.color.white) }
+    private val defaultSecondaryBtnTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.banner_button_color, R.color.banner_button_color) }
+    private val defaultTitleTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.title_text_color, R.color.title_text_color) }
+    private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color, R.color.body_text_color) }
     private val defaultBorderWidth = 1
     private val defaultBorderCornerRadius = 8f
 
@@ -108,10 +109,6 @@ class IterableEmbeddedView(
                 else ContextCompat.getDrawable(requireContext(), R.drawable.secondary_banner_button_background) as? GradientDrawable
             secondaryBtnBackgroundDrawable?.setColor(secondaryBtnBackgroundColor)
 
-            val params = secondButton.layoutParams as FlexboxLayout.LayoutParams
-            params.leftMargin = (8 * resources.displayMetrics.density).toInt()
-            secondButton.layoutParams = params
-
             secondButton.setBackgroundDrawable(secondaryBtnBackgroundDrawable)
         }
 
@@ -184,9 +181,10 @@ class IterableEmbeddedView(
         }
     }
 
-    private fun getDefaultColor(viewType: IterableEmbeddedViewType, notificationColor: Int, bannerColor: Int): Int {
+    private fun getDefaultColor(viewType: IterableEmbeddedViewType, notificationColor: Int, cardColor: Int, bannerColor: Int): Int {
         return when (viewType) {
             IterableEmbeddedViewType.NOTIFICATION -> ContextCompat.getColor(requireContext(), notificationColor)
+            IterableEmbeddedViewType.CARD -> ContextCompat.getColor(requireContext(), cardColor)
             else -> ContextCompat.getColor(requireContext(), bannerColor)
         }
     }
