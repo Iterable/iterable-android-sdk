@@ -542,8 +542,10 @@ public class IterableApi {
             }
         }
 
-        anonymousUserManager.updateAnonSession();
-        anonymousUserManager.getCriteria();
+        if (sharedInstance.config.enableAnonTracking) {
+            anonymousUserManager.updateAnonSession();
+            anonymousUserManager.getCriteria();
+        }
     }
 
     public static void setContext(Context context) {
@@ -902,7 +904,7 @@ public class IterableApi {
      */
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking) {
             anonymousUserManager.trackAnonEvent(eventName, dataFields);
             return;
         }
@@ -926,7 +928,7 @@ public class IterableApi {
      * @param items
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking) {
             anonymousUserManager.trackAnonUpdateCart(items);
             return;
         }
@@ -961,7 +963,7 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking) {
             anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
             return;
         }
