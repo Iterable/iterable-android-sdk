@@ -2,15 +2,22 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 33
+
+    namespace 'com.iterable.iterableapi.ui'
 
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    publishing {
+        multipleVariants {
+            allVariants()
+            withJavadocJar()
+        }
     }
 
     buildTypes {
@@ -20,7 +27,7 @@ android {
         }
 
         debug {
-            testCoverageEnabled true
+            enableAndroidTestCoverage true
         }
     }
 }
@@ -36,14 +43,13 @@ dependencies {
     implementation "com.github.bumptech.glide:glide:4.8.0"
     implementation 'com.google.android.material:material:1.2.0'
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
 }
 
 ext {
-    publishedGroupId = 'com.iterable'
     libraryName = 'iterableapi-ui'
     artifact = 'iterableapi-ui'
 
@@ -62,8 +68,6 @@ ext {
     licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
     allLicenses = ["Apache-2.0"]
 }
-
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
 
 if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
