@@ -100,7 +100,6 @@ task javadoc(type: Javadoc) {
 
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
-    jacoco.excludes = ['jdk.internal.*']
 }
 
 task checkstyle(type: Checkstyle) {
