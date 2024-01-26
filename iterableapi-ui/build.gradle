@@ -4,8 +4,6 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 33
 
-    namespace 'com.iterable.iterableapi.ui'
-
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 28
@@ -58,6 +56,8 @@ ext {
     licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
     allLicenses = ["Apache-2.0"]
 }
+
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
 
 if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'

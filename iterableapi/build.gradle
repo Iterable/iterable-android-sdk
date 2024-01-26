@@ -7,9 +7,6 @@ android {
     compileSdkVersion 33
     buildToolsVersion '30.0.3'
 
-    namespace 'com.iterable.iterableapi'
-    testNamespace 'iterable.com.iterableapi'
-
     compileOptions {
         sourceCompatibility 1.8
         targetCompatibility 1.8
@@ -94,6 +91,8 @@ ext {
     licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
     allLicenses = ["Apache-2.0"]
 }
+
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
 
 if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'

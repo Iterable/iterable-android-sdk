@@ -11,9 +11,6 @@ android {
     compileSdkVersion 33
     buildToolsVersion '30.0.3'
 
-    namespace 'com.iterable.iterableapi.testapp'
-    testNamespace 'iterable.com.iterableapi'
-
     defaultConfig {
         applicationId "com.iterable.iterableapi.testapp"
         minSdkVersion 16
