@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+#### Added
+- nothing yet
+
+#### Removed
+- nothing yet
+
+#### Changed
+- nothing yet
+
 ## [3.5.0]
 #### Added
 - introduces support for embedded messaging: an eligibility–based, personalized messages sent from Iterable to your mobile and web apps, which can display them inline, using native interface components.
