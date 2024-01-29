@@ -28,7 +28,7 @@
     <LinearLayout
         android:id="@+id/embedded_message_text_container"
         android:layout_width="0dp"
-        android:layout_height="100dp"
+        android:layout_height="@dimen/card_text_container_height"
         android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@id/embedded_message_buttons_container"
         app:layout_constraintStart_toStartOf="parent"
