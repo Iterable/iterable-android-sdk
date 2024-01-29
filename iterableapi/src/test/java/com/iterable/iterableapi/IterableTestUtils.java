@@ -42,7 +42,8 @@ public class IterableTestUtils {
 
     public static void createIterableApiNew(ConfigBuilderExtender extender, String email) {
         IterableConfig.Builder builder = new IterableConfig.Builder()
-                .setAutoPushRegistration(false);
+                .setAutoPushRegistration(false)
+                .setEnableEmbeddedMessaging(true);
 
         if (extender != null) {
             builder = extender.run(builder);
