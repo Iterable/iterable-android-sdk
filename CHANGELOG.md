@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
 #### Added
 - nothing yet
 
@@ -11,6 +12,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 #### Changed
 - nothing yet
+
+## [3.5.0]
+#### Added
+- introduces support for embedded messaging: an eligibility–based, personalized messages sent from Iterable to your mobile and web apps, which can display them inline, using native interface components.
+- To display embedded messages, you can use customizable, out-of-the-box components provided by the SDK (cards, notifications, banners), or you can build fully custom components of your own design.
+- To learn more, read [Embedded Messages with Iterable's iOS SDK](https://support.iterable.com/hc/articles/23061840746900).
+
+#### Changed
+- `IterableConfig` is updated with an `enableEmbeddedMessaging` flag that needs to be set to true to allow use of embedded messaging functionality
 
 ## [3.5.0-beta1](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.5.0-beta1)
 
