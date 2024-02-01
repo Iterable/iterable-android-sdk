@@ -1,0 +1,7 @@
+{
+  "itbl": {
+    "messageId": "BACKGROUND_NOTIFICATION",
+    "isGhostPush": true
+  },
+  "notificationType": "UpdateEmbedded"
+}

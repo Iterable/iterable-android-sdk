@@ -84,6 +84,11 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    /**
+     * Allows for fetching embedded messages.
+     */
+    final boolean enableEmbeddedMessaging;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -99,6 +104,7 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
+        enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
     }
 
     public static class Builder {
@@ -116,6 +122,7 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
+        private boolean enableEmbeddedMessaging = false;
 
         public Builder() {}
 
@@ -266,6 +273,15 @@ public class IterableConfig {
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
+            return this;
+        }
+
+        /**
+         * Allows for fetching embedded messages.
+         * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
+         */
+        public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
+            this.enableEmbeddedMessaging = enableEmbeddedMessaging;
             return this;
         }
 

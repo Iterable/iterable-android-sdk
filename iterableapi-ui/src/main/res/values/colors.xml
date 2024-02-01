@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#ff8f00</color>
+    <color name="colorPrimaryDark">#c56000</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="white">#FFFFFF</color>
+    <color name="red">#ff3d00</color>
+    <color name="blue">#1565c0</color>
+    <color name="green">#64dd17</color>
+
+    <!--    New Iterable Colors-->
+    <color name="Primary_Red">#EF3D55</color>
+    <color name="Primary_Purple">#6A266D</color>
+    <color name="Primary_Cool_Green">#59C1A7</color>
+    <color name="Primary_Cyan">#34C3F2</color>
+
+    <color name="Secondary_Lavender">#C29DC9</color>
+    <color name="Secondary_Mustard">#F2CA1B</color>
+    <color name="Secondary_Salmon">#F36F4C</color>
+    <color name="Secondary_Gray">#999094</color>
+    <color name="Secondary_Not_Black">#4D4D4D</color>
+
+    <color name="notification_border_color">#C2F0FC</color>
+    <color name="notification_background_color">#E6FBFF</color>
+    <color name="notification_text_color">#2489A9</color>
+    <color name="notification_button_border_color">#E0DEDF</color>
+
+    <color name="banner_button_color">#6A266D</color>
+    <color name="banner_background_color">#FFFFFF</color>
+    <color name="banner_border_color">#E0DEDF</color>
+
+    <color name="title_text_color">#3D3A3B</color>
+    <color name="body_text_color">#787174</color>
+
+</resources>
