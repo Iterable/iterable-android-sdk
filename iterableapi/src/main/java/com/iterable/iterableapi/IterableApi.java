@@ -610,7 +610,7 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if (email != null && !email.isEmpty()) {
+        if (email != null && !email.isEmpty() && sharedInstance.config.enableAnonTracking) {
             anonymousUserMerge.mergeUserUsingEmail(apiClient, email);
         }
         //Only if passed in same non-null email
@@ -647,7 +647,7 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if (userId != null && !userId.isEmpty()) {
+        if (userId != null && !userId.isEmpty() && sharedInstance.config.enableAnonTracking) {
             anonymousUserMerge.mergeUserUsingUserId(apiClient, userId);
         }
         //If same non null userId is passed
