@@ -443,7 +443,7 @@ public class IterableApi {
             IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
         }
 
-        if (config.authHandler != null) {
+        if (config.authHandler != null && checkSDKInitialization()) {
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
