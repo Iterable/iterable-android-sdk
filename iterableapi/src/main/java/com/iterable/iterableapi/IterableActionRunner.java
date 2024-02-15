@@ -73,6 +73,11 @@ class IterableActionRunner {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(uri);
 
+            if (context.getPackageManager() == null) {
+                IterableLogger.e(TAG, "Could not find package manager to handle deep link:" + uri);
+                return false;
+            }
+
             List<ResolveInfo> resolveInfos = context.getPackageManager().queryIntentActivities(intent, 0);
             if (resolveInfos.size() > 1) {
                 for (ResolveInfo resolveInfo : resolveInfos) {
