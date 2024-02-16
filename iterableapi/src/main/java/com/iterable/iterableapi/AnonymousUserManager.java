@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -47,10 +48,10 @@ public class AnonymousUserManager {
 
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.SHARED_PREFS_SESSION_NO, sessionNo + 1);
-            newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentDateTime());
+            newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentTime());
 
             if (firstSessionDate.isEmpty()) {
-                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentDateTime());
+                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentTime());
             } else {
                 newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, firstSessionDate);
             }
@@ -173,10 +174,11 @@ public class AnonymousUserManager {
             if (!userData.isEmpty()) {
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+                if (!getPushStatus().isEmpty()) {
+                    userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
+                }
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, criteriaId);
-                userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
-                userDataJson.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
-                IterableApi.getInstance().track(IterableConstants.SHARED_PREFS_ANON_SESSIONS, userDataJson);
+                IterableApi.getInstance().apiClient.trackAnonSession(getCurrentTime(), userDataJson);
             }
 
         } catch (JSONException e) {
@@ -333,14 +335,14 @@ public class AnonymousUserManager {
         return Calendar.getInstance().getTimeInMillis();
     }
 
-    private String getCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateFormat.format(new Date());
-    }
-
-    private boolean getPushStatus() {
+    private String getPushStatus() {
         NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(IterableApi.getInstance().getMainActivityContext());
-        return notificationManagerCompat.areNotificationsEnabled();
+        if (notificationManagerCompat.areNotificationsEnabled()) {
+            ApplicationInfo applicationInfo = IterableApi.sharedInstance.getMainActivityContext().getApplicationInfo();
+            int stringId = applicationInfo.labelRes;
+            return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : IterableApi.sharedInstance.getMainActivityContext().getString(stringId);
+        } else {
+            return "";
+        }
     }
 }

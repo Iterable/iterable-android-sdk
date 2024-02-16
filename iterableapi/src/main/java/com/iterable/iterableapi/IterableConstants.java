@@ -56,6 +56,7 @@ public final class IterableConstants {
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
     public static final String KEY_FIRETV = "FireTV";
     public static final String KEY_CREATE_NEW_FIELDS    = "createNewFields";
+    public static final String KEY_ANON_SESSION_CONTEXT = "anonSessionContext";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -80,6 +81,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
     public static final String ENDPOINT_MERGE_USER              = "users/merge";
     public static final String ENDPOINT_CRITERIA_LIST           = "anonymoususer/list";
+    public static final String ENDPOINT_TRACK_ANON_SESSION      = "anonymoususer/events/session";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -120,13 +122,13 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
     public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
     public static final String SHARED_PREFS_ANON_SESSIONS = "itbl_anon_sessions";
-    public static final String SHARED_PREFS_SESSION_NO = "number_of_sessions";
-    public static final String SHARED_PREFS_LAST_SESSION = "last_session";
-    public static final String SHARED_PREFS_FIRST_SESSION = "first_session";
+    public static final String SHARED_PREFS_SESSION_NO = "totalAnonSessionCount";
+    public static final String SHARED_PREFS_LAST_SESSION = "lastAnonSession";
+    public static final String SHARED_PREFS_FIRST_SESSION = "firstAnonSession";
     public static final String SHARED_PREFS_EVENT_TYPE = "eventType";
     public static final String SHARED_PREFS_CRITERIA = "criteria";
-    public static final String SHARED_PREFS_CRITERIA_ID = "anon_criteria_id";
-    public static final String SHARED_PREFS_PUSH_OPT_IN = "pushOptIn";
+    public static final String SHARED_PREFS_CRITERIA_ID = "matchedCriteriaId";
+    public static final String SHARED_PREFS_PUSH_OPT_IN = "mobilePushOptIn";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
