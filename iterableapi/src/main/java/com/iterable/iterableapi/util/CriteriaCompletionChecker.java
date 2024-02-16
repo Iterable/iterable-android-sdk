@@ -22,32 +22,55 @@ public class CriteriaCompletionChecker {
 
         try {
             JSONObject json = new JSONObject(criteriaData);
-            if (json.has("criteriaList")) {
-                JSONArray criteriaList = json.getJSONArray("criteriaList");
-                for (int i = 0; i < criteriaList.length(); i++) {
-                    JSONObject criteria = criteriaList.getJSONObject(i);
-                    if (criteria.has("searchQuery") && criteria.has("criteriaId")) {
-
-                        JSONObject searchQuery = criteria.getJSONObject("searchQuery");
-                        int currentCriteriaId = criteria.getInt("criteriaId");
-                        JSONArray eventsToProcess = getEventsWithCartItems();
-                        JSONArray nonPurchaseEvents = getNonCartEvents();
-                        for (int j = 0; j < nonPurchaseEvents.length(); j++) {
-                            eventsToProcess.put(nonPurchaseEvents.getJSONObject(j));
-                        }
-
-                        boolean result = evaluateTree(searchQuery, eventsToProcess);
-                        if (result) {
-                            criteriaId = currentCriteriaId;
-                            break;
-                        }
-                    }
-                }
+            if (json.has("criterias")) {
+                JSONArray criteriaList = json.getJSONArray("criterias");
+                criteriaId = findMatchedCriteria(criteriaList);
             }
         } catch (JSONException e) {
             handleJSONException(e);
         }
+
         return criteriaId;
+    }
+
+    private Integer findMatchedCriteria(JSONArray criteriaList) {
+        Integer criteriaId = null;
+
+        for (int i = 0; i < criteriaList.length(); i++) {
+            try {
+                JSONObject criteria = criteriaList.getJSONObject(i);
+                if (criteria.has("searchQuery") && criteria.has("criteriaId")) {
+                    JSONObject searchQuery = criteria.getJSONObject("searchQuery");
+                    int currentCriteriaId = criteria.getInt("criteriaId");
+                    JSONArray eventsToProcess = prepareEventsToProcess();
+
+                    boolean result = evaluateTree(searchQuery, eventsToProcess);
+                    if (result) {
+                        criteriaId = currentCriteriaId;
+                        break;
+                    }
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return criteriaId;
+    }
+
+    private JSONArray prepareEventsToProcess() {
+        JSONArray eventsToProcess = getEventsWithCartItems();
+        JSONArray nonPurchaseEvents = getNonCartEvents();
+
+        for (int i = 0; i < nonPurchaseEvents.length(); i++) {
+            try {
+                eventsToProcess.put(nonPurchaseEvents.getJSONObject(i));
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return eventsToProcess;
     }
 
     private JSONArray getEventsWithCartItems() {
