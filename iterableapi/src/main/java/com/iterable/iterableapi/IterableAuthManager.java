@@ -141,7 +141,11 @@ public class IterableAuthManager {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    api.getAuthManager().requestNewAuthToken(false);
+                    if (api.getEmail() != null || api.getUserId() != null) {
+                        api.getAuthManager().requestNewAuthToken(false);
+                    } else {
+                        IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
+                    }
                 }
             }, timeDuration);
         } catch (Exception e) {
