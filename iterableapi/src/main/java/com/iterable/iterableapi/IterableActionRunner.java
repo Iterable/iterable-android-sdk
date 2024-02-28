@@ -58,6 +58,7 @@ class IterableActionRunner {
          * `false` if the handler did not handle this URL and no activity was found to open it with
          */
         private boolean openUri(@NonNull Context context, @NonNull Uri uri, @NonNull IterableActionContext actionContext) {
+            boolean uriHandled = false;
             // Handle URL: check for deep links within the app
             if (!IterableUtil.isUrlOpenAllowed(uri.toString())) {
                 return false;
@@ -72,6 +73,11 @@ class IterableActionRunner {
             // Handle URL: check for deep links within the app
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(uri);
+
+            if (context.getPackageManager() == null) {
+                IterableLogger.e(TAG, "Could not find package manager to handle deep link:" + uri);
+                return false;
+            }
 
             List<ResolveInfo> resolveInfos = context.getPackageManager().queryIntentActivities(intent, 0);
             if (resolveInfos.size() > 1) {
@@ -88,11 +94,11 @@ class IterableActionRunner {
 
             if (intent.resolveActivity(context.getPackageManager()) != null) {
                 context.startActivity(intent);
-                return true;
+                uriHandled = true;
             } else {
                 IterableLogger.e(TAG, "Could not find activities to handle deep link:" + uri);
-                return false;
             }
+            return uriHandled;
         }
 
         /**
