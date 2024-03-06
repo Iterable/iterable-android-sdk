@@ -156,6 +156,10 @@ public class IterableAuthManager {
     private static long decodedExpiration(String encodedJWT) throws Exception {
         long exp = 0;
             String[] split = encodedJWT.split("\\.");
+            //Check if jwt is valid
+            if (split.length != 3) {
+                throw new Exception("Invalid JWT");
+            }
             String body = getJson(split[1]);
             JSONObject jObj = new JSONObject(body);
             exp = jObj.getLong(expirationString);
