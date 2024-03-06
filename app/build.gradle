@@ -3,9 +3,16 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'jacoco'
 
+repositories {
+    mavenCentral()
+}
+
 android {
-    compileSdkVersion 29
-    buildToolsVersion '29.0.3'
+    compileSdkVersion 33
+    buildToolsVersion '33.0.2'
+
+    namespace 'com.iterable.iterableapi.testapp'
+    testNamespace 'iterable.com.iterableapi'
 
     defaultConfig {
         applicationId "com.iterable.iterableapi.testapp"
@@ -16,21 +23,25 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+
         debug {
-            testCoverageEnabled true
+            enableAndroidTestCoverage true
         }
     }
 
     testOptions.unitTests.includeAndroidResources = true
+
     compileOptions {
         sourceCompatibility = 1.8
         targetCompatibility = 1.8
     }
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
@@ -47,14 +58,14 @@ dependencies {
     implementation project(':iterableapi')
     implementation project(':iterableapi-ui')
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    testImplementation 'androidx.test.ext:junit:1.1.1'
-    testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation 'org.mockito:mockito-core:2.27.0'
-    testImplementation 'org.robolectric:robolectric:4.3.1'
-    testImplementation 'org.robolectric:shadows-playservices:4.3.1'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'androidx.test:runner:1.5.2'
+    testImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    testImplementation 'androidx.test.ext:junit:1.1.5'
+    testImplementation 'androidx.test:rules:1.5.0'
+    testImplementation 'org.mockito:mockito-core:3.3.3'
+    testImplementation 'org.robolectric:robolectric:4.9.2'
+    testImplementation 'org.robolectric:shadows-playservices:4.9.2'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.2.2'
     androidTestImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     androidTestImplementation 'androidx.test:runner:1.2.0'
@@ -69,9 +80,12 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-contrib:3.2.0'
     androidTestImplementation 'br.com.concretesolutions:kappuccino:1.2.1'
 }
+
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
 }
+
 task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     group = "reporting"
     description = "Generate unified Jacoco code coverage report"
@@ -99,12 +113,14 @@ task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest'])
             '**/*$ModuleAdapter.class',
             '**/*$ViewInjector*.class',
     ]
+
     def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
     def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/classes", excludes: fileFilter)
     def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/classes", excludes: fileFilter)
     def mainSrc = "${project.projectDir}/src/main/java"
     def sdkSrc = "${project.projectDir}/../iterableapi/src/main/java"
     def sdkUiSrc = "${project.projectDir}/../iterableapi-ui/src/main/java"
+
     sourceDirectories.from = files([mainSrc])
     classDirectories.from = files([debugTree])
     additionalSourceDirs.from = files([sdkSrc, sdkUiSrc])
@@ -117,11 +133,13 @@ task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest'])
 task jacocoDebugAndroidTestReport(type: JacocoReport, dependsOn: ['connectedCheck']) {
     group = "reporting"
     description = "Generate Jacoco code coverage report for instumentation tests"
+
     reports {
         xml.enabled = true
         html.enabled = true
         csv.enabled = false
     }
+
     def fileFilter = [
             '**/*Test*.*',
             '**/AutoValue_*.*',
@@ -141,15 +159,17 @@ task jacocoDebugAndroidTestReport(type: JacocoReport, dependsOn: ['connectedChec
             '**/*$ModuleAdapter.class',
             '**/*$ViewInjector*.class',
     ]
+
     def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
     def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/classes", excludes: fileFilter)
     def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/classes", excludes: fileFilter)
     def mainSrc = "${project.projectDir}/src/main/java"
     def sdkSrc = "${project.projectDir}/../iterableapi/src/main/java"
     def sdkUiSrc = "${project.projectDir}/../iterableapi-ui/src/main/java"
+    
     sourceDirectories.from = files([mainSrc])
     classDirectories.from = files([debugTree])
     additionalSourceDirs.from = files([sdkSrc, sdkUiSrc])
     additionalClassDirs.from = files([sdkTree, sdkUiTree])
-    executionData.from = fileTree(dir: "$buildDir", include: "outputs/code_coverage/debugAndroidTest/connected/*.ec")
+    executionData.from = fileTree(dir: "$buildDir", include: "outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
 }

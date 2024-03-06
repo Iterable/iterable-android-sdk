@@ -4,32 +4,50 @@ apply plugin: 'com.hiya.jacoco-android'
 apply plugin: 'checkstyle'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion '29.0.3'
+    compileSdkVersion 33
+    buildToolsVersion '33.0.2'
+
+    namespace 'com.iterable.iterableapi'
+    testNamespace 'iterable.com.iterableapi'
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
 
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 27
 
-        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.4.9\""
+        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.5.0\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    publishing {
+        multipleVariants {
+            allVariants()
+            withJavadocJar()
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
-            testCoverageEnabled true
+            enableAndroidTestCoverage true
             multiDexEnabled true
         }
     }
+
     testOptions.unitTests.all {
         testLogging {
             exceptionFormat "full"
         }
     }
+
     testOptions.unitTests.includeAndroidResources = true
 }
 
@@ -39,18 +57,22 @@ dependencies {
     api 'androidx.appcompat:appcompat:1.0.0'
     api 'androidx.annotation:annotation:1.0.0'
     api 'com.google.firebase:firebase-messaging:20.3.0'
+    implementation "androidx.security:security-crypto:1.1.0-alpha06"
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'androidx.test:runner:1.3.0'
-    testImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-    testImplementation 'androidx.test.ext:junit:1.1.2'
-    testImplementation 'androidx.test:rules:1.3.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'androidx.test:runner:1.5.2'
+    testImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    testImplementation 'androidx.test.ext:junit:1.1.5'
+    testImplementation 'androidx.test:rules:1.5.0'
     testImplementation 'org.mockito:mockito-core:3.3.3'
-    testImplementation 'org.robolectric:robolectric:4.4'
-    testImplementation 'org.robolectric:shadows-playservices:4.4'
+    testImplementation 'org.mockito:mockito-inline:2.8.47'
+    testImplementation 'org.robolectric:robolectric:4.9.2'
+    testImplementation 'org.robolectric:shadows-playservices:4.9.2'
     testImplementation 'org.khronos:opengl-api:gl1.1-android-2.1_r1'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.2.2'
     testImplementation 'org.skyscreamer:jsonassert:1.5.0'
+    testImplementation project(':iterableapi')
+
     androidTestImplementation 'androidx.test:runner:1.3.0'
     androidTestImplementation 'androidx.test:rules:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
@@ -62,38 +84,25 @@ dependencies {
 }
 
 ext {
-    publishedGroupId = 'com.iterable'
     libraryName = 'iterableapi'
-    artifact = 'iterableapi'
-
-    libraryDescription = 'Iterable Android SDK'
-
-    siteUrl = 'https://github.com/Iterable/iterable-android-sdk'
-    gitUrl = 'https://github.com/Iterable/iterable-android-sdk.git'
-
-    libraryVersion = '3.4.9'
-
-    developerId = 'davidtruong'
-    developerName = 'David Truong'
-    developerEmail = 'dt@iterable.com'
-
-    licenseName = 'The Apache Software License, Version 2.0'
-    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-    allLicenses = ["Apache-2.0"]
+    libraryVersion = '3.5.0'
 }
 
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-if(hasProperty("mavenPublishEnabled")) {
+if (hasProperty("mavenPublishEnabled")) {
     apply from: '../maven-push.gradle'
 }
 
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
+    excludes = ['**/*.kt']
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+
+    exclude '**/*.kt'
 }
 
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
 }
 
 task checkstyle(type: Checkstyle) {

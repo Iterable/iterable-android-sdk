@@ -104,7 +104,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
-        this.setStyle(DialogFragment.STYLE_NO_FRAME, R.style.Theme_AppCompat_NoActionBar);
+        this.setStyle(DialogFragment.STYLE_NO_FRAME, androidx.appcompat.R.style.Theme_AppCompat_NoActionBar);
     }
 
     @Override
@@ -351,10 +351,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 default:
                     animationResource = R.anim.fade_in_custom;
             }
-
-            Animation anim = AnimationUtils.loadAnimation(getContext(), animationResource);
-            anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
-            webView.startAnimation(anim);
+            try {
+                Animation anim = AnimationUtils.loadAnimation(getContext(), animationResource);
+                anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
+                webView.startAnimation(anim);
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Failed to show inapp with animation");
+            }
         }
     }
 
@@ -378,10 +381,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     animationResource = R.anim.fade_out_custom;
             }
 
-            Animation anim = AnimationUtils.loadAnimation(getContext(),
-                    animationResource);
-            anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
-            webView.startAnimation(anim);
+            try {
+                Animation anim = AnimationUtils.loadAnimation(getContext(),
+                        animationResource);
+                anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
+                webView.startAnimation(anim);
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Failed to hide inapp with animation");
+            }
+
         }
 
         hideInAppBackground();
@@ -409,7 +417,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
 
         if (message.isMarkedForDeletion() && !message.isConsumed()) {
-            IterableApi.sharedInstance.getInAppManager().removeMessage(message);
+            IterableApi.sharedInstance.getInAppManager().removeMessage(message, null, null);
         }
     }
 
