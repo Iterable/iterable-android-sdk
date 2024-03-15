@@ -16,15 +16,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [3.5.1]
 
 #### Added
-- embedded manager syncs messages as soon as user logs in
-- link for embedded messaging support documentation in readme file
-- check for three components of auth token being present before decoding the expiration time to prevent app crashes
-- check for SDK initialization on appropriate methods to prevent app crashes
-- check to ensure package manager is not null
-- check for user log in when refreshing JWT
+- improved auth token handling
 
-#### Removed
-- nothing yet
+#### Fixed
+- embedded manager syncs messages as soon as user logs in
+- Fixed a bug to prevent app crashes due to malformed authTokens
+- Fixes a bug where push notifications opens would lead to app crashes
+- Fixes a bug where crashes would occur due to SDK not being initialized
+- check for three components of auth token being present before decoding the expiration time to prevent app crashes
 
 #### Changed
 - updates Glide library in embedded message OOTB views to version [4.16.0](https://github.com/bumptech/glide/releases/tag/v4.16.0)
