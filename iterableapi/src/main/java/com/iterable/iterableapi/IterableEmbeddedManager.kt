@@ -13,7 +13,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region variables
     private var localPlacementMessagesMap = mutableMapOf<Long, List<IterableEmbeddedMessage>>()
+
     private var placementIds = mutableListOf<Long>()
+    private var messageIds = arrayOf<String>()
 
     private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
     private var iterableApi: IterableApi
@@ -83,7 +85,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
-            IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
+            messageIds += "ZXZhbi5ncmVlckBpdGVyYWJsZS5jb20vMjE2NjYvOTMwMDA5Mi8xMjI5NzU2Mi9mYWxzZQ=="
+            messageIds += "ZXZhbi5ncmVlckBpdGVyYWJsZS5jb20vMjE2NjYvOTI5OTk4NS8xMjI5NzQwMC9mYWxzZQ=="
+
+            IterableApi.sharedInstance.getEmbeddedMessages(messageIds,null, SuccessHandler { data ->
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 try {
                     val previousPlacementIds = getPlacementIds()
