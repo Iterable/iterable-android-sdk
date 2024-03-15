@@ -13,6 +13,22 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.5.1]
+
+#### Added
+- embedded manager syncs messages as soon as user logs in
+- check for three components of auth token being present before decoding the expiration time to prevent app crashes
+- README updates with article link for support documentation
+- check for SDK initialization on appropriate methods to prevent app crashes
+- check to ensure package manager is not null
+- check for user log in when refreshing JWT
+
+#### Removed
+- nothing yet
+
+#### Changed
+- updates Glide library in embedded message OOTB views to version [4.16.0](https://github.com/bumptech/glide/releases/tag/v4.16.0)
+
 ## [3.5.0]
 #### Added
 - introduces support for embedded messaging: an eligibility–based, personalized messages sent from Iterable to your mobile and web apps, which can display them inline, using native interface components.
