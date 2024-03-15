@@ -16,17 +16,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [3.5.1]
 
 #### Added
-- improved auth token handling
+- Improved auth token handling
 
 #### Fixed
-- embedded manager syncs messages as soon as user logs in
+- Embedded manager syncs messages as soon as user logs in
 - Fixed a bug to prevent app crashes due to malformed authTokens
 - Fixes a bug where push notifications opens would lead to app crashes
 - Fixes a bug where crashes would occur due to SDK not being initialized
-- check for three components of auth token being present before decoding the expiration time to prevent app crashes
 
 #### Changed
-- updates Glide library in embedded message OOTB views to version [4.16.0](https://github.com/bumptech/glide/releases/tag/v4.16.0)
+- Updates Glide library in embedded message OOTB views to version [4.16.0](https://github.com/bumptech/glide/releases/tag/v4.16.0)
 
 ## [3.5.0]
 #### Added
