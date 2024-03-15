@@ -74,6 +74,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     fun reset() {
         localPlacementMessagesMap = mutableMapOf()
+        messageIds = arrayOf()
     }
 
     fun getPlacementIds(): List<Long> {
@@ -84,9 +85,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     fun syncMessages() {
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
-
-            messageIds += "ZXZhbi5ncmVlckBpdGVyYWJsZS5jb20vMjE2NjYvOTMwMDA5Mi8xMjI5NzU2Mi9mYWxzZQ=="
-            messageIds += "ZXZhbi5ncmVlckBpdGVyYWJsZS5jb20vMjE2NjYvOTI5OTk4NS8xMjI5NzQwMC9mYWxzZQ=="
 
             IterableApi.sharedInstance.getEmbeddedMessages(messageIds,null, SuccessHandler { data ->
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
@@ -116,6 +114,13 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                                 val messages = placement.messages
 
                                 currentPlacementIds.add(placementId)
+
+                                messages.forEach { message ->
+                                    if (!messageIds.contains(message.metadata.messageId)) {
+                                        messageIds += message.metadata.messageId
+                                    }
+                                }
+
                                 updateLocalMessageMap(placementId, messages)
                             }
                         }
