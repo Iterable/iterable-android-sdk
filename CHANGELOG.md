@@ -15,9 +15,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.5.1]
 
-#### Added
-- Improved auth token handling
-
 #### Fixed
 - Embedded manager syncs messages as soon as user logs in
 - Fixed a bug to prevent app crashes due to malformed authTokens
