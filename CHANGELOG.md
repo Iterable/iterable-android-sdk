@@ -17,8 +17,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 #### Added
 - embedded manager syncs messages as soon as user logs in
+- link for embedded messaging support documentation in readme file
 - check for three components of auth token being present before decoding the expiration time to prevent app crashes
-- README updates with article link for support documentation
 - check for SDK initialization on appropriate methods to prevent app crashes
 - check to ensure package manager is not null
 - check for user log in when refreshing JWT
