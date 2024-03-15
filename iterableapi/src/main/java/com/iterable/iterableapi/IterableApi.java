@@ -138,6 +138,9 @@ public class IterableApi {
 
     @Nullable
     IterableKeychain getKeychain() {
+        if (_applicationContext == null) {
+            return null;
+        }
         if (keychain == null) {
             try {
                 keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
@@ -164,7 +167,7 @@ public class IterableApi {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.NOTIFICATION_ICON_NAME, iconName);
-        editor.commit();
+        editor.apply();
     }
 
     /**
@@ -174,8 +177,7 @@ public class IterableApi {
      */
     static String getNotificationIcon(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
-        return iconName;
+        return sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
     }
 
     /**
@@ -423,6 +425,9 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
+        if (_applicationContext == null) {
+            return;
+        }
         IterableKeychain iterableKeychain = getKeychain();
         if (iterableKeychain != null) {
             iterableKeychain.saveEmail(_email);
@@ -434,6 +439,9 @@ public class IterableApi {
     }
 
     private void retrieveEmailAndUserId() {
+        if (_applicationContext == null) {
+            return;
+        }
         IterableKeychain iterableKeychain = getKeychain();
         if (iterableKeychain != null) {
             _email = iterableKeychain.getEmail();
@@ -552,7 +560,6 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-
         if (deviceToken == null) {
             IterableLogger.e(TAG, "registerDeviceToken: token is null");
             return;
@@ -681,6 +688,9 @@ public class IterableApi {
      */
     @Nullable
     public IterableAttributionInfo getAttributionInfo() {
+        if (_applicationContext == null) {
+            return null;
+        }
         return IterableAttributionInfo.fromJSONObject(
                 IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
         );
@@ -915,6 +925,9 @@ public class IterableApi {
      * @return whether or not the app link was handled
      */
     public boolean handleAppLink(@NonNull String uri) {
+        if (_applicationContext == null) {
+            return false;
+        }
         IterableLogger.printInfo();
 
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
@@ -1110,20 +1123,20 @@ public class IterableApi {
      * user email or user ID is set before calling this method.
      */
     public void registerForPush() {
-        if (!checkSDKInitialization()) {
-            return;
+        if (checkSDKInitialization()) {
+            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+            IterablePushRegistration.executePushRegistrationTask(data);
         }
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
      * Disables the device from push notifications
      */
     public void disablePush() {
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        IterablePushRegistration.executePushRegistrationTask(data);
+        if (checkSDKInitialization()) {
+            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+            IterablePushRegistration.executePushRegistrationTask(data);
+        }
     }
 
     /**
