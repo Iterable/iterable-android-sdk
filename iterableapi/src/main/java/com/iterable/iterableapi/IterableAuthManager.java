@@ -158,7 +158,7 @@ public class IterableAuthManager {
             String[] split = encodedJWT.split("\\.");
             //Check if jwt is valid
             if (split.length != 3) {
-                throw new Exception("Invalid JWT");
+                throw new IllegalArgumentException("Invalid JWT");
             }
             String body = getJson(split[1]);
             JSONObject jObj = new JSONObject(body);
