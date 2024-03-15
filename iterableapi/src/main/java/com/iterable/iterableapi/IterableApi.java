@@ -374,6 +374,7 @@ public class IterableApi {
         }
 
         getInAppManager().syncInApp();
+        getEmbeddedManager().syncMessages();
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
