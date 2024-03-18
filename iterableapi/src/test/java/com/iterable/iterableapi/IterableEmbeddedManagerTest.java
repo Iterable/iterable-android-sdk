@@ -201,16 +201,13 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
 
-        verify(iterableApiSpy).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(0));
-        verify(iterableApiSpy).trackEmbeddedMessageReceived(embeddedManager.getMessages(1L).get(0));
-
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_3.json")));
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
 
-        verify(iterableApiSpy).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(1));
-        verify(iterableApiSpy, never()).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(0));
-        verify(iterableApiSpy, never()).trackEmbeddedMessageReceived(embeddedManager.getMessages(1L).get(0));
+        verify(iterableApiSpy, times(1)).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(1));
+        verify(iterableApiSpy, times(1)).trackEmbeddedMessageReceived(embeddedManager.getMessages(0L).get(0));
+        verify(iterableApiSpy, times(1)).trackEmbeddedMessageReceived(embeddedManager.getMessages(1L).get(0));
     }
 
     @Test
@@ -243,6 +240,52 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         shadowOf(getMainLooper()).idle();
 
         verify(mockHandler1).onEmbeddedMessagingDisabled();
+    }
+
+    @Test
+    public void testSyncEmbeddedMultiplePlacementsDiffMerge() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("faert442rjasiri99", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_3.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(2, embeddedManager.getMessages(0L).size());
+        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
+        assertEquals("gret45ydkht5fewty", embeddedManager.getMessages(0L).get(1).getMetadata().getMessageId());
+
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("faert442rjasiri99", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
+    }
+
+    @Test
+    public void testSyncEmbeddedMultiplePlacementsDiffMergeRemoval() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_3.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(2, embeddedManager.getMessages(0L).size());
+        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
+        assertEquals("gret45ydkht5fewty", embeddedManager.getMessages(0L).get(1).getMetadata().getMessageId());
+
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("faert442rjasiri99", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_4.json")));
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertEquals("gret45ydkht5fewty", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
+
+        assertEquals(1, embeddedManager.getMessages(1L).size());
+        assertEquals("faert442rjasiri99", embeddedManager.getMessages(1L).get(0).getMetadata().getMessageId());
     }
 
 }

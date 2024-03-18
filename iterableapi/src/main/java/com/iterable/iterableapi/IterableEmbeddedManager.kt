@@ -114,13 +114,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                                 val messages = placement.messages
 
                                 currentPlacementIds.add(placementId)
-
-                                messages.forEach { message ->
-                                    if (!messageIds.contains(message.metadata.messageId)) {
-                                        messageIds += message.metadata.messageId
-                                    }
-                                }
-
                                 updateLocalMessageMap(placementId, messages)
                             }
                         }
@@ -209,18 +202,32 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         IterableLogger.printInfo()
         var localMessagesChanged = false
 
+        var localMessages: MutableList<IterableEmbeddedMessage>? = getMessages(placementId)?.toMutableList()
+
         // Get local messages in a mutable list
         val localMessageMap = mutableMapOf<String, IterableEmbeddedMessage>()
-        getMessages(placementId)?.toMutableList()?.forEach {
+        localMessages?.forEach {
             localMessageMap[it.metadata.messageId] = it
         }
 
         // Compare the remote list to local list
         // if there are new messages, trigger a message update in UI and send out received events
-        remoteMessageList.forEach {
-            if (!localMessageMap.containsKey(it.metadata.messageId)) {
+        remoteMessageList.forEach { embeddedMessage ->
+            val position = remoteMessageList.indexOf(embeddedMessage)
+
+            if(localMessageMap[embeddedMessage.metadata.messageId] == null) {
+                if(localMessages == null) {
+                    localMessages = mutableListOf(embeddedMessage)
+                } else {
+                    localMessages?.add(position, embeddedMessage)
+                }
+
                 localMessagesChanged = true
-                IterableApi.getInstance().trackEmbeddedMessageReceived(it)
+
+                if (!messageIds.contains(embeddedMessage.metadata.messageId)) {
+                    messageIds += embeddedMessage.metadata.messageId
+                    IterableApi.getInstance().trackEmbeddedMessageReceived(embeddedMessage)
+                }
             }
         }
 
@@ -231,14 +238,23 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             remoteMessageMap[it.metadata.messageId] = it
         }
 
-        localPlacementMessagesMap[placementId]?.forEach {
-            if (!remoteMessageMap.containsKey(it.metadata.messageId)) {
-                localMessagesChanged = true
+        //iterable through current messages and remove the messages that are not in the remote list
+        val iterator = localMessages?.iterator()
+        val let = iterator?.let { iterator: MutableIterator<IterableEmbeddedMessage> ->
+            while (iterator.hasNext()) {
+                val message = iterator.next()
+                if (!remoteMessageMap.containsKey(message.metadata.messageId)) {
+                    iterator.remove()
+                    messageIds = messageIds.filter { it != message.metadata.messageId }.toTypedArray()
+                    localMessagesChanged = true
+                }
             }
         }
 
         // update local message map for placement with remote message list
-        localPlacementMessagesMap[placementId] = remoteMessageList
+        if(localMessages != null) {
+            localPlacementMessagesMap[placementId] = localMessages!!
+        }
 
         //if local messages changed, trigger a message update in UI
         if (localMessagesChanged) {

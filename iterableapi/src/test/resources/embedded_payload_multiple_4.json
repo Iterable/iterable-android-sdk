@@ -1,0 +1,30 @@
+{
+  "placements": [
+    {
+      "placementId": 0,
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "gret45ydkht5fewty",
+            "placementId": 0,
+            "campaignId": 2326,
+            "isProof": true
+          }
+        }
+      ]
+    },
+    {
+      "placementId": 1,
+      "embeddedMessages": [
+        {
+          "metadata": {
+            "messageId": "faert442rjasiri99",
+            "placementId": 1,
+            "campaignId": 132,
+            "isProof": true
+          }
+        }
+      ]
+    }
+  ]
+}

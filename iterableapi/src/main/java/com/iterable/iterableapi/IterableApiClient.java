@@ -259,7 +259,7 @@ class IterableApiClient {
     private static StringBuilder getEmbeddedPathBuilder(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds) {
         StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES);
 
-        if(placementIds != null || currentMessageIds != null) {
+        if(placementIds != null || currentMessageIds.length > 0) {
             pathBuilder.append("?");
 
             if (placementIds != null) {
@@ -274,7 +274,7 @@ class IterableApiClient {
                 }
             }
 
-            if (currentMessageIds != null) {
+            if (currentMessageIds.length > 0) {
                 boolean isFirst = true;
                 for (String currentMessageId : currentMessageIds) {
                     if(isFirst) {
