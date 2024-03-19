@@ -34,6 +34,7 @@ To learn more about various SDK features, read:
 - [Customizing Mobile Inbox on Android](https://support.iterable.com/hc/articles/360039189931)
 - [Android App Links](https://support.iterable.com/hc/articles/360035127392)
 - [Deep Links in Push Notifications](https://support.iterable.com/hc/articles/360035453971)
+- [Embedded Messages with Iterable's Android SDK](https://support.iterable.com/hc/articles/23061877893652)
 
 ## Sample projects
 
