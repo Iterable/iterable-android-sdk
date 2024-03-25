@@ -86,6 +86,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
+            //val testMessageIds = arrayOf("ZXZhbi5ncmVlckBpdGVyYWJsZS5jb20vMjE2NjYvOTM4NDQ5NS8xMjQwMzc3OS9mYWxzZQ=")
+
             IterableApi.sharedInstance.getEmbeddedMessages(messageIds,null, SuccessHandler { data ->
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 try {
@@ -240,16 +242,19 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
         //iterable through current messages and remove the messages that are not in the remote list
         val iterator = localMessages?.iterator()
-        val let = iterator?.let { iterator: MutableIterator<IterableEmbeddedMessage> ->
+//        iterator?.let { iterator: MutableIterator<IterableEmbeddedMessage> ->
+        if (iterator != null) {
             while (iterator.hasNext()) {
                 val message = iterator.next()
                 if (!remoteMessageMap.containsKey(message.metadata.messageId)) {
                     iterator.remove()
-                    messageIds = messageIds.filter { it != message.metadata.messageId }.toTypedArray()
+                    messageIds =
+                        messageIds.filter { it != message.metadata.messageId }.toTypedArray()
                     localMessagesChanged = true
                 }
             }
         }
+
 
         // update local message map for placement with remote message list
         if(localMessages != null) {
