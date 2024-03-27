@@ -253,11 +253,11 @@ public class IterableApi {
      * @param onCallback
      */
 
-    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    public void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(placementIds, onCallback);
+        apiClient.getEmbeddedMessages(currentMessageIds, placementIds, onCallback);
     }
 
     /**
@@ -272,11 +272,11 @@ public class IterableApi {
      * @param onFailure
      */
 
-    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    public void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(placementIds, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(currentMessageIds, placementIds, onSuccess, onFailure);
     }
 
     /**
@@ -294,7 +294,7 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(null, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(null, null, onSuccess, onFailure);
     }
 
     /**
