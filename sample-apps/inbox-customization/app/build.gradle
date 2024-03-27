@@ -10,7 +10,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    compileSdkVersion 33
+    compileSdkVersion 34
     buildToolsVersion "33.0.2"
     defaultConfig {
         applicationId "com.iterable.inbox_customization"
