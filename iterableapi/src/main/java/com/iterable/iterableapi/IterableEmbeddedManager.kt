@@ -158,31 +158,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
-        if ((clickedUrl != null) && clickedUrl.toString().isNotEmpty()) {
-            if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
-                // This is an action:// URL, pass that to the custom action handler
-                val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ACTION, "")
-                IterableActionRunner.executeAction(
-                    context,
-                    IterableAction.actionCustomAction(actionName),
-                    IterableActionSource.EMBEDDED
-                )
-            } else if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
-                // Handle itbl:// URLs, pass that to the custom action handler for compatibility
-                val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ITBL, "")
-                IterableActionRunner.executeAction(
-                    context,
-                    IterableAction.actionCustomAction(actionName),
-                    IterableActionSource.EMBEDDED
-                )
-            } else {
-                IterableActionRunner.executeAction(
-                    context,
-                    IterableAction.actionOpenUrl(clickedUrl),
-                    IterableActionSource.EMBEDDED
-                )
-            }
-        }
+        val helper = IterableManagerHelper()
+        helper.handleClick(clickedUrl, context, IterableActionSource.EMBEDDED)
     }
 
     private fun broadcastSubscriptionInactive() {

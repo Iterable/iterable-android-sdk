@@ -290,24 +290,27 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     public void handleInAppClick(@NonNull IterableInAppMessage message, @Nullable Uri url) {
         IterableLogger.printInfo();
 
-        if (url != null && !url.toString().isEmpty()) {
-            String urlString = url.toString();
-            if (urlString.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
-                // This is an action:// URL, pass that to the custom action handler
-                String actionName = urlString.replace(IterableConstants.URL_SCHEME_ACTION, "");
-                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP);
-            } else if (urlString.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
-                // Handle itbl:// URLs, pass that to the custom action handler for compatibility
-                String actionName = urlString.replace(IterableConstants.URL_SCHEME_ITBL, "");
-                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP);
-            } else if (urlString.startsWith(IterableConstants.URL_SCHEME_ITERABLE)) {
-                // Handle iterable:// URLs - reserved for actions defined by the SDK only
-                String actionName = urlString.replace(IterableConstants.URL_SCHEME_ITERABLE, "");
+        IterableManagerHelper helper = new IterableManagerHelper();
+        helper.handleClick(url, context, IterableActionSource.IN_APP);
+
+//        if (url != null && !url.toString().isEmpty()) {
+//            String urlString = url.toString();
+//            if (urlString.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
+//                // This is an action:// URL, pass that to the custom action handler
+//                String actionName = urlString.replace(IterableConstants.URL_SCHEME_ACTION, "");
+//                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP);
+//            } else if (urlString.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
+//                // Handle itbl:// URLs, pass that to the custom action handler for compatibility
+//                String actionName = urlString.replace(IterableConstants.URL_SCHEME_ITBL, "");
+//                IterableActionRunner.executeAction(context, IterableAction.actionCustomAction(actionName), IterableActionSource.IN_APP);
+//            } else if (urlString.startsWith(IterableConstants.URL_SCHEME_ITERABLE)) {
+//                // Handle iterable:// URLs - reserved for actions defined by the SDK only
+//                String actionName = urlString.replace(IterableConstants.URL_SCHEME_ITERABLE, "");
                 handleIterableCustomAction(actionName, message);
-            } else {
-                IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(urlString), IterableActionSource.IN_APP);
-            }
-        }
+//            } else {
+//                IterableActionRunner.executeAction(context, IterableAction.actionOpenUrl(urlString), IterableActionSource.IN_APP);
+//            }
+//        }
     }
 
     /**
