@@ -669,14 +669,21 @@ class IterableApiClient {
         sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
     }
 
-    void trackAnonSession(long createdAt, @NonNull JSONObject requestJson) {
+    void trackAnonSession(long createdAt, String userId, @NonNull JSONObject requestJson, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         try {
             JSONObject requestObject = new JSONObject();
-            addEmailOrUserIdToJson(requestObject);
+
+            JSONObject userObject = new JSONObject();
+            userObject.put(IterableConstants.KEY_USER_ID, userId);
+            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
+            userObject.put(IterableConstants.KEY_MERGE_NESTED_OBJECTS, true);
+            userObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
+
+            requestObject.put(IterableConstants.KEY_USER, userObject);
             requestObject.put(IterableConstants.KEY_CREATED_AT, createdAt);
             requestObject.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
             requestObject.put(IterableConstants.KEY_ANON_SESSION_CONTEXT, requestJson);
-            sendPostRequest(IterableConstants.ENDPOINT_TRACK_ANON_SESSION, requestObject);
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_ANON_SESSION, requestObject, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }

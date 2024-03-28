@@ -16,6 +16,7 @@ public final class IterableConstants {
 
     //API Fields
     public static final String HEADER_API_KEY           = "Api-Key";
+    public static final String HTTP_STATUS_CODE         = "httpStatusCode";
     public static final String HEADER_SDK_PLATFORM      = "SDK-Platform";
     public static final String HEADER_SDK_VERSION       = "SDK-Version";
     public static final String HEADER_SDK_AUTHORIZATION = "Authorization";
