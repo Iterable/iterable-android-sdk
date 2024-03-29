@@ -217,7 +217,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -227,7 +227,7 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            StringBuilder pathBuilder = getEmbeddedPathBuilder(currentMessageIds, placementIds);
+            StringBuilder pathBuilder = getEmbeddedPathBuilder(null, placementIds);
 
             String path = pathBuilder.toString();
             sendGetRequest(path, requestJSON, onCallback);
@@ -259,7 +259,7 @@ class IterableApiClient {
     private static StringBuilder getEmbeddedPathBuilder(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds) {
         StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES);
 
-        if (placementIds != null || currentMessageIds.length > 0) {
+        if (placementIds != null || (currentMessageIds != null && currentMessageIds.length > 0)) {
             pathBuilder.append("?");
 
             if (placementIds != null) {

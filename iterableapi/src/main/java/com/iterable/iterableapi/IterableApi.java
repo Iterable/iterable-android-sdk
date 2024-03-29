@@ -253,11 +253,11 @@ public class IterableApi {
      * @param onCallback
      */
 
-    public void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(currentMessageIds, placementIds, onCallback);
+        apiClient.getEmbeddedMessages(placementIds, onCallback);
     }
 
     /**
@@ -272,11 +272,11 @@ public class IterableApi {
      * @param onFailure
      */
 
-    public void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(currentMessageIds, placementIds, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(null, placementIds, onSuccess, onFailure);
     }
 
     /**
@@ -287,14 +287,15 @@ public class IterableApi {
      * To get list of messages as a list of EmbeddedMessages in memory, use
      * {@link IterableEmbeddedManager#getMessages(long)} instead
      *
+     * @param currentMessageIds array of current message ids stored in memory
      * @param onSuccess
      * @param onFailure
      */
-    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable String[] currentMessageIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(null, null, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(currentMessageIds, null, onSuccess, onFailure);
     }
 
     /**
