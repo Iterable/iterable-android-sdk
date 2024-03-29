@@ -85,6 +85,7 @@ class IterablePushNotificationUtil {
         // Open the launcher activity if the action was not handled by anything, and openApp is true
         if (openApp && !handled) {
             Intent launcherIntent = IterableNotificationHelper.getMainActivityIntent(context);
+            launcherIntent.putExtras(intent.getExtras());
             launcherIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             if (launcherIntent.resolveActivity(context.getPackageManager()) != null) {
                 context.startActivity(launcherIntent);
