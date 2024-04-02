@@ -280,25 +280,6 @@ public class IterableApi {
     }
 
     /**
-     * A package-private method to get a list of Embedded Messages from Iterable;
-     * Passes the result to the success or failure callback.
-     * Used by the IterableEmbeddedManager.
-     *
-     * To get list of messages as a list of EmbeddedMessages in memory, use
-     * {@link IterableEmbeddedManager#getMessages(long)} instead
-     *
-     * @param currentMessageIds array of current message ids stored in memory
-     * @param onSuccess
-     * @param onFailure
-     */
-    void getEmbeddedMessages(@Nullable String[] currentMessageIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-        apiClient.getEmbeddedMessages(currentMessageIds, null, onSuccess, onFailure);
-    }
-
-    /**
      * Tracks in-app delivery events (per in-app)
      * @param message the in-app message to be tracked as delivered */
     void trackInAppDelivery(@NonNull IterableInAppMessage message) {
