@@ -330,6 +330,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     private void handleSuccessResponse(IterableApiResponse response) {
         IterableApi.getInstance().getAuthManager().resetFailedAuth();
+        IterableApi.getInstance().getAuthManager().pauseAuthRetries(false);
+
         if (iterableApiRequest.successCallback != null) {
             iterableApiRequest.successCallback.onSuccess(response.responseJson);
         }
@@ -346,7 +348,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     private void requestNewAuthTokenAndRetry(IterableApiResponse response) {
-        IterableApi.getInstance().getAuthManager().requestNewAuthToken(false, data -> {
+        long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
+        IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, true, data -> {
             try {
                 String newAuthToken = data.getString("newAuthToken");
                 retryRequestWithNewAuthToken(newAuthToken);

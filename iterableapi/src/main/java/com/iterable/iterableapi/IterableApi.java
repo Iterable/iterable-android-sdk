@@ -355,6 +355,7 @@ public class IterableApi {
             return;
         }
 
+        pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
         } else {
@@ -457,7 +458,7 @@ public class IterableApi {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
                 IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
-                getAuthManager().scheduleAuthTokenRefresh(10000);
+                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
             }
         }
     }
@@ -696,7 +697,9 @@ public class IterableApi {
                 IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
         );
     }
-
+    public void pauseAuthRetries(boolean pauseRetry) {
+        getAuthManager().pauseAuthRetries(pauseRetry);
+    }
     public void setEmail(@Nullable String email) {
         setEmail(email, null, null, null);
     }

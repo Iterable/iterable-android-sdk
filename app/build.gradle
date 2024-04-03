@@ -15,7 +15,7 @@ android {
     testNamespace 'iterable.com.iterableapi'
 
     defaultConfig {
-        applicationId "com.iterable.iterableapi.testapp"
+        applicationId "com.iterable.androidsdk"
         minSdkVersion 16
         targetSdkVersion 27
         versionCode 1

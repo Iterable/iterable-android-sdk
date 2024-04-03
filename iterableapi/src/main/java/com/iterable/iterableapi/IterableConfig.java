@@ -66,6 +66,21 @@ public class IterableConfig {
     final long expiringAuthTokenRefreshPeriod;
 
     /**
+     * Number of consecutive JWT refresh retries the SDK should attempt before disabling JWT refresh attempts altogether.
+     */
+    final int maxRetry;
+
+    /**
+     * Configurable duration between JWT refresh retries. Starting point for the retry backoff.
+     */
+    final long retryInterval;
+
+    /**
+     * Linear or Exponential. Determines the backoff pattern to apply between retry attempts.
+     */
+    final RetryPolicy retryBackoff;
+
+    /**
      * By default, the SDK allows navigation/calls to URLs with the `https` protocol (e.g. deep links or external links)
      * If you'd like to allow other protocols like `http`, `tel`, etc., add them to the `allowedProtocols` array
      */
@@ -100,6 +115,9 @@ public class IterableConfig {
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
+        maxRetry = builder.maxRetry;
+        retryInterval = builder.retryInterval;
+        retryBackoff = builder.retryBackoff;
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
@@ -118,6 +136,9 @@ public class IterableConfig {
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
+        private int maxRetry = 10;
+        private long retryInterval = 1000L;
+        private RetryPolicy retryBackoff = RetryPolicy.LINEAR;
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
@@ -221,6 +242,36 @@ public class IterableConfig {
         @NonNull
         public Builder setAuthHandler(@NonNull IterableAuthHandler authHandler) {
             this.authHandler = authHandler;
+            return this;
+        }
+
+        /**
+         * Set max retries before it disables JWT refresh attempts altogether
+         * @param retryTimes
+         */
+        @NonNull
+        public Builder setMaxRetries(@NonNull int retryTimes) {
+            this.maxRetry = retryTimes;
+            return this;
+        }
+
+        /**
+         * Set a custom period to automatically retrieve a new token on JWT Refresh in case of failure
+         * @param period in seconds
+         */
+        @NonNull
+        public Builder setRetryInterval(@NonNull Long period) {
+            this.retryInterval = period * 1000L;
+            return this;
+        }
+
+        /**
+         * Set a custom period to automatically retrieve a new token on JWT Refresh in case of failure
+         * @param type either Linear or Exponential
+         */
+        @NonNull
+        public Builder setRetryBackoff(@NonNull RetryPolicy type) {
+            this.retryBackoff = type;
             return this;
         }
 
