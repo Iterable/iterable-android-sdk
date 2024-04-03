@@ -35,8 +35,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     ) {
         this.iterableApi = iterableApi
         this.context = iterableApi.mainActivityContext
-        activityMonitor = IterableActivityMonitor.getInstance()
-        activityMonitor?.addCallback(this)
+        if(iterableApi.config.enableEmbeddedMessaging) {
+            activityMonitor = IterableActivityMonitor.getInstance()
+            activityMonitor?.addCallback(this)
+        }
     }
 
     // endregion
