@@ -81,10 +81,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         return placementIds
     }
 
-    fun getCurrentMessageIds(): Array<String> {
-        return messageIds
-    }
-
     //Network call to get the embedded messages
     fun syncMessages() {
         if (iterableApi.config.enableEmbeddedMessaging) {
@@ -244,7 +240,6 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
         //iterable through current messages and remove the messages that are not in the remote list
         val iterator = localMessages?.iterator()
-//        iterator?.let { iterator: MutableIterator<IterableEmbeddedMessage> ->
         if (iterator != null) {
             while (iterator.hasNext()) {
                 val message = iterator.next()
