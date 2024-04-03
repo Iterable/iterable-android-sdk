@@ -16,7 +16,6 @@ import com.iterable.iterableapi.util.DeviceInfoUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
