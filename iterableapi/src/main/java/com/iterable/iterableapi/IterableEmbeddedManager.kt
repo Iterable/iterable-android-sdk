@@ -81,6 +81,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         return placementIds
     }
 
+    fun getCurrentMessageIds(): Array<String> {
+        return messageIds
+    }
+
     //Network call to get the embedded messages
     fun syncMessages() {
         if (iterableApi.config.enableEmbeddedMessaging) {

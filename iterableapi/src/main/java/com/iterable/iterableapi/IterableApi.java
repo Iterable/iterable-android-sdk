@@ -16,6 +16,7 @@ import com.iterable.iterableapi.util.DeviceInfoUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -253,11 +254,11 @@ public class IterableApi {
      * @param onCallback
      */
 
-    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    public void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(placementIds, onCallback);
+        apiClient.getEmbeddedMessages(currentMessageIds, placementIds, onCallback);
     }
 
     /**
@@ -272,11 +273,12 @@ public class IterableApi {
      * @param onFailure
      */
 
-    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    public void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(null, placementIds, onSuccess, onFailure);
+
+        apiClient.getEmbeddedMessages(currentMessageIds, placementIds, onSuccess, onFailure);
     }
 
     /**
