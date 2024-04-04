@@ -136,7 +136,7 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             }
 
-            if(attributionInfo != null) {
+            if (attributionInfo != null) {
                 requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, attributionInfo.campaignId);
                 requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, attributionInfo.templateId);
             }
