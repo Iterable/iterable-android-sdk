@@ -41,14 +41,11 @@ public class IterableAuthManager {
 
     public void pauseAuthRetries(boolean pauseRetry) {
         pauseAuthRetry = pauseRetry;
-        if (!pauseAuthRetry) {
-            resetRetryCount();
-        }
+        resetRetryCount();
     }
 
     void resetRetryCount() {
-        if (retryCount > 0) retryCount = -1;
-        else retryCount = 0;
+        retryCount = 0;
     }
 
     private void handleSuccessForAuthToken(String authToken, IterableHelper.SuccessHandler successCallback) {
@@ -65,7 +62,7 @@ public class IterableAuthManager {
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
             boolean shouldRefreshOnFailure) {
-        if ((shouldRefreshOnFailure && pauseAuthRetry) || (retryCount >= api.config.maxRetry && shouldRefreshOnFailure)) {
+        if ((shouldRefreshOnFailure && pauseAuthRetry) || (retryCount >= api.config.retryPolicy.maxRetry && shouldRefreshOnFailure)) {
             return;
         }
 
@@ -154,8 +151,8 @@ public class IterableAuthManager {
     }
 
     long getNextRetryInterval() {
-        long nextRetryInterval = api.config.retryInterval;
-        if (api.config.retryBackoff == RetryPolicy.EXPONENTIAL) {
+        long nextRetryInterval = api.config.retryPolicy.retryInterval;
+        if (api.config.retryPolicy.retryBackoff == RetryPolicy.Type.EXPONENTIAL) {
             nextRetryInterval *= Math.pow(IterableConstants.EXPONENTIAL_FACTOR, retryCount-1); // Exponential backoff
         }
         return nextRetryInterval;
