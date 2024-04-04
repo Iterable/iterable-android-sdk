@@ -1034,6 +1034,7 @@ public class IterableApi {
      * @param total total purchase amount
      * @param items list of purchased items
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
+     * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
         if (!checkSDKInitialization()) {
