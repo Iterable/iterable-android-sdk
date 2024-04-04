@@ -118,7 +118,7 @@ class IterableApiClient {
         }
     }
 
-    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
         JSONObject requestJSON = new JSONObject();
         try {
             JSONArray itemsArray = new JSONArray();
@@ -134,6 +134,11 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_TOTAL, total);
             if (dataFields != null) {
                 requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            }
+
+            if(attributionInfo != null) {
+                requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, attributionInfo.campaignId);
+                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, attributionInfo.templateId);
             }
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
