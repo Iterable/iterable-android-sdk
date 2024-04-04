@@ -236,7 +236,7 @@ public class IterableConfig {
          * @param retryPolicy
          */
         @NonNull
-        public Builder setRetryPolicy(@NonNull RetryPolicy retryPolicy) {
+        public Builder setAuthRetryPolicy(@NonNull RetryPolicy retryPolicy) {
             this.retryPolicy = retryPolicy;
             return this;
         }
