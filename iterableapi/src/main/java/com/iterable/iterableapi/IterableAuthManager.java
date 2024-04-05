@@ -90,7 +90,7 @@ public class IterableAuthManager {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
             scheduleAuthTokenRefresh(scheduledRefreshPeriod);
-            authHandler.onTokenRegistrationFailed(new Throwable("Auth token null"));
+            handleAuthFailure(null, IterableConstants.AUTH_TOKEN_NULL);
             return;
         }
         IterableApi.getInstance().setAuthToken(authToken);
@@ -101,7 +101,7 @@ public class IterableAuthManager {
 
     private void handleAuthTokenFailure(Throwable throwable) {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
-        authHandler.onTokenRegistrationFailed(throwable);
+        handleAuthFailure(null, IterableConstants.AUTH_TOKEN_GENERATION_ERROR);
         pendingAuth = false;
         reSyncAuth();
     }
@@ -118,7 +118,7 @@ public class IterableAuthManager {
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
-            authHandler.onTokenRegistrationFailed(new Throwable("Auth token decode failure. Scheduling auth token refresh in 10 seconds..."));
+            handleAuthFailure(encodedJWT, IterableConstants.AUTH_TOKEN_PAYLOAD_INVALID);
             //TODO: Sync with configured time duration once feature is available.
             scheduleAuthTokenRefresh(scheduledRefreshPeriod);
         }
@@ -133,6 +133,22 @@ public class IterableAuthManager {
             requiresAuthRefresh = false;
             requestNewAuthToken(false);
         }
+    }
+
+    void handleAuthFailure(String authToken, String failureReason) {
+        authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
+    }
+
+    private String getEmailOrUserId() {
+        String email = api.getEmail();
+        String userId = api.getUserId();
+
+        if (email != null) {
+            return email;
+        } else if (userId != null) {
+            return userId;
+        }
+        return null;
     }
 
     void scheduleAuthTokenRefresh(long timeDuration) {
