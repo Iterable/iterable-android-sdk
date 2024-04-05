@@ -1,5 +1,8 @@
 package com.iterable.iterableapi;
 
+import static com.iterable.iterableapi.IterableConstants.ENDPOINT_DISABLE_DEVICE;
+import static com.iterable.iterableapi.IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION;
+
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -22,6 +25,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * Async task to handle sending data to the Iterable server
@@ -330,6 +334,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     private void handleSuccessResponse(IterableApiResponse response) {
         IterableApi.getInstance().getAuthManager().resetFailedAuth();
+        if (!Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_GET_REMOTE_CONFIGURATION) && !Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_DISABLE_DEVICE)) {
+            IterableApi.getInstance().getAuthManager().pauseAuthRetries(false);
+        }
+
         if (iterableApiRequest.successCallback != null) {
             iterableApiRequest.successCallback.onSuccess(response.responseJson);
         }
@@ -346,7 +354,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     private void requestNewAuthTokenAndRetry(IterableApiResponse response) {
-        IterableApi.getInstance().getAuthManager().requestNewAuthToken(false, data -> {
+        long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
+        IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, true, data -> {
             try {
                 String newAuthToken = data.getString("newAuthToken");
                 retryRequestWithNewAuthToken(newAuthToken);
