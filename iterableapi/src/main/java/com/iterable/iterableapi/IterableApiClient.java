@@ -137,8 +137,8 @@ class IterableApiClient {
             }
 
             if (attributionInfo != null) {
-                requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, attributionInfo.campaignId);
-                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, attributionInfo.templateId);
+                requestJSON.putOpt(IterableConstants.KEY_CAMPAIGN_ID, attributionInfo.campaignId);
+                requestJSON.putOpt(IterableConstants.KEY_TEMPLATE_ID, attributionInfo.templateId);
             }
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
