@@ -1277,7 +1277,7 @@ public class IterableApi {
     }
 
     /**
-     * (DEPRECATED)
+     * @deprecated
      * Gets a list of placements for the list of placement ids passed in from Iterable and
      * passes the result to the callback;
      * To get list of messages as a list of Embedded Messages in memory, use
@@ -1299,7 +1299,7 @@ public class IterableApi {
     }
 
     /**
-     * (DEPRECATED)
+     * @deprecated
      * Gets a list of placements for the list of placement ids passed in from Iterable and
      * passes the result to the success or failure callback;
      * To get list of messages as a list of Embedded Messages in memory, use
