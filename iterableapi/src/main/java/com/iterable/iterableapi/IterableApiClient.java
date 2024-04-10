@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
@@ -264,35 +265,30 @@ class IterableApiClient {
     private static StringBuilder getEmbeddedPathBuilder(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds) {
         StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES);
 
-        if (placementIds != null || (currentMessageIds != null && currentMessageIds.length > 0)) {
-            pathBuilder.append("?");
-
-            if (placementIds != null) {
-                boolean isFirst = true;
-                for (Long placementId : placementIds) {
-                    if (isFirst) {
-                        pathBuilder.append("placementIds=").append(placementId);
-                        isFirst = false;
-                    } else {
-                        pathBuilder.append("&placementIds=").append(placementId);
-                    }
-                }
-            }
-
-            if (currentMessageIds.length > 0) {
-                boolean isFirst = true;
-                for (String currentMessageId : currentMessageIds) {
-                    if (isFirst) {
-                        pathBuilder.append("currentMessageIds=").append(currentMessageId);
-                        isFirst = false;
-                    } else {
-                        pathBuilder.append("&currentMessageIds=").append(currentMessageId);
-                    }
-                }
-            }
+        if(placementIds != null && placementIds.length > 0) {
+            appendIds(pathBuilder, "placementIds", placementIds);
         }
+
+        if (currentMessageIds != null && currentMessageIds.length > 0) {
+            appendIds(pathBuilder, "currentMessageIds", currentMessageIds);
+        }
+
         return pathBuilder;
     }
+
+    private static void appendIds(StringBuilder pathBuilder, String paramName, Object[] ids) {
+        pathBuilder.append("?");
+        boolean isFirst = true;
+        for (Object id : ids) {
+            if (isFirst) {
+                pathBuilder.append(paramName).append("=").append(id);
+                isFirst = false;
+            } else {
+                pathBuilder.append("&").append(paramName).append("=").append(id);
+            }
+        }
+    }
+
 
     public void trackInAppOpen(@NonNull String messageId) {
         JSONObject requestJSON = new JSONObject();
