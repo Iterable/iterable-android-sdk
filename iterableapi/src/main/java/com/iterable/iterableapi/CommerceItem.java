@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import java.util.List;
 
 /**
- * Represents a product. These are used by the commerce API; see {@link IterableApi#trackPurchase(double, List, JSONObject)}
+ * Represents a product. These are used by the commerce API; see {@link IterableApi#trackPurchase(double, List, JSONObject, IterableAttributionInfo)}
  */
 public class CommerceItem {
 
