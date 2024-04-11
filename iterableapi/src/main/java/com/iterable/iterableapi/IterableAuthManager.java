@@ -90,7 +90,7 @@ public class IterableAuthManager {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
             scheduleAuthTokenRefresh(scheduledRefreshPeriod);
-            handleAuthFailure(null, IterableConstants.AUTH_TOKEN_NULL);
+            handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_NULL);
             return;
         }
         IterableApi.getInstance().setAuthToken(authToken);
@@ -101,7 +101,7 @@ public class IterableAuthManager {
 
     private void handleAuthTokenFailure(Throwable throwable) {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
-        handleAuthFailure(null, IterableConstants.AUTH_TOKEN_GENERATION_ERROR);
+        handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_GENERATION_ERROR);
         pendingAuth = false;
         reSyncAuth();
     }
@@ -118,7 +118,7 @@ public class IterableAuthManager {
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
-            handleAuthFailure(encodedJWT, IterableConstants.AUTH_TOKEN_PAYLOAD_INVALID);
+            handleAuthFailure(encodedJWT, AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID);
             //TODO: Sync with configured time duration once feature is available.
             scheduleAuthTokenRefresh(scheduledRefreshPeriod);
         }
@@ -135,7 +135,7 @@ public class IterableAuthManager {
         }
     }
 
-    void handleAuthFailure(String authToken, String failureReason) {
+    void handleAuthFailure(String authToken, AuthFailureReason failureReason) {
         authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
     }
 

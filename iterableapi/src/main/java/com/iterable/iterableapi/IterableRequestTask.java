@@ -266,7 +266,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         }
     }
 
-    private static String getMappedErrorCodeForMessage(JSONObject jsonResponse) {
+    private static AuthFailureReason getMappedErrorCodeForMessage(JSONObject jsonResponse) {
         try {
             if (jsonResponse == null || !jsonResponse.has("msg")) {
                 return null;
@@ -276,17 +276,22 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
             switch (errorMessage.toLowerCase()) {
                 case "exp must be less than 1 year from iat":
-                    return IterableConstants.AUTH_TOKEN_EXPIRATION_INVALID;
+                    return AuthFailureReason.AUTH_TOKEN_EXPIRATION_INVALID;
                 case "jwt format is invalid":
-                    return IterableConstants.AUTH_TOKEN_FORMAT_INVALID;
+                    return AuthFailureReason.AUTH_TOKEN_FORMAT_INVALID;
                 case "jwt token is expired":
-                    return IterableConstants.AUTH_TOKEN_EXPIRED;
+                    return AuthFailureReason.AUTH_TOKEN_EXPIRED;
                 case "jwt is invalid":
-                    return IterableConstants.AUTH_TOKEN_SIGNATURE_INVALID;
+                    return AuthFailureReason.AUTH_TOKEN_SIGNATURE_INVALID;
                 case "jwt payload requires a value for userid or email":
-                    return IterableConstants.AUTH_TOKEN_USER_KEY_INVALID;
+                case "email could not be found":
+                    return AuthFailureReason.AUTH_TOKEN_USER_KEY_INVALID;
+                case "jwt token has been invalidated":
+                    return AuthFailureReason.AUTH_TOKEN_INVALIDATED;
+                case "invalid payload":
+                    return AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID;
                 default:
-                    return errorMessage;
+                    return null;
             }
         } catch (JSONException e) {
             return null;
