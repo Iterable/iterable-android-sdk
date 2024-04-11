@@ -257,19 +257,6 @@ public final class IterableConstants {
     public static final String ITERABLE_INBOX_IMP_DISPLAY_COUNT          = "displayCount";
     public static final String ITERABLE_INBOX_IMP_DISPLAY_DURATION       = "displayDuration";
     public static final String ITERABLE_IN_APP_SHOULD_ANIMATE            = "shouldAnimate";
-    public static final String AUTH_TOKEN_NULL                           = "AUTH_TOKEN_NULL";
-    public static final String AUTH_TOKEN_GENERATION_ERROR               = "AUTH_TOKEN_GENERATION_ERROR";
-
-    public static final String AUTH_TOKEN_GENERIC_ERROR                  = "AUTH_TOKEN_GENERIC_ERROR";
-    public static final String AUTH_TOKEN_EXPIRED                        = "AUTH_TOKEN_EXPIRED";
-    public static final String AUTH_TOKEN_EXPIRATION_INVALID             = "AUTH_TOKEN_EXPIRATION_INVALID";
-    public static final String AUTH_TOKEN_SIGNATURE_INVALID              = "AUTH_TOKEN_SIGNATURE_INVALID";
-    public static final String AUTH_TOKEN_FORMAT_INVALID                 = "AUTH_TOKEN_FORMAT_INVALID";
-    public static final String AUTH_TOKEN_INVALIDATED                    = "AUTH_TOKEN_INVALIDATED";
-    public static final String AUTH_TOKEN_PAYLOAD_INVALID                = "AUTH_TOKEN_PAYLOAD_INVALID";
-    public static final String AUTH_TOKEN_USER_KEY_INVALID               = "AUTH_TOKEN_USER_KEY_INVALID";
-
-
     public static final int ITERABLE_IN_APP_ANIMATION_DURATION           = 500;
     public static final int ITERABLE_IN_APP_BACKGROUND_ANIMATION_DURATION = 300;
 

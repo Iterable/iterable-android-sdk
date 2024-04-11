@@ -15,15 +15,17 @@ public class AuthFailure {
     public final long failedRequestTime;
 
     /** indicates a reason for failure */
-    public final String failureReason;
+    public final AuthFailureReason failureReason;
 
     public AuthFailure(String userKey,
                        String failedAuthToken,
                        long failedRequestTime,
-                       String failureReason){
+                       AuthFailureReason failureReason){
         this.userKey = userKey;
         this.failedAuthToken = failedAuthToken;
         this.failedRequestTime = failedRequestTime;
         this.failureReason = failureReason;
     }
 }
+
+
