@@ -26,8 +26,6 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Async task to handle sending data to the Iterable server
