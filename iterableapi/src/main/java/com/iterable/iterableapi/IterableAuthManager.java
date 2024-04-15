@@ -27,6 +27,7 @@ public class IterableAuthManager {
     private boolean pauseAuthRetry;
     private int retryCount;
 
+    private boolean isLastAuthTokenValid;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long expiringAuthTokenRefreshPeriod) {
@@ -36,7 +37,7 @@ public class IterableAuthManager {
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
-        requestNewAuthToken(hasFailedPriorAuth, null, false);
+        requestNewAuthToken(hasFailedPriorAuth, null, true);
     }
 
     public void pauseAuthRetries(boolean pauseRetry) {
@@ -44,6 +45,9 @@ public class IterableAuthManager {
         resetRetryCount();
     }
 
+    void markLastAuthToken(boolean isValid) {
+        isLastAuthTokenValid = isValid;
+    }
     void resetRetryCount() {
         retryCount = 0;
     }
@@ -61,8 +65,9 @@ public class IterableAuthManager {
     public synchronized void requestNewAuthToken(
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
-            boolean shouldRefreshOnFailure) {
-        if ((shouldRefreshOnFailure && pauseAuthRetry) || (retryCount >= api.config.retryPolicy.maxRetry && shouldRefreshOnFailure)) {
+            boolean shouldIgnoreRetryPolicy) {
+
+        if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= api.config.retryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
             return;
         }
 
@@ -76,6 +81,11 @@ public class IterableAuthManager {
                         @Override
                         public void run() {
                             try {
+                                if (isLastAuthTokenValid && !shouldIgnoreRetryPolicy) {
+                                    // if some JWT retry had valid token it will not fetch the auth token again from developer function
+                                    handleAuthTokenSuccess(IterableApi.getInstance().getAuthToken(), successCallback);
+                                    return;
+                                }
                                 final String authToken = authHandler.onAuthTokenRequested();
                                 retryCount++;
                                 handleAuthTokenSuccess(authToken, successCallback);
@@ -104,7 +114,7 @@ public class IterableAuthManager {
         } else {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
-            scheduleAuthTokenRefresh(getNextRetryInterval(), true, null);
+            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
             handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_NULL);
             return;
         }
@@ -127,7 +137,7 @@ public class IterableAuthManager {
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
             long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
             if (triggerExpirationRefreshTime > 0) {
-                scheduleAuthTokenRefresh(triggerExpirationRefreshTime, false, null);
+                scheduleAuthTokenRefresh(triggerExpirationRefreshTime, true, null);
             } else {
                 IterableLogger.w(TAG, "The expiringAuthTokenRefreshPeriod has already passed for the current JWT");
             }
@@ -135,7 +145,7 @@ public class IterableAuthManager {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
             handleAuthFailure(encodedJWT, AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID);
             //TODO: Sync with configured time duration once feature is available.
-            scheduleAuthTokenRefresh(getNextRetryInterval(), true, null);
+            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
         }
     }
 
@@ -162,9 +172,9 @@ public class IterableAuthManager {
         return nextRetryInterval;
     }
 
-    void scheduleAuthTokenRefresh(long timeDuration, boolean shouldRetryJWTRefresh, final IterableHelper.SuccessHandler successCallback) {
-        if (pauseAuthRetry && shouldRetryJWTRefresh) {
-            // we only stop schedule token refresh it is called from retry (in case of failure). The normal auth token refresh schedule would work
+    void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
+        if (pauseAuthRetry && !isScheduledRefresh) {
+            // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
             return;
         }
         timer = new Timer(true);
@@ -173,7 +183,7 @@ public class IterableAuthManager {
                 @Override
                 public void run() {
                     if (api.getEmail() != null || api.getUserId() != null) {
-                        api.getAuthManager().requestNewAuthToken(false, successCallback, shouldRetryJWTRefresh);
+                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh);
                     } else {
                         IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
                     }
