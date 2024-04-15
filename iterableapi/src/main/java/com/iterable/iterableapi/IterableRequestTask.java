@@ -42,9 +42,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     static final int MAX_RETRY_COUNT = 5;
 
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
-
+    static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
     int retryCount = 0;
-    boolean shouldRetryWhileJwtInvalid = true;
     IterableApiRequest iterableApiRequest;
 
     /**
@@ -62,10 +61,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         return executeApiRequest(iterableApiRequest);
     }
 
-    public void setShouldRetryWhileJwtInvalid(boolean shouldRetryWhileJwtInvalid) {
-        this.shouldRetryWhileJwtInvalid = shouldRetryWhileJwtInvalid;
-    }
-
     private void retryRequestWithNewAuthToken(String newAuthToken) {
         IterableApiRequest request = new IterableApiRequest(
                 iterableApiRequest.apiKey,
@@ -75,7 +70,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 newAuthToken,
                 iterableApiRequest.legacyCallback);
         IterableRequestTask requestTask = new IterableRequestTask();
-        requestTask.setShouldRetryWhileJwtInvalid(false);
         requestTask.execute(request);
     }
 
@@ -194,7 +188,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
-                    if (matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD)) {
+                    if (matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_MISSING_JWT_PAYLOAD)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
@@ -336,6 +330,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         IterableApi.getInstance().getAuthManager().resetFailedAuth();
         if (!Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_GET_REMOTE_CONFIGURATION) && !Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_DISABLE_DEVICE)) {
             IterableApi.getInstance().getAuthManager().pauseAuthRetries(false);
+            IterableApi.getInstance().getAuthManager().markLastAuthToken(true);
         }
 
         if (iterableApiRequest.successCallback != null) {
@@ -344,8 +339,9 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     private void handleErrorResponse(IterableApiResponse response) {
-        if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD) && shouldRetryWhileJwtInvalid) {
-            requestNewAuthTokenAndRetry(response);
+        if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(response.responseJson, ERROR_CODE_MISSING_JWT_PAYLOAD)) {
+            IterableApi.getInstance().getAuthManager().markLastAuthToken(false);
+            requestNewAuthTokenAndRetry();
         }
 
         if (iterableApiRequest.failureCallback != null) {
@@ -353,16 +349,17 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         }
     }
 
-    private void requestNewAuthTokenAndRetry(IterableApiResponse response) {
+    private void requestNewAuthTokenAndRetry() {
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
-        IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, true, data -> {
+        Handler handler = new Handler();
+        handler.postDelayed(() -> IterableApi.getInstance().getAuthManager().requestNewAuthToken(false, data -> {
             try {
                 String newAuthToken = data.getString("newAuthToken");
                 retryRequestWithNewAuthToken(newAuthToken);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        });
+        }, false), retryInterval);
     }
 
     protected void setRetryCount(int count) {
