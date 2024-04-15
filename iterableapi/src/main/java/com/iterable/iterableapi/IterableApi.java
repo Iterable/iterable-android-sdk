@@ -345,6 +345,7 @@ public class IterableApi {
         getInAppManager().reset();
         getEmbeddedManager().reset();
         getAuthManager().clearRefreshTimer();
+        getAuthManager().setIsLastAuthTokenValid(false);
 
         apiClient.onLogout();
     }
