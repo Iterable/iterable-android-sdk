@@ -243,6 +243,61 @@ public class IterableApi {
     }
 
     /**
+     * Gets a list of placements for the list of placement ids passed in from Iterable and
+     * passes the result to the callback;
+     * To get list of messages as a list of Embedded Messages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(long)} instead.
+     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
+     *
+     * @param placementIds array of placement ids - optional
+     * @param onCallback
+     */
+
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(null, placementIds, onCallback);
+    }
+
+    /**
+     * Gets a list of placements for the list of placement ids passed in from Iterable and
+     * passes the result to the success or failure callback;
+     * To get list of messages as a list of Embedded Messages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(long)} instead.
+     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
+     *
+     * @param placementIds array of placement ids - optional
+     * @param onSuccess
+     * @param onFailure
+     */
+
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(null, placementIds, onSuccess, onFailure);
+    }
+
+    /**
+     * A package-private method to get a list of Embedded Messages from Iterable;
+     * Passes the result to the success or failure callback.
+     * Used by the IterableEmbeddedManager.
+     *
+     * To get list of messages as a list of EmbeddedMessages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(long)} instead
+     *
+     * @param onSuccess
+     * @param onFailure
+     */
+    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(null, null, onSuccess, onFailure);
+    }
+
+    /**
      * Tracks in-app delivery events (per in-app)
      * @param message the in-app message to be tracked as delivered */
     void trackInAppDelivery(@NonNull IterableInAppMessage message) {
@@ -1275,51 +1330,6 @@ public class IterableApi {
             IterableLogger.w(TAG, "trackInAppClose: could not find an in-app message with ID: " + messageId);
         }
     }
-
-    /**
-     * @deprecated
-     * Gets a list of placements for the list of placement ids passed in from Iterable and
-     * passes the result to the callback;
-     * To get list of messages as a list of Embedded Messages in memory, use
-     * {@link IterableEmbeddedManager#getMessages(long)} instead.
-     *
-     * If current
-     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
-     *
-     * @param placementIds array of placement ids - optional
-     * @param onCallback
-     */
-
-    @Deprecated
-    public void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-        apiClient.getEmbeddedMessages(currentMessageIds, placementIds, onCallback);
-    }
-
-    /**
-     * @deprecated
-     * Gets a list of placements for the list of placement ids passed in from Iterable and
-     * passes the result to the success or failure callback;
-     * To get list of messages as a list of Embedded Messages in memory, use
-     * {@link IterableEmbeddedManager#getMessages(long)} instead.
-     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
-     *
-     * @param placementIds array of placement ids - optional
-     * @param onSuccess
-     * @param onFailure
-     */
-
-    @Deprecated
-    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.getEmbeddedMessages(null, placementIds, onSuccess, onFailure);
-    }
-
 //endregion
 
 //region library scoped
