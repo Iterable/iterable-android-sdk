@@ -184,11 +184,6 @@ public class IterableAuthManager {
             timer = new Timer(true);
         }
 
-        if (pauseAuthRetry && !isScheduledRefresh) {
-            // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
-            return;
-        }
-        timer = new Timer(true);
         try {
             timer.schedule(new TimerTask() {
                 @Override
