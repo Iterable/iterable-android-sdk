@@ -27,8 +27,8 @@ public class IterableAuthManager {
     private boolean pauseAuthRetry;
     private int retryCount;
     private boolean isLastAuthTokenValid;
-
     private boolean isTimerScheduled;
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long expiringAuthTokenRefreshPeriod) {
@@ -68,6 +68,7 @@ public class IterableAuthManager {
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
             boolean shouldIgnoreRetryPolicy) {
+      
         if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= api.config.retryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
             return;
         }
@@ -116,7 +117,7 @@ public class IterableAuthManager {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
-            authHandler.onTokenRegistrationFailed(new Throwable("Auth token null"));
+            handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_NULL);
             return;
         }
         IterableApi.getInstance().setAuthToken(authToken);
@@ -127,7 +128,7 @@ public class IterableAuthManager {
 
     private void handleAuthTokenFailure(Throwable throwable) {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
-        authHandler.onTokenRegistrationFailed(throwable);
+        handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_GENERATION_ERROR);
         pendingAuth = false;
         reSyncAuth();
     }
@@ -144,7 +145,7 @@ public class IterableAuthManager {
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
-            authHandler.onTokenRegistrationFailed(new Throwable("Auth token decode failure. Scheduling auth token refresh in 10 seconds..."));
+            handleAuthFailure(encodedJWT, AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID);
             //TODO: Sync with configured time duration once feature is available.
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
         }
@@ -161,12 +162,16 @@ public class IterableAuthManager {
         }
     }
 
+    void handleAuthFailure(String authToken, AuthFailureReason failureReason) {
+        authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
+    }
+
     long getNextRetryInterval() {
         long nextRetryInterval = api.config.retryPolicy.retryInterval;
         if (api.config.retryPolicy.retryBackoff == RetryPolicy.Type.EXPONENTIAL) {
             nextRetryInterval *= Math.pow(IterableConstants.EXPONENTIAL_FACTOR, retryCount-1); // Exponential backoff
         }
-
+   
         return nextRetryInterval;
     }
 
@@ -179,6 +184,11 @@ public class IterableAuthManager {
             timer = new Timer(true);
         }
 
+        if (pauseAuthRetry && !isScheduledRefresh) {
+            // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
+            return;
+        }
+        timer = new Timer(true);
         try {
             timer.schedule(new TimerTask() {
                 @Override
@@ -195,6 +205,18 @@ public class IterableAuthManager {
         } catch (Exception e) {
             IterableLogger.e(TAG, "timer exception: " + timer, e);
         }
+    }
+
+    private String getEmailOrUserId() {
+        String email = api.getEmail();
+        String userId = api.getUserId();
+
+        if (email != null) {
+            return email;
+        } else if (userId != null) {
+            return userId;
+        }
+        return null;
     }
 
     private static long decodedExpiration(String encodedJWT) throws Exception {

@@ -44,6 +44,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
     static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
     static final String ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED = "JwtUserIdentifiersMismatched";
+  
     int retryCount = 0;
     IterableApiRequest iterableApiRequest;
 
@@ -190,6 +191,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 if (responseCode == 401) {
                     if (matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_MISSING_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
+                        IterableApi.getInstance().getAuthManager().handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse));
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -262,6 +264,41 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             return false;
         }
     }
+
+    private static AuthFailureReason getMappedErrorCodeForMessage(JSONObject jsonResponse) {
+        try {
+            if (jsonResponse == null || !jsonResponse.has("msg")) {
+                return null;
+            }
+
+            String errorMessage = jsonResponse.getString("msg");
+
+            switch (errorMessage.toLowerCase()) {
+                case "exp must be less than 1 year from iat":
+                    return AuthFailureReason.AUTH_TOKEN_EXPIRATION_INVALID;
+                case "jwt format is invalid":
+                    return AuthFailureReason.AUTH_TOKEN_FORMAT_INVALID;
+                case "jwt token is expired":
+                    return AuthFailureReason.AUTH_TOKEN_EXPIRED;
+                case "jwt is invalid":
+                    return AuthFailureReason.AUTH_TOKEN_SIGNATURE_INVALID;
+                case "jwt payload requires a value for userid or email":
+                case "email could not be found":
+                    return AuthFailureReason.AUTH_TOKEN_USER_KEY_INVALID;
+                case "jwt token has been invalidated":
+                    return AuthFailureReason.AUTH_TOKEN_INVALIDATED;
+                case "invalid payload":
+                    return AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID;
+                case "jwt authorization header is not set":
+                    return AuthFailureReason.AUTH_TOKEN_MISSING;
+                default:
+                    return null;
+            }
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
 
     private static void logError(IterableApiRequest iterableApiRequest, String baseUrl, Exception e) {
         IterableLogger.e(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
@@ -358,7 +395,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        });
+        }, false), retryInterval);
     }
 
     protected void setRetryCount(int count) {
