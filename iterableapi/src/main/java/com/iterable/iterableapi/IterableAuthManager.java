@@ -26,8 +26,9 @@ public class IterableAuthManager {
     private boolean requiresAuthRefresh;
     private boolean pauseAuthRetry;
     private int retryCount;
-
     private boolean isLastAuthTokenValid;
+    private boolean isTimerScheduled;
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long expiringAuthTokenRefreshPeriod) {
@@ -45,9 +46,10 @@ public class IterableAuthManager {
         resetRetryCount();
     }
 
-    void markLastAuthToken(boolean isValid) {
+    void setIsLastAuthTokenValid(boolean isValid) {
         isLastAuthTokenValid = isValid;
     }
+
     void resetRetryCount() {
         retryCount = 0;
     }
@@ -66,7 +68,7 @@ public class IterableAuthManager {
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
             boolean shouldIgnoreRetryPolicy) {
-
+      
         if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= api.config.retryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
             return;
         }
@@ -169,10 +171,19 @@ public class IterableAuthManager {
         if (api.config.retryPolicy.retryBackoff == RetryPolicy.Type.EXPONENTIAL) {
             nextRetryInterval *= Math.pow(IterableConstants.EXPONENTIAL_FACTOR, retryCount-1); // Exponential backoff
         }
+   
         return nextRetryInterval;
     }
 
     void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
+        if (pauseAuthRetry && !isScheduledRefresh && isTimerScheduled) {
+            // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
+            return;
+        }
+        if (timer == null) {
+            timer = new Timer(true);
+        }
+
         if (pauseAuthRetry && !isScheduledRefresh) {
             // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
             return;
@@ -187,8 +198,10 @@ public class IterableAuthManager {
                     } else {
                         IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
                     }
+                    isTimerScheduled = false;
                 }
             }, timeDuration);
+            isTimerScheduled = true;
         } catch (Exception e) {
             IterableLogger.e(TAG, "timer exception: " + timer, e);
         }

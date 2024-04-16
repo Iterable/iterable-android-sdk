@@ -43,6 +43,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
     static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
+    static final String ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED = "JwtUserIdentifiersMismatched";
+  
     int retryCount = 0;
     IterableApiRequest iterableApiRequest;
 
@@ -57,7 +59,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         if (params != null && params.length > 0) {
             iterableApiRequest = params[0];
         }
-
         return executeApiRequest(iterableApiRequest);
     }
 
@@ -188,7 +189,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
-                    if (matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_MISSING_JWT_PAYLOAD)) {
+                    if (matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_MISSING_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                         IterableApi.getInstance().getAuthManager().handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse));
                     } else {
@@ -366,7 +367,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         IterableApi.getInstance().getAuthManager().resetFailedAuth();
         if (!Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_GET_REMOTE_CONFIGURATION) && !Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_DISABLE_DEVICE)) {
             IterableApi.getInstance().getAuthManager().pauseAuthRetries(false);
-            IterableApi.getInstance().getAuthManager().markLastAuthToken(true);
+            IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(true);
         }
 
         if (iterableApiRequest.successCallback != null) {
@@ -375,8 +376,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     private void handleErrorResponse(IterableApiResponse response) {
-        if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(response.responseJson, ERROR_CODE_MISSING_JWT_PAYLOAD)) {
-            IterableApi.getInstance().getAuthManager().markLastAuthToken(false);
+        if (matchesErrorCode(response.responseJson, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(response.responseJson, ERROR_CODE_MISSING_JWT_PAYLOAD) || matchesErrorCode(response.responseJson, ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED)) {
+            IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
             requestNewAuthTokenAndRetry();
         }
 
@@ -387,8 +388,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     private void requestNewAuthTokenAndRetry() {
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
-        Handler handler = new Handler();
-        handler.postDelayed(() -> IterableApi.getInstance().getAuthManager().requestNewAuthToken(false, data -> {
+        IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, false, data -> {
             try {
                 String newAuthToken = data.getString("newAuthToken");
                 retryRequestWithNewAuthToken(newAuthToken);
