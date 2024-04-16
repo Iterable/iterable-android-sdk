@@ -395,7 +395,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-        }, false), retryInterval);
+        });
     }
 
     protected void setRetryCount(int count) {
