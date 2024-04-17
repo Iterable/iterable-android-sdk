@@ -46,6 +46,11 @@ public class IterableAuthManager {
         resetRetryCount();
     }
 
+    void reset() {
+        clearRefreshTimer();
+        setIsLastAuthTokenValid(false);
+    }
+
     void setIsLastAuthTokenValid(boolean isValid) {
         isLastAuthTokenValid = isValid;
     }
