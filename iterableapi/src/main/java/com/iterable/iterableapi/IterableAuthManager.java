@@ -24,6 +24,7 @@ public class IterableAuthManager {
     private boolean hasFailedPriorAuth;
     private boolean pendingAuth;
     private boolean requiresAuthRefresh;
+    private RetryPolicy authRetryPolicy;
     private boolean pauseAuthRetry;
     private int retryCount;
     private boolean isLastAuthTokenValid;
@@ -31,9 +32,10 @@ public class IterableAuthManager {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, long expiringAuthTokenRefreshPeriod) {
+    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, RetryPolicy authRetryPolicy, long expiringAuthTokenRefreshPeriod) {
         this.api = api;
         this.authHandler = authHandler;
+        this.authRetryPolicy = authRetryPolicy;
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
     }
 
@@ -74,7 +76,7 @@ public class IterableAuthManager {
             final IterableHelper.SuccessHandler successCallback,
             boolean shouldIgnoreRetryPolicy) {
       
-        if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= api.config.retryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
+        if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= authRetryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
             return;
         }
 
@@ -95,6 +97,7 @@ public class IterableAuthManager {
                                 }
                                 final String authToken = authHandler.onAuthTokenRequested();
                                 retryCount++;
+                                IterableLogger.v("TAG", "AuthRetry::" + retryCount + " of "+authRetryPolicy.maxRetry);
                                 handleAuthTokenSuccess(authToken, successCallback);
                             } catch (final Exception e) {
                                 handleAuthTokenFailure(e);
@@ -172,8 +175,8 @@ public class IterableAuthManager {
     }
 
     long getNextRetryInterval() {
-        long nextRetryInterval = api.config.retryPolicy.retryInterval;
-        if (api.config.retryPolicy.retryBackoff == RetryPolicy.Type.EXPONENTIAL) {
+        long nextRetryInterval = authRetryPolicy.retryInterval;
+        if (authRetryPolicy.retryBackoff == RetryPolicy.Type.EXPONENTIAL) {
             nextRetryInterval *= Math.pow(IterableConstants.EXPONENTIAL_FACTOR, retryCount-1); // Exponential backoff
         }
    

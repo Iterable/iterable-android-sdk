@@ -131,7 +131,7 @@ public class IterableApi {
     @NonNull
     IterableAuthManager getAuthManager() {
         if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
+            authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod);
         }
         return authManager;
     }
@@ -355,7 +355,7 @@ public class IterableApi {
             return;
         }
 
-        pauseAuthRetries(false);
+        getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
         } else {
@@ -697,9 +697,18 @@ public class IterableApi {
                 IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
         );
     }
+
+    /**
+     * // This method gets called from developer end only.
+     * @param pauseRetry to pause/unpause auth retries
+     */
     public void pauseAuthRetries(boolean pauseRetry) {
         getAuthManager().pauseAuthRetries(pauseRetry);
+        if (!pauseRetry) { // request new auth token as soon as unpause
+            getAuthManager().requestNewAuthToken(false);
+        }
     }
+
     public void setEmail(@Nullable String email) {
         setEmail(email, null, null, null);
     }
