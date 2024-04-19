@@ -97,7 +97,6 @@ public class IterableAuthManager {
                                 }
                                 final String authToken = authHandler.onAuthTokenRequested();
                                 retryCount++;
-                                IterableLogger.v("TAG", "AuthRetry::" + retryCount + " of "+authRetryPolicy.maxRetry);
                                 handleAuthTokenSuccess(authToken, successCallback);
                             } catch (final Exception e) {
                                 handleAuthTokenFailure(e);
@@ -177,9 +176,9 @@ public class IterableAuthManager {
     long getNextRetryInterval() {
         long nextRetryInterval = authRetryPolicy.retryInterval;
         if (authRetryPolicy.retryBackoff == RetryPolicy.Type.EXPONENTIAL) {
-            nextRetryInterval *= Math.pow(IterableConstants.EXPONENTIAL_FACTOR, retryCount-1); // Exponential backoff
+            nextRetryInterval *= Math.pow(IterableConstants.EXPONENTIAL_FACTOR, retryCount - 1); // Exponential backoff
         }
-   
+
         return nextRetryInterval;
     }
 

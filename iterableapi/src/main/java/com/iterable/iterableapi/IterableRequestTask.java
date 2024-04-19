@@ -44,7 +44,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
     static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
     static final String ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED = "JwtUserIdentifiersMismatched";
-  
     int retryCount = 0;
     IterableApiRequest iterableApiRequest;
 

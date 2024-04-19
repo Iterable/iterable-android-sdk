@@ -20,7 +20,7 @@ public class AuthFailure {
     public AuthFailure(String userKey,
                        String failedAuthToken,
                        long failedRequestTime,
-                       AuthFailureReason failureReason){
+                       AuthFailureReason failureReason) {
         this.userKey = userKey;
         this.failedAuthToken = failedAuthToken;
         this.failedRequestTime = failedRequestTime;
