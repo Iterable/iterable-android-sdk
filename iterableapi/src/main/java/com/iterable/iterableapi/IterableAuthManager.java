@@ -75,7 +75,6 @@ public class IterableAuthManager {
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
             boolean shouldIgnoreRetryPolicy) {
-      
         if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= authRetryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
             return;
         }
@@ -190,7 +189,6 @@ public class IterableAuthManager {
         if (timer == null) {
             timer = new Timer(true);
         }
-        
         try {
             timer.schedule(new TimerTask() {
                 @Override
