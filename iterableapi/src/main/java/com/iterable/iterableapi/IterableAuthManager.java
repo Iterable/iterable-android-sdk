@@ -123,7 +123,7 @@ public class IterableAuthManager {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
-            handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_NULL);
+            authHandler.onTokenRegistrationFailed(new Throwable("Auth token null"));
             return;
         }
         IterableApi.getInstance().setAuthToken(authToken);
@@ -134,7 +134,7 @@ public class IterableAuthManager {
 
     private void handleAuthTokenFailure(Throwable throwable) {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
-        handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_GENERATION_ERROR);
+        authHandler.onTokenRegistrationFailed(throwable);
         pendingAuth = false;
         reSyncAuth();
     }
@@ -151,7 +151,7 @@ public class IterableAuthManager {
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
-            handleAuthFailure(encodedJWT, AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID);
+            authHandler.onTokenRegistrationFailed(new Throwable("Auth token decode failure. Scheduling auth token refresh in 10 seconds..."));
             //TODO: Sync with configured time duration once feature is available.
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
         }
@@ -165,12 +165,6 @@ public class IterableAuthManager {
         if (requiresAuthRefresh) {
             requiresAuthRefresh = false;
             requestNewAuthToken(false);
-        }
-    }
-
-    void handleAuthFailure(String authToken, AuthFailureReason failureReason) {
-        if (authHandler != null) {
-            authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
         }
     }
 
