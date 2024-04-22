@@ -136,7 +136,9 @@ public class IterableAuthManager {
     }
 
     void handleAuthFailure(String authToken, AuthFailureReason failureReason) {
-        authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
+        if (authHandler != null) {
+            authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
+        }
     }
 
     private String getEmailOrUserId() {

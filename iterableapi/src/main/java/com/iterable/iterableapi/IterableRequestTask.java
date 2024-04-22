@@ -290,6 +290,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     return AuthFailureReason.AUTH_TOKEN_INVALIDATED;
                 case "invalid payload":
                     return AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID;
+                case "jwt authorization header is not set":
+                    return AuthFailureReason.AUTH_TOKEN_MISSING;
                 default:
                     return null;
             }
