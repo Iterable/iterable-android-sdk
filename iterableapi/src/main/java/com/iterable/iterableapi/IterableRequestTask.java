@@ -61,7 +61,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         return executeApiRequest(iterableApiRequest);
     }
 
-    private void retryRequestWithNewAuthToken(String newAuthToken) {
+    private static void retryRequestWithNewAuthToken(String newAuthToken, IterableApiRequest iterableApiRequest) {
         IterableApiRequest request = new IterableApiRequest(
                 iterableApiRequest.apiKey,
                 iterableApiRequest.resourcePath,
@@ -190,6 +190,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 if (responseCode == 401) {
                     if (matchesJWTErrorCodes(jsonResponse)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
+                        // We handle the JWT Retry for both online and offline here rather than handling online request in onPostExecute
+                        handleErrorResponse(apiResponse, iterableApiRequest);
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -302,8 +304,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             return;
         } else if (response.success) {
             handleSuccessResponse(response);
-        } else {
-            handleErrorResponse(response);
         }
 
         if (iterableApiRequest.legacyCallback != null) {
@@ -342,23 +342,23 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         }
     }
 
-    private void handleErrorResponse(IterableApiResponse response) {
-        if (matchesJWTErrorCodes(response.responseJson)) {
-            IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
-            requestNewAuthTokenAndRetry();
-        }
+    private static void handleErrorResponse(IterableApiResponse response, IterableApiRequest iterableApiRequest) {
+        requestNewAuthTokenAndRetry(newToken -> {
+            retryRequestWithNewAuthToken(newToken, iterableApiRequest);
+        });
 
         if (iterableApiRequest.failureCallback != null) {
             iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
         }
     }
 
-    private void requestNewAuthTokenAndRetry() {
+    private static void requestNewAuthTokenAndRetry(IterableAuthTokenReceiver iterableAuthTokenReceiver) {
+        IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
         IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, false, data -> {
             try {
                 String newAuthToken = data.getString("newAuthToken");
-                retryRequestWithNewAuthToken(newAuthToken);
+                iterableAuthTokenReceiver.onFetchNewAuthToken(newAuthToken);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -370,6 +370,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 }
 
+
+interface IterableAuthTokenReceiver {
+    void onFetchNewAuthToken(String newToken);
+}
 /**
  *  Iterable Request object
  */
