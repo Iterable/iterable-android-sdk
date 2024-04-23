@@ -191,7 +191,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     if (matchesJWTErrorCodes(jsonResponse)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                         // We handle the JWT Retry for both online and offline here rather than handling online request in onPostExecute
-                        handleErrorResponse(apiResponse, iterableApiRequest);
+                        handleJWTError(apiResponse, iterableApiRequest);
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -304,6 +304,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             return;
         } else if (response.success) {
             handleSuccessResponse(response);
+        } else {
+            handleErrorResponse(response, iterableApiRequest);
         }
 
         if (iterableApiRequest.legacyCallback != null) {
@@ -343,13 +345,17 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     private static void handleErrorResponse(IterableApiResponse response, IterableApiRequest iterableApiRequest) {
+        if (iterableApiRequest.failureCallback != null) {
+            iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
+        }
+    }
+
+    private static void handleJWTError(IterableApiResponse response, IterableApiRequest iterableApiRequest) {
         requestNewAuthTokenAndRetry(newToken -> {
             retryRequestWithNewAuthToken(newToken, iterableApiRequest);
         });
 
-        if (iterableApiRequest.failureCallback != null) {
-            iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
-        }
+        handleErrorResponse(response, iterableApiRequest);
     }
 
     private static void requestNewAuthTokenAndRetry(IterableAuthTokenReceiver iterableAuthTokenReceiver) {
