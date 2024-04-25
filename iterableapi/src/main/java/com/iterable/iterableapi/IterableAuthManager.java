@@ -95,9 +95,11 @@ public class IterableAuthManager {
                                     return;
                                 }
                                 final String authToken = authHandler.onAuthTokenRequested();
+                                pendingAuth = false;
                                 retryCount++;
                                 handleAuthTokenSuccess(authToken, successCallback);
                             } catch (final Exception e) {
+                                retryCount++;
                                 handleAuthTokenFailure(e);
                             }
                         }
@@ -127,7 +129,6 @@ public class IterableAuthManager {
             return;
         }
         IterableApi.getInstance().setAuthToken(authToken);
-        pendingAuth = false;
         reSyncAuth();
         authHandler.onTokenRegistrationSuccessful(authToken);
     }
@@ -136,7 +137,7 @@ public class IterableAuthManager {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
         authHandler.onTokenRegistrationFailed(throwable);
         pendingAuth = false;
-        reSyncAuth();
+        scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
     }
 
     public void queueExpirationRefresh(String encodedJWT) {
@@ -164,7 +165,7 @@ public class IterableAuthManager {
     void reSyncAuth() {
         if (requiresAuthRefresh) {
             requiresAuthRefresh = false;
-            requestNewAuthToken(false);
+            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
         }
     }
 
@@ -178,7 +179,7 @@ public class IterableAuthManager {
     }
 
     void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
-        if (pauseAuthRetry && !isScheduledRefresh && isTimerScheduled) {
+        if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
             // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
             return;
         }
