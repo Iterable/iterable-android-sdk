@@ -257,7 +257,7 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(placementIds, onCallback);
+        apiClient.getEmbeddedMessages(null, placementIds, onCallback);
     }
 
     /**
@@ -276,7 +276,7 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(placementIds, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(null, placementIds, onSuccess, onFailure);
     }
 
     /**
@@ -294,7 +294,7 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        apiClient.getEmbeddedMessages(null, onSuccess, onFailure);
+        apiClient.getEmbeddedMessages(null, null, onSuccess, onFailure);
     }
 
     /**

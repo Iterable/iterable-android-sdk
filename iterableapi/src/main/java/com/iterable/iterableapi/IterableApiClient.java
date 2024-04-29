@@ -222,7 +222,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -232,25 +232,16 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null) {
-                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+            StringBuilder pathBuilder = getEmbeddedPathBuilder(currentMessageIds, placementIds);
 
-                for (Long placementId : placementIds) {
-                    pathBuilder.append("&placementIds=").append(placementId);
-                }
-
-                String path = pathBuilder.toString();
-                sendGetRequest(path, requestJSON, onCallback);
-            } else {
-                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
-            }
-
+            String path = pathBuilder.toString();
+            sendGetRequest(path, requestJSON, onCallback);
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -260,23 +251,43 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null) {
-                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+            StringBuilder pathBuilder = getEmbeddedPathBuilder(currentMessageIds, placementIds);
 
-                for (Long placementId : placementIds) {
-                    pathBuilder.append("&placementIds=").append(placementId);
-                }
-
-                String path = pathBuilder.toString();
-                sendGetRequest(path, requestJSON, onSuccess, onFailure);
-            } else {
-                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
-            }
-
+            String path = pathBuilder.toString();
+            sendGetRequest(path, requestJSON, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
+
+    @NonNull
+    private static StringBuilder getEmbeddedPathBuilder(@Nullable String[] currentMessageIds, @Nullable Long[] placementIds) {
+        StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES);
+
+        if (placementIds != null && placementIds.length > 0) {
+            appendIds(pathBuilder, "placementIds", placementIds);
+        }
+
+        if (currentMessageIds != null && currentMessageIds.length > 0) {
+            appendIds(pathBuilder, "currentMessageIds", currentMessageIds);
+        }
+
+        return pathBuilder;
+    }
+
+    private static void appendIds(StringBuilder pathBuilder, String paramName, Object[] ids) {
+        pathBuilder.append("?");
+        boolean isFirst = true;
+        for (Object id : ids) {
+            if (isFirst) {
+                pathBuilder.append(paramName).append("=").append(id);
+                isFirst = false;
+            } else {
+                pathBuilder.append("&").append(paramName).append("=").append(id);
+            }
+        }
+    }
+
 
     public void trackInAppOpen(@NonNull String messageId) {
         JSONObject requestJSON = new JSONObject();
