@@ -10,15 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
 
       - name: Configure JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
         with:
           java-version: 11
+          distribution: "zulu"
 
       - run: touch local.properties
 
@@ -33,15 +34,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
 
       - name: Configure JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
         with:
-            java-version: 11
+          java-version: 11
+          distribution: "zulu"
 
       - run: touch local.properties
 
@@ -49,7 +51,7 @@ jobs:
         run: ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: unit-tests
           path: |
@@ -61,26 +63,27 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
 
       - name: Configure JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
         with:
-            java-version: 11
+          java-version: 11
+          distribution: "zulu"
 
       - run: touch local.properties
 
       - name: Test
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@6b0df4b0efb23bb0ec63d881db79aefbc976e4b2 # v2.30.1
         with:
           api-level: 28
           script: ./gradlew :iterableapi:connectedCheck :app:jacocoDebugAndroidTestReport
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: instrumentation-tests
           path: |
@@ -95,24 +98,25 @@ jobs:
       JACOCO_SOURCE_PATH: "iterableapi/src/main/java iterableapi-ui/src/main/java"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Configure JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
         with:
           java-version: 11
+          distribution: "zulu"
 
       - run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
       - run: chmod +x ./cc-test-reporter
       - run: ./cc-test-reporter before-build
 
       - name: Download unit tests coverage
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: unit-tests
 
       - name: Download instrumentation tests coverage
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: instrumentation-tests
 
