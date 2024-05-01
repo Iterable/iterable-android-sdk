@@ -2,9 +2,11 @@ package com.iterable.iterableapi;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -46,10 +48,10 @@ public class AnonymousUserManager {
 
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.SHARED_PREFS_SESSION_NO, sessionNo + 1);
-            newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentDateTime());
+            newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentTime());
 
             if (firstSessionDate.isEmpty()) {
-                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentDateTime());
+                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentTime());
             } else {
                 newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, firstSessionDate);
             }
@@ -78,6 +80,18 @@ public class AnonymousUserManager {
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
             storeEventListToLocalStorage(newDataObject);
 
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void trackAnonUpdateUser(JSONObject dataFields) {
+        IterableLogger.v(TAG, "updateAnonUser");
+        try {
+            JSONObject newDataObject = new JSONObject();
+            newDataObject.put(IterableConstants.DATA_REPLACE, dataFields);
+            newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.UPDATE_USER);
+            storeEventListToLocalStorage(newDataObject, true);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -119,120 +133,22 @@ public class AnonymousUserManager {
     }
 
     void getCriteria() {
-        try {
-            // call API when it is available and save data in SharedPreferences, until then just save the data using static data
-            String mockData = "{" +
-                    "    \"count\":2," +
-                    "    \"criteriaList\":[" +
-                    "        {" +
-                    "            \"criteriaId\":12345," +
-                    "            \"searchQuery\":{" +
-                    "                \"combinator\":\"Or\"," +
-                    "                \"searchQueries\":[" +
-                    "                    {" +
-                    "                        \"combinator\":\"And\"," +
-                    "                        \"searchQueries\":[" +
-                    "                            {" +
-                    "                                \"dataType\":\"purchase\"," +
-                    "                                \"searchCombo\":{" +
-                    "                                    \"combinator\":\"And\"," +
-                    "                                    \"searchQueries\":[" +
-                    "                                        {" +
-                    "                                            \"field\":\"shoppingCartItems.price\"," +
-                    "                                            \"fieldType\":\"double\"," +
-                    "                                            \"comparatorType\":\"Equals\"," +
-                    "                                            \"dataType\":\"purchase\"," +
-                    "                                            \"id\":2," +
-                    "                                            \"value\":\"4.67\"" +
-                    "                                        }," +
-                    "                                        {" +
-                    "                                            \"field\":\"shoppingCartItems.quantity\"," +
-                    "                                            \"fieldType\":\"long\"," +
-                    "                                            \"comparatorType\":\"GreaterThanOrEqualTo\"," +
-                    "                                            \"dataType\":\"purchase\"," +
-                    "                                            \"id\":3," +
-                    "                                            \"valueLong\":2," +
-                    "                                            \"value\":\"2\"" +
-                    "                                        }" +
-                    "                                    ]" +
-                    "                                }" +
-                    "                            }" +
-                    "                        ]" +
-                    "                    }" +
-                    "                ]" +
-                    "            }" +
-                    "        }," +
-                    "        {" +
-                    "            \"criteriaId\":5678," +
-                    "            \"searchQuery\":{" +
-                    "                \"combinator\":\"Or\"," +
-                    "                \"searchQueries\":[" +
-                    "                    {" +
-                    "                        \"combinator\":\"Or\"," +
-                    "                        \"searchQueries\":[" +
-                    "                            {" +
-                    "                                \"dataType\":\"user\"," +
-                    "                                \"searchCombo\":{" +
-                    "                                    \"combinator\":\"And\"," +
-                    "                                    \"searchQueries\":[" +
-                    "                                        {" +
-                    "                                            \"field\":\"itblInternal.emailDomain\"," +
-                    "                                            \"fieldType\":\"string\"," +
-                    "                                            \"comparatorType\":\"Equals\"," +
-                    "                                            \"dataType\":\"user\"," +
-                    "                                            \"id\":6," +
-                    "                                            \"value\":\"gmail.com\"" +
-                    "                                        }" +
-                    "                                    ]" +
-                    "                                }" +
-                    "                            }," +
-                    "                            {" +
-                    "                                \"dataType\":\"customEvent\"," +
-                    "                                \"searchCombo\":{" +
-                    "                                    \"combinator\":\"And\"," +
-                    "                                    \"searchQueries\":[" +
-                    "                                        {" +
-                    "                                            \"field\":\"eventName\"," +
-                    "                                            \"fieldType\":\"string\"," +
-                    "                                            \"comparatorType\":\"Equals\"," +
-                    "                                            \"dataType\":\"customEvent\"," +
-                    "                                            \"id\":9," +
-                    "                                            \"value\":\"processing_cancelled\"" +
-                    "                                        }," +
-                    "                                        {" +
-                    "                                            \"field\":\"createdAt\"," +
-                    "                                            \"fieldType\":\"date\"," +
-                    "                                            \"comparatorType\":\"GreaterThan\"," +
-                    "                                            \"dataType\":\"customEvent\"," +
-                    "                                            \"id\":10," +
-                    "                                            \"dateRange\":{" +
-                    "                                            }," +
-                    "                                            \"isRelativeDate\":false," +
-                    "                                            \"value\":\"1688194800000\"" +
-                    "                                        }" +
-                    "                                    ]" +
-                    "                                }" +
-                    "                            }" +
-                    "                        ]" +
-                    "                    }" +
-                    "                ]" +
-                    "            }" +
-                    "        }" +
-                    "    ]" +
-                    "}";
-
-            JSONObject mockDataObject = new JSONObject(mockData);
-            SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
-            editor.apply();
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        IterableApi.getInstance().apiClient.getCriteriaList(data -> {
+            if (data != null) {
+                try {
+                    JSONObject mockDataObject = new JSONObject(data);
+                    SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
+                    editor.apply();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
-    private boolean checkCriteriaCompletion() {
+    private Integer checkCriteriaCompletion() {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
@@ -240,24 +156,29 @@ public class AnonymousUserManager {
         try {
             if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
                 CriteriaCompletionChecker checker = new CriteriaCompletionChecker();
-                return checker.getMatchedCriteria(criteriaData, localStoredEventList) != null;
+                return checker.getMatchedCriteria(criteriaData, localStoredEventList);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return false;
+        return null;
     }
 
-    private void createKnownUser() {
-        IterableApi.getInstance().setUserId(UUID.randomUUID().toString());
+    private void createKnownUser(Integer criteriaId) {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
+        IterableApi.getInstance().setUserId(UUID.randomUUID().toString());
 
         try {
             if (!userData.isEmpty()) {
-                JSONObject userDataJson = new JSONObject(userData);
-                IterableApi.getInstance().updateUser(userDataJson);
+                JSONObject userSessionDataJson = new JSONObject(userData);
+                JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+                if (!getPushStatus().isEmpty()) {
+                    userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
+                }
+                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, criteriaId);
+                IterableApi.getInstance().apiClient.trackAnonSession(getCurrentTime(), userDataJson);
             }
 
         } catch (JSONException e) {
@@ -326,6 +247,10 @@ public class AnonymousUserManager {
                             IterableApi.getInstance().updateCart(list, userObject, createdAt);
                             break;
                         }
+                        case IterableConstants.UPDATE_USER: {
+                            IterableApi.getInstance().updateUser(event.getJSONObject(IterableConstants.DATA_REPLACE));
+                            break;
+                        }
                         default:
                             break;
                     }
@@ -347,15 +272,47 @@ public class AnonymousUserManager {
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
+        storeEventListToLocalStorage(newDataObject, false);
+    }
+
+    private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
         JSONArray previousDataArray = getEventListFromLocalStorage();
+        try {
+            if (shouldOverWrite) {
+                int indexToRemove = -1;
+                String trackingType = newDataObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+                for (int i = 0; i < previousDataArray.length(); i++) {
+                    JSONObject jsonObject = previousDataArray.getJSONObject(i);
+                    if (jsonObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(trackingType)) {
+                        indexToRemove = i;
+                        break;
+                    }
+                }
+
+                if (indexToRemove >= 0) {
+                    JSONArray newDataArray = new JSONArray();
+                    for (int j = 0; j < previousDataArray.length(); j++) {
+                        if (j != indexToRemove) {
+                            newDataArray.put(previousDataArray.get(j));
+                        }
+                    }
+
+                    previousDataArray = newDataArray;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         previousDataArray.put(newDataObject);
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
         editor.apply();
 
-        if (checkCriteriaCompletion()) {
-            createKnownUser();
+        Integer criteriaId = checkCriteriaCompletion();
+        if (criteriaId != null) {
+            createKnownUser(criteriaId);
         }
     }
 
@@ -378,9 +335,14 @@ public class AnonymousUserManager {
         return Calendar.getInstance().getTimeInMillis();
     }
 
-    private String getCurrentDateTime() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateFormat.format(new Date());
+    private String getPushStatus() {
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(IterableApi.getInstance().getMainActivityContext());
+        if (notificationManagerCompat.areNotificationsEnabled()) {
+            ApplicationInfo applicationInfo = IterableApi.sharedInstance.getMainActivityContext().getApplicationInfo();
+            int stringId = applicationInfo.labelRes;
+            return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : IterableApi.sharedInstance.getMainActivityContext().getString(stringId);
+        } else {
+            return "";
+        }
     }
 }

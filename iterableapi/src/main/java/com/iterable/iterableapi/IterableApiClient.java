@@ -664,4 +664,21 @@ class IterableApiClient {
             e.printStackTrace();
         }
     }
+
+    void getCriteriaList(@Nullable IterableHelper.IterableActionHandler actionHandler) {
+        sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
+    }
+
+    void trackAnonSession(long createdAt, @NonNull JSONObject requestJson) {
+        try {
+            JSONObject requestObject = new JSONObject();
+            addEmailOrUserIdToJson(requestObject);
+            requestObject.put(IterableConstants.KEY_CREATED_AT, createdAt);
+            requestObject.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            requestObject.put(IterableConstants.KEY_ANON_SESSION_CONTEXT, requestJson);
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_ANON_SESSION, requestObject);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }
