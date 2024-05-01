@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # v1.1.0
+        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
 
       - name: Configure JDK
         uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # v1.1.0
+        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
 
       - name: Configure JDK
         uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
@@ -58,13 +58,13 @@ jobs:
 
   instrumentation-tests:
     name: Instrumentation tests
-    runs-on: macos-latest
+    runs-on: macos-12
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4 # v1.1.0
+        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
 
       - name: Configure JDK
         uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
