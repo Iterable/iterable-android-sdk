@@ -168,8 +168,7 @@ public class AnonymousUserManager {
     private void createKnownUser(Integer criteriaId) {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
-        IterableApi.getInstance().setUserId(UUID.randomUUID().toString());
-
+        String userId = UUID.randomUUID().toString();
         try {
             if (!userData.isEmpty()) {
                 JSONObject userSessionDataJson = new JSONObject(userData);
@@ -178,14 +177,25 @@ public class AnonymousUserManager {
                     userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
                 }
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, criteriaId);
-                IterableApi.getInstance().apiClient.trackAnonSession(getCurrentTime(), userDataJson);
+                IterableApi.getInstance().apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
+                    // success handler
+                    IterableApi.getInstance().setUserId(userId);
+                    syncEvents();
+                }, (reason, data) -> {
+                    if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
+                        try {
+                            int statusCode = (int) data.get(IterableConstants.HTTP_STATUS_CODE);
+                            if (statusCode == 409) {
+                                getCriteria(); // refetch the criteria
+                            }
+                        } catch (JSONException e) {}
+                    }
+                });
             }
 
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-        syncEvents();
     }
 
     void syncEvents() {
