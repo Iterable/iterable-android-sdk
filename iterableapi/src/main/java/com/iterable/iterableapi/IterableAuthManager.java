@@ -24,9 +24,9 @@ public class IterableAuthManager {
     private boolean hasFailedPriorAuth;
     private boolean pendingAuth;
     private boolean requiresAuthRefresh;
-    private RetryPolicy authRetryPolicy;
-    private boolean pauseAuthRetry;
-    private int retryCount;
+    RetryPolicy authRetryPolicy;
+    boolean pauseAuthRetry;
+    int retryCount;
     private boolean isLastAuthTokenValid;
     private boolean isTimerScheduled;
 
