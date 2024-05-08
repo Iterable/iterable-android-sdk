@@ -181,6 +181,11 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             }
 
+            if (attributionInfo != null) {
+                requestJSON.putOpt(IterableConstants.KEY_CAMPAIGN_ID, attributionInfo.campaignId);
+                requestJSON.putOpt(IterableConstants.KEY_TEMPLATE_ID, attributionInfo.templateId);
+            }
+
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -287,6 +292,62 @@ class IterableApiClient {
         }
     }
 
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+            requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
+            requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
+
+            if (placementIds != null) {
+                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
+                for (Long placementId : placementIds) {
+                    pathBuilder.append("&placementIds=").append(placementId);
+                }
+
+                String path = pathBuilder.toString();
+                sendGetRequest(path, requestJSON, onCallback);
+            } else {
+                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
+            requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
+            requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
+            requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
+
+            if (placementIds != null) {
+                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
+                for (Long placementId : placementIds) {
+                    pathBuilder.append("&placementIds=").append(placementId);
+                }
+
+                String path = pathBuilder.toString();
+                sendGetRequest(path, requestJSON, onSuccess, onFailure);
+            } else {
+                sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void trackInAppOpen(@NonNull String messageId) {
         JSONObject requestJSON = new JSONObject();
 
@@ -349,6 +410,22 @@ class IterableApiClient {
         }
     }
 
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String buttonIdentifier, @Nullable String clickedUrl) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId());
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER, buttonIdentifier);
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL, clickedUrl);
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_CLICK, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     void trackInAppClose(@NonNull IterableInAppMessage message, @Nullable String clickedURL, @NonNull IterableInAppCloseAction closeAction, @NonNull IterableInAppLocation clickLocation, @Nullable String inboxSessionId) {
         JSONObject requestJSON = new JSONObject();
 
@@ -385,6 +462,20 @@ class IterableApiClient {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId());
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
@@ -442,6 +533,42 @@ class IterableApiClient {
             addInboxSessionID(requestJSON, inboxSessionId);
 
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_INBOX_SESSION, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void trackEmbeddedSession(@NonNull IterableEmbeddedSession session) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+
+            JSONObject sessionJson = new JSONObject();
+            if (session.getId() != null) {
+                sessionJson.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getId());
+            }
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getStart().getTime());
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getEnd().getTime());
+
+            requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION, sessionJson);
+
+            if (session.getImpressions() != null) {
+                JSONArray impressionsJsonArray = new JSONArray();
+                for (IterableEmbeddedImpression impression : session.getImpressions()) {
+                    JSONObject impressionJson = new JSONObject();
+                    impressionJson.put(IterableConstants.KEY_MESSAGE_ID, impression.getMessageId());
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, impression.getPlacementId());
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT, impression.getDisplayCount());
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION, impression.getDuration());
+                    impressionsJsonArray.put(impressionJson);
+                }
+                requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_IMPRESSIONS, impressionsJsonArray);
+            }
+
+            requestJSON.putOpt(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION, requestJSON);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -617,6 +744,10 @@ class IterableApiClient {
      */
     void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableActionHandler onCallback) {
         getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onCallback);
+    }
+
+    void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onSuccess, onFailure);
     }
 
     void onLogout() {

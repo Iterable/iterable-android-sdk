@@ -86,6 +86,11 @@ public class IterableConfig {
 
     final boolean enableAnonTracking;
 
+    /**
+     * Allows for fetching embedded messages.
+     */
+    final boolean enableEmbeddedMessaging;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -102,6 +107,7 @@ public class IterableConfig {
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
         enableAnonTracking = builder.enableAnonTracking;
+        enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
     }
 
     public static class Builder {
@@ -120,6 +126,7 @@ public class IterableConfig {
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
         private boolean enableAnonTracking = false;
+        private boolean enableEmbeddedMessaging = false;
 
         public Builder() {}
 
@@ -280,6 +287,15 @@ public class IterableConfig {
          */
         public Builder setEnableAnonTracking(boolean enableAnonTracking) {
             this.enableAnonTracking = enableAnonTracking;
+			return this;
+		}
+
+		/**
+         * Allows for fetching embedded messages.
+         * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
+         */
+        public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
+            this.enableEmbeddedMessaging = enableEmbeddedMessaging;
             return this;
         }
 

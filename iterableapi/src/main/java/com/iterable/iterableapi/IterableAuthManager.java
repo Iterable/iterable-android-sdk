@@ -141,7 +141,11 @@ public class IterableAuthManager {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    api.getAuthManager().requestNewAuthToken(false);
+                    if (api.getEmail() != null || api.getUserId() != null) {
+                        api.getAuthManager().requestNewAuthToken(false);
+                    } else {
+                        IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
+                    }
                 }
             }, timeDuration);
         } catch (Exception e) {
@@ -152,6 +156,10 @@ public class IterableAuthManager {
     private static long decodedExpiration(String encodedJWT) throws Exception {
         long exp = 0;
             String[] split = encodedJWT.split("\\.");
+            //Check if jwt is valid
+            if (split.length != 3) {
+                throw new IllegalArgumentException("Invalid JWT");
+            }
             String body = getJson(split[1]);
             JSONObject jObj = new JSONObject(body);
             exp = jObj.getLong(expirationString);
