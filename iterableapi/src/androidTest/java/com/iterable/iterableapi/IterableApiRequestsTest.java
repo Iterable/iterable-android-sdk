@@ -146,7 +146,7 @@ public class IterableApiRequestsTest {
         JSONObject dataFields = new JSONObject();
         dataFields.put("field", "testValue");
 
-        IterableApi.sharedInstance.trackPurchase(100.0, items, dataFields);
+        IterableApi.sharedInstance.trackPurchase(100.0, items, dataFields, null);
 
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(request);

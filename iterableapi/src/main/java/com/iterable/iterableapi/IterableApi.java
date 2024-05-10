@@ -1038,7 +1038,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        trackPurchase(total, items, null);
+        trackPurchase(total, items, null, null);
     }
 
     /**
@@ -1052,7 +1052,22 @@ public class IterableApi {
             return;
         }
 
-        apiClient.trackPurchase(total, items, dataFields);
+        apiClient.trackPurchase(total, items, dataFields, null);
+    }
+
+    /**
+     * Tracks a purchase.
+     * @param total total purchase amount
+     * @param items list of purchased items
+     * @param dataFields a `JSONObject` containing any additional information to save along with the event
+     * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
+     */
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.trackPurchase(total, items, dataFields, attributionInfo);
     }
 
     /**
