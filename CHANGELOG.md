@@ -13,6 +13,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.5.2]
+#### Added
+ - Introducing a new method `setAuthRetryPolicy` in `IterableConfig` to set the retry policy for JWT token refresh.
+ - You can now use method - `pauseAuthRetries(boolean pauseRetry)` to pause or resume the JWT token refresh retries.
+ - `trackPurchase` method now accepts `attributionInfo` parameter to track purchase with attribution information.
+
+#### Fixed
+- Embedded manager listeners are active only if feature is enabled
+
 ## [3.5.1]
 
 #### Fixed
