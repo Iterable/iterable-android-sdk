@@ -131,7 +131,7 @@ public class IterableApi {
     @NonNull
     IterableAuthManager getAuthManager() {
         if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
+            authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod);
         }
         return authManager;
     }
@@ -344,7 +344,7 @@ public class IterableApi {
 
         getInAppManager().reset();
         getEmbeddedManager().reset();
-        getAuthManager().clearRefreshTimer();
+        getAuthManager().reset();
 
         apiClient.onLogout();
     }
@@ -355,6 +355,7 @@ public class IterableApi {
             return;
         }
 
+        getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
         } else {
@@ -457,7 +458,7 @@ public class IterableApi {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
                 IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
-                getAuthManager().scheduleAuthTokenRefresh(10000);
+                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
             }
         }
     }
@@ -695,6 +696,17 @@ public class IterableApi {
         return IterableAttributionInfo.fromJSONObject(
                 IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
         );
+    }
+
+    /**
+     * // This method gets called from developer end only.
+     * @param pauseRetry to pause/unpause auth retries
+     */
+    public void pauseAuthRetries(boolean pauseRetry) {
+        getAuthManager().pauseAuthRetries(pauseRetry);
+        if (!pauseRetry) { // request new auth token as soon as unpause
+            getAuthManager().requestNewAuthToken(false);
+        }
     }
 
     public void setEmail(@Nullable String email) {
