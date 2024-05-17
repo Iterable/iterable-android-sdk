@@ -281,7 +281,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      */
     public synchronized void removeMessage(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableLogger.printInfo();
-        if(message != null) {
+        if (message != null) {
             message.setConsumed(true);
             api.inAppConsume(message, source, clickLocation, successHandler, failureHandler);
         }
