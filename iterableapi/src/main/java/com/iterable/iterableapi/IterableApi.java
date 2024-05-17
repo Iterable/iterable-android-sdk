@@ -894,6 +894,10 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            return;
+        }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, null, null);
     }
 
@@ -910,6 +914,13 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
+            return;
+        }
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            if (failureHandler != null) {
+                failureHandler.onFailure("inAppConsume: message is null", null);
+            }
             return;
         }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, successHandler, failureHandler);
