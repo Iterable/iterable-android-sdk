@@ -870,7 +870,7 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (handleNullMessage(message, failureHandler)) {
+        if (checkIfMessageIsNull(message, failureHandler)) {
             return;
         }
         inAppConsume(message, null, null, successHandler, failureHandler);
@@ -890,8 +890,7 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        if (message == null) {
-            IterableLogger.e(TAG, "inAppConsume: message is null");
+        if (checkIfMessageIsNull(message, null)) {
             return;
         }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, null, null);
@@ -912,7 +911,7 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-        if (handleNullMessage(message, failureHandler)) {
+        if (checkIfMessageIsNull(message, failureHandler)) {
             return;
         }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, successHandler, failureHandler);
@@ -926,7 +925,7 @@ public class IterableApi {
      * @param failureHandler  The failure handler to be called if the message is null.
      * @return                True if the message is null, false otherwise.
      */
-    private boolean handleNullMessage(@Nullable IterableInAppMessage message, @Nullable IterableHelper.FailureHandler failureHandler) {
+    private boolean checkIfMessageIsNull(@Nullable IterableInAppMessage message, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (message == null) {
             IterableLogger.e(TAG, "inAppConsume: message is null");
             if (failureHandler != null) {
