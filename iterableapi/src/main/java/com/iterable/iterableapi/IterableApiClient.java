@@ -163,7 +163,7 @@ class IterableApiClient {
         }
     }
 
-    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
         JSONObject requestJSON = new JSONObject();
         try {
             JSONArray itemsArray = new JSONArray();
