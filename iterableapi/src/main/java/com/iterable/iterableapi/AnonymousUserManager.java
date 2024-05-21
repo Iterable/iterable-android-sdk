@@ -321,7 +321,6 @@ public class AnonymousUserManager {
         editor.apply();
 
         Integer criteriaId = checkCriteriaCompletion();
-
         if (criteriaId != null) {
             createKnownUser(criteriaId);
         }
