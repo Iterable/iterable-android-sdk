@@ -1080,7 +1080,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        trackPurchase(total, items, null, null);
+        trackPurchase(total, items, null);
     }
 
     /**
