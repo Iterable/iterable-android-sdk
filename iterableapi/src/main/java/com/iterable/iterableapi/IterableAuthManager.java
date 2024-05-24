@@ -75,7 +75,7 @@ public class IterableAuthManager {
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
             boolean shouldIgnoreRetryPolicy) {
-        if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= authRetryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
+        if (!shouldIgnoreRetryPolicy && (pauseAuthRetry || (retryCount >= authRetryPolicy.maxRetry))) {
             return;
         }
 
