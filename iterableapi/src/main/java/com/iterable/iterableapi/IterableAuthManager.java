@@ -124,6 +124,8 @@ public class IterableAuthManager {
         } else {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
+            handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
+            IterableApi.getInstance().setAuthToken(authToken);
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
             return;
         }
