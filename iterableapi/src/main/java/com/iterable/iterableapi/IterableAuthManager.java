@@ -92,6 +92,7 @@ public class IterableAuthManager {
                                 if (isLastAuthTokenValid && !shouldIgnoreRetryPolicy) {
                                     // if some JWT retry had valid token it will not fetch the auth token again from developer function
                                     handleAuthTokenSuccess(IterableApi.getInstance().getAuthToken(), successCallback);
+                                    pendingAuth = false;
                                     return;
                                 }
                                 final String authToken = authHandler.onAuthTokenRequested();
