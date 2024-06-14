@@ -89,7 +89,7 @@ public class AnonymousUserManager {
         IterableLogger.v(TAG, "updateAnonUser");
         try {
             JSONObject newDataObject = new JSONObject();
-            newDataObject.put(IterableConstants.DATA_REPLACE, dataFields);
+            newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.UPDATE_USER);
             storeEventListToLocalStorage(newDataObject, true);
         } catch (JSONException e) {
@@ -148,7 +148,7 @@ public class AnonymousUserManager {
         });
     }
 
-    private Integer checkCriteriaCompletion() {
+    private String checkCriteriaCompletion() {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
@@ -165,7 +165,7 @@ public class AnonymousUserManager {
         return null;
     }
 
-    private void createKnownUser(Integer criteriaId) {
+    private void createKnownUser(String criteriaId) {
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         String userId = UUID.randomUUID().toString();
@@ -176,10 +176,10 @@ public class AnonymousUserManager {
                 if (!getPushStatus().isEmpty()) {
                     userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
                 }
-                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, criteriaId);
+                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
                 IterableApi.getInstance().apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
                     // success handler
-                    IterableApi.getInstance().setUserId(userId);
+                    IterableApi.getInstance().setAnonUser(userId);
                     syncEvents();
                 }, (reason, data) -> {
                     if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
@@ -206,7 +206,6 @@ public class AnonymousUserManager {
                 try {
                     JSONObject event = trackEventList.getJSONObject(i);
                     String eventType = event.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-
                     switch (eventType) {
                         case IterableConstants.TRACK_EVENT: {
                             String createdAt = "";
@@ -226,18 +225,16 @@ public class AnonymousUserManager {
                             Type listType = new TypeToken<List<CommerceItem>>() {
                             }.getType();
                             List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
-                            JSONObject userObject = new JSONObject();
-                            userObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
 
-                            String createdAt = "";
+                            long createdAt = 0;
                             if (event.has(IterableConstants.KEY_CREATED_AT)) {
-                                createdAt = event.getString(IterableConstants.KEY_CREATED_AT);
+                                createdAt = Long.valueOf(event.getString(IterableConstants.KEY_CREATED_AT));
                             }
                             if (event.has(IterableConstants.KEY_DATA_FIELDS)) {
                                 JSONObject dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
-                                IterableApi.getInstance().trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, dataFields, userObject, createdAt);
+                                IterableApi.getInstance().trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, dataFields, createdAt);
                             } else {
-                                IterableApi.getInstance().trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, null, userObject, createdAt);
+                                IterableApi.getInstance().trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, null, createdAt);
                             }
                             break;
                         }
@@ -246,19 +243,15 @@ public class AnonymousUserManager {
                             Type listType = new TypeToken<List<CommerceItem>>() {
                             }.getType();
                             List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
-                            JSONObject userObject = new JSONObject();
-                            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
-                            userObject.put(IterableConstants.KEY_MERGE_NESTED_OBJECTS, true);
-                            userObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
-                            String createdAt = "";
+                            long createdAt = 0;
                             if (event.has(IterableConstants.KEY_CREATED_AT)) {
-                                createdAt = event.getString(IterableConstants.KEY_CREATED_AT);
+                                createdAt = Long.valueOf(event.getString(IterableConstants.KEY_CREATED_AT));
                             }
-                            IterableApi.getInstance().updateCart(list, userObject, createdAt);
+                            IterableApi.getInstance().updateCart(list, createdAt);
                             break;
                         }
                         case IterableConstants.UPDATE_USER: {
-                            IterableApi.getInstance().updateUser(event.getJSONObject(IterableConstants.DATA_REPLACE));
+                            IterableApi.getInstance().updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS));
                             break;
                         }
                         default:
@@ -313,14 +306,13 @@ public class AnonymousUserManager {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
         previousDataArray.put(newDataObject);
         SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
         editor.apply();
 
-        Integer criteriaId = checkCriteriaCompletion();
+        String criteriaId = checkCriteriaCompletion();
         if (criteriaId != null) {
             createKnownUser(criteriaId);
         }

@@ -115,6 +115,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";
     public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
+    public static final String SHARED_PREFS_USERIDANON_KEY = "itbl_userid_anon";
     public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
     public static final String SHARED_PREFS_AUTH_TOKEN_KEY = "itbl_authtoken";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
@@ -315,15 +316,30 @@ public final class IterableConstants {
     public static final String NO_MESSAGES_TITLE = "noMessagesTitle";
     public static final String NO_MESSAGES_BODY = "noMessagesBody";
 
+    // Criteria constants
+    public static final String CRITERIAS = "criterias";
+    public static final String SEARCH_QUERIES = "searchQueries";
+    public static final String SEARCH_QUERY = "searchQuery";
+    public static final String CRITERIA_ID = "criteriaId";
+    public static final String COMBINATOR = "combinator";
+    public static final String SEARCH_COMBO = "searchCombo";
+    public static final String FIELD = "field";
+    public static final String VALUE = "value";
+    public static final String DATA_TYPE = "dataType";
+    public static final String COMPARATOR_TYPE = "comparatorType";
+
+
     //Tracking types
     public static final String TRACK_EVENT = "customEvent";
     public static final String TRACK_PURCHASE = "purchase";
     public static final String TRACK_UPDATE_CART = "cartUpdate";
+    public static final String UPDATE_CART = "updateCart";
     public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
-    public static final String UPDATE_USER = "updateUser";
+    public static final String UPDATE_USER = "user";
 
-    public static final String ANON_USER_ID = "userId";
-    public static  final String ANON_USER_EMAIL = "email";
+    public static final String USER_ID = "userId";
+    public static final String ANON_USER_ID = "anon_user_id";
+    public static  final String USER_EMAIL = "email";
     public static final String SOURCE_EMAIL = "sourceEmail";
     public static final String SOURCE_USER_ID = "sourceUserId";
     public static final String DESTINATION_EMAIL = "destinationEmail";

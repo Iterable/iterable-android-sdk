@@ -28,6 +28,8 @@ class IterableApiClient {
         @Nullable
         String getUserId();
         @Nullable
+        String getUserIdAnon();
+        @Nullable
         String getAuthToken();
         @Nullable
         String getApiKey();
@@ -35,7 +37,6 @@ class IterableApiClient {
         String getDeviceId();
         @Nullable
         Context getContext();
-
         void resetAuth();
     }
 
@@ -143,7 +144,7 @@ class IterableApiClient {
         }
     }
 
-    public void updateCart(@NonNull List<CommerceItem> items, JSONObject userObject, String createdAt) {
+    public void updateCart(@NonNull List<CommerceItem> items, long createdAt) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -152,7 +153,9 @@ class IterableApiClient {
                 itemsArray.put(item.toJSONObject());
             }
 
+            JSONObject userObject = new JSONObject();
             addEmailOrUserIdToJson(userObject);
+            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
             requestJSON.put(IterableConstants.KEY_USER, userObject);
             requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
             requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
@@ -192,7 +195,7 @@ class IterableApiClient {
         }
     }
 
-    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, JSONObject userObject, String createdAt) {
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields,@NonNull long createdAt) {
         JSONObject requestJSON = new JSONObject();
         try {
             JSONArray itemsArray = new JSONArray();
@@ -200,7 +203,9 @@ class IterableApiClient {
                 itemsArray.put(item.toJSONObject());
             }
 
+            JSONObject userObject = new JSONObject();
             addEmailOrUserIdToJson(userObject);
+            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
             requestJSON.put(IterableConstants.KEY_USER, userObject);
 
             requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
@@ -241,7 +246,7 @@ class IterableApiClient {
             addEmailOrUserIdToJson(requestJSON);
 
             // Create the user by userId if it doesn't exist
-            if (authProvider.getEmail() == null && authProvider.getUserId() != null) {
+            if (authProvider.getEmail() == null && (authProvider.getUserIdAnon() != null || authProvider.getUserId() != null)) {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
@@ -656,7 +661,11 @@ class IterableApiClient {
             if (authProvider.getEmail() != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail());
             } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
+                if (authProvider.getUserIdAnon() != null) {
+                    requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserIdAnon());
+                } else {
+                    requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -753,26 +762,6 @@ class IterableApiClient {
     void onLogout() {
         getRequestProcessor().onLogout(authProvider.getContext());
         authProvider.resetAuth();
-    }
-
-    void getUserByUserID(String userId, @Nullable IterableHelper.IterableActionHandler actionHandler) {
-        JSONObject requestJson = new JSONObject();
-        try {
-            requestJson.put(IterableConstants.ANON_USER_ID, userId);
-            sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_USERID, requestJson, actionHandler);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void getUserByEmail(String email, @Nullable IterableHelper.IterableActionHandler actionHandler) {
-        JSONObject requestJson = new JSONObject();
-        try {
-            requestJson.put(IterableConstants.ANON_USER_EMAIL, email);
-            sendGetRequest(IterableConstants.ENDPOINT_GET_USER_BY_EMAIL, requestJson, actionHandler);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 
     void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {

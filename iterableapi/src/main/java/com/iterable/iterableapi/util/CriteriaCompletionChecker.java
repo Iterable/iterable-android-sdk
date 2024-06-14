@@ -8,7 +8,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -16,14 +18,14 @@ public class CriteriaCompletionChecker {
 
     private JSONArray localStoredEventList;
 
-    public Integer getMatchedCriteria(String criteriaData, JSONArray localStoredEventList) {
+    public String getMatchedCriteria(String criteriaData, JSONArray localStoredEventList) {
         this.localStoredEventList = localStoredEventList;
-        Integer criteriaId = null;
+        String criteriaId = null;
 
         try {
             JSONObject json = new JSONObject(criteriaData);
-            if (json.has("criterias")) {
-                JSONArray criteriaList = json.getJSONArray("criterias");
+            if (json.has(IterableConstants.CRITERIAS)) {
+                JSONArray criteriaList = json.getJSONArray(IterableConstants.CRITERIAS);
                 criteriaId = findMatchedCriteria(criteriaList);
             }
         } catch (JSONException e) {
@@ -33,17 +35,16 @@ public class CriteriaCompletionChecker {
         return criteriaId;
     }
 
-    private Integer findMatchedCriteria(JSONArray criteriaList) {
-        Integer criteriaId = null;
+    private String findMatchedCriteria(JSONArray criteriaList) {
+        String criteriaId = null;
+        JSONArray eventsToProcess = prepareEventsToProcess();
 
         for (int i = 0; i < criteriaList.length(); i++) {
             try {
                 JSONObject criteria = criteriaList.getJSONObject(i);
-                if (criteria.has("searchQuery") && criteria.has("criteriaId")) {
-                    JSONObject searchQuery = criteria.getJSONObject("searchQuery");
-                    int currentCriteriaId = criteria.getInt("criteriaId");
-                    JSONArray eventsToProcess = prepareEventsToProcess();
-
+                if (criteria.has(IterableConstants.SEARCH_QUERY) && criteria.has(IterableConstants.CRITERIA_ID)) {
+                    JSONObject searchQuery = criteria.getJSONObject(IterableConstants.SEARCH_QUERY);
+                    String currentCriteriaId = criteria.getString(IterableConstants.CRITERIA_ID);
                     boolean result = evaluateTree(searchQuery, eventsToProcess);
                     if (result) {
                         criteriaId = currentCriteriaId;
@@ -79,26 +80,27 @@ public class CriteriaCompletionChecker {
             for (int i = 0; i < localStoredEventList.length(); i++) {
                 JSONObject localEventData = localStoredEventList.getJSONObject(i);
                 if (localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && (
-                        localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_PURCHASE)
-                                || (localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART)))) {
-
+                        localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_PURCHASE))) {
                     JSONObject updatedItem = new JSONObject();
-                    if (localEventData.has(IterableConstants.KEY_ITEMS)) {
 
-                        JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
-                        for (int j = 0; j < items.length(); j++) {
+                    if(localEventData.has(IterableConstants.KEY_ITEMS)) {
+                        final JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
+                        final JSONArray processedItems = new JSONArray();
+                        for(int j=0; j < items.length(); j++) {
+                            JSONObject processedItem = new JSONObject();
                             JSONObject item = items.getJSONObject(j);
-                            Iterator<String> itemKeys = item.keys();
-
-                            while (itemKeys.hasNext()) {
-                                String key = itemKeys.next();
-                                updatedItem.put("shoppingCartItems." + key, item.get(key));
+                            Iterator<String> keys = item.keys();
+                            while(keys.hasNext()) {
+                                String key = keys.next();
+                                processedItem.put("shoppingCartItems." + key, item.get(key));
                             }
+                            processedItems.put(processedItem);
                         }
+                        updatedItem.put(IterableConstants.TRACK_PURCHASE + IterableConstants.KEY_ITEMS, processedItems);
                     }
 
-                    if (localEventData.has("dataFields")) {
-                        JSONObject dataFields = localEventData.getJSONObject("dataFields");
+                    if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
+                        JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
                         Iterator<String> fieldKeys = dataFields.keys();
                         while (fieldKeys.hasNext()) {
                             String key = fieldKeys.next();
@@ -109,10 +111,55 @@ public class CriteriaCompletionChecker {
                     Iterator<String> keys = localEventData.keys();
                     while (keys.hasNext()) {
                         String key = keys.next();
-                        if (!key.equals(IterableConstants.KEY_ITEMS) && !key.equals("dataFields")) {
+                        if (!key.equals(IterableConstants.KEY_ITEMS) && !key.equals(IterableConstants.KEY_DATA_FIELDS)) {
                             updatedItem.put(key, localEventData.get(key));
                         }
                     }
+                    processedEvents.put(updatedItem);
+                } else if(localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && (
+                        localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART))){
+                    processedEvents.put(new JSONObject()
+                            .put(IterableConstants.KEY_EVENT_NAME, IterableConstants.UPDATE_CART)
+                            .put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT));
+                    JSONObject updatedItem = new JSONObject();
+
+                    if(localEventData.has(IterableConstants.KEY_ITEMS)) {
+                        final JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
+                        final JSONArray processedItems = new JSONArray();
+                        for(int j=0; j < items.length(); j++) {
+                            JSONObject processedItem = new JSONObject();
+                            JSONObject item = items.getJSONObject(j);
+                            Iterator<String> keys = item.keys();
+                            while(keys.hasNext()) {
+                                String key = keys.next();
+                                processedItem.put("updateCart.updatedShoppingCartItems." + key, item.get(key));
+                            }
+                            processedItems.put(processedItem);
+                        }
+                        updatedItem.put(IterableConstants.TRACK_EVENT + IterableConstants.KEY_ITEMS, processedItems);
+                    }
+
+                    if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
+                        JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
+                        Iterator<String> fieldKeys = dataFields.keys();
+                        while (fieldKeys.hasNext()) {
+                            String key = fieldKeys.next();
+                            updatedItem.put(key, dataFields.get(key));
+                        }
+                    }
+
+                    Iterator<String> localEventDataKeys = localEventData.keys();
+                    while (localEventDataKeys.hasNext()) {
+                        String key = localEventDataKeys.next();
+                        if (!key.equals(IterableConstants.KEY_ITEMS) && !key.equals(IterableConstants.KEY_DATA_FIELDS)) {
+                            if(key.equals(IterableConstants.SHARED_PREFS_EVENT_TYPE)) {
+                                updatedItem.put(key, IterableConstants.TRACK_EVENT);
+                            } else {
+                                updatedItem.put(key, localEventData.get(key));
+                            }
+                        }
+                    }
+
                     processedEvents.put(updatedItem);
                 }
             }
@@ -130,7 +177,17 @@ public class CriteriaCompletionChecker {
                 if (localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE)
                         && !localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_PURCHASE)
                         && !localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART)) {
-                    nonPurchaseEvents.put(localEventData);
+
+                    JSONObject updatedItem = new JSONObject(localEventData.toString());
+                    if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
+                        JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
+                        Iterator<String> fieldKeys = dataFields.keys();
+                        while (fieldKeys.hasNext()) {
+                            String key = fieldKeys.next();
+                            updatedItem.put(key, dataFields.get(key));
+                        }
+                    }
+                    nonPurchaseEvents.put(updatedItem);
                 }
             }
         } catch (JSONException e) {
@@ -141,9 +198,9 @@ public class CriteriaCompletionChecker {
 
     public boolean evaluateTree(JSONObject node, JSONArray localEventData) {
         try {
-            if (node.has("searchQueries")) {
-                String combinator = node.getString("combinator");
-                JSONArray searchQueries = node.getJSONArray("searchQueries");
+            if (node.has(IterableConstants.SEARCH_QUERIES)) {
+                String combinator = node.getString(IterableConstants.COMBINATOR);
+                JSONArray searchQueries = node.getJSONArray(IterableConstants.SEARCH_QUERIES);
                 if (combinator.equals("And")) {
                     for (int i = 0; i < searchQueries.length(); i++) {
                         if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
@@ -159,10 +216,10 @@ public class CriteriaCompletionChecker {
                     }
                     return false;
                 }
-            } else if (node.has("searchCombo")) {
-                JSONObject searchCombo = node.getJSONObject("searchCombo");
+            } else if (node.has(IterableConstants.SEARCH_COMBO)) {
+                JSONObject searchCombo = node.getJSONObject(IterableConstants.SEARCH_COMBO);
                 return evaluateTree(searchCombo, localEventData);
-            } else if (node.has("field")) {
+            } else if (node.has(IterableConstants.FIELD)) {
                 return evaluateField(node, localEventData);
             }
         } catch (Exception e) {
@@ -185,20 +242,36 @@ public class CriteriaCompletionChecker {
         for (int i = 0; i < localEventData.length(); i++) {
             JSONObject eventData = localEventData.getJSONObject(i);
             String trackingType = eventData.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-            String dataType = node.getString("dataType");
-            if (!dataType.equals(trackingType)) {
-                return false;
-            }
+            String dataType = node.getString(IterableConstants.DATA_TYPE);
+            if (dataType.equals(trackingType)) {
+                String field = node.getString(IterableConstants.FIELD);
+                String comparatorType = node.getString(IterableConstants.COMPARATOR_TYPE);
 
-            String field = node.getString("field");
-            String comparatorType = node.getString("comparatorType");
-            ArrayList<String> localDataKeys = extractKeys(eventData);
+                String combinedKey =  trackingType+IterableConstants.KEY_ITEMS;
+                if(eventData.has(combinedKey)) {
+                    JSONArray items = new JSONArray(eventData.getString(combinedKey));
+                    for (int j=0; j < items.length(); j++) {
+                        JSONObject item = items.getJSONObject(j);
+                        Iterator<String> itemKeys = item.keys();
+                        while(itemKeys.hasNext()) {
+                            String itemKey = itemKeys.next();
+                            if(field.equals(itemKey)) {
+                                Object matchedCountObj = item.get(itemKey);
+                                if (evaluateComparison(comparatorType, matchedCountObj, node.getString(IterableConstants.VALUE))) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
 
-            for (String key : localDataKeys) {
-                if (field.equals(key)) {
-                    Object matchedCountObj = eventData.get(key);
-                    if (evaluateComparison(comparatorType, matchedCountObj, node.getString("value"))) {
-                        return true;
+                ArrayList<String> localDataKeys = extractKeys(eventData);
+                for (String key : localDataKeys) {
+                    if (field.equals(key)) {
+                        Object matchedCountObj = eventData.get(key);
+                        if (evaluateComparison(comparatorType, matchedCountObj, node.getString(IterableConstants.VALUE))) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -208,28 +281,30 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateComparison(String comparatorType, Object matchObj, String valueToCompare) {
-        if (valueToCompare == null) {
+        if (valueToCompare == null && !comparatorType.equals(MatchComparator.IS_SET)) {
             return false;
         }
 
         switch (comparatorType) {
-            case "Equals":
+            case MatchComparator.EQUALS:
                 return compareValueEquality(matchObj, valueToCompare);
-            case "DoesNotEquals":
+            case MatchComparator.DOES_NOT_EQUALS:
                 return !compareValueEquality(matchObj, valueToCompare);
-            case "GreaterThan":
+            case MatchComparator.IS_SET:
+                return !compareValueEquality(matchObj, "");
+            case MatchComparator.GREATER_THAN:
                 return compareNumericValues(matchObj, valueToCompare, " > ");
-            case "LessThan":
+            case MatchComparator.LESS_THAN:
                 return compareNumericValues(matchObj, valueToCompare, " < ");
-            case "GreaterThanOrEqualTo":
+            case MatchComparator.GREATER_THAN_OR_EQUAL_TO:
                 return compareNumericValues(matchObj, valueToCompare, " >= ");
-            case "LessThanOrEqualTo":
+            case MatchComparator.LESS_THAN_OR_EQUAL_TO:
                 return compareNumericValues(matchObj, valueToCompare, " <= ");
-            case "Contains":
-                return compareStringContains(matchObj, valueToCompare);
-            case "StartsWith":
+            case MatchComparator.CONTAINS:
+                return compareStringContains(String.valueOf(matchObj), valueToCompare);
+            case MatchComparator.STARTS_WITH:
                 return compareStringStartsWith(matchObj, valueToCompare);
-            case "MatchesRegex":
+            case MatchComparator.MATCHES_REGEX:
                 return compareWithRegex(matchObj instanceof String ? (String) matchObj : "", valueToCompare);
             default:
                 return false;
@@ -271,8 +346,8 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
-    private boolean compareStringContains(Object sourceTo, String stringValue) {
-        return sourceTo instanceof String && ((String) sourceTo).contains(stringValue);
+    private boolean compareStringContains(String sourceTo, String stringValue) {
+        return sourceTo.contains(stringValue);
     }
 
     private boolean compareStringStartsWith(Object sourceTo, String stringValue) {

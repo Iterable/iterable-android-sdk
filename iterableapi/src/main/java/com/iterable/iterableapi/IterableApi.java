@@ -34,6 +34,7 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
     private String _userId;
+    private String _userIdAnon;
     private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
@@ -436,6 +437,7 @@ public class IterableApi {
         if (iterableKeychain != null) {
             iterableKeychain.saveEmail(_email);
             iterableKeychain.saveUserId(_userId);
+            iterableKeychain.saveUserIdAnon(_userIdAnon);
             iterableKeychain.saveAuthToken(_authToken);
         } else {
             IterableLogger.e(TAG, "Shared preference creation failed. ");
@@ -450,6 +452,7 @@ public class IterableApi {
         if (iterableKeychain != null) {
             _email = iterableKeychain.getEmail();
             _userId = iterableKeychain.getUserId();
+            _userIdAnon = iterableKeychain.getUserIdAnon();
             _authToken = iterableKeychain.getAuthToken();
         } else {
             IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
@@ -476,6 +479,12 @@ public class IterableApi {
         @Override
         public String getUserId() {
             return _userId;
+        }
+
+        @Nullable
+        @Override
+        public String getUserIdAnon() {
+            return _userIdAnon;
         }
 
         @Nullable
@@ -729,28 +738,42 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if (email != null && !email.isEmpty() && sharedInstance.config.enableAnonTracking) {
-            anonymousUserMerge.mergeUserUsingEmail(apiClient, email);
-        }
-        //Only if passed in same non-null email
-        if (_email != null && _email.equals(email)) {
-            checkAndUpdateAuthToken(authToken);
-            return;
-        }
 
-        if (_email == null && _userId == null && email == null) {
-            return;
-        }
+        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, email, true, new MergeResultCallback() {
+            @Override
+            public void onResult(boolean success) {
+                if (success) {
+                    //Only if passed in same non-null email
+                    if (_email != null && _email.equals(email) && authToken != null) {
+                        checkAndUpdateAuthToken(authToken);
+                        return;
+                    }
 
-        logoutPreviousUser();
+                    if (_email == email) {
+                        return;
+                    }
 
-        _email = email;
-        _userId = null;
-        _setUserSuccessCallbackHandler = successHandler;
-        _setUserFailureCallbackHandler = failureHandler;
+                    logoutPreviousUser();
+                    setAnonUser(null);
+                    _email = email;
+                    _userId = null;
+                    anonymousUserManager.syncEvents();
+                    _setUserSuccessCallbackHandler = successHandler;
+                    _setUserFailureCallbackHandler = failureHandler;
+                    storeAuthData();
+
+                    onLogin(authToken);
+                } else {
+                    failureHandler.onFailure("userMerge Error", null);
+                }
+            }
+        });
+
+    }
+
+    public void setAnonUser(@Nullable String userId) {
+        _userIdAnon = userId;
         storeAuthData();
-
-        onLogin(authToken);
     }
 
     public void setUserId(@Nullable String userId) {
@@ -766,33 +789,38 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if (userId != null && !userId.isEmpty() && sharedInstance.config.enableAnonTracking) {
-            anonymousUserMerge.mergeUserUsingUserId(apiClient, userId);
-        }
-        //If same non null userId is passed
-        if (_userId != null && _userId.equals(userId)) {
-            checkAndUpdateAuthToken(authToken);
-            return;
-        }
+        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, userId, false, new MergeResultCallback() {
+            @Override
+            public void onResult(boolean success) {
+                if (success) {
+                    //If same non null userId is passed
+                    if (_userId != null && _userId.equals(userId)) {
+                        checkAndUpdateAuthToken(authToken);
+                        return;
+                    }
 
-        if (_email == null && _userId == null && userId == null) {
-            return;
-        }
+                    if (_userId == userId) {
+                        return;
+                    }
 
-        logoutPreviousUser();
+                    logoutPreviousUser();
+                    setAnonUser(null);
+                    _email = null;
 
-        _email = null;
-        if (_userId == null) {
-            _userId = userId;
-            anonymousUserManager.syncEvents();
-        } else {
-            _userId = userId;
-        }
-        _setUserSuccessCallbackHandler = successHandler;
-        _setUserFailureCallbackHandler = failureHandler;
-        storeAuthData();
+                    _userId = userId;
+                    anonymousUserManager.syncEvents();
 
-        onLogin(authToken);
+                    _setUserSuccessCallbackHandler = successHandler;
+                    _setUserFailureCallbackHandler = failureHandler;
+                    storeAuthData();
+
+                    onLogin(authToken);
+                } else {
+                    failureHandler.onFailure("userMerge Error", null);
+                }
+            }
+        });
+
     }
 
     public void setAuthToken(String authToken) {
@@ -1031,7 +1059,7 @@ public class IterableApi {
      */
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
-        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking) {
+        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
             anonymousUserManager.trackAnonEvent(eventName, dataFields);
             return;
         }
@@ -1055,7 +1083,7 @@ public class IterableApi {
      * @param items
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking) {
+        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
             anonymousUserManager.trackAnonUpdateCart(items);
             return;
         }
@@ -1067,11 +1095,10 @@ public class IterableApi {
      * Updates the status of the cart
      *
      * @param items
-     * @param userObject
      * @param createdAt
      */
-    public void updateCart(@NonNull List<CommerceItem> items, JSONObject userObject, String createdAt) {
-        apiClient.updateCart(items, userObject, createdAt);
+    public void updateCart(@NonNull List<CommerceItem> items, long createdAt) {
+        apiClient.updateCart(items, createdAt);
     }
 
     /**
@@ -1090,13 +1117,14 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking) {
+        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
             anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
             return;
         }
 
         apiClient.trackPurchase(total, items, dataFields, null);
     }
+
 
     /**
      * Tracks a purchase.
@@ -1119,11 +1147,10 @@ public class IterableApi {
      * @param total      total purchase amount
      * @param items      list of purchased items
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
-     * @param userObject a `JSONObject` containing user data
      *
      */
-    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, JSONObject userObject, String createdAt) {
-        apiClient.trackPurchase(total, items, dataFields, userObject, createdAt);
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, long createdAt) {
+        apiClient.trackPurchase(total, items, dataFields, createdAt);
     }
 
     /**
@@ -1194,7 +1221,7 @@ public class IterableApi {
      * @param mergeNestedObjects
      */
     public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
             anonymousUserManager.trackAnonUpdateUser(dataFields);
             return;
         }
