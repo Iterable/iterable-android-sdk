@@ -9,9 +9,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingHorizontal="16dp"
@@ -28,11 +26,13 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginBottom="20dp">
+
             <EditText
                 android:id="@+id/updateCart_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="cart items" />
+                android:hint="cart items"
+                android:text='[{"name":"piano","id":"fdsafds","price":9,"quantity":2}]' />
             <Button
                 android:id="@+id/updateCart"
                 android:layout_width="wrap_content"
@@ -47,11 +47,13 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginBottom="20dp">
+
             <EditText
                 android:id="@+id/trackPurchase_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="purchase items" />
+                android:hint="purchase items"
+                android:text='{"items":[{"name":"keyboard","id":"fdsafds","price":4.67,"quantity":3}, {"name":"keyboard","id":"fdsafds","price":4.67,"quantity":2}], "total": 100}' />
             <Button
                 android:id="@+id/trackPurchase"
                 android:layout_width="wrap_content"
@@ -66,11 +68,13 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginBottom="20dp">
+
             <EditText
                 android:id="@+id/customEvent_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="event items" />
+                android:hint="event items"
+                android:text='{"eventName":"button-clicked", "dataFields": {"button-clicked.lastPageViewed":"signup page"}}' />
             <Button
                 android:id="@+id/customEvent"
                 android:layout_width="wrap_content"
@@ -85,11 +89,13 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_marginBottom="20dp">
+
             <EditText
                 android:id="@+id/updateUser_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="user" />
+                android:hint="user"
+                android:text='{"phone_number": "999999", "country": "UK"}' />
             <Button
                 android:id="@+id/updateUser"
                 android:layout_width="wrap_content"

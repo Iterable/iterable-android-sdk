@@ -532,6 +532,10 @@ public class IterableApi {
 
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
         if (deviceToken != null) {
+            if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
+                anonymousUserManager.trackAnonTokenRegistration(deviceToken);
+                return;
+            }
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
                     registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
@@ -739,33 +743,30 @@ public class IterableApi {
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
 
-        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, email, true, new MergeResultCallback() {
-            @Override
-            public void onResult(boolean success) {
-                if (success) {
-                    //Only if passed in same non-null email
-                    if (_email != null && _email.equals(email) && authToken != null) {
-                        checkAndUpdateAuthToken(authToken);
-                        return;
-                    }
-
-                    if (_email == email) {
-                        return;
-                    }
-
-                    logoutPreviousUser();
-                    setAnonUser(null);
-                    _email = email;
-                    _userId = null;
-                    anonymousUserManager.syncEvents();
-                    _setUserSuccessCallbackHandler = successHandler;
-                    _setUserFailureCallbackHandler = failureHandler;
-                    storeAuthData();
-
-                    onLogin(authToken);
-                } else {
-                    failureHandler.onFailure("userMerge Error", null);
+        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, email, true, success -> {
+            if (success) {
+                //Only if passed in same non-null email
+                if (_email != null && _email.equals(email) && authToken != null) {
+                    checkAndUpdateAuthToken(authToken);
+                    return;
                 }
+
+                if (_email == email) {
+                    return;
+                }
+
+                logoutPreviousUser();
+                _userIdAnon = null;
+                _email = email;
+                _userId = null;
+                anonymousUserManager.syncEvents();
+                _setUserSuccessCallbackHandler = successHandler;
+                _setUserFailureCallbackHandler = failureHandler;
+                storeAuthData();
+
+                onLogin(authToken);
+            } else {
+                failureHandler.onFailure("userMerge Error", null);
             }
         });
 
@@ -804,9 +805,8 @@ public class IterableApi {
                     }
 
                     logoutPreviousUser();
-                    setAnonUser(null);
+                    _userIdAnon = null;
                     _email = null;
-
                     _userId = userId;
                     anonymousUserManager.syncEvents();
 

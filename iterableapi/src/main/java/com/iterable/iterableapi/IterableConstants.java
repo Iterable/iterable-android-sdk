@@ -336,10 +336,6 @@ public final class IterableConstants {
     public static final String UPDATE_CART = "updateCart";
     public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
     public static final String UPDATE_USER = "user";
-
-    public static final String USER_ID = "userId";
-    public static final String ANON_USER_ID = "anon_user_id";
-    public static  final String USER_EMAIL = "email";
     public static final String SOURCE_EMAIL = "sourceEmail";
     public static final String SOURCE_USER_ID = "sourceUserId";
     public static final String DESTINATION_EMAIL = "destinationEmail";

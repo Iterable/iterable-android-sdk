@@ -11,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="com.iterable.androidsdk.testActivity"
+            android:name="com.iterable.androidsdk.AnonTrackingTestActivity"
             android:exported="false" />
         <activity
             android:name="com.iterable.androidsdk.MainActivity"
