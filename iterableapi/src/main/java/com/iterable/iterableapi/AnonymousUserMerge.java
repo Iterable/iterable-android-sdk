@@ -1,12 +1,6 @@
 package com.iterable.iterableapi;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import org.json.JSONObject;
-
 public class AnonymousUserMerge {
-    private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
     private static final String TAG = "AnonymousUserMerge";
 
     public void tryMergeUser(IterableApiClient apiClient, String sourceUserId, String destinationUserIdOrEmail, boolean isEmail, MergeResultCallback callback) {
@@ -17,16 +11,16 @@ public class AnonymousUserMerge {
 
             apiClient.mergeUser(null, sourceUserId, destinationEmail, destinationUserId, data -> {
                 if (callback != null) {
-                    callback.onResult(true); // Notify success
+                    callback.onResult(IterableConstants.MERGE_SUCCESSFUL, null); // Notify success
                 }
             }, (reason, data) -> {
                 if (callback != null) {
-                    callback.onResult(false); // Notify failure
+                    callback.onResult(IterableConstants.MERGE_NOTREQUIRED, reason); // Notify failure
                 }
             });
         } else {
             if (callback != null) {
-                callback.onResult(true); // Return true if inputs are null as per original logic
+                callback.onResult(IterableConstants.MERGE_SUCCESSFUL, null); // Return true if inputs are null as per original logic
             }
         }
     }

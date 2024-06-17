@@ -8,9 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -83,14 +81,14 @@ public class CriteriaCompletionChecker {
                         localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_PURCHASE))) {
                     JSONObject updatedItem = new JSONObject();
 
-                    if(localEventData.has(IterableConstants.KEY_ITEMS)) {
+                    if (localEventData.has(IterableConstants.KEY_ITEMS)) {
                         final JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
                         final JSONArray processedItems = new JSONArray();
-                        for(int j=0; j < items.length(); j++) {
+                        for (int j = 0; j < items.length(); j++) {
                             JSONObject processedItem = new JSONObject();
                             JSONObject item = items.getJSONObject(j);
                             Iterator<String> keys = item.keys();
-                            while(keys.hasNext()) {
+                            while (keys.hasNext()) {
                                 String key = keys.next();
                                 processedItem.put("shoppingCartItems." + key, item.get(key));
                             }
@@ -116,21 +114,21 @@ public class CriteriaCompletionChecker {
                         }
                     }
                     processedEvents.put(updatedItem);
-                } else if(localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && (
-                        localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART))){
+                } else if (localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && (
+                        localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART))) {
                     processedEvents.put(new JSONObject()
                             .put(IterableConstants.KEY_EVENT_NAME, IterableConstants.UPDATE_CART)
                             .put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT));
                     JSONObject updatedItem = new JSONObject();
 
-                    if(localEventData.has(IterableConstants.KEY_ITEMS)) {
+                    if (localEventData.has(IterableConstants.KEY_ITEMS)) {
                         final JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
                         final JSONArray processedItems = new JSONArray();
-                        for(int j=0; j < items.length(); j++) {
+                        for (int j = 0; j < items.length(); j++) {
                             JSONObject processedItem = new JSONObject();
                             JSONObject item = items.getJSONObject(j);
                             Iterator<String> keys = item.keys();
-                            while(keys.hasNext()) {
+                            while (keys.hasNext()) {
                                 String key = keys.next();
                                 processedItem.put("updateCart.updatedShoppingCartItems." + key, item.get(key));
                             }
@@ -152,7 +150,7 @@ public class CriteriaCompletionChecker {
                     while (localEventDataKeys.hasNext()) {
                         String key = localEventDataKeys.next();
                         if (!key.equals(IterableConstants.KEY_ITEMS) && !key.equals(IterableConstants.KEY_DATA_FIELDS)) {
-                            if(key.equals(IterableConstants.SHARED_PREFS_EVENT_TYPE)) {
+                            if (key.equals(IterableConstants.SHARED_PREFS_EVENT_TYPE)) {
                                 updatedItem.put(key, IterableConstants.TRACK_EVENT);
                             } else {
                                 updatedItem.put(key, localEventData.get(key));
@@ -247,15 +245,15 @@ public class CriteriaCompletionChecker {
                 String field = node.getString(IterableConstants.FIELD);
                 String comparatorType = node.getString(IterableConstants.COMPARATOR_TYPE);
 
-                String combinedKey =  trackingType+IterableConstants.KEY_ITEMS;
-                if(eventData.has(combinedKey)) {
+                String combinedKey =  trackingType + IterableConstants.KEY_ITEMS;
+                if (eventData.has(combinedKey)) {
                     JSONArray items = new JSONArray(eventData.getString(combinedKey));
-                    for (int j=0; j < items.length(); j++) {
+                    for (int j = 0; j < items.length(); j++) {
                         JSONObject item = items.getJSONObject(j);
                         Iterator<String> itemKeys = item.keys();
-                        while(itemKeys.hasNext()) {
+                        while (itemKeys.hasNext()) {
                             String itemKey = itemKeys.next();
-                            if(field.equals(itemKey)) {
+                            if (field.equals(itemKey)) {
                                 Object matchedCountObj = item.get(itemKey);
                                 if (evaluateComparison(comparatorType, matchedCountObj, node.getString(IterableConstants.VALUE))) {
                                     return true;

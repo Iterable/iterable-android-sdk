@@ -304,7 +304,7 @@ public class IterableConfig {
          */
         public Builder setEnableAnonTracking(boolean enableAnonTracking) {
             this.enableAnonTracking = enableAnonTracking;
-			return this;
+            return this;
 		}
 
 		/**

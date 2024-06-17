@@ -19,12 +19,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 import java.util.UUID;
 
 public class AnonymousUserManager {
@@ -181,6 +177,7 @@ public class AnonymousUserManager {
 
     private void createKnownUser(String criteriaId) {
         SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        updateAnonSession();
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         String userId = UUID.randomUUID().toString();
         try {

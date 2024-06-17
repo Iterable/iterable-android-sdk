@@ -743,14 +743,16 @@ public class IterableApi {
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
 
-        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, email, true, success -> {
-            if (success) {
+        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, email, true, (mergeResult, error) -> {
+            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL) {
                 //Only if passed in same non-null email
                 if (_email != null && _email.equals(email) && authToken != null) {
                     checkAndUpdateAuthToken(authToken);
                     return;
                 }
-
+                if (email == null) {
+                    _userIdAnon = null;
+                }
                 if (_email == email) {
                     return;
                 }
@@ -763,10 +765,9 @@ public class IterableApi {
                 _setUserSuccessCallbackHandler = successHandler;
                 _setUserFailureCallbackHandler = failureHandler;
                 storeAuthData();
-
                 onLogin(authToken);
             } else {
-                failureHandler.onFailure("userMerge Error", null);
+                failureHandler.onFailure(error, null);
             }
         });
 
@@ -790,16 +791,16 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, userId, false, new MergeResultCallback() {
-            @Override
-            public void onResult(boolean success) {
-                if (success) {
+        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, userId, false, (mergeResult, error) -> {
+                if (mergeResult == IterableConstants.MERGE_SUCCESSFUL) {
                     //If same non null userId is passed
                     if (_userId != null && _userId.equals(userId)) {
                         checkAndUpdateAuthToken(authToken);
                         return;
                     }
-
+                    if (userId == null) {
+                        _userIdAnon = null;
+                    }
                     if (_userId == userId) {
                         return;
                     }
@@ -816,9 +817,8 @@ public class IterableApi {
 
                     onLogin(authToken);
                 } else {
-                    failureHandler.onFailure("userMerge Error", null);
+                    failureHandler.onFailure(error, null);
                 }
-            }
         });
 
     }

@@ -340,4 +340,8 @@ public final class IterableConstants {
     public static final String SOURCE_USER_ID = "sourceUserId";
     public static final String DESTINATION_EMAIL = "destinationEmail";
     public static final String DESTINATION_USER_ID = "destinationUserId";
+
+    // Merge user constants
+    public static final String MERGE_SUCCESSFUL = "merge_successful";
+    public static final String MERGE_NOTREQUIRED = "merge_notrequired";
 }
