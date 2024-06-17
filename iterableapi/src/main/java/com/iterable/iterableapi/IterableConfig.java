@@ -307,7 +307,7 @@ public class IterableConfig {
             return this;
         }
 
-		/**
+        /**
          * Allows for fetching embedded messages.
          * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
          */
