@@ -1059,8 +1059,10 @@ public class IterableApi {
      */
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
-        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
-            anonymousUserManager.trackAnonEvent(eventName, dataFields);
+        if (!checkSDKInitialization()) {
+            if (sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
+                anonymousUserManager.trackAnonEvent(eventName, dataFields);
+            }
             return;
         }
 
@@ -1117,8 +1119,10 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
-            anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
+        if (!checkSDKInitialization()) {
+            if (sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
+                anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
+            }
             return;
         }
 
@@ -1221,8 +1225,10 @@ public class IterableApi {
      * @param mergeNestedObjects
      */
     public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
-        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
-            anonymousUserManager.trackAnonUpdateUser(dataFields);
+        if (!checkSDKInitialization()) {
+            if (sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
+                anonymousUserManager.trackAnonUpdateUser(dataFields);
+            }
             return;
         }
 
