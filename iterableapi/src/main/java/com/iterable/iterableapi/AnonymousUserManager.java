@@ -176,7 +176,7 @@ public class AnonymousUserManager {
     }
 
     private void createKnownUser(String criteriaId) {
-        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         updateAnonSession();
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         String userId = UUID.randomUUID().toString();
@@ -192,6 +192,7 @@ public class AnonymousUserManager {
                     // success handler
                     iterableApi.setAnonUser(userId);
                     syncEvents();
+                    Log.d("TEST_USER", "user created: " + String.valueOf(userId));
                 }, (reason, data) -> {
                     if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
                         try {
@@ -276,7 +277,7 @@ public class AnonymousUserManager {
     }
 
     private void clearAnonEventsData() {
-        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
@@ -329,7 +330,7 @@ public class AnonymousUserManager {
     }
 
     private JSONArray getEventListFromLocalStorage() {
-        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String eventListJson = sharedPref.getString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
         JSONArray eventListArray = new JSONArray();
         try {
