@@ -230,14 +230,14 @@ public class CriteriaCompletionCheckerTest {
 
     @Test
     public void testCompareDataWithANDCombinator() throws Exception {
-        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":4.67,\\\"quantity\\\":3}]\",\"createdAt\":1700071052507,\"total\":4.67,\"dataType\":\"purchase\"}]");
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":4.67,\\\"quantity\\\":3}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"purchase\"}]");
         boolean result = evaluator.getMatchedCriteria(mockDataWithAnd, jsonArray) != null;
         assertTrue(result);
     }
 
     @Test
     public void testCompareDataWithORCombinator() throws Exception {
-        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":4.67,\\\"quantity\\\":3}]\",\"createdAt\":1700071052507,\"total\":2,\"dataType\":\"purchase\"}]");
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":4.67,\\\"quantity\\\":3}]\",\"createdAt\":1700071052507,\"total\":2,\"eventType\":\"purchase\"}]");
         boolean result = evaluator.getMatchedCriteria(mockDataWithOr, jsonArray) != null;
         assertTrue(result);
     }
