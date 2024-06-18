@@ -228,7 +228,7 @@ public class AnonymousUserManager {
                             if (event.has(IterableConstants.KEY_DATA_FIELDS)) {
                                 dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
                             }
-                            iterableApi.track(event.getString(IterableConstants.KEY_EVENT_NAME), 0, 0, dataFields, createdAt);
+                            iterableApi.apiClient.track(event.getString(IterableConstants.KEY_EVENT_NAME), 0, 0, dataFields, createdAt);
                             break;
                         }
                         case IterableConstants.TRACK_PURCHASE: {
@@ -245,7 +245,7 @@ public class AnonymousUserManager {
                             if (event.has(IterableConstants.KEY_DATA_FIELDS)) {
                                 dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
                             }
-                            iterableApi.trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, dataFields, createdAt);
+                            iterableApi.apiClient.trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, dataFields, createdAt);
                             break;
                         }
                         case IterableConstants.TRACK_UPDATE_CART: {
@@ -257,7 +257,7 @@ public class AnonymousUserManager {
                             if (event.has(IterableConstants.KEY_CREATED_AT)) {
                                 createdAt = Long.parseLong(event.getString(IterableConstants.KEY_CREATED_AT));
                             }
-                            iterableApi.updateCart(list, createdAt);
+                            iterableApi.apiClient.updateCart(list, createdAt);
                             break;
                         }
                         case IterableConstants.UPDATE_USER: {

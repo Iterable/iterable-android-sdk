@@ -532,8 +532,10 @@ public class IterableApi {
 
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
         if (deviceToken != null) {
-            if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
-                anonymousUserManager.trackAnonTokenRegistration(deviceToken);
+            if (!checkSDKInitialization() && _userIdAnon == null) {
+                if (sharedInstance.config.enableAnonTracking) {
+                    anonymousUserManager.trackAnonTokenRegistration(deviceToken);
+                }
                 return;
             }
             final Thread registrationThread = new Thread(new Runnable() {
@@ -631,21 +633,22 @@ public class IterableApi {
 
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
+
+        if (sharedInstance.config.enableAnonTracking) {
+            anonymousUserManager.updateAnonSession();
+            anonymousUserManager.getCriteria();
+        }
+
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
             try {
                 JSONObject dataFields = new JSONObject();
                 JSONObject deviceDetails = new JSONObject();
                 DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
-                sharedInstance.apiClient.updateUser(dataFields, false);
+                sharedInstance.updateUser(dataFields, false);
             } catch (JSONException e) {
                 IterableLogger.e(TAG, "initialize: exception", e);
             }
-        }
-
-        if (sharedInstance.config.enableAnonTracking) {
-            anonymousUserManager.updateAnonSession();
-            anonymousUserManager.getCriteria();
         }
     }
 
@@ -1074,37 +1077,18 @@ public class IterableApi {
     }
 
     /**
-     * Track an event.
-     *
-     * @param eventName
-     * @param dataFields
-     */
-    public void track(@NonNull String eventName, int campaignId, int templateId,  @Nullable JSONObject dataFields, String createdAt) {
-        IterableLogger.printInfo();
-        apiClient.track(eventName, campaignId, templateId, dataFields, createdAt);
-    }
-
-    /**
      * Updates the status of the cart
      * @param items
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        if (!checkSDKInitialization() && sharedInstance.config.enableAnonTracking && _userIdAnon == null) {
-            anonymousUserManager.trackAnonUpdateCart(items);
+        if (!checkSDKInitialization() && _userIdAnon == null) {
+            if (sharedInstance.config.enableAnonTracking) {
+                anonymousUserManager.trackAnonUpdateCart(items);
+            }
             return;
         }
 
         apiClient.updateCart(items);
-    }
-
-    /**
-     * Updates the status of the cart
-     *
-     * @param items
-     * @param createdAt
-     */
-    public void updateCart(@NonNull List<CommerceItem> items, long createdAt) {
-        apiClient.updateCart(items, createdAt);
     }
 
     /**
@@ -1113,7 +1097,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        trackPurchase(total, items, null);
+        trackPurchase(total, items, null, null);
     }
 
     /**
@@ -1123,14 +1107,7 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        if (!checkSDKInitialization() && _userIdAnon == null) {
-            if (sharedInstance.config.enableAnonTracking) {
-                anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
-            }
-            return;
-        }
-
-        apiClient.trackPurchase(total, items, dataFields, null);
+        trackPurchase(total, items, dataFields, null);
     }
 
 
@@ -1142,23 +1119,14 @@ public class IterableApi {
      * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && _userIdAnon == null) {
+            if (sharedInstance.config.enableAnonTracking) {
+                anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
+            }
             return;
         }
 
         apiClient.trackPurchase(total, items, dataFields, attributionInfo);
-    }
-
-    /**
-     * Tracks a purchase.
-     *
-     * @param total      total purchase amount
-     * @param items      list of purchased items
-     * @param dataFields a `JSONObject` containing any additional information to save along with the event
-     *
-     */
-    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, long createdAt) {
-        apiClient.trackPurchase(total, items, dataFields, createdAt);
     }
 
     /**
