@@ -15,12 +15,12 @@ public class AnonymousUserMerge {
                 }
             }, (reason, data) -> {
                 if (callback != null) {
-                    callback.onResult(IterableConstants.MERGE_NOTREQUIRED, reason); // Notify failure
+                    callback.onResult(null, reason); // Notify failure
                 }
             });
         } else {
             if (callback != null) {
-                callback.onResult(IterableConstants.MERGE_SUCCESSFUL, null); // Return true if inputs are null as per original logic
+                callback.onResult(IterableConstants.MERGE_NOTREQUIRED, null); // Return true if inputs are null as per original logic
             }
         }
     }
