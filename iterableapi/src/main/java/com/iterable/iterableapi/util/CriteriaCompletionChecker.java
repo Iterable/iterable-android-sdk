@@ -94,7 +94,7 @@ public class CriteriaCompletionChecker {
                             }
                             processedItems.put(processedItem);
                         }
-                        updatedItem.put(IterableConstants.TRACK_PURCHASE + IterableConstants.KEY_ITEMS, processedItems);
+                        updatedItem.put(IterableConstants.KEY_ITEMS, processedItems);
                     }
 
                     if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
@@ -134,7 +134,7 @@ public class CriteriaCompletionChecker {
                             }
                             processedItems.put(processedItem);
                         }
-                        updatedItem.put(IterableConstants.TRACK_EVENT + IterableConstants.KEY_ITEMS, processedItems);
+                        updatedItem.put(IterableConstants.KEY_ITEMS, processedItems);
                     }
 
                     if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
@@ -245,9 +245,8 @@ public class CriteriaCompletionChecker {
                 String field = node.getString(IterableConstants.FIELD);
                 String comparatorType = node.getString(IterableConstants.COMPARATOR_TYPE);
 
-                String combinedKey =  trackingType + IterableConstants.KEY_ITEMS;
-                if (eventData.has(combinedKey)) {
-                    JSONArray items = new JSONArray(eventData.getString(combinedKey));
+                if (eventData.has(IterableConstants.KEY_ITEMS)) {
+                    JSONArray items = new JSONArray(eventData.getString(IterableConstants.KEY_ITEMS));
                     for (int j = 0; j < items.length(); j++) {
                         JSONObject item = items.getJSONObject(j);
                         Iterator<String> itemKeys = item.keys();
