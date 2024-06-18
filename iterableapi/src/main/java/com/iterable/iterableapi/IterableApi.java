@@ -767,7 +767,9 @@ public class IterableApi {
                 storeAuthData();
                 onLogin(authToken);
             } else {
-                failureHandler.onFailure(error, null);
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
             }
         });
 
@@ -817,7 +819,9 @@ public class IterableApi {
 
                     onLogin(authToken);
                 } else {
-                    failureHandler.onFailure(error, null);
+                    if (failureHandler != null) {
+                        failureHandler.onFailure(error, null);
+                    }
                 }
         });
 
