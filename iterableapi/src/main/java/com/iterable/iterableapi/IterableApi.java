@@ -733,7 +733,11 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        setEmail(email, null, null, null);
+        setEmail(email, null,  null, null);
+    }
+
+    public void setEmail(@Nullable String email, Boolean merge) {
+        setEmail(email, null, merge, null, null);
     }
 
     public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
@@ -741,12 +745,21 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
-        setEmail(email, authToken, null, null);
+        setEmail(email, authToken,  null, null);
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        setEmail(email, authToken, null, successHandler, failureHandler);
+    }
 
-        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, email, true, (mergeResult, error) -> {
+    public void setEmail(@Nullable String email, @Nullable String authToken, Boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        String sourceUserId = _userIdAnon;
+        String sourceEmail = null;
+        if(merge != null && (_userId != null || _email != null)) {
+            sourceUserId = _userId;
+            sourceEmail = _email;
+        }
+        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, email,true, merge,  (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                 //Only if passed in same non-null email
                 if (_email != null && _email.equals(email) && authToken != null) {
@@ -764,7 +777,9 @@ public class IterableApi {
                 _userIdAnon = null;
                 _email = email;
                 _userId = null;
-                anonymousUserManager.syncEvents();
+                if(!(merge != null && !merge)) {
+                    anonymousUserManager.syncEvents();
+                }
                 _setUserSuccessCallbackHandler = successHandler;
                 _setUserFailureCallbackHandler = failureHandler;
                 storeAuthData();
@@ -783,6 +798,10 @@ public class IterableApi {
         storeAuthData();
     }
 
+    public void setUserId(@Nullable String userId, Boolean merge) {
+        setUserId(userId, null, merge, null, null);
+    }
+
     public void setUserId(@Nullable String userId) {
         setUserId(userId, null, null, null);
     }
@@ -796,36 +815,46 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, userId, false, (mergeResult, error) -> {
-                if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                    //If same non null userId is passed
-                    if (_userId != null && _userId.equals(userId)) {
-                        checkAndUpdateAuthToken(authToken);
-                        return;
-                    }
-                    if (userId == null) {
-                        _userIdAnon = null;
-                    }
-                    if (_userId == userId) {
-                        return;
-                    }
+       setUserId(userId, authToken, null, successHandler, failureHandler);
+    }
 
-                    logoutPreviousUser();
-                    _userIdAnon = null;
-                    _email = null;
-                    _userId = userId;
-                    anonymousUserManager.syncEvents();
-
-                    _setUserSuccessCallbackHandler = successHandler;
-                    _setUserFailureCallbackHandler = failureHandler;
-                    storeAuthData();
-
-                    onLogin(authToken);
-                } else {
-                    if (failureHandler != null) {
-                        failureHandler.onFailure(error, null);
-                    }
+    public void setUserId(@Nullable String userId, @Nullable String authToken, Boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        String sourceUserId = _userIdAnon;
+        String sourceEmail = null;
+        if(merge != null && (_userId != null || _email != null)) {
+            sourceUserId = _userId;
+            sourceEmail = _email;
+        }
+        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, (mergeResult, error) -> {
+            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
+                // If the same non-null userId is passed
+                if (_userId != null && _userId.equals(userId)) {
+                    checkAndUpdateAuthToken(authToken);
+                    return;
                 }
+                if (userId == null) {
+                    _userIdAnon = null;
+                }
+                if (_userId == userId) {
+                    return;
+                }
+
+                logoutPreviousUser();
+                _userIdAnon = null;
+                _email = null;
+                _userId = userId;
+                if(!(merge != null && !merge)) {
+                    anonymousUserManager.syncEvents();
+                }
+                _setUserSuccessCallbackHandler = successHandler;
+                _setUserFailureCallbackHandler = failureHandler;
+                storeAuthData();
+                onLogin(authToken);
+            } else {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
+            }
         });
 
     }
