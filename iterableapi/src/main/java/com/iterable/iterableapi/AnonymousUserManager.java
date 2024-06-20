@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,21 +19,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 import java.util.UUID;
 
 public class AnonymousUserManager {
 
     private static final String TAG = "AnonymousUserManager";
+    private final IterableApi iterableApi = IterableApi.sharedInstance;
 
     void updateAnonSession() {
         IterableLogger.v(TAG, "updateAnonSession");
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String previousData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
 
         try {
@@ -89,9 +87,21 @@ public class AnonymousUserManager {
         IterableLogger.v(TAG, "updateAnonUser");
         try {
             JSONObject newDataObject = new JSONObject();
-            newDataObject.put(IterableConstants.DATA_REPLACE, dataFields);
+            newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.UPDATE_USER);
             storeEventListToLocalStorage(newDataObject, true);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void trackAnonTokenRegistration(String token) {
+        IterableLogger.v(TAG, "trackAnonTokenRegistration");
+        try {
+            JSONObject newDataObject = new JSONObject();
+            newDataObject.put(IterableConstants.KEY_TOKEN, token);
+            newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_TOKEN_REGISTRATION);
+            storeEventListToLocalStorage(newDataObject, false);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -133,11 +143,11 @@ public class AnonymousUserManager {
     }
 
     void getCriteria() {
-        IterableApi.getInstance().apiClient.getCriteriaList(data -> {
+        iterableApi.apiClient.getCriteriaList(data -> {
             if (data != null) {
                 try {
                     JSONObject mockDataObject = new JSONObject(data);
-                    SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+                    SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
                     editor.apply();
@@ -148,8 +158,8 @@ public class AnonymousUserManager {
         });
     }
 
-    private Integer checkCriteriaCompletion() {
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+    private String checkCriteriaCompletion() {
+        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
 
@@ -165,8 +175,9 @@ public class AnonymousUserManager {
         return null;
     }
 
-    private void createKnownUser(Integer criteriaId) {
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+    private void createKnownUser(String criteriaId) {
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        updateAnonSession();
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         String userId = UUID.randomUUID().toString();
         try {
@@ -176,11 +187,12 @@ public class AnonymousUserManager {
                 if (!getPushStatus().isEmpty()) {
                     userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
                 }
-                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, criteriaId);
-                IterableApi.getInstance().apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
+                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
+                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
                     // success handler
-                    IterableApi.getInstance().setUserId(userId);
+                    iterableApi.setAnonUser(userId);
                     syncEvents();
+                    Log.d("TEST_USER", "user created: " + String.valueOf(userId));
                 }, (reason, data) -> {
                     if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
                         try {
@@ -206,19 +218,17 @@ public class AnonymousUserManager {
                 try {
                     JSONObject event = trackEventList.getJSONObject(i);
                     String eventType = event.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-
                     switch (eventType) {
                         case IterableConstants.TRACK_EVENT: {
                             String createdAt = "";
                             if (event.has(IterableConstants.KEY_CREATED_AT)) {
                                 createdAt = event.getString(IterableConstants.KEY_CREATED_AT);
                             }
+                            JSONObject dataFields = null;
                             if (event.has(IterableConstants.KEY_DATA_FIELDS)) {
-                                JSONObject dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
-                                IterableApi.getInstance().track(event.getString(IterableConstants.KEY_EVENT_NAME), 0, 0, dataFields, createdAt);
-                            } else {
-                                IterableApi.getInstance().track(event.getString(IterableConstants.KEY_EVENT_NAME), 0, 0, null, createdAt);
+                                dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
                             }
+                            iterableApi.apiClient.track(event.getString(IterableConstants.KEY_EVENT_NAME), 0, 0, dataFields, createdAt);
                             break;
                         }
                         case IterableConstants.TRACK_PURCHASE: {
@@ -226,19 +236,16 @@ public class AnonymousUserManager {
                             Type listType = new TypeToken<List<CommerceItem>>() {
                             }.getType();
                             List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
-                            JSONObject userObject = new JSONObject();
-                            userObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
 
-                            String createdAt = "";
+                            long createdAt = 0;
                             if (event.has(IterableConstants.KEY_CREATED_AT)) {
-                                createdAt = event.getString(IterableConstants.KEY_CREATED_AT);
+                                createdAt = Long.parseLong(event.getString(IterableConstants.KEY_CREATED_AT));
                             }
+                            JSONObject dataFields = null;
                             if (event.has(IterableConstants.KEY_DATA_FIELDS)) {
-                                JSONObject dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
-                                IterableApi.getInstance().trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, dataFields, userObject, createdAt);
-                            } else {
-                                IterableApi.getInstance().trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, null, userObject, createdAt);
+                                dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
                             }
+                            iterableApi.apiClient.trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, dataFields, createdAt);
                             break;
                         }
                         case IterableConstants.TRACK_UPDATE_CART: {
@@ -246,19 +253,15 @@ public class AnonymousUserManager {
                             Type listType = new TypeToken<List<CommerceItem>>() {
                             }.getType();
                             List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
-                            JSONObject userObject = new JSONObject();
-                            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
-                            userObject.put(IterableConstants.KEY_MERGE_NESTED_OBJECTS, true);
-                            userObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
-                            String createdAt = "";
+                            long createdAt = 0;
                             if (event.has(IterableConstants.KEY_CREATED_AT)) {
-                                createdAt = event.getString(IterableConstants.KEY_CREATED_AT);
+                                createdAt = Long.parseLong(event.getString(IterableConstants.KEY_CREATED_AT));
                             }
-                            IterableApi.getInstance().updateCart(list, userObject, createdAt);
+                            iterableApi.apiClient.updateCart(list, createdAt);
                             break;
                         }
                         case IterableConstants.UPDATE_USER: {
-                            IterableApi.getInstance().updateUser(event.getJSONObject(IterableConstants.DATA_REPLACE));
+                            iterableApi.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS));
                             break;
                         }
                         default:
@@ -270,11 +273,11 @@ public class AnonymousUserManager {
             }
         }
 
-        clearLocallyStoredData();
+        clearAnonEventsData();
     }
 
-    private void clearLocallyStoredData() {
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+    private void clearAnonEventsData() {
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
@@ -313,21 +316,21 @@ public class AnonymousUserManager {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
         previousDataArray.put(newDataObject);
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
         editor.apply();
 
-        Integer criteriaId = checkCriteriaCompletion();
+        String criteriaId = checkCriteriaCompletion();
         if (criteriaId != null) {
             createKnownUser(criteriaId);
         }
+        Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
 
     private JSONArray getEventListFromLocalStorage() {
-        SharedPreferences sharedPref = IterableApi.sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String eventListJson = sharedPref.getString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
         JSONArray eventListArray = new JSONArray();
         try {
@@ -346,11 +349,11 @@ public class AnonymousUserManager {
     }
 
     private String getPushStatus() {
-        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(IterableApi.getInstance().getMainActivityContext());
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(iterableApi.getMainActivityContext());
         if (notificationManagerCompat.areNotificationsEnabled()) {
-            ApplicationInfo applicationInfo = IterableApi.sharedInstance.getMainActivityContext().getApplicationInfo();
+            ApplicationInfo applicationInfo = iterableApi.getMainActivityContext().getApplicationInfo();
             int stringId = applicationInfo.labelRes;
-            return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : IterableApi.sharedInstance.getMainActivityContext().getString(stringId);
+            return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : iterableApi.getMainActivityContext().getString(stringId);
         } else {
             return "";
         }

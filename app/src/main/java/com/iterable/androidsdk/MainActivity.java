@@ -1,5 +1,6 @@
 package com.iterable.androidsdk;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -30,8 +31,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-//        IterableApi.initialize(this, "1c4b47f3177b44c6b9bc1524b21d1ba7");
         //Below api key is used to display merge user feature
         IterableApi.initialize(this, "289895aa038648ee9e4ce60bd0a46e9c");
 
@@ -42,6 +41,12 @@ public class MainActivity extends AppCompatActivity {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
+        });
+
+        findViewById(R.id.mainLayout).setOnLongClickListener(v -> {
+            Intent intent = new Intent(this, AnonTrackingTestActivity.class);
+            startActivity(intent);
+            return true;
         });
 
         findViewById(R.id.btn_track_event).setOnClickListener(v -> IterableApi.getInstance().track("Browse Mocha"));

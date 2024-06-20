@@ -304,10 +304,10 @@ public class IterableConfig {
          */
         public Builder setEnableAnonTracking(boolean enableAnonTracking) {
             this.enableAnonTracking = enableAnonTracking;
-			return this;
-		}
+            return this;
+        }
 
-		/**
+        /**
          * Allows for fetching embedded messages.
          * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
          */
