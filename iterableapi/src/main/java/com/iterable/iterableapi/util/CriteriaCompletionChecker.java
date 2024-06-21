@@ -277,12 +277,11 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
-    public static String formattedDoubleValue(double d)
-    {
-        if(d == (long) d)
-            return String.format("%d",(long)d);
+    public static String formattedDoubleValue(double d) {
+        if (d == (long) d)
+            return String.format("%d", (long) d);
         else
-            return String.format("%s",d);
+            return String.format("%s", d);
     }
 
     private boolean evaluateComparison(String comparatorType, Object matchObj, String valueToCompare) {
