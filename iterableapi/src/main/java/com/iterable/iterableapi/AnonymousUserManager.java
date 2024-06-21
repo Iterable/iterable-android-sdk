@@ -22,6 +22,9 @@ import java.lang.reflect.Type;
 import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.security.auth.login.LoginException;
 
 public class AnonymousUserManager {
 
@@ -113,6 +116,7 @@ public class AnonymousUserManager {
         try {
             JSONObject newDataObject = new JSONObject();
             Gson gson = new GsonBuilder().create();
+
             newDataObject.put(IterableConstants.KEY_ITEMS, gson.toJsonTree(items).getAsJsonArray().toString());
             newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
@@ -151,6 +155,7 @@ public class AnonymousUserManager {
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
                     editor.apply();
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -180,6 +185,7 @@ public class AnonymousUserManager {
         updateAnonSession();
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         String userId = UUID.randomUUID().toString();
+        System.out.println("TEST_USER: " + "inside KnownUser: " + String.valueOf(userId));
         try {
             if (!userData.isEmpty()) {
                 JSONObject userSessionDataJson = new JSONObject(userData);
@@ -193,6 +199,7 @@ public class AnonymousUserManager {
                     iterableApi.setAnonUser(userId);
                     syncEvents();
                     Log.d("TEST_USER", "user created: " + String.valueOf(userId));
+                    System.out.println("TEST_USER: " + "user created: " + String.valueOf(userId));
                 }, (reason, data) -> {
                     if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
                         try {
@@ -203,6 +210,7 @@ public class AnonymousUserManager {
                         } catch (JSONException e) {}
                     }
                 });
+                System.out.println("TEST_USER: " + "TrackAnonSession failure");
             }
 
         } catch (JSONException e) {
@@ -276,7 +284,7 @@ public class AnonymousUserManager {
         clearAnonEventsData();
     }
 
-    private void clearAnonEventsData() {
+    public void clearAnonEventsData() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
