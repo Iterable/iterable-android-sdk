@@ -323,7 +323,6 @@ public class AnonymousUserManager {
         editor.apply();
 
         String criteriaId = checkCriteriaCompletion();
-//        String criteriaId = "57";
         if (criteriaId != null) {
             createKnownUser(criteriaId);
         }
