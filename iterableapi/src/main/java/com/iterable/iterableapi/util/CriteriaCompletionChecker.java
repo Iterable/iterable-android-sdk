@@ -277,9 +277,22 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
+    public static String formattedDoubleValue(double d) {
+        if (d == (long) d)
+            return String.format("%d", (long) d);
+        else
+            return String.format("%s", d);
+    }
+
     private boolean evaluateComparison(String comparatorType, Object matchObj, String valueToCompare) {
         if (valueToCompare == null && !comparatorType.equals(MatchComparator.IS_SET)) {
             return false;
+        }
+
+        if (isDouble(valueToCompare)) {
+            // here do the conversion of this number to formatted double value by removing trailing zeros
+            // because when jsonstring to jsonarray happens for items object it removes trailing zeros
+            valueToCompare = formattedDoubleValue(Double.parseDouble(valueToCompare));
         }
 
         switch (comparatorType) {
@@ -310,15 +323,15 @@ public class CriteriaCompletionChecker {
 
     private boolean compareValueEquality(Object sourceTo, String stringValue) {
         if (sourceTo instanceof Double && isDouble(stringValue)) {
-            return ((Double) sourceTo).equals(Double.parseDouble(stringValue));
+            return sourceTo.equals(Double.parseDouble(stringValue));
         } else if (sourceTo instanceof Integer && isInteger(stringValue)) {
-            return ((Integer) sourceTo).equals(Integer.parseInt(stringValue));
+            return sourceTo.equals(Integer.parseInt(stringValue));
         } else if (sourceTo instanceof Long && isLong(stringValue)) {
-            return ((Long) sourceTo).equals(Long.parseLong(stringValue));
+            return sourceTo.equals(Long.parseLong(stringValue));
         } else if (sourceTo instanceof Boolean && isBoolean(stringValue)) {
-            return ((Boolean) sourceTo).equals(Boolean.parseBoolean(stringValue));
+            return sourceTo.equals(Boolean.parseBoolean(stringValue));
         } else if (sourceTo instanceof String) {
-            return ((String) sourceTo).equals(stringValue);
+            return sourceTo.equals(stringValue);
         }
         return false;
     }
