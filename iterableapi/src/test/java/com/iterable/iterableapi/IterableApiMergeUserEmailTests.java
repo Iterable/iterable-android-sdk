@@ -1,11 +1,14 @@
 package com.iterable.iterableapi;
 
+import static android.os.Looper.getMainLooper;
+import static com.iterable.iterableapi.IterableConstants.ENDPOINT_UPDATE_EMAIL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -17,6 +20,7 @@ import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +37,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 public class IterableApiMergeUserEmailTests extends BaseTest {
     private MockWebServer server;
+    private PathBasedQueueDispatcher dispatcher;
     private String criteriaMockData = "{\n" +
         "   \"count\":2,\n" +
                 "   \"criterias\":[\n" +
@@ -136,7 +141,8 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     @Before
     public void setUp() {
         server = new MockWebServer();
-        server = new MockWebServer();
+        dispatcher = new PathBasedQueueDispatcher();
+        server.setDispatcher(dispatcher);
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         setCriteria(criteriaMockData);
     }
@@ -145,11 +151,20 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     public void tearDown() throws IOException {
         server.shutdown();
         server = null;
+        clearEventData();
+        IterableApi.getInstance().setUserId(null);
+        IterableApi.getInstance().setEmail(null);
     }
 
     private String getEventData() {
         SharedPreferences sharedPref = getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         return sharedPref.getString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+    }
+    private void clearEventData() {
+        SharedPreferences sharedPref = getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.apply();
     }
     private void setCriteria(String criteria) {
         SharedPreferences sharedPref = getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
@@ -162,75 +177,77 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         items.add(new CommerceItem(id, name, price, quantity));
         IterableApi.getInstance().trackPurchase(4, items);
     }
-
-//    @Test
-//    public void testCriteriaNotMetUserIdMergeFalse() throws Exception {
-//
-//        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
-//        IterableApi.initialize(getContext(), "apiKey", iterableConfig);
-//        IterableApi.getInstance().getKeychain().saveUserIdAnon("testAnonId");
-//        assertNotNull(IterableApi.getInstance().getKeychain().getUserIdAnon());
-//
-//        String userId = "testUserId";
-//        IterableApi.getInstance().setUserId(userId, true);
-//
-//        assertTrue(IterableApi.getInstance().getKeychain().getUserIdAnon() == null);
-////        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
-////        assertNotNull(recordedRequest);
-//        System.out.println("TEST_LOG: " + recordedRequest.getPath());
-//        System.out.println("TEST_LOG: " + String.valueOf(IterableApi.getInstance().getKeychain().getUserIdAnon()));
-//
-//    }
+    private void addResponse(String endPoint) {
+        dispatcher.enqueueResponse("/" + endPoint, new MockResponse().setResponseCode(200).setBody("{}"));
+    }
 
     @Test
     public void testCriteriaNotMetUserIdMergeFalse() throws Exception {
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
-        IterableApi.initialize(getContext(), "18845050c4774b7c9dc48beece2f6d8b", iterableConfig);
-//        IterableApi.getInstance().setEmail(null);
-//        IterableApi.getInstance().setUserId(null);
+        IterableApi.initialize(getContext(), "apiKey", iterableConfig);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null);
-        triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
-        RecordedRequest recordedRequest = server.takeRequest(2, TimeUnit.SECONDS);
-        assertNotNull(recordedRequest);
-        System.out.println("TEST_LOG: " + recordedRequest.getPath());
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
+        shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
-        String userId = "testUserId";
+        assertFalse(eventData.equals(""));
+        final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, false);
+        shadowOf(getMainLooper()).idle();
+        assertEquals(userId, IterableApi.getInstance().getUserId());
         assertEquals(eventData, getEventData());
-        assertEquals(userId, IterableApi.getInstance().getKeychain().getUserId());
     }
 
     @Test
     public void testCriteriaNotMetUserIdMergeTrue() throws Exception {
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
-        IterableApi.getInstance().getKeychain().saveUserId(null);
-        IterableApi.getInstance().getKeychain().saveUserIdAnon(null);
-        IterableApi.getInstance().getKeychain().saveEmail(null);
-//        triggerUpdateCartEvent("test", "piano", 15, 2);
-
-        String userId = "testUserId";
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
+        shadowOf(getMainLooper()).idle();
+        String eventData = getEventData();
+        assertFalse(eventData.equals(""));
+        final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, true);
-
-        assertEquals(IterableApi.getInstance().getKeychain().getUserIdAnon(), null);
-        assertEquals(IterableApi.getInstance().getKeychain().getEmail(), null);
+        assertEquals(userId, IterableApi.getInstance().getUserId());
         assertEquals("", getEventData());
-        assertEquals(userId, IterableApi.getInstance().getKeychain().getUserId());
+    }
+
+    @Test
+    public void testCriteriaMetUserIdMergeTrue() throws Exception {
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
+        IterableApi.initialize(getContext(), "apiKey", iterableConfig);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+        triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
+        shadowOf(getMainLooper()).idle();
+        assertEquals("", getEventData());
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        final String userId = "testUser2";
+        IterableApi.getInstance().setUserId(userId, true);
+        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(mergeRequest);
+        shadowOf(getMainLooper()).idle();
+        assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+        assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
     @Test
     public void testCriteriaMetUserIdMergeFalse() throws Exception {
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
-        IterableApi.getInstance().getKeychain().saveUserId(null);
-        IterableApi.getInstance().getKeychain().saveEmail(null);
-        IterableApi.getInstance().getKeychain().saveUserIdAnon("testAnonId");
-
-        String userId = "testUserId";
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
+        shadowOf(getMainLooper()).idle();
+        assertEquals("", getEventData());
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, false);
-
-        assertEquals(IterableApi.getInstance().getKeychain().getUserIdAnon(),null);
-        assertEquals(userId, IterableApi.getInstance().getKeychain().getUserId());
+        shadowOf(getMainLooper()).idle();
+        assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
 }
