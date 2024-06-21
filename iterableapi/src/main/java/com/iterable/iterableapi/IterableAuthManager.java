@@ -75,7 +75,7 @@ public class IterableAuthManager {
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
             boolean shouldIgnoreRetryPolicy) {
-        if ((!shouldIgnoreRetryPolicy && pauseAuthRetry) || (retryCount >= authRetryPolicy.maxRetry && !shouldIgnoreRetryPolicy)) {
+        if (!shouldIgnoreRetryPolicy && (pauseAuthRetry || (retryCount >= authRetryPolicy.maxRetry))) {
             return;
         }
 
@@ -124,8 +124,11 @@ public class IterableAuthManager {
         } else {
             IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
             //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
+            handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
+
+            //Setting auth token as null so that Failure reasons are accurately captured
+            IterableApi.getInstance().setAuthToken(authToken);
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
-            authHandler.onTokenRegistrationFailed(new Throwable("Auth token null"));
             return;
         }
         IterableApi.getInstance().setAuthToken(authToken);
@@ -135,7 +138,7 @@ public class IterableAuthManager {
 
     private void handleAuthTokenFailure(Throwable throwable) {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
-        authHandler.onTokenRegistrationFailed(throwable);
+        handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_GENERATION_ERROR);
         pendingAuth = false;
         scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
     }
@@ -152,7 +155,7 @@ public class IterableAuthManager {
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
-            authHandler.onTokenRegistrationFailed(new Throwable("Auth token decode failure. Scheduling auth token refresh in 10 seconds..."));
+            handleAuthFailure(encodedJWT, AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID);
             //TODO: Sync with configured time duration once feature is available.
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
         }
@@ -168,6 +171,13 @@ public class IterableAuthManager {
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
         }
     }
+
+    void handleAuthFailure(String authToken, AuthFailureReason failureReason) {
+        if (authHandler != null) {
+            authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
+        }
+    }
+
 
     long getNextRetryInterval() {
         long nextRetryInterval = authRetryPolicy.retryInterval;
@@ -186,6 +196,7 @@ public class IterableAuthManager {
         if (timer == null) {
             timer = new Timer(true);
         }
+
         try {
             timer.schedule(new TimerTask() {
                 @Override
