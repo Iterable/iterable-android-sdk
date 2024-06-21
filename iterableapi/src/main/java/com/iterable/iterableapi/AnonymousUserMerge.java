@@ -3,9 +3,9 @@ package com.iterable.iterableapi;
 public class AnonymousUserMerge {
     private static final String TAG = "AnonymousUserMerge";
 
-    public void tryMergeUser(IterableApiClient apiClient, String sourceUserId, String sourceEmail, String destinationUserIdOrEmail, boolean isEmail, Boolean merge, MergeResultCallback callback) {
+    public void tryMergeUser(IterableApiClient apiClient, String sourceUserId, String sourceEmail, String destinationUserIdOrEmail, boolean isEmail, boolean merge, boolean shouldUserDefaultMerge, MergeResultCallback callback) {
         IterableLogger.v(TAG, "tryMergeUser");
-        if ((sourceUserId != null || sourceEmail != null) && destinationUserIdOrEmail != null && !(merge != null && !merge)) {
+        if ((sourceUserId != null || sourceEmail != null) && destinationUserIdOrEmail != null && (shouldUserDefaultMerge || merge)) {
             String destinationEmail = isEmail ? destinationUserIdOrEmail : null;
             String destinationUserId = isEmail ? null : destinationUserIdOrEmail;
             apiClient.mergeUser(sourceEmail, sourceUserId, destinationEmail, destinationUserId, data -> {
