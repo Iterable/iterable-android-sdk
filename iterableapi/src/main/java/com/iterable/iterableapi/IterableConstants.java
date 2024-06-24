@@ -327,6 +327,8 @@ public final class IterableConstants {
     public static final String VALUE = "value";
     public static final String DATA_TYPE = "dataType";
     public static final String COMPARATOR_TYPE = "comparatorType";
+    public static final String UPDATECART_ITEM_PREFIX = "updateCart.updatedShoppingCartItems.";
+    public static final String PURCHASE_ITEM_PREFIX = "shoppingCartItems";
 
 
     //Tracking types
