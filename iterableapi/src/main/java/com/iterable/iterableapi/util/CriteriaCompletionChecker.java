@@ -1,5 +1,7 @@
 package com.iterable.iterableapi.util;
 
+import androidx.annotation.NonNull;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.iterable.iterableapi.IterableConstants;
@@ -92,7 +94,7 @@ public class CriteriaCompletionChecker {
                             Iterator<String> keys = item.keys();
                             while (keys.hasNext()) {
                                 String key = keys.next();
-                                processedItem.put("shoppingCartItems." + key, item.get(key));
+                                processedItem.put(IterableConstants.PURCHASE_ITEM_PREFIX + key, item.get(key));
                             }
                             processedItems.put(processedItem);
                         }
@@ -118,10 +120,8 @@ public class CriteriaCompletionChecker {
                     processedEvents.put(updatedItem);
                 } else if (localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && (
                         localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART))) {
-                    processedEvents.put(new JSONObject()
-                            .put(IterableConstants.KEY_EVENT_NAME, IterableConstants.UPDATE_CART)
-                            .put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT));
                     JSONObject updatedItem = new JSONObject();
+                    updatedItem.put(IterableConstants.KEY_EVENT_NAME, IterableConstants.UPDATE_CART);
 
                     if (localEventData.has(IterableConstants.KEY_ITEMS)) {
                         final JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
@@ -132,7 +132,7 @@ public class CriteriaCompletionChecker {
                             Iterator<String> keys = item.keys();
                             while (keys.hasNext()) {
                                 String key = keys.next();
-                                processedItem.put("updateCart.updatedShoppingCartItems." + key, item.get(key));
+                                processedItem.put(IterableConstants.UPDATECART_ITEM_PREFIX + key, item.get(key));
                             }
                             processedItems.put(processedItem);
                         }
@@ -217,7 +217,6 @@ public class CriteriaCompletionChecker {
                     return false;
                 }
             } else if (node.has(IterableConstants.SEARCH_COMBO)) {
-                JSONObject searchCombo = node.getJSONObject(IterableConstants.SEARCH_COMBO);
                 return evaluateSearchQueries(node, localEventData);
             }
         } catch (Exception e) {
@@ -226,7 +225,7 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
-    private boolean evaluateSearchQueries(JSONObject node, JSONArray localEventData) throws JSONException {
+    private boolean evaluateSearchQueries(JSONObject node, @NonNull JSONArray localEventData) throws JSONException {
         for (int i = 0; i < localEventData.length(); i++) {
             JSONObject eventData = localEventData.getJSONObject(i);
             String trackingType = eventData.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
@@ -236,6 +235,13 @@ public class CriteriaCompletionChecker {
                 JSONArray searchQueries = searchCombo.getJSONArray(IterableConstants.SEARCH_QUERIES);
                 String combinator = searchCombo.getString(IterableConstants.COMBINATOR);
                 if (evaluateEvent(searchQueries, eventData, combinator)) {
+                    if (node.has(IterableConstants.MIN_MATCH)) {
+                        int minMatch = node.getInt(IterableConstants.MIN_MATCH) - 1;
+                        node.put(IterableConstants.MIN_MATCH, minMatch);
+                        if(minMatch > 0) {
+                            continue;
+                        }
+                    }
                     return true;
                 }
 
@@ -257,14 +263,6 @@ public class CriteriaCompletionChecker {
         }
         return false;
     }
-//    private boolean evaluateField(JSONObject node, JSONArray localEventData) {
-//        try {
-//            return evaluateFieldLogic(node, localEventData);
-//        } catch (JSONException e) {
-//            handleJSONException(e);
-//        }
-//        return false;
-//    }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
                 boolean itemMatchResult = false;
@@ -283,11 +281,12 @@ public class CriteriaCompletionChecker {
                     }
                     itemMatchResult = result;
                 }
+
                 ArrayList<String> filteredDataKeys = new ArrayList<>();
                 Iterator<String> localEventDataKeys = eventData.keys();
-                while(localEventDataKeys.hasNext()) {
+                while (localEventDataKeys.hasNext()) {
                     String localEventDataKey = localEventDataKeys.next();
-                    if(!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
+                    if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
                         filteredDataKeys.add(localEventDataKey);
                     }
                 }
@@ -295,6 +294,7 @@ public class CriteriaCompletionChecker {
                 if (filteredDataKeys.size() == 0) {
                     return itemMatchResult;
                 }
+
                 JSONArray filteredSearchQueries = new JSONArray();
                 for (int i = 0; i < searchQueries.length(); i++) {
                     JSONObject searchQuery = searchQueries.getJSONObject(i);
@@ -302,6 +302,9 @@ public class CriteriaCompletionChecker {
                     if (!field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX) && !field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX)) {
                         filteredSearchQueries.put(searchQuery);
                     }
+                }
+                if (filteredSearchQueries.length() == 0) {
+                    return itemMatchResult;
                 }
                 boolean matchResult = false;
                 for(int k = 0; k < filteredSearchQueries.length(); k++) {

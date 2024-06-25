@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -216,6 +217,211 @@ public class CriteriaCompletionCheckerTest {
             "   ]\n" +
             "}";
 
+    private String mockCriteria = "{\n" +
+            "  \"count\": 4,\n" +
+            "  \"criterias\": [\n" +
+            "    {\n" +
+            "      \"criteriaId\": \"43\",\n" +
+            "      \"name\": \"ContactProperty\",\n" +
+            "      \"createdAt\": 1716560453973,\n" +
+            "      \"updatedAt\": 1716560453973,\n" +
+            "      \"searchQuery\": {\n" +
+            "        \"combinator\": \"And\",\n" +
+            "        \"searchQueries\": [\n" +
+            "          {\n" +
+            "            \"combinator\": \"Or\",\n" +
+            "            \"searchQueries\": [\n" +
+            "              {\n" +
+            "                \"dataType\": \"user\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"user\",\n" +
+            "                      \"field\": \"country\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"value\": \"UK\",\n" +
+            "                      \"fieldType\": \"string\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              },\n" +
+            "              {\n" +
+            "                \"dataType\": \"user\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"user\",\n" +
+            "                      \"field\": \"preferred_car_models\",\n" +
+            "                      \"comparatorType\": \"Contains\",\n" +
+            "                      \"value\": \"Mazda\",\n" +
+            "                      \"fieldType\": \"string\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              }\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        ]\n" +
+            "      }\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"criteriaId\": \"42\",\n" +
+            "      \"name\": \"purchase\",\n" +
+            "      \"createdAt\": 1716560403912,\n" +
+            "      \"updatedAt\": 1716560403912,\n" +
+            "      \"searchQuery\": {\n" +
+            "        \"combinator\": \"And\",\n" +
+            "        \"searchQueries\": [\n" +
+            "          {\n" +
+            "            \"combinator\": \"Or\",\n" +
+            "            \"searchQueries\": [\n" +
+            "              {\n" +
+            "                \"dataType\": \"purchase\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"purchase\",\n" +
+            "                      \"field\": \"shoppingCartItems.name\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"value\": \"keyboard\",\n" +
+            "                      \"fieldType\": \"string\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              },\n" +
+            "              {\n" +
+            "                \"dataType\": \"purchase\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"purchase\",\n" +
+            "                      \"field\": \"shoppingCartItems.quantity\",\n" +
+            "                      \"comparatorType\": \"GreaterThanOrEqualTo\",\n" +
+            "                      \"value\": \"3\",\n" +
+            "                      \"fieldType\": \"long\"\n" +
+            "                    },\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"purchase\",\n" +
+            "                      \"field\": \"shoppingCartItems.price\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"value\": \"10\",\n" +
+            "                      \"fieldType\": \"long\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              }\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        ]\n" +
+            "      }\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"criteriaId\": \"41\",\n" +
+            "      \"name\": \"updateCart\",\n" +
+            "      \"createdAt\": 1716560369947,\n" +
+            "      \"updatedAt\": 1716560369947,\n" +
+            "      \"searchQuery\": {\n" +
+            "        \"combinator\": \"And\",\n" +
+            "        \"searchQueries\": [\n" +
+            "          {\n" +
+            "            \"combinator\": \"Or\",\n" +
+            "            \"searchQueries\": [\n" +
+            "              {\n" +
+            "                \"dataType\": \"customEvent\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"customEvent\",\n" +
+            "                      \"field\": \"eventName\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"value\": \"updateCart\",\n" +
+            "                      \"fieldType\": \"string\"\n" +
+            "                    },\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"customEvent\",\n" +
+            "                      \"field\": \"updateCart.updatedShoppingCartItems.price\",\n" +
+            "                      \"comparatorType\": \"LessThanOrEqualTo\",\n" +
+            "                      \"value\": \"10\",\n" +
+            "                      \"fieldType\": \"double\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                },\n" +
+            "                \"minMatch\": 3,\n" +
+            "                \"maxMatch\": 2\n" +
+            "              },\n" +
+            "              {\n" +
+            "                \"dataType\": \"customEvent\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"customEvent\",\n" +
+            "                      \"field\": \"eventName\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"value\": \"updateCart\",\n" +
+            "                      \"fieldType\": \"string\"\n" +
+            "                    },\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"customEvent\",\n" +
+            "                      \"field\": \"updateCart.updatedShoppingCartItems.quantity\",\n" +
+            "                      \"comparatorType\": \"GreaterThanOrEqualTo\",\n" +
+            "                      \"value\": \"50\",\n" +
+            "                      \"fieldType\": \"long\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              }\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        ]\n" +
+            "      }\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"criteriaId\": \"40\",\n" +
+            "      \"name\": \"Customevent\",\n" +
+            "      \"createdAt\": 1716560323583,\n" +
+            "      \"updatedAt\": 1716560323583,\n" +
+            "      \"searchQuery\": {\n" +
+            "        \"combinator\": \"And\",\n" +
+            "        \"searchQueries\": [\n" +
+            "          {\n" +
+            "            \"combinator\": \"And\",\n" +
+            "            \"searchQueries\": [\n" +
+            "              {\n" +
+            "                \"dataType\": \"customEvent\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"customEvent\",\n" +
+            "                      \"field\": \"eventName\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"value\": \"button-clicked\",\n" +
+            "                      \"fieldType\": \"string\"\n" +
+            "                    },\n" +
+            "                    {\n" +
+            "                      \"dataType\": \"customEvent\",\n" +
+            "                      \"field\": \"button-clicked.lastPageViewed\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"value\": \"signup page\",\n" +
+            "                      \"fieldType\": \"string\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              }\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        ]\n" +
+            "      }\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}";
+
     @Before
     public void setUp() {
         evaluator = new CriteriaCompletionChecker();
@@ -248,4 +454,98 @@ public class CriteriaCompletionCheckerTest {
         boolean result = evaluator.getMatchedCriteria(mockDataWithOr, jsonArray) != null;
         assertFalse(result);
     }
+
+    @Test
+    public void testUserWithMockData() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"dataFields\":{\"country\":\"UK\"},\"eventType\":\"user\"}]");
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
+
+    @Test
+    public void testUserWithMockDataFail() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"dataFields\":{\"country\":\"US\"},\"eventType\":\"user\"}]");
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
+    @Test
+    public void testPurchaseWithMockData() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"keyboard\\\",\\\"price\\\":10,\\\"quantity\\\":2}]\",\"createdAt\":1700071052507,\"total\":2,\"eventType\":\"purchase\"}]");
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
+
+    @Test
+    public void testPurchaseWithMockDataFail() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"guitar\\\",\\\"price\\\":15,\\\"quantity\\\":2}]\",\"createdAt\":1700071052507,\"total\":2,\"eventType\":\"purchase\"}]");
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
+    @Test
+    public void testUpdateCartWithMockData() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":9,\\\"quantity\\\":52}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"}]");
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
+
+    @Test
+    public void testUpdateCartWithMockDataFail() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":9,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":9,\"eventType\":\"cartUpdate\"}]");
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
+    @Test
+    public void testCustomEventWithMockData() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"button-clicked.lastPageViewed\":\"signup page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
+
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
+
+    @Test
+    public void testCustomEventWithMockDataFail() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"button-clicked.lastPageViewed\":\"login page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
+
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
+    @Test
+    public void testSingleItemMatchWithMockDataFail() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"piano\\\",\\\"price\\\":10,\\\"quantity\\\":2},{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"piano\\\",\\\"price\\\":5,\\\"quantity\\\":3}]\",\"createdAt\":1700071052507,\"total\":2,\"eventType\":\"purchase\"}]");
+
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
+    @Test
+    public void testMinMatchWithMockData() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"}]");
+
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
+
+    @Test
+    public void testMinMatchWithMockDataFail() throws Exception {
+        JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":15,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"}]");
+
+        String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
 }
