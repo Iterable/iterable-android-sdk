@@ -68,6 +68,7 @@ public class ComplexCriteriaCheckerTest {
             + "    }"
             + "]"
             + "}";
+
     private String complexCriteria1 = "{\n" +
             "    \"count\": 1,\n" +
             "    \"criterias\": [\n" +
@@ -193,6 +194,256 @@ public class ComplexCriteriaCheckerTest {
             "    ]\n" +
             "}";
 
+    private String complexCriteria2 = "{"
+            + "\"count\": 1,"
+            + "\"criterias\": ["
+            + "    {"
+            + "        \"criteriaId\": \"1\","
+            + "        \"name\": \"Custom Event\","
+            + "        \"createdAt\": 1716560453973,"
+            + "        \"updatedAt\": 1716560453973,"
+            + "        \"searchQuery\": {"
+            + "            \"combinator\": \"And\","
+            + "            \"searchQueries\": ["
+            + "                {"
+            + "                    \"combinator\": \"Or\","
+            + "                    \"searchQueries\": ["
+            + "                        {"
+            + "                            \"dataType\": \"customEvent\","
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"eventName\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 2,"
+            + "                                        \"value\": \"button-clicked\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"button-clicked.lastPageViewed\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 4,"
+            + "                                        \"value\": \"welcome page\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        },"
+            + "                        {"
+            + "                            \"dataType\": \"customEvent\","
+            + "                            \"minMatch\": 2,"
+            + "                            \"maxMatch\": 3,"
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"updateCart.updatedShoppingCartItems.price\","
+            + "                                        \"fieldType\": \"double\","
+            + "                                        \"comparatorType\": \"GreaterThanOrEqualTo\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 6,"
+            + "                                        \"value\": \"85\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"updateCart.updatedShoppingCartItems.quantity\","
+            + "                                        \"fieldType\": \"long\","
+            + "                                        \"comparatorType\": \"GreaterThanOrEqualTo\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 7,"
+            + "                                        \"valueLong\": 50,"
+            + "                                        \"value\": \"50\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        }"
+            + "                    ]"
+            + "                },"
+            + "                {"
+            + "                    \"combinator\": \"Or\","
+            + "                    \"searchQueries\": ["
+            + "                        {"
+            + "                            \"dataType\": \"purchase\","
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"shoppingCartItems.name\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"purchase\","
+            + "                                        \"id\": 16,"
+            + "                                        \"isFiltering\": false,"
+            + "                                        \"value\": \"coffee\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"shoppingCartItems.quantity\","
+            + "                                        \"fieldType\": \"long\","
+            + "                                        \"comparatorType\": \"GreaterThanOrEqualTo\","
+            + "                                        \"dataType\": \"purchase\","
+            + "                                        \"id\": 17,"
+            + "                                        \"valueLong\": 2,"
+            + "                                        \"value\": \"2\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        },"
+            + "                        {"
+            + "                            \"dataType\": \"user\","
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"country\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"user\","
+            + "                                        \"id\": 19,"
+            + "                                        \"value\": \"USA\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"preferred_car_models\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Contains\","
+            + "                                        \"dataType\": \"user\","
+            + "                                        \"id\": 21,"
+            + "                                        \"value\": \"Subaru\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        }"
+            + "                    ]"
+            + "                }"
+            + "            ]"
+            + "        }"
+            + "    }"
+            + "]"
+            + "}";
+
+    private String complexCriteria3 = "{"
+            + "\"count\": 1,"
+            + "\"criterias\": ["
+            + "    {"
+            + "        \"criteriaId\": \"1\","
+            + "        \"name\": \"Custom Event\","
+            + "        \"createdAt\": 1716560453973,"
+            + "        \"updatedAt\": 1716560453973,"
+            + "        \"searchQuery\": {"
+            + "            \"combinator\": \"And\","
+            + "            \"searchQueries\": ["
+            + "                {"
+            + "                    \"combinator\": \"And\","
+            + "                    \"searchQueries\": ["
+            + "                        {"
+            + "                            \"dataType\": \"customEvent\","
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"eventName\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 2,"
+            + "                                        \"value\": \"button-clicked\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"button-clicked.lastPageViewed\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 4,"
+            + "                                        \"value\": \"welcome page\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        },"
+            + "                        {"
+            + "                            \"dataType\": \"customEvent\","
+            + "                            \"minMatch\": 2,"
+            + "                            \"maxMatch\": 3,"
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"updateCart.updatedShoppingCartItems.price\","
+            + "                                        \"fieldType\": \"double\","
+            + "                                        \"comparatorType\": \"GreaterThanOrEqualTo\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 6,"
+            + "                                        \"value\": \"85\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"updateCart.updatedShoppingCartItems.quantity\","
+            + "                                        \"fieldType\": \"long\","
+            + "                                        \"comparatorType\": \"GreaterThanOrEqualTo\","
+            + "                                        \"dataType\": \"customEvent\","
+            + "                                        \"id\": 7,"
+            + "                                        \"valueLong\": 50,"
+            + "                                        \"value\": \"50\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        },"
+            + "                        {"
+            + "                            \"dataType\": \"purchase\","
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"shoppingCartItems.name\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"purchase\","
+            + "                                        \"id\": 9,"
+            + "                                        \"value\": \"coffee\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"shoppingCartItems.quantity\","
+            + "                                        \"fieldType\": \"long\","
+            + "                                        \"comparatorType\": \"GreaterThanOrEqualTo\","
+            + "                                        \"dataType\": \"purchase\","
+            + "                                        \"id\": 10,"
+            + "                                        \"valueLong\": 2,"
+            + "                                        \"value\": \"2\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        },"
+            + "                        {"
+            + "                            \"dataType\": \"user\","
+            + "                            \"searchCombo\": {"
+            + "                                \"combinator\": \"And\","
+            + "                                \"searchQueries\": ["
+            + "                                    {"
+            + "                                        \"field\": \"country\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Equals\","
+            + "                                        \"dataType\": \"user\","
+            + "                                        \"id\": 12,"
+            + "                                        \"value\": \"USA\""
+            + "                                    },"
+            + "                                    {"
+            + "                                        \"field\": \"preferred_car_models\","
+            + "                                        \"fieldType\": \"string\","
+            + "                                        \"comparatorType\": \"Contains\","
+            + "                                        \"dataType\": \"user\","
+            + "                                        \"id\": 14,"
+            + "                                        \"value\": \"Subaru\""
+            + "                                    }"
+            + "                                ]"
+            + "                            }"
+            + "                        }"
+            + "                    ]"
+            + "                }"
+            + "            ]"
+            + "        }"
+            + "    }"
+            + "]"
+            + "}";
+
 
     @Before
     public void setUp() {
@@ -297,5 +548,163 @@ public class ComplexCriteriaCheckerTest {
         System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
+
+    @Test
+    public void testComplexCriteria2() throws Exception {
+        String jsonString = "[\n" +
+                "  {\n" +
+                "    \"items\": \"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":90,\\\"quantity\\\":50}]\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 50,\n" +
+                "    \"eventType\": \"cartUpdate\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"items\": \"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":90,\\\"quantity\\\":50}]\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 50,\n" +
+                "    \"eventType\": \"cartUpdate\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"dataFields\": {\n" +
+                "      \"preferred_car_models\": \"Subaru\",\n" +
+                "      \"country\": \"USA\"\n" +
+                "    },\n" +
+                "    \"eventType\": \"user\"\n" +
+                "  }\n" +
+                "]";
+
+        JSONArray jsonArray = new JSONArray(jsonString);
+        String result = evaluator.getMatchedCriteria(complexCriteria2, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
+
+    @Test
+    public void testComplexCriteria2Fail() throws Exception {
+        String jsonString = "[\n" +
+                "  {\n" +
+                "    \"items\": \"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":90,\\\"quantity\\\":50}]\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 50,\n" +
+                "    \"eventType\": \"cartUpdate\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"dataFields\": {\n" +
+                "      \"preferred_car_models\": \"Subaru\",\n" +
+                "      \"country\": \"USA\"\n" +
+                "    },\n" +
+                "    \"eventType\": \"user\"\n" +
+                "  }\n" +
+                "]";
+
+        JSONArray jsonArray = new JSONArray(jsonString);
+        String result = evaluator.getMatchedCriteria(complexCriteria2, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
+    @Test
+    public void testComplexCriteria3() throws Exception {
+        String jsonString = "[\n" +
+                "  {\n" +
+                "    \"items\": \"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":90,\\\"quantity\\\":50}]\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 50,\n" +
+                "    \"eventType\": \"cartUpdate\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"items\": \"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":90,\\\"quantity\\\":50}]\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 50,\n" +
+                "    \"eventType\": \"cartUpdate\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"dataFields\": {\n" +
+                "      \"preferred_car_models\": \"Subaru\",\n" +
+                "      \"country\": \"USA\"\n" +
+                "    },\n" +
+                "    \"eventType\": \"user\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"eventName\": \"button-clicked\",\n" +
+                "    \"dataFields\": {\n" +
+                "      \"button-clicked.lastPageViewed\": \"welcome page\"\n" +
+                "    },\n" +
+                "    \"total\": 3,\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"eventType\": \"customEvent\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"items\": [\n" +
+                "      {\n" +
+                "        \"id\": \"12\",\n" +
+                "        \"name\": \"coffee\",\n" +
+                "        \"price\": 10,\n" +
+                "        \"quantity\": 5\n" +
+                "      }\n" +
+                "    ],\n" +
+                "    \"shoppingCartItems\": \"temp\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 2,\n" +
+                "    \"eventType\": \"purchase\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"eventName\": \"button-clicked\",\n" +
+                "    \"dataFields\": {\n" +
+                "      \"button-clicked.lastPageViewed\": \"welcome page\"\n" +
+                "    },\n" +
+                "    \"total\": 3,\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"eventType\": \"customEvent\"\n" +
+                "  }\n" +
+                "]";
+
+        JSONArray jsonArray = new JSONArray(jsonString);
+        String result = evaluator.getMatchedCriteria(complexCriteria3, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
+
+    @Test
+    public void testComplexCriteria3Fail() throws Exception {
+        String jsonString = "[\n" +
+                "  {\n" +
+                "    \"items\": \"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":90,\\\"quantity\\\":50}]\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 50,\n" +
+                "    \"eventType\": \"cartUpdate\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"items\": \"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":90,\\\"quantity\\\":50}]\",\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 50,\n" +
+                "    \"eventType\": \"cartUpdate\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"dataFields\": {\n" +
+                "      \"preferred_car_models\": \"Subaru\",\n" +
+                "      \"country\": \"USA\"\n" +
+                "    },\n" +
+                "    \"eventType\": \"user\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"eventName\": \"button-clicked\",\n" +
+                "    \"dataFields\": {\n" +
+                "      \"button-clicked.lastPageViewed\": \"welcome page\"\n" +
+                "    },\n" +
+                "    \"total\": 3,\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"eventType\": \"customEvent\"\n" +
+                "  }\n" +
+                "]";
+
+
+        JSONArray jsonArray = new JSONArray(jsonString);
+        String result = evaluator.getMatchedCriteria(complexCriteria3, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
+
+
 
 }
