@@ -634,7 +634,7 @@ public class IterableApi {
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
 
-        if (sharedInstance.config.enableAnonTracking) {
+        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonTracking) {
             anonymousUserManager.updateAnonSession();
             anonymousUserManager.getCriteria();
         }
