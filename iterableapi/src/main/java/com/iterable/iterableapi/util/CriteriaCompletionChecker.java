@@ -215,6 +215,14 @@ public class CriteriaCompletionChecker {
                         }
                     }
                     return false;
+                } else if (combinator.equals("Not")) {
+                    for (int i = 0; i < searchQueries.length(); i++) {
+                        searchQueries.getJSONObject(i).put("isNot", true);
+                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                            return false;
+                        }
+                    }
+                    return true;
                 }
             } else if (node.has(IterableConstants.SEARCH_COMBO)) {
                 return evaluateSearchQueries(node, localEventData);
@@ -242,6 +250,9 @@ public class CriteriaCompletionChecker {
                             continue;
                         }
                     }
+                    if (node.has("isNot") && !(i+1 == localEventData.length())) {
+                        continue;
+                    }
                     return true;
                 }
 
@@ -251,20 +262,15 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
-        if (combinator.equals("And")) {
-            if(!evaluateFieldLogic(searchQueries, eventData)) {
-                return false;
-            }
-            return true;
-        } else if (combinator.equals("Or")) {
-            if(evaluateFieldLogic(searchQueries, eventData)) {
-                return true;
-            }
+        if (combinator.equals("And") || combinator.equals("Or")) {
+            return evaluateFieldLogic(searchQueries, eventData, false);
+        } else if (combinator.equals("Not")) {
+            return !evaluateFieldLogic(searchQueries, eventData, true);
         }
         return false;
     }
 
-    private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
+    private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData, boolean isNot) throws JSONException {
                 boolean itemMatchResult = false;
                 if (eventData.has(IterableConstants.KEY_ITEMS)) {
                     boolean result = false;
@@ -272,12 +278,17 @@ public class CriteriaCompletionChecker {
                     for (int j = 0; j < items.length(); j++) {
                         JSONObject item = items.getJSONObject(j);
                         if(doesItemMatchQueries(searchQueries, item)) {
+                            if (isNot) {
+                                return true;
+                            }
                            result = true;
                            break;
                         }
                     }
-                    if (!result && doesItemCriteriaExists(searchQueries)) {
-                        return false;
+                    if (!isNot) {
+                        if (!result && doesItemCriteriaExists(searchQueries)) {
+                            return false;
+                        }
                     }
                     itemMatchResult = result;
                 }
@@ -307,18 +318,21 @@ public class CriteriaCompletionChecker {
                     return itemMatchResult;
                 }
                 boolean matchResult = false;
-                for(int k = 0; k < filteredSearchQueries.length(); k++) {
+                for (int k = 0; k < filteredSearchQueries.length(); k++) {
                     JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
                     String field = searchQuery.getString(IterableConstants.FIELD);
                     boolean isKeyExists = false;
-                    for(String filteredDataKey: filteredDataKeys) {
-                        if(field.equals(filteredDataKey)) {
+                    for (String filteredDataKey: filteredDataKeys) {
+                        if (field.equals(filteredDataKey)) {
                             isKeyExists = true;
                         }
                     }
 
-                    if(isKeyExists) {
-                        if(evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
+                    if (isKeyExists) {
+                        if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
+                            if (isNot) {
+                                return true;
+                            }
                             matchResult = true;
                             continue;
                         }
