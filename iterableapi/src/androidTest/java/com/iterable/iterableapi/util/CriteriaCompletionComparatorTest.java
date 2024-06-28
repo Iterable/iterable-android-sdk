@@ -299,7 +299,9 @@ public class CriteriaCompletionComparatorTest {
                 "                \"quantity\": 2\n" +
                 "            }\n" +
                 "        ],\n" +
-                "        \"shoppingCartItems\": \"temp\",\n" +
+                "        \"dataFields\": {\n" +
+                "        \"shoppingCartItems\": \"temp\"\n" +
+                "        },\n" +
                 "        \"createdAt\": 1700071052507,\n" +
                 "        \"total\": 2,\n" +
                 "        \"eventType\": \"purchase\"\n" +
@@ -322,7 +324,9 @@ public class CriteriaCompletionComparatorTest {
                 "                \"name\": \"keyboard\"" +
                 "            }\n" +
                 "        ],\n" +
-                "        \"shoppingCartItems\": \"temp\",\n" +
+                "        \"dataFields\": {\n" +
+                "        \"shoppingCartItems\": \"temp\"\n" +
+                "        },\n" +
                 "        \"createdAt\": 1700071052507,\n" +
                 "        \"total\": 2,\n" +
                 "        \"eventType\": \"purchase\"\n" +
