@@ -1,9 +1,6 @@
 package com.iterable.iterableapi.util;
 
 import androidx.annotation.NonNull;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
 
@@ -248,11 +245,11 @@ public class CriteriaCompletionChecker {
                     if (node.has(IterableConstants.MIN_MATCH)) {
                         int minMatch = node.getInt(IterableConstants.MIN_MATCH) - 1;
                         node.put(IterableConstants.MIN_MATCH, minMatch);
-                        if(minMatch > 0) {
+                        if (minMatch > 0) {
                             continue;
                         }
                     }
-                    if (isNot && !(i+1 == localEventData.length())) {
+                    if (isNot && !(i + 1 == localEventData.length())) {
                         continue;
                     }
                     return true;
@@ -281,7 +278,7 @@ public class CriteriaCompletionChecker {
                     JSONArray items = new JSONArray(eventData.getString(IterableConstants.KEY_ITEMS));
                     for (int j = 0; j < items.length(); j++) {
                         JSONObject item = items.getJSONObject(j);
-                        if(doesItemMatchQueries(searchQueries, item)) {
+                        if (doesItemMatchQueries(searchQueries, item)) {
                            result = true;
                            break;
                         }
@@ -321,7 +318,7 @@ public class CriteriaCompletionChecker {
                     JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
                     String field = searchQuery.getString(IterableConstants.FIELD);
                     boolean isKeyExists = false;
-                    for (String filteredDataKey: filteredDataKeys) {
+                    for (String filteredDataKey : filteredDataKeys) {
                         if (field.equals(filteredDataKey)) {
                             isKeyExists = true;
                         }
@@ -342,7 +339,7 @@ public class CriteriaCompletionChecker {
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
         for (int i = 0; i < searchQueries.length(); i++) {
             String field = searchQueries.getJSONObject(i).getString(IterableConstants.FIELD);
-            if(field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
+            if (field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
                 return true;
             }
         }
@@ -358,24 +355,25 @@ public class CriteriaCompletionChecker {
                 filterSearchQueries.put(searchQuery);
             }
         }
-            if(filterSearchQueries.length() == 0) {
-                return  false;
-            }
 
-            for(int j = 0; j < filterSearchQueries.length(); j++) {
-                JSONObject query = filterSearchQueries.getJSONObject(j);
-                String field = query.getString(IterableConstants.FIELD);
-                if (item.has(field)) {
-                    if(!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
-                        return false;
-                    }
+        if (filterSearchQueries.length() == 0) {
+            return  false;
+        }
+
+        for (int j = 0; j < filterSearchQueries.length(); j++) {
+            JSONObject query = filterSearchQueries.getJSONObject(j);
+            String field = query.getString(IterableConstants.FIELD);
+            if (item.has(field)) {
+                if(!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
+                    return false;
                 }
-
             }
 
-            if(filterSearchQueries.length() > 0) {
-                return true;
-            }
+        }
+
+        if (filterSearchQueries.length() > 0) {
+            return true;
+        }
 
         return false;
     }
