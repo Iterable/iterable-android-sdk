@@ -364,7 +364,7 @@ public class CriteriaCompletionChecker {
             JSONObject query = filterSearchQueries.getJSONObject(j);
             String field = query.getString(IterableConstants.FIELD);
             if (item.has(field)) {
-                if(!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
+                if (!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
                     return false;
                 }
             }
