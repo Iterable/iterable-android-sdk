@@ -242,6 +242,8 @@ public class CriteriaCompletionChecker {
                 JSONObject searchCombo = node.getJSONObject(IterableConstants.SEARCH_COMBO);
                 JSONArray searchQueries = searchCombo.getJSONArray(IterableConstants.SEARCH_QUERIES);
                 String combinator = searchCombo.getString(IterableConstants.COMBINATOR);
+                boolean isNot = node.has("isNot");
+
                 if (evaluateEvent(searchQueries, eventData, combinator)) {
                     if (node.has(IterableConstants.MIN_MATCH)) {
                         int minMatch = node.getInt(IterableConstants.MIN_MATCH) - 1;
@@ -250,10 +252,12 @@ public class CriteriaCompletionChecker {
                             continue;
                         }
                     }
-                    if (node.has("isNot") && !(i+1 == localEventData.length())) {
+                    if (isNot && !(i+1 == localEventData.length())) {
                         continue;
                     }
                     return true;
+                } else if (isNot) {
+                    return false;
                 }
 
             }
@@ -263,14 +267,14 @@ public class CriteriaCompletionChecker {
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
         if (combinator.equals("And") || combinator.equals("Or")) {
-            return evaluateFieldLogic(searchQueries, eventData, false);
+            return evaluateFieldLogic(searchQueries, eventData);
         } else if (combinator.equals("Not")) {
-            return !evaluateFieldLogic(searchQueries, eventData, true);
+            return !evaluateFieldLogic(searchQueries, eventData);
         }
         return false;
     }
 
-    private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData, boolean isNot) throws JSONException {
+    private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
                 boolean itemMatchResult = false;
                 if (eventData.has(IterableConstants.KEY_ITEMS)) {
                     boolean result = false;
@@ -278,17 +282,12 @@ public class CriteriaCompletionChecker {
                     for (int j = 0; j < items.length(); j++) {
                         JSONObject item = items.getJSONObject(j);
                         if(doesItemMatchQueries(searchQueries, item)) {
-                            if (isNot) {
-                                return true;
-                            }
                            result = true;
                            break;
                         }
                     }
-                    if (!isNot) {
-                        if (!result && doesItemCriteriaExists(searchQueries)) {
-                            return false;
-                        }
+                    if (!result && doesItemCriteriaExists(searchQueries)) {
+                        return false;
                     }
                     itemMatchResult = result;
                 }
@@ -330,9 +329,6 @@ public class CriteriaCompletionChecker {
 
                     if (isKeyExists) {
                         if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
-                            if (isNot) {
-                                return true;
-                            }
                             matchResult = true;
                             continue;
                         }
