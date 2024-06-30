@@ -789,7 +789,7 @@ public class IterableApi {
                 _userIdAnon = null;
                 _email = email;
                 _userId = null;
-                if((shouldUseDefaultMerge || merge)) {
+                if(shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
                 _setUserSuccessCallbackHandler = successHandler;
@@ -867,7 +867,7 @@ public class IterableApi {
                 _userIdAnon = null;
                 _email = null;
                 _userId = userId;
-                if((shouldUseDefaultMerge || merge)) {
+                if(shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
                 _setUserSuccessCallbackHandler = successHandler;
