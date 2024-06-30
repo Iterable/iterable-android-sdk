@@ -805,6 +805,7 @@ public class IterableApi {
     }
     public void setAnonUser(@Nullable String userId) {
         _userIdAnon = userId;
+        setUserId(userId, null, null, null, true);
         storeAuthData();
     }
 
@@ -976,11 +977,7 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message == null) {
-            IterableLogger.e(TAG, "inAppConsume: message is null");
-            if (failureHandler != null) {
-                failureHandler.onFailure("inAppConsume: message is null", null);
-            }
+        if (checkIfMessageIsNull(message, failureHandler)) {
             return;
         }
         inAppConsume(message, null, null, successHandler, failureHandler);
@@ -998,6 +995,9 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
+            return;
+        }
+        if (checkIfMessageIsNull(message, null)) {
             return;
         }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, null, null);
@@ -1018,7 +1018,29 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
+        if (checkIfMessageIsNull(message, failureHandler)) {
+            return;
+        }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, successHandler, failureHandler);
+    }
+
+    /**
+     * Handles the case when the provided message is null.
+     * If the message is null and a failure handler is provided, it calls the onFailure method of the failure handler.
+     *
+     * @param message         The in-app message to be checked.
+     * @param failureHandler  The failure handler to be called if the message is null.
+     * @return                True if the message is null, false otherwise.
+     */
+    private boolean checkIfMessageIsNull(@Nullable IterableInAppMessage message, @Nullable IterableHelper.FailureHandler failureHandler) {
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            if (failureHandler != null) {
+                failureHandler.onFailure("inAppConsume: message is null", null);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
