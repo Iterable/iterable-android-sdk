@@ -767,11 +767,11 @@ public class IterableApi {
     private void setEmail(@Nullable String email, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         String sourceUserId = _userIdAnon;
         String sourceEmail = null;
-        if(!shouldUseDefaultMerge && (_userId != null || _email != null)) {
+        if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
             sourceUserId = _userId;
             sourceEmail = _email;
         }
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, email,true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
+        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, email, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                 //Only if passed in same non-null email
                 if (_email != null && _email.equals(email) && authToken != null) {
@@ -789,7 +789,7 @@ public class IterableApi {
                 _userIdAnon = null;
                 _email = email;
                 _userId = null;
-                if(shouldUseDefaultMerge || merge) {
+                if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
                 _setUserSuccessCallbackHandler = successHandler;
@@ -810,11 +810,11 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null, false, true,null, null);
+        setUserId(userId, null, false, true, null, null);
     }
 
     public void setUserId(@Nullable String userId, boolean merge) {
-        setUserId(userId, null, merge, false,null, null);
+        setUserId(userId, null, merge, false, null, null);
     }
 
     public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
@@ -826,11 +826,11 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        setUserId(userId, authToken, false, true,null, null);
+        setUserId(userId, authToken, false, true, null, null);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge) {
-        setUserId(userId, authToken, merge, false,null, null);
+        setUserId(userId, authToken, merge, false, null, null);
 
     }
 
@@ -845,7 +845,7 @@ public class IterableApi {
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         String sourceUserId = _userIdAnon;
         String sourceEmail = null;
-        if(!shouldUseDefaultMerge && (_userId != null || _email != null)) {
+        if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
             sourceUserId = _userId;
             sourceEmail = _email;
         }
@@ -868,7 +868,7 @@ public class IterableApi {
                 _userIdAnon = null;
                 _email = null;
                 _userId = userId;
-                if(shouldUseDefaultMerge || merge) {
+                if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
                 _setUserSuccessCallbackHandler = successHandler;
