@@ -309,7 +309,7 @@ public class CriteriaCompletionChecker {
             JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
             String field = searchQuery.getString(IterableConstants.FIELD);
             boolean isKeyExists = false;
-            for (String filteredDataKey: filteredDataKeys) {
+            for (String filteredDataKey : filteredDataKeys) {
                 if (field.equals(filteredDataKey)) {
                     isKeyExists = true;
                 }
