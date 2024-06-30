@@ -226,7 +226,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      */
     @Override
     public void onStop() {
-        orientationListener.disable();
+        if (orientationListener != null) {
+            orientationListener.disable();
+        }
 
         super.onStop();
     }
