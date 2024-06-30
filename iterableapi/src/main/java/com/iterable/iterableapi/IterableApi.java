@@ -780,22 +780,23 @@ public class IterableApi {
 
     public void setAnonUser(@Nullable String userId) {
         _userIdAnon = userId;
+        setUserId(userId, null, null, null, true);
         storeAuthData();
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null, null, null);
+        setUserId(userId, null, null, null, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, successHandler, failureHandler);
+        setUserId(userId, null, successHandler, failureHandler, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        setUserId(userId, authToken, null, null);
+        setUserId(userId, authToken, null, null, false);
     }
 
-    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, @Nullable Boolean isAnon) {
         anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, userId, false, (mergeResult, error) -> {
                 if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                     //If same non null userId is passed
@@ -811,7 +812,11 @@ public class IterableApi {
                     }
 
                     logoutPreviousUser();
-                    _userIdAnon = null;
+
+                    if (!isAnon) {
+                        _userIdAnon = null;
+                    }
+
                     _email = null;
                     _userId = userId;
                     anonymousUserManager.syncEvents();
