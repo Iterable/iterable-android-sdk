@@ -2,8 +2,6 @@ package com.iterable.iterableapi.util;
 
 import androidx.annotation.NonNull;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
 
@@ -265,68 +263,68 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
-                boolean itemMatchResult = false;
-                if (eventData.has(IterableConstants.KEY_ITEMS)) {
-                    boolean result = false;
-                    JSONArray items = new JSONArray(eventData.getString(IterableConstants.KEY_ITEMS));
-                    for (int j = 0; j < items.length(); j++) {
-                        JSONObject item = items.getJSONObject(j);
-                        if(doesItemMatchQueries(searchQueries, item)) {
-                           result = true;
-                           break;
-                        }
-                    }
-                    if (!result && doesItemCriteriaExists(searchQueries)) {
-                        return false;
-                    }
-                    itemMatchResult = result;
-                }
-
-                ArrayList<String> filteredDataKeys = new ArrayList<>();
-                Iterator<String> localEventDataKeys = eventData.keys();
-                while (localEventDataKeys.hasNext()) {
-                    String localEventDataKey = localEventDataKeys.next();
-                    if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
-                        filteredDataKeys.add(localEventDataKey);
-                    }
-                }
-
-                if (filteredDataKeys.size() == 0) {
-                    return itemMatchResult;
-                }
-
-                JSONArray filteredSearchQueries = new JSONArray();
-                for (int i = 0; i < searchQueries.length(); i++) {
-                    JSONObject searchQuery = searchQueries.getJSONObject(i);
-                    String field = searchQuery.getString(IterableConstants.FIELD);
-                    if (!field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX) && !field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX)) {
-                        filteredSearchQueries.put(searchQuery);
-                    }
-                }
-                if (filteredSearchQueries.length() == 0) {
-                    return itemMatchResult;
-                }
-                boolean matchResult = false;
-                for(int k = 0; k < filteredSearchQueries.length(); k++) {
-                    JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
-                    String field = searchQuery.getString(IterableConstants.FIELD);
-                    boolean isKeyExists = false;
-                    for(String filteredDataKey: filteredDataKeys) {
-                        if(field.equals(filteredDataKey)) {
-                            isKeyExists = true;
-                        }
-                    }
-
-                    if(isKeyExists) {
-                        if(evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
-                            matchResult = true;
-                            continue;
-                        }
-                    }
-                    matchResult = false;
+        boolean itemMatchResult = false;
+        if (eventData.has(IterableConstants.KEY_ITEMS)) {
+            boolean result = false;
+            JSONArray items = new JSONArray(eventData.getString(IterableConstants.KEY_ITEMS));
+            for (int j = 0; j < items.length(); j++) {
+                JSONObject item = items.getJSONObject(j);
+                if(doesItemMatchQueries(searchQueries, item)) {
+                    result = true;
                     break;
                 }
-                return matchResult;
+            }
+            if (!result && doesItemCriteriaExists(searchQueries)) {
+                return false;
+            }
+            itemMatchResult = result;
+        }
+
+        ArrayList<String> filteredDataKeys = new ArrayList<>();
+        Iterator<String> localEventDataKeys = eventData.keys();
+        while (localEventDataKeys.hasNext()) {
+            String localEventDataKey = localEventDataKeys.next();
+            if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
+                filteredDataKeys.add(localEventDataKey);
+            }
+        }
+
+        if (filteredDataKeys.size() == 0) {
+            return itemMatchResult;
+        }
+
+        JSONArray filteredSearchQueries = new JSONArray();
+        for (int i = 0; i < searchQueries.length(); i++) {
+            JSONObject searchQuery = searchQueries.getJSONObject(i);
+            String field = searchQuery.getString(IterableConstants.FIELD);
+            if (!field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX) && !field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX)) {
+                filteredSearchQueries.put(searchQuery);
+            }
+        }
+        if (filteredSearchQueries.length() == 0) {
+            return itemMatchResult;
+        }
+        boolean matchResult = false;
+        for(int k = 0; k < filteredSearchQueries.length(); k++) {
+            JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
+            String field = searchQuery.getString(IterableConstants.FIELD);
+            boolean isKeyExists = false;
+            for(String filteredDataKey: filteredDataKeys) {
+                if(field.equals(filteredDataKey)) {
+                    isKeyExists = true;
+                }
+            }
+
+            if(isKeyExists) {
+                if(evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
+                    matchResult = true;
+                    continue;
+                }
+            }
+            matchResult = false;
+            break;
+        }
+        return matchResult;
     }
 
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
@@ -339,7 +337,6 @@ public class CriteriaCompletionChecker {
         return false;
     }
     private boolean doesItemMatchQueries(JSONArray searchQueries, JSONObject item) throws JSONException {
-
         JSONArray filterSearchQueries = new JSONArray();
 
         for (int i = 0; i < searchQueries.length(); i++) {
@@ -348,24 +345,24 @@ public class CriteriaCompletionChecker {
                 filterSearchQueries.put(searchQuery);
             }
         }
-            if(filterSearchQueries.length() == 0) {
-                return  false;
-            }
 
-            for(int j = 0; j < filterSearchQueries.length(); j++) {
-                JSONObject query = filterSearchQueries.getJSONObject(j);
-                String field = query.getString(IterableConstants.FIELD);
-                if (item.has(field)) {
-                    if(!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
-                        return false;
-                    }
+        if(filterSearchQueries.length() == 0) {
+            return  false;
+        }
+
+        for(int j = 0; j < filterSearchQueries.length(); j++) {
+            JSONObject query = filterSearchQueries.getJSONObject(j);
+            String field = query.getString(IterableConstants.FIELD);
+            if (item.has(field)) {
+                if(!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
+                    return false;
                 }
-
             }
+        }
 
-            if(filterSearchQueries.length() > 0) {
-                return true;
-            }
+        if(filterSearchQueries.length() > 0) {
+            return true;
+        }
 
         return false;
     }
