@@ -341,57 +341,6 @@ public class CriteriaCompletionChecker {
                     matchResult = false;
                     break;
                 }
-            }
-            if (!result && doesItemCriteriaExists(searchQueries)) {
-                return false;
-            }
-            itemMatchResult = result;
-        }
-
-        ArrayList<String> filteredDataKeys = new ArrayList<>();
-        Iterator<String> localEventDataKeys = eventData.keys();
-        while (localEventDataKeys.hasNext()) {
-            String localEventDataKey = localEventDataKeys.next();
-            if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
-                filteredDataKeys.add(localEventDataKey);
-            }
-        }
-
-        if (filteredDataKeys.size() == 0) {
-            return itemMatchResult;
-        }
-
-        JSONArray filteredSearchQueries = new JSONArray();
-        for (int i = 0; i < searchQueries.length(); i++) {
-            JSONObject searchQuery = searchQueries.getJSONObject(i);
-            String field = searchQuery.getString(IterableConstants.FIELD);
-            if (!field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX) && !field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX)) {
-                filteredSearchQueries.put(searchQuery);
-            }
-        }
-        if (filteredSearchQueries.length() == 0) {
-            return itemMatchResult;
-        }
-        boolean matchResult = false;
-        for (int k = 0; k < filteredSearchQueries.length(); k++) {
-            JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
-            String field = searchQuery.getString(IterableConstants.FIELD);
-            boolean isKeyExists = false;
-            for (String filteredDataKey : filteredDataKeys) {
-                if (field.equals(filteredDataKey)) {
-                    isKeyExists = true;
-                }
-            }
-
-            if (isKeyExists) {
-                if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
-                    matchResult = true;
-                    continue;
-                }
-            }
-            matchResult = false;
-            break;
-        }
         return matchResult;
     }
 
@@ -426,8 +375,6 @@ public class CriteriaCompletionChecker {
                     return false;
                 }
             }
-        }
-
         }
 
         if (filterSearchQueries.length() > 0) {
