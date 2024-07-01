@@ -200,7 +200,7 @@ public class IterableApiTest extends BaseTest {
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
                 assertTrue(false); // callback should be called with failure
             }
-        });
+        }, false);
     }
 
     @Test
