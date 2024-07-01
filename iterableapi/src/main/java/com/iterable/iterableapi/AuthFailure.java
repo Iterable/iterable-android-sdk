@@ -8,7 +8,7 @@ public class AuthFailure {
     /** userId or email of the signed-in user */
     public final String userKey;
 
-    /** the authToken which casued the failure */
+    /** the authToken which caused the failure */
     public final String failedAuthToken;
 
     /** the timestamp of the failed request */

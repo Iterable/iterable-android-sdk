@@ -123,11 +123,7 @@ public class IterableAuthManager {
             }
             queueExpirationRefresh(authToken);
         } else {
-            IterableLogger.w(TAG, "Auth token received as null. Calling the handler in 10 seconds");
-            //TODO: Make this time configurable and in sync with SDK initialization flow for auth null scenario
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
-
-            //Setting auth token as null so that Failure reasons are accurately captured
             IterableApi.getInstance().setAuthToken(authToken);
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
             return;
@@ -158,7 +154,6 @@ public class IterableAuthManager {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
             isLastAuthTokenValid = false;
             handleAuthFailure(encodedJWT, AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID);
-            //TODO: Sync with configured time duration once feature is available.
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
         }
     }
