@@ -98,7 +98,7 @@ public class CriteriaCompletionChecker {
                             }
                             processedItems.put(processedItem);
                         }
-                        updatedItem.put(IterableConstants.KEY_ITEMS, processedItems);
+                        updatedItem.put(IterableConstants.PURCHASE_ITEM, processedItems);
                     }
 
                     if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
@@ -266,9 +266,16 @@ public class CriteriaCompletionChecker {
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
                 boolean itemMatchResult = false;
+                String item_key = null;
                 if (eventData.has(IterableConstants.KEY_ITEMS)) {
+                    item_key = IterableConstants.KEY_ITEMS;
+                } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
+                    item_key = IterableConstants.PURCHASE_ITEM;
+                }
+
+                if (item_key.length() > 0) {
                     boolean result = false;
-                    JSONArray items = new JSONArray(eventData.getString(IterableConstants.KEY_ITEMS));
+                    JSONArray items = new JSONArray(eventData.getString(item_key));
                     for (int j = 0; j < items.length(); j++) {
                         JSONObject item = items.getJSONObject(j);
                         if(doesItemMatchQueries(searchQueries, item)) {
@@ -282,13 +289,19 @@ public class CriteriaCompletionChecker {
                     itemMatchResult = result;
                 }
 
+//                ArrayList<String> filteredDataKeys = new ArrayList<>();
+//                Iterator<String> localEventDataKeys = eventData.keys();
+//                while (localEventDataKeys.hasNext()) {
+//                    String localEventDataKey = localEventDataKeys.next();
+//                    if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
+//                        filteredDataKeys.add(localEventDataKey);
+//                    }
+//                }
+
                 ArrayList<String> filteredDataKeys = new ArrayList<>();
                 Iterator<String> localEventDataKeys = eventData.keys();
                 while (localEventDataKeys.hasNext()) {
-                    String localEventDataKey = localEventDataKeys.next();
-                    if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
-                        filteredDataKeys.add(localEventDataKey);
-                    }
+                        filteredDataKeys.add(localEventDataKeys.next());
                 }
 
                 if (filteredDataKeys.size() == 0) {
