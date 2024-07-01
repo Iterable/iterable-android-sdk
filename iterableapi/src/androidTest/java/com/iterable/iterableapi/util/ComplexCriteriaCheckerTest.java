@@ -444,6 +444,82 @@ public class ComplexCriteriaCheckerTest {
             + "]"
             + "}";
 
+    private String complexCriteria4 = "{\n" +
+            "  \"count\": 1,\n" +
+            "  \"criterias\": [\n" +
+            "    {\n" +
+            "      \"criteriaId\": \"1\",\n" +
+            "      \"name\": \"Custom Event\",\n" +
+            "      \"createdAt\": 1716560453973,\n" +
+            "      \"updatedAt\": 1716560453973,\n" +
+            "      \"searchQuery\": {\n" +
+            "        \"combinator\": \"And\",\n" +
+            "        \"searchQueries\": [\n" +
+            "          {\n" +
+            "            \"combinator\": \"Not\",\n" +
+            "            \"searchQueries\": [\n" +
+            "              {\n" +
+            "                \"dataType\": \"purchase\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"field\": \"shoppingCartItems.name\",\n" +
+            "                      \"fieldType\": \"string\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"dataType\": \"purchase\",\n" +
+            "                      \"id\": 1,\n" +
+            "                      \"value\": \"sneakers\"\n" +
+            "                    },\n" +
+            "                    {\n" +
+            "                      \"field\": \"shoppingCartItems.quantity\",\n" +
+            "                      \"fieldType\": \"long\",\n" +
+            "                      \"comparatorType\": \"LessThanOrEqualTo\",\n" +
+            "                      \"dataType\": \"purchase\",\n" +
+            "                      \"id\": 2,\n" +
+            "                      \"valueLong\": 3,\n" +
+            "                      \"value\": \"3\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              }\n" +
+            "            ]\n" +
+            "          },\n" +
+            "          {\n" +
+            "            \"combinator\": \"And\",\n" +
+            "            \"searchQueries\": [\n" +
+            "              {\n" +
+            "                \"dataType\": \"purchase\",\n" +
+            "                \"searchCombo\": {\n" +
+            "                  \"combinator\": \"And\",\n" +
+            "                  \"searchQueries\": [\n" +
+            "                    {\n" +
+            "                      \"field\": \"shoppingCartItems.name\",\n" +
+            "                      \"fieldType\": \"string\",\n" +
+            "                      \"comparatorType\": \"Equals\",\n" +
+            "                      \"dataType\": \"purchase\",\n" +
+            "                      \"id\": 4,\n" +
+            "                      \"value\": \"slippers\"\n" +
+            "                    },\n" +
+            "                    {\n" +
+            "                      \"field\": \"shoppingCartItems.quantity\",\n" +
+            "                      \"fieldType\": \"long\",\n" +
+            "                      \"comparatorType\": \"GreaterThanOrEqualTo\",\n" +
+            "                      \"dataType\": \"purchase\",\n" +
+            "                      \"id\": 5,\n" +
+            "                      \"valueLong\": 3,\n" +
+            "                      \"value\": \"3\"\n" +
+            "                    }\n" +
+            "                  ]\n" +
+            "                }\n" +
+            "              }\n" +
+            "            ]\n" +
+            "          }\n" +
+            "        ]\n" +
+            "      }\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}";
 
     @Before
     public void setUp() {
@@ -705,6 +781,63 @@ public class ComplexCriteriaCheckerTest {
         assertFalse(result != null);
     }
 
+    @Test
+    public void testComplexCriteria4() throws Exception {
+        String jsonString = "[\n" +
+                "  {\n" +
+                "    \"items\": [\n" +
+                "      {\n" +
+                "        \"id\": \"12\",\n" +
+                "        \"name\": \"sneakers\",\n" +
+                "        \"price\": 10,\n" +
+                "        \"quantity\": 5\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"id\": \"12\",\n" +
+                "        \"name\": \"slippers\",\n" +
+                "        \"price\": 10,\n" +
+                "        \"quantity\": 5\n" +
+                "      }\n" +
+                "    ],\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 2,\n" +
+                "    \"eventType\": \"purchase\"\n" +
+                "  }\n" +
+                "]";
 
+        JSONArray jsonArray = new JSONArray(jsonString);
+        String result = evaluator.getMatchedCriteria(complexCriteria4, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertTrue(result != null);
+    }
 
+    @Test
+    public void testComplexCriteria4Fail() throws Exception {
+        String jsonString = "[\n" +
+                "  {\n" +
+                "    \"items\": [\n" +
+                "      {\n" +
+                "        \"id\": \"12\",\n" +
+                "        \"name\": \"sneakers\",\n" +
+                "        \"price\": 10,\n" +
+                "        \"quantity\": 3\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"id\": \"12\",\n" +
+                "        \"name\": \"slippers\",\n" +
+                "        \"price\": 10,\n" +
+                "        \"quantity\": 5\n" +
+                "      }\n" +
+                "    ],\n" +
+                "    \"createdAt\": 1700071052507,\n" +
+                "    \"total\": 2,\n" +
+                "    \"eventType\": \"purchase\"\n" +
+                "  }\n" +
+                "]";
+
+        JSONArray jsonArray = new JSONArray(jsonString);
+        String result = evaluator.getMatchedCriteria(complexCriteria4, jsonArray);
+        System.out.println("TEST_USER: " + String.valueOf(result));
+        assertFalse(result != null);
+    }
 }

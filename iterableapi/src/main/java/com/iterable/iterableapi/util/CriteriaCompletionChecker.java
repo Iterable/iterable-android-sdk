@@ -1,7 +1,6 @@
 package com.iterable.iterableapi.util;
 
 import androidx.annotation.NonNull;
-
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
 
@@ -213,6 +212,14 @@ public class CriteriaCompletionChecker {
                         }
                     }
                     return false;
+                } else if (combinator.equals("Not")) {
+                    for (int i = 0; i < searchQueries.length(); i++) {
+                        searchQueries.getJSONObject(i).put("isNot", true);
+                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                            return false;
+                        }
+                    }
+                    return true;
                 }
             } else if (node.has(IterableConstants.SEARCH_COMBO)) {
                 return evaluateSearchQueries(node, localEventData);
@@ -232,6 +239,8 @@ public class CriteriaCompletionChecker {
                 JSONObject searchCombo = node.getJSONObject(IterableConstants.SEARCH_COMBO);
                 JSONArray searchQueries = searchCombo.getJSONArray(IterableConstants.SEARCH_QUERIES);
                 String combinator = searchCombo.getString(IterableConstants.COMBINATOR);
+                boolean isNot = node.has("isNot");
+
                 if (evaluateEvent(searchQueries, eventData, combinator)) {
                     if (node.has(IterableConstants.MIN_MATCH)) {
                         int minMatch = node.getInt(IterableConstants.MIN_MATCH) - 1;
@@ -240,7 +249,12 @@ public class CriteriaCompletionChecker {
                             continue;
                         }
                     }
+                    if (isNot && !(i + 1 == localEventData.length())) {
+                        continue;
+                    }
                     return true;
+                } else if (isNot) {
+                    return false;
                 }
 
             }
@@ -258,7 +272,10 @@ public class CriteriaCompletionChecker {
             if (evaluateFieldLogic(searchQueries, eventData)) {
                 return true;
             }
+        } else if (combinator.equals("Not")) {
+            return !evaluateFieldLogic(searchQueries, eventData);
         }
+
         return false;
     }
 
