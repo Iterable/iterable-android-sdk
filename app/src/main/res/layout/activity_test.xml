@@ -53,7 +53,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="purchase items"
-                android:text='{"items":[{"name":"keyboard","id":"fdsafds","price":4.67,"quantity":3}, {"name":"keyboard","id":"fdsafds","price":4.67,"quantity":2}], "total": 100}' />
+                android:text='{"items":[{"name":"sneakers","id":"fdsafds","price":4,"quantity":3}, {"name":"slippers","id":"fdsafds","price":5,"quantity":3}], "total": 100}' />
             <Button
                 android:id="@+id/trackPurchase"
                 android:layout_width="wrap_content"
