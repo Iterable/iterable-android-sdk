@@ -3,7 +3,9 @@ package com.iterable.iterableapi;
 import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -28,7 +30,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 public class IterableApiMergeUserEmailTests extends BaseTest {
     private MockWebServer server;
     private PathBasedQueueDispatcher dispatcher;
-    private String criteriaMockData = "{\n" +
+    private final String criteriaMockData = "{\n" +
         "   \"count\":2,\n" +
                 "   \"criterias\":[\n" +
                 "      {\n" +
@@ -133,10 +135,17 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
         server.setDispatcher(dispatcher);
+        reInitIterableApi();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
         setCriteria(criteriaMockData);
+
+    }
+
+
+    private void reInitIterableApi() {
+        IterableApi.sharedInstance = new IterableApi();
     }
 
     @After
@@ -181,14 +190,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
-        assertFalse(eventData.equals(""));
+        assertNotEquals("", eventData);
         final String userId = "testUser2";
         while (server.takeRequest(1, TimeUnit.SECONDS) != null);
         IterableApi.getInstance().setUserId(userId, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId, IterableApi.getInstance().getUserId());
         assertEquals(eventData, getEventData());
     }
@@ -200,14 +209,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
-        assertFalse(eventData.equals(""));
+        assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null);
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, true);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId, IterableApi.getInstance().getUserId());
         assertEquals("", getEventData());
     }
@@ -219,14 +228,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
-        assertFalse(eventData.equals(""));
+        assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null);
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId, IterableApi.getInstance().getUserId());
         assertEquals("", getEventData());
     }
@@ -244,7 +253,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
@@ -297,7 +306,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId2, IterableApi.getInstance().getUserId());
     }
 
@@ -332,7 +341,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId2, IterableApi.getInstance().getUserId());
     }
 
@@ -344,14 +353,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
-        assertFalse(eventData.equals(""));
+        assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null);
         final String email = "testUser@gmail.com";
         IterableApi.getInstance().setEmail(email, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
         assertEquals(eventData, getEventData());
     }
@@ -363,14 +372,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
-        assertFalse(eventData.equals(""));
+        assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null);
         final String email = "testUser@gmail.com";
         IterableApi.getInstance().setEmail(email, true);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
         assertEquals("", getEventData());
     }
@@ -382,7 +391,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
-        assertFalse(eventData.equals(""));
+        assertNotEquals("", eventData);
 
         while (server.takeRequest(1, TimeUnit.SECONDS) != null);
         final String email = "testUser2@gmail.com";
@@ -390,7 +399,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
         assertEquals("", getEventData());
     }
@@ -408,7 +417,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
     }
 
@@ -461,7 +470,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email2, IterableApi.getInstance().getEmail());
     }
 
@@ -496,7 +505,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
-        assertFalse(("/" + IterableConstants.ENDPOINT_MERGE_USER).equals(mergeRequest.getPath()));
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email2, IterableApi.getInstance().getEmail());
     }
 
