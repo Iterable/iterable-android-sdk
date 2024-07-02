@@ -2,10 +2,8 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -185,14 +183,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     // all userId tests
     @Test
     public void testCriteriaNotMetUserIdMergeFalse() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
         assertNotEquals("", eventData);
         final String userId = "testUser2";
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         IterableApi.getInstance().setUserId(userId, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
@@ -204,13 +202,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaNotMetUserIdMergeTrue() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
         assertNotEquals("", eventData);
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, true);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -223,13 +221,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaNotMetUserIdDefault() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
         assertNotEquals("", eventData);
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -242,12 +240,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetUserIdMergeFalse() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -259,13 +257,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetUserIdMergeTrue() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, true);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -277,13 +275,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetUserIdDefault() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -300,7 +298,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setUserId(userId1, false);
         shadowOf(getMainLooper()).idle();
         assertEquals(userId1, IterableApi.getInstance().getUserId());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId2 = "testUser2";
         IterableApi.getInstance().setUserId(userId2, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -318,7 +316,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setUserId(userId1, false);
         shadowOf(getMainLooper()).idle();
         assertEquals(userId1, IterableApi.getInstance().getUserId());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         final String userId2 = "testUser2";
         IterableApi.getInstance().setUserId(userId2, true);
@@ -335,7 +333,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setUserId(userId1);
         shadowOf(getMainLooper()).idle();
         assertEquals(userId1, IterableApi.getInstance().getUserId());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId2 = "testUser2";
         IterableApi.getInstance().setUserId(userId2);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -348,13 +346,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     // all email tests
     @Test
     public void testCriteriaNotMetEmailMergeFalse() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
         assertNotEquals("", eventData);
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
         IterableApi.getInstance().setEmail(email, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -367,13 +365,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaNotMetEmailMergeTrue() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
         assertNotEquals("", eventData);
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
         IterableApi.getInstance().setEmail(email, true);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -386,14 +384,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaNotMetEmailDefault() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
         String eventData = getEventData();
         assertNotEquals("", eventData);
 
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -406,12 +404,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetEmailMergeFalse() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
         IterableApi.getInstance().setEmail(email, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -423,13 +421,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetEmailMergeTrue() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
         IterableApi.getInstance().setEmail(email, true);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -441,13 +439,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetEmailDefault() throws Exception {
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -464,7 +462,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setEmail(email1, false);
         shadowOf(getMainLooper()).idle();
         assertEquals(email1, IterableApi.getInstance().getEmail());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email2 = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email2, false);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -482,7 +480,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setEmail(email1, false);
         shadowOf(getMainLooper()).idle();
         assertEquals(email1, IterableApi.getInstance().getEmail());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         final String email2 = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email2, true);
@@ -499,7 +497,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setEmail(email1);
         shadowOf(getMainLooper()).idle();
         assertEquals(email1, IterableApi.getInstance().getEmail());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null);
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email2 = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email2);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
