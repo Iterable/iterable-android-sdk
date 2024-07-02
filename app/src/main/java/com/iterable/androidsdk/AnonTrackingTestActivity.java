@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import com.iterable.iterableapi.CommerceItem;
 import com.iterable.iterableapi.IterableApi;
@@ -113,18 +114,19 @@ public class AnonTrackingTestActivity extends AppCompatActivity {
         findViewById(R.id.setUser).setOnClickListener(view -> {
             EditText setUser_edit = findViewById(R.id.setUser_edit);
             if(setUser_edit == null) return;
-
-            IterableApi.getInstance().setUserId(String.valueOf(setUser_edit.getText()));
+            final Boolean mergeFlag = ((CheckBox) findViewById(R.id.user_check)).isChecked();
+            IterableApi.getInstance().setUserId(String.valueOf(setUser_edit.getText()), mergeFlag);
         });
         findViewById(R.id.setEmail).setOnClickListener(view -> {
             EditText setEmail_edit = findViewById(R.id.setEmail_edit);
             if(setEmail_edit == null) return;
-
-            IterableApi.getInstance().setEmail(String.valueOf(setEmail_edit.getText()));
+            final Boolean mergeFlag = ((CheckBox) findViewById(R.id.email_check)).isChecked();
+            IterableApi.getInstance().setEmail(String.valueOf(setEmail_edit.getText()), mergeFlag);
         });
 
         findViewById(R.id.btn_logout).setOnClickListener(view -> {
             IterableApi.getInstance().setUserId(null);
+            IterableApi.getInstance().setEmail(null);
         });
 
     }
