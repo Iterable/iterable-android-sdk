@@ -68,7 +68,6 @@ public class AnonymousUserManager {
 
     void trackAnonEvent(String eventName, JSONObject dataFields) {
         IterableLogger.v(TAG, "trackAnonEvent");
-
         try {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_EVENT_NAME, eventName);
@@ -77,7 +76,6 @@ public class AnonymousUserManager {
             newDataObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
             storeEventListToLocalStorage(newDataObject);
-
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -108,7 +106,6 @@ public class AnonymousUserManager {
     }
 
     void trackAnonPurchaseEvent(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-
         IterableLogger.v(TAG, "trackAnonPurchaseEvent");
         try {
             JSONObject newDataObject = new JSONObject();
@@ -211,7 +208,6 @@ public class AnonymousUserManager {
     }
 
     void syncEvents() {
-
         JSONArray trackEventList = getEventListFromLocalStorage();
         if (trackEventList.length() > 0) {
             for (int i = 0; i < trackEventList.length(); i++) {
