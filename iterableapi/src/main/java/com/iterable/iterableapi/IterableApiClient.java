@@ -98,7 +98,7 @@ class IterableApiClient {
         }
     }
 
-    public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields, String createdAt) {
+    void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields, String createdAt) {
         JSONObject requestJSON = new JSONObject();
         try {
             addEmailOrUserIdToJson(requestJSON);
@@ -144,7 +144,7 @@ class IterableApiClient {
         }
     }
 
-    public void updateCart(@NonNull List<CommerceItem> items, long createdAt) {
+    void updateCart(@NonNull List<CommerceItem> items, long createdAt) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -195,7 +195,7 @@ class IterableApiClient {
         }
     }
 
-    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @NonNull long createdAt) {
+    void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @NonNull long createdAt) {
         JSONObject requestJSON = new JSONObject();
         try {
             JSONArray itemsArray = new JSONArray();

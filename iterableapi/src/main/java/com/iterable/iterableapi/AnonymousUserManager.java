@@ -261,7 +261,7 @@ public class AnonymousUserManager {
                             break;
                         }
                         case IterableConstants.UPDATE_USER: {
-                            iterableApi.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS));
+                            iterableApi.apiClient.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS), false);
                             break;
                         }
                         default:
