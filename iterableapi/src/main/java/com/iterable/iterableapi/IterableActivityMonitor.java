@@ -12,7 +12,6 @@ import androidx.annotation.Nullable;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 
 import java.lang.ref.WeakReference;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -132,11 +131,9 @@ public class IterableActivityMonitor {
     }
 
     public void removeCallback(@NonNull AppStateCallback callback) {
-        Iterator<WeakReference<AppStateCallback>> iterator = callbacks.iterator();
-        while (iterator.hasNext()) {
-            WeakReference<AppStateCallback> callbackRef = iterator.next();
+        for (WeakReference<AppStateCallback> callbackRef : callbacks) {
             if (callbackRef.get() == callback) {
-                iterator.remove();
+                callbacks.remove(callbackRef);
             }
         }
     }
