@@ -133,7 +133,7 @@ public class IterableActivityMonitor {
     public void removeCallback(@NonNull AppStateCallback callback) {
         for (WeakReference<AppStateCallback> callbackRef : callbacks) {
             if (callbackRef.get() == callback) {
-                callbacks.remove(callbackRef); 
+                callbacks.remove(callbackRef);
             }
         }
     }
