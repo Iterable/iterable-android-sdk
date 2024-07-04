@@ -237,7 +237,7 @@ public class CriteriaCompletionChecker {
                     if (node.has(IterableConstants.MIN_MATCH)) {
                         int minMatch = node.getInt(IterableConstants.MIN_MATCH) - 1;
                         node.put(IterableConstants.MIN_MATCH, minMatch);
-                        if(minMatch > 0) {
+                        if (minMatch > 0) {
                             continue;
                         }
                     }
@@ -251,12 +251,12 @@ public class CriteriaCompletionChecker {
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
         if (combinator.equals("And")) {
-            if(!evaluateFieldLogic(searchQueries, eventData)) {
+            if (!evaluateFieldLogic(searchQueries, eventData)) {
                 return false;
             }
             return true;
         } else if (combinator.equals("Or")) {
-            if(evaluateFieldLogic(searchQueries, eventData)) {
+            if (evaluateFieldLogic(searchQueries, eventData)) {
                 return true;
             }
         }
@@ -265,19 +265,19 @@ public class CriteriaCompletionChecker {
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
                 boolean itemMatchResult = false;
-                String item_key = null;
+                String itemKey = null;
                 if (eventData.has(IterableConstants.KEY_ITEMS)) {
-                    item_key = IterableConstants.KEY_ITEMS;
+                    itemKey = IterableConstants.KEY_ITEMS;
                 } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
-                    item_key = IterableConstants.PURCHASE_ITEM;
+                    itemKey = IterableConstants.PURCHASE_ITEM;
                 }
 
-                if (item_key != null) {
+                if (itemKey != null) {
                     boolean result = false;
-                    JSONArray items = new JSONArray(eventData.getString(item_key));
+                    JSONArray items = new JSONArray(eventData.getString(itemKey));
                     for (int j = 0; j < items.length(); j++) {
                         JSONObject item = items.getJSONObject(j);
-                        if(doesItemMatchQueries(searchQueries, item)) {
+                        if (doesItemMatchQueries(searchQueries, item)) {
                            result = true;
                            break;
                         }
@@ -330,7 +330,7 @@ public class CriteriaCompletionChecker {
                             continue;
                         }
                     } else {
-                        for (String filteredDataKey: filteredDataKeys) {
+                        for (String filteredDataKey : filteredDataKeys) {
                             if (field.equals(filteredDataKey)) {
                                 isKeyExists = true;
                             }
@@ -352,7 +352,7 @@ public class CriteriaCompletionChecker {
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
         for (int i = 0; i < searchQueries.length(); i++) {
             String field = searchQueries.getJSONObject(i).getString(IterableConstants.FIELD);
-            if(field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
+            if (field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
                 return true;
             }
         }
@@ -368,22 +368,22 @@ public class CriteriaCompletionChecker {
                 filterSearchQueries.put(searchQuery);
             }
         }
-            if(filterSearchQueries.length() == 0) {
+            if (filterSearchQueries.length() == 0) {
                 return  false;
             }
 
-            for(int j = 0; j < filterSearchQueries.length(); j++) {
+            for (int j = 0; j < filterSearchQueries.length(); j++) {
                 JSONObject query = filterSearchQueries.getJSONObject(j);
                 String field = query.getString(IterableConstants.FIELD);
                 if (item.has(field)) {
-                    if(!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
+                    if (!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE), item.get(field), query.getString(IterableConstants.VALUE))) {
                         return false;
                     }
                 }
 
             }
 
-            if(filterSearchQueries.length() > 0) {
+            if (filterSearchQueries.length() > 0) {
                 return true;
             }
 
