@@ -2,8 +2,6 @@ package com.iterable.iterableapi.util;
 
 import androidx.annotation.NonNull;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
 
@@ -15,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.Map;
 
 public class CriteriaCompletionChecker {
 
@@ -273,7 +272,7 @@ public class CriteriaCompletionChecker {
                     item_key = IterableConstants.PURCHASE_ITEM;
                 }
 
-                if (item_key.length() > 0) {
+                if (item_key != null) {
                     boolean result = false;
                     JSONArray items = new JSONArray(eventData.getString(item_key));
                     for (int j = 0; j < items.length(); j++) {
@@ -320,18 +319,26 @@ public class CriteriaCompletionChecker {
                     return itemMatchResult;
                 }
                 boolean matchResult = false;
-                for(int k = 0; k < filteredSearchQueries.length(); k++) {
+                for (int k = 0; k < filteredSearchQueries.length(); k++) {
                     JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
                     String field = searchQuery.getString(IterableConstants.FIELD);
                     boolean isKeyExists = false;
-                    for(String filteredDataKey: filteredDataKeys) {
-                        if(field.equals(filteredDataKey)) {
-                            isKeyExists = true;
+                    if (searchQuery.getString(IterableConstants.DATA_TYPE).equals(IterableConstants.TRACK_EVENT) && searchQuery.getString("fieldType").equals("object") && searchQuery.getString(IterableConstants.COMPARATOR_TYPE).equals(MatchComparator.IS_SET)) {
+                        final String eventName = eventData.getString(IterableConstants.KEY_EVENT_NAME);
+                        if ((eventName.equals(IterableConstants.UPDATE_CART) && field.equals(eventName)) || field.equals(eventName)) {
+                            matchResult = true;
+                            continue;
+                        }
+                    } else {
+                        for (String filteredDataKey: filteredDataKeys) {
+                            if (field.equals(filteredDataKey)) {
+                                isKeyExists = true;
+                            }
                         }
                     }
 
-                    if(isKeyExists) {
-                        if(evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
+                    if (isKeyExists) {
+                        if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
                             matchResult = true;
                             continue;
                         }
@@ -407,7 +414,7 @@ public class CriteriaCompletionChecker {
             case MatchComparator.DOES_NOT_EQUALS:
                 return !compareValueEquality(matchObj, valueToCompare);
             case MatchComparator.IS_SET:
-                return !compareValueEquality(matchObj, "");
+                return issetCheck(matchObj);
             case MatchComparator.GREATER_THAN:
                 return compareNumericValues(matchObj, valueToCompare, " > ");
             case MatchComparator.LESS_THAN:
@@ -424,6 +431,16 @@ public class CriteriaCompletionChecker {
                 return compareWithRegex(matchObj instanceof String ? (String) matchObj : "", valueToCompare);
             default:
                 return false;
+        }
+    }
+
+    private boolean issetCheck(Object matchObj) {
+        if (matchObj instanceof Object[]) {
+            return ((Object[]) matchObj).length > 0;
+        } else if (matchObj instanceof Map) {
+            return !((Map<?, ?>) matchObj).isEmpty();
+        } else {
+            return matchObj != null && !matchObj.equals("");
         }
     }
 

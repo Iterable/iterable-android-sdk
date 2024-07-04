@@ -643,7 +643,6 @@ public class ComplexCriteriaCheckerTest {
                 "        \"quantity\": 5\n" +
                 "      }\n" +
                 "    ],\n" +
-                "    \"shoppingCartItems\": \"temp\",\n" +
                 "    \"createdAt\": 1700071052507,\n" +
                 "    \"total\": 2,\n" +
                 "    \"eventType\": \"purchase\"\n" +
