@@ -133,6 +133,7 @@ public class IterableAuthManager {
         authHandler.onTokenRegistrationSuccessful(authToken);
     }
 
+    // This method is called when there is an error receiving an the auth token.
     private void handleAuthTokenFailure(Throwable throwable) {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
         handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_GENERATION_ERROR);
@@ -169,6 +170,7 @@ public class IterableAuthManager {
         }
     }
 
+    // This method is called is used to call the authHandler.onAuthFailure method with appropriate AuthFailureReason
     void handleAuthFailure(String authToken, AuthFailureReason failureReason) {
         if (authHandler != null) {
             authHandler.onAuthFailure(new AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason));
