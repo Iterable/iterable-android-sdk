@@ -371,7 +371,6 @@ public class CriteriaCompletionChecker {
     }
     private boolean doesItemMatchQueries(JSONArray searchQueries, JSONObject item) throws JSONException {
         JSONArray filterSearchQueries = new JSONArray();
-
         for (int i = 0; i < searchQueries.length(); i++) {
             JSONObject searchQuery = searchQueries.getJSONObject(i);
             String field = searchQuery.getString(IterableConstants.FIELD);
