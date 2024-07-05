@@ -316,8 +316,7 @@ public class CriteriaCompletionComparatorTest {
                 "            {\n" +
                 "                \"id\": \"12\",\n" +
                 "                \"name\": \"keyboard\"," +
-                "                \"price\": '',\n" +
-                "                \"quantity\": ''\n" +
+                "                \"quantity\": 5\n" +
                 "            }\n" +
                 "        ],\n" +
                 "        \"createdAt\": 1700071052507,\n" +
@@ -361,8 +360,7 @@ public class CriteriaCompletionComparatorTest {
                 + "            {"
                 + "                \"id\": \"12\","
                 + "                \"name\": \"Mocha\","
-                + "                \"price\": 9,"
-                + "                \"quantity\": ''"
+                + "                \"quantity\": 5"
                 + "            }"
                 + "        ],"
                 + "        \"createdAt\": 1700071052507,"
