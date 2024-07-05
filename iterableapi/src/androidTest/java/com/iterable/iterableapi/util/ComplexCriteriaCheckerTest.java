@@ -475,7 +475,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(criteriaMinMax, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -498,7 +497,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(criteriaMinMax, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -522,7 +520,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(complexCriteria1, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -545,7 +542,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(complexCriteria1, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -575,7 +571,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(complexCriteria2, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -599,7 +594,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(complexCriteria2, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -660,7 +654,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(complexCriteria3, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -700,7 +693,6 @@ public class ComplexCriteriaCheckerTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(complexCriteria3, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
