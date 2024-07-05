@@ -18,6 +18,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AnonTrackingTestActivity extends AppCompatActivity {
 
@@ -39,6 +40,7 @@ public class AnonTrackingTestActivity extends AppCompatActivity {
             IterableApi.initialize(getBaseContext(), "18845050c4774b7c9dc48beece2f6d8b", iterableConfig);
             IterableApi.getInstance().setUserId(null);
             IterableApi.getInstance().setEmail(null);
+            printAllSharedPreferencesData(this);
 
         }, 1000);
 
@@ -125,5 +127,13 @@ public class AnonTrackingTestActivity extends AppCompatActivity {
             IterableApi.getInstance().setUserId(null);
         });
 
+    }
+    public void printAllSharedPreferencesData(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        Map<String, ?> allEntries = sharedPref.getAll();
+
+        for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
+            Log.d("SharedPref", entry.getKey() + ": " + entry.getValue().toString());
+        }
     }
 }
