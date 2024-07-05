@@ -293,7 +293,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 case "jwt authorization header is not set":
                     return AuthFailureReason.AUTH_TOKEN_MISSING;
                 default:
-                    return null;
+                    return AuthFailureReason.AUTH_TOKEN_GENERIC_ERROR;
             }
         } catch (JSONException e) {
             return null;
