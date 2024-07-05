@@ -457,7 +457,7 @@ public class IterableApi {
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
-                IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
+                IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
                 getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
             }
         }
