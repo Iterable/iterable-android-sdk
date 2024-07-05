@@ -265,7 +265,6 @@ public class CriteriaCompletionComparatorTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -283,7 +282,6 @@ public class CriteriaCompletionComparatorTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -307,7 +305,6 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -331,7 +328,6 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -354,7 +350,6 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -377,7 +372,6 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -398,7 +392,6 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -418,7 +411,6 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
