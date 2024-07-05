@@ -837,7 +837,7 @@ public class IterableApi {
        setUserId(userId, authToken, false, true, successHandler, failureHandler);
     }
 
-    public void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean isAnon, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         setUserId(userId, authToken, merge, false, successHandler, failureHandler);
     }
 
@@ -864,6 +864,11 @@ public class IterableApi {
                 }
 
                 logoutPreviousUser();
+
+                if (!isAnon) {
+                    _userIdAnon = null;
+                }
+
                 _userIdAnon = null;
                 _email = null;
                 _userId = userId;
@@ -881,6 +886,35 @@ public class IterableApi {
             }
         });
 
+                if (userId == null) {
+                    _userIdAnon = null;
+                }
+
+                if (_userId == userId) {
+                    return;
+                }
+
+                logoutPreviousUser();
+
+                if (!isAnon) {
+                    _userIdAnon = null;
+                }
+
+                _email = null;
+                _userId = userId;
+                anonymousUserManager.syncEvents();
+
+                _setUserSuccessCallbackHandler = successHandler;
+                _setUserFailureCallbackHandler = failureHandler;
+                storeAuthData();
+
+                onLogin(authToken);
+            } else {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
+            }
+        });
     }
 
     public void setAuthToken(String authToken) {
