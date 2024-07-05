@@ -288,19 +288,13 @@ public class CriteriaCompletionChecker {
                     itemMatchResult = result;
                 }
 
-//                ArrayList<String> filteredDataKeys = new ArrayList<>();
-//                Iterator<String> localEventDataKeys = eventData.keys();
-//                while (localEventDataKeys.hasNext()) {
-//                    String localEventDataKey = localEventDataKeys.next();
-//                    if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
-//                        filteredDataKeys.add(localEventDataKey);
-//                    }
-//                }
-
                 ArrayList<String> filteredDataKeys = new ArrayList<>();
                 Iterator<String> localEventDataKeys = eventData.keys();
                 while (localEventDataKeys.hasNext()) {
-                        filteredDataKeys.add(localEventDataKeys.next());
+                    String localEventDataKey = localEventDataKeys.next();
+                    if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
+                        filteredDataKeys.add(localEventDataKey);
+                    }
                 }
 
                 if (filteredDataKeys.size() == 0) {
@@ -364,7 +358,11 @@ public class CriteriaCompletionChecker {
 
         for (int i = 0; i < searchQueries.length(); i++) {
             JSONObject searchQuery = searchQueries.getJSONObject(i);
-            if (item.has(searchQuery.getString(IterableConstants.FIELD))) {
+            String field = searchQuery.getString(IterableConstants.FIELD);
+            if (field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
+                if (!item.has(field)) {
+                    return false;
+                }
                 filterSearchQueries.put(searchQuery);
             }
         }
