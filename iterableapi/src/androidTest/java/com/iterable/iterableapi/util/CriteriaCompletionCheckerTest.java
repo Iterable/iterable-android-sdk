@@ -458,7 +458,6 @@ public class CriteriaCompletionCheckerTest {
     public void testUserWithMockData() throws Exception {
         JSONArray jsonArray = new JSONArray("[{\"dataFields\":{\"country\":\"UK\"},\"eventType\":\"user\"}]");
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -466,7 +465,6 @@ public class CriteriaCompletionCheckerTest {
     public void testUserWithMockDataFail() throws Exception {
         JSONArray jsonArray = new JSONArray("[{\"dataFields\":{\"country\":\"US\"},\"eventType\":\"user\"}]");
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -474,7 +472,6 @@ public class CriteriaCompletionCheckerTest {
     public void testPurchaseWithMockData() throws Exception {
         JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"keyboard\\\",\\\"price\\\":10,\\\"quantity\\\":2}]\",\"createdAt\":1700071052507,\"total\":2,\"eventType\":\"purchase\"}]");
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -482,7 +479,6 @@ public class CriteriaCompletionCheckerTest {
     public void testPurchaseWithMockDataFail() throws Exception {
         JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"guitar\\\",\\\"price\\\":15,\\\"quantity\\\":2}]\",\"createdAt\":1700071052507,\"total\":2,\"eventType\":\"purchase\"}]");
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -490,7 +486,6 @@ public class CriteriaCompletionCheckerTest {
     public void testUpdateCartWithMockData() throws Exception {
         JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":9,\\\"quantity\\\":52}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"}]");
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -498,7 +493,6 @@ public class CriteriaCompletionCheckerTest {
     public void testUpdateCartWithMockDataFail() throws Exception {
         JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":9,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":9,\"eventType\":\"cartUpdate\"}]");
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -507,7 +501,6 @@ public class CriteriaCompletionCheckerTest {
         JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"button-clicked.lastPageViewed\":\"signup page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
 
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -516,7 +509,6 @@ public class CriteriaCompletionCheckerTest {
         JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"button-clicked.lastPageViewed\":\"login page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
 
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -525,7 +517,6 @@ public class CriteriaCompletionCheckerTest {
         JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"piano\\\",\\\"price\\\":10,\\\"quantity\\\":2},{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"piano\\\",\\\"price\\\":5,\\\"quantity\\\":3}]\",\"createdAt\":1700071052507,\"total\":2,\"eventType\":\"purchase\"}]");
 
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
@@ -534,7 +525,6 @@ public class CriteriaCompletionCheckerTest {
         JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"}]");
 
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertTrue(result != null);
     }
 
@@ -543,7 +533,6 @@ public class CriteriaCompletionCheckerTest {
         JSONArray jsonArray = new JSONArray("[{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":10,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"},{\"items\":\"[{\\\"id\\\":\\\"12\\\",\\\"name\\\":\\\"Mocha\\\",\\\"price\\\":15,\\\"quantity\\\":40}]\",\"createdAt\":1700071052507,\"total\":4.67,\"eventType\":\"cartUpdate\"}]");
 
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
-        System.out.println("TEST_USER: " + String.valueOf(result));
         assertFalse(result != null);
     }
 
