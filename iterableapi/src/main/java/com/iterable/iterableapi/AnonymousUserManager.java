@@ -324,6 +324,8 @@ public class AnonymousUserManager {
         editor.apply();
 
         String criteriaId = checkCriteriaCompletion();
+        Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
+
         if (criteriaId != null) {
             createKnownUser(criteriaId);
         }
