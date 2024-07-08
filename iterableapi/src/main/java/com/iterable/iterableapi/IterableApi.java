@@ -745,7 +745,6 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-
         anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, email, true, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                 //Only if passed in same non-null email
@@ -775,7 +774,6 @@ public class IterableApi {
                 }
             }
         });
-
     }
 
     public void setAnonUser(@Nullable String userId) {
@@ -798,41 +796,42 @@ public class IterableApi {
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, @Nullable Boolean isAnon) {
         anonymousUserMerge.tryMergeUser(apiClient, _userIdAnon, userId, false, (mergeResult, error) -> {
-                if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                    //If same non null userId is passed
-                    if (_userId != null && _userId.equals(userId)) {
-                        checkAndUpdateAuthToken(authToken);
-                        return;
-                    }
-                    if (userId == null) {
-                        _userIdAnon = null;
-                    }
-                    if (_userId == userId) {
-                        return;
-                    }
-
-                    logoutPreviousUser();
-
-                    if (!isAnon) {
-                        _userIdAnon = null;
-                    }
-
-                    _email = null;
-                    _userId = userId;
-                    anonymousUserManager.syncEvents();
-
-                    _setUserSuccessCallbackHandler = successHandler;
-                    _setUserFailureCallbackHandler = failureHandler;
-                    storeAuthData();
-
-                    onLogin(authToken);
-                } else {
-                    if (failureHandler != null) {
-                        failureHandler.onFailure(error, null);
-                    }
+            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
+                //If same non null userId is passed
+                if (_userId != null && _userId.equals(userId)) {
+                    checkAndUpdateAuthToken(authToken);
+                    return;
                 }
-        });
 
+                if (userId == null) {
+                    _userIdAnon = null;
+                }
+
+                if (_userId == userId) {
+                    return;
+                }
+
+                logoutPreviousUser();
+
+                if (!isAnon) {
+                    _userIdAnon = null;
+                }
+
+                _email = null;
+                _userId = userId;
+                anonymousUserManager.syncEvents();
+
+                _setUserSuccessCallbackHandler = successHandler;
+                _setUserFailureCallbackHandler = failureHandler;
+                storeAuthData();
+
+                onLogin(authToken);
+            } else {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
+            }
+        });
     }
 
     public void setAuthToken(String authToken) {
