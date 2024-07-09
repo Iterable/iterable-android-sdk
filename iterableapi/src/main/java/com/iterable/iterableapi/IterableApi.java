@@ -863,7 +863,7 @@ public class IterableApi {
                 if (_userId == userId) {
                     return;
                 }
-                if(!isAnon) {
+                if (!isAnon) {
                     _userIdAnon = null;
                 }
 
