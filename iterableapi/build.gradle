@@ -19,7 +19,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 27
 
-        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.5.2\""
+        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.5.3\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -86,7 +86,7 @@ dependencies {
 
 ext {
     libraryName = 'iterableapi'
-    libraryVersion = '3.5.2'
+    libraryVersion = '3.5.3'
 }
 
 if (hasProperty("mavenPublishEnabled")) {
