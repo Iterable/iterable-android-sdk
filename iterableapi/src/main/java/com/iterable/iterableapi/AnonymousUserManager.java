@@ -30,7 +30,7 @@ public class AnonymousUserManager {
 
     void updateAnonSession() {
         IterableLogger.v(TAG, "updateAnonSession");
-        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String previousData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
 
         try {
@@ -113,6 +113,7 @@ public class AnonymousUserManager {
         try {
             JSONObject newDataObject = new JSONObject();
             Gson gson = new GsonBuilder().create();
+
             newDataObject.put(IterableConstants.KEY_ITEMS, gson.toJsonTree(items).getAsJsonArray().toString());
             newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
@@ -147,10 +148,11 @@ public class AnonymousUserManager {
             if (data != null) {
                 try {
                     JSONObject mockDataObject = new JSONObject(data);
-                    SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+                    SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
                     editor.apply();
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -159,7 +161,7 @@ public class AnonymousUserManager {
     }
 
     private String checkCriteriaCompletion() {
-        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
 
@@ -190,9 +192,8 @@ public class AnonymousUserManager {
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
                 iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
                     // success handler
-                    iterableApi.setAnonUser(userId);
+                    IterableApi.getInstance().setAnonUser(userId);
                     syncEvents();
-                    Log.d("TEST_USER", "user created: " + String.valueOf(userId));
                 }, (reason, data) -> {
                     if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
                         try {
@@ -276,7 +277,7 @@ public class AnonymousUserManager {
         clearAnonEventsData();
     }
 
-    private void clearAnonEventsData() {
+    public void clearAnonEventsData() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
@@ -317,7 +318,7 @@ public class AnonymousUserManager {
             e.printStackTrace();
         }
         previousDataArray.put(newDataObject);
-        SharedPreferences sharedPref = iterableApi.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
         editor.apply();
@@ -351,11 +352,11 @@ public class AnonymousUserManager {
     }
 
     private String getPushStatus() {
-        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(iterableApi.getMainActivityContext());
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(IterableApi.getInstance().getMainActivityContext());
         if (notificationManagerCompat.areNotificationsEnabled()) {
-            ApplicationInfo applicationInfo = iterableApi.getMainActivityContext().getApplicationInfo();
+            ApplicationInfo applicationInfo = IterableApi.getInstance().getMainActivityContext().getApplicationInfo();
             int stringId = applicationInfo.labelRes;
-            return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : iterableApi.getMainActivityContext().getString(stringId);
+            return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : IterableApi.getInstance().getMainActivityContext().getString(stringId);
         } else {
             return "";
         }
