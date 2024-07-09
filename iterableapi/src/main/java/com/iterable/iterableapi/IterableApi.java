@@ -805,43 +805,44 @@ public class IterableApi {
     }
     public void setAnonUser(@Nullable String userId) {
         _userIdAnon = userId;
+        setUserId(userId, null, false, true, null, null, true);
         storeAuthData();
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null, false, true, null, null);
+        setUserId(userId, null, false, true, null, null, false);
     }
 
     public void setUserId(@Nullable String userId, boolean merge) {
-        setUserId(userId, null, merge, false, null, null);
+        setUserId(userId, null, merge, false, null, null, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, false, true, successHandler, failureHandler);
+        setUserId(userId, null, false, true, successHandler, failureHandler, false);
     }
 
     public void setUserId(@Nullable String userId, boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, merge, false, successHandler, failureHandler);
+        setUserId(userId, null, merge, false, successHandler, failureHandler, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        setUserId(userId, authToken, false, true, null, null);
+        setUserId(userId, authToken, false, true, null, null, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge) {
-        setUserId(userId, authToken, merge, false, null, null);
+        setUserId(userId, authToken, merge, false, null, null, false);
 
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-       setUserId(userId, authToken, false, true, successHandler, failureHandler);
+       setUserId(userId, authToken, false, true, successHandler, failureHandler, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, authToken, merge, false, successHandler, failureHandler);
+        setUserId(userId, authToken, merge, false, successHandler, failureHandler, false);
     }
 
-    private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
         String sourceUserId = _userIdAnon;
         String sourceEmail = null;
         if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
@@ -862,10 +863,12 @@ public class IterableApi {
                 if (_userId == userId) {
                     return;
                 }
+                if(!isAnon) {
+                    _userIdAnon = null;
+                }
 
                 logoutPreviousUser();
 
-                _userIdAnon = null;
                 _email = null;
                 _userId = userId;
                 if (shouldUseDefaultMerge || merge) {
