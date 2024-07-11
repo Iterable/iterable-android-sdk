@@ -8,7 +8,7 @@ repositories {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 35
     buildToolsVersion '33.0.2'
 
     namespace 'com.iterable.iterableapi.testapp'

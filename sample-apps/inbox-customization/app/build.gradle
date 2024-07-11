@@ -5,7 +5,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 35
     buildToolsVersion "33.0.2"
     defaultConfig {
         applicationId "com.iterable.inbox_customization"
