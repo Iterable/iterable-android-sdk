@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.os.Build;
 
@@ -10,14 +11,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 class IterableNetworkConnectivityManager {
     private static final String TAG = "NetworkConnectivityManager";
     private boolean isConnected;
 
     private static IterableNetworkConnectivityManager sharedInstance;
-
+    private ConnectivityManager connectivityManager;
     private ArrayList<IterableNetworkMonitorListener> networkMonitorListeners = new ArrayList<>();
+    private Set<Network> networkSet = new HashSet<>();
 
     public interface IterableNetworkMonitorListener {
         void onNetworkConnected();
@@ -37,21 +41,36 @@ class IterableNetworkConnectivityManager {
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            checkInternetAvailabilityOnActiveNetwork();
             startNetworkCallback(context);
+        }
+    }
+
+    private void checkInternetAvailabilityOnActiveNetwork() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Network activeNetwork = connectivityManager.getActiveNetwork();
+                isConnected = activeNetwork == null ? false : connectivityManager.getNetworkCapabilities(activeNetwork).hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+                IterableLogger.v(TAG, "Internet active : " + isConnected);
+            } else {
+                IterableLogger.v(TAG, "Internet capability could not be detected on active network due to Android OS < Marshmallow.");
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error in detecting network availability");
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void startNetworkCallback(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkRequest.Builder networkBuilder = new NetworkRequest.Builder();
-
+        NetworkRequest networkRequest = new NetworkRequest.Builder().build();
         if (connectivityManager != null) {
             try {
-                connectivityManager.registerNetworkCallback(networkBuilder.build(), new ConnectivityManager.NetworkCallback() {
+                connectivityManager.registerNetworkCallback(networkRequest, new ConnectivityManager.NetworkCallback() {
                     @Override
                     public void onAvailable(@NonNull Network network) {
                         super.onAvailable(network);
+                        networkSet.add(network);
                         IterableLogger.v(TAG, "Network Connected");
                         isConnected = true;
                         ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
@@ -64,10 +83,13 @@ class IterableNetworkConnectivityManager {
                     public void onLost(@NonNull Network network) {
                         super.onLost(network);
                         IterableLogger.v(TAG, "Network Disconnected");
-                        isConnected = false;
-                        ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
-                        for (IterableNetworkMonitorListener listener : networkListenersCopy) {
-                            listener.onNetworkDisconnected();
+                        networkSet.remove(network);
+                        if (networkSet.isEmpty()) {
+                            isConnected = false;
+                            ArrayList<IterableNetworkMonitorListener> networkListenersCopy = new ArrayList<>(networkMonitorListeners);
+                            for (IterableNetworkMonitorListener listener : networkListenersCopy) {
+                                listener.onNetworkDisconnected();
+                            }
                         }
                     }
                 });
