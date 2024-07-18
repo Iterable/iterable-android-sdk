@@ -248,6 +248,7 @@ public class IterableAuthManager {
         if (timer != null) {
             timer.cancel();
             timer = null;
+            isTimerScheduled = false;
         }
     }
 }
