@@ -1,18 +1,21 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'com.hiya.jacoco-android'
+//apply plugin: 'com.hiya.jacoco-android'
 apply plugin: 'checkstyle'
 
 android {
-    compileSdkVersion 33
+    compileSdk 34
     buildToolsVersion '33.0.2'
 
     namespace 'com.iterable.iterableapi'
     testNamespace 'iterable.com.iterableapi'
 
     compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlin {
+        jvmToolchain(17)
     }
 
     defaultConfig {
@@ -100,10 +103,10 @@ task javadoc(type: Javadoc) {
     exclude '**/*.kt'
 }
 
-tasks.withType(Test) {
-    jacoco.includeNoLocationClasses = true
-    jacoco.excludes = ['jdk.internal.*']
-}
+//tasks.withType(Test) {
+//    jacoco.includeNoLocationClasses = true
+//    jacoco.excludes = ['jdk.internal.*']
+//}
 
 task checkstyle(type: Checkstyle) {
     configFile file("${project.rootDir}/checkstyle.xml")
