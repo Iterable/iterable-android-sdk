@@ -5,7 +5,7 @@ apply plugin: 'checkstyle'
 
 android {
     compileSdk 34
-    buildToolsVersion '33.0.2'
+    buildToolsVersion = '33.0.2'
 
     namespace 'com.iterable.iterableapi'
     testNamespace 'iterable.com.iterableapi'
