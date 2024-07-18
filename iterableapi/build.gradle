@@ -4,7 +4,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'checkstyle'
 
 android {
-    compileSdk 34
+    compileSdk 35
     buildToolsVersion = '33.0.2'
 
     namespace 'com.iterable.iterableapi'
