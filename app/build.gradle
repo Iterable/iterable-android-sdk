@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-parcelize'
 apply plugin: 'jacoco'
 
 repositories {
@@ -8,7 +8,7 @@ repositories {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 35
     buildToolsVersion '33.0.2'
 
     namespace 'com.iterable.iterableapi.testapp'
@@ -38,12 +38,15 @@ android {
     testOptions.unitTests.includeAndroidResources = true
 
     compileOptions {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
+        sourceCompatibility = 17
+        targetCompatibility = 17
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        jvmToolchain(17)
+    }
+    viewBinding {
+        enabled = true
     }
 }
 
