@@ -13,6 +13,24 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.5.3]
+#### Fixed
+- Fixed an [issue](https://github.com/Iterable/react-native-sdk/issues/547) where the SDK would crash if the `IterableInAppMessage` object was null when consuming an in-app message.
+
+#### Changed
+- SDK now provides more insight into JWT refresh failures, so you can take appropriate action in your application code. With this update, when a JWT refresh fails (for any  of various reasons), the SDK calls `onAuthFailure` on the `IterableAuthHandler` instance you can provide to the SDK at initialization.
+    For more information, see the [documentation](https://support.iterable.com/hc/articles/360035019712) for Iterable's Android SDK.
+- The  IterableAuthHandler's `onTokenRegistrationFailed(Throwable object)` has been replaced with `onAuthFailure(Throwable object)` which will be called when JWT token refresh fails.
+
+## [3.5.2]
+#### Added
+ - Introducing a new method `setAuthRetryPolicy` in `IterableConfig` to set the retry policy for JWT token refresh.
+ - You can now use method - `pauseAuthRetries(boolean pauseRetry)` to pause or resume the JWT token refresh retries.
+ - `trackPurchase` method now accepts `attributionInfo` parameter to track purchase with attribution information.
+
+#### Fixed
+- Embedded manager listeners are active only if feature is enabled
+
 ## [3.5.1]
 
 #### Fixed
