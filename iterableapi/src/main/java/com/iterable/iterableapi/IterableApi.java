@@ -805,6 +805,7 @@ public class IterableApi {
     }
     public void setAnonUser(@Nullable String userId) {
         _userIdAnon = userId;
+        setUserId(userId, null, false, true, null, null, true);
         storeAuthData();
     }
 
