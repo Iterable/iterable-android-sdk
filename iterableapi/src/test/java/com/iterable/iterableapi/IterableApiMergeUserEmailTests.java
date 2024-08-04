@@ -266,10 +266,13 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, true);
+        Thread.sleep(1000);
+
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+        assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
     @Test
