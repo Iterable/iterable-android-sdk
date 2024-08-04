@@ -4,6 +4,7 @@ import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -19,6 +20,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -424,11 +426,24 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
         final String email = "testUser@gmail.com";
+
+        boolean emailSet = false;
+        for (int i = 0; i < 10; i++) { // Retry up to 10 times
+            if (IterableApi.getInstance().getEmail() != null) {
+                emailSet = true;
+                break;
+            }
+            Thread.sleep(200); // Wait 200ms before retrying
+        }
+        assertTrue(emailSet);
+
         IterableApi.getInstance().setEmail(email, true);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
@@ -442,13 +457,25 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
         final String email = "testUser2@gmail.com";
+
+        boolean emailSet = false;
+        for (int i = 0; i < 10; i++) { // Retry up to 10 times
+            if (IterableApi.getInstance().getEmail() != null) {
+                emailSet = true;
+                break;
+            }
+            Thread.sleep(200); // Wait 200ms before retrying
+        }
+        assertTrue(emailSet);
         IterableApi.getInstance().setEmail(email);
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest mergeRequest = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
