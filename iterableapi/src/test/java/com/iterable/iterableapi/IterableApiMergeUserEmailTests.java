@@ -20,7 +20,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -475,7 +474,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         }
         assertTrue(emailSet);
         IterableApi.getInstance().setEmail(email);
-        RecordedRequest mergeRequest = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
