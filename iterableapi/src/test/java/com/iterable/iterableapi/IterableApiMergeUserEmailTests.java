@@ -258,21 +258,26 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     @Test
     public void testCriteriaMetUserIdMergeTrue() throws Exception {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
+
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+        Thread.sleep(1000);
+
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId, true);
         Thread.sleep(1000);
+        assertEquals(userId, IterableApi.getInstance().getUserId());
 
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
-        assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
     @Test
