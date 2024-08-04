@@ -864,10 +864,9 @@ public class IterableApi {
                     return;
                 }
 
-                _userIdAnon = null;
-
                 logoutPreviousUser();
 
+                _userIdAnon = null;
                 _email = null;
                 _userId = userId;
                 if (shouldUseDefaultMerge || merge) {
