@@ -866,7 +866,7 @@ public class IterableApi {
 
                 logoutPreviousUser();
 
-                if(!isAnon) {
+                if (!isAnon) {
                     _userIdAnon = null;
                 }
 
