@@ -850,6 +850,18 @@ public class IterableApi {
             sourceEmail = _email;
         }
 
+        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
+            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
+                if (shouldUseDefaultMerge || merge) {
+                    anonymousUserManager.syncEvents();
+                }
+            } else {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
+            }
+        });
+
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -876,18 +888,6 @@ public class IterableApi {
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
         onLogin(authToken);
-
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
-            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (shouldUseDefaultMerge || merge) {
-                    anonymousUserManager.syncEvents();
-                }
-            } else {
-                if (failureHandler != null) {
-                    failureHandler.onFailure(error, null);
-                }
-            }
-        });
     }
 
     public void setAuthToken(String authToken) {
