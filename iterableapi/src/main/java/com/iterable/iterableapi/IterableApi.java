@@ -843,6 +843,13 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
+        String sourceUserId = _userIdAnon;
+        String sourceEmail = null;
+        if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
+            sourceUserId = _userId;
+            sourceEmail = _email;
+        }
+
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -869,13 +876,6 @@ public class IterableApi {
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
         onLogin(authToken);
-
-        String sourceUserId = _userIdAnon;
-        String sourceEmail = null;
-        if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
-            sourceUserId = _userId;
-            sourceEmail = _email;
-        }
 
         anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
