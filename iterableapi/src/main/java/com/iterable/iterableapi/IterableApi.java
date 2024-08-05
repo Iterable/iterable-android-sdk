@@ -771,17 +771,8 @@ public class IterableApi {
             sourceUserId = _userId;
             sourceEmail = _email;
         }
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, email, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
-            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (shouldUseDefaultMerge || merge) {
-                    anonymousUserManager.syncEvents();
-                }
-            } else {
-                if (failureHandler != null) {
-                    failureHandler.onFailure(error, null);
-                }
-            }
-        });
+
+        attemptAndProcessMerge(email, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
 
         if (_email != null && _email.equals(email) && authToken != null) {
             checkAndUpdateAuthToken(authToken);
@@ -806,6 +797,7 @@ public class IterableApi {
         storeAuthData();
         onLogin(authToken);
     }
+
     public void setAnonUser(@Nullable String userId) {
         _userIdAnon = userId;
         setUserId(userId, null, false, true, null, null, true);
@@ -864,6 +856,7 @@ public class IterableApi {
                 }
             }
         });
+        attemptAndProcessMerge(userId, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
 
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
@@ -891,6 +884,20 @@ public class IterableApi {
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
         onLogin(authToken);
+    }
+
+    private void attemptAndProcessMerge(String userIdOrEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String sourceUserId, String sourceEmail) {
+        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userIdOrEmail, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
+            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
+                if (shouldUseDefaultMerge || merge) {
+                    anonymousUserManager.syncEvents();
+                }
+            } else {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
+            }
+        });
     }
 
     public void setAuthToken(String authToken) {
