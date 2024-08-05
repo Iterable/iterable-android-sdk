@@ -773,35 +773,38 @@ public class IterableApi {
         }
         anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, email, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                //Only if passed in same non-null email
-                if (_email != null && _email.equals(email) && authToken != null) {
-                    checkAndUpdateAuthToken(authToken);
-                    return;
-                }
-                if (email == null) {
-                    _userIdAnon = null;
-                }
-                if (_email == email) {
-                    return;
-                }
-
-                logoutPreviousUser();
-                _userIdAnon = null;
-                _email = email;
-                _userId = null;
                 if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
-                _setUserSuccessCallbackHandler = successHandler;
-                _setUserFailureCallbackHandler = failureHandler;
-                storeAuthData();
-                onLogin(authToken);
             } else {
                 if (failureHandler != null) {
                     failureHandler.onFailure(error, null);
                 }
             }
         });
+
+        if (_email != null && _email.equals(email) && authToken != null) {
+            checkAndUpdateAuthToken(authToken);
+            return;
+        }
+
+        if (email == null) {
+            _userIdAnon = null;
+        }
+
+        if (_email == email) {
+            return;
+        }
+
+        logoutPreviousUser();
+        _userIdAnon = null;
+        _email = email;
+        _userId = null;
+
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
+        storeAuthData();
+        onLogin(authToken);
     }
     public void setAnonUser(@Nullable String userId) {
         _userIdAnon = userId;

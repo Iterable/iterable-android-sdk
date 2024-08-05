@@ -434,6 +434,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+        assertEquals(email, IterableApi.getInstance().getEmail());
     }
 
     @Test
@@ -451,6 +452,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+        assertEquals(email, IterableApi.getInstance().getEmail());
     }
 
     @Test
