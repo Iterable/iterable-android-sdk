@@ -850,8 +850,6 @@ public class IterableApi {
             sourceEmail = _email;
         }
 
-        _userId = userId;
-
         anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                 // If the same non-null userId is passed
