@@ -843,6 +843,33 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
+        if (_userId != null && _userId.equals(userId)) {
+            checkAndUpdateAuthToken(authToken);
+            return;
+        }
+
+        if (userId == null) {
+            _userIdAnon = null;
+        }
+
+        if (_userId == userId) {
+            return;
+        }
+
+        logoutPreviousUser();
+
+        _email = null;
+        _userId = userId;
+
+        if (!isAnon) {
+            _userIdAnon = null;
+        }
+
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
+        storeAuthData();
+        onLogin(authToken);
+
         String sourceUserId = _userIdAnon;
         String sourceEmail = null;
         if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
@@ -852,33 +879,9 @@ public class IterableApi {
 
         anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                // If the same non-null userId is passed
-                if (_userId != null && _userId.equals(userId)) {
-                    checkAndUpdateAuthToken(authToken);
-                    return;
-                }
-                if (userId == null) {
-                    _userIdAnon = null;
-                }
-                if (_userId == userId) {
-                    return;
-                }
-
-                logoutPreviousUser();
-
-                if (!isAnon) {
-                    _userIdAnon = null;
-                }
-
-                _email = null;
-                _userId = userId;
                 if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
-                _setUserSuccessCallbackHandler = successHandler;
-                _setUserFailureCallbackHandler = failureHandler;
-                storeAuthData();
-                onLogin(authToken);
             } else {
                 if (failureHandler != null) {
                     failureHandler.onFailure(error, null);
