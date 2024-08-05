@@ -771,40 +771,36 @@ public class IterableApi {
             sourceUserId = _userId;
             sourceEmail = _email;
         }
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, email, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
-            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                //Only if passed in same non-null email
-                if (_email != null && _email.equals(email) && authToken != null) {
-                    checkAndUpdateAuthToken(authToken);
-                    return;
-                }
-                if (email == null) {
-                    _userIdAnon = null;
-                }
-                if (_email == email) {
-                    return;
-                }
 
-                logoutPreviousUser();
-                _userIdAnon = null;
-                _email = email;
-                _userId = null;
-                if (shouldUseDefaultMerge || merge) {
-                    anonymousUserManager.syncEvents();
-                }
-                _setUserSuccessCallbackHandler = successHandler;
-                _setUserFailureCallbackHandler = failureHandler;
-                storeAuthData();
-                onLogin(authToken);
-            } else {
-                if (failureHandler != null) {
-                    failureHandler.onFailure(error, null);
-                }
-            }
-        });
+        attemptAndProcessMerge(email, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+
+        if (_email != null && _email.equals(email) && authToken != null) {
+            checkAndUpdateAuthToken(authToken);
+            return;
+        }
+
+        if (email == null) {
+            _userIdAnon = null;
+        }
+
+        if (_email == email) {
+            return;
+        }
+
+        logoutPreviousUser();
+        _userIdAnon = null;
+        _email = email;
+        _userId = null;
+
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
+        storeAuthData();
+        onLogin(authToken);
     }
+
     public void setAnonUser(@Nullable String userId) {
         _userIdAnon = userId;
+        setUserId(userId, null, false, true, null, null, true);
         storeAuthData();
     }
 
@@ -851,33 +847,51 @@ public class IterableApi {
 
         anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                // If the same non-null userId is passed
-                if (_userId != null && _userId.equals(userId)) {
-                    checkAndUpdateAuthToken(authToken);
-                    return;
-                }
-                if (userId == null) {
-                    _userIdAnon = null;
-                }
-                if (_userId == userId) {
-                    return;
-                }
-
-                logoutPreviousUser();
-
-                if (!isAnon) {
-                    _userIdAnon = null;
-                }
-
-                _email = null;
-                _userId = userId;
                 if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
-                _setUserSuccessCallbackHandler = successHandler;
-                _setUserFailureCallbackHandler = failureHandler;
-                storeAuthData();
-                onLogin(authToken);
+            } else {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
+            }
+        });
+        attemptAndProcessMerge(userId, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+
+        if (_userId != null && _userId.equals(userId)) {
+            checkAndUpdateAuthToken(authToken);
+            return;
+        }
+
+        if (userId == null) {
+            _userIdAnon = null;
+        }
+
+        if (_userId == userId) {
+            return;
+        }
+
+        logoutPreviousUser();
+
+        _email = null;
+        _userId = userId;
+
+        if (!isAnon) {
+            _userIdAnon = null;
+        }
+
+        _setUserSuccessCallbackHandler = successHandler;
+        _setUserFailureCallbackHandler = failureHandler;
+        storeAuthData();
+        onLogin(authToken);
+    }
+
+    private void attemptAndProcessMerge(String userIdOrEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String sourceUserId, String sourceEmail) {
+        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userIdOrEmail, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
+            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
+                if (shouldUseDefaultMerge || merge) {
+                    anonymousUserManager.syncEvents();
+                }
             } else {
                 if (failureHandler != null) {
                     failureHandler.onFailure(error, null);
