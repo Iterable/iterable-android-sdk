@@ -845,17 +845,6 @@ public class IterableApi {
             sourceEmail = _email;
         }
 
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userId, false, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
-            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (shouldUseDefaultMerge || merge) {
-                    anonymousUserManager.syncEvents();
-                }
-            } else {
-                if (failureHandler != null) {
-                    failureHandler.onFailure(error, null);
-                }
-            }
-        });
         attemptAndProcessMerge(userId, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
 
         if (_userId != null && _userId.equals(userId)) {
