@@ -89,6 +89,8 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    final boolean enableAnonTracking;
+
     /**
      * Allows for fetching embedded messages.
      */
@@ -110,6 +112,7 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
+        enableAnonTracking = builder.enableAnonTracking;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
     }
 
@@ -129,6 +132,7 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
+        private boolean enableAnonTracking = false;
         private boolean enableEmbeddedMessaging = false;
 
         public Builder() {}
@@ -290,6 +294,16 @@ public class IterableConfig {
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
+            return this;
+        }
+
+        /**
+         * Set whether the SDK should track events for anonymous users. Set this to `true`
+         * if you want to track all events when users are not logged into the application.
+         * @param enableAnonTracking `true` will track events for anonymous users.
+         */
+        public Builder setEnableAnonTracking(boolean enableAnonTracking) {
+            this.enableAnonTracking = enableAnonTracking;
             return this;
         }
 

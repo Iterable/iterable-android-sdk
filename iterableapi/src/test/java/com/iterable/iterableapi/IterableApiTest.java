@@ -190,7 +190,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "test_user_id";
-        IterableApi.getInstance().setUserId(userId, null, new IterableHelper.SuccessHandler() {
+        IterableApi.getInstance().setUserId(userId, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 assertTrue(true); // callback should be called with success

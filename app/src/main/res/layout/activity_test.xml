@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.iterable.androidsdk.MainActivity">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="16dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context="com.iterable.androidsdk.MainActivity"
+        tools:showIn="@layout/activity_main"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
+
+            <EditText
+                android:id="@+id/updateCart_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="cart items"
+                android:text='[{"name":"piano","id":"fdsafds","price":9,"quantity":2}]' />
+            <Button
+                android:id="@+id/updateCart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Update Cart" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
+
+            <EditText
+                android:id="@+id/trackPurchase_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="purchase items"
+                android:text='{"items":[{"name":"sneakers","id":"fdsafds","price":4,"quantity":3}, {"name":"slippers","id":"fdsafds","price":5,"quantity":3}], "total": 100}' />
+            <Button
+                android:id="@+id/trackPurchase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Track purchase" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
+
+            <EditText
+                android:id="@+id/customEvent_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="event items"
+                android:text='{"eventName":"button-clicked", "dataFields": {"button-clicked.lastPageViewed":"signup page"}}' />
+            <Button
+                android:id="@+id/customEvent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="custom event" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
+
+            <EditText
+                android:id="@+id/updateUser_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="user"
+                android:text='{"phone_number": "999999", "country": "UK"}' />
+            <Button
+                android:id="@+id/updateUser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="update User" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+        <EditText
+                android:id="@+id/setUser_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="new user" />
+            <CheckBox
+                android:id="@+id/user_check"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight=".2"
+                android:text="merge:"/>
+        </LinearLayout>
+            <Button
+                android:id="@+id/setUser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="setUser" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+                <EditText
+                        android:id="@+id/setEmail_edit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="email" />
+                <CheckBox
+                    android:id="@+id/email_check"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight=".2"
+                    android:text="merge:"/>
+            </LinearLayout>
+            <Button
+                android:id="@+id/setEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="setEmail" />
+        </LinearLayout>
+
+
+
+        <Button
+            android:id="@+id/btn_logout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Logout"/>
+
+    </LinearLayout>
+
+    </ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
