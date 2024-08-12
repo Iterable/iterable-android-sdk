@@ -765,7 +765,7 @@ public class IterableApi {
     }
 
     private void setEmail(@Nullable String email, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if(config.enableAnonTracking) {
+        if (config.enableAnonTracking) {
             _userIdAnon = null;
 
             attemptAndProcessMerge(email, merge, shouldUseDefaultMerge, failureHandler);
@@ -831,7 +831,7 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
-        if(config.enableAnonTracking) {
+        if (config.enableAnonTracking) {
             if (userId == null || !isAnon) {
                 _userIdAnon = null;
             }
