@@ -760,10 +760,6 @@ public class IterableApi {
         setEmail(email, authToken, true, successHandler, failureHandler);
     }
 
-//    public void setEmail(@Nullable String email, @Nullable String authToken, boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-//        setEmail(email, authToken, merge, false, successHandler, failureHandler);
-//    }
-
     private void setEmail(@Nullable String email, @Nullable String authToken, boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         attemptAndProcessMerge(email, merge, failureHandler);
 
@@ -825,10 +821,6 @@ public class IterableApi {
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
        setUserId(userId, authToken, true, successHandler, failureHandler, false);
     }
-
-//    public void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-//        setUserId(userId, authToken, merge, false, successHandler, failureHandler, false);
-//    }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
         attemptAndProcessMerge(userId, merge, failureHandler);
