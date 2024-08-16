@@ -2,7 +2,7 @@ package com.iterable.iterableapi.util;
 
 public class MatchComparator {
     public static final String EQUALS = "Equals";
-    public static final String DOES_NOT_EQUALS = "DoesNotEquals";
+    public static final String DOES_NOT_EQUALS = "DoesNotEqual";
     public static final String IS_SET = "IsSet";
     public static final String GREATER_THAN = "GreaterThan";
     public static final String LESS_THAN = "LessThan";
