@@ -348,6 +348,22 @@ public class CriteriaCompletionChecker {
                 }
             }
 
+            if (field.contains(".")) {
+                Object valueFromObj = getFieldValue(eventData, field);
+                if (valueFromObj != null) {
+                    matchResult = evaluateComparison(
+                            searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
+                            valueFromObj,
+                            searchQuery.getString(IterableConstants.VALUE)
+                    );
+                    if (matchResult) {
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
             if (isKeyExists) {
                 if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
                     matchResult = true;
@@ -358,6 +374,36 @@ public class CriteriaCompletionChecker {
             break;
         }
         return matchResult;
+    }
+    private Object getFieldValue(JSONObject data, String field) {
+        String[] fields = field.split("\\.");
+        try {
+            String eventType = data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+
+            if (eventType.equals(IterableConstants.TRACK_EVENT)) {
+                String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
+                if (fields[0].equals(eventName)) {
+                    fields = new String[]{fields[fields.length - 1]};
+                }
+            }
+
+            JSONObject value = data;
+            Object fieldValue = null;
+
+            for (String currentField : fields) {
+                if (value.has(currentField)) {
+                    Object dataValue = value.get(currentField);
+                    if (dataValue instanceof JSONObject) {
+                        value = value.getJSONObject(currentField);
+                    } else  {
+                        fieldValue = value.get(currentField);
+                    }
+                }
+            }
+            return fieldValue;
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
