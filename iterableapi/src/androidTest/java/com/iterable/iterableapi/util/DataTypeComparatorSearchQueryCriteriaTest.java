@@ -1,6 +1,8 @@
 package com.iterable.iterableapi.util;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.json.JSONArray;
@@ -497,7 +499,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataEquals, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -515,7 +517,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataEquals, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -533,7 +535,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataDoesNotEqual, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -551,7 +553,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataDoesNotEqual, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -567,7 +569,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataGreaterThan, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -583,7 +585,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataGreaterThan, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -599,7 +601,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataGreaterThanOrEqualTo, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -615,7 +617,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataGreaterThanOrEqualTo, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -631,7 +633,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataLessThan, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -647,9 +649,8 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataLessThan, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
-
 
     @Test
     public void testLessThanOrEqualsToMockDataPass() throws Exception {
@@ -664,7 +665,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataLessThanOrEqualTo, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -680,7 +681,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataLessThanOrEqualTo, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -698,7 +699,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataIsSet, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -716,7 +717,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataIsSet, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -731,7 +732,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataContains, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -746,7 +747,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataContains, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -761,7 +762,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataMatchesRegex, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -776,7 +777,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataMatchesRegex, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 
     @Test
@@ -791,7 +792,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataStartsWith, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -806,6 +807,6 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
                 "]";
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(mockDataStartsWith, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
 }
