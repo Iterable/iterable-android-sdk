@@ -137,7 +137,7 @@ public class IterableConfig {
         private boolean encryptionEnforced = false;
         private boolean enableAnonTracking = false;
         private boolean enableEmbeddedMessaging = false;
-        private int eventThresholdLimit = 100;
+        private int eventThresholdLimit = 50;
 
         public Builder() {}
 
