@@ -1,9 +1,7 @@
 package com.iterable.iterableapi.util;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import org.json.JSONArray;
 import org.junit.Before;
