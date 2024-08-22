@@ -19,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
@@ -291,6 +292,7 @@ public class AnonymousUserManager {
 
     private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
         JSONArray previousDataArray = getEventListFromLocalStorage();
+        ArrayList<JSONObject> eventListData = new ArrayList<>();
         try {
             if (shouldOverWrite) {
                 int indexToRemove = -1;
@@ -318,6 +320,19 @@ public class AnonymousUserManager {
             e.printStackTrace();
         }
         previousDataArray.put(newDataObject);
+        int lengthOfData = previousDataArray.length();
+        int eventThresholdLimit = iterableApi.config.eventThresholdLimit;
+        if (lengthOfData > eventThresholdLimit) {
+            int difference = lengthOfData - eventThresholdLimit;
+            for (int i = difference; i < previousDataArray.length(); i++) {
+                try {
+                    eventListData.add(previousDataArray.getJSONObject(i));
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            previousDataArray = new JSONArray(eventListData);
+        }
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
