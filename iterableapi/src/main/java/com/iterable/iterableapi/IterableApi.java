@@ -772,29 +772,29 @@ public class IterableApi {
             sourceEmail = _email;
         }
 
-        attemptAndProcessMerge(email, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+        if (config.enableAnonTracking) {
+            _userIdAnon = null;
 
-        if (_email != null && _email.equals(email) && authToken != null) {
+            attemptAndProcessMerge(email, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+        }
+
+        if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
             return;
         }
 
-        if (email == null) {
-            _userIdAnon = null;
-        }
-
-        if (_email == email) {
+        if (_email == null && _userId == null && email == null) {
             return;
         }
 
         logoutPreviousUser();
-        _userIdAnon = null;
+
         _email = email;
         _userId = null;
-
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
+
         onLogin(authToken);
     }
 
@@ -845,18 +845,20 @@ public class IterableApi {
             sourceEmail = _email;
         }
 
-        attemptAndProcessMerge(userId, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+        if (config.enableAnonTracking) {
+            if (userId == null || !isAnon) {
+                _userIdAnon = null;
+            }
+
+            attemptAndProcessMerge(userId, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+        }
 
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
         }
 
-        if (userId == null) {
-            _userIdAnon = null;
-        }
-
-        if (_userId == userId) {
+        if (_email == null && _userId == null && userId == null) {
             return;
         }
 
@@ -864,14 +866,10 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
-
-        if (!isAnon) {
-            _userIdAnon = null;
-        }
-
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
+
         onLogin(authToken);
     }
 
