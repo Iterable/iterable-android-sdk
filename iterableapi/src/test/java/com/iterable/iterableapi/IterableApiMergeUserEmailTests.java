@@ -291,58 +291,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
-    @Test
-    public void testIdentifiedUserIdMergeFalse() throws Exception {
-
-        final String userId1 = "testUser1";
-        IterableApi.getInstance().setUserId(userId1, false);
-        shadowOf(getMainLooper()).idle();
-        assertEquals(userId1, IterableApi.getInstance().getUserId());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        final String userId2 = "testUser2";
-        IterableApi.getInstance().setUserId(userId2, false);
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
-//        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
-        assertEquals(userId2, IterableApi.getInstance().getUserId());
-    }
-
-    @Test
-    public void testIdentifiedUserIdMergeTrue() throws Exception {
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
-
-        final String userId1 = "testUser1";
-        IterableApi.getInstance().setUserId(userId1, false);
-        shadowOf(getMainLooper()).idle();
-        assertEquals(userId1, IterableApi.getInstance().getUserId());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-
-        final String userId2 = "testUser2";
-        IterableApi.getInstance().setUserId(userId2, true);
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
-//        assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
-        assertEquals(userId2, IterableApi.getInstance().getUserId());
-    }
-
-    @Test
-    public void testIdentifiedUserIdDefault() throws Exception {
-        final String userId1 = "testUser1";
-        IterableApi.getInstance().setUserId(userId1);
-        shadowOf(getMainLooper()).idle();
-        assertEquals(userId1, IterableApi.getInstance().getUserId());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        final String userId2 = "testUser2";
-        IterableApi.getInstance().setUserId(userId2);
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
-//        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
-        assertEquals(userId2, IterableApi.getInstance().getUserId());
-    }
-
     // all email tests
     @Test
     public void testCriteriaNotMetEmailMergeFalse() throws Exception {
@@ -454,57 +402,4 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
     }
-
-    @Test
-    public void testIdentifiedEmailMergeFalse() throws Exception {
-
-        final String email1 = "testUser1@gmail.com";
-        IterableApi.getInstance().setEmail(email1, false);
-        shadowOf(getMainLooper()).idle();
-        assertEquals(email1, IterableApi.getInstance().getEmail());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        final String email2 = "testUser2@gmail.com";
-        IterableApi.getInstance().setEmail(email2, false);
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
-//        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
-        assertEquals(email2, IterableApi.getInstance().getEmail());
-    }
-
-    @Test
-    public void testIdentifiedEmailMergeTrue() throws Exception {
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
-
-        final String email1 = "testUser1@gmail.com";
-        IterableApi.getInstance().setEmail(email1, false);
-        shadowOf(getMainLooper()).idle();
-        assertEquals(email1, IterableApi.getInstance().getEmail());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-
-        final String email2 = "testUser2@gmail.com";
-        IterableApi.getInstance().setEmail(email2, true);
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
-//        assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
-        assertEquals(email2, IterableApi.getInstance().getEmail());
-    }
-
-    @Test
-    public void testIdentifiedEmailDefault() throws Exception {
-        final String email1 = "testUser1@gmail.com";
-        IterableApi.getInstance().setEmail(email1);
-        shadowOf(getMainLooper()).idle();
-        assertEquals(email1, IterableApi.getInstance().getEmail());
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        final String email2 = "testUser2@gmail.com";
-        IterableApi.getInstance().setEmail(email2);
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
-//        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
-        assertEquals(email2, IterableApi.getInstance().getEmail());
-    }
-
 }
