@@ -775,7 +775,7 @@ public class IterableApi {
         if (config.enableAnonTracking) {
             _userIdAnon = null;
 
-            attemptAndProcessMerge(email, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+            attemptAndProcessMerge(email, true, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
         }
 
         if (_email != null && _email.equals(email)) {
@@ -850,7 +850,7 @@ public class IterableApi {
                 _userIdAnon = null;
             }
 
-            attemptAndProcessMerge(userId, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
+            attemptAndProcessMerge(userId, false, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
         }
 
         if (_userId != null && _userId.equals(userId)) {
@@ -873,8 +873,8 @@ public class IterableApi {
         onLogin(authToken);
     }
 
-    private void attemptAndProcessMerge(String userIdOrEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String sourceUserId, String sourceEmail) {
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userIdOrEmail, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
+    private void attemptAndProcessMerge(String userIdOrEmail, boolean isEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String sourceUserId, String sourceEmail) {
+        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userIdOrEmail, isEmail, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                 if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
