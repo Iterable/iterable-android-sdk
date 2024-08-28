@@ -861,8 +861,8 @@ public class IterableApi {
         onLogin(authToken);
     }
 
-    private void attemptAndProcessMerge(@NonNull String userIdOrEmail, boolean isEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String sourceUserId) {
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, userIdOrEmail, isEmail, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
+    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
+        anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                 if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
