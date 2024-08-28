@@ -5,7 +5,7 @@ public class AnonymousUserMerge {
 
     void tryMergeUser(IterableApiClient apiClient, String sourceUserId, String destinationUserIdOrEmail, boolean isEmail, boolean merge, boolean shouldUserDefaultMerge, MergeResultCallback callback) {
         IterableLogger.v(TAG, "tryMergeUser");
-        if (sourceUserId != null && destinationUserIdOrEmail != null && (shouldUserDefaultMerge || merge)) {
+        if (shouldUserDefaultMerge || merge) {
             String destinationEmail = isEmail ? destinationUserIdOrEmail : null;
             String destinationUserId = isEmail ? null : destinationUserIdOrEmail;
             apiClient.mergeUser(null, sourceUserId, destinationEmail, destinationUserId, data -> {
