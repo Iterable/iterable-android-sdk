@@ -91,6 +91,8 @@ public class IterableConfig {
 
     final boolean enableAnonTracking;
 
+    final int eventThresholdLimit;
+
     /**
      * Allows for fetching embedded messages.
      */
@@ -114,6 +116,7 @@ public class IterableConfig {
         encryptionEnforced = builder.encryptionEnforced;
         enableAnonTracking = builder.enableAnonTracking;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
+        eventThresholdLimit = builder.eventThresholdLimit;
     }
 
     public static class Builder {
@@ -134,6 +137,7 @@ public class IterableConfig {
         private boolean encryptionEnforced = false;
         private boolean enableAnonTracking = false;
         private boolean enableEmbeddedMessaging = false;
+        private int eventThresholdLimit = 100;
 
         public Builder() {}
 
@@ -304,6 +308,11 @@ public class IterableConfig {
          */
         public Builder setEnableAnonTracking(boolean enableAnonTracking) {
             this.enableAnonTracking = enableAnonTracking;
+            return this;
+        }
+
+        public Builder setEventThresholdLimit(int eventThresholdLimit) {
+            this.eventThresholdLimit = eventThresholdLimit;
             return this;
         }
 

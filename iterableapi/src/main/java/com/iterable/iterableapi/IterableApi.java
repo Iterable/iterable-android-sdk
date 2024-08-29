@@ -765,36 +765,30 @@ public class IterableApi {
     }
 
     private void setEmail(@Nullable String email, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        String sourceUserId = _userIdAnon;
-        String sourceEmail = null;
-        if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
-            sourceUserId = _userId;
-            sourceEmail = _email;
+        if (config.enableAnonTracking) {
+            if (email != null) {
+                attemptAndProcessMerge(email, true, merge, shouldUseDefaultMerge, failureHandler, _userIdAnon);
+            }
+            _userIdAnon = null;
         }
 
-        attemptAndProcessMerge(email, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
-
-        if (_email != null && _email.equals(email) && authToken != null) {
+        if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
             return;
         }
 
-        if (email == null) {
-            _userIdAnon = null;
-        }
-
-        if (_email == email) {
+        if (_email == null && _userId == null && email == null) {
             return;
         }
 
         logoutPreviousUser();
-        _userIdAnon = null;
+
         _email = email;
         _userId = null;
-
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
+
         onLogin(authToken);
     }
 
@@ -838,25 +832,21 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
-        String sourceUserId = _userIdAnon;
-        String sourceEmail = null;
-        if (!shouldUseDefaultMerge && (_userId != null || _email != null)) {
-            sourceUserId = _userId;
-            sourceEmail = _email;
+        if (config.enableAnonTracking) {
+            if (userId != null && !userId.equals(_userIdAnon)) {
+                attemptAndProcessMerge(userId, false, merge, shouldUseDefaultMerge, failureHandler, _userIdAnon);
+            }
+            if (!isAnon) {
+                _userIdAnon = null;
+            }
         }
-
-        attemptAndProcessMerge(userId, merge, shouldUseDefaultMerge, failureHandler, sourceUserId, sourceEmail);
 
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
         }
 
-        if (userId == null) {
-            _userIdAnon = null;
-        }
-
-        if (_userId == userId) {
+        if (_email == null && _userId == null && userId == null) {
             return;
         }
 
@@ -864,19 +854,15 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
-
-        if (!isAnon) {
-            _userIdAnon = null;
-        }
-
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
+
         onLogin(authToken);
     }
 
-    private void attemptAndProcessMerge(String userIdOrEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String sourceUserId, String sourceEmail) {
-        anonymousUserMerge.tryMergeUser(apiClient, sourceUserId, sourceEmail, userIdOrEmail, true, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
+    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
+        anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
                 if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
