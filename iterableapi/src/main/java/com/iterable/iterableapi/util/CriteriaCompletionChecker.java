@@ -484,7 +484,7 @@ public class CriteriaCompletionChecker {
             return String.format("%s", d);
     }
 
-    private boolean evaluateComparison(String comparatorType, Object matchObj, String valueToCompare) {
+    private boolean evaluateComparison(String comparatorType, Object matchObj, String valueToCompare) throws JSONException {
         if (valueToCompare == null && !comparatorType.equals(MatchComparator.IS_SET)) {
             return false;
         }
@@ -511,11 +511,11 @@ public class CriteriaCompletionChecker {
             case MatchComparator.LESS_THAN_OR_EQUAL_TO:
                 return compareNumericValues(matchObj, valueToCompare, " <= ");
             case MatchComparator.CONTAINS:
-                return compareStringContains(String.valueOf(matchObj), valueToCompare);
+                return compareContains(matchObj, valueToCompare);
             case MatchComparator.STARTS_WITH:
-                return compareStringStartsWith(matchObj, valueToCompare);
+                return compareStartsWith(matchObj, valueToCompare);
             case MatchComparator.MATCHES_REGEX:
-                return compareWithRegex(matchObj instanceof String ? (String) matchObj : "", valueToCompare);
+                return compareWithRegex(matchObj, valueToCompare);
             default:
                 return false;
         }
@@ -531,8 +531,36 @@ public class CriteriaCompletionChecker {
         }
     }
 
-    private boolean compareValueEquality(Object sourceTo, String stringValue) {
-        if (sourceTo instanceof Double && isDouble(stringValue)) {
+    private boolean compareValueEquality(Object sourceTo, String stringValue) throws JSONException {
+        if (sourceTo instanceof JSONArray) {
+            JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
+            Object element = jsonArraySourceTo.get(0);
+            if (element instanceof String) {
+                ArrayList<String> stringArrayList = new ArrayList<>();
+                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                    stringArrayList.add(jsonArraySourceTo.getString(i));
+                }
+                return stringArrayList.contains(stringValue);
+            } else if (element instanceof Integer && isInteger(stringValue)) {
+                ArrayList<Integer> integerArrayList = new ArrayList<>();
+                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                    integerArrayList.add(jsonArraySourceTo.getInt(i));
+                }
+                return integerArrayList.contains(Integer.parseInt(stringValue));
+            } else if (element instanceof Double && isDouble(stringValue)) {
+                ArrayList<Double> doubleArrayList = new ArrayList<>();
+                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                    doubleArrayList.add(jsonArraySourceTo.getDouble(i));
+                }
+                return doubleArrayList.contains(Double.parseDouble(stringValue));
+            } else if (element instanceof Long && isLong(stringValue)) {
+                ArrayList<Long> longArrayList = new ArrayList<>();
+                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                    longArrayList.add(jsonArraySourceTo.getLong(i));
+                }
+                return longArrayList.contains(Long.parseLong(stringValue));
+            }
+        } else if (sourceTo instanceof Double && isDouble(stringValue)) {
             return sourceTo.equals(Double.parseDouble(stringValue));
         } else if (sourceTo instanceof Integer && isInteger(stringValue)) {
             return sourceTo.equals(Integer.parseInt(stringValue));
@@ -546,8 +574,21 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
-    private boolean compareNumericValues(Object sourceTo, String stringValue, String compareOperator) {
-        if (isDouble(stringValue)) {
+    private boolean compareArrayNumericValue(Object sourceTo, String stringValue, String compareOperator) throws JSONException {
+        JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
+        boolean isMatched = false;
+        for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+            if (compareNumericValues(jsonArraySourceTo.get(i), stringValue, compareOperator)) {
+                isMatched = true;
+            }
+        }
+        return isMatched;
+    }
+
+    private boolean compareNumericValues(Object sourceTo, String stringValue, String compareOperator) throws JSONException {
+        if (sourceTo instanceof JSONArray) {
+            return compareArrayNumericValue(sourceTo, stringValue, compareOperator);
+        } else if (isDouble(stringValue)) {
             double sourceNumber = getDoubleValue(sourceTo);
             double numericValue = Double.parseDouble(stringValue);
             switch (compareOperator.trim()) {
@@ -566,22 +607,67 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
-    private boolean compareStringContains(String sourceTo, String stringValue) {
-        return sourceTo.contains(stringValue);
-    }
-
-    private boolean compareStringStartsWith(Object sourceTo, String stringValue) {
-        return sourceTo instanceof String && ((String) sourceTo).startsWith(stringValue);
-    }
-
-    private boolean compareWithRegex(String sourceTo, String pattern) {
-        try {
-            Pattern regexPattern = Pattern.compile(pattern);
-            return regexPattern.matcher(sourceTo).matches();
-        } catch (PatternSyntaxException e) {
-            e.printStackTrace();
-            return false;
+    private boolean compareContains(Object sourceTo, String stringValue) throws JSONException {
+        if (sourceTo instanceof JSONArray) {
+            JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
+            Object element = jsonArraySourceTo.get(0);
+            if (element instanceof String) {
+                ArrayList<String> stringArrayList = new ArrayList<>();
+                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                    stringArrayList.add(jsonArraySourceTo.getString(i));
+                }
+                return stringArrayList.contains(stringValue);
+            }
+        } else if (sourceTo instanceof String) {
+            String stringSourceTo = (String) sourceTo;
+            return stringSourceTo.contains(stringValue);
         }
+        return false;
+    }
+
+    private boolean compareStartsWith(Object sourceTo, String stringValue) throws JSONException {
+        if (sourceTo instanceof JSONArray) {
+            JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
+            Object element = jsonArraySourceTo.get(0);
+            if (element instanceof String) {
+                boolean isMatched = false;
+                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                    if (jsonArraySourceTo.getString(i).startsWith(stringValue)) {
+                        isMatched = true;
+                    }
+                }
+                return isMatched;
+            }
+        } else if (sourceTo instanceof String) {
+            return ((String) sourceTo).startsWith(stringValue);
+        }
+        return false;
+    }
+
+    private boolean compareWithRegex(Object sourceTo, String pattern) throws JSONException {
+        if (sourceTo instanceof JSONArray) {
+            JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
+            Object element = jsonArraySourceTo.get(0);
+            if (element instanceof String) {
+                boolean isMatched = false;
+                Pattern regexPattern = Pattern.compile(pattern);
+                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                    if (regexPattern.matcher(jsonArraySourceTo.getString(i)).matches()) {
+                        isMatched = true;
+                    }
+                }
+                return isMatched;
+            }
+        } else if (sourceTo instanceof String) {
+            try {
+                Pattern regexPattern = Pattern.compile(pattern);
+                return regexPattern.matcher((String) sourceTo).matches();
+            } catch (PatternSyntaxException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return false;
     }
 
     private double getDoubleValue(Object value) {
