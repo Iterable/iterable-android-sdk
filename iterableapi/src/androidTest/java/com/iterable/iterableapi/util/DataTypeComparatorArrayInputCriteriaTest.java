@@ -466,7 +466,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
             "    \"criterias\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
-            "            \"name\": \"Criteria_LessThanOrEqualTo\",\n" +
+            "            \"name\": \"Criteria_Contains\",\n" +
             "            \"createdAt\": 1722497422151,\n" +
             "            \"updatedAt\": 1722500235276,\n" +
             "            \"searchQuery\": {\n" +
@@ -533,7 +533,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
             "    \"criterias\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
-            "            \"name\": \"Criteria_LessThanOrEqualTo\",\n" +
+            "            \"name\": \"Criteria_MatchesRegex\",\n" +
             "            \"createdAt\": 1722497422151,\n" +
             "            \"updatedAt\": 1722500235276,\n" +
             "            \"searchQuery\": {\n" +
@@ -601,7 +601,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
             "    \"criterias\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
-            "            \"name\": \"Criteria_LessThanOrEqualTo\",\n" +
+            "            \"name\": \"Criteria_StartsWith\",\n" +
             "            \"createdAt\": 1722497422151,\n" +
             "            \"updatedAt\": 1722500235276,\n" +
             "            \"searchQuery\": {\n" +
@@ -764,7 +764,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
                 "       {\n" +
                 "        \"dataFields\": {     \n" +
                 "                \"createdAt\": 1699246745093,\n" +
-                "                \"milestoneYears\": [1990, 1992, 1996,1997]\n" +
+                "                \"milestoneYears\": [1990, 1992, 1996, 1997]\n" +
                 "            },\n" +
                 "         \"eventType\": \"user\"\n" +
                 "        },\n" +
