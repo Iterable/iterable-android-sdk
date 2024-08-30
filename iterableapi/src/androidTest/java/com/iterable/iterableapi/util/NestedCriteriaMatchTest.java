@@ -41,8 +41,8 @@ public class NestedCriteriaMatchTest {
             "                                           {\n" +
             "                                               \"dataType\": \"user\",\n" +
             "                                               \"field\": \"furniture.furnitureColor\",\n" +
-            "                                               \"comparatorType\": \"IsSet\",\n" +
-            "                                               \"value\": \"\",\n" +
+            "                                               \"comparatorType\": \"Equals\",\n" +
+            "                                               \"value\": \"White\",\n" +
             "                                               \"fieldType\": \"string\"\n" +
             "                                           },\n" +
             "                                           {\n" +
@@ -84,7 +84,7 @@ public class NestedCriteriaMatchTest {
                 "                  \"widthInches\": 60\n" +
                 "                },\n" +
                 "                {\n" +
-                "                  \"furnitureType\": \"Sofa\",\n" +
+                "                  \"furnitureType\": \"Table\",\n" +
                 "                  \"furnitureColor\": \"Gray\",\n" +
                 "                  \"lengthInches\": 20,\n" +
                 "                  \"widthInches\": 30\n" +
@@ -107,13 +107,13 @@ public class NestedCriteriaMatchTest {
                 "              \"furniture\": [\n" +
                 "                {\n" +
                 "                  \"furnitureType\": \"Sofa\",\n" +
-                "                  \"furnitureColor\": \"White\",\n" +
+                "                  \"furnitureColor\": \"Gray\",\n" +
                 "                  \"lengthInches\": 40,\n" +
                 "                  \"widthInches\": 60\n" +
                 "                },\n" +
                 "                {\n" +
                 "                  \"furnitureType\": \"Table\",\n" +
-                "                  \"furnitureColor\": \"Gray\",\n" +
+                "                  \"furnitureColor\": \"White\",\n" +
                 "                  \"lengthInches\": 20,\n" +
                 "                  \"widthInches\": 30\n" +
                 "                }\n" +

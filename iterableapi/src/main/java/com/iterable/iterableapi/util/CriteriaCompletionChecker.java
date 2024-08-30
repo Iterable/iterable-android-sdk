@@ -350,28 +350,19 @@ public class CriteriaCompletionChecker {
             if (field.contains(".")) {
                 String[] splitString = field.split("\\.");
                 String firstElement = splitString[0];
-                Object eventDataFirstElement = eventData.get(firstElement);
+                Object eventDataFirstElement = eventData.has(firstElement) ? eventData.get(firstElement) : null;
                 if (eventDataFirstElement instanceof JSONArray) {
                     JSONArray jsonArraySourceTo = (JSONArray) eventDataFirstElement;
                     for (int i = 0; i < jsonArraySourceTo.length(); i++) {
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.put(firstElement, jsonArraySourceTo.get(i));
                         jsonObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, eventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE));
-                        Object valueFromObj = getFieldValue(jsonObject, field);
-                        if (valueFromObj != null) {
-                            matchResult = evaluateComparison(
-                                    searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
-                                    valueFromObj,
-                                    searchQuery.getString(IterableConstants.VALUE)
-                            );
-                            if (!matchResult) {
-                                break;
-                            }
+                        matchResult = evaluateFieldLogic(searchQueries, jsonObject);
+                        if (matchResult) {
+                            break;
                         }
                     }
                     if (matchResult) {
-                        continue;
-                    } else {
                         break;
                     }
                 } else {
