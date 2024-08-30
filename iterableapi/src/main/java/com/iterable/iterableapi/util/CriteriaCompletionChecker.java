@@ -347,7 +347,41 @@ public class CriteriaCompletionChecker {
                     }
                 }
             }
-
+            if (field.contains(".")) {
+                String[] splitString = field.split("\\.");
+                String firstElement = splitString[0];
+                Object eventDataFirstElement = eventData.has(firstElement) ? eventData.get(firstElement) : null;
+                if (eventDataFirstElement instanceof JSONArray) {
+                    JSONArray jsonArraySourceTo = (JSONArray) eventDataFirstElement;
+                    for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put(firstElement, jsonArraySourceTo.get(i));
+                        jsonObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, eventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE));
+                        matchResult = evaluateFieldLogic(searchQueries, jsonObject);
+                        if (matchResult) {
+                            break;
+                        }
+                    }
+                    if (matchResult) {
+                        break;
+                    }
+                } else {
+                    Object valueFromObj = getFieldValue(eventData, field);
+                    if (valueFromObj != null) {
+                        matchResult = evaluateComparison(
+                                searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
+                                valueFromObj,
+                                searchQuery.getString(IterableConstants.VALUE)
+                        );
+                        if (matchResult) {
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                return matchResult;
+            }
             if (isKeyExists) {
                 if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
                     matchResult = true;
@@ -358,6 +392,37 @@ public class CriteriaCompletionChecker {
             break;
         }
         return matchResult;
+    }
+
+    private Object getFieldValue(JSONObject data, String field) {
+        String[] fields = field.split("\\.");
+        try {
+            String eventType = data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+
+            if (eventType.equals(IterableConstants.TRACK_EVENT)) {
+                String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
+                if (fields[0].equals(eventName)) {
+                    fields = new String[]{fields[fields.length - 1]};
+                }
+            }
+
+            JSONObject value = data;
+            Object fieldValue = null;
+
+            for (String currentField : fields) {
+                if (value.has(currentField)) {
+                    Object dataValue = value.get(currentField);
+                    if (dataValue instanceof JSONObject) {
+                        value = value.getJSONObject(currentField);
+                    } else  {
+                        fieldValue = value.get(currentField);
+                    }
+                }
+            }
+            return fieldValue;
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
