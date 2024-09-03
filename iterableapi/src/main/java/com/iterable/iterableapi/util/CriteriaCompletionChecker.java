@@ -347,23 +347,41 @@ public class CriteriaCompletionChecker {
                     }
                 }
             }
-
             if (field.contains(".")) {
-                Object valueFromObj = getFieldValue(eventData, field);
-                if (valueFromObj != null) {
-                    matchResult = evaluateComparison(
-                            searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
-                            valueFromObj,
-                            searchQuery.getString(IterableConstants.VALUE)
-                    );
+                String[] splitString = field.split("\\.");
+                String firstElement = splitString[0];
+                Object eventDataFirstElement = eventData.has(firstElement) ? eventData.get(firstElement) : null;
+                if (eventDataFirstElement instanceof JSONArray) {
+                    JSONArray jsonArraySourceTo = (JSONArray) eventDataFirstElement;
+                    for (int i = 0; i < jsonArraySourceTo.length(); i++) {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put(firstElement, jsonArraySourceTo.get(i));
+                        jsonObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, eventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE));
+                        matchResult = evaluateFieldLogic(searchQueries, jsonObject);
+                        if (matchResult) {
+                            break;
+                        }
+                    }
                     if (matchResult) {
-                        continue;
-                    } else {
                         break;
                     }
+                } else {
+                    Object valueFromObj = getFieldValue(eventData, field);
+                    if (valueFromObj != null) {
+                        matchResult = evaluateComparison(
+                                searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
+                                valueFromObj,
+                                searchQuery.getString(IterableConstants.VALUE)
+                        );
+                        if (matchResult) {
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
                 }
+                return matchResult;
             }
-
             if (isKeyExists) {
                 if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE), eventData.get(field), searchQuery.getString(IterableConstants.VALUE))) {
                     matchResult = true;
