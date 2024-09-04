@@ -760,11 +760,11 @@ public class IterableApi {
         setEmail(email, authToken, false, successHandler, failureHandler);
     }
 
-    public void setEmail(@Nullable String email, @Nullable String authToken, boolean disableMergeAndReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, authToken, disableMergeAndReplay, successHandler, failureHandler);
-    }
+//    public void setEmail(@Nullable String email, @Nullable String authToken, boolean disableMergeAndReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+//        setEmail(email, authToken, disableMergeAndReplay, successHandler, failureHandler);
+//    }
 
-    private void setEmail(@Nullable String email, @Nullable String authToken, boolean disableMergeAndReplay, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    private void setEmail(@Nullable String email, @Nullable String authToken, boolean disableMergeAndReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (config.enableAnonTracking) {
             if (email != null) {
                 attemptAndProcessMerge(email, true, disableMergeAndReplay, failureHandler, _userIdAnon);
