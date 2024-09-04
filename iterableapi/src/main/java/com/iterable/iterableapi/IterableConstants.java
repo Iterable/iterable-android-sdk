@@ -325,6 +325,7 @@ public final class IterableConstants {
     public static final String SEARCH_COMBO = "searchCombo";
     public static final String FIELD = "field";
     public static final String VALUE = "value";
+    public static final String VALUES = "values";
     public static final String DATA_TYPE = "dataType";
     public static final String COMPARATOR_TYPE = "comparatorType";
     public static final String UPDATECART_ITEM_PREFIX = "updateCart.updatedShoppingCartItems.";
