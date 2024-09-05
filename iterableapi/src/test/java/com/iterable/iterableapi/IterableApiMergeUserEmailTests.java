@@ -197,7 +197,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         shadowOf(getMainLooper()).idle();
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId, IterableApi.getInstance().getUserId());
-        assertEquals("", getEventData());
+        assertEquals(eventData, getEventData());
     }
 
     @Test
@@ -235,7 +235,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         shadowOf(getMainLooper()).idle();
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(userId, IterableApi.getInstance().getUserId());
-        assertEquals("", getEventData());
+        assertEquals(eventData, getEventData());
     }
 
     @Test
@@ -360,7 +360,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         shadowOf(getMainLooper()).idle();
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
-        assertEquals("", getEventData());
+        assertEquals(eventData, getEventData());
     }
 
     @Test
@@ -399,7 +399,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         shadowOf(getMainLooper()).idle();
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
-        assertEquals("", getEventData());
+        assertEquals(eventData, getEventData());
     }
 
     @Test
