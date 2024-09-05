@@ -1,0 +1,73 @@
+// Bintray
+final Properties localConfig = new Properties()
+
+if (file("$rootDir/local.properties").exists())
+  localConfig.load(file("$rootDir/local.properties").newDataInputStream())
+
+//apply from: "$rootDir/tools/publish/maven-config.gradle"
+//apply plugin: 'com.jfrog.bintray'
+
+//group = GROUP
+//version = VERSION_NAME
+
+//task sourcesJar(type: Jar) {
+//  from android.sourceSets.main.java.srcDirs
+//  classifier = 'sources'
+//}
+//
+//task javadocJar(type: Jar) {
+//  classifier = 'javadoc'
+//  from android.sourceSets.main.java.srcDirs
+//}
+//
+//artifacts {
+//  archives javadocJar
+//  archives sourcesJar
+//}
+
+//apply plugin: 'maven-publish'
+//publishing {
+//  publications {
+//    mainPublication(MavenPublication) {
+//      artifact sourcesJar
+//      artifact javadocJar
+//      artifact "$buildDir/outputs/aar/${project.name}-release.aar"
+//      groupId group
+//      artifactId ARTIFACT_ID
+//      version version
+//      pom.withXml {
+//        def root = asNode()
+//        root.appendNode('description', DESCRIPTION)
+//        root.appendNode('name', NAME)
+//        root.appendNode('url', PROJECT_URL)
+//      }
+//    }
+//  }
+//}
+
+//bintray {
+//
+//  user = localConfig.getProperty('bintray.user')
+//  key = localConfig.getProperty('bintray.apikey')
+//
+//  configurations = ['archives']
+//  pkg {
+//    repo = 'concrete-maven'
+//    name = 'kappuccino'
+//    userOrg = 'concrete'
+//    desc = DESCRIPTION
+//    websiteUrl = PROJECT_URL
+//    vcsUrl = SCM_URL
+//    licenses = ["Apache-2.0"]
+//    publish = true
+//    publicDownloadNumbers = true
+//    version {
+//      desc = DESCRIPTION
+//      gpg {
+//        sign = true //Determines whether to GPG sign the files. The default is false
+//        passphrase = localConfig.getProperty('bintray.gpg.password')
+//      }
+//    }
+//
+//  }
+//}
