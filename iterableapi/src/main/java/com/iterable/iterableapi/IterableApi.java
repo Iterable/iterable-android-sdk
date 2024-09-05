@@ -760,12 +760,12 @@ public class IterableApi {
         setEmail(email, authToken, false, successHandler, failureHandler);
     }
 
-    private void setEmail(@Nullable String email, @Nullable String authToken, boolean disableMergeAndReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    private void setEmail(@Nullable String email, @Nullable String authToken, boolean disableReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (config.enableAnonTracking) {
-            boolean shouldMergeAndReplay = !disableMergeAndReplay && _userIdAnon != null;
+//            boolean shouldMergeAndReplay = !disableMergeAndReplay && _userIdAnon != null;
 
             if (email != null) {
-                attemptAndProcessMerge(email, true, shouldMergeAndReplay, failureHandler, _userIdAnon);
+                attemptAndProcessMerge(email, true, disableReplay, failureHandler, _userIdAnon);
             }
             _userIdAnon = null;
         }
@@ -829,12 +829,12 @@ public class IterableApi {
         setUserId(userId, authToken, disableMergeAndReplay, successHandler, failureHandler, false);
     }
 
-    private void setUserId(@Nullable String userId, @Nullable String authToken, boolean disableMergeAndReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
+    private void setUserId(@Nullable String userId, @Nullable String authToken, boolean disableReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
         if (config.enableAnonTracking) {
-            boolean shouldMergeAndReplay = !disableMergeAndReplay && _userIdAnon != null;
+//            boolean shouldMergeAndReplay = !disableMergeAndReplay && _userIdAnon != null;
 
             if (userId != null && !userId.equals(_userIdAnon)) {
-                attemptAndProcessMerge(userId, false, shouldMergeAndReplay, failureHandler, _userIdAnon);
+                attemptAndProcessMerge(userId, false, disableReplay, failureHandler, _userIdAnon);
             }
             if (!isAnon) {
                 _userIdAnon = null;
@@ -861,10 +861,10 @@ public class IterableApi {
         onLogin(authToken);
     }
 
-    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean shouldMergeAndReplay, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
-        anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, shouldMergeAndReplay, (mergeResult, error) -> {
+    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean disableReplay, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
+        anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (shouldMergeAndReplay) {
+                if (!disableReplay) {
                     anonymousUserManager.syncEvents();
                 }
             } else {
