@@ -761,15 +761,6 @@ public class IterableApi {
     }
 
     private void setEmail(@Nullable String email, @Nullable String authToken, boolean disableReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        if (config.enableAnonTracking) {
-//            boolean shouldMergeAndReplay = !disableMergeAndReplay && _userIdAnon != null;
-
-            if (email != null) {
-                attemptAndProcessMerge(email, true, disableReplay, failureHandler, _userIdAnon);
-            }
-            _userIdAnon = null;
-        }
-
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -788,6 +779,13 @@ public class IterableApi {
         storeAuthData();
 
         onLogin(authToken);
+
+        if (config.enableAnonTracking) {
+            if (email != null) {
+                attemptAndProcessMerge(email, true, disableReplay, failureHandler, _userIdAnon);
+            }
+            _userIdAnon = null;
+        }
     }
 
     public void setAnonUser(@Nullable String userId) {
@@ -830,17 +828,6 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean disableReplay, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
-        if (config.enableAnonTracking) {
-//            boolean shouldMergeAndReplay = !disableMergeAndReplay && _userIdAnon != null;
-
-            if (userId != null && !userId.equals(_userIdAnon)) {
-                attemptAndProcessMerge(userId, false, disableReplay, failureHandler, _userIdAnon);
-            }
-            if (!isAnon) {
-                _userIdAnon = null;
-            }
-        }
-
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -859,6 +846,15 @@ public class IterableApi {
         storeAuthData();
 
         onLogin(authToken);
+
+        if (config.enableAnonTracking) {
+            if (userId != null && !userId.equals(_userIdAnon)) {
+                attemptAndProcessMerge(userId, false, disableReplay, failureHandler, _userIdAnon);
+            }
+            if (!isAnon) {
+                _userIdAnon = null;
+            }
+        }
     }
 
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean disableReplay, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
