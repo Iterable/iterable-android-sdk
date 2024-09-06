@@ -765,6 +765,21 @@ public class IterableApi {
     }
 
     private void setEmail(@Nullable String email, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        if (config.enableAnonTracking) {
+            if (email != null) {
+                attemptAndProcessMerge(email, true, merge, shouldUseDefaultMerge, failureHandler, _userIdAnon);
+            }
+
+            _email = email;
+            _userId = null;
+
+            if(_userIdAnon == null && _email != null) {
+                anonymousUserManager.syncEvents();
+            }
+
+            _userIdAnon = null;
+        }
+
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -783,13 +798,6 @@ public class IterableApi {
         storeAuthData();
 
         onLogin(authToken);
-
-        if (config.enableAnonTracking) {
-            if (email != null) {
-                attemptAndProcessMerge(email, true, merge, shouldUseDefaultMerge, failureHandler, _userIdAnon);
-            }
-            _userIdAnon = null;
-        }
     }
 
     public void setAnonUser(@Nullable String userId) {
@@ -832,6 +840,23 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, boolean merge, boolean shouldUseDefaultMerge, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
+        if (config.enableAnonTracking) {
+            if (userId != null && !userId.equals(_userIdAnon)) {
+                attemptAndProcessMerge(userId, false, merge, shouldUseDefaultMerge, failureHandler, _userIdAnon);
+            }
+
+            _email = null;
+            _userId = userId;
+
+            if(!isAnon && _userIdAnon == null && _userId != null) {
+                anonymousUserManager.syncEvents();
+            }
+
+            if (!isAnon) {
+                _userIdAnon = null;
+            }
+        }
+
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -845,32 +870,18 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
         onLogin(authToken);
-
-        if (config.enableAnonTracking) {
-            if (userId != null && !userId.equals(_userIdAnon)) {
-                attemptAndProcessMerge(userId, false, merge, shouldUseDefaultMerge, failureHandler, _userIdAnon);
-            }
-            if (!isAnon) {
-                _userIdAnon = null;
-            }
-        }
     }
 
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
         anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
-            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (shouldUseDefaultMerge || merge) {
-                    anonymousUserManager.syncEvents();
-                }
-            } else {
-                if (failureHandler != null) {
-                    failureHandler.onFailure(error, null);
-                }
+            if (failureHandler != null) {
+                failureHandler.onFailure(error, null);
             }
         });
     }
