@@ -773,7 +773,7 @@ public class IterableApi {
             _email = email;
             _userId = null;
 
-            if(_userIdAnon == null && _email != null) {
+            if (_userIdAnon == null && _email != null) {
                 anonymousUserManager.syncEvents();
             }
 
@@ -848,7 +848,7 @@ public class IterableApi {
             _email = null;
             _userId = userId;
 
-            if(!isAnon && _userIdAnon == null && _userId != null) {
+            if (!isAnon && _userIdAnon == null && _userId != null) {
                 anonymousUserManager.syncEvents();
             }
 
