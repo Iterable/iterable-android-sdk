@@ -310,51 +310,14 @@ public class AnonymousUserManager {
 
     private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
         JSONArray previousDataArray = getEventListFromLocalStorage();
-        ArrayList<JSONObject> eventListData = new ArrayList<>();
-        try {
-            if (shouldOverWrite) {
-                int indexToRemove = -1;
-                String trackingType = newDataObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-                for (int i = 0; i < previousDataArray.length(); i++) {
-                    JSONObject jsonObject = previousDataArray.getJSONObject(i);
-                    if (jsonObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(trackingType)) {
-                        indexToRemove = i;
-                        break;
-                    }
-                }
-
-                if (indexToRemove >= 0) {
-                    JSONArray newDataArray = new JSONArray();
-                    for (int j = 0; j < previousDataArray.length(); j++) {
-                        if (j != indexToRemove) {
-                            newDataArray.put(previousDataArray.get(j));
-                        }
-                    }
-
-                    previousDataArray = newDataArray;
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
+        if (shouldOverWrite) {
+            previousDataArray = removeDuplicateEvent(previousDataArray, newDataObject);
         }
+
         previousDataArray.put(newDataObject);
-        int lengthOfData = previousDataArray.length();
-        int eventThresholdLimit = iterableApi.config.eventThresholdLimit;
-        if (lengthOfData > eventThresholdLimit) {
-            int difference = lengthOfData - eventThresholdLimit;
-            for (int i = difference; i < previousDataArray.length(); i++) {
-                try {
-                    eventListData.add(previousDataArray.getJSONObject(i));
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            previousDataArray = new JSONArray(eventListData);
-        }
-        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, previousDataArray.toString());
-        editor.apply();
+
+        previousDataArray = enforceEventThresholdLimit(previousDataArray);
+        saveEventListToLocalStorage(previousDataArray);
 
         String criteriaId = checkCriteriaCompletion();
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
@@ -363,6 +326,57 @@ public class AnonymousUserManager {
             createKnownUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
+    }
+
+    private JSONArray removeDuplicateEvent(JSONArray previousDataArray, JSONObject newDataObject) {
+        try {
+            String trackingType = newDataObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+            for (int i = 0; i < previousDataArray.length(); i++) {
+                JSONObject jsonObject = previousDataArray.getJSONObject(i);
+                if (jsonObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(trackingType)) {
+                    return removeEventAtIndex(previousDataArray, i);
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return previousDataArray;
+    }
+
+    private JSONArray removeEventAtIndex(JSONArray array, int indexToRemove) throws JSONException {
+        JSONArray newArray = new JSONArray();
+        for (int i = 0; i < array.length(); i++) {
+            if (i != indexToRemove) {
+                newArray.put(array.get(i));
+            }
+        }
+        return newArray;
+    }
+
+    private JSONArray enforceEventThresholdLimit(JSONArray eventDataArray) {
+        int lengthOfData = eventDataArray.length();
+        int eventThresholdLimit = iterableApi.config.eventThresholdLimit;
+
+        if (lengthOfData > eventThresholdLimit) {
+            int difference = lengthOfData - eventThresholdLimit;
+            ArrayList<JSONObject> eventListData = new ArrayList<>();
+            for (int i = difference; i < eventDataArray.length(); i++) {
+                try {
+                    eventListData.add(eventDataArray.getJSONObject(i));
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return new JSONArray(eventListData);
+        }
+        return eventDataArray;
+    }
+
+    private void saveEventListToLocalStorage(JSONArray eventDataArray) {
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, eventDataArray.toString());
+        editor.apply();
     }
 
     private JSONArray getEventListFromLocalStorage() {
