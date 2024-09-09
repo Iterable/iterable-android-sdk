@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -213,7 +214,6 @@ public class AnonymousUserManager {
     }
 
     void syncEvents() {
-
         JSONArray trackEventList = getEventListFromLocalStorage();
         Gson gson = new GsonBuilder().create();
 
@@ -252,14 +252,8 @@ public class AnonymousUserManager {
     }
 
     private void handleTrackEvent(JSONObject event) throws JSONException {
-        String createdAt = "";
-        if (event.has(IterableConstants.KEY_CREATED_AT)) {
-            createdAt = event.getString(IterableConstants.KEY_CREATED_AT);
-        }
-        JSONObject dataFields = null;
-        if (event.has(IterableConstants.KEY_DATA_FIELDS)) {
-            dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
-        }
+        String createdAt = getStringValue(event, IterableConstants.KEY_CREATED_AT, "");
+        JSONObject dataFields = getDataFields(event);
         iterableApi.apiClient.track(event.getString(IterableConstants.KEY_EVENT_NAME), 0, 0, dataFields, createdAt);
     }
 
@@ -267,27 +261,29 @@ public class AnonymousUserManager {
         Type listType = new TypeToken<List<CommerceItem>>() {}.getType();
         List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
 
-        long createdAt = 0;
-        if (event.has(IterableConstants.KEY_CREATED_AT)) {
-            createdAt = Long.parseLong(event.getString(IterableConstants.KEY_CREATED_AT));
-        }
-        JSONObject dataFields = null;
-        if (event.has(IterableConstants.KEY_DATA_FIELDS)) {
-            dataFields = new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS));
-        }
+        long createdAt = getLongValue(event, IterableConstants.KEY_CREATED_AT, 0L);
+        JSONObject dataFields = getDataFields(event);
         iterableApi.apiClient.trackPurchase(event.getDouble(IterableConstants.KEY_TOTAL), list, dataFields, createdAt);
     }
 
     private void handleUpdateCart(JSONObject event, Gson gson) throws JSONException {
         Type listType = new TypeToken<List<CommerceItem>>() {}.getType();
         List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
-        long createdAt = 0;
-        if (event.has(IterableConstants.KEY_CREATED_AT)) {
-            createdAt = Long.parseLong(event.getString(IterableConstants.KEY_CREATED_AT));
-        }
+
+        long createdAt = getLongValue(event, IterableConstants.KEY_CREATED_AT, 0L);
         iterableApi.apiClient.updateCart(list, createdAt);
     }
 
+    private String getStringValue(JSONObject event, String key, String defaultValue) throws JSONException {
+        return event.has(key) ? event.getString(key) : defaultValue;
+    }
+
+    private long getLongValue(JSONObject event, String key, long defaultValue) throws JSONException {
+        return event.has(key) ? Long.parseLong(event.getString(key)) : defaultValue;
+    }
+    private JSONObject getDataFields(JSONObject event) throws JSONException {
+        return event.has(IterableConstants.KEY_DATA_FIELDS) ? new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS)) : null;
+    }
 
     public void clearAnonEventsData() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
