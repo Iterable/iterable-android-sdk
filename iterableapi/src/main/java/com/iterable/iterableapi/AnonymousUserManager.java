@@ -281,7 +281,7 @@ public class AnonymousUserManager {
     }
 
     private void handleTrackPurchase(JSONObject event, Gson gson) throws JSONException {
-        Type listType = new TypeToken<List<CommerceItem>>() {} .getType();
+        Type listType = new TypeToken<List<CommerceItem>>() { }.getType();
         List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
 
         long createdAt = getLongValue(event);
@@ -290,7 +290,7 @@ public class AnonymousUserManager {
     }
 
     private void handleUpdateCart(JSONObject event, Gson gson) throws JSONException {
-        Type listType = new TypeToken<List<CommerceItem>>() {} .getType();
+        Type listType = new TypeToken<List<CommerceItem>>() { }.getType();
         List<CommerceItem> list = gson.fromJson(event.getString(IterableConstants.KEY_ITEMS), listType);
 
         long createdAt = getLongValue(event);
