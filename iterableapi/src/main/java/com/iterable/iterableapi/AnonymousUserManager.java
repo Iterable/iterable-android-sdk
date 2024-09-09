@@ -193,34 +193,47 @@ public class AnonymousUserManager {
     private void createKnownUser(String criteriaId) {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         updateAnonSession();
+
+        //get session data
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
+
+        //generate anon user id
         String userId = UUID.randomUUID().toString();
+
         try {
             if (!userData.isEmpty()) {
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+
+                //update user data
                 if (!getPushStatus().isEmpty()) {
                     userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
                 }
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
+
+                //track anon session with new user
                 iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
                     // success handler
                     IterableApi.getInstance().setAnonUser(userId);
                     syncEvents();
-                }, (reason, data) -> {
-                    if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
-                        try {
-                            int statusCode = (int) data.get(IterableConstants.HTTP_STATUS_CODE);
-                            if (statusCode == 409) {
-                                getCriteria(); // refetch the criteria
-                            }
-                        } catch (JSONException e) {}
-                    }
-                });
+                }, (reason, data) -> handleTrackFailure(data));
             }
 
         } catch (JSONException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void handleTrackFailure(JSONObject data) {
+        if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
+            try {
+                int statusCode = (int) data.get(IterableConstants.HTTP_STATUS_CODE);
+                if (statusCode == 409) {
+                    getCriteria(); // refetch the criteria
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -248,7 +261,7 @@ public class AnonymousUserManager {
                         break;
                     }
                     case IterableConstants.UPDATE_USER: {
-                        iterableApi.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS));
+                        iterableApi.apiClient.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS), false);
                         break;
                     }
                     default:
