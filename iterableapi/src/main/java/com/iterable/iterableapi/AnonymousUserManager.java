@@ -32,6 +32,7 @@ public class AnonymousUserManager {
 
     void updateAnonSession() {
         IterableLogger.v(TAG, "updateAnonSession");
+
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String previousData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
 
@@ -39,6 +40,7 @@ public class AnonymousUserManager {
             int sessionNo = 0;
             String firstSessionDate = "";
 
+            //If previous session data exists, get previous session number and first session date
             if (!previousData.isEmpty()) {
                 JSONObject previousDataJson = new JSONObject(previousData);
                 JSONObject sessionObject = previousDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
@@ -46,26 +48,35 @@ public class AnonymousUserManager {
                 firstSessionDate = sessionObject.getString(IterableConstants.SHARED_PREFS_FIRST_SESSION);
             }
 
-            JSONObject newDataObject = new JSONObject();
-            newDataObject.put(IterableConstants.SHARED_PREFS_SESSION_NO, sessionNo + 1);
-            newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentTime());
-
-            if (firstSessionDate.isEmpty()) {
-                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentTime());
-            } else {
-                newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, firstSessionDate);
-            }
-
-            JSONObject anonSessionData = new JSONObject();
-            anonSessionData.put(IterableConstants.SHARED_PREFS_ANON_SESSIONS, newDataObject);
-
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, anonSessionData.toString());
-            editor.apply();
-
+            //create new session data object and save it to local storage
+            JSONObject newDataObject = createNewSessionData(sessionNo, firstSessionDate);
+            saveAnonSessionData(sharedPref, newDataObject);
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    private JSONObject createNewSessionData(int sessionNo, String firstSessionDate) throws JSONException {
+        JSONObject newDataObject = new JSONObject();
+        newDataObject.put(IterableConstants.SHARED_PREFS_SESSION_NO, sessionNo + 1);
+        newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentTime());
+
+        if (firstSessionDate.isEmpty()) {
+            newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentTime());
+        } else {
+            newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, firstSessionDate);
+        }
+
+        return newDataObject;
+    }
+
+    private void saveAnonSessionData(SharedPreferences sharedPref, JSONObject newDataObject) throws JSONException {
+        JSONObject anonSessionData = new JSONObject();
+        anonSessionData.put(IterableConstants.SHARED_PREFS_ANON_SESSIONS, newDataObject);
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, anonSessionData.toString());
+        editor.apply();
     }
 
     void trackAnonEvent(String eventName, JSONObject dataFields) {
