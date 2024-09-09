@@ -45,6 +45,7 @@ public class IterableApi {
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
+    private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
@@ -130,13 +131,16 @@ public class IterableApi {
     @NonNull
     IterableAuthManager getAuthManager() {
         if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
+            authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod);
         }
         return authManager;
     }
 
     @Nullable
     IterableKeychain getKeychain() {
+        if (_applicationContext == null) {
+            return null;
+        }
         if (keychain == null) {
             try {
                 keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
@@ -163,7 +167,7 @@ public class IterableApi {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.NOTIFICATION_ICON_NAME, iconName);
-        editor.commit();
+        editor.apply();
     }
 
     /**
@@ -173,8 +177,7 @@ public class IterableApi {
      */
     static String getNotificationIcon(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.NOTIFICATION_ICON_NAME, Context.MODE_PRIVATE);
-        String iconName = sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
-        return iconName;
+        return sharedPref.getString(IterableConstants.NOTIFICATION_ICON_NAME, "");
     }
 
     /**
@@ -240,6 +243,61 @@ public class IterableApi {
     }
 
     /**
+     * Gets a list of placements for the list of placement ids passed in from Iterable and
+     * passes the result to the callback;
+     * To get list of messages as a list of Embedded Messages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(long)} instead.
+     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
+     *
+     * @param placementIds array of placement ids - optional
+     * @param onCallback
+     */
+
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(placementIds, onCallback);
+    }
+
+    /**
+     * Gets a list of placements for the list of placement ids passed in from Iterable and
+     * passes the result to the success or failure callback;
+     * To get list of messages as a list of Embedded Messages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(long)} instead.
+     * If no placement ids are passed in, all available messages with corresponding placement id will be returned
+     *
+     * @param placementIds array of placement ids - optional
+     * @param onSuccess
+     * @param onFailure
+     */
+
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(placementIds, onSuccess, onFailure);
+    }
+
+    /**
+     * A package-private method to get a list of Embedded Messages from Iterable;
+     * Passes the result to the success or failure callback.
+     * Used by the IterableEmbeddedManager.
+     *
+     * To get list of messages as a list of EmbeddedMessages in memory, use
+     * {@link IterableEmbeddedManager#getMessages(long)} instead
+     *
+     * @param onSuccess
+     * @param onFailure
+     */
+    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+        apiClient.getEmbeddedMessages(null, onSuccess, onFailure);
+    }
+
+    /**
      * Tracks in-app delivery events (per in-app)
      * @param message the in-app message to be tracked as delivered */
     void trackInAppDelivery(@NonNull IterableInAppMessage message) {
@@ -253,6 +311,22 @@ public class IterableApi {
         }
 
         apiClient.trackInAppDelivery(message);
+    }
+
+    /**
+     * Tracks embedded message received events (per embedded message)
+     * @param message the embedded message to be tracked as received */
+    void trackEmbeddedMessageReceived(@NonNull IterableEmbeddedMessage message) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackEmbeddedMessageReceived: message is null");
+            return;
+        }
+
+        apiClient.trackEmbeddedMessageReceived(message);
     }
 
     private String getPushIntegrationName() {
@@ -269,7 +343,8 @@ public class IterableApi {
         }
 
         getInAppManager().reset();
-        getAuthManager().clearRefreshTimer();
+        getEmbeddedManager().reset();
+        getAuthManager().reset();
 
         apiClient.onLogout();
     }
@@ -280,6 +355,7 @@ public class IterableApi {
             return;
         }
 
+        getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
         } else {
@@ -299,6 +375,7 @@ public class IterableApi {
         }
 
         getInAppManager().syncInApp();
+        getEmbeddedManager().syncMessages();
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -350,6 +427,9 @@ public class IterableApi {
     }
 
     private void storeAuthData() {
+        if (_applicationContext == null) {
+            return;
+        }
         IterableKeychain iterableKeychain = getKeychain();
         if (iterableKeychain != null) {
             iterableKeychain.saveEmail(_email);
@@ -361,6 +441,9 @@ public class IterableApi {
     }
 
     private void retrieveEmailAndUserId() {
+        if (_applicationContext == null) {
+            return;
+        }
         IterableKeychain iterableKeychain = getKeychain();
         if (iterableKeychain != null) {
             _email = iterableKeychain.getEmail();
@@ -370,12 +453,12 @@ public class IterableApi {
             IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
         }
 
-        if (config.authHandler != null) {
+        if (config.authHandler != null && checkSDKInitialization()) {
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
-                IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
-                getAuthManager().scheduleAuthTokenRefresh(10000);
+                IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
+                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
             }
         }
     }
@@ -479,7 +562,6 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-
         if (deviceToken == null) {
             IterableLogger.e(TAG, "registerDeviceToken: token is null");
             return;
@@ -526,6 +608,12 @@ public class IterableApi {
                     sharedInstance.config.useInMemoryStorageForInApps);
         }
 
+        if (sharedInstance.embeddedManager == null) {
+            sharedInstance.embeddedManager = new IterableEmbeddedManager(
+                    sharedInstance
+            );
+        }
+
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
@@ -556,11 +644,19 @@ public class IterableApi {
     }
 
     @VisibleForTesting
+    IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager) {
+        config = new IterableConfig.Builder().build();
+        this.inAppManager = inAppManager;
+        this.embeddedManager = embeddedManager;
+    }
+
+    @VisibleForTesting
     IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
         config = new IterableConfig.Builder().build();
         this.apiClient = apiClient;
         this.inAppManager = inAppManager;
     }
+
 //endregion
 
 //region SDK public functions
@@ -578,6 +674,15 @@ public class IterableApi {
         return inAppManager;
     }
 
+    @NonNull
+    public IterableEmbeddedManager getEmbeddedManager() {
+        if (embeddedManager == null) {
+            throw new RuntimeException("IterableApi must be initialized before calling getEmbeddedManager(). " +
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+        }
+        return embeddedManager;
+    }
+
     /**
      * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
      * or app link click from an email.
@@ -585,9 +690,23 @@ public class IterableApi {
      */
     @Nullable
     public IterableAttributionInfo getAttributionInfo() {
+        if (_applicationContext == null) {
+            return null;
+        }
         return IterableAttributionInfo.fromJSONObject(
                 IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
         );
+    }
+
+    /**
+     * // This method gets called from developer end only.
+     * @param pauseRetry to pause/unpause auth retries
+     */
+    public void pauseAuthRetries(boolean pauseRetry) {
+        getAuthManager().pauseAuthRetries(pauseRetry);
+        if (!pauseRetry) { // request new auth token as soon as unpause
+            getAuthManager().requestNewAuthToken(false);
+        }
     }
 
     public void setEmail(@Nullable String email) {
@@ -751,11 +870,7 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message == null) {
-            IterableLogger.e(TAG, "inAppConsume: message is null");
-            if (failureHandler != null) {
-                failureHandler.onFailure("inAppConsume: message is null", null);
-            }
+        if (checkIfMessageIsNull(message, failureHandler)) {
             return;
         }
         inAppConsume(message, null, null, successHandler, failureHandler);
@@ -773,6 +888,9 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
+            return;
+        }
+        if (checkIfMessageIsNull(message, null)) {
             return;
         }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, null, null);
@@ -793,7 +911,29 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
+        if (checkIfMessageIsNull(message, failureHandler)) {
+            return;
+        }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, successHandler, failureHandler);
+    }
+
+    /**
+     * Handles the case when the provided message is null.
+     * If the message is null and a failure handler is provided, it calls the onFailure method of the failure handler.
+     *
+     * @param message         The in-app message to be checked.
+     * @param failureHandler  The failure handler to be called if the message is null.
+     * @return                True if the message is null, false otherwise.
+     */
+    private boolean checkIfMessageIsNull(@Nullable IterableInAppMessage message, @Nullable IterableHelper.FailureHandler failureHandler) {
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            if (failureHandler != null) {
+                failureHandler.onFailure("inAppConsume: message is null", null);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -819,6 +959,9 @@ public class IterableApi {
      * @return whether or not the app link was handled
      */
     public boolean handleAppLink(@NonNull String uri) {
+        if (_applicationContext == null) {
+            return false;
+        }
         IterableLogger.printInfo();
 
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
@@ -916,7 +1059,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        trackPurchase(total, items, null);
+        trackPurchase(total, items, null, null);
     }
 
     /**
@@ -930,7 +1073,22 @@ public class IterableApi {
             return;
         }
 
-        apiClient.trackPurchase(total, items, dataFields);
+        apiClient.trackPurchase(total, items, dataFields, null);
+    }
+
+    /**
+     * Tracks a purchase.
+     * @param total total purchase amount
+     * @param items list of purchased items
+     * @param dataFields a `JSONObject` containing any additional information to save along with the event
+     * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
+     */
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.trackPurchase(total, items, dataFields, attributionInfo);
     }
 
     /**
@@ -1014,20 +1172,20 @@ public class IterableApi {
      * user email or user ID is set before calling this method.
      */
     public void registerForPush() {
-        if (!checkSDKInitialization()) {
-            return;
+        if (checkSDKInitialization()) {
+            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+            IterablePushRegistration.executePushRegistrationTask(data);
         }
-
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-        IterablePushRegistration.executePushRegistrationTask(data);
     }
 
     /**
      * Disables the device from push notifications
      */
     public void disablePush() {
-        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        IterablePushRegistration.executePushRegistrationTask(data);
+        if (checkSDKInitialization()) {
+            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+            IterablePushRegistration.executePushRegistrationTask(data);
+        }
     }
 
     /**
@@ -1103,6 +1261,26 @@ public class IterableApi {
 
         apiClient.trackInAppClose(message, clickedURL, closeAction, clickLocation, inboxSessionId);
     }
+
+    /**
+     * Tracks when a link inside an embedded message is clicked
+     * @param message the embedded message to be tracked
+     * @param buttonIdentifier identifier that determines which button or if embedded message itself was clicked
+     * @param clickedUrl the URL of the clicked button or assigned to the embedded message itself
+     */
+    public void trackEmbeddedClick(@NonNull IterableEmbeddedMessage message, @Nullable String buttonIdentifier, @Nullable String clickedUrl) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (message == null) {
+            IterableLogger.e(TAG, "trackEmbeddedClick: message is null");
+            return;
+        }
+
+        apiClient.trackEmbeddedClick(message, buttonIdentifier, clickedUrl);
+    }
+
 //endregion
 
 //region DEPRECATED - API public functions
@@ -1216,6 +1394,25 @@ public class IterableApi {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void clearInboxSessionId() {
         this.inboxSessionId = null;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void trackEmbeddedSession(@NonNull IterableEmbeddedSession session) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        if (session == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: session is null");
+            return;
+        }
+
+        if (session.getStart() == null || session.getEnd() == null) {
+            IterableLogger.e(TAG, "trackEmbeddedSession: sessionStartTime and sessionEndTime must be set");
+            return;
+        }
+
+        apiClient.trackEmbeddedSession(session);
     }
 //endregion
 }

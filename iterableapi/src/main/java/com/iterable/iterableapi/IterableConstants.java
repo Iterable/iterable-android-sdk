@@ -53,6 +53,7 @@ public final class IterableConstants {
     public static final String KEY_USER                 = "user";
     public static final String KEY_USER_TEXT            = "userText";
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
+    public static final String KEY_EMBEDDED_SESSION_ID     = "id";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
     public static final String KEY_FIRETV = "FireTV";
 
@@ -75,6 +76,10 @@ public final class IterableConstants {
     public static final String ENDPOINT_UPDATE_USER_SUBS        = "users/updateSubscriptions";
     public static final String ENDPOINT_TRACK_INAPP_CLOSE       = "events/trackInAppClose";
     public static final String ENDPOINT_GET_REMOTE_CONFIGURATION = "mobile/getRemoteConfiguration";
+    public static final String ENDPOINT_GET_EMBEDDED_MESSAGES   = "embedded-messaging/messages";
+    public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
+    public static final String ENDPOINT_TRACK_EMBEDDED_CLICK   = "embedded-messaging/events/click";
+    public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/session";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -166,6 +171,43 @@ public final class IterableConstants {
     public static final String PICASSO_CLASS = "com.squareup.picasso.Picasso";
     public static final String LOCATION_HEADER_FIELD = "Location";
 
+    //Embedded Message Constants
+    public static final String ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS  = "placements";
+    public static final String ITERABLE_EMBEDDED_MESSAGE  = "embeddedMessages";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_METADATA = "metadata";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_ELEMENTS = "elements";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_PAYLOAD = "payload";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_ID = "messageId";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID = "placementId";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_CAMPAIGN_ID = "campaignId";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_IS_PROOF = "isProof";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TITLE = "title";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BODY = "body";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL = "mediaUrl";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_MEDIA_URL_CAPTION = "mediaUrlCaption";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION = "defaultAction";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTONS = "buttons";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER = "buttonIdentifier";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL = "targetUrl";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT = "text";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_TYPE = "type";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION_DATA = "data";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_ID = "id";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_TITLE = "title";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION = "action";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_TYPE = "type";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_BUTTON_ACTION_DATA = "data";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_ID = "id";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_TEXT = "text";
+    public static final String ITERABLE_EMBEDDED_MESSAGE_TEXT_LABEL = "label";
+
+    public static final String ITERABLE_EMBEDDED_SESSION = "session";
+    public static final String ITERABLE_EMBEDDED_SESSION_START = "start";
+    public static final String ITERABLE_EMBEDDED_SESSION_END = "end";
+    public static final String ITERABLE_EMBEDDED_IMPRESSIONS = "impressions";
+    public static final String ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT = "displayCount";
+    public static final String ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION = "displayDuration";
+
     //In-App Constants
     public static final String ITERABLE_IN_APP_BGCOLOR_ALPHA    = "alpha";
     public static final String ITERABLE_IN_APP_BGCOLOR_HEX      = "hex";
@@ -217,6 +259,8 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_SHOULD_ANIMATE            = "shouldAnimate";
     public static final int ITERABLE_IN_APP_ANIMATION_DURATION           = 500;
     public static final int ITERABLE_IN_APP_BACKGROUND_ANIMATION_DURATION = 300;
+
+    public static final int EXPONENTIAL_FACTOR                              = 2;
 
     public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_LOW           = 400.0;
     public static final double ITERABLE_IN_APP_PRIORITY_LEVEL_MEDIUM        = 300.0;

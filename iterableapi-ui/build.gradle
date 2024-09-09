@@ -7,7 +7,7 @@ android {
     namespace 'com.iterable.iterableapi.ui'
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 28
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -37,17 +37,21 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.flexbox:flexbox:3.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation "com.github.bumptech.glide:glide:4.16.0"
+    implementation 'com.google.android.material:material:1.2.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
-
 }
 
 ext {
     libraryName = 'iterableapi-ui'
-    libraryVersion = '3.4.17'
+    libraryVersion = '3.5.3'
 }
 
 if (hasProperty("mavenPublishEnabled")) {
@@ -57,6 +61,8 @@ if (hasProperty("mavenPublishEnabled")) {
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+
+    exclude '**/*.kt'
 }
 
 // A hack to import the classpath and BuildConfig into the javadoc task

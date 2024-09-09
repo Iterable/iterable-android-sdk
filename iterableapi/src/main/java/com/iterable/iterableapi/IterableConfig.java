@@ -66,6 +66,11 @@ public class IterableConfig {
     final long expiringAuthTokenRefreshPeriod;
 
     /**
+     * Retry policy for JWT Refresh.
+     */
+    final RetryPolicy retryPolicy;
+
+    /**
      * By default, the SDK allows navigation/calls to URLs with the `https` protocol (e.g. deep links or external links)
      * If you'd like to allow other protocols like `http`, `tel`, etc., add them to the `allowedProtocols` array
      */
@@ -84,6 +89,11 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    /**
+     * Allows for fetching embedded messages.
+     */
+    final boolean enableEmbeddedMessaging;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -95,10 +105,12 @@ public class IterableConfig {
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
+        retryPolicy = builder.retryPolicy;
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
+        enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
     }
 
     public static class Builder {
@@ -112,10 +124,12 @@ public class IterableConfig {
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
+        private RetryPolicy retryPolicy = new RetryPolicy(10, 6L, RetryPolicy.Type.LINEAR);
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
+        private boolean enableEmbeddedMessaging = false;
 
         public Builder() {}
 
@@ -218,6 +232,16 @@ public class IterableConfig {
         }
 
         /**
+         * Set retry policy for JWT Refresh
+         * @param retryPolicy
+         */
+        @NonNull
+        public Builder setAuthRetryPolicy(@NonNull RetryPolicy retryPolicy) {
+            this.retryPolicy = retryPolicy;
+            return this;
+        }
+
+        /**
          * Set a custom period before an auth token expires to automatically retrieve a new token
          * @param period in seconds
          */
@@ -266,6 +290,15 @@ public class IterableConfig {
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
+            return this;
+        }
+
+        /**
+         * Allows for fetching embedded messages.
+         * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
+         */
+        public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
+            this.enableEmbeddedMessaging = enableEmbeddedMessaging;
             return this;
         }
 
