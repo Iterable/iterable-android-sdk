@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -185,13 +186,33 @@ public class AnonymousUserManager {
         String userId = UUID.randomUUID().toString();
         try {
             if (!userData.isEmpty()) {
+                JSONArray trackEventList = getEventListFromLocalStorage();
+                JSONObject updateUserTrack = null;
+                int updateUserTrackPosition = 0;
+                for (int i = 0; i < trackEventList.length(); i++) {
+                    JSONObject trackEvent = trackEventList.getJSONObject(i);
+                    if ((trackEvent.has(IterableConstants.SHARED_PREFS_EVENT_TYPE)
+                            && trackEvent.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.KEY_USER))
+                            && trackEvent.has(IterableConstants.KEY_DATA_FIELDS)) {
+                        updateUserTrackPosition = i;
+                        updateUserTrack = trackEvent.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
+                        break;
+                    }
+                }
+                if (updateUserTrack != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        trackEventList.remove(updateUserTrackPosition);
+                    }
+                }
+                storeEventListToLocalStorage(trackEventList);
+
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
                 if (!getPushStatus().isEmpty()) {
                     userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
                 }
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
+                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserTrack, data -> {
                     // success handler
                     IterableApi.getInstance().setAnonUser(userId);
                     syncEvents();
@@ -288,6 +309,13 @@ public class AnonymousUserManager {
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
         storeEventListToLocalStorage(newDataObject, false);
+    }
+
+    private void storeEventListToLocalStorage(JSONArray newArrayObject) {
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, newArrayObject.toString());
+        editor.apply();
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
