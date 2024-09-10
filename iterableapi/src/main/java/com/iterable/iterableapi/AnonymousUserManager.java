@@ -260,7 +260,7 @@ public class AnonymousUserManager {
                         break;
                     }
                     case IterableConstants.UPDATE_USER: {
-                        iterableApi.apiClient.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS), false);
+                        handleUpdateUser(event);
                         break;
                     }
                     default:
@@ -295,6 +295,10 @@ public class AnonymousUserManager {
 
         long createdAt = getLongValue(event);
         iterableApi.apiClient.updateCart(list, createdAt);
+    }
+
+    private void handleUpdateUser(JSONObject event) throws JSONException {
+        iterableApi.apiClient.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS), false);
     }
 
     private String getStringValue(JSONObject event) throws JSONException {
