@@ -363,7 +363,7 @@ public class AnonymousUserManager {
     }
 
     private long getCurrentTime() {
-        return Calendar.getInstance().getTimeInMillis();
+        return Calendar.getInstance().getTimeInMillis() / 1000;
     }
 
     private String getPushStatus() {
