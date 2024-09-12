@@ -291,7 +291,7 @@ public class CriteriaCompletionChecker {
         boolean itemMatchResult = false;
 
         if (itemKey != null) {
-            if(!evaluateItemQueries(searchQueries, eventData, itemKey) && doesItemCriteriaExists(searchQueries)) {
+            if (!evaluateItemQueries(searchQueries, eventData, itemKey) && doesItemCriteriaExists(searchQueries)) {
                 return false;
             }
         }
@@ -513,7 +513,7 @@ public class CriteriaCompletionChecker {
             JSONObject query = relevantSearchQueries.getJSONObject(j);
             String field = query.getString(IterableConstants.FIELD);
 
-            if(item.has(field) && !evaluateSingleQuery(query, item.get(field))) {
+            if (item.has(field) && !evaluateSingleQuery(query, item.get(field))) {
                 return false;
             }
         }
