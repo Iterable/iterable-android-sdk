@@ -205,6 +205,8 @@ public class AnonymousUserManager {
                 JSONArray trackEventList = getEventListFromLocalStorage();
                 JSONObject updateUserTrack = null;
                 int updateUserTrackPosition = 0;
+
+                //find last update user event data fields and position
                 for (int i = 0; i < trackEventList.length(); i++) {
                     JSONObject trackEvent = trackEventList.getJSONObject(i);
                     if ((trackEvent.has(IterableConstants.SHARED_PREFS_EVENT_TYPE)
@@ -215,12 +217,14 @@ public class AnonymousUserManager {
                         break;
                     }
                 }
+
+                //remove update user event from local event list
                 if (updateUserTrack != null) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                         trackEventList.remove(updateUserTrackPosition);
                     }
                 }
-                storeEventListToLocalStorage(trackEventList);
+                saveEventListToLocalStorage(trackEventList);
 
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
@@ -343,13 +347,6 @@ public class AnonymousUserManager {
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
         storeEventListToLocalStorage(newDataObject, false);
-    }
-
-    private void storeEventListToLocalStorage(JSONArray newArrayObject) {
-        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, newArrayObject.toString());
-        editor.apply();
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
