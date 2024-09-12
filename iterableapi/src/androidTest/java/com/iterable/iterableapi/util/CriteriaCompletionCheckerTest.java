@@ -498,7 +498,7 @@ public class CriteriaCompletionCheckerTest {
 
     @Test
     public void testCustomEventWithMockData() throws Exception {
-        JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"button-clicked.lastPageViewed\":\"signup page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
+        JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"lastPageViewed\":\"signup page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
 
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
         assertTrue(result != null);
@@ -506,7 +506,7 @@ public class CriteriaCompletionCheckerTest {
 
     @Test
     public void testCustomEventWithMockDataFail() throws Exception {
-        JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"button-clicked.lastPageViewed\":\"login page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
+        JSONArray jsonArray = new JSONArray("[{\"eventName\":\"button-clicked\",\"dataFields\":{\"lastPageViewed\":\"login page\"},\"createdAt\":1700071052507,\"eventType\":\"customEvent\"}]");
 
         String result = evaluator.getMatchedCriteria(mockCriteria, jsonArray);
         assertFalse(result != null);
