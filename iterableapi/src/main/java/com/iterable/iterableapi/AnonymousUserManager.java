@@ -173,6 +173,7 @@ public class AnonymousUserManager {
     }
 
     private String checkCriteriaCompletion() {
+        //get criteria data from local storage
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         JSONArray localStoredEventList = getEventListFromLocalStorage();
@@ -180,6 +181,7 @@ public class AnonymousUserManager {
         try {
             if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
                 CriteriaCompletionChecker checker = new CriteriaCompletionChecker();
+                // check if there is a criteria that matches the locally stored event list
                 return checker.getMatchedCriteria(criteriaData, localStoredEventList);
             }
         } catch (Exception e) {
