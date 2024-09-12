@@ -200,7 +200,7 @@ public class AnonymousUserManager {
         //generate anon user id
         String userId = UUID.randomUUID().toString();
 
-        if(userData.isEmpty()) return;
+        if (userData.isEmpty()) return;
 
         try {
             //find last update user event data fields and position
@@ -208,7 +208,7 @@ public class AnonymousUserManager {
             int updateUserTrackPosition = getLastUpdateUserEventPosition(trackEventList);
             JSONObject updateUserTrack = null;
 
-            if(updateUserTrackPosition != -1) {
+            if (updateUserTrackPosition != -1) {
                 updateUserTrack = trackEventList.getJSONObject(updateUserTrackPosition).getJSONObject(IterableConstants.KEY_DATA_FIELDS);
             }
 
