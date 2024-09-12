@@ -285,43 +285,70 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
+        // evaluate item-related queries
+        String itemKey = getItemKey(eventData);
+
         boolean itemMatchResult = false;
-        String itemKey = null;
-        if (eventData.has(IterableConstants.KEY_ITEMS)) {
-            itemKey = IterableConstants.KEY_ITEMS;
-        } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
-            itemKey = IterableConstants.PURCHASE_ITEM;
-        }
 
         if (itemKey != null) {
-            boolean result = false;
-            JSONArray items = new JSONArray(eventData.getString(itemKey));
-            for (int j = 0; j < items.length(); j++) {
-                JSONObject item = items.getJSONObject(j);
-                if (doesItemMatchQueries(searchQueries, item)) {
-                    result = true;
-                    break;
-                }
-            }
-            if (!result && doesItemCriteriaExists(searchQueries)) {
+            if(!evaluateItemQueries(searchQueries, eventData, itemKey) && doesItemCriteriaExists(searchQueries)) {
                 return false;
             }
-            itemMatchResult = result;
         }
 
+        //filter event data keys
+        ArrayList<String> filteredDataKeys = filterEventDataKeys(eventData);
+
+        // if there are no filtered data keys, return the result of item queries
+        if (filteredDataKeys.isEmpty()) {
+            return itemKey != null;
+        }
+
+        // filter search queries that are not item-related
+        JSONArray nonItemSearchQueries = getNonItemSearchQueries(searchQueries);
+        if (nonItemSearchQueries.length() == 0) {
+            return itemKey != null;
+        }
+
+        // evaluate non-item related search queries
+        return evaluateNonItemQueries(nonItemSearchQueries, eventData, filteredDataKeys);
+    }
+
+    private String getItemKey(JSONObject eventData) throws JSONException {
+        if (eventData.has(IterableConstants.KEY_ITEMS)) {
+            return IterableConstants.KEY_ITEMS;
+        } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
+            return IterableConstants.PURCHASE_ITEM;
+        }
+        return null;
+    }
+
+    private boolean evaluateItemQueries(JSONArray searchQueries, JSONObject eventData, String itemKey) throws JSONException {
+        JSONArray items = new JSONArray(eventData.getString(itemKey));
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject item = items.getJSONObject(i);
+            if (doesItemMatchQueries(searchQueries, item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ArrayList<String> filterEventDataKeys(JSONObject eventData) {
         ArrayList<String> filteredDataKeys = new ArrayList<>();
-        Iterator<String> localEventDataKeys = eventData.keys();
-        while (localEventDataKeys.hasNext()) {
-            String localEventDataKey = localEventDataKeys.next();
-            if (!localEventDataKey.equals(IterableConstants.KEY_ITEMS)) {
-                filteredDataKeys.add(localEventDataKey);
+        Iterator<String> keys = eventData.keys();
+
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (!key.equals(IterableConstants.KEY_ITEMS)) {
+                filteredDataKeys.add(key);
             }
         }
 
-        if (filteredDataKeys.size() == 0) {
-            return itemMatchResult;
-        }
+        return filteredDataKeys;
+    }
 
+    private JSONArray getNonItemSearchQueries(JSONArray searchQueries) throws JSONException {
         JSONArray filteredSearchQueries = new JSONArray();
         for (int i = 0; i < searchQueries.length(); i++) {
             JSONObject searchQuery = searchQueries.getJSONObject(i);
@@ -330,13 +357,15 @@ public class CriteriaCompletionChecker {
                 filteredSearchQueries.put(searchQuery);
             }
         }
-        if (filteredSearchQueries.length() == 0) {
-            return itemMatchResult;
-        }
+        return filteredSearchQueries;
+    }
+
+    private boolean evaluateNonItemQueries(JSONArray searchQueries, JSONObject eventData, ArrayList<String> filteredDataKeys) throws JSONException {
         boolean matchResult = false;
-        for (int k = 0; k < filteredSearchQueries.length(); k++) {
-            JSONObject searchQuery = filteredSearchQueries.getJSONObject(k);
+        for (int k = 0; k < searchQueries.length(); k++) {
+            JSONObject searchQuery = searchQueries.getJSONObject(k);
             String field = searchQuery.getString(IterableConstants.FIELD);
+
             boolean isKeyExists = false;
             if (searchQuery.getString(IterableConstants.DATA_TYPE).equals(IterableConstants.TRACK_EVENT) && searchQuery.getString("fieldType").equals("object") && searchQuery.getString(IterableConstants.COMPARATOR_TYPE).equals(MatchComparator.IS_SET)) {
                 final String eventName = eventData.getString(IterableConstants.KEY_EVENT_NAME);
