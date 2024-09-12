@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -201,6 +202,30 @@ public class AnonymousUserManager {
 
         try {
             if (!userData.isEmpty()) {
+                JSONArray trackEventList = getEventListFromLocalStorage();
+                JSONObject updateUserTrack = null;
+                int updateUserTrackPosition = 0;
+
+                //find last update user event data fields and position
+                for (int i = 0; i < trackEventList.length(); i++) {
+                    JSONObject trackEvent = trackEventList.getJSONObject(i);
+                    if ((trackEvent.has(IterableConstants.SHARED_PREFS_EVENT_TYPE)
+                            && trackEvent.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.KEY_USER))
+                            && trackEvent.has(IterableConstants.KEY_DATA_FIELDS)) {
+                        updateUserTrackPosition = i;
+                        updateUserTrack = trackEvent.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
+                        break;
+                    }
+                }
+
+                //remove update user event from local event list
+                if (updateUserTrack != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        trackEventList.remove(updateUserTrackPosition);
+                    }
+                }
+                saveEventListToLocalStorage(trackEventList);
+
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
 
@@ -211,7 +236,7 @@ public class AnonymousUserManager {
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
 
                 //track anon session with new user
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, data -> {
+                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserTrack, data -> {
                     // success handler
                     IterableApi.getInstance().setAnonUser(userId);
                     syncEvents();
