@@ -40,27 +40,37 @@ public class CriteriaCompletionChecker {
     }
 
     private String findMatchedCriteria(JSONArray criteriaList) {
-        String criteriaId = null;
         JSONArray eventsToProcess = prepareEventsToProcess();
 
+        //for each criteria
         for (int i = 0; i < criteriaList.length(); i++) {
             try {
                 JSONObject criteria = criteriaList.getJSONObject(i);
-                if (criteria.has(IterableConstants.SEARCH_QUERY) && criteria.has(IterableConstants.CRITERIA_ID)) {
+
+                // check if criteria is valid
+                if (isCriteriaValid(criteria)) {
                     JSONObject searchQuery = criteria.getJSONObject(IterableConstants.SEARCH_QUERY);
                     String currentCriteriaId = criteria.getString(IterableConstants.CRITERIA_ID);
-                    boolean result = evaluateTree(searchQuery, eventsToProcess);
-                    if (result) {
-                        criteriaId = currentCriteriaId;
-                        break;
+
+                    // check if criteria matches
+                    if (isCriteriaMatched(searchQuery, eventsToProcess)) {
+                        return currentCriteriaId;
                     }
                 }
             } catch (JSONException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Error processing criteria: " + e.getMessage(), e);
             }
         }
 
-        return criteriaId;
+        return null;
+    }
+
+    private boolean isCriteriaValid(JSONObject criteria) {
+        return criteria.has(IterableConstants.SEARCH_QUERY) && criteria.has(IterableConstants.CRITERIA_ID);
+    }
+
+    private boolean isCriteriaMatched(JSONObject searchQuery, JSONArray eventsToProcess) {
+        return evaluateTree(searchQuery, eventsToProcess);
     }
 
     private JSONArray prepareEventsToProcess() {
