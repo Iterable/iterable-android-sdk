@@ -210,6 +210,7 @@ public class CriteriaCompletionChecker {
             JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
             mergeDataFields(updatedItem, dataFields);
         }
+        return updatedItem;
     }
 
     private void mergeDataFields(JSONObject updatedItem, JSONObject dataFields) throws JSONException {
