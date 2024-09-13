@@ -297,12 +297,12 @@ public class CriteriaCompletionChecker {
             String dataType = node.getString(IterableConstants.DATA_TYPE);
 
             if (dataType.equals(trackingType)) {
-                if(processSearchCombo(node, eventData)) {
+                if (processSearchCombo(node, eventData)) {
                     //check if min match is reached
-                    if(isMinMatchReached(node)) {
+                    if (isMinMatchReached(node)) {
                         return true;
                     }
-                    if(isNegationValid(node, i, localEventData.length())) {
+                    if (isNegationValid(node, i, localEventData.length())) {
                         continue;
                     }
                     return true;
