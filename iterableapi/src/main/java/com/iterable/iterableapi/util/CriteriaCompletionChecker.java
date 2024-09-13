@@ -188,7 +188,7 @@ public class CriteriaCompletionChecker {
         try {
             for (int i = 0; i < localStoredEventList.length(); i++) {
                 JSONObject localEventData = localStoredEventList.getJSONObject(i);
-                if(isNonCartEvent(localEventData)) {
+                if (isNonCartEvent(localEventData)) {
                     JSONObject updatedItem = createUpdatedItem(localEventData);
                     nonPurchaseEvents.put(updatedItem);
                 }
