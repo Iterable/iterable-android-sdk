@@ -73,6 +73,9 @@ public class CriteriaCompletionChecker {
         return evaluateTree(searchQuery, eventsToProcess);
     }
 
+    //
+    //event processing functions
+    //
     private JSONArray prepareEventsToProcess() {
         //store purchase events in events list
         JSONArray eventsToProcess = getEventsWithCartItems();
@@ -231,33 +234,24 @@ public class CriteriaCompletionChecker {
         }
     }
 
+    //
+    //criteria completion functions
+    //
     public boolean evaluateTree(JSONObject node, JSONArray localEventData) {
         try {
             if (node.has(IterableConstants.SEARCH_QUERIES)) {
                 String combinator = node.getString(IterableConstants.COMBINATOR);
                 JSONArray searchQueries = node.getJSONArray(IterableConstants.SEARCH_QUERIES);
-                if (combinator.equals("And")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                } else if (combinator.equals("Or")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                } else if (combinator.equals("Not")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        searchQueries.getJSONObject(i).put("isNot", true);
-                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return false;
-                        }
-                    }
-                    return true;
+
+                switch (combinator) {
+                    case "And":
+                        return evaluateAnd(searchQueries, localEventData);
+                    case "Or":
+                        return evaluateOr(searchQueries, localEventData);
+                    case "Not":
+                        return evaluateNot(searchQueries, localEventData);
+                    default:
+                        throw new IllegalArgumentException("Unknown combinator: " + combinator);
                 }
             } else if (node.has(IterableConstants.SEARCH_COMBO)) {
                 return evaluateSearchQueries(node, localEventData);
@@ -268,36 +262,78 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
+    private boolean evaluateAnd(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean evaluateOr(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean evaluateNot(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            searchQueries.getJSONObject(i).put("isNot", true);
+            if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean evaluateSearchQueries(JSONObject node, @NonNull JSONArray localEventData) throws JSONException {
         for (int i = 0; i < localEventData.length(); i++) {
             JSONObject eventData = localEventData.getJSONObject(i);
             String trackingType = eventData.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
             String dataType = node.getString(IterableConstants.DATA_TYPE);
-            if (dataType.equals(trackingType)) {
-                JSONObject searchCombo = node.getJSONObject(IterableConstants.SEARCH_COMBO);
-                JSONArray searchQueries = searchCombo.getJSONArray(IterableConstants.SEARCH_QUERIES);
-                String combinator = searchCombo.getString(IterableConstants.COMBINATOR);
-                boolean isNot = node.has("isNot");
 
-                if (evaluateEvent(searchQueries, eventData, combinator)) {
-                    if (node.has(IterableConstants.MIN_MATCH)) {
-                        int minMatch = node.getInt(IterableConstants.MIN_MATCH) - 1;
-                        node.put(IterableConstants.MIN_MATCH, minMatch);
-                        if (minMatch > 0) {
-                            continue;
-                        }
+            if (dataType.equals(trackingType)) {
+                if(processSearchCombo(node, eventData)) {
+                    //check if min match is reached
+                    if(isMinMatchReached(node)) {
+                        return true;
                     }
-                    if (isNot && !(i + 1 == localEventData.length())) {
+                    if(isNegationValid(node, i, localEventData.length())) {
                         continue;
                     }
                     return true;
-                } else if (isNot) {
+                } else if (node.has("isNot")) {
                     return false;
                 }
-
             }
         }
         return false;
+    }
+
+    private boolean processSearchCombo(JSONObject node, JSONObject eventData) throws JSONException {
+        JSONObject searchCombo = node.getJSONObject(IterableConstants.SEARCH_COMBO);
+        JSONArray searchQueries = searchCombo.getJSONArray(IterableConstants.SEARCH_QUERIES);
+        String combinator = searchCombo.getString(IterableConstants.COMBINATOR);
+
+        return evaluateEvent(searchQueries, eventData, combinator);
+    }
+
+    private boolean isMinMatchReached(JSONObject node) throws JSONException {
+        if (node.has(IterableConstants.MIN_MATCH)) {
+            int minMatch = node.getInt(IterableConstants.MIN_MATCH) - 1;
+            node.put(IterableConstants.MIN_MATCH, minMatch);
+            return minMatch <= 0;
+        }
+        return false;
+    }
+
+    private boolean isNegationValid(JSONObject node, int currentIndex, int totalEvents) {
+        boolean isNot = node.has("isNot");
+        return isNot && currentIndex + 1 != totalEvents;
     }
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
