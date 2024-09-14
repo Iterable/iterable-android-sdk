@@ -627,17 +627,22 @@ public class CriteriaCompletionChecker {
     private boolean compareContains(Object sourceTo, String stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
             JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
-            Object element = jsonArraySourceTo.get(0);
-            if (element instanceof String) {
-                ArrayList<String> stringArrayList = new ArrayList<>();
-                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                    stringArrayList.add(jsonArraySourceTo.getString(i));
-                }
-                return stringArrayList.contains(stringValue);
+
+            if (jsonArraySourceTo.get(0) instanceof String) {
+                // check if any string in the array contains the string
+                return arrayContains(jsonArraySourceTo, stringValue);
             }
         } else if (sourceTo instanceof String) {
-            String stringSourceTo = (String) sourceTo;
-            return stringSourceTo.contains(stringValue);
+            return ((String) sourceTo).contains(stringValue);
+        }
+        return false;
+    }
+
+    private boolean arrayContains(JSONArray jsonArray, String stringValue) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getString(i).contains(stringValue)) {
+                return true;
+            }
         }
         return false;
     }
@@ -645,18 +650,23 @@ public class CriteriaCompletionChecker {
     private boolean compareStartsWith(Object sourceTo, String stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
             JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
-            Object element = jsonArraySourceTo.get(0);
-            if (element instanceof String) {
-                boolean isMatched = false;
-                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                    if (jsonArraySourceTo.getString(i).startsWith(stringValue)) {
-                        isMatched = true;
-                    }
-                }
-                return isMatched;
+
+            if (jsonArraySourceTo.get(0) instanceof String) {
+                // check if any string in the array starts with string
+                return anyStartsWith(jsonArraySourceTo, stringValue);
             }
         } else if (sourceTo instanceof String) {
             return ((String) sourceTo).startsWith(stringValue);
+        }
+
+        return false;
+    }
+
+    private boolean anyStartsWith(JSONArray jsonArray, String stringValue) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getString(i).startsWith(stringValue)) {
+                return true;
+            }
         }
         return false;
     }
@@ -665,7 +675,7 @@ public class CriteriaCompletionChecker {
         try {
             Pattern regexPattern = Pattern.compile(pattern);
 
-            // If the source is a JSONArray, check if any string element matches the regex
+            // If the source is a JSONArray
             if (sourceTo instanceof JSONArray) {
                 JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
 
