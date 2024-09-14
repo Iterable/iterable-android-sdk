@@ -494,11 +494,7 @@ public class CriteriaCompletionChecker {
             return false;
         }
 
-        if (valueToCompare instanceof String && isDouble((String) valueToCompare)) {
-            // here do the conversion of this number to formatted double value by removing trailing zeros
-            // because when jsonstring to jsonarray happens for items object it removes trailing zeros
-            valueToCompare = formattedDoubleValue(Double.parseDouble((String) valueToCompare));
-        }
+        valueToCompare = formatValueToCompare(valueToCompare);
 
         switch (comparatorType) {
             case MatchComparator.EQUALS:
@@ -508,13 +504,10 @@ public class CriteriaCompletionChecker {
             case MatchComparator.IS_SET:
                 return issetCheck(matchObj);
             case MatchComparator.GREATER_THAN:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " > ");
             case MatchComparator.LESS_THAN:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " < ");
             case MatchComparator.GREATER_THAN_OR_EQUAL_TO:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " >= ");
             case MatchComparator.LESS_THAN_OR_EQUAL_TO:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " <= ");
+                return compareNumeric(matchObj, valueToCompare, comparatorType);
             case MatchComparator.CONTAINS:
                 return compareContains(matchObj, String.valueOf(valueToCompare));
             case MatchComparator.STARTS_WITH:
@@ -523,6 +516,33 @@ public class CriteriaCompletionChecker {
                 return compareWithRegex(matchObj, String.valueOf(valueToCompare));
             default:
                 return false;
+        }
+    }
+
+    private Object formatValueToCompare(Object valueToCompare) {
+        if (valueToCompare instanceof String && isDouble((String) valueToCompare)) {
+            return formattedDoubleValue(Double.parseDouble((String) valueToCompare));
+        }
+        return valueToCompare;
+    }
+
+    private boolean compareNumeric(Object matchObj, Object valueToCompare, String comparatorType) throws JSONException {
+        String comparisonOperator = getComparisonOperator(comparatorType);
+        return compareNumericValues(matchObj, String.valueOf(valueToCompare), comparisonOperator);
+    }
+
+    private String getComparisonOperator(String comparatorType) {
+        switch (comparatorType) {
+            case MatchComparator.GREATER_THAN:
+                return " > ";
+            case MatchComparator.LESS_THAN:
+                return " < ";
+            case MatchComparator.GREATER_THAN_OR_EQUAL_TO:
+                return " >= ";
+            case MatchComparator.LESS_THAN_OR_EQUAL_TO:
+                return " <= ";
+            default:
+                throw new IllegalArgumentException("Invalid comparator type: " + comparatorType);
         }
     }
 
@@ -535,9 +555,7 @@ public class CriteriaCompletionChecker {
             return matchObj != null && !matchObj.equals("");
         }
     }
-
-
-
+    
     private boolean compareValueEquality(Object sourceTo, Object stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
             JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
