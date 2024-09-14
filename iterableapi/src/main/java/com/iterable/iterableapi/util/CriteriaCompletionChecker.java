@@ -662,26 +662,32 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean compareWithRegex(Object sourceTo, String pattern) throws JSONException {
-        if (sourceTo instanceof JSONArray) {
-            JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
-            Object element = jsonArraySourceTo.get(0);
-            if (element instanceof String) {
-                boolean isMatched = false;
-                Pattern regexPattern = Pattern.compile(pattern);
-                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                    if (regexPattern.matcher(jsonArraySourceTo.getString(i)).matches()) {
-                        isMatched = true;
-                    }
+        try {
+            Pattern regexPattern = Pattern.compile(pattern);
+
+            // If the source is a JSONArray, check if any string element matches the regex
+            if (sourceTo instanceof JSONArray) {
+                JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
+
+                if (jsonArraySourceTo.get(0) instanceof String) {
+                    // check if any string in the array matches the regex
+                    return anyMatchesRegex(jsonArraySourceTo, regexPattern);
                 }
-                return isMatched;
-            }
-        } else if (sourceTo instanceof String) {
-            try {
-                Pattern regexPattern = Pattern.compile(pattern);
+            } else if (sourceTo instanceof String) {
                 return regexPattern.matcher((String) sourceTo).matches();
-            } catch (PatternSyntaxException e) {
-                e.printStackTrace();
-                return false;
+            }
+
+        } catch (PatternSyntaxException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private boolean anyMatchesRegex(JSONArray jsonArray, Pattern regexPattern) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (regexPattern.matcher(jsonArray.getString(i)).matches()) {
+                return true;
             }
         }
         return false;
@@ -729,15 +735,6 @@ public class CriteriaCompletionChecker {
 
     private boolean isBoolean(String value) {
         return "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
-    }
-
-    private ArrayList<String> extractKeys(JSONObject jsonObject) {
-        ArrayList<String> keys = new ArrayList<>();
-        Iterator<String> jsonKeys = jsonObject.keys();
-        while (jsonKeys.hasNext()) {
-            keys.add(jsonKeys.next());
-        }
-        return keys;
     }
 
     private void handleException(Exception e) {
