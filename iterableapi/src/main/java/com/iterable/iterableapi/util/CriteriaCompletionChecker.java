@@ -485,6 +485,10 @@ public class CriteriaCompletionChecker {
             return String.format("%s", d);
     }
 
+    //
+    // comparison functions
+    //
+
     private boolean evaluateComparison(String comparatorType, Object matchObj, Object valueToCompare) throws JSONException {
         if (valueToCompare == null && !comparatorType.equals(MatchComparator.IS_SET)) {
             return false;
@@ -531,6 +535,8 @@ public class CriteriaCompletionChecker {
             return matchObj != null && !matchObj.equals("");
         }
     }
+
+
 
     private boolean compareValueEquality(Object sourceTo, Object stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
