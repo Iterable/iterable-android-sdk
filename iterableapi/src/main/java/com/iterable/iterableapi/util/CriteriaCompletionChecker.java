@@ -555,7 +555,7 @@ public class CriteriaCompletionChecker {
             return matchObj != null && !matchObj.equals("");
         }
     }
-    
+
     private boolean compareValueEquality(Object sourceTo, Object stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
             JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
