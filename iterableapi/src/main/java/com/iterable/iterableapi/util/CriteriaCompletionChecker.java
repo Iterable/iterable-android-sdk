@@ -430,34 +430,45 @@ public class CriteriaCompletionChecker {
     }
 
     private Object getFieldValue(JSONObject data, String field) {
-        String[] fields = field.split("\\.");
         try {
-            String eventType = data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-
-            if (eventType.equals(IterableConstants.TRACK_EVENT)) {
-                String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
-                if (fields[0].equals(eventName)) {
-                    fields = new String[]{fields[fields.length - 1]};
-                }
-            }
-
-            JSONObject value = data;
-            Object fieldValue = null;
-
-            for (String currentField : fields) {
-                if (value.has(currentField)) {
-                    Object dataValue = value.get(currentField);
-                    if (dataValue instanceof JSONObject) {
-                        value = value.getJSONObject(currentField);
-                    } else  {
-                        fieldValue = value.get(currentField);
-                    }
-                }
-            }
-            return fieldValue;
+            String[] fields = getFieldsArray(data, field);
+            return retrieveFieldValue(data, fields);
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    private String[] getFieldsArray(JSONObject data, String field) throws JSONException {
+        String[] fields = field.split("\\.");
+        String eventType = data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+
+        // If the event is a track event, and the first field is the event name, shorten the fields array
+        if (eventType.equals(IterableConstants.TRACK_EVENT)) {
+            String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
+            if (fields[0].equals(eventName)) {
+                fields = new String[]{fields[fields.length - 1]};
+            }
+        }
+
+        return fields;
+    }
+
+    private Object retrieveFieldValue(JSONObject data, String[] fields) throws JSONException {
+        JSONObject value = data;
+        Object fieldValue = null;
+
+        for (String currentField : fields) {
+            if (value.has(currentField)) {
+                Object dataValue = value.get(currentField);
+                if (dataValue instanceof JSONObject) {
+                    value = value.getJSONObject(currentField);
+                } else  {
+                    fieldValue = value.get(currentField);
+                }
+            }
+        }
+
+        return fieldValue;
     }
 
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
