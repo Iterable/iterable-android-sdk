@@ -19,13 +19,17 @@ public class CriteriaCompletionChecker {
     private JSONArray localStoredEventList;
 
     public String getMatchedCriteria(String criteriaData, JSONArray localStoredEventList) {
+        //store locally stored event list
         this.localStoredEventList = localStoredEventList;
         String criteriaId = null;
 
         try {
             JSONObject json = new JSONObject(criteriaData);
             if (json.has(IterableConstants.CRITERIAS)) {
+                // pull criteria list from json
                 JSONArray criteriaList = json.getJSONArray(IterableConstants.CRITERIAS);
+
+                // find matched criteria
                 criteriaId = findMatchedCriteria(criteriaList);
             }
         } catch (JSONException e) {
@@ -36,33 +40,48 @@ public class CriteriaCompletionChecker {
     }
 
     private String findMatchedCriteria(JSONArray criteriaList) {
-        String criteriaId = null;
         JSONArray eventsToProcess = prepareEventsToProcess();
 
+        //for each criteria
         for (int i = 0; i < criteriaList.length(); i++) {
             try {
                 JSONObject criteria = criteriaList.getJSONObject(i);
-                if (criteria.has(IterableConstants.SEARCH_QUERY) && criteria.has(IterableConstants.CRITERIA_ID)) {
+
+                // check if criteria is valid
+                if (isCriteriaValid(criteria)) {
                     JSONObject searchQuery = criteria.getJSONObject(IterableConstants.SEARCH_QUERY);
                     String currentCriteriaId = criteria.getString(IterableConstants.CRITERIA_ID);
-                    boolean result = evaluateTree(searchQuery, eventsToProcess);
-                    if (result) {
-                        criteriaId = currentCriteriaId;
-                        break;
+
+                    // check if criteria matches
+                    if (isCriteriaMatched(searchQuery, eventsToProcess)) {
+                        return currentCriteriaId;
                     }
                 }
             } catch (JSONException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Error processing criteria: " + e.getMessage(), e);
             }
         }
 
-        return criteriaId;
+        return null;
     }
 
+    private boolean isCriteriaValid(JSONObject criteria) {
+        return criteria.has(IterableConstants.SEARCH_QUERY) && criteria.has(IterableConstants.CRITERIA_ID);
+    }
+
+    private boolean isCriteriaMatched(JSONObject searchQuery, JSONArray eventsToProcess) {
+        return evaluateTree(searchQuery, eventsToProcess);
+    }
+
+    //
+    //event processing functions
+    //
     private JSONArray prepareEventsToProcess() {
+        //store purchase events in events list
         JSONArray eventsToProcess = getEventsWithCartItems();
         JSONArray nonPurchaseEvents = getNonCartEvents();
 
+        //store non-purchase events in event list
         for (int i = 0; i < nonPurchaseEvents.length(); i++) {
             try {
                 eventsToProcess.put(nonPurchaseEvents.getJSONObject(i));
@@ -76,88 +95,19 @@ public class CriteriaCompletionChecker {
 
     private JSONArray getEventsWithCartItems() {
         JSONArray processedEvents = new JSONArray();
+
         try {
             for (int i = 0; i < localStoredEventList.length(); i++) {
+                //get event data and event type
                 JSONObject localEventData = localStoredEventList.getJSONObject(i);
-                if (localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && (
-                        localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_PURCHASE))) {
-                    JSONObject updatedItem = new JSONObject();
+                String eventType = localEventData.optString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
 
-                    if (localEventData.has(IterableConstants.KEY_ITEMS)) {
-                        final JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
-                        final JSONArray processedItems = new JSONArray();
-                        for (int j = 0; j < items.length(); j++) {
-                            JSONObject processedItem = new JSONObject();
-                            JSONObject item = items.getJSONObject(j);
-                            Iterator<String> keys = item.keys();
-                            while (keys.hasNext()) {
-                                String key = keys.next();
-                                processedItem.put(IterableConstants.PURCHASE_ITEM_PREFIX + key, item.get(key));
-                            }
-                            processedItems.put(processedItem);
-                        }
-                        updatedItem.put(IterableConstants.PURCHASE_ITEM, processedItems);
-                    }
-
-                    if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
-                        JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
-                        Iterator<String> fieldKeys = dataFields.keys();
-                        while (fieldKeys.hasNext()) {
-                            String key = fieldKeys.next();
-                            updatedItem.put(key, dataFields.get(key));
-                        }
-                    }
-
-                    Iterator<String> keys = localEventData.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        if (!key.equals(IterableConstants.KEY_ITEMS) && !key.equals(IterableConstants.KEY_DATA_FIELDS)) {
-                            updatedItem.put(key, localEventData.get(key));
-                        }
-                    }
+                //process event based on if its a purchase or a cart update
+                if (eventType.equals(IterableConstants.TRACK_PURCHASE)) {
+                    JSONObject updatedItem = processPurchaseEvent(localEventData);
                     processedEvents.put(updatedItem);
-                } else if (localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && (
-                        localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART))) {
-                    JSONObject updatedItem = new JSONObject();
-                    updatedItem.put(IterableConstants.KEY_EVENT_NAME, IterableConstants.UPDATE_CART);
-
-                    if (localEventData.has(IterableConstants.KEY_ITEMS)) {
-                        final JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
-                        final JSONArray processedItems = new JSONArray();
-                        for (int j = 0; j < items.length(); j++) {
-                            JSONObject processedItem = new JSONObject();
-                            JSONObject item = items.getJSONObject(j);
-                            Iterator<String> keys = item.keys();
-                            while (keys.hasNext()) {
-                                String key = keys.next();
-                                processedItem.put(IterableConstants.UPDATECART_ITEM_PREFIX + key, item.get(key));
-                            }
-                            processedItems.put(processedItem);
-                        }
-                        updatedItem.put(IterableConstants.KEY_ITEMS, processedItems);
-                    }
-
-                    if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
-                        JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
-                        Iterator<String> fieldKeys = dataFields.keys();
-                        while (fieldKeys.hasNext()) {
-                            String key = fieldKeys.next();
-                            updatedItem.put(key, dataFields.get(key));
-                        }
-                    }
-
-                    Iterator<String> localEventDataKeys = localEventData.keys();
-                    while (localEventDataKeys.hasNext()) {
-                        String key = localEventDataKeys.next();
-                        if (!key.equals(IterableConstants.KEY_ITEMS) && !key.equals(IterableConstants.KEY_DATA_FIELDS)) {
-                            if (key.equals(IterableConstants.SHARED_PREFS_EVENT_TYPE)) {
-                                updatedItem.put(key, IterableConstants.TRACK_EVENT);
-                            } else {
-                                updatedItem.put(key, localEventData.get(key));
-                            }
-                        }
-                    }
-
+                } else if (eventType.equals(IterableConstants.TRACK_UPDATE_CART)) {
+                    JSONObject updatedItem = processUpdateCartEvent(localEventData);
                     processedEvents.put(updatedItem);
                 }
             }
@@ -167,24 +117,92 @@ public class CriteriaCompletionChecker {
         return processedEvents;
     }
 
+    private JSONObject processPurchaseEvent(JSONObject localEventData) throws JSONException {
+        JSONObject updatedItem = new JSONObject();
+
+        //process shopping cart items
+        if (localEventData.has(IterableConstants.KEY_ITEMS)) {
+            JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
+            JSONArray processedItems = processItems(items, IterableConstants.PURCHASE_ITEM_PREFIX);
+            updatedItem.put(IterableConstants.PURCHASE_ITEM, processedItems);
+        }
+
+        //process data fields
+        addDataFields(localEventData, updatedItem);
+
+        //process remaining fields
+        addRemainingFields(localEventData, updatedItem);
+
+        return updatedItem;
+    }
+
+    private JSONObject processUpdateCartEvent(JSONObject localEventData) throws JSONException {
+        JSONObject updatedItem = new JSONObject();
+        updatedItem.put(IterableConstants.KEY_EVENT_NAME, IterableConstants.UPDATE_CART);
+
+        //process shopping cart items
+        if (localEventData.has(IterableConstants.KEY_ITEMS)) {
+            JSONArray items = new JSONArray(localEventData.getString(IterableConstants.KEY_ITEMS));
+            JSONArray processedItems = processItems(items, IterableConstants.UPDATECART_ITEM_PREFIX);
+            updatedItem.put(IterableConstants.KEY_ITEMS, processedItems);
+        }
+
+        //process data fields
+        addDataFields(localEventData, updatedItem);
+
+        //process remaining fields
+        addRemainingFields(localEventData, updatedItem);
+
+        //add event type
+        updatedItem.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
+
+        return updatedItem;
+    }
+
+    private JSONArray processItems(JSONArray items, String prefix) throws JSONException {
+        final JSONArray processedItems = new JSONArray();
+
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject item = items.getJSONObject(i);
+            JSONObject processedItem = new JSONObject();
+            Iterator<String> keys = item.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                processedItem.put(prefix + key, item.get(key));
+            }
+            processedItems.put(processedItem);
+        }
+        return processedItems;
+    }
+
+    private void addDataFields(JSONObject localEventData, JSONObject updatedItem) throws JSONException {
+        if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
+            JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
+            Iterator<String> fieldKeys = dataFields.keys();
+            while (fieldKeys.hasNext()) {
+                String key = fieldKeys.next();
+                updatedItem.put(key, dataFields.get(key));
+            }
+        }
+    }
+
+    private void addRemainingFields(JSONObject localEventData, JSONObject updatedItem) throws JSONException {
+        Iterator<String> keys = localEventData.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (!key.equals(IterableConstants.KEY_ITEMS) && !key.equals(IterableConstants.KEY_DATA_FIELDS)) {
+                updatedItem.put(key, localEventData.get(key));
+            }
+        }
+    }
+
     private JSONArray getNonCartEvents() {
         JSONArray nonPurchaseEvents = new JSONArray();
         try {
             for (int i = 0; i < localStoredEventList.length(); i++) {
                 JSONObject localEventData = localStoredEventList.getJSONObject(i);
-                if (localEventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE)
-                        && !localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_PURCHASE)
-                        && !localEventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_UPDATE_CART)) {
-
-                    JSONObject updatedItem = new JSONObject(localEventData.toString());
-                    if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
-                        JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
-                        Iterator<String> fieldKeys = dataFields.keys();
-                        while (fieldKeys.hasNext()) {
-                            String key = fieldKeys.next();
-                            updatedItem.put(key, dataFields.get(key));
-                        }
-                    }
+                if (isNonCartEvent(localEventData)) {
+                    JSONObject updatedItem = createUpdatedItem(localEventData);
                     nonPurchaseEvents.put(updatedItem);
                 }
             }
@@ -192,6 +210,28 @@ public class CriteriaCompletionChecker {
             handleJSONException(e);
         }
         return nonPurchaseEvents;
+    }
+
+    private boolean isNonCartEvent(JSONObject localEventData) throws JSONException {
+        String eventType = localEventData.optString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+        return !eventType.equals(IterableConstants.TRACK_PURCHASE) && !eventType.equals(IterableConstants.TRACK_UPDATE_CART);
+    }
+
+    private JSONObject createUpdatedItem(JSONObject localEventData) throws JSONException {
+        JSONObject updatedItem = new JSONObject(localEventData.toString());
+        if (localEventData.has(IterableConstants.KEY_DATA_FIELDS)) {
+            JSONObject dataFields = localEventData.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
+            mergeDataFields(updatedItem, dataFields);
+        }
+        return updatedItem;
+    }
+
+    private void mergeDataFields(JSONObject updatedItem, JSONObject dataFields) throws JSONException {
+        Iterator<String> fieldKeys = dataFields.keys();
+        while (fieldKeys.hasNext()) {
+            String key = fieldKeys.next();
+            updatedItem.put(key, dataFields.get(key));
+        }
     }
 
     //
