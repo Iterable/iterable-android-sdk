@@ -194,6 +194,10 @@ public class CriteriaCompletionChecker {
         return nonPurchaseEvents;
     }
 
+    //
+    // evaluate tree functions
+    //
+
     public boolean evaluateTree(JSONObject node, JSONArray localEventData) {
         try {
             if (node.has(IterableConstants.SEARCH_QUERIES)) {
