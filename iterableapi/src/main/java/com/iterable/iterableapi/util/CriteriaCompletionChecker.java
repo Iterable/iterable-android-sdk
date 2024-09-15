@@ -280,6 +280,10 @@ public class CriteriaCompletionChecker {
         return false;
     }
 
+    //
+    // field logic evaluation
+    //
+
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
         // evaluate item-related queries
         String itemKey = getItemKey(eventData);
@@ -362,71 +366,77 @@ public class CriteriaCompletionChecker {
             JSONObject searchQuery = searchQueries.getJSONObject(k);
             String field = searchQuery.getString(IterableConstants.FIELD);
 
-            boolean isKeyExists = false;
-            if (searchQuery.getString(IterableConstants.DATA_TYPE).equals(IterableConstants.TRACK_EVENT) && searchQuery.getString("fieldType").equals("object") && searchQuery.getString(IterableConstants.COMPARATOR_TYPE).equals(MatchComparator.IS_SET)) {
-                final String eventName = eventData.getString(IterableConstants.KEY_EVENT_NAME);
-                if ((eventName.equals(IterableConstants.UPDATE_CART) && field.equals(eventName)) || field.equals(eventName)) {
-                    matchResult = true;
-                    continue;
-                }
-            } else {
-                for (String filteredDataKey : filteredDataKeys) {
-                    if (field.equals(filteredDataKey)) {
-                        isKeyExists = true;
-                    }
-                }
+            // check if the field is a track event object
+            if (isTrackEventObject(searchQuery, eventData, field)) {
+                continue;
             }
+
+            //evaluate filtered keys first
+            if (isFieldInFilteredKeys(field, filteredDataKeys)) {
+                return evaluateComparisonForKey(searchQuery, eventData.get(field));
+            }
+
             if (field.contains(".")) {
-                String[] splitString = field.split("\\.");
-                String firstElement = splitString[0];
-                Object eventDataFirstElement = eventData.has(firstElement) ? eventData.get(firstElement) : null;
-                if (eventDataFirstElement instanceof JSONArray) {
-                    JSONArray jsonArraySourceTo = (JSONArray) eventDataFirstElement;
-                    for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                        JSONObject jsonObject = new JSONObject();
-                        jsonObject.put(firstElement, jsonArraySourceTo.get(i));
-                        jsonObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, eventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE));
-                        matchResult = evaluateFieldLogic(searchQueries, jsonObject);
-                        if (matchResult) {
-                            break;
-                        }
-                    }
-                    if (matchResult) {
-                        break;
-                    }
-                } else {
-                    Object valueFromObj = getFieldValue(eventData, field);
-                    if (valueFromObj != null) {
-                        matchResult = evaluateComparison(
-                                searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
-                                valueFromObj,
-                                searchQuery.has(IterableConstants.VALUES) ?
-                                        searchQuery.getJSONArray(IterableConstants.VALUES) :
-                                        searchQuery.getString(IterableConstants.VALUE)
-                        );
-                        if (matchResult) {
-                            continue;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                return matchResult;
+                return evaluateNestedField(eventData, field, searchQuery, searchQueries);
             }
-            if (isKeyExists) {
-                if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
-                        eventData.get(field),
-                        searchQuery.has(IterableConstants.VALUES) ?
-                                searchQuery.getJSONArray(IterableConstants.VALUES) :
-                                searchQuery.getString(IterableConstants.VALUE))) {
-                    matchResult = true;
-                    continue;
-                }
-            }
-            matchResult = false;
-            break;
+
+            return false;
         }
-        return matchResult;
+        return false;
+    }
+
+    private boolean isTrackEventObject(JSONObject searchQuery, JSONObject eventData, String field) throws JSONException {
+        if (searchQuery.getString(IterableConstants.DATA_TYPE).equals(IterableConstants.TRACK_EVENT) &&
+                searchQuery.getString("fieldType").equals("object") &&
+                searchQuery.getString(IterableConstants.COMPARATOR_TYPE).equals(MatchComparator.IS_SET)) {
+            String eventName = eventData.getString(IterableConstants.KEY_EVENT_NAME);
+            return field.equals(eventName);
+        }
+        return false;
+    }
+
+    private boolean isFieldInFilteredKeys(String field, ArrayList<String> filteredDataKeys) {
+        return filteredDataKeys.contains(field);
+    }
+
+    private boolean evaluateComparisonForKey(JSONObject searchQuery, Object eventFieldValue) throws JSONException {
+        return evaluateComparison(
+                searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
+                eventFieldValue,
+                searchQuery.has(IterableConstants.VALUES) ?
+                        searchQuery.getJSONArray(IterableConstants.VALUES) :
+                        searchQuery.getString(IterableConstants.VALUE)
+        );
+    }
+
+    private boolean evaluateNestedField(JSONObject eventData, String field, JSONObject searchQuery, JSONArray searchQueries) throws JSONException {
+        String[] splitString = field.split("\\.");
+        String firstElement = splitString[0];
+        Object firstElementValue = eventData.opt(firstElement);
+
+        if (firstElementValue instanceof JSONArray) {
+            return evaluateJsonArrayForNestedField((JSONArray) firstElementValue, firstElement, eventData, searchQueries);
+        } else {
+            Object fieldValue = getFieldValue(eventData, field);
+            return fieldValue != null && evaluateComparisonForKey(searchQuery, fieldValue);
+        }
+    }
+
+    private boolean evaluateJsonArrayForNestedField(JSONArray jsonArray, String firstElement, JSONObject eventData, JSONArray searchQueries) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject jsonObject = createJsonObjectForArrayEvaluation(jsonArray, i, firstElement, eventData);
+            if (evaluateFieldLogic(searchQueries, jsonObject)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private JSONObject createJsonObjectForArrayEvaluation(JSONArray jsonArray, int index, String firstElement, JSONObject eventData) throws JSONException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put(firstElement, jsonArray.get(index));
+        jsonObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, eventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE));
+        return jsonObject;
     }
 
     private Object getFieldValue(JSONObject data, String field) {
