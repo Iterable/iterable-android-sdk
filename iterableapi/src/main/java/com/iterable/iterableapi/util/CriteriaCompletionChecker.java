@@ -243,28 +243,16 @@ public class CriteriaCompletionChecker {
             if (node.has(IterableConstants.SEARCH_QUERIES)) {
                 String combinator = node.getString(IterableConstants.COMBINATOR);
                 JSONArray searchQueries = node.getJSONArray(IterableConstants.SEARCH_QUERIES);
-                if (combinator.equals("And")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                } else if (combinator.equals("Or")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                } else if (combinator.equals("Not")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        searchQueries.getJSONObject(i).put("isNot", true);
-                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return false;
-                        }
-                    }
-                    return true;
+
+                switch (combinator) {
+                    case "And":
+                        return evaluateAnd(searchQueries, localEventData);
+                    case "Or":
+                        return evaluateOr(searchQueries, localEventData);
+                    case "Not":
+                        return evaluateNot(searchQueries, localEventData);
+                    default:
+                        throw new IllegalArgumentException("Unknown combinator: " + combinator);
                 }
             } else if (node.has(IterableConstants.SEARCH_COMBO)) {
                 return evaluateSearchQueries(node, localEventData);
@@ -273,6 +261,34 @@ public class CriteriaCompletionChecker {
             handleException(e);
         }
         return false;
+    }
+
+    private boolean evaluateAnd(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean evaluateOr(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean evaluateNot(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            searchQueries.getJSONObject(i).put("isNot", true);
+            if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean evaluateSearchQueries(JSONObject node, @NonNull JSONArray localEventData) throws JSONException {
