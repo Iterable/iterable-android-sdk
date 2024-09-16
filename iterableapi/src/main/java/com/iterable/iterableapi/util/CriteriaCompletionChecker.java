@@ -494,48 +494,65 @@ public class CriteriaCompletionChecker {
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
         for (int i = 0; i < searchQueries.length(); i++) {
             String field = searchQueries.getJSONObject(i).getString(IterableConstants.FIELD);
-            if (field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
+            if (isRelevantField(field)) {
                 return true;
             }
         }
         return false;
     }
     private boolean doesItemMatchQueries(JSONArray searchQueries, JSONObject item) throws JSONException {
-        JSONArray filterSearchQueries = new JSONArray();
-        for (int i = 0; i < searchQueries.length(); i++) {
-            JSONObject searchQuery = searchQueries.getJSONObject(i);
-            String field = searchQuery.getString(IterableConstants.FIELD);
-            if (field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
-                if (!item.has(field)) {
-                    return false;
-                }
-                filterSearchQueries.put(searchQuery);
-            }
-        }
+        JSONArray filterSearchQueries = getFilteredSearchQueries(searchQueries, item);
 
+        //if there are no valid queries found after filtering
         if (filterSearchQueries.length() == 0) {
             return false;
         }
 
-        for (int j = 0; j < filterSearchQueries.length(); j++) {
-            JSONObject query = filterSearchQueries.getJSONObject(j);
-            String field = query.getString(IterableConstants.FIELD);
-            if (item.has(field)) {
-                if (!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE),
-                        item.get(field),
-                        query.has(IterableConstants.VALUES) ?
-                                query.getJSONArray(IterableConstants.VALUES) :
-                                query.getString(IterableConstants.VALUE))) {
-                    return false;
+        //evaluate all relevant queries
+        return evaluateRelevantQueries(filterSearchQueries, item);
+    }
+
+    private JSONArray getFilteredSearchQueries(JSONArray searchQueries, JSONObject item) throws JSONException {
+        JSONArray filteredQueries = new JSONArray();
+
+        for (int i = 0; i < searchQueries.length(); i++) {
+            JSONObject searchQuery = searchQueries.getJSONObject(i);
+            String field = searchQuery.getString(IterableConstants.FIELD);
+
+            if (isRelevantField(field)) {
+                if (!item.has(field)) {
+                    return new JSONArray();
                 }
+                filteredQueries.put(searchQuery);
             }
         }
 
-        if (filterSearchQueries.length() > 0) {
-            return true;
+        return filteredQueries;
+    }
+
+    private boolean isRelevantField(String field) {
+        return field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) ||
+                field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX);
+    }
+
+    private boolean evaluateRelevantQueries(JSONArray relevantSearchQueries, JSONObject item) throws JSONException {
+        for (int j = 0; j < relevantSearchQueries.length(); j++) {
+            JSONObject query = relevantSearchQueries.getJSONObject(j);
+            String field = query.getString(IterableConstants.FIELD);
+
+            if (item.has(field) && !evaluateSingleQuery(query, item.get(field))) {
+                return false;
+            }
         }
 
-        return false;
+        return true;
+    }
+
+    private boolean evaluateSingleQuery(JSONObject query, Object itemValue) throws JSONException {
+        String comparatorType = query.getString(IterableConstants.COMPARATOR_TYPE);
+        Object comparisonValue = query.has(IterableConstants.VALUES) ? query.getJSONArray(IterableConstants.VALUES) : query.getString(IterableConstants.VALUE);
+
+        return evaluateComparison(comparatorType, itemValue, comparisonValue);
     }
 
     public static String formattedDoubleValue(double d) {
