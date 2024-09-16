@@ -1,6 +1,8 @@
 package com.iterable.iterableapi.util;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.json.JSONArray;
@@ -54,14 +56,6 @@ public class CriteriaCompletionComparatorTest {
             + "                                        \"dataType\": \"customEvent\","
             + "                                        \"id\": 5,"
             + "                                        \"valueLong\": null,"
-            + "                                        \"value\": \"\""
-            + "                                    },"
-            + "                                    {"
-            + "                                        \"field\": \"total\","
-            + "                                        \"fieldType\": \"double\","
-            + "                                        \"comparatorType\": \"IsSet\","
-            + "                                        \"dataType\": \"customEvent\","
-            + "                                        \"id\": 9,"
             + "                                        \"value\": \"\""
             + "                                    }"
             + "                                ]"
@@ -382,7 +376,6 @@ public class CriteriaCompletionComparatorTest {
                 + "            \"animal\": \"test page\","
                 + "            \"clickCount\": \"2\""
                 + "        },"
-                + "        \"total\": 3,"
                 + "        \"createdAt\": 1700071052507,"
                 + "        \"eventType\": \"customEvent\""
                 + "    }"
@@ -390,7 +383,7 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        assertTrue(result != null);
+        assertNotNull(result);
     }
 
     @Test
@@ -401,7 +394,6 @@ public class CriteriaCompletionComparatorTest {
                 + "        \"dataFields\": {"
                 + "            \"animal\": \"\""
                 + "        },"
-                + "        \"total\": 3,"
                 + "        \"createdAt\": 1700071052507,"
                 + "        \"eventType\": \"customEvent\""
                 + "    }"
@@ -409,7 +401,6 @@ public class CriteriaCompletionComparatorTest {
 
         JSONArray jsonArray = new JSONArray(jsonString);
         String result = evaluator.getMatchedCriteria(isSetMockData, jsonArray);
-        assertFalse(result != null);
+        assertNull(result);
     }
-
 }
