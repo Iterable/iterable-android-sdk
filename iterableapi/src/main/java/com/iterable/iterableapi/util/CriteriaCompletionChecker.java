@@ -324,17 +324,16 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
-        if (combinator.equals("And")) {
-            if (!evaluateFieldLogic(searchQueries, eventData)) {
-                return false;
-            }
-            return true;
-        } else if (combinator.equals("Or")) {
-            if (evaluateFieldLogic(searchQueries, eventData)) {
-                return true;
-            }
-        } else if (combinator.equals("Not")) {
-            return !evaluateFieldLogic(searchQueries, eventData);
+        switch (combinator) {
+            case "And":
+                return evaluateFieldLogic(searchQueries, eventData);
+            case "Or":
+                if (evaluateFieldLogic(searchQueries, eventData)) {
+                    return true;
+                }
+                break;
+            case "Not":
+                return !evaluateFieldLogic(searchQueries, eventData);
         }
 
         return false;
@@ -462,33 +461,48 @@ public class CriteriaCompletionChecker {
 
     private Object getFieldValue(JSONObject data, String field) {
         String[] fields = field.split("\\.");
+
         try {
-            String eventType = data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-
-            if (eventType.equals(IterableConstants.TRACK_EVENT)) {
-                String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
-                if (fields[0].equals(eventName)) {
-                    fields = new String[]{fields[fields.length - 1]};
-                }
+            if (isTrackEvent(data)) {
+                fields = adjustFieldsForTrackEvent(data, fields);
             }
 
-            JSONObject value = data;
-            Object fieldValue = null;
-
-            for (String currentField : fields) {
-                if (value.has(currentField)) {
-                    Object dataValue = value.get(currentField);
-                    if (dataValue instanceof JSONObject) {
-                        value = value.getJSONObject(currentField);
-                    } else  {
-                        fieldValue = value.get(currentField);
-                    }
-                }
-            }
-            return fieldValue;
+            return extractFieldValue(data, fields);
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    private boolean isTrackEvent(JSONObject data) throws JSONException {
+        return data.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) &&
+                IterableConstants.TRACK_EVENT.equals(data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE));
+    }
+
+    private String[] adjustFieldsForTrackEvent(JSONObject data, String[] fields) throws JSONException {
+        String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
+        if (fields.length > 0 && fields[0].equals(eventName)) {
+            return new String[]{fields[fields.length - 1]};
+        }
+        return fields;
+    }
+
+    private Object extractFieldValue(JSONObject data, String[] fields) throws JSONException {
+        JSONObject value = data;
+        Object fieldValue = null;
+
+        for (String currentField : fields) {
+            if (value.has(currentField)) {
+                Object dataValue = value.get(currentField);
+
+                if (dataValue instanceof JSONObject) {
+                    value = value.getJSONObject(currentField);
+                } else  {
+                    fieldValue = value.get(currentField);
+                    break;
+                }
+            }
+        }
+        return fieldValue;
     }
 
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
