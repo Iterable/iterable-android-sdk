@@ -30,6 +30,18 @@ public class AnonymousUserManager {
     private static final String TAG = "AnonymousUserManager";
     private final IterableApi iterableApi = IterableApi.sharedInstance;
 
+    private final IterableIdentityResolution identityResolution;
+
+    public AnonymousUserManager(
+            IterableIdentityResolution identityResolution
+    ) {
+        this.identityResolution = identityResolution;
+    }
+
+    public AnonymousUserManager() {
+        this.identityResolution = null;
+    }
+
     void updateAnonSession() {
         IterableLogger.v(TAG, "updateAnonSession");
 
