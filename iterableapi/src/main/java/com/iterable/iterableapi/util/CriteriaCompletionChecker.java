@@ -281,29 +281,8 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
-        boolean itemMatchResult = false;
-        String itemKey = null;
-        if (eventData.has(IterableConstants.KEY_ITEMS)) {
-            itemKey = IterableConstants.KEY_ITEMS;
-        } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
-            itemKey = IterableConstants.PURCHASE_ITEM;
-        }
-
-        if (itemKey != null) {
-            boolean result = false;
-            JSONArray items = new JSONArray(eventData.getString(itemKey));
-            for (int j = 0; j < items.length(); j++) {
-                JSONObject item = items.getJSONObject(j);
-                if (doesItemMatchQueries(searchQueries, item)) {
-                    result = true;
-                    break;
-                }
-            }
-            if (!result && doesItemCriteriaExists(searchQueries)) {
-                return false;
-            }
-            itemMatchResult = result;
-        }
+        //evaluate item logic
+        boolean itemMatchResult = evaluateItemLogic(searchQueries, eventData);
 
         ArrayList<String> filteredDataKeys = new ArrayList<>();
         Iterator<String> localEventDataKeys = eventData.keys();
@@ -397,6 +376,36 @@ public class CriteriaCompletionChecker {
             break;
         }
         return matchResult;
+    }
+
+    boolean evaluateItemLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
+        String itemKey = getItemKey(eventData);
+
+        // if no items exist in event data, return false
+        if (itemKey == null) {
+            return false;
+        }
+
+        // check if each item matches search queries
+        JSONArray items = new JSONArray(eventData.getString(itemKey));
+        for (int j = 0; j < items.length(); j++) {
+            JSONObject item = items.getJSONObject(j);
+            if (doesItemMatchQueries(searchQueries, item)) {
+                return true;
+            }
+        }
+
+        //return true if item criteria does not exist
+        return !doesItemCriteriaExists(searchQueries);
+    }
+
+    private String getItemKey(JSONObject eventData) {
+        if (eventData.has(IterableConstants.KEY_ITEMS)) {
+            return IterableConstants.KEY_ITEMS;
+        } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
+            return IterableConstants.PURCHASE_ITEM;
+        }
+        return null;
     }
 
     private Object getFieldValue(JSONObject data, String field) {
