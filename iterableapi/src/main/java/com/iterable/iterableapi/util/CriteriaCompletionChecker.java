@@ -324,16 +324,14 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
+        boolean result = evaluateFieldLogic(searchQueries, eventData);
+
         switch (combinator) {
             case "And":
-                return evaluateFieldLogic(searchQueries, eventData);
             case "Or":
-                if (evaluateFieldLogic(searchQueries, eventData)) {
-                    return true;
-                }
-                break;
+                return result;
             case "Not":
-                return !evaluateFieldLogic(searchQueries, eventData);
+                return !result;
             default:
                 return false;
         }
@@ -466,7 +464,6 @@ public class CriteriaCompletionChecker {
             if (isTrackEvent(data)) {
                 fields = adjustFieldsForTrackEvent(data, fields);
             }
-
             return extractFieldValue(data, fields);
         } catch (JSONException e) {
             return null;
