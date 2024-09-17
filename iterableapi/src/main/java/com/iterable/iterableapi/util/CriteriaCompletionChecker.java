@@ -334,9 +334,9 @@ public class CriteriaCompletionChecker {
                 break;
             case "Not":
                 return !evaluateFieldLogic(searchQueries, eventData);
+            default:
+                return false;
         }
-
-        return false;
     }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
