@@ -131,7 +131,7 @@ public class IterableApi {
     @NonNull
     IterableAuthManager getAuthManager() {
         if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler, config.expiringAuthTokenRefreshPeriod);
+            authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod);
         }
         return authManager;
     }
@@ -344,7 +344,7 @@ public class IterableApi {
 
         getInAppManager().reset();
         getEmbeddedManager().reset();
-        getAuthManager().clearRefreshTimer();
+        getAuthManager().reset();
 
         apiClient.onLogout();
     }
@@ -355,6 +355,7 @@ public class IterableApi {
             return;
         }
 
+        getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
         } else {
@@ -374,6 +375,7 @@ public class IterableApi {
         }
 
         getInAppManager().syncInApp();
+        getEmbeddedManager().syncMessages();
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -455,8 +457,8 @@ public class IterableApi {
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
-                IterableLogger.d(TAG, "Auth token found as null. Scheduling token refresh in 10 seconds...");
-                getAuthManager().scheduleAuthTokenRefresh(10000);
+                IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
+                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
             }
         }
     }
@@ -696,6 +698,17 @@ public class IterableApi {
         );
     }
 
+    /**
+     * // This method gets called from developer end only.
+     * @param pauseRetry to pause/unpause auth retries
+     */
+    public void pauseAuthRetries(boolean pauseRetry) {
+        getAuthManager().pauseAuthRetries(pauseRetry);
+        if (!pauseRetry) { // request new auth token as soon as unpause
+            getAuthManager().requestNewAuthToken(false);
+        }
+    }
+
     public void setEmail(@Nullable String email) {
         setEmail(email, null, null, null);
     }
@@ -857,11 +870,7 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
-        if (message == null) {
-            IterableLogger.e(TAG, "inAppConsume: message is null");
-            if (failureHandler != null) {
-                failureHandler.onFailure("inAppConsume: message is null", null);
-            }
+        if (checkIfMessageIsNull(message, failureHandler)) {
             return;
         }
         inAppConsume(message, null, null, successHandler, failureHandler);
@@ -879,6 +888,9 @@ public class IterableApi {
      */
     public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation) {
         if (!checkSDKInitialization()) {
+            return;
+        }
+        if (checkIfMessageIsNull(message, null)) {
             return;
         }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, null, null);
@@ -899,7 +911,29 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
+        if (checkIfMessageIsNull(message, failureHandler)) {
+            return;
+        }
         apiClient.inAppConsume(message, source, clickLocation, inboxSessionId, successHandler, failureHandler);
+    }
+
+    /**
+     * Handles the case when the provided message is null.
+     * If the message is null and a failure handler is provided, it calls the onFailure method of the failure handler.
+     *
+     * @param message         The in-app message to be checked.
+     * @param failureHandler  The failure handler to be called if the message is null.
+     * @return                True if the message is null, false otherwise.
+     */
+    private boolean checkIfMessageIsNull(@Nullable IterableInAppMessage message, @Nullable IterableHelper.FailureHandler failureHandler) {
+        if (message == null) {
+            IterableLogger.e(TAG, "inAppConsume: message is null");
+            if (failureHandler != null) {
+                failureHandler.onFailure("inAppConsume: message is null", null);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1025,7 +1059,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        trackPurchase(total, items, null);
+        trackPurchase(total, items, null, null);
     }
 
     /**
@@ -1039,7 +1073,22 @@ public class IterableApi {
             return;
         }
 
-        apiClient.trackPurchase(total, items, dataFields);
+        apiClient.trackPurchase(total, items, dataFields, null);
+    }
+
+    /**
+     * Tracks a purchase.
+     * @param total total purchase amount
+     * @param items list of purchased items
+     * @param dataFields a `JSONObject` containing any additional information to save along with the event
+     * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
+     */
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
+        if (!checkSDKInitialization()) {
+            return;
+        }
+
+        apiClient.trackPurchase(total, items, dataFields, attributionInfo);
     }
 
     /**
