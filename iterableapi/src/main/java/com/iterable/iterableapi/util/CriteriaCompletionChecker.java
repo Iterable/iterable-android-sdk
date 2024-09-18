@@ -485,16 +485,16 @@ public class CriteriaCompletionChecker {
             return String.format("%s", d);
     }
 
+    //
+    // comparison functions
+    //
+
     private boolean evaluateComparison(String comparatorType, Object matchObj, Object valueToCompare) throws JSONException {
         if (valueToCompare == null && !comparatorType.equals(MatchComparator.IS_SET)) {
             return false;
         }
 
-        if (valueToCompare instanceof String && isDouble((String) valueToCompare)) {
-            // here do the conversion of this number to formatted double value by removing trailing zeros
-            // because when jsonstring to jsonarray happens for items object it removes trailing zeros
-            valueToCompare = formattedDoubleValue(Double.parseDouble((String) valueToCompare));
-        }
+        valueToCompare = formatValueToCompare(valueToCompare);
 
         switch (comparatorType) {
             case MatchComparator.EQUALS:
@@ -504,13 +504,10 @@ public class CriteriaCompletionChecker {
             case MatchComparator.IS_SET:
                 return issetCheck(matchObj);
             case MatchComparator.GREATER_THAN:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " > ");
             case MatchComparator.LESS_THAN:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " < ");
             case MatchComparator.GREATER_THAN_OR_EQUAL_TO:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " >= ");
             case MatchComparator.LESS_THAN_OR_EQUAL_TO:
-                return compareNumericValues(matchObj, String.valueOf(valueToCompare), " <= ");
+                return compareNumeric(matchObj, valueToCompare, comparatorType);
             case MatchComparator.CONTAINS:
                 return compareContains(matchObj, String.valueOf(valueToCompare));
             case MatchComparator.STARTS_WITH:
@@ -519,6 +516,33 @@ public class CriteriaCompletionChecker {
                 return compareWithRegex(matchObj, String.valueOf(valueToCompare));
             default:
                 return false;
+        }
+    }
+
+    private Object formatValueToCompare(Object valueToCompare) {
+        if (valueToCompare instanceof String && isDouble((String) valueToCompare)) {
+            return formattedDoubleValue(Double.parseDouble((String) valueToCompare));
+        }
+        return valueToCompare;
+    }
+
+    private boolean compareNumeric(Object matchObj, Object valueToCompare, String comparatorType) throws JSONException {
+        String comparisonOperator = getComparisonOperator(comparatorType);
+        return compareNumericValues(matchObj, String.valueOf(valueToCompare), comparisonOperator);
+    }
+
+    private String getComparisonOperator(String comparatorType) {
+        switch (comparatorType) {
+            case MatchComparator.GREATER_THAN:
+                return " > ";
+            case MatchComparator.LESS_THAN:
+                return " < ";
+            case MatchComparator.GREATER_THAN_OR_EQUAL_TO:
+                return " >= ";
+            case MatchComparator.LESS_THAN_OR_EQUAL_TO:
+                return " <= ";
+            default:
+                throw new IllegalArgumentException("Invalid comparator type: " + comparatorType);
         }
     }
 
@@ -534,37 +558,39 @@ public class CriteriaCompletionChecker {
 
     private boolean compareValueEquality(Object sourceTo, Object stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
-            JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
-            boolean matchResult = false;
-            for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                if (compareValueEquality(jsonArraySourceTo.get(i), stringValue)) {
-                    matchResult = true;
-                    break;
-                }
-            }
-            return matchResult;
+            return compareWithJSONArray((JSONArray) sourceTo, stringValue);
         } else if (stringValue instanceof JSONArray) {
-            JSONArray jsonArrayStringValue = (JSONArray) stringValue;
-            boolean matchResult = false;
-            for (int i = 0; i < jsonArrayStringValue.length(); i++) {
-                if (compareValueEquality(sourceTo, jsonArrayStringValue.get(i))) {
-                    matchResult = true;
-                    break;
-                }
-            }
-            return matchResult;
-        } else if (sourceTo instanceof Double && isDouble((String) stringValue)) {
-            return sourceTo.equals(Double.parseDouble((String) stringValue));
-        } else if (sourceTo instanceof Integer && isInteger((String) stringValue)) {
-            return sourceTo.equals(Integer.parseInt((String) stringValue));
-        } else if (sourceTo instanceof Long && isLong((String) stringValue)) {
-            return sourceTo.equals(Long.parseLong((String) stringValue));
-        } else if (sourceTo instanceof Boolean && isBoolean((String) stringValue)) {
-            return sourceTo.equals(Boolean.parseBoolean((String) stringValue));
-        } else if (sourceTo instanceof String) {
+            return compareWithJSONArray((JSONArray) stringValue, sourceTo);
+        } else if (sourceTo instanceof String || stringValue instanceof String) {
+            return compareWithParsedValues(sourceTo, stringValue);
+        } else {
             return sourceTo.equals(stringValue);
         }
+    }
+
+    private boolean compareWithJSONArray(JSONArray jsonArray, Object valueToCompare) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (compareValueEquality(jsonArray.get(i), valueToCompare)) {
+                return true;
+            }
+        }
         return false;
+    }
+
+    private boolean compareWithParsedValues(Object sourceTo, Object stringValue) {
+        String stringVal = stringValue.toString();
+
+        if (sourceTo instanceof Double && isDouble(stringVal)) {
+            return sourceTo.equals(Double.parseDouble(stringVal));
+        } else if (sourceTo instanceof Integer && isInteger(stringVal)) {
+            return sourceTo.equals(Integer.parseInt(stringVal));
+        } else if (sourceTo instanceof Long && isLong(stringVal)) {
+            return sourceTo.equals(Long.parseLong(stringVal));
+        } else if (sourceTo instanceof Boolean && isBoolean(stringVal)) {
+            return sourceTo.equals(Boolean.parseBoolean(stringVal));
+        } else {
+            return sourceTo.equals(stringValue);
+        }
     }
 
     private boolean compareArrayNumericValue(Object sourceTo, String stringValue, String compareOperator) throws JSONException {
@@ -603,17 +629,22 @@ public class CriteriaCompletionChecker {
     private boolean compareContains(Object sourceTo, String stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
             JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
-            Object element = jsonArraySourceTo.get(0);
-            if (element instanceof String) {
-                ArrayList<String> stringArrayList = new ArrayList<>();
-                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                    stringArrayList.add(jsonArraySourceTo.getString(i));
-                }
-                return stringArrayList.contains(stringValue);
+
+            if (jsonArraySourceTo.get(0) instanceof String) {
+                // check if any string in the array contains the string
+                return arrayContains(jsonArraySourceTo, stringValue);
             }
         } else if (sourceTo instanceof String) {
-            String stringSourceTo = (String) sourceTo;
-            return stringSourceTo.contains(stringValue);
+            return ((String) sourceTo).contains(stringValue);
+        }
+        return false;
+    }
+
+    private boolean arrayContains(JSONArray jsonArray, String stringValue) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getString(i).contains(stringValue)) {
+                return true;
+            }
         }
         return false;
     }
@@ -621,43 +652,54 @@ public class CriteriaCompletionChecker {
     private boolean compareStartsWith(Object sourceTo, String stringValue) throws JSONException {
         if (sourceTo instanceof JSONArray) {
             JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
-            Object element = jsonArraySourceTo.get(0);
-            if (element instanceof String) {
-                boolean isMatched = false;
-                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                    if (jsonArraySourceTo.getString(i).startsWith(stringValue)) {
-                        isMatched = true;
-                    }
-                }
-                return isMatched;
+
+            if (jsonArraySourceTo.get(0) instanceof String) {
+                // check if any string in the array starts with string
+                return anyStartsWith(jsonArraySourceTo, stringValue);
             }
         } else if (sourceTo instanceof String) {
             return ((String) sourceTo).startsWith(stringValue);
+        }
+
+        return false;
+    }
+
+    private boolean anyStartsWith(JSONArray jsonArray, String stringValue) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (jsonArray.getString(i).startsWith(stringValue)) {
+                return true;
+            }
         }
         return false;
     }
 
     private boolean compareWithRegex(Object sourceTo, String pattern) throws JSONException {
-        if (sourceTo instanceof JSONArray) {
-            JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
-            Object element = jsonArraySourceTo.get(0);
-            if (element instanceof String) {
-                boolean isMatched = false;
-                Pattern regexPattern = Pattern.compile(pattern);
-                for (int i = 0; i < jsonArraySourceTo.length(); i++) {
-                    if (regexPattern.matcher(jsonArraySourceTo.getString(i)).matches()) {
-                        isMatched = true;
-                    }
+        try {
+            Pattern regexPattern = Pattern.compile(pattern);
+
+            // If the source is a JSONArray
+            if (sourceTo instanceof JSONArray) {
+                JSONArray jsonArraySourceTo = (JSONArray) sourceTo;
+
+                if (jsonArraySourceTo.get(0) instanceof String) {
+                    // check if any string in the array matches the regex
+                    return anyMatchesRegex(jsonArraySourceTo, regexPattern);
                 }
-                return isMatched;
-            }
-        } else if (sourceTo instanceof String) {
-            try {
-                Pattern regexPattern = Pattern.compile(pattern);
+            } else if (sourceTo instanceof String) {
                 return regexPattern.matcher((String) sourceTo).matches();
-            } catch (PatternSyntaxException e) {
-                e.printStackTrace();
-                return false;
+            }
+
+        } catch (PatternSyntaxException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private boolean anyMatchesRegex(JSONArray jsonArray, Pattern regexPattern) throws JSONException {
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (regexPattern.matcher(jsonArray.getString(i)).matches()) {
+                return true;
             }
         }
         return false;
@@ -705,15 +747,6 @@ public class CriteriaCompletionChecker {
 
     private boolean isBoolean(String value) {
         return "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
-    }
-
-    private ArrayList<String> extractKeys(JSONObject jsonObject) {
-        ArrayList<String> keys = new ArrayList<>();
-        Iterator<String> jsonKeys = jsonObject.keys();
-        while (jsonKeys.hasNext()) {
-            keys.add(jsonKeys.next());
-        }
-        return keys;
     }
 
     private void handleException(Exception e) {
