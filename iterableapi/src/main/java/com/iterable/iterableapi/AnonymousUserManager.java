@@ -30,18 +30,6 @@ public class AnonymousUserManager {
     private static final String TAG = "AnonymousUserManager";
     private final IterableApi iterableApi = IterableApi.sharedInstance;
 
-    private final IterableIdentityResolution identityResolution;
-
-    public AnonymousUserManager(
-            IterableIdentityResolution identityResolution
-    ) {
-        this.identityResolution = identityResolution;
-    }
-
-    public AnonymousUserManager() {
-        this.identityResolution = null;
-    }
-
     void updateAnonSession() {
         IterableLogger.v(TAG, "updateAnonSession");
 
@@ -184,6 +172,8 @@ public class AnonymousUserManager {
             }
         });
     }
+
+
 
     private String checkCriteriaCompletion() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);

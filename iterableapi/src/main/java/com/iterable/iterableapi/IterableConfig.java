@@ -98,6 +98,8 @@ public class IterableConfig {
      */
     final boolean enableEmbeddedMessaging;
 
+    final IterableIdentityResolution identityResolution;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -117,6 +119,7 @@ public class IterableConfig {
         enableAnonTracking = builder.enableAnonTracking;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
+        identityResolution = builder.identityResolution;
     }
 
     public static class Builder {
@@ -138,6 +141,7 @@ public class IterableConfig {
         private boolean enableAnonTracking = false;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
+        private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
 
         public Builder() {}
 
@@ -322,6 +326,11 @@ public class IterableConfig {
          */
         public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
             this.enableEmbeddedMessaging = enableEmbeddedMessaging;
+            return this;
+        }
+
+        public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
+            this.identityResolution = identityResolution;
             return this;
         }
 

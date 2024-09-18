@@ -47,6 +47,7 @@ public class IterableApi {
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
     private static final AnonymousUserMerge anonymousUserMerge = new AnonymousUserMerge();
+    private IterableIdentityResolution identityResolution;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
@@ -864,7 +865,7 @@ public class IterableApi {
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
         anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (shouldUseDefaultMerge || merge) {
+                if (config.identityResolution.getReplayOnVisitorToKnown()) {
                     anonymousUserManager.syncEvents();
                 }
             } else {
