@@ -14,7 +14,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataEquals = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_Equals\",\n" +
@@ -72,7 +72,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataDoesNotEqual = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"286\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_DoesNotEqual\",\n" +
@@ -130,7 +130,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataGreaterThan = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"287\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_GreaterThan\",\n" +
@@ -174,7 +174,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataGreaterThanOrEqualTo = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"288\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_GreaterThanOrEqualTo\",\n" +
@@ -218,7 +218,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataLessThan = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"289\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_LessThan\",\n" +
@@ -262,7 +262,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataLessThanOrEqualTo = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"290\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_LessThanOrEqualTo\",\n" +
@@ -307,7 +307,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataIsSet = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"291\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_IsSet\",\n" +
@@ -365,7 +365,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataContains = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"291\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_IsSet\",\n" +
@@ -402,7 +402,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataMatchesRegex = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"291\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_IsSet\",\n" +
@@ -439,7 +439,7 @@ public class DataTypeComparatorSearchQueryCriteriaTest {
 
     static final String mockDataStartsWith = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"291\",\n" +
             "            \"name\": \"Criteria_EventTimeStamp_IsSet\",\n" +

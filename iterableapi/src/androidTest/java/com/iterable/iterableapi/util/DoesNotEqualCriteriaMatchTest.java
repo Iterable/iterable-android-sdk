@@ -14,7 +14,7 @@ public class DoesNotEqualCriteriaMatchTest {
 
     static final String mockDataLongDoesNotEqual = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"194\",\n" +
             "      \"name\": \"Contact: Phone Number != 57688559\",\n" +
@@ -51,7 +51,7 @@ public class DoesNotEqualCriteriaMatchTest {
 
     static final String mockDataStringDoesNotEqual = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"194\",\n" +
             "      \"name\": \"Contact: Phone Number != 57688559\",\n" +
@@ -88,7 +88,7 @@ public class DoesNotEqualCriteriaMatchTest {
 
     static final String mockDataBooleanDoesNotEqual = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"194\",\n" +
             "      \"name\": \"Contact: Phone Number != 57688559\",\n" +
@@ -126,7 +126,7 @@ public class DoesNotEqualCriteriaMatchTest {
 
     static final String mockDataDoubleDoesNotEqual = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"194\",\n" +
             "      \"name\": \"Contact: Phone Number != 57688559\",\n" +

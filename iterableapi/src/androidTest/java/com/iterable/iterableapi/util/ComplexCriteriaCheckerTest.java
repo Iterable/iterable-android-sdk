@@ -15,7 +15,7 @@ public class ComplexCriteriaCheckerTest {
 
     private String criteriaMinMax = "{"
             + "\"count\": 1,"
-            + "\"criterias\": ["
+            + "\"criteriaSets\": ["
             + "    {"
             + "        \"criteriaId\": \"1\","
             + "        \"name\": \"Custom Event\","
@@ -71,7 +71,7 @@ public class ComplexCriteriaCheckerTest {
 
     private String complexCriteria1 = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"1\",\n" +
             "            \"name\": \"Custom Event\",\n" +
@@ -196,7 +196,7 @@ public class ComplexCriteriaCheckerTest {
 
     private String complexCriteria2 = "{"
             + "\"count\": 1,"
-            + "\"criterias\": ["
+            + "\"criteriaSets\": ["
             + "    {"
             + "        \"criteriaId\": \"1\","
             + "        \"name\": \"Custom Event\","
@@ -324,7 +324,7 @@ public class ComplexCriteriaCheckerTest {
 
     private String complexCriteria3 = "{"
             + "\"count\": 1,"
-            + "\"criterias\": ["
+            + "\"criteriaSets\": ["
             + "    {"
             + "        \"criteriaId\": \"1\","
             + "        \"name\": \"Custom Event\","
@@ -446,7 +446,7 @@ public class ComplexCriteriaCheckerTest {
 
     private String complexCriteria4 = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"1\",\n" +
             "      \"name\": \"Custom Event\",\n" +
