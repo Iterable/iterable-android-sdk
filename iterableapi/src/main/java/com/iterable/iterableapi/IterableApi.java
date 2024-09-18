@@ -865,7 +865,7 @@ public class IterableApi {
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean shouldUseDefaultMerge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
         anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, shouldUseDefaultMerge, (mergeResult, error) -> {
             if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (config.identityResolution.getReplayOnVisitorToKnown()) {
+                if (shouldUseDefaultMerge || merge) {
                     anonymousUserManager.syncEvents();
                 }
             } else {
