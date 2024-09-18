@@ -761,7 +761,7 @@ public class IterableApi {
         setEmail(email, authToken, null, successHandler, failureHandler);
     }
 
-    private void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         boolean replay = (iterableIdentityResolution != null) ?
                 iterableIdentityResolution.getReplayOnVisitorToKnown() :
                 config.identityResolution.getReplayOnVisitorToKnown();

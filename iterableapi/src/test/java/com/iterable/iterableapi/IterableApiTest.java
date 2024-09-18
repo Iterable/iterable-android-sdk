@@ -172,7 +172,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
-        IterableApi.getInstance().setEmail(email, null, new IterableHelper.SuccessHandler() {
+        IterableApi.getInstance().setEmail(email, null, null, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 assertTrue(true); // callback should be called with success
