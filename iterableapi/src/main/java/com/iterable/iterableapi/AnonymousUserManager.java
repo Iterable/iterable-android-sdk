@@ -173,8 +173,6 @@ public class AnonymousUserManager {
         });
     }
 
-
-
     private String checkCriteriaCompletion() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
