@@ -13,6 +13,7 @@ import com.iterable.iterableapi.CommerceItem;
 import com.iterable.iterableapi.IterableApi;
 import com.iterable.iterableapi.IterableConfig;
 import com.iterable.iterableapi.IterableConstants;
+import com.iterable.iterableapi.IterableIdentityResolution;
 import com.iterable.iterableapi.testapp.R;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -113,15 +114,15 @@ public class AnonTrackingTestActivity extends AppCompatActivity {
         });
         findViewById(R.id.setUser).setOnClickListener(view -> {
             EditText setUser_edit = findViewById(R.id.setUser_edit);
-            if(setUser_edit == null) return;
-            final Boolean mergeFlag = ((CheckBox) findViewById(R.id.user_check)).isChecked();
-            IterableApi.getInstance().setUserId(String.valueOf(setUser_edit.getText()), mergeFlag);
+            if(setUser_edit == null) return;;
+            final IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+            IterableApi.getInstance().setUserId(String.valueOf(setUser_edit.getText()), identityResolution);
         });
         findViewById(R.id.setEmail).setOnClickListener(view -> {
             EditText setEmail_edit = findViewById(R.id.setEmail_edit);
             if(setEmail_edit == null) return;
-            final Boolean mergeFlag = ((CheckBox) findViewById(R.id.email_check)).isChecked();
-            IterableApi.getInstance().setEmail(String.valueOf(setEmail_edit.getText()), mergeFlag);
+            final IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+            IterableApi.getInstance().setEmail(String.valueOf(setEmail_edit.getText()), identityResolution);
         });
 
         findViewById(R.id.btn_logout).setOnClickListener(view -> {
