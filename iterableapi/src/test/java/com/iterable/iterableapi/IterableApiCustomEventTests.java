@@ -29,7 +29,7 @@ public class IterableApiCustomEventTests extends BaseTest {
     private PathBasedQueueDispatcher dispatcher;
     private final String criteriaMockData = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"423\",\n" +
             "            \"name\": \"animal-found Test Cases\",\n" +
