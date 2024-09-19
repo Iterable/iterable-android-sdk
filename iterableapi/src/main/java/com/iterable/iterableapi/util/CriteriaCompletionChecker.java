@@ -24,8 +24,8 @@ public class CriteriaCompletionChecker {
 
         try {
             JSONObject json = new JSONObject(criteriaData);
-            if (json.has(IterableConstants.CRITERIAS)) {
-                JSONArray criteriaList = json.getJSONArray(IterableConstants.CRITERIAS);
+            if (json.has(IterableConstants.CRITERIA_SETS)) {
+                JSONArray criteriaList = json.getJSONArray(IterableConstants.CRITERIA_SETS);
                 criteriaId = findMatchedCriteria(criteriaList);
             }
         } catch (JSONException e) {
