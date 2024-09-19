@@ -27,63 +27,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 public class IterableApiCustomEventTests extends BaseTest {
     private MockWebServer server;
     private PathBasedQueueDispatcher dispatcher;
-    private final String criteriaMockData = "{\n" +
-            "    \"count\": 1,\n" +
-            "    \"criteriaSets\": [\n" +
-            "        {\n" +
-            "            \"criteriaId\": \"423\",\n" +
-            "            \"name\": \"animal-found Test Cases\",\n" +
-            "            \"createdAt\": 1726648931809,\n" +
-            "            \"updatedAt\": 1726648931809,\n" +
-            "            \"searchQuery\": {\n" +
-            "                \"combinator\": \"And\",\n" +
-            "                \"searchQueries\": [\n" +
-            "                    {\n" +
-            "                        \"combinator\": \"And\",\n" +
-            "                        \"searchQueries\": [\n" +
-            "                            {\n" +
-            "                                \"dataType\": \"customEvent\",\n" +
-            "                                \"searchCombo\": {\n" +
-            "                                    \"combinator\": \"And\",\n" +
-            "                                    \"searchQueries\": [\n" +
-            "                                        {\n" +
-            "                                            \"dataType\": \"customEvent\",\n" +
-            "                                            \"field\": \"animal-found.count\",\n" +
-            "                                            \"comparatorType\": \"Equals\",\n" +
-            "                                            \"value\": \"6\",\n" +
-            "                                            \"fieldType\": \"long\"\n" +
-            "                                        },\n" +
-            "                                        {\n" +
-            "                                            \"dataType\": \"customEvent\",\n" +
-            "                                            \"field\": \"animal-found.type\",\n" +
-            "                                            \"comparatorType\": \"Equals\",\n" +
-            "                                            \"value\": \"cat\",\n" +
-            "                                            \"fieldType\": \"string\"\n" +
-            "                                        },\n" +
-            "                                        {\n" +
-            "                                            \"dataType\": \"customEvent\",\n" +
-            "                                            \"field\": \"animal-found.vaccinated\",\n" +
-            "                                            \"comparatorType\": \"Equals\",\n" +
-            "                                            \"value\": \"true\",\n" +
-            "                                            \"fieldType\": \"boolean\"\n" +
-            "                                        },\n" +
-            "                                        {\n" +
-            "                                            \"dataType\": \"customEvent\",\n" +
-            "                                            \"field\": \"eventName\",\n" +
-            "                                            \"comparatorType\": \"Equals\",\n" +
-            "                                            \"value\": \"animal-found\",\n" +
-            "                                            \"fieldType\": \"string\"\n" +
-            "                                        }\n" +
-            "                                    ]\n" +
-            "                                }\n" +
-            "                            }\n" +
-            "                        ]\n" +
-            "                    }\n" +
-            "                ]\n" +
-            "            }\n" +
-            "        }\n" +
-            "    ]\n" +
-            "}";
+
     @Before
     public void setUp() {
         server = new MockWebServer();
@@ -93,8 +37,66 @@ public class IterableApiCustomEventTests extends BaseTest {
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
-        setCriteria(criteriaMockData);
 
+        String criteriaMockData = "{\n" +
+                "    \"count\": 1,\n" +
+                "    \"criteriaSets\": [\n" +
+                "        {\n" +
+                "            \"criteriaId\": \"423\",\n" +
+                "            \"name\": \"animal-found Test Cases\",\n" +
+                "            \"createdAt\": 1726648931809,\n" +
+                "            \"updatedAt\": 1726648931809,\n" +
+                "            \"searchQuery\": {\n" +
+                "                \"combinator\": \"And\",\n" +
+                "                \"searchQueries\": [\n" +
+                "                    {\n" +
+                "                        \"combinator\": \"And\",\n" +
+                "                        \"searchQueries\": [\n" +
+                "                            {\n" +
+                "                                \"dataType\": \"customEvent\",\n" +
+                "                                \"searchCombo\": {\n" +
+                "                                    \"combinator\": \"And\",\n" +
+                "                                    \"searchQueries\": [\n" +
+                "                                        {\n" +
+                "                                            \"dataType\": \"customEvent\",\n" +
+                "                                            \"field\": \"animal-found.count\",\n" +
+                "                                            \"comparatorType\": \"Equals\",\n" +
+                "                                            \"value\": \"6\",\n" +
+                "                                            \"fieldType\": \"long\"\n" +
+                "                                        },\n" +
+                "                                        {\n" +
+                "                                            \"dataType\": \"customEvent\",\n" +
+                "                                            \"field\": \"animal-found.type\",\n" +
+                "                                            \"comparatorType\": \"Equals\",\n" +
+                "                                            \"value\": \"cat\",\n" +
+                "                                            \"fieldType\": \"string\"\n" +
+                "                                        },\n" +
+                "                                        {\n" +
+                "                                            \"dataType\": \"customEvent\",\n" +
+                "                                            \"field\": \"animal-found.vaccinated\",\n" +
+                "                                            \"comparatorType\": \"Equals\",\n" +
+                "                                            \"value\": \"true\",\n" +
+                "                                            \"fieldType\": \"boolean\"\n" +
+                "                                        },\n" +
+                "                                        {\n" +
+                "                                            \"dataType\": \"customEvent\",\n" +
+                "                                            \"field\": \"eventName\",\n" +
+                "                                            \"comparatorType\": \"Equals\",\n" +
+                "                                            \"value\": \"animal-found\",\n" +
+                "                                            \"fieldType\": \"string\"\n" +
+                "                                        }\n" +
+                "                                    ]\n" +
+                "                                }\n" +
+                "                            }\n" +
+                "                        ]\n" +
+                "                    }\n" +
+                "                ]\n" +
+                "            }\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}";
+
+        setCriteria(criteriaMockData);
     }
 
 
@@ -111,10 +113,6 @@ public class IterableApiCustomEventTests extends BaseTest {
         IterableApi.getInstance().setEmail(null);
     }
 
-    private String getEventData() {
-        SharedPreferences sharedPref = getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        return sharedPref.getString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
-    }
     private void clearEventData() {
         SharedPreferences sharedPref = getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
