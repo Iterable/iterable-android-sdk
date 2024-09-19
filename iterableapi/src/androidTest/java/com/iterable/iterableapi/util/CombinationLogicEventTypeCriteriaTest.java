@@ -20,7 +20,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorContactPropertyANDCustomEvent = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"310\",\n" +
             "      \"name\": \"Contact_Property_AND_Custom_Event\",\n" +
@@ -114,7 +114,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorContactPropertyORCustomEvent = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "         {\n" +
             "            \"criteriaId\": \"312\",\n" +
             "            \"name\": \"Contact_Property_OR_Custom_Event\",\n" +
@@ -207,7 +207,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorContactPropertyNOTCustomEvent = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "         {\n" +
             "            \"criteriaId\": \"312\",\n" +
             "            \"name\": \"Contact_Property_NOT_Custom_Event\",\n" +
@@ -301,7 +301,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorUpdateCartANDContactProperty = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"315\",\n" +
             "      \"name\": \"UpdateCart_AND_ContactProperty\",\n" +
@@ -398,7 +398,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorUpdateCartORContactProperty = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"315\",\n" +
             "      \"name\": \"UpdateCart_OR_ContactProperty\",\n" +
@@ -496,7 +496,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorUpdateCartNOTContactProperty = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"315\",\n" +
             "      \"name\": \"UpdateCart_NOT_ContactProperty\",\n" +
@@ -594,7 +594,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorPurchaseANDUpdateCart = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"316\",\n" +
             "      \"name\": \"Purchase_AND_UpdateCart\",\n" +
@@ -696,7 +696,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorPurchaseORUpdateCart = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"316\",\n" +
             "      \"name\": \"Purchase_OR_UpdateCart\",\n" +
@@ -798,7 +798,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorPurchaseNOTUpdateCart = "{\n" +
             "  \"count\": 1,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"316\",\n" +
             "      \"name\": \"Purchase_NOT_UpdateCart\",\n" +
@@ -900,7 +900,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorCustomEventANDPurchase = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"320\",\n" +
             "            \"name\": \"CustomEvent_AND_Purchase\",\n" +
@@ -998,7 +998,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorCustomEventORPurchase = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"320\",\n" +
             "            \"name\": \"CustomEvent_OR_Purchase\",\n" +
@@ -1096,7 +1096,7 @@ public class CombinationLogicEventTypeCriteriaTest {
 
     static final String mockDataCombinatorCustomEventNOTPurchase = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"320\",\n" +
             "            \"name\": \"CustomEvent_NOT_Purchase\",\n" +
