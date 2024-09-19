@@ -16,7 +16,7 @@ public class CriteriaCompletionCheckerTest {
 
     private final String mockDataWithAnd = "{\n" +
             "   \"count\":2,\n" +
-            "   \"criterias\":[\n" +
+            "   \"criteriaSets\":[\n" +
             "      {\n" +
             "         \"criteriaId\":12345,\n" +
             "         \"searchQuery\":{\n" +
@@ -117,7 +117,7 @@ public class CriteriaCompletionCheckerTest {
 
     private final String mockDataWithOr = "{\n" +
             "   \"count\":2,\n" +
-            "   \"criterias\":[\n" +
+            "   \"criteriaSets\":[\n" +
             "      {\n" +
             "         \"criteriaId\":12345,\n" +
             "         \"searchQuery\":{\n" +
@@ -218,7 +218,7 @@ public class CriteriaCompletionCheckerTest {
 
     private String mockCriteria = "{\n" +
             "  \"count\": 4,\n" +
-            "  \"criterias\": [\n" +
+            "  \"criteriaSets\": [\n" +
             "    {\n" +
             "      \"criteriaId\": \"43\",\n" +
             "      \"name\": \"ContactProperty\",\n" +
