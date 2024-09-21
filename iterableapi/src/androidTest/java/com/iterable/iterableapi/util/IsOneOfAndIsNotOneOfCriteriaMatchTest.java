@@ -21,7 +21,7 @@ public class IsOneOfAndIsNotOneOfCriteriaMatchTest {
 
     static final String mockDataCriteriaIsOneOf = "{\n" +
             "    \"count\": 5,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "      {\n" +
             "            \"criteriaId\": \"299\",\n" +
             "            \"name\": \"Criteria_Is_One_of\",\n" +
@@ -103,7 +103,7 @@ public class IsOneOfAndIsNotOneOfCriteriaMatchTest {
 
     static final String mockDataCriteriaIsNotOneOf = "{\n" +
             "    \"count\": 5,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "      {\n" +
             "            \"criteriaId\": \"299\",\n" +
             "            \"name\": \"Criteria_IsNonOf\",\n" +

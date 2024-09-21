@@ -30,7 +30,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     private PathBasedQueueDispatcher dispatcher;
     private final String criteriaMockData = "{\n" +
         "   \"count\":2,\n" +
-                "   \"criterias\":[\n" +
+                "   \"criteriaSets\":[\n" +
                 "      {\n" +
                 "         \"criteriaId\":43,\n" +
                 "         \"searchQuery\":{\n" +
