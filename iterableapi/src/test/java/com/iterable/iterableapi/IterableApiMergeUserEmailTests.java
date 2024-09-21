@@ -192,7 +192,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         final String userId = "testUser2";
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
-        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, false);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -370,7 +370,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
-        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, false);
         IterableApi.getInstance().setEmail(email, identityResolution);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
