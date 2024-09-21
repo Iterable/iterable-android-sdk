@@ -806,7 +806,7 @@ public class IterableApi {
         setUserId(userId, null, null, null, null, false);
     }
 
-    public void setUserId(@Nullable String userId, IterableIdentityResolution iterableIdentityResolution) {
+    public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution) {
         setUserId(userId, null, identityResolution, null, null, false);
     }
 
