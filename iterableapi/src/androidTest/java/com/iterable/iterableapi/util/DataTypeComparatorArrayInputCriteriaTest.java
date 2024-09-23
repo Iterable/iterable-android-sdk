@@ -21,7 +21,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithEquals = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_Equals\",\n" +
@@ -108,7 +108,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithDoesNotEqual = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_DoesNotEqual\",\n" +
@@ -195,7 +195,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithGreaterThan = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_GreaterThan\",\n" +
@@ -262,7 +262,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithGreaterThanOrEqualTo = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_GreaterThanOrEqualTo\",\n" +
@@ -329,7 +329,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithLessThan = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_LessThan\",\n" +
@@ -396,7 +396,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithLessThanOrEqualTo = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_LessThanOrEqualTo\",\n" +
@@ -463,7 +463,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithContains = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_Contains\",\n" +
@@ -530,7 +530,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithMatchesRegex = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_MatchesRegex\",\n" +
@@ -598,7 +598,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataArrayDataTypeWithStartsWith = "{\n" +
             "    \"count\": 1,\n" +
-            "    \"criterias\": [\n" +
+            "    \"criteriaSets\": [\n" +
             "        {\n" +
             "            \"criteriaId\": \"285\",\n" +
             "            \"name\": \"Criteria_StartsWith\",\n" +
@@ -665,7 +665,7 @@ public class DataTypeComparatorArrayInputCriteriaTest {
 
     static final String mockDataStringArrayMixCriteriaArea = " {\n" +
             "         \"count\": 1,\n" +
-            "         \"criterias\": [\n" +
+            "         \"criteriaSets\": [\n" +
             "           {\n" +
             "               \"criteriaId\": \"382\",\n" +
             "               \"name\": \"comparison_for_Array_data_types_or\",\n" +
