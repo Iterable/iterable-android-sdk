@@ -765,13 +765,6 @@ public class IterableApi {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
-        if (config.enableAnonTracking) {
-            if (email != null) {
-                attemptAndProcessMerge(email, true, merge, replay, failureHandler, _userIdAnon);
-            }
-            _userIdAnon = null;
-        }
-
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -785,6 +778,14 @@ public class IterableApi {
 
         _email = email;
         _userId = null;
+
+        if (config.enableAnonTracking) {
+            if (email != null) {
+                attemptAndProcessMerge(email, true, merge, replay, failureHandler, _userIdAnon);
+            }
+            _userIdAnon = null;
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
@@ -831,15 +832,6 @@ public class IterableApi {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
-        if (config.enableAnonTracking) {
-            if (userId != null && !userId.equals(_userIdAnon)) {
-                attemptAndProcessMerge(userId, false, merge, replay, failureHandler, _userIdAnon);
-            }
-            if (!isAnon) {
-                _userIdAnon = null;
-            }
-        }
-
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -853,6 +845,16 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
+
+        if (config.enableAnonTracking) {
+            if (userId != null && !userId.equals(_userIdAnon)) {
+                attemptAndProcessMerge(userId, false, merge, replay, failureHandler, _userIdAnon);
+            }
+            if (!isAnon) {
+                _userIdAnon = null;
+            }
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
