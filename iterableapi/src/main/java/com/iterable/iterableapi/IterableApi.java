@@ -762,12 +762,8 @@ public class IterableApi {
     }
 
     void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        boolean replay = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getReplayOnVisitorToKnown() :
-                config.identityResolution.getReplayOnVisitorToKnown();
-        boolean merge = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getMergeOnAnonymousToKnown() :
-                config.identityResolution.getMergeOnAnonymousToKnown();
+        boolean replay = isReplay(iterableIdentityResolution);
+        boolean merge = isMerge(iterableIdentityResolution);
 
         if (config.enableAnonTracking) {
             if (email != null) {
@@ -832,12 +828,8 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
-        boolean replay = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getReplayOnVisitorToKnown() :
-                config.identityResolution.getReplayOnVisitorToKnown();
-        boolean merge = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getMergeOnAnonymousToKnown() :
-                config.identityResolution.getMergeOnAnonymousToKnown();
+        boolean replay = isReplay(iterableIdentityResolution);
+        boolean merge = isMerge(iterableIdentityResolution);
 
         if (config.enableAnonTracking) {
             if (userId != null && !userId.equals(_userIdAnon)) {
@@ -866,6 +858,14 @@ public class IterableApi {
         storeAuthData();
 
         onLogin(authToken);
+    }
+
+    private boolean isMerge(@Nullable IterableIdentityResolution iterableIdentityResolution) {
+        return (iterableIdentityResolution != null) ? iterableIdentityResolution.getMergeOnAnonymousToKnown() : config.identityResolution.getMergeOnAnonymousToKnown();
+    }
+
+    private boolean isReplay(@Nullable IterableIdentityResolution iterableIdentityResolution) {
+        return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
     }
 
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean replay, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
