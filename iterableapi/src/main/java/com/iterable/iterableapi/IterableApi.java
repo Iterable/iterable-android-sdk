@@ -762,19 +762,8 @@ public class IterableApi {
     }
 
     void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        boolean replay = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getReplayOnVisitorToKnown() :
-                config.identityResolution.getReplayOnVisitorToKnown();
-        boolean merge = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getMergeOnAnonymousToKnown() :
-                config.identityResolution.getMergeOnAnonymousToKnown();
-
-        if (config.enableAnonTracking) {
-            if (email != null) {
-                attemptAndProcessMerge(email, true, merge, replay, failureHandler, _userIdAnon);
-            }
-            _userIdAnon = null;
-        }
+        boolean replay = isReplay(iterableIdentityResolution);
+        boolean merge = isMerge(iterableIdentityResolution);
 
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
@@ -789,6 +778,14 @@ public class IterableApi {
 
         _email = email;
         _userId = null;
+
+        if (config.enableAnonTracking) {
+            if (email != null) {
+                attemptAndProcessMerge(email, true, merge, replay, failureHandler, _userIdAnon);
+            }
+            _userIdAnon = null;
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
@@ -832,21 +829,8 @@ public class IterableApi {
     }
 
     private void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
-        boolean replay = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getReplayOnVisitorToKnown() :
-                config.identityResolution.getReplayOnVisitorToKnown();
-        boolean merge = (iterableIdentityResolution != null) ?
-                iterableIdentityResolution.getMergeOnAnonymousToKnown() :
-                config.identityResolution.getMergeOnAnonymousToKnown();
-
-        if (config.enableAnonTracking) {
-            if (userId != null && !userId.equals(_userIdAnon)) {
-                attemptAndProcessMerge(userId, false, merge, replay, failureHandler, _userIdAnon);
-            }
-            if (!isAnon) {
-                _userIdAnon = null;
-            }
-        }
+        boolean replay = isReplay(iterableIdentityResolution);
+        boolean merge = isMerge(iterableIdentityResolution);
 
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
@@ -861,11 +845,29 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
+
+        if (config.enableAnonTracking) {
+            if (userId != null && !userId.equals(_userIdAnon)) {
+                attemptAndProcessMerge(userId, false, merge, replay, failureHandler, _userIdAnon);
+            }
+            if (!isAnon) {
+                _userIdAnon = null;
+            }
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
         onLogin(authToken);
+    }
+
+    private boolean isMerge(@Nullable IterableIdentityResolution iterableIdentityResolution) {
+        return (iterableIdentityResolution != null) ? iterableIdentityResolution.getMergeOnAnonymousToKnown() : config.identityResolution.getMergeOnAnonymousToKnown();
+    }
+
+    private boolean isReplay(@Nullable IterableIdentityResolution iterableIdentityResolution) {
+        return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
     }
 
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean replay, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
