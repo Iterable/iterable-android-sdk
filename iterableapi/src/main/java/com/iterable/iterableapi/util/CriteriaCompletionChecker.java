@@ -281,29 +281,30 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
-        boolean itemMatchResult = false;
-        String itemKey = null;
-        if (eventData.has(IterableConstants.KEY_ITEMS)) {
-            itemKey = IterableConstants.KEY_ITEMS;
-        } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
-            itemKey = IterableConstants.PURCHASE_ITEM;
-        }
+        boolean itemMatchResult = evaluateItemLogic(searchQueries, eventData);
 
-        if (itemKey != null) {
-            boolean result = false;
-            JSONArray items = new JSONArray(eventData.getString(itemKey));
-            for (int j = 0; j < items.length(); j++) {
-                JSONObject item = items.getJSONObject(j);
-                if (doesItemMatchQueries(searchQueries, item)) {
-                    result = true;
-                    break;
-                }
-            }
-            if (!result && doesItemCriteriaExists(searchQueries)) {
-                return false;
-            }
-            itemMatchResult = result;
-        }
+//        String itemKey = null;
+//        if (eventData.has(IterableConstants.KEY_ITEMS)) {
+//            itemKey = IterableConstants.KEY_ITEMS;
+//        } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
+//            itemKey = IterableConstants.PURCHASE_ITEM;
+//        }
+
+//        if (itemKey != null) {
+//            boolean result = false;
+//            JSONArray items = new JSONArray(eventData.getString(itemKey));
+//            for (int j = 0; j < items.length(); j++) {
+//                JSONObject item = items.getJSONObject(j);
+//                if (doesItemMatchQueries(searchQueries, item)) {
+//                    result = true;
+//                    break;
+//                }
+//            }
+//            if (!result && doesItemCriteriaExists(searchQueries)) {
+//                return false;
+//            }
+//            itemMatchResult = result;
+//        }
 
         ArrayList<String> filteredDataKeys = new ArrayList<>();
         Iterator<String> localEventDataKeys = eventData.keys();
@@ -397,6 +398,41 @@ public class CriteriaCompletionChecker {
             break;
         }
         return matchResult;
+    }
+
+    private boolean evaluateItemLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
+        String itemKey = getItemKey(eventData);
+        if (itemKey == null) {
+            return false;
+        }
+
+        JSONArray items = new JSONArray(eventData.getString(itemKey));
+        boolean result = evaluateItems(searchQueries, items);
+
+        if (!result && doesItemCriteriaExists(searchQueries)) {
+            return false;
+        }
+
+        return result;
+    }
+
+    private String getItemKey(JSONObject eventData) {
+        if (eventData.has(IterableConstants.KEY_ITEMS)) {
+            return IterableConstants.KEY_ITEMS;
+        } else if (eventData.has(IterableConstants.PURCHASE_ITEM)) {
+            return IterableConstants.PURCHASE_ITEM;
+        }
+        return null;
+    }
+
+    private boolean evaluateItems(JSONArray searchQueries, JSONArray items) throws JSONException {
+        for (int j = 0; j < items.length(); j++) {
+            JSONObject item = items.getJSONObject(j);
+            if (doesItemMatchQueries(searchQueries, item)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Object getFieldValue(JSONObject data, String field) {
