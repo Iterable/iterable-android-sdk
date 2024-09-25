@@ -785,7 +785,7 @@ public class IterableApi {
                 attemptAndProcessMerge(email, true, merge, failureHandler, _userIdAnon);
             }
 
-            if (replay && _userIdAnon == null && _userId != null) {
+            if (replay && _userIdAnon == null && _email != null) {
                 anonymousUserManager.syncEvents();
             }
 
@@ -857,7 +857,7 @@ public class IterableApi {
                 attemptAndProcessMerge(userId, false, merge, failureHandler, _userIdAnon);
             }
 
-            if (replay && _userIdAnon == null) {
+            if (replay && _userIdAnon == null && _userId != null) {
                 anonymousUserManager.syncEvents();
             }
 
