@@ -382,7 +382,6 @@ public class CriteriaCompletionChecker {
                         }
                     }
                 }
-                return matchResult;
             }
             if (isKeyExists) {
                 if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
