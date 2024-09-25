@@ -18,6 +18,7 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -784,7 +785,7 @@ public class IterableApi {
                 attemptAndProcessMerge(email, true, merge, failureHandler, _userIdAnon);
             }
 
-            if (replay && _userIdAnon == null) {
+            if (replay && _userIdAnon == null && _userId != null) {
                 anonymousUserManager.syncEvents();
             }
 
@@ -882,12 +883,10 @@ public class IterableApi {
 
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
         anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, (mergeResult, error) -> {
-            //                if (replay) {
-//                    anonymousUserManager.syncEvents();
-//                }
-//            } else {
-            if (failureHandler != null) {
-                failureHandler.onFailure(error, null);
+            if (!(Objects.equals(mergeResult, IterableConstants.MERGE_SUCCESSFUL) || Objects.equals(mergeResult, IterableConstants.MERGE_NOTREQUIRED))) {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
             }
         });
     }
