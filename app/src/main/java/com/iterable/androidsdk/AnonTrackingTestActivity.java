@@ -115,14 +115,12 @@ public class AnonTrackingTestActivity extends AppCompatActivity {
         findViewById(R.id.setUser).setOnClickListener(view -> {
             EditText setUser_edit = findViewById(R.id.setUser_edit);
             if(setUser_edit == null) return;;
-            final IterableIdentityResolution identityResolution = new IterableIdentityResolution();
-            IterableApi.getInstance().setUserId(String.valueOf(setUser_edit.getText()), identityResolution);
+            IterableApi.getInstance().setUserId(String.valueOf(setUser_edit.getText()));
         });
         findViewById(R.id.setEmail).setOnClickListener(view -> {
             EditText setEmail_edit = findViewById(R.id.setEmail_edit);
             if(setEmail_edit == null) return;
-            final IterableIdentityResolution identityResolution = new IterableIdentityResolution();
-            IterableApi.getInstance().setEmail(String.valueOf(setEmail_edit.getText()), identityResolution);
+            IterableApi.getInstance().setEmail(String.valueOf(setEmail_edit.getText()));
         });
 
         findViewById(R.id.btn_logout).setOnClickListener(view -> {
