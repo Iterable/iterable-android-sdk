@@ -191,7 +191,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotEquals("", eventData);
         final String userId = "testUser2";
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        IterableApi.getInstance().setUserId(userId, false);
+
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, false);
+        IterableApi.getInstance().setUserId(userId, identityResolution);
+
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -210,7 +213,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
-        IterableApi.getInstance().setUserId(userId, true);
+
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+        IterableApi.getInstance().setUserId(userId, identityResolution);
+
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -247,7 +253,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("", getEventData());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
-        IterableApi.getInstance().setUserId(userId, false);
+
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setUserId(userId, identityResolution);
+
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -265,7 +274,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("", getEventData());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId = "testUser2";
-        IterableApi.getInstance().setUserId(userId, true);
+
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+        IterableApi.getInstance().setUserId(userId, identityResolution);
+
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -295,12 +307,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     public void testIdentifiedUserIdMergeFalse() throws Exception {
 
         final String userId1 = "testUser1";
-        IterableApi.getInstance().setUserId(userId1, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setUserId(userId1, identityResolution);
         shadowOf(getMainLooper()).idle();
         assertEquals(userId1, IterableApi.getInstance().getUserId());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String userId2 = "testUser2";
-        IterableApi.getInstance().setUserId(userId2, false);
+        IterableIdentityResolution identityResolution2 = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setUserId(userId2, identityResolution2);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -313,13 +327,15 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         final String userId1 = "testUser1";
-        IterableApi.getInstance().setUserId(userId1, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setUserId(userId1, identityResolution);
         shadowOf(getMainLooper()).idle();
         assertEquals(userId1, IterableApi.getInstance().getUserId());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         final String userId2 = "testUser2";
-        IterableApi.getInstance().setUserId(userId2, true);
+        IterableIdentityResolution identityResolution2 = new IterableIdentityResolution(true, true);
+        IterableApi.getInstance().setUserId(userId2, identityResolution2);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -354,7 +370,8 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
-        IterableApi.getInstance().setEmail(email, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, false);
+        IterableApi.getInstance().setEmail(email, identityResolution);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -373,7 +390,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotEquals("", eventData);
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
-        IterableApi.getInstance().setEmail(email, true);
+        IterableApi.getInstance().setEmail(email);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -411,7 +428,8 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("", getEventData());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
-        IterableApi.getInstance().setEmail(email, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setEmail(email, identityResolution);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -429,7 +447,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("", getEventData());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
-        IterableApi.getInstance().setEmail(email, true);
+        IterableApi.getInstance().setEmail(email);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -457,14 +475,15 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testIdentifiedEmailMergeFalse() throws Exception {
-
         final String email1 = "testUser1@gmail.com";
-        IterableApi.getInstance().setEmail(email1, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setEmail(email1, identityResolution);
         shadowOf(getMainLooper()).idle();
         assertEquals(email1, IterableApi.getInstance().getEmail());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email2 = "testUser2@gmail.com";
-        IterableApi.getInstance().setEmail(email2, false);
+        IterableIdentityResolution identityResolution2 = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setEmail(email2, identityResolution2);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
@@ -477,13 +496,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         final String email1 = "testUser1@gmail.com";
-        IterableApi.getInstance().setEmail(email1, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setEmail(email1, identityResolution);
         shadowOf(getMainLooper()).idle();
         assertEquals(email1, IterableApi.getInstance().getEmail());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         final String email2 = "testUser2@gmail.com";
-        IterableApi.getInstance().setEmail(email2, true);
+        IterableApi.getInstance().setEmail(email2);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();

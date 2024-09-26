@@ -135,7 +135,10 @@ public class IterableApiCustomEventTests extends BaseTest {
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK);
         final String userId = "testUser2";
-        IterableApi.getInstance().setUserId(userId, false);
+
+        IterableIdentityResolution identityRes = new IterableIdentityResolution(true, false);
+        IterableApi.getInstance().setUserId(userId, identityRes);
+
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         JSONObject customEventItem = new JSONObject("{\n" +
                 "  \"dataFields\": " +
