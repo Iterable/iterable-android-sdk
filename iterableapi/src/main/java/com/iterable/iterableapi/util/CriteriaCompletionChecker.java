@@ -382,7 +382,6 @@ public class CriteriaCompletionChecker {
                         }
                     }
                 }
-                return matchResult;
             }
             if (isKeyExists) {
                 if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
@@ -408,7 +407,9 @@ public class CriteriaCompletionChecker {
             if (eventType.equals(IterableConstants.TRACK_EVENT)) {
                 String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
                 if (fields[0].equals(eventName)) {
-                    fields = new String[]{fields[fields.length - 1]};
+                    String[] newArray = new String[fields.length - 1];
+                    System.arraycopy(fields, 1, newArray, 0, newArray.length);
+                    fields = newArray;
                 }
             }
 
@@ -423,6 +424,8 @@ public class CriteriaCompletionChecker {
                     } else  {
                         fieldValue = value.get(currentField);
                     }
+                } else {
+                    break;
                 }
             }
             return fieldValue;
