@@ -47,7 +47,6 @@ public class IterableApi {
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
     private static final AnonymousUserMerge anonymousUserMerge = new AnonymousUserMerge();
-    private IterableIdentityResolution identityResolution;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
@@ -761,7 +760,7 @@ public class IterableApi {
         setEmail(email, authToken, null, successHandler, failureHandler);
     }
 
-    void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
@@ -828,7 +827,7 @@ public class IterableApi {
        setUserId(userId, authToken, null, successHandler, failureHandler, false);
     }
 
-    private void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
