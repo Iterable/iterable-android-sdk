@@ -18,6 +18,7 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -781,8 +782,13 @@ public class IterableApi {
 
         if (config.enableAnonTracking) {
             if (email != null) {
-                attemptAndProcessMerge(email, true, merge, replay, failureHandler, _userIdAnon);
+                attemptAndProcessMerge(email, true, merge, failureHandler, _userIdAnon);
             }
+
+            if (replay && _userIdAnon == null && _email != null) {
+                anonymousUserManager.syncEvents();
+            }
+
             _userIdAnon = null;
         }
 
@@ -848,8 +854,13 @@ public class IterableApi {
 
         if (config.enableAnonTracking) {
             if (userId != null && !userId.equals(_userIdAnon)) {
-                attemptAndProcessMerge(userId, false, merge, replay, failureHandler, _userIdAnon);
+                attemptAndProcessMerge(userId, false, merge, failureHandler, _userIdAnon);
             }
+
+            if (replay && _userIdAnon == null && _userId != null) {
+                anonymousUserManager.syncEvents();
+            }
+
             if (!isAnon) {
                 _userIdAnon = null;
             }
@@ -870,13 +881,9 @@ public class IterableApi {
         return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
     }
 
-    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, boolean replay, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
+    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
         anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, (mergeResult, error) -> {
-            if (mergeResult == IterableConstants.MERGE_SUCCESSFUL || mergeResult == IterableConstants.MERGE_NOTREQUIRED) {
-                if (replay) {
-                    anonymousUserManager.syncEvents();
-                }
-            } else {
+            if (!(Objects.equals(mergeResult, IterableConstants.MERGE_SUCCESSFUL) || Objects.equals(mergeResult, IterableConstants.MERGE_NOTREQUIRED))) {
                 if (failureHandler != null) {
                     failureHandler.onFailure(error, null);
                 }
