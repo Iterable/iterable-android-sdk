@@ -14,7 +14,7 @@ public class CriteriaCompletionComparatorTest {
     private CriteriaCompletionChecker evaluator;
     private String isSetMockData = "{"
             + "\"count\": 4,"
-            + "\"criterias\": ["
+            + "\"criteriaSets\": ["
             + "    {"
             + "        \"criteriaId\": \"1\","
             + "        \"name\": \"CustomEvent\","
