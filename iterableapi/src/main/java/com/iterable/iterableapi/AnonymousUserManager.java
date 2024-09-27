@@ -200,52 +200,58 @@ public class AnonymousUserManager {
         //generate anon user id
         String userId = UUID.randomUUID().toString();
 
+        if (userData.isEmpty()) return;
+
         try {
-            if (!userData.isEmpty()) {
-                JSONArray trackEventList = getEventListFromLocalStorage();
-                JSONObject updateUserTrack = null;
-                int updateUserTrackPosition = 0;
+            //find last update user event data fields and position
+            JSONArray trackEventList = getEventListFromLocalStorage();
+            int updateUserTrackPosition = getLastUpdateUserEventPosition(trackEventList);
+            JSONObject updateUserTrack = null;
 
-                //find last update user event data fields and position
-                for (int i = 0; i < trackEventList.length(); i++) {
-                    JSONObject trackEvent = trackEventList.getJSONObject(i);
-                    if ((trackEvent.has(IterableConstants.SHARED_PREFS_EVENT_TYPE)
-                            && trackEvent.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.KEY_USER))
-                            && trackEvent.has(IterableConstants.KEY_DATA_FIELDS)) {
-                        updateUserTrackPosition = i;
-                        updateUserTrack = trackEvent.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
-                        break;
-                    }
-                }
-
-                //remove update user event from local event list
-                if (updateUserTrack != null) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                        trackEventList.remove(updateUserTrackPosition);
-                    }
-                }
-                saveEventListToLocalStorage(trackEventList);
-
-                JSONObject userSessionDataJson = new JSONObject(userData);
-                JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
-
-                //update user data
-                if (!getPushStatus().isEmpty()) {
-                    userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
-                }
-                userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
-
-                //track anon session with new user
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserTrack, data -> {
-                    // success handler
-                    IterableApi.getInstance().setAnonUser(userId);
-                    syncEvents();
-                }, (reason, data) -> handleTrackFailure(data));
+            if (updateUserTrackPosition != -1) {
+                updateUserTrack = trackEventList.getJSONObject(updateUserTrackPosition).getJSONObject(IterableConstants.KEY_DATA_FIELDS);
             }
+
+            //remove update user event from local event list
+            if (updateUserTrack != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    trackEventList.remove(updateUserTrackPosition);
+                }
+            }
+            saveEventListToLocalStorage(trackEventList);
+
+            JSONObject userSessionDataJson = new JSONObject(userData);
+            JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+
+            //update user data
+            if (!getPushStatus().isEmpty()) {
+                userDataJson.put(IterableConstants.SHARED_PREFS_PUSH_OPT_IN, getPushStatus());
+            }
+            userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
+
+            //track anon session with new user
+            iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserTrack, data -> {
+                // success handler
+                IterableApi.getInstance().setAnonUser(userId);
+                syncEvents();
+            }, (reason, data) -> handleTrackFailure(data));
 
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    private int getLastUpdateUserEventPosition(JSONArray trackEventList) throws JSONException {
+        int updateUserTrackPosition = -1;
+        for (int i = 0; i < trackEventList.length(); i++) {
+            JSONObject trackEvent = trackEventList.getJSONObject(i);
+            if ((trackEvent.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) &&
+                    trackEvent.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.KEY_USER)) &&
+                    trackEvent.has(IterableConstants.KEY_DATA_FIELDS)) {
+                updateUserTrackPosition = i;
+            }
+        }
+        return updateUserTrackPosition;
     }
 
     private void handleTrackFailure(JSONObject data) {
