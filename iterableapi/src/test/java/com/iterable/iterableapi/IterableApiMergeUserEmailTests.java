@@ -375,8 +375,8 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         final String userId2 = "testUser2";
-        IterableApi.getInstance().setUserId(userId2, identityResolution2);
         IterableIdentityResolution identityResolution2 = new IterableIdentityResolution(true, true);
+        IterableApi.getInstance().setUserId(userId2, identityResolution2);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
