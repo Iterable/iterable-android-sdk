@@ -325,16 +325,7 @@ public class CriteriaCompletionChecker {
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
         boolean result = evaluateFieldLogic(searchQueries, eventData);
-
-        switch (combinator) {
-            case "And":
-            case "Or":
-                return result;
-            case "Not":
-                return !result;
-            default:
-                return false;
-        }
+        return combinator.equals("Not") != result;
     }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
