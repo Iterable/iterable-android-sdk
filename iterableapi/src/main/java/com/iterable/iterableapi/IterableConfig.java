@@ -98,6 +98,10 @@ public class IterableConfig {
      */
     final boolean enableEmbeddedMessaging;
 
+    /**
+     * This controls whether the SDK should allow event replay from local storage to logged in profile
+     * and merging between the generated anonymous profile and the logged in profile by default.
+     */
     final IterableIdentityResolution identityResolution;
 
     private IterableConfig(Builder builder) {
@@ -328,6 +332,14 @@ public class IterableConfig {
             this.enableEmbeddedMessaging = enableEmbeddedMessaging;
             return this;
         }
+
+        /**
+         * Set whether the SDK should replay events from local storage to the logged in profile
+         * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
+         * This can be overwritten by a parameter passed into setEmail or setUserId.
+         * @param identityResolution
+         * @return
+         */
 
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
             this.identityResolution = identityResolution;
