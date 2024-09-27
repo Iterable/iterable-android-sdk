@@ -317,7 +317,7 @@ public final class IterableConstants {
     public static final String NO_MESSAGES_BODY = "noMessagesBody";
 
     // Criteria constants
-    public static final String CRITERIAS = "criterias";
+    public static final String CRITERIA_SETS = "criteriaSets";
     public static final String SEARCH_QUERIES = "searchQueries";
     public static final String SEARCH_QUERY = "searchQuery";
     public static final String CRITERIA_ID = "criteriaId";

@@ -246,15 +246,19 @@ public class CriteriaCompletionChecker {
 
                 switch (combinator) {
                     case "And":
+                        IterableLogger.d("CriteriaCompletionChecker", "evaluating And combinator");
                         return evaluateAnd(searchQueries, localEventData);
                     case "Or":
+                        IterableLogger.d("CriteriaCompletionChecker", "evaluating Or combinator");
                         return evaluateOr(searchQueries, localEventData);
                     case "Not":
+                        IterableLogger.d("CriteriaCompletionChecker", "evaluating Not combinator");
                         return evaluateNot(searchQueries, localEventData);
                     default:
                         throw new IllegalArgumentException("Unknown combinator: " + combinator);
                 }
             } else if (node.has(IterableConstants.SEARCH_COMBO)) {
+                IterableLogger.d("CriteriaCompletionChecker", "evaluating search combo");
                 return evaluateSearchQueries(node, localEventData);
             }
         } catch (Exception e) {
