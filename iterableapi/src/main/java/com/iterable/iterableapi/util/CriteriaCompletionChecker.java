@@ -242,36 +242,56 @@ public class CriteriaCompletionChecker {
             if (node.has(IterableConstants.SEARCH_QUERIES)) {
                 String combinator = node.getString(IterableConstants.COMBINATOR);
                 JSONArray searchQueries = node.getJSONArray(IterableConstants.SEARCH_QUERIES);
-                if (combinator.equals("And")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                } else if (combinator.equals("Or")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                } else if (combinator.equals("Not")) {
-                    for (int i = 0; i < searchQueries.length(); i++) {
-                        searchQueries.getJSONObject(i).put("isNot", true);
-                        if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
-                            return false;
-                        }
-                    }
-                    return true;
+
+                switch (combinator) {
+                    case "And":
+                        IterableLogger.d("CriteriaCompletionChecker", "evaluating And combinator");
+                        return evaluateAnd(searchQueries, localEventData);
+                    case "Or":
+                        IterableLogger.d("CriteriaCompletionChecker", "evaluating Or combinator");
+                        return evaluateOr(searchQueries, localEventData);
+                    case "Not":
+                        IterableLogger.d("CriteriaCompletionChecker", "evaluating Not combinator");
+                        return evaluateNot(searchQueries, localEventData);
+                    default:
+                        throw new IllegalArgumentException("Unknown combinator: " + combinator);
                 }
             } else if (node.has(IterableConstants.SEARCH_COMBO)) {
+                IterableLogger.d("CriteriaCompletionChecker", "evaluating search combo");
                 return evaluateSearchQueries(node, localEventData);
             }
         } catch (Exception e) {
             handleException(e);
         }
         return false;
+    }
+
+    private boolean evaluateAnd(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            if (!evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean evaluateOr(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean evaluateNot(JSONArray searchQueries, JSONArray localEventData) throws JSONException {
+        for (int i = 0; i < searchQueries.length(); i++) {
+            searchQueries.getJSONObject(i).put("isNot", true);
+            if (evaluateTree(searchQueries.getJSONObject(i), localEventData)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean evaluateSearchQueries(JSONObject node, @NonNull JSONArray localEventData) throws JSONException {
@@ -307,20 +327,8 @@ public class CriteriaCompletionChecker {
     }
 
     private boolean evaluateEvent(JSONArray searchQueries, JSONObject eventData, String combinator) throws JSONException {
-        if (combinator.equals("And")) {
-            if (!evaluateFieldLogic(searchQueries, eventData)) {
-                return false;
-            }
-            return true;
-        } else if (combinator.equals("Or")) {
-            if (evaluateFieldLogic(searchQueries, eventData)) {
-                return true;
-            }
-        } else if (combinator.equals("Not")) {
-            return !evaluateFieldLogic(searchQueries, eventData);
-        }
-
-        return false;
+        boolean result = evaluateFieldLogic(searchQueries, eventData);
+        return combinator.equals("Not") != result;
     }
 
     private boolean evaluateFieldLogic(JSONArray searchQueries, JSONObject eventData) throws JSONException {
@@ -445,80 +453,111 @@ public class CriteriaCompletionChecker {
 
     private Object getFieldValue(JSONObject data, String field) {
         String[] fields = field.split("\\.");
+
         try {
-            String eventType = data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-
-            if (eventType.equals(IterableConstants.TRACK_EVENT)) {
-                String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
-                if (fields[0].equals(eventName)) {
-                    fields = new String[]{fields[fields.length - 1]};
-                }
+            if (isTrackEvent(data)) {
+                fields = adjustFieldsForTrackEvent(data, fields);
             }
-
-            JSONObject value = data;
-            Object fieldValue = null;
-
-            for (String currentField : fields) {
-                if (value.has(currentField)) {
-                    Object dataValue = value.get(currentField);
-                    if (dataValue instanceof JSONObject) {
-                        value = value.getJSONObject(currentField);
-                    } else  {
-                        fieldValue = value.get(currentField);
-                    }
-                }
-            }
-            return fieldValue;
+            return extractFieldValue(data, fields);
         } catch (JSONException e) {
             return null;
         }
     }
 
+    private boolean isTrackEvent(JSONObject data) throws JSONException {
+        return data.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) &&
+                IterableConstants.TRACK_EVENT.equals(data.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE));
+    }
+
+    private String[] adjustFieldsForTrackEvent(JSONObject data, String[] fields) throws JSONException {
+        String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
+        if (fields.length > 0 && fields[0].equals(eventName)) {
+            return new String[]{fields[fields.length - 1]};
+        }
+        return fields;
+    }
+
+    private Object extractFieldValue(JSONObject data, String[] fields) throws JSONException {
+        JSONObject value = data;
+        Object fieldValue = null;
+
+        for (String currentField : fields) {
+            if (value.has(currentField)) {
+                Object dataValue = value.get(currentField);
+
+                if (dataValue instanceof JSONObject) {
+                    value = value.getJSONObject(currentField);
+                } else  {
+                    fieldValue = value.get(currentField);
+                    break;
+                }
+            }
+        }
+        return fieldValue;
+    }
+
     private boolean doesItemCriteriaExists(JSONArray searchQueries) throws JSONException {
         for (int i = 0; i < searchQueries.length(); i++) {
             String field = searchQueries.getJSONObject(i).getString(IterableConstants.FIELD);
-            if (field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
+            if (isRelevantField(field)) {
                 return true;
             }
         }
         return false;
     }
     private boolean doesItemMatchQueries(JSONArray searchQueries, JSONObject item) throws JSONException {
-        JSONArray filterSearchQueries = new JSONArray();
-        for (int i = 0; i < searchQueries.length(); i++) {
-            JSONObject searchQuery = searchQueries.getJSONObject(i);
-            String field = searchQuery.getString(IterableConstants.FIELD);
-            if (field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) || field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX)) {
-                if (!item.has(field)) {
-                    return false;
-                }
-                filterSearchQueries.put(searchQuery);
-            }
-        }
+        JSONArray filterSearchQueries = getFilteredSearchQueries(searchQueries, item);
 
+        //if there are no valid queries found after filtering
         if (filterSearchQueries.length() == 0) {
             return false;
         }
 
-        for (int j = 0; j < filterSearchQueries.length(); j++) {
-            JSONObject query = filterSearchQueries.getJSONObject(j);
-            String field = query.getString(IterableConstants.FIELD);
-            if (item.has(field)) {
-                if (!evaluateComparison(query.getString(IterableConstants.COMPARATOR_TYPE),
-                        item.get(field),
-                        query.has(IterableConstants.VALUES) ?
-                                query.getJSONArray(IterableConstants.VALUES) :
-                                query.getString(IterableConstants.VALUE))) {
-                    return false;
+        //evaluate all relevant queries
+        return evaluateRelevantQueries(filterSearchQueries, item);
+    }
+
+    private JSONArray getFilteredSearchQueries(JSONArray searchQueries, JSONObject item) throws JSONException {
+        JSONArray filteredQueries = new JSONArray();
+
+        for (int i = 0; i < searchQueries.length(); i++) {
+            JSONObject searchQuery = searchQueries.getJSONObject(i);
+            String field = searchQuery.getString(IterableConstants.FIELD);
+
+            if (isRelevantField(field)) {
+                if (!item.has(field)) {
+                    return new JSONArray();
                 }
+                filteredQueries.put(searchQuery);
             }
         }
 
-        if (filterSearchQueries.length() > 0) {
-            return true;
+        return filteredQueries;
+    }
+
+    private boolean isRelevantField(String field) {
+        return field.startsWith(IterableConstants.UPDATECART_ITEM_PREFIX) ||
+                field.startsWith(IterableConstants.PURCHASE_ITEM_PREFIX);
+    }
+
+    private boolean evaluateRelevantQueries(JSONArray relevantSearchQueries, JSONObject item) throws JSONException {
+        for (int j = 0; j < relevantSearchQueries.length(); j++) {
+            JSONObject query = relevantSearchQueries.getJSONObject(j);
+            String field = query.getString(IterableConstants.FIELD);
+
+            if (item.has(field) && !evaluateSingleQuery(query, item.get(field))) {
+                return false;
+            }
         }
 
-        return false;
+        return true;
+    }
+
+    private boolean evaluateSingleQuery(JSONObject query, Object itemValue) throws JSONException {
+        String comparatorType = query.getString(IterableConstants.COMPARATOR_TYPE);
+        Object comparisonValue = query.has(IterableConstants.VALUES) ? query.getJSONArray(IterableConstants.VALUES) : query.getString(IterableConstants.VALUE);
+
+        return evaluateComparison(comparatorType, itemValue, comparisonValue);
     }
 
     public static String formattedDoubleValue(double d) {
