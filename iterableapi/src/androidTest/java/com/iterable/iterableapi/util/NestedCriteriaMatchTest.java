@@ -14,7 +14,7 @@ public class NestedCriteriaMatchTest {
 
     static final String mockDataNested = " {\n" +
             "         \"count\": 1,\n" +
-            "         \"criterias\": [\n" +
+            "         \"criteriaSets\": [\n" +
             "           {\n" +
             "               \"criteriaId\": \"168\",\n" +
             "               \"name\": \"nested testing\",\n" +
