@@ -382,7 +382,6 @@ public class CriteriaCompletionChecker {
                         }
                     }
                 }
-                return matchResult;
             }
             if (isKeyExists) {
                 if (evaluateComparison(searchQuery.getString(IterableConstants.COMPARATOR_TYPE),
@@ -407,22 +406,34 @@ public class CriteriaCompletionChecker {
 
             if (eventType.equals(IterableConstants.TRACK_EVENT)) {
                 String eventName = data.getString(IterableConstants.KEY_EVENT_NAME);
+                // if first field equals event name
                 if (fields[0].equals(eventName)) {
-                    fields = new String[]{fields[fields.length - 1]};
+                    // remove the event name from the fields array
+                    String[] newArray = new String[fields.length - 1];
+                    System.arraycopy(fields, 1, newArray, 0, newArray.length);
+                    fields = newArray;
                 }
             }
 
             JSONObject value = data;
             Object fieldValue = null;
 
+            // loop through the fields array
             for (String currentField : fields) {
+                // check if the current field exists event data
                 if (value.has(currentField)) {
+                    // get the value of the current field
                     Object dataValue = value.get(currentField);
+                    // check if the value is a JSONObject
                     if (dataValue instanceof JSONObject) {
+                        // set the value to the JSONObject
                         value = value.getJSONObject(currentField);
                     } else  {
+                        // if the value is not a JSONObject, set the returned value to value of the current field
                         fieldValue = value.get(currentField);
                     }
+                } else {
+                    break;
                 }
             }
             return fieldValue;
