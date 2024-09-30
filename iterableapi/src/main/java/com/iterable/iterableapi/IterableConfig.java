@@ -60,6 +60,9 @@ public class IterableConfig {
      */
     final IterableAuthHandler authHandler;
 
+
+    final IterableAnonUserHandler iterableAnonUserHandler;
+
     /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
@@ -124,6 +127,7 @@ public class IterableConfig {
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
+        iterableAnonUserHandler = builder.iterableAnonUserHandler;
     }
 
     public static class Builder {
@@ -146,6 +150,13 @@ public class IterableConfig {
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+        private IterableAnonUserHandler iterableAnonUserHandler;
+
+        @NonNull
+        public Builder setIterableAnonUserHandler(@NonNull IterableAnonUserHandler iterableAnonUserHandler) {
+            this.iterableAnonUserHandler = iterableAnonUserHandler;
+            return this;
+        }
 
         public Builder() {}
 

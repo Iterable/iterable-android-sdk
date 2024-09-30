@@ -238,6 +238,9 @@ public class AnonymousUserManager {
                 //track anon session with new user
                 iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserTrack, data -> {
                     // success handler
+                    if (IterableApi.getInstance().config.iterableAnonUserHandler != null) {
+                        IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
+                    }
                     IterableApi.getInstance().setAnonUser(userId);
                     syncEvents();
                 }, (reason, data) -> handleTrackFailure(data));
