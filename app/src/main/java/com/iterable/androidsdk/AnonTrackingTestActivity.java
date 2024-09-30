@@ -7,13 +7,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import com.iterable.iterableapi.CommerceItem;
+import com.iterable.iterableapi.IterableAnonUserHandler;
 import com.iterable.iterableapi.IterableApi;
 import com.iterable.iterableapi.IterableConfig;
 import com.iterable.iterableapi.IterableConstants;
-import com.iterable.iterableapi.IterableIdentityResolution;
 import com.iterable.iterableapi.testapp.R;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,14 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class AnonTrackingTestActivity extends AppCompatActivity {
+public class AnonTrackingTestActivity extends AppCompatActivity implements IterableAnonUserHandler {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
 
-        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).setIterableAnonUserHandler(this).build();
 
         // clear data for testing
         SharedPreferences sharedPref = getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
@@ -136,5 +135,10 @@ public class AnonTrackingTestActivity extends AppCompatActivity {
         for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
             Log.d("SharedPref", entry.getKey() + ": " + entry.getValue().toString());
         }
+    }
+
+    @Override
+    public void onAnonUserCreated(String userId) {
+        Log.d("userId", userId);
     }
 }
