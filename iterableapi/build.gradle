@@ -4,8 +4,8 @@ apply plugin: 'kotlin-android'
 apply plugin: 'checkstyle'
 
 android {
-    compileSdk 35
-    buildToolsVersion = '33.0.2'
+    compileSdk 34
+    buildToolsVersion = '34.0.0'
 
     namespace 'com.iterable.iterableapi'
     testNamespace 'iterable.com.iterableapi'
@@ -17,7 +17,7 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-
+    android.buildFeatures.buildConfig true
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 35
