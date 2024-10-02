@@ -226,6 +226,10 @@ public class IterableApi {
         }
     }
 
+    IterableApi() {
+        config = new IterableConfig.Builder().setAllowedProtocols(new String[]{"http", "custom", "mailto", "tel", "sms"}).build();
+    }
+
     /**
      * Gets a list of InAppNotifications from Iterable; passes the result to the callback.
      * Now package-private. If you were previously using this method, use
@@ -592,7 +596,7 @@ public class IterableApi {
         sharedInstance.config = config;
 
         if (sharedInstance.config == null) {
-            sharedInstance.config = new IterableConfig.Builder().build();
+            sharedInstance.config = new IterableConfig.Builder().setAllowedProtocols(new String[]{"http", "custom", "mailto", "tel", "sms"}).build();
         }
 
         sharedInstance.retrieveEmailAndUserId();
@@ -633,8 +637,9 @@ public class IterableApi {
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
     }
 
-    IterableApi() {
-        config = new IterableConfig.Builder().build();
+    public void syncInAppMessages() {
+        assert inAppManager != null;
+        inAppManager.syncInApp();
     }
 
     @VisibleForTesting

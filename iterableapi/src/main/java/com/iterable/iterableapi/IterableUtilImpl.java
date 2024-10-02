@@ -184,7 +184,7 @@ class IterableUtilImpl {
         }
 
         for (String allowedProtocol : IterableApi.sharedInstance.config.allowedProtocols) {
-            if (urlProtocol.equals(allowedProtocol)) {
+            if (urlProtocol.startsWith(allowedProtocol)) {
                 return true;
             }
         }
