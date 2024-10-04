@@ -82,14 +82,13 @@
             android:layout_height="36dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
-            android:padding="8dp"
             android:background="@drawable/primary_card_button_background"
             android:ellipsize="end"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
             android:singleLine="true"
-            android:textAllCaps="false"
             android:stateListAnimator="@null"
+            android:textAllCaps="false"
             android:textColor="@color/white"
             app:cornerRadius="32dp" />
 
@@ -99,7 +98,6 @@
             android:layout_height="36dp"
             android:layout_marginEnd="16dp"
             android:layout_weight="1"
-            android:padding="8dp"
             android:background="@drawable/secondary_card_button_background"
             android:ellipsize="end"
             android:singleLine="true"
