@@ -348,10 +348,15 @@ public class CriteriaCompletionChecker {
                     }
                 }
             }
+
+            // if field is a nested field
             if (field.contains(".")) {
+                // separate the sub-fields into an array
                 String[] splitString = field.split("\\.");
+                // if event type is a custom event and event name equals the top-level sub-field
                 if ((eventData.has(IterableConstants.SHARED_PREFS_EVENT_TYPE) && eventData.get(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.TRACK_EVENT))
                         && (eventData.has(IterableConstants.KEY_EVENT_NAME) && eventData.get(IterableConstants.KEY_EVENT_NAME).equals(splitString[0]))) {
+                    // remove the event name from the separated sub-fields array
                     splitString = Arrays.copyOfRange(splitString, 1, splitString.length);
                 }
 
@@ -359,15 +364,24 @@ public class CriteriaCompletionChecker {
                 boolean isSubFieldArray = false;
                 boolean isSubMatch = false;
 
+                // loop through the separated fields array
                 for (String subField : splitString) {
+                    // check if the current sub-field exists in the event data
                     if (fieldValue.has(subField)) {
+                        // get the value of the current sub-field
                         Object subFieldValue = fieldValue.get(subField);
+                        // check if the value is a JSONArray
                         if (subFieldValue instanceof JSONArray) {
                             isSubFieldArray = true;
                             JSONArray subFieldValueArray = (JSONArray) subFieldValue;
+                            // loop through the JSONArray
                             for (int i = 0; i < subFieldValueArray.length(); i++) {
+                                // get the value of the current item in the JSONArray
                                 Object item = subFieldValueArray.get(i);
                                 JSONObject data = new JSONObject();
+
+                                // loop through the separated fields array
+                                // process array to allow individual items to be checked
                                 for (int j = splitString.length - 1; j >= 0; j--) {
                                     String split = splitString[j];
                                     if (split.equals(subField)) {
@@ -378,15 +392,20 @@ public class CriteriaCompletionChecker {
                                         data.put(split, temp);
                                     }
                                 }
+                                // check if the current item matches the search queries
                                 if (evaluateFieldLogic(searchQueries, mergeEventData(eventData, data))) {
+                                    // if item matches, set to true and break the loop
                                     isSubMatch = true;
                                     break;
                                 }
                             }
 
                         } else if (subFieldValue instanceof JSONObject) {
+                            // set field value to the JSONObject for next iteration
                             fieldValue = (JSONObject) subFieldValue;
                         }
+
+                        // return result if sub-field is an array
                         if (isSubFieldArray) {
                             return isSubMatch;
                         }
