@@ -698,7 +698,7 @@ public class ComplexCriteriaCheckerTest {
                 "  {\n" +
                 "    \"eventName\": \"button-clicked\",\n" +
                 "    \"dataFields\": {\n" +
-                "      \"button-clicked.lastPageViewed\": \"welcome page\"\n" +
+                "      \"lastPageViewed\": \"welcome page\"\n" +
                 "    },\n" +
                 "    \"total\": 3,\n" +
                 "    \"createdAt\": 1700071052507,\n" +
@@ -720,7 +720,7 @@ public class ComplexCriteriaCheckerTest {
                 "  {\n" +
                 "    \"eventName\": \"button-clicked\",\n" +
                 "    \"dataFields\": {\n" +
-                "      \"button-clicked.lastPageViewed\": \"welcome page\"\n" +
+                "      \"lastPageViewed\": \"welcome page\"\n" +
                 "    },\n" +
                 "    \"total\": 3,\n" +
                 "    \"createdAt\": 1700071052507,\n" +
@@ -758,7 +758,7 @@ public class ComplexCriteriaCheckerTest {
                 "  {\n" +
                 "    \"eventName\": \"button-clicked\",\n" +
                 "    \"dataFields\": {\n" +
-                "      \"button-clicked.lastPageViewed\": \"welcome page\"\n" +
+                "      \"lastPageViewed\": \"welcome page\"\n" +
                 "    },\n" +
                 "    \"total\": 3,\n" +
                 "    \"createdAt\": 1700071052507,\n" +
