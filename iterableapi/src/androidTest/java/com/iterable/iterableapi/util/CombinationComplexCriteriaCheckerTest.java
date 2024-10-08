@@ -543,6 +543,41 @@ public class CombinationComplexCriteriaCheckerTest {
             "                       }\n" +
             "                     }\n" +
             "                   ]\n" +
+            "                 },\n" +
+            "                 {\n" +
+            "                   \"combinator\": \"Not\",\n" +
+            "                   \"searchQueries\": [\n" +
+            "                     {\n" +
+            "                       \"dataType\": \"purchase\",\n" +
+            "                       \"searchCombo\": {\n" +
+            "                         \"combinator\": \"And\",\n" +
+            "                         \"searchQueries\": [\n" +
+            "                           {\n" +
+            "                             \"dataType\": \"purchase\",\n" +
+            "                             \"field\": \"total\",\n" +
+            "                             \"comparatorType\": \"LessThanOrEqualTo\",\n" +
+            "                             \"value\": \"10\",\n" +
+            "                             \"fieldType\": \"double\"\n" +
+            "                           }\n" +
+            "                         ]\n" +
+            "                       }\n" +
+            "                     },\n" +
+            "                     {\n" +
+            "                       \"dataType\": \"purchase\",\n" +
+            "                       \"searchCombo\": {\n" +
+            "                         \"combinator\": \"And\",\n" +
+            "                         \"searchQueries\": [\n" +
+            "                           {\n" +
+            "                             \"dataType\": \"purchase\",\n" +
+            "                             \"field\": \"shoppingCartItems.quantity\",\n" +
+            "                             \"comparatorType\": \"LessThanOrEqualTo\",\n" +
+            "                             \"value\": \"34\",\n" +
+            "                             \"fieldType\": \"long\"\n" +
+            "                           }\n" +
+            "                         ]\n" +
+            "                       }\n" +
+            "                     }\n" +
+            "                   ]\n" +
             "                 }\n" +
             "               ]\n" +
             "             }\n" +
@@ -555,19 +590,14 @@ public class CombinationComplexCriteriaCheckerTest {
     public void complexCriteria3TestPass() throws Exception {
         String jsonString = "[\n" +
                 "  {\n" +
-                "    \"dataFields\": {\n" +
-                "      \"vaccinated\": true,\n" +
-                "      \"count\": 10\n" +
-                "    },\n" +
-                "    \"eventName\": \"animal-found\",\n" +
-                "    \"eventType\": \"customEvent\"\n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"dataFields\": {\n" +
-                "      \"firstName\": \"xcode\",\n" +
-                "      \"firstName\": \"ssr\"\n" +
-                "    },\n" +
-                "    \"eventType\": \"user\"\n" +
+                "    \"dataType\": \"purchase\",\n" +
+                "    \"createdAt\": 1699246745093,\n" +
+                "    \"items\": [{\n" +
+                "      \"id\": \"12\",\n" +
+                "      \"name\": \"coffee\",\n" +
+                "      \"price\": \"100\",\n" +
+                "      \"quantity\": \"2\",\n" +
+                "    }]\n" +
                 "  }\n" +
                 "]";
 
@@ -580,19 +610,21 @@ public class CombinationComplexCriteriaCheckerTest {
     public void complexCriteria3TestFail() throws Exception {
         String jsonString = "[\n" +
                 "  {\n" +
-                "    \"dataFields\": {\n" +
-                "      \"vaccinated\": false,\n" +
-                "      \"count\": 4\n" +
-                "    },\n" +
-                "    \"eventName\": \"animal-found\",\n" +
-                "    \"eventType\": \"customEvent\"\n" +
-                "  },\n" +
+                "    \"dataType\": \"purchase\",\n" +
+                "    \"createdAt\": 1699246745093,\n" +
+                "    \"items\": [{\n" +
+                "      \"id\": \"12\",\n" +
+                "      \"name\": \"coffee\",\n" +
+                "      \"price\": \"100\",\n" +
+                "      \"quantity\": \"2\",\n" +
+                "    }]\n" +
+                "  }\n" +
                 "  {\n" +
+                "    \"dataType\": \"user\",\n" +
                 "    \"dataFields\": {\n" +
                 "      \"firstName\": \"Alex\",\n" +
-                "      \"lastName\": \"Aris\"\n" +
-                "    },\n" +
-                "    \"eventType\": \"user\"\n" +
+                "      \"lastName\": \"Aris\",\n" +
+                "    }\n" +
                 "  }\n" +
                 "]";
 
@@ -600,5 +632,4 @@ public class CombinationComplexCriteriaCheckerTest {
         String result = evaluator.getMatchedCriteria(complexCriteria3, jsonArray);
         assertNull(result);
     }
-
 }
