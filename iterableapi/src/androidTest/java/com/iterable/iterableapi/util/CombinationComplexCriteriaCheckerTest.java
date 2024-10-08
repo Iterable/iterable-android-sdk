@@ -607,6 +607,26 @@ public class CombinationComplexCriteriaCheckerTest {
     }
 
     @Test
+    public void complexCriteria3TestPass2() throws Exception {
+        String jsonString = "[\n" +
+                "  {\n" +
+                "    \"dataType\": \"purchase\",\n" +
+                "    \"createdAt\": 1699246745067,\n" +
+                "    \"items\": [{\n" +
+                "      \"id\": \"13\",\n" +
+                "      \"name\": \"kittens\",\n" +
+                "      \"price\": \"2\",\n" +
+                "      \"quantity\": \"2\",\n" +
+                "    }]\n" +
+                "  }\n" +
+                "]";
+
+        JSONArray jsonArray = new JSONArray(jsonString);
+        String result = evaluator.getMatchedCriteria(complexCriteria3, jsonArray);
+        assertNotNull(result);
+    }
+
+    @Test
     public void complexCriteria3TestFail() throws Exception {
         String jsonString = "[\n" +
                 "  {\n" +
