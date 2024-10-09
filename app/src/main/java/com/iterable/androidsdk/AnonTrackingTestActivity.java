@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import com.iterable.iterableapi.CommerceItem;
 import com.iterable.iterableapi.IterableAnonUserHandler;
@@ -23,11 +24,13 @@ import java.util.Map;
 
 public class AnonTrackingTestActivity extends AppCompatActivity implements IterableAnonUserHandler {
 
+    private CheckBox anonymousUsageTrackedCheckBox;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-
+        anonymousUsageTrackedCheckBox = findViewById(R.id.anonymousUsageTracked_check_box);
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).setIterableAnonUserHandler(this).build();
 
         // clear data for testing
@@ -35,6 +38,7 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putBoolean(IterableConstants.SHARED_PREFS_ANONYMOUS_USAGE_TRACKED, false);
         editor.apply();
 
         new Handler().postDelayed(() -> {
@@ -42,8 +46,13 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
             IterableApi.getInstance().setUserId(null);
             IterableApi.getInstance().setEmail(null);
             printAllSharedPreferencesData(this);
+            IterableApi.getInstance().setAnonymousUsageTracked(anonymousUsageTrackedCheckBox.isChecked());
 
         }, 1000);
+
+        anonymousUsageTrackedCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            IterableApi.getInstance().setAnonymousUsageTracked(isChecked);
+        });
 
         findViewById(R.id.updateCart).setOnClickListener(view -> {
             EditText updateCart_edit = findViewById(R.id.updateCart_edit);

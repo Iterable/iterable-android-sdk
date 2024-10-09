@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import static com.iterable.iterableapi.IterableConstants.SHARED_PREFS_ANONYMOUS_USAGE_TRACKED;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -635,7 +637,7 @@ public class IterableApi {
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
 
-        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonTracking) {
+        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonTracking && sharedInstance.getAnonymousUsageTracked()) {
             anonymousUserManager.updateAnonSession();
             anonymousUserManager.getCriteria();
         }
@@ -1535,6 +1537,26 @@ public class IterableApi {
         }
 
         apiClient.trackEmbeddedSession(session);
+    }
+
+    public void setAnonymousUsageTracked(@NonNull Boolean isSetAnonymousUsageTracked) {
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
+        editor.putBoolean(SHARED_PREFS_ANONYMOUS_USAGE_TRACKED, isSetAnonymousUsageTracked);
+        editor.apply();
+
+        if (isSetAnonymousUsageTracked) {
+            anonymousUserManager.updateAnonSession();
+            anonymousUserManager.getCriteria();
+        }
+    }
+
+    public boolean getAnonymousUsageTracked() {
+        SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(SHARED_PREFS_ANONYMOUS_USAGE_TRACKED, false);
     }
 //endregion
 }

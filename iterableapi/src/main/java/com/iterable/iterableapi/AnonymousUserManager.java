@@ -349,10 +349,15 @@ public class AnonymousUserManager {
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
-        storeEventListToLocalStorage(newDataObject, false);
+        if (iterableApi.getAnonymousUsageTracked()) {
+            storeEventListToLocalStorage(newDataObject, false);
+        }
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
+        if (!iterableApi.getAnonymousUsageTracked()) {
+            return;
+        }
         JSONArray previousDataArray = getEventListFromLocalStorage();
         if (shouldOverWrite) {
             previousDataArray = removeDuplicateEvent(previousDataArray, newDataObject);
