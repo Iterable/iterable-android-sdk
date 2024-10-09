@@ -139,9 +139,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
         IterableApi.getInstance().setAnonymousUsageTracked(true);
         setCriteria(criteriaMockData);
-
     }
-
 
     private void reInitIterableApi() {
         IterableApi.sharedInstance = new IterableApi();
