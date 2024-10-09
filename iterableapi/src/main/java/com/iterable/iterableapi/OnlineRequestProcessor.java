@@ -39,7 +39,13 @@ class OnlineRequestProcessor implements RequestProcessor {
 
     JSONObject addCreatedAtToJson(JSONObject jsonObject) {
         try {
-            jsonObject.put(IterableConstants.KEY_CREATED_AT, new Date().getTime() / 1000);
+            long createdAt;
+            if (jsonObject.has(IterableConstants.KEY_CREATED_AT)) {
+                createdAt = Long.parseLong(jsonObject.getString(IterableConstants.KEY_CREATED_AT));
+            } else {
+                createdAt = new Date().getTime() / 1000;
+            }
+            jsonObject.put(IterableConstants.KEY_CREATED_AT, createdAt);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "Could not add createdAt timestamp to json object");
         }
