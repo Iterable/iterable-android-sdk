@@ -590,13 +590,13 @@ public class CombinationComplexCriteriaCheckerTest {
     public void complexCriteria3TestPass() throws Exception {
         String jsonString = "[\n" +
                 "  {\n" +
-                "    \"dataType\": \"purchase\",\n" +
+                "    \"eventType\": \"purchase\",\n" +
                 "    \"createdAt\": 1699246745093,\n" +
                 "    \"items\": [{\n" +
                 "      \"id\": \"12\",\n" +
                 "      \"name\": \"coffee\",\n" +
                 "      \"price\": \"100\",\n" +
-                "      \"quantity\": \"2\",\n" +
+                "      \"quantity\": \"2\"\n" +
                 "    }]\n" +
                 "  }\n" +
                 "]";
@@ -610,13 +610,13 @@ public class CombinationComplexCriteriaCheckerTest {
     public void complexCriteria3TestPass2() throws Exception {
         String jsonString = "[\n" +
                 "  {\n" +
-                "    \"dataType\": \"purchase\",\n" +
+                "    \"eventType\": \"purchase\",\n" +
                 "    \"createdAt\": 1699246745067,\n" +
                 "    \"items\": [{\n" +
                 "      \"id\": \"13\",\n" +
                 "      \"name\": \"kittens\",\n" +
                 "      \"price\": \"2\",\n" +
-                "      \"quantity\": \"2\",\n" +
+                "      \"quantity\": \"2\"\n" +
                 "    }]\n" +
                 "  }\n" +
                 "]";
@@ -630,20 +630,20 @@ public class CombinationComplexCriteriaCheckerTest {
     public void complexCriteria3TestFail() throws Exception {
         String jsonString = "[\n" +
                 "  {\n" +
-                "    \"dataType\": \"purchase\",\n" +
+                "    \"eventType\": \"purchase\",\n" +
                 "    \"createdAt\": 1699246745093,\n" +
                 "    \"items\": [{\n" +
                 "      \"id\": \"12\",\n" +
                 "      \"name\": \"coffee\",\n" +
                 "      \"price\": \"100\",\n" +
-                "      \"quantity\": \"2\",\n" +
+                "      \"quantity\": \"2\"\n" +
                 "    }]\n" +
-                "  }\n" +
+                "  },\n" +
                 "  {\n" +
-                "    \"dataType\": \"user\",\n" +
+                "    \"eventType\": \"user\",\n" +
                 "    \"dataFields\": {\n" +
                 "      \"firstName\": \"Alex\",\n" +
-                "      \"lastName\": \"Aris\",\n" +
+                "      \"lastName\": \"Aris\"\n" +
                 "    }\n" +
                 "  }\n" +
                 "]";
