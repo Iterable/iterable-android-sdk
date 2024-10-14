@@ -1548,7 +1548,7 @@ public class IterableApi {
         editor.putBoolean(SHARED_PREFS_ANONYMOUS_USAGE_TRACKED, isSetAnonymousUsageTracked);
         editor.apply();
 
-        if (isSetAnonymousUsageTracked) {
+        if (isSetAnonymousUsageTracked && config.enableAnonTracking) {
             anonymousUserManager.updateAnonSession();
             anonymousUserManager.getCriteria();
         }
