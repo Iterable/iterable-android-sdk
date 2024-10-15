@@ -207,7 +207,7 @@ class IterableNotificationHelper {
             }
 
             PendingIntent notificationClickedIntent = PendingIntent.getActivity(context, notificationBuilder.requestCode,
-                    trampolineActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    trampolineActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
 
             notificationBuilder.setContentIntent(notificationClickedIntent);
             notificationBuilder.setIsGhostPush(isGhostPush(extras));

@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.Tasks;
@@ -55,9 +56,9 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             IterableLogger.d(TAG, "Not an Iterable push message");
             return false;
         }
-
+        IterableLogger.d(TAG, "Extra:::::: " + extras + "Message Data " + messageData);
         if (!IterableNotificationHelper.isGhostPush(extras)) {
-            if (!IterableNotificationHelper.isEmptyBody(extras)) {
+            if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
                 IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
                         context.getApplicationContext(), extras);

@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.RemoteInput;
 
@@ -134,12 +135,12 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             buttonIntent.setClass(context, IterableTrampolineActivity.class);
             buttonIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             pendingButtonIntent = PendingIntent.getActivity(context, buttonIntent.hashCode(),
-                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
         } else {
             IterableLogger.d(TAG, "Go through IterablePushActionReceiver");
             buttonIntent.setClass(context, IterablePushActionReceiver.class);
             pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
-                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
         }
 
         return pendingButtonIntent;
