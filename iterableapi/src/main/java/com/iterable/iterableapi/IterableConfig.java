@@ -60,6 +60,9 @@ public class IterableConfig {
      */
     final IterableAuthHandler authHandler;
 
+
+    final IterableAnonUserHandler iterableAnonUserHandler;
+
     /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
@@ -89,10 +92,20 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    final boolean enableAnonTracking;
+
+    final int eventThresholdLimit;
+
     /**
      * Allows for fetching embedded messages.
      */
     final boolean enableEmbeddedMessaging;
+
+    /**
+     * This controls whether the SDK should allow event replay from local storage to logged in profile
+     * and merging between the generated anonymous profile and the logged in profile by default.
+     */
+    final IterableIdentityResolution identityResolution;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -110,7 +123,11 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
+        enableAnonTracking = builder.enableAnonTracking;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
+        eventThresholdLimit = builder.eventThresholdLimit;
+        identityResolution = builder.identityResolution;
+        iterableAnonUserHandler = builder.iterableAnonUserHandler;
     }
 
     public static class Builder {
@@ -129,7 +146,17 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
+        private boolean enableAnonTracking = false;
         private boolean enableEmbeddedMessaging = false;
+        private int eventThresholdLimit = 100;
+        private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+        private IterableAnonUserHandler iterableAnonUserHandler;
+
+        @NonNull
+        public Builder setIterableAnonUserHandler(@NonNull IterableAnonUserHandler iterableAnonUserHandler) {
+            this.iterableAnonUserHandler = iterableAnonUserHandler;
+            return this;
+        }
 
         public Builder() {}
 
@@ -294,11 +321,39 @@ public class IterableConfig {
         }
 
         /**
+         * Set whether the SDK should track events for anonymous users. Set this to `true`
+         * if you want to track all events when users are not logged into the application.
+         * @param enableAnonTracking `true` will track events for anonymous users.
+         */
+        public Builder setEnableAnonTracking(boolean enableAnonTracking) {
+            this.enableAnonTracking = enableAnonTracking;
+            return this;
+        }
+
+        public Builder setEventThresholdLimit(int eventThresholdLimit) {
+            this.eventThresholdLimit = eventThresholdLimit;
+            return this;
+        }
+
+        /**
          * Allows for fetching embedded messages.
          * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
          */
         public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
             this.enableEmbeddedMessaging = enableEmbeddedMessaging;
+            return this;
+        }
+
+        /**
+         * Set whether the SDK should replay events from local storage to the logged in profile
+         * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
+         * This can be overwritten by a parameter passed into setEmail or setUserId.
+         * @param identityResolution
+         * @return
+         */
+
+        public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
+            this.identityResolution = identityResolution;
             return this;
         }
 

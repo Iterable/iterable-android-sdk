@@ -16,6 +16,7 @@ class IterableKeychain {
 
     private val emailKey = "iterable-email"
     private val userIdKey = "iterable-user-id"
+    private val userIdAnonKey = "iterable-user-id-anon"
     private val authTokenKey = "iterable-auth-token"
 
     private var encryptionEnabled = false
@@ -92,7 +93,14 @@ class IterableKeychain {
     fun getUserId(): String? {
         return sharedPrefs.getString(userIdKey, null)
     }
-
+    fun getUserIdAnon(): String? {
+        return sharedPrefs.getString(userIdAnonKey,null)
+    }
+    fun saveUserIdAnon(userId: String?) {
+        sharedPrefs.edit()
+            .putString(userIdAnonKey, userId)
+            .apply()
+    }
     fun saveUserId(userId: String?) {
         sharedPrefs.edit()
             .putString(userIdKey, userId)
@@ -117,6 +125,7 @@ class IterableKeychain {
         )
         val sharedPrefsEmail = oldPrefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null)
         val sharedPrefsUserId = oldPrefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null)
+        val sharedPrefsUserIdAnon = oldPrefs.getString(IterableConstants.SHARED_PREFS_USERIDANON_KEY, null)
         val sharedPrefsAuthToken =
             oldPrefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null)
         val editor: SharedPreferences.Editor = oldPrefs.edit()
@@ -130,6 +139,18 @@ class IterableKeychain {
         } else if (sharedPrefsEmail != null) {
             editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY)
         }
+
+        if (getUserIdAnon() == null && sharedPrefsUserIdAnon != null) {
+            saveUserIdAnon(sharedPrefsUserIdAnon)
+            editor.remove(IterableConstants.SHARED_PREFS_USERIDANON_KEY)
+            IterableLogger.v(
+                TAG,
+                "UPDATED: migrated userIdAnon from SharedPreferences to IterableKeychain"
+            )
+        } else if (sharedPrefsUserIdAnon != null) {
+            editor.remove(IterableConstants.SHARED_PREFS_USERIDANON_KEY)
+        }
+
         if (getUserId() == null && sharedPrefsUserId != null) {
             saveUserId(sharedPrefsUserId)
             editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY)
