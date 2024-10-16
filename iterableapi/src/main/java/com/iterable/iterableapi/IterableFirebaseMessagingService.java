@@ -56,7 +56,6 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             IterableLogger.d(TAG, "Not an Iterable push message");
             return false;
         }
-        IterableLogger.d(TAG, "Extra:::::: " + extras + "Message Data " + messageData);
         if (!IterableNotificationHelper.isGhostPush(extras)) {
             if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
