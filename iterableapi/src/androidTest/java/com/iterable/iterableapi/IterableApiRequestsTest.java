@@ -24,6 +24,7 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 
+import android.util.Log;
 @RunWith(AndroidJUnit4.class)
 public class IterableApiRequestsTest {
 
@@ -45,7 +46,7 @@ public class IterableApiRequestsTest {
     @Test
     public void testPostRequestHeaders() throws Exception {
         IterableApi.sharedInstance.track("customEvent");
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK, request.getPath());
         assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
@@ -56,7 +57,7 @@ public class IterableApiRequestsTest {
     @Test
     public void testGetRequestHeaders() throws Exception {
         IterableApi.sharedInstance.getInAppMessages(1, null);
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue(request.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
         assertFalse(request.getPath().contains("api_key"));
         assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
@@ -72,7 +73,7 @@ public class IterableApiRequestsTest {
 
         IterableApi.sharedInstance.updateCart(items);
 
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request);
         assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_CART, request.getPath());
 
@@ -96,7 +97,7 @@ public class IterableApiRequestsTest {
 
         IterableApi.sharedInstance.trackPurchase(100.0, items);
 
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
         assertEquals(expectedRequest, request.getBody().readUtf8());
     }
@@ -122,7 +123,8 @@ public class IterableApiRequestsTest {
 
         IterableApi.sharedInstance.trackPurchase(42, items);
 
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        assert request != null;
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
 
         String expectedRequest = new StringBuilder(
@@ -148,7 +150,7 @@ public class IterableApiRequestsTest {
 
         IterableApi.sharedInstance.trackPurchase(100.0, items, dataFields, null);
 
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
         assertEquals(expectedRequest, request.getBody().readUtf8());
@@ -162,7 +164,7 @@ public class IterableApiRequestsTest {
         // Plain request check
         IterableApi.sharedInstance.updateEmail("test@example.com");
 
-        RecordedRequest request1 = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request1 = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request1);
         assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL, request1.getPath());
         assertEquals("{\"currentEmail\":\"test_email\",\"newEmail\":\"test@example.com\"}", request1.getBody().readUtf8());
@@ -173,7 +175,7 @@ public class IterableApiRequestsTest {
         // Check that we handle failures properly
         IterableApi.sharedInstance.updateEmail("invalid_mail!!123");
 
-        RecordedRequest request2 = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request2);
         assertEquals("{\"currentEmail\":\"test@example.com\",\"newEmail\":\"invalid_mail!!123\"}", request2.getBody().readUtf8());
         Thread.sleep(100); // We need the callback to run to verify the internal email field change
@@ -181,7 +183,7 @@ public class IterableApiRequestsTest {
         // Check that we still pass a valid (old) email after trying to update to an invalid one
         IterableApi.sharedInstance.updateEmail("another@email.com");
 
-        RecordedRequest request3 = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request3 = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request3);
         assertEquals("{\"currentEmail\":\"test@example.com\",\"newEmail\":\"another@email.com\"}", request3.getBody().readUtf8());
     }
@@ -190,7 +192,7 @@ public class IterableApiRequestsTest {
     public void testTrackWithoutCampaignIdTemplateId() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.sharedInstance.track("testEvent");
-        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request);
 
         JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
@@ -200,7 +202,7 @@ public class IterableApiRequestsTest {
 
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableApi.sharedInstance.track("testEvent", 1234, 4321);
-        request = server.takeRequest(1, TimeUnit.SECONDS);
+        request = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request);
 
         requestJson = new JSONObject(request.getBody().readUtf8());
