@@ -248,9 +248,10 @@ public class AnonymousUserManager {
 
     void syncEvents() {
         JSONArray trackEventList = getEventListFromLocalStorage();
+        JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
         Gson gson = new GsonBuilder().create();
 
-        if (trackEventList.length() == 0) return;
+        if (trackEventList.length() == 0 && !updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) return;
 
         for (int i = 0; i < trackEventList.length(); i++) {
             try {
@@ -277,7 +278,7 @@ public class AnonymousUserManager {
             }
         }
 
-        clearAnonEventsData();
+        clearAnonEventsAndUserData();
     }
 
     private void handleTrackEvent(JSONObject event) throws JSONException {
@@ -314,11 +315,12 @@ public class AnonymousUserManager {
         return event.has(IterableConstants.KEY_DATA_FIELDS) ? new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS)) : null;
     }
 
-    public void clearAnonEventsData() {
+    public void clearAnonEventsAndUserData() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
         editor.apply();
     }
 
@@ -332,12 +334,12 @@ public class AnonymousUserManager {
         if (!iterableApi.getAnonymousUsageTracked()) {
             return;
         }
-        JSONArray previousDataArray = getEventListFromLocalStorage();
+        JSONArray eventList = getEventListFromLocalStorage();
 
-        previousDataArray.put(newDataObject);
+        eventList.put(newDataObject);
 
-        previousDataArray = enforceEventThresholdLimit(previousDataArray);
-        saveEventListToLocalStorage(previousDataArray);
+        eventList = enforceEventThresholdLimit(eventList);
+        saveEventListToLocalStorage(eventList);
 
         String criteriaId = checkCriteriaCompletion();
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
