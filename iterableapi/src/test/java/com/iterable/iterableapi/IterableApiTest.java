@@ -80,9 +80,9 @@ public class IterableApiTest extends BaseTest {
 
     private void reInitIterableApi() {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        IterableEmbeddedManager embeddedManagerMock = mock(IterableEmbeddedManager.class);
+//        IterableEmbeddedManager embeddedManagerMock = mock(IterableEmbeddedManager.class);
 
-        IterableApi.sharedInstance = new IterableApi(inAppManagerMock, embeddedManagerMock);
+        IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
 
         originalApiClient = IterableApi.sharedInstance.apiClient;
         mockApiClient = spy(originalApiClient);
