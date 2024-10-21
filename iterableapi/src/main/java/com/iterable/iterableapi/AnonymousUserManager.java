@@ -177,15 +177,15 @@ public class AnonymousUserManager {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
 
-        JSONArray localStoredEventList = getEventListFromLocalStorage();
+        JSONArray localStoredEventListAndUserUpdates = getEventListFromLocalStorage();
         JSONObject localStoredUserUpdateObj = getUserUpdateObjFromLocalStorage();
 
-        localStoredEventList.put(localStoredUserUpdateObj);
+        localStoredEventListAndUserUpdates.put(localStoredUserUpdateObj);
 
         try {
-            if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
+            if (!criteriaData.isEmpty() && localStoredEventListAndUserUpdates.length() > 0) {
                 CriteriaCompletionChecker checker = new CriteriaCompletionChecker();
-                return checker.getMatchedCriteria(criteriaData, localStoredEventList);
+                return checker.getMatchedCriteria(criteriaData, localStoredEventListAndUserUpdates);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -274,14 +274,14 @@ public class AnonymousUserManager {
                         break;
                 }
             } catch (JSONException e) {
-                e.printStackTrace();
+                IterableLogger.d(TAG, "Event Sync Failure");
             }
         }
 
         try {
             handleUpdateUser(updateUserObj);
         } catch (JSONException e) {
-            e.printStackTrace();
+            IterableLogger.d(TAG, "Handle User Update Failure");
         }
 
         clearAnonEventsAndUserData();
