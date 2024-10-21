@@ -763,7 +763,7 @@ public class IterableApi {
         setEmail(email, authToken, null, successHandler, failureHandler);
     }
 
-    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler)  {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
@@ -787,7 +787,7 @@ public class IterableApi {
             }
 
             if (replay && _userIdAnon == null && _email != null) {
-                anonymousUserManager.syncEvents();
+                anonymousUserManager.syncEventsAndUserUpdate();
             }
 
             _userIdAnon = null;
@@ -859,7 +859,7 @@ public class IterableApi {
             }
 
             if (replay && _userIdAnon == null && _userId != null) {
-                anonymousUserManager.syncEvents();
+                anonymousUserManager.syncEventsAndUserUpdate();
             }
 
             if (!isAnon) {

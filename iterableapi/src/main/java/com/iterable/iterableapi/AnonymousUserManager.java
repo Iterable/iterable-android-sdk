@@ -224,7 +224,7 @@ public class AnonymousUserManager {
                         IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
                     }
                     IterableApi.getInstance().setAnonUser(userId);
-                    syncEvents();
+                    syncEventsAndUserUpdate();
                 }, (reason, data) -> handleTrackFailure(data));
             }
 
@@ -246,12 +246,12 @@ public class AnonymousUserManager {
         }
     }
 
-    void syncEvents() {
+    void syncEventsAndUserUpdate() {
         JSONArray trackEventList = getEventListFromLocalStorage();
         JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
         Gson gson = new GsonBuilder().create();
 
-1        if (trackEventList.length() == 0 && !updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) return;
+        if (trackEventList.length() == 0 && !updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) return;
 
         for (int i = 0; i < trackEventList.length(); i++) {
             try {
@@ -278,6 +278,12 @@ public class AnonymousUserManager {
             }
         }
 
+        try {
+            handleUpdateUser(updateUserObj);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         clearAnonEventsAndUserData();
     }
 
@@ -302,6 +308,10 @@ public class AnonymousUserManager {
 
         long createdAt = getLongValue(event);
         iterableApi.apiClient.updateCart(list, createdAt);
+    }
+
+    private void handleUpdateUser(JSONObject event) throws JSONException {
+        iterableApi.apiClient.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS), false);
     }
 
     private String getStringValue(JSONObject event) throws JSONException {
