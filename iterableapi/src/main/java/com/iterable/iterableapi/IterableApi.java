@@ -787,7 +787,7 @@ public class IterableApi {
             }
 
             if (replay && _userIdAnon == null && _email != null) {
-                anonymousUserManager.syncEvents();
+                anonymousUserManager.syncEventsAndUserUpdate();
             }
 
             _userIdAnon = null;
@@ -859,7 +859,7 @@ public class IterableApi {
             }
 
             if (replay && _userIdAnon == null && _userId != null) {
-                anonymousUserManager.syncEvents();
+                anonymousUserManager.syncEventsAndUserUpdate();
             }
 
             if (!isAnon) {

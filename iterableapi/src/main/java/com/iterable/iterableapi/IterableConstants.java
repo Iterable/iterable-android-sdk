@@ -128,6 +128,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
     public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
+    public static final String SHARED_PREFS_USER_UPDATE_OBJECT_KEY = "itbl_user_update_object";
     public static final String SHARED_PREFS_ANON_SESSIONS = "itbl_anon_sessions";
     public static final String SHARED_PREFS_SESSION_NO = "totalAnonSessionCount";
     public static final String SHARED_PREFS_LAST_SESSION = "lastAnonSession";
