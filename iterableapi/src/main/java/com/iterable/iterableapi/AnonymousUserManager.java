@@ -114,7 +114,7 @@ public class AnonymousUserManager {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_TOKEN, token);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_TOKEN_REGISTRATION);
-            storeEventListToLocalStorage(newDataObject, false);
+            storeEventListToLocalStorage(newDataObject);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -335,12 +335,6 @@ public class AnonymousUserManager {
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
-        if (iterableApi.getAnonymousUsageTracked()) {
-            storeEventListToLocalStorage(newDataObject, false);
-        }
-    }
-
-    private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
         if (!iterableApi.getAnonymousUsageTracked()) {
             return;
         }
