@@ -378,22 +378,9 @@ public class AnonymousUserManager {
         while (keys.hasNext()) {
             String key = keys.next();
             Object value = source.get(key);
-            if (target.has(key)) {
-                // If the key exists in the target
-                if (value instanceof JSONObject) {
-                    // For nested JSONObjects, recurse
-                    mergeUpdateUserObjects(target.getJSONObject(key), (JSONObject) value);
-                } else if (value instanceof JSONArray) {
-                    // For JSONArrays, append items
-                    JSONArray targetArray = target.getJSONArray(key);
-                    JSONArray sourceArray = (JSONArray) value;
-                    for (int i = 0; i < sourceArray.length(); i++) {
-                        targetArray.put(sourceArray.get(i));
-                    }
-                } else {
-                    // For simple types, overwrite
-                    target.put(key, value);
-                }
+            // if value is an object, recurse
+            if (value instanceof JSONObject && target.has(key)) {
+                mergeUpdateUserObjects(target.getJSONObject(key), (JSONObject) value);
             } else {
                 // If the key doesn't exist in the target, just add it
                 target.put(key, value);
