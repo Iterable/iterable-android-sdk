@@ -39,8 +39,8 @@ public class IterableAuthManager {
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
     }
 
-    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
-        requestNewAuthToken(hasFailedPriorAuth, null, true);
+    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, GenerateJWTSuccess generateJwtSuccess) {
+        requestNewAuthToken(hasFailedPriorAuth, null, true, generateJwtSuccess);
     }
 
     public void pauseAuthRetries(boolean pauseRetry) {
@@ -74,7 +74,7 @@ public class IterableAuthManager {
     public synchronized void requestNewAuthToken(
             boolean hasFailedPriorAuth,
             final IterableHelper.SuccessHandler successCallback,
-            boolean shouldIgnoreRetryPolicy) {
+            boolean shouldIgnoreRetryPolicy, GenerateJWTSuccess generateJwtSuccess) {
         if (!shouldIgnoreRetryPolicy && (pauseAuthRetry || (retryCount >= authRetryPolicy.maxRetry))) {
             return;
         }
@@ -99,6 +99,9 @@ public class IterableAuthManager {
                                 pendingAuth = false;
                                 retryCount++;
                                 handleAuthTokenSuccess(authToken, successCallback);
+                                if (generateJwtSuccess != null) {
+                                    generateJwtSuccess.onJWTSuccess(authToken);
+                                }
                             } catch (final Exception e) {
                                 retryCount++;
                                 handleAuthTokenFailure(e);
@@ -112,6 +115,9 @@ public class IterableAuthManager {
             }
 
         } else {
+            if (generateJwtSuccess != null) {
+                generateJwtSuccess.onJWTSuccess(null);
+            }
             IterableApi.getInstance().setAuthToken(null, true);
         }
     }
@@ -201,7 +207,7 @@ public class IterableAuthManager {
                 @Override
                 public void run() {
                     if (api.getEmail() != null || api.getUserId() != null) {
-                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh);
+                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh, null);
                     } else {
                         IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
                     }
