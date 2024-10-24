@@ -1548,6 +1548,7 @@ public class IterableApi {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
         editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         editor.putBoolean(SHARED_PREFS_ANONYMOUS_USAGE_TRACKED, isSetAnonymousUsageTracked);
         editor.apply();

@@ -114,7 +114,7 @@ public class AnonymousUserManager {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_TOKEN, token);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_TOKEN_REGISTRATION);
-            storeEventListToLocalStorage(newDataObject, false);
+            storeEventListToLocalStorage(newDataObject);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -194,7 +194,7 @@ public class AnonymousUserManager {
         return null;
     }
 
-    private void createKnownUser(String criteriaId) {
+    private void createAnonymousUser(String criteriaId) {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         updateAnonSession();
 
@@ -335,12 +335,6 @@ public class AnonymousUserManager {
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
-        if (iterableApi.getAnonymousUsageTracked()) {
-            storeEventListToLocalStorage(newDataObject, false);
-        }
-    }
-
-    private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
         if (!iterableApi.getAnonymousUsageTracked()) {
             return;
         }
@@ -355,7 +349,7 @@ public class AnonymousUserManager {
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null) {
-            createKnownUser(criteriaId);
+            createAnonymousUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
@@ -374,7 +368,7 @@ public class AnonymousUserManager {
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null) {
-            createKnownUser(criteriaId);
+            createAnonymousUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
@@ -384,22 +378,9 @@ public class AnonymousUserManager {
         while (keys.hasNext()) {
             String key = keys.next();
             Object value = source.get(key);
-            if (target.has(key)) {
-                // If the key exists in the target
-                if (value instanceof JSONObject) {
-                    // For nested JSONObjects, recurse
-                    mergeUpdateUserObjects(target.getJSONObject(key), (JSONObject) value);
-                } else if (value instanceof JSONArray) {
-                    // For JSONArrays, append items
-                    JSONArray targetArray = target.getJSONArray(key);
-                    JSONArray sourceArray = (JSONArray) value;
-                    for (int i = 0; i < sourceArray.length(); i++) {
-                        targetArray.put(sourceArray.get(i));
-                    }
-                } else {
-                    // For simple types, overwrite
-                    target.put(key, value);
-                }
+            // if value is an object, recurse
+            if (value instanceof JSONObject && target.has(key)) {
+                mergeUpdateUserObjects(target.getJSONObject(key), (JSONObject) value);
             } else {
                 // If the key doesn't exist in the target, just add it
                 target.put(key, value);
