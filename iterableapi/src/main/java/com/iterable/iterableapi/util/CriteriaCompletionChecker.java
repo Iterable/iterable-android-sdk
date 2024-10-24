@@ -371,7 +371,7 @@ public class CriteriaCompletionChecker {
                         // get the value of the current sub-field
                         Object subFieldValue = fieldValue.get(subField);
                         // check if the value is a JSONArray
-                        if (subFieldValue instanceof JSONArray) {
+                        if (subFieldValue instanceof JSONArray && ((JSONArray) subFieldValue).get(0) instanceof JSONObject) {
                             isSubFieldArray = true;
                             JSONArray subFieldValueArray = (JSONArray) subFieldValue;
                             // loop through the JSONArray
