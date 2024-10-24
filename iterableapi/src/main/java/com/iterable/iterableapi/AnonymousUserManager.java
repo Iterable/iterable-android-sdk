@@ -194,7 +194,7 @@ public class AnonymousUserManager {
         return null;
     }
 
-    private void createKnownUser(String criteriaId) {
+    private void createAnonymousUser(String criteriaId) {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         updateAnonSession();
 
@@ -349,7 +349,7 @@ public class AnonymousUserManager {
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null) {
-            createKnownUser(criteriaId);
+            createAnonymousUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
@@ -368,7 +368,7 @@ public class AnonymousUserManager {
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null) {
-            createKnownUser(criteriaId);
+            createAnonymousUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
