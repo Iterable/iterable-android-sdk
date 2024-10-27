@@ -3,5 +3,7 @@
     <uses-sdk tools:overrideLibrary="android_libs.ub_uiautomator,androidx.security"/>
     <application
         android:label="IterableAPI"
+        android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:supportsRtl="true" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
