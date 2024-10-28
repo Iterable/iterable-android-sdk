@@ -789,7 +789,7 @@ public class IterableApi {
         _email = email;
         _userId = null;
 
-        if(config.authHandler != null) {
+        if (config.authHandler == null) {
             attemptMergeAndEventReplay(email, true, merge, replay, failureHandler);
         }
 
@@ -853,7 +853,7 @@ public class IterableApi {
         _email = null;
         _userId = userId;
 
-        if(config.authHandler != null) {
+        if (config.authHandler == null) {
             attemptMergeAndEventReplay(userId, false, merge, replay, failureHandler);
         }
 
