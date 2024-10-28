@@ -355,19 +355,25 @@ public class IterableApi {
         apiClient.onLogout();
     }
 
-    private void onLogin(@Nullable String authToken, GenerateJWTSuccess generateJwtSuccess) {
+    private void onLogin(
+            @Nullable String authToken,
+            String userIdOrEmail,
+            boolean isEmail,
+            boolean merge,
+            boolean replay,
+            @Nullable IterableHelper.FailureHandler failureHandler
+    ) {
         if (!isInitialized()) {
             setAuthToken(null);
-            generateJwtSuccess.onJWTSuccess(null);
             return;
         }
 
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
-            generateJwtSuccess.onJWTSuccess(authToken);
+            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler);
         } else {
-            getAuthManager().requestNewAuthToken(false, generateJwtSuccess);
+            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler));
         }
     }
 
@@ -783,20 +789,7 @@ public class IterableApi {
         _email = email;
         _userId = null;
 
-        onLogin(authToken, token -> {
-            if (config.enableAnonTracking) {
-                if (email != null) {
-                    attemptAndProcessMerge(email, true, merge, failureHandler, _userIdAnon);
-                }
-
-                if (replay && _userIdAnon == null && _email != null) {
-                    anonymousUserManager.syncEventsAndUserUpdate();
-                }
-
-                _userIdAnon = null;
-            }
-            storeAuthData();
-        });
+        onLogin(authToken, email, true, merge, replay, failureHandler);
 
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
@@ -856,22 +849,11 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
-        onLogin(authToken, token -> {
-            if (config.enableAnonTracking) {
-                if (userId != null && !userId.equals(_userIdAnon)) {
-                    attemptAndProcessMerge(userId, false, merge, failureHandler, _userIdAnon);
-                }
+        onLogin(authToken, userId, false, merge, replay, failureHandler);
 
-                if (replay && _userIdAnon == null && _userId != null) {
-                    anonymousUserManager.syncEventsAndUserUpdate();
-                }
-
-                if (!isAnon) {
-                    _userIdAnon = null;
-                }
-            }
-            storeAuthData();
-        });
+        if (!isAnon) {
+            _userIdAnon = null;
+        }
 
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
@@ -884,6 +866,19 @@ public class IterableApi {
 
     private boolean isReplay(@Nullable IterableIdentityResolution iterableIdentityResolution) {
         return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
+    }
+
+    private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, IterableHelper.FailureHandler failureHandler) {
+        if (config.enableAnonTracking) {
+            if (emailOrUserId != null && !emailOrUserId.equals(_userIdAnon)) {
+                attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdAnon);
+            }
+
+            if (replay && _userIdAnon == null && _userId != null) {
+                anonymousUserManager.syncEventsAndUserUpdate();
+            }
+        }
+        storeAuthData();
     }
 
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
