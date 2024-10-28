@@ -369,7 +369,7 @@ public class IterableApi {
         }
 
         getAuthManager().pauseAuthRetries(false);
-        if(config.authHandler != null) {
+        if (config.authHandler != null) {
             if (authToken != null) {
                 setAuthToken(authToken);
                 attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler);
