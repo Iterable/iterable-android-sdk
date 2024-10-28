@@ -369,15 +369,11 @@ public class IterableApi {
         }
 
         getAuthManager().pauseAuthRetries(false);
-        if (config.authHandler != null) {
-            if (authToken != null) {
-                setAuthToken(authToken);
-                attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler);
-            } else {
-                getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler));
-            }
-        } else {
+        if (authToken != null) {
+            setAuthToken(authToken);
             attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler);
+        } else {
+            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler));
         }
     }
 
@@ -793,12 +789,15 @@ public class IterableApi {
         _email = email;
         _userId = null;
 
-        onLogin(authToken, email, true, merge, replay, failureHandler);
+        if(config.authHandler != null) {
+            attemptMergeAndEventReplay(email, true, merge, replay, failureHandler);
+        }
 
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
+        onLogin(authToken, email, true, merge, replay, failureHandler);
     }
 
     public void setAnonUser(@Nullable String userId) {
@@ -853,7 +852,10 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
-        onLogin(authToken, userId, false, merge, replay, failureHandler);
+
+        if(config.authHandler != null) {
+            attemptMergeAndEventReplay(userId, false, merge, replay, failureHandler);
+        }
 
         if (!isAnon) {
             _userIdAnon = null;
@@ -862,6 +864,8 @@ public class IterableApi {
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
+
+        onLogin(authToken, userId, false, merge, replay, failureHandler);
     }
 
     private boolean isMerge(@Nullable IterableIdentityResolution iterableIdentityResolution) {
@@ -882,7 +886,6 @@ public class IterableApi {
                 anonymousUserManager.syncEventsAndUserUpdate();
             }
         }
-        storeAuthData();
     }
 
     private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
