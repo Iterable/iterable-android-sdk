@@ -18,7 +18,7 @@ jobs:
       - name: Configure JDK
         uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
         with:
-          java-version: 11
+          java-version: 17
 
       - run: touch local.properties
 
@@ -41,7 +41,7 @@ jobs:
       - name: Configure JDK
         uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
         with:
-          java-version: 11
+          java-version: 17
 
       - run: touch local.properties
 
@@ -69,7 +69,7 @@ jobs:
       - name: Configure JDK
         uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
         with:
-          java-version: 11
+          java-version: 17
 
       - run: touch local.properties
 
@@ -102,7 +102,7 @@ jobs:
       - name: Configure JDK
         uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
         with:
-          java-version: 11
+          java-version: 17
 
       - run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
       - run: chmod +x ./cc-test-reporter
