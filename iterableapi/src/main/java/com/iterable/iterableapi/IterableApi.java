@@ -369,11 +369,15 @@ public class IterableApi {
         }
 
         getAuthManager().pauseAuthRetries(false);
-        if (authToken != null) {
-            setAuthToken(authToken);
-            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler);
+        if(config.authHandler != null) {
+            if (authToken != null) {
+                setAuthToken(authToken);
+                attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler);
+            } else {
+                getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler));
+            }
         } else {
-            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler));
+            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, failureHandler);
         }
     }
 
