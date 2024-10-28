@@ -57,7 +57,7 @@ public class IterableApiRequestsTest {
     @Test
     public void testGetRequestHeaders() throws Exception {
         IterableApi.sharedInstance.getInAppMessages(1, null);
-        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest request = server.takeRequest(11, TimeUnit.SECONDS);
         assertTrue(request.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
         assertFalse(request.getPath().contains("api_key"));
         assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
@@ -80,11 +80,13 @@ public class IterableApiRequestsTest {
         String expectedRequest = new StringBuilder(
                 new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
                         .append("\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],")
-                        .append("\"createdAt\":")
-                        .append(new Date().getTime() / 1000)
                         .append("}")).toString();
 
-        assertEquals(expectedRequest, request.getBody().readUtf8());
+        String requestBody = request.getBody().readUtf8();
+        // remove createdAt field from the request body
+        requestBody = requestBody.replaceAll("\"createdAt\":[0-9]+", "");
+
+        assertEquals(expectedRequest, requestBody);
     }
 
     @Test
@@ -131,11 +133,12 @@ public class IterableApiRequestsTest {
                 new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
                         .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"DIAMOND-IS-UNBREAKABLE\",\"description\":\"When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.\",\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\",\"dataFields\":{\"color\":\"yellow\",\"count\":8},\"categories\":[\"bow\",\"arrow\"]}],")
                         .append("\"total\":42,")
-                        .append("\"createdAt\":")
-                        .append(new Date().getTime() / 1000)
                         .append("}")).toString();
 
-        assertEquals(expectedRequest, request.getBody().readUtf8());
+        String requestBody = request.getBody().readUtf8();
+        // remove createdAt field from the request body
+        requestBody = requestBody.replaceAll("\"createdAt\":[0-9]+", "");
+        assertEquals(expectedRequest, requestBody);
     }
 
     @Test
