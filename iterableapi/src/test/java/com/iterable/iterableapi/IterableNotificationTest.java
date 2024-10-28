@@ -103,8 +103,8 @@ public class IterableNotificationTest {
 
         assertTrue((shadowOf(notification.contentIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
         assertTrue((shadowOf(notification.actions[0].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[1].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[2].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[1].actionIntent).getFlags() & PendingIntent.FLAG_MUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[2].actionIntent).getFlags() & PendingIntent.FLAG_MUTABLE) != 0);
     }
 
 }
