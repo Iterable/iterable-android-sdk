@@ -14,13 +14,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    kotlin {
-        jvmToolchain(17)
-    }
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 27
+        targetSdkVersion 29
 
         buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.5.3\""
 
@@ -38,10 +35,12 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [usesCleartextTraffic: "false"]
         }
         debug {
             enableAndroidTestCoverage true
             multiDexEnabled true
+            manifestPlaceholders = [usesCleartextTraffic: "true"]
         }
     }
 
@@ -68,6 +67,7 @@ dependencies {
     testImplementation 'androidx.test.ext:junit:1.1.5'
     testImplementation 'androidx.test:rules:1.5.0'
     testImplementation 'org.mockito:mockito-core:4.8.0'
+    testImplementation 'org.mockito:mockito-inline:4.8.0'
     testImplementation 'org.robolectric:robolectric:4.9.2'
     testImplementation 'org.robolectric:shadows-playservices:4.9.2'
     testImplementation 'org.khronos:opengl-api:gl1.1-android-2.1_r1'
