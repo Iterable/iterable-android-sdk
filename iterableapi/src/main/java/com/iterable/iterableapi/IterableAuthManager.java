@@ -39,8 +39,8 @@ public class IterableAuthManager {
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
     }
 
-    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
-        requestNewAuthToken(hasFailedPriorAuth, null, true);
+    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, IterableHelper.SuccessHandler successCallback) {
+        requestNewAuthToken(hasFailedPriorAuth, successCallback, true);
     }
 
     public void pauseAuthRetries(boolean pauseRetry) {

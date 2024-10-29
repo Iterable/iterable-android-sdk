@@ -224,7 +224,6 @@ public class AnonymousUserManager {
                         IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
                     }
                     IterableApi.getInstance().setAnonUser(userId);
-                    syncEventsAndUserUpdate();
                 }, (reason, data) -> handleTrackFailure(data));
             }
 
