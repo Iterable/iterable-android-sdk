@@ -880,7 +880,7 @@ public class IterableApi {
 
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, IterableHelper.FailureHandler failureHandler) {
         if (config.enableAnonTracking) {
-            if (emailOrUserId != null && !emailOrUserId.equals(_userIdAnon)) {
+            if (emailOrUserId != null && _userIdAnon != null && !emailOrUserId.equals(_userIdAnon)) {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdAnon);
                 return;
             }
