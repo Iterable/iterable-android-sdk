@@ -882,9 +882,10 @@ public class IterableApi {
         if (config.enableAnonTracking) {
             if (emailOrUserId != null && !emailOrUserId.equals(_userIdAnon)) {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdAnon);
+                return;
             }
 
-            if (replay && _userIdAnon == null && (_userId != null || _email != null)) {
+            if (replay && (_userId != null || _email != null)) {
                 anonymousUserManager.syncEventsAndUserUpdate();
             }
         }
