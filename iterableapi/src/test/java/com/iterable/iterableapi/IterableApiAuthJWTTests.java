@@ -159,7 +159,7 @@ public class IterableApiAuthJWTTests extends BaseTest {
         IterableTestUtils.createIterableApiNew(builder -> builder.setAuthHandler(authHandler), null);
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).setAuthHandler(authHandler).build();
         IterableApi.initialize(getContext(), "fake_key", iterableConfig);
-        IterableApi.getInstance().setAnonymousUsageTracked(true);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
         setCriteria(criteriaMockData);
     }
 

@@ -137,7 +137,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_CRITERIA = "criteria";
     public static final String SHARED_PREFS_CRITERIA_ID = "matchedCriteriaId";
     public static final String SHARED_PREFS_PUSH_OPT_IN = "mobilePushOptIn";
-    public static final String SHARED_PREFS_ANONYMOUS_USAGE_TRACKED = "itbl_anonymous_usage_track";
+    public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED = "itbl_visitor_usage_track";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";

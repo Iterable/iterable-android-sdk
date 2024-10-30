@@ -334,7 +334,7 @@ public class AnonymousUserManager {
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
-        if (!iterableApi.getAnonymousUsageTracked()) {
+        if (!iterableApi.getVisitorUsageTracked()) {
             return;
         }
         JSONArray eventList = getEventListFromLocalStorage();
@@ -354,7 +354,7 @@ public class AnonymousUserManager {
     }
 
     private void storeUserUpdateToLocalStorage(JSONObject newDataObject) throws JSONException {
-        if (!iterableApi.getAnonymousUsageTracked()) {
+        if (!iterableApi.getVisitorUsageTracked()) {
             return;
         }
 
