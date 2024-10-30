@@ -46,7 +46,7 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
-        editor.putBoolean(IterableConstants.SHARED_PREFS_ANONYMOUS_USAGE_TRACKED, false);
+        editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
         editor.apply();
 
         new Handler().postDelayed(() -> {
@@ -54,12 +54,12 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
             IterableApi.getInstance().setUserId(null);
             IterableApi.getInstance().setEmail(null);
             printAllSharedPreferencesData(this);
-            IterableApi.getInstance().setAnonymousUsageTracked(anonymousUsageTrackedCheckBox.isChecked());
+            IterableApi.getInstance().setVisitorUsageTracked(anonymousUsageTrackedCheckBox.isChecked());
 
         }, 1000);
 
         anonymousUsageTrackedCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            IterableApi.getInstance().setAnonymousUsageTracked(isChecked);
+            IterableApi.getInstance().setVisitorUsageTracked(isChecked);
         });
 
         findViewById(R.id.updateCart).setOnClickListener(view -> {
