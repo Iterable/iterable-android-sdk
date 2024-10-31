@@ -92,7 +92,7 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
-    final boolean enableAnonTracking;
+    final boolean enableAnonActivation;
 
     final int eventThresholdLimit;
 
@@ -123,7 +123,7 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
-        enableAnonTracking = builder.enableAnonTracking;
+        enableAnonActivation = builder.enableAnonActivation;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
@@ -146,7 +146,7 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
-        private boolean enableAnonTracking = false;
+        private boolean enableAnonActivation = false;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
@@ -323,10 +323,10 @@ public class IterableConfig {
         /**
          * Set whether the SDK should track events for anonymous users. Set this to `true`
          * if you want to track all events when users are not logged into the application.
-         * @param enableAnonTracking `true` will track events for anonymous users.
+         * @param enableAnonActivation `true` will track events for anonymous users.
          */
-        public Builder setEnableAnonTracking(boolean enableAnonTracking) {
-            this.enableAnonTracking = enableAnonTracking;
+        public Builder setEnableAnonActivation(boolean enableAnonActivation) {
+            this.enableAnonActivation = enableAnonActivation;
             return this;
         }
 

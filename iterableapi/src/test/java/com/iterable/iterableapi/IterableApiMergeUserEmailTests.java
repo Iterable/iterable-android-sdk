@@ -135,7 +135,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         server.setDispatcher(dispatcher);
         reInitIterableApi();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).build();
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonActivation(true).build();
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
         IterableApi.getInstance().setVisitorUsageTracked(true);
         setCriteria(criteriaMockData);
