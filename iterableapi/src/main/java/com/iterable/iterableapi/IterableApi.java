@@ -542,7 +542,7 @@ public class IterableApi {
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
         if (deviceToken != null) {
             if (!checkSDKInitialization() && _userIdAnon == null) {
-                if (sharedInstance.config.enableAnonTracking) {
+                if (sharedInstance.config.enableAnonActivation) {
                     anonymousUserManager.trackAnonTokenRegistration(deviceToken);
                 }
                 return;
@@ -643,7 +643,7 @@ public class IterableApi {
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
 
-        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonTracking && sharedInstance.getVisitorUsageTracked()) {
+        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonActivation && sharedInstance.getVisitorUsageTracked()) {
             anonymousUserManager.updateAnonSession();
             anonymousUserManager.getCriteria();
         }
@@ -877,7 +877,7 @@ public class IterableApi {
     }
 
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, IterableHelper.FailureHandler failureHandler) {
-        if (config.enableAnonTracking) {
+        if (config.enableAnonActivation) {
             if (emailOrUserId != null && _userIdAnon != null && !emailOrUserId.equals(_userIdAnon)) {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdAnon);
                 return;
@@ -1157,7 +1157,7 @@ public class IterableApi {
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
         if (!checkSDKInitialization() && _userIdAnon == null) {
-            if (sharedInstance.config.enableAnonTracking) {
+            if (sharedInstance.config.enableAnonActivation) {
                 anonymousUserManager.trackAnonEvent(eventName, dataFields);
             }
             return;
@@ -1172,7 +1172,7 @@ public class IterableApi {
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
         if (!checkSDKInitialization() && _userIdAnon == null) {
-            if (sharedInstance.config.enableAnonTracking) {
+            if (sharedInstance.config.enableAnonActivation) {
                 anonymousUserManager.trackAnonUpdateCart(items);
             }
             return;
@@ -1210,7 +1210,7 @@ public class IterableApi {
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
         if (!checkSDKInitialization() && _userIdAnon == null) {
-            if (sharedInstance.config.enableAnonTracking) {
+            if (sharedInstance.config.enableAnonActivation) {
                 anonymousUserManager.trackAnonPurchaseEvent(total, items, dataFields);
             }
             return;
@@ -1288,7 +1288,7 @@ public class IterableApi {
      */
     public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
         if (!checkSDKInitialization() && _userIdAnon == null) {
-            if (sharedInstance.config.enableAnonTracking) {
+            if (sharedInstance.config.enableAnonActivation) {
                 anonymousUserManager.trackAnonUpdateUser(dataFields);
             }
             return;
@@ -1556,7 +1556,7 @@ public class IterableApi {
         editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
         editor.apply();
 
-        if (isSetVisitorUsageTracked && config.enableAnonTracking) {
+        if (isSetVisitorUsageTracked && config.enableAnonActivation) {
             anonymousUserManager.updateAnonSession();
             anonymousUserManager.getCriteria();
         }

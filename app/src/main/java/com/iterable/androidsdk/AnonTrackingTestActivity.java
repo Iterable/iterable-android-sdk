@@ -39,7 +39,7 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
         anonymousUsageTrackedCheckBox = findViewById(R.id.anonymousUsageTracked_check_box);
-        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).setIterableAnonUserHandler(this).setAuthHandler(this).build();
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonActivation(true).setIterableAnonUserHandler(this).setAuthHandler(this).build();
 
         // clear data for testing
         SharedPreferences sharedPref = getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
