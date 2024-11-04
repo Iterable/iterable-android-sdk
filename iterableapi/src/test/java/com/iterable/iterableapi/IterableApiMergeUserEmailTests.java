@@ -272,12 +272,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // Mock all relevant endpoints
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -288,6 +286,9 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId);
@@ -344,7 +345,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // Mock all relevant endpoints
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
@@ -360,6 +360,9 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, true);
@@ -564,12 +567,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // Mock all relevant endpoints
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -580,6 +581,9 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         final String email = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email);
@@ -635,12 +639,11 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // Mock all relevant endpoints
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
 
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -651,6 +654,9 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         final String email = "testUser@gmail.com";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
