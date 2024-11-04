@@ -310,7 +310,7 @@ public class AnonymousUserManager {
     }
 
     private void handleUpdateUser(JSONObject event) throws JSONException {
-        iterableApi.apiClient.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS), true);
+        iterableApi.apiClient.updateUser(event.getJSONObject(IterableConstants.KEY_DATA_FIELDS), false);
     }
 
     private String getStringValue(JSONObject event) throws JSONException {
