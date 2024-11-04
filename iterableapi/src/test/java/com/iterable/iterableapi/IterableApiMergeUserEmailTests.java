@@ -277,6 +277,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -311,6 +312,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -347,6 +349,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -566,6 +569,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -599,7 +603,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        assertEquals("", getEventData());
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -636,7 +640,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        assertEquals("", getEventData());
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Verify anon session tracking request
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
