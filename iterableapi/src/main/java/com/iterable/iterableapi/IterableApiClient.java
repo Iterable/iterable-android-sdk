@@ -789,7 +789,7 @@ class IterableApiClient {
         sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
     }
 
-    void trackAnonSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserTrack, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void trackAnonSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserObj, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         try {
             JSONObject requestObject = new JSONObject();
 
@@ -798,8 +798,8 @@ class IterableApiClient {
             userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
             userObject.put(IterableConstants.KEY_MERGE_NESTED_OBJECTS, true);
             userObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
-            if (updateUserTrack != null) {
-                userObject.put(IterableConstants.KEY_DATA_FIELDS, updateUserTrack);
+            if (updateUserObj != null) {
+                userObject.put(IterableConstants.KEY_DATA_FIELDS, updateUserObj.getJSONObject(IterableConstants.KEY_DATA_FIELDS));
             }
             requestObject.put(IterableConstants.KEY_USER, userObject);
             requestObject.put(IterableConstants.KEY_CREATED_AT, createdAt);
