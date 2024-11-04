@@ -270,13 +270,18 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Mock all relevant endpoints
-        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
+
+        // Verify anon session tracking request
+        RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(anonSessionRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
 
         // Verify purchase tracking request
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -296,21 +301,26 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetUserIdMergeFalse() throws Exception {
-        //Clear existing requests
+        // Clear existing requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Mock all relevant endpoints
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);;
 
         // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
 
+        // Verify anon session tracking request
+        RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(anonSessionRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+
         // Verify purchase tracking request
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(purchaseRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath();
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
 
         final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
@@ -326,19 +336,33 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaMetUserIdMergeTrue() throws Exception {
+        // Clear existing requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // Mock all relevant endpoints
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
+        // trigger purchase event matching criteria
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        String eventData = getEventData();
-        assertEquals("", eventData);
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        final String userId = "testUser2";
 
+        // Verify anon session tracking request
+        RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(anonSessionRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+
+        // Verify purchase tracking request
+        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(purchaseRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, true);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
+        // Verify merge tracking request not made
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         shadowOf(getMainLooper()).idle();
