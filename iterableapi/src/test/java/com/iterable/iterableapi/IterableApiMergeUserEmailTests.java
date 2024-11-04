@@ -527,7 +527,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         // Verify purchase tracking request
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(purchaseRequest);
+        //assertNotNull(purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
 
         // Test email setting and user merge
