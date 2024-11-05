@@ -102,7 +102,7 @@ public class AnonymousUserManager {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.UPDATE_USER);
-            storeUserUpdateToLocalStorage(dataFields);
+            storeUserUpdateToLocalStorage(newDataObject);
         } catch (JSONException e) {
             e.printStackTrace();
         }
