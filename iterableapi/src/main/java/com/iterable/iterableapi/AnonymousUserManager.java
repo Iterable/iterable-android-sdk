@@ -102,7 +102,7 @@ public class AnonymousUserManager {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.UPDATE_USER);
-            storeUserUpdateToLocalStorage(newDataObject);
+            storeUserUpdateToLocalStorage(dataFields);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -207,6 +207,7 @@ public class AnonymousUserManager {
         try {
             if (!userData.isEmpty()) {
                 JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
+                JSONObject updateUserDataFields = updateUserObj.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
 
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
@@ -218,7 +219,7 @@ public class AnonymousUserManager {
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
 
                 //track anon session with new user
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserObj, data -> {
+                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
                     // success handler
                     if (IterableApi.getInstance().config.iterableAnonUserHandler != null) {
                         IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
@@ -250,7 +251,7 @@ public class AnonymousUserManager {
         JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
         Gson gson = new GsonBuilder().create();
 
-        if (trackEventList.length() == 0 && !updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) return;
+        if (trackEventList.length() == 0) return;
 
         for (int i = 0; i < trackEventList.length(); i++) {
             try {
