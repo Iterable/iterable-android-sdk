@@ -251,7 +251,7 @@ public class AnonymousUserManager {
         JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
         Gson gson = new GsonBuilder().create();
 
-//        if (trackEventList.length() == 0) return;
+        if (trackEventList.length() == 0 && !updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) return;
 
         for (int i = 0; i < trackEventList.length(); i++) {
             try {
