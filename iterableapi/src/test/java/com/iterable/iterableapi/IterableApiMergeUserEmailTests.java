@@ -511,9 +511,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
+
         shadowOf(getMainLooper()).idle();
+        Thread.sleep(1000);
 
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(purchaseRequest);
