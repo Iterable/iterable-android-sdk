@@ -283,7 +283,7 @@ public class AnonymousUserManager {
             IterableLogger.d(TAG, "Handle User Update Failure");
         }
 
-        clearAnonEventsAndUserData();
+        clearVisitorEventsAndUserData();
     }
 
     private void handleTrackEvent(JSONObject event) throws JSONException {
@@ -324,7 +324,7 @@ public class AnonymousUserManager {
         return event.has(IterableConstants.KEY_DATA_FIELDS) ? new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS)) : null;
     }
 
-    public void clearAnonEventsAndUserData() {
+    public void clearVisitorEventsAndUserData() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
