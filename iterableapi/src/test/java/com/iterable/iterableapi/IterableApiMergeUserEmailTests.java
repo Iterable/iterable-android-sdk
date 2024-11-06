@@ -4,6 +4,7 @@ import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -507,18 +508,26 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     @Test
     public void testCriteriaMetEmailDefault() throws Exception {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(purchaseRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
         final String email = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email);
+
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
+
+        assertNull(server.takeRequest(1, TimeUnit.SECONDS));
     }
 
     @Test
