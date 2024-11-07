@@ -207,6 +207,7 @@ public class AnonymousUserManager {
         try {
             if (!userData.isEmpty()) {
                 JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
+                JSONObject updateUserDataFields = updateUserObj.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
 
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
@@ -218,7 +219,7 @@ public class AnonymousUserManager {
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
 
                 //track anon session with new user
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserObj, data -> {
+                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
                     // success handler
                     if (IterableApi.getInstance().config.iterableAnonUserHandler != null) {
                         IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
