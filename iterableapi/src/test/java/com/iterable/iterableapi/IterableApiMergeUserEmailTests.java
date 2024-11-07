@@ -553,7 +553,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
         assertEquals("", getEventData());
-        while (server.takeRequest(1, TimeUqnit.SECONDS) != null) { }
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser@gmail.com";
         IterableApi.getInstance().setEmail(email);
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
