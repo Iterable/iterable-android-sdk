@@ -516,6 +516,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
+        assertEquals("", getEventData());
 
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser2@gmail.com";
@@ -525,7 +526,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
-        assertEquals("", getEventData());
     }
 
     @Test
