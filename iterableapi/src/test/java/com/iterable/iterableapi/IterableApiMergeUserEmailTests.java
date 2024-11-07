@@ -512,24 +512,17 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     @Test
     public void testCriteriaMetEmailDefault() throws Exception {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
-        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-
-        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull("Purchase request should not be null", purchaseRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
-
+        assertEquals("", getEventData());
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
         final String email = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email);
-        shadowOf(getMainLooper()).idle();
-
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull("Merge request should not be null", mergeRequest);
+        assertNotNull(mergeRequest);
+        shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
         assertEquals(email, IterableApi.getInstance().getEmail());
     }
