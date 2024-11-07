@@ -208,11 +208,9 @@ public class AnonymousUserManager {
             if (!userData.isEmpty()) {
                 JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
                 JSONObject updateUserDataFields = null;
-                
-                if(updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) {
+                if (updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) {
                     updateUserDataFields = updateUserObj.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
                 }
-                
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
 
