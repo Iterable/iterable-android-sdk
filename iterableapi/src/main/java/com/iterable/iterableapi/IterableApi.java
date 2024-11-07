@@ -886,6 +886,8 @@ public class IterableApi {
             if (!isAnon) {
                 _userIdAnon = null;
             }
+
+            anonymousUserManager.clearVisitorEventsAndUserData();
         }
     }
 

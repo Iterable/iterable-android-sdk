@@ -283,8 +283,6 @@ public class AnonymousUserManager {
         } catch (JSONException e) {
             IterableLogger.d(TAG, "Handle User Update Failure");
         }
-
-        clearVisitorEventsAndUserData();
     }
 
     private void handleTrackEvent(JSONObject event) throws JSONException {
