@@ -4,6 +4,7 @@ import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -196,13 +197,11 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         // check that request was not sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertNull("There should not be an anon session request", anonSessionRequest);
 
         // check that request was not sent to track purchase endpoint
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull("Purchase request should not be null", purchaseRequest);
-        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+        assertNull("There should not be a purchase request", purchaseRequest);
 
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
@@ -213,8 +212,8 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setUserId(userId);
 
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        assertNull("There should not be a merge request", mergeRequest);
+
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
