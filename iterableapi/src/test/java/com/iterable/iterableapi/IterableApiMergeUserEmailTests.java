@@ -199,8 +199,8 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNull("There should not be an anon session request", anonSessionRequest);
 
         // check that request was not sent to track purchase endpoint
-        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNull("There should not be a purchase request", purchaseRequest);
+        RecordedRequest purchaseRequest1 = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNull("There should not be a purchase request", purchaseRequest1);
 
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
@@ -212,10 +212,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId);
 
+        // check that request was sent to purchase endpoint on event replay
+        RecordedRequest purchaseRequest2 = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(purchaseRequest2);
+        assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE), purchaseRequest2.getPath());
+
         // check that request was not sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        assertNull(mergeRequest);
 
         // check that userId was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -223,9 +227,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
     @Test
     public void testCriteriaNotMetUserIdReplayTrueMergeFalse() throws Exception {
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
+
         shadowOf(getMainLooper()).idle();
         assertNotEquals("", getEventData());
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
