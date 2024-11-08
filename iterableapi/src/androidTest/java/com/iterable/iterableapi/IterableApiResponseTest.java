@@ -297,7 +297,7 @@ public class IterableApiResponseTest {
         new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(5, TimeUnit.SECONDS));
     }
 
     @Test

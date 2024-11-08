@@ -49,8 +49,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.1.0'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'androidx.fragment:fragment:1.8.2'
-    debugImplementation 'androidx.fragment:fragment-testing:1.8.2'
+    implementation 'androidx.fragment:fragment:1.8.5'
+    debugImplementation 'androidx.fragment:fragment-testing:1.8.5'
 
     implementation project(':iterableapi')
     implementation project(':iterableapi-ui')
