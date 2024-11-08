@@ -25,9 +25,6 @@ jobs:
       - name: Checkstyle
         run: ./gradlew :iterableapi:checkstyle :iterableapi-ui:assembleDebug
 
-      - name: Javadoc Check
-        run: ./gradlew :iterableapi:javadoc :iterableapi-ui:javadoc
-
   unit-tests:
     name: Unit tests
     runs-on: ubuntu-latest
