@@ -219,7 +219,8 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         // check that request was not sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNull(mergeRequest);
+        assertNotNull(mergeRequest);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE), purchaseRequest2.getPath());
 
         // check that userId was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
