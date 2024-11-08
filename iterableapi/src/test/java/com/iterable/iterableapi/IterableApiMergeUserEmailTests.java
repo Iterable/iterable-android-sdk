@@ -515,7 +515,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
@@ -527,6 +526,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         final String email = "testUser2@gmail.com";
         IterableApi.getInstance().setEmail(email);
