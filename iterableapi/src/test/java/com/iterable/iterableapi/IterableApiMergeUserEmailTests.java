@@ -208,7 +208,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock merge response
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
-        // set email
+        // set user id
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId);
 
@@ -222,7 +222,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(mergeRequest);
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
 
-        // check that userId was set
+        // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
@@ -253,7 +253,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock merge response
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
-        // set email
+        // set user id
         final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
         IterableApi.getInstance().setUserId(userId, identityResolution);
@@ -268,7 +268,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(mergeRequest);
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
 
-        // check that userId was set
+        // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
@@ -299,7 +299,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock merge response
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
-        // set email
+        // set user id
         final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, false);
         IterableApi.getInstance().setUserId(userId, identityResolution);
@@ -309,7 +309,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(mergeRequest);
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
 
-        // check that userId was set
+        // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
@@ -340,7 +340,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock merge response
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
-        // set email
+        // set user id
         final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, true);
         IterableApi.getInstance().setUserId(userId, identityResolution);
@@ -350,105 +350,185 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(mergeRequest);
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
 
-        // check that userId was set
+        // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
     @Test
     public void testCriteriaMetUserIdDefault() throws Exception {
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // mock anon session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+
+        // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        assertEquals("", getEventData());
+
+        // check if request was sent to anon session endpoint
+        RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Anon session request should not be null", anonSessionRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+
+        // check if request was sent to track purchase endpoint
+        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Purchase request should not be null", purchaseRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // mock merge response
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
+        // set user id
         final String userId = "testUser2";
         IterableApi.getInstance().setUserId(userId);
+
+        // check that request was sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+
+        // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
     @Test
     public void testCriteriaMetUserIdMergeFalse() throws Exception {
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // mock anon session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+
+        // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        String eventData = getEventData();
-        assertEquals("", eventData);
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        final String userId = "testUser2";
 
+        // check if request was sent to anon session endpoint
+        RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Anon session request should not be null", anonSessionRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+
+        // check if request was sent to track purchase endpoint
+        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Purchase request should not be null", purchaseRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // clear any pending requests
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // set user id
+        final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
+        // check that request was not sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
         assertNotEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+
+        // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
     @Test
     public void testCriteriaMetUserIdMergeTrue() throws Exception {
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // mock anon session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+
+        // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
-        String eventData = getEventData();
-        assertEquals("", eventData);
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        final String userId = "testUser2";
 
+        // check if request was sent to anon session endpoint
+        RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Anon session request should not be null", anonSessionRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+
+        // check if request was sent to track purchase endpoint
+        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Purchase request should not be null", purchaseRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // clear any pending requests
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // set user id
+        final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, true);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
+        // check that request was sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+
+        // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
     }
 
     @Test
     public void testIdentifiedUserIdDefault() throws Exception {
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
+
+        // set user id
         final String userId1 = "testUser1";
         IterableApi.getInstance().setUserId(userId1);
-        shadowOf(getMainLooper()).idle();
+
+        // check that user id was set
         assertEquals(userId1, IterableApi.getInstance().getUserId());
+
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // set different user id
         final String userId2 = "testUser2";
         IterableApi.getInstance().setUserId(userId2);
+
+        // check that request was not sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+
+        // check that user id was set
         assertEquals(userId2, IterableApi.getInstance().getUserId());
     }
 
     @Test
     public void testIdentifiedUserIdMergeFalse() throws Exception {
+        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
+        // set user id
         final String userId1 = "testUser1";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
         IterableApi.getInstance().setUserId(userId1, identityResolution);
-        shadowOf(getMainLooper()).idle();
+
+        // check that user id was set
         assertEquals(userId1, IterableApi.getInstance().getUserId());
+
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
+        // set different user id
         final String userId2 = "testUser2";
         IterableIdentityResolution identityResolution2 = new IterableIdentityResolution(true, false);
         IterableApi.getInstance().setUserId(userId2, identityResolution2);
+
+        // check that request was not sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+
+        // check that user id was set
         assertEquals(userId2, IterableApi.getInstance().getUserId());
     }
 
@@ -456,20 +536,28 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     public void testIdentifiedUserIdMergeTrue() throws Exception {
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
+        // set user id
         final String userId1 = "testUser1";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
         IterableApi.getInstance().setUserId(userId1, identityResolution);
-        shadowOf(getMainLooper()).idle();
+
+        // check that user id was set
         assertEquals(userId1, IterableApi.getInstance().getUserId());
+
+        // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
+        // set different user id
         final String userId2 = "testUser2";
         IterableIdentityResolution identityResolution2 = new IterableIdentityResolution(true, true);
         IterableApi.getInstance().setUserId(userId2, identityResolution2);
+
+        // check that request was not sent to merge endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
-        shadowOf(getMainLooper()).idle();
         assertNotEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+
+        // check that user id was set
         assertEquals(userId2, IterableApi.getInstance().getUserId());
     }
 
