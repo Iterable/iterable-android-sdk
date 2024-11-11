@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
-## [3.6.0-beta]
+## [3.6.0-beta1]
 
 #### Added
 - This release includes initial support for Anonymous user activation, a feature that allows marketers to convert valuable visitors into customers. With this feature, the SDK can:
