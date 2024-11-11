@@ -464,7 +464,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         // set user id
         final String userId = "testUser2";
-        IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, true);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
         // check that request was sent to merge endpoint
@@ -538,7 +538,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         // set user id
         final String userId1 = "testUser1";
-        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
         IterableApi.getInstance().setUserId(userId1, identityResolution);
 
         // check that user id was set
