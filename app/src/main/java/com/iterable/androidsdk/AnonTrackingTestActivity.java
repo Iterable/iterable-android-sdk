@@ -177,7 +177,10 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
             } else {
                 userEmail = null;
             }
-            final Duration days7 = Duration.ofDays(7);
+            Duration days7 = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                days7 = Duration.ofDays(7);
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 jwtToken = IterableJwtGenerator.generateToken(secret, days7, userEmail, userId);
             }
