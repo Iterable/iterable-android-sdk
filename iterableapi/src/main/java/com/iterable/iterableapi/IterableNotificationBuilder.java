@@ -81,7 +81,6 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 if (notificationImage != null) {
                     style = new NotificationCompat.BigPictureStyle()
                             .bigPicture(notificationImage)
-                            .bigLargeIcon(null)
                             .setSummaryText(expandedContent);
                     this.setLargeIcon(notificationImage);
                 } else {
@@ -139,7 +138,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             IterableLogger.d(TAG, "Go through IterablePushActionReceiver");
             buttonIntent.setClass(context, IterablePushActionReceiver.class);
             pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
-                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
         }
 
         return pendingButtonIntent;

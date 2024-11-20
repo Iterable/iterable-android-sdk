@@ -86,7 +86,7 @@ class IterableEmbeddedView(
         gradientDrawable.setColor(backgroundColor)
         gradientDrawable.setStroke(borderWidth, borderColor)
         gradientDrawable.cornerRadius = borderCornerRadius
-        view.setBackgroundDrawable(gradientDrawable)
+        view.background = gradientDrawable
 
         val firstButton = view.findViewById<Button>(R.id.embedded_message_first_button)
         val secondButton = view.findViewById<Button>(R.id.embedded_message_second_button)
@@ -100,7 +100,7 @@ class IterableEmbeddedView(
                 else ContextCompat.getDrawable(requireContext(), R.drawable.primary_banner_button_background) as? GradientDrawable
             primaryBtnBackgroundDrawable?.setColor(primaryBtnBackgroundColor)
 
-            firstButton.setBackgroundDrawable(primaryBtnBackgroundDrawable)
+            firstButton.background = primaryBtnBackgroundDrawable
         }
 
         if(config?.secondaryBtnBackgroundColor != null) {
@@ -109,7 +109,7 @@ class IterableEmbeddedView(
                 else ContextCompat.getDrawable(requireContext(), R.drawable.secondary_banner_button_background) as? GradientDrawable
             secondaryBtnBackgroundDrawable?.setColor(secondaryBtnBackgroundColor)
 
-            secondButton.setBackgroundDrawable(secondaryBtnBackgroundDrawable)
+            secondButton.background = secondaryBtnBackgroundDrawable
         }
 
         firstButton.setTextColor(primaryBtnTextColor)
