@@ -1,10 +1,13 @@
 package com.iterable.iterableapi.ui.inbox;
 
 import android.content.Intent;
+import android.graphics.Insets;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -182,6 +185,33 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
         itemTouchHelper.attachToRecyclerView(recyclerView);
         return relativeLayout;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        // Use ViewCompat to handle insets dynamically
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // For API 30 and above: Use WindowInsetsCompat to handle insets
+                Insets systemBarsInsets = insets.getSystemGestureInsets().toPlatformInsets();
+                v.setPadding(
+                        0,
+                        systemBarsInsets.top,  // Padding for status bar and cutout
+                        0,
+                        systemBarsInsets.bottom // Padding for navigation bar
+                );
+            } else {
+                // For older Android versions: Use legacy methods
+                v.setPadding(
+                        0,
+                        insets.getSystemWindowInsetTop(),  // Padding for status bar and cutout
+                        0,
+                        insets.getSystemWindowInsetBottom() // Padding for navigation bar
+                );
+            }
+            return insets;
+        });
     }
 
     @Override
