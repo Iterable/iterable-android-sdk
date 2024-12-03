@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 
@@ -402,14 +403,18 @@ public class IterableApi {
     };
 
     private void onForeground() {
-        if (!_firstForegroundHandled) {
-            _firstForegroundHandled = true;
-            if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
-                IterableLogger.d(TAG, "Performing automatic push registration");
-                sharedInstance.registerForPush();
-            }
-            fetchRemoteConfiguration();
+        boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        boolean isNotificationEnable = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
+        if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized() && isNotificationEnable != systemNotificationEnabled) {
+            IterableLogger.d(TAG, "Performing automatic push registration");
+            sharedInstance.registerForPush();
         }
+        fetchRemoteConfiguration();
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
+        editor.apply();
     }
 
     private boolean isInitialized() {
