@@ -57,6 +57,11 @@ class IterableEmbeddedView(
                 bind(viewType, notificationView, message)
                 notificationView
             }
+            IterableEmbeddedViewType.SURVEY -> {
+                val surveyView = inflater.inflate(R.layout.survey_view, container, false)
+                bind(viewType, surveyView, message)
+                surveyView
+            }
         }
 
         setDefaultAction(view, message)
