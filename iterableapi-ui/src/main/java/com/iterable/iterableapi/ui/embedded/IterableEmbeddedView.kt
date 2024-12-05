@@ -1,7 +1,10 @@
 package com.iterable.iterableapi.ui.embedded
 
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,14 +12,17 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.google.android.flexbox.FlexboxLayout
+import com.google.android.material.button.MaterialButton
 import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.iterableapi.ui.R
+import java.util.Locale
 
 class IterableEmbeddedView(
     private var viewType: IterableEmbeddedViewType,
@@ -65,7 +71,7 @@ class IterableEmbeddedView(
             }
             IterableEmbeddedViewType.SURVEY -> {
                 val surveyView = inflater.inflate(R.layout.survey_view, container, false)
-//                bind(viewType, surveyView, message)
+                bindSurveyView(surveyView, message)
                 surveyView
             }
         }
@@ -164,6 +170,29 @@ class IterableEmbeddedView(
         }
 
         return view
+    }
+
+    private fun bindSurveyView(view: View, message: IterableEmbeddedMessage) {
+        val surveyScoreContainer = view.findViewById<LinearLayout>(R.id.survey_score_buttons_container)
+
+        addScoreButtons(surveyScoreContainer, 10)
+    }
+
+    private fun addScoreButtons(container: LinearLayout, numberOfButtons: Int) {
+        // Get the context from the container
+        val inflater = LayoutInflater.from(container.context)
+
+        // Create and add buttons
+        for (i in 0..numberOfButtons) {
+            // Inflate the button layout
+            val buttonView = inflater.inflate(R.layout.survey_score_button, container, false) as Button
+
+            // Set unique ID and text
+            buttonView.text = String.format(Locale.getDefault(), "%d", i)
+
+            // Add the button to the container
+            container.addView(buttonView)
+        }
     }
 
     private fun setDefaultAction(view: View, message: IterableEmbeddedMessage) {
