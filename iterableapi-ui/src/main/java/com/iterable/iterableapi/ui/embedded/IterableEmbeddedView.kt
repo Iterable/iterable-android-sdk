@@ -45,27 +45,30 @@ class IterableEmbeddedView(
             IterableEmbeddedViewType.BANNER -> {
                 val bannerView = inflater.inflate(R.layout.banner_view, container, false)
                 bind(viewType, bannerView, message)
+                setDefaultAction(bannerView, message)
+                configure(bannerView, viewType, config)
                 bannerView
             }
             IterableEmbeddedViewType.CARD -> {
                 val cardView = inflater.inflate(R.layout.card_view, container, false)
                 bind(viewType, cardView, message)
+                setDefaultAction(cardView, message)
+                configure(cardView, viewType, config)
                 cardView
             }
             IterableEmbeddedViewType.NOTIFICATION -> {
                 val notificationView = inflater.inflate(R.layout.notification_view, container, false)
                 bind(viewType, notificationView, message)
+                setDefaultAction(notificationView, message)
+                configure(notificationView, viewType, config)
                 notificationView
             }
             IterableEmbeddedViewType.SURVEY -> {
                 val surveyView = inflater.inflate(R.layout.survey_view, container, false)
-                bind(viewType, surveyView, message)
+//                bind(viewType, surveyView, message)
                 surveyView
             }
         }
-
-        setDefaultAction(view, message)
-        configure(view, viewType, config)
 
         return view
     }
