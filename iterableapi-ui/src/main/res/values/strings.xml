@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="survey_title">How likely are you to recommend Fiterable to a friend?</string>
+    <string name="survey_body">This will help us improve your experience.</string>
+    <string name="survey_submit_button_text">Submit</string>
+    <string name="very_unlikely_label">Very unlikely</string>
+    <string name="very_likely_label">Very likely</string>
+</resources>

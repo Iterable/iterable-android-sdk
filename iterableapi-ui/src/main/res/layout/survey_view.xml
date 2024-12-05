@@ -14,46 +14,35 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/embedded_message_title"
+        android:id="@+id/survey_embedded_message_title"
         android:layout_width="240dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:ellipsize="end"
         android:maxLines="2"
-        android:text=""
+        android:text="@string/survey_title"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toStartOf="@+id/embedded_message_image"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/embedded_message_body"
+        android:id="@+id/survey_embedded_message_body"
         android:layout_width="240dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:ellipsize="end"
         android:maxLines="2"
-        android:text=""
+        android:text="@string/survey_body"
         app:layout_constraintBottom_toTopOf="@+id/embedded_message_buttons_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/embedded_message_title"
+        app:layout_constraintTop_toBottomOf="@id/survey_embedded_message_title"
         app:layout_constraintVertical_bias="0.0" />
-
-    <ImageView
-        android:id="@+id/embedded_message_image"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:contentDescription=""
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/embedded_message_buttons_container"
