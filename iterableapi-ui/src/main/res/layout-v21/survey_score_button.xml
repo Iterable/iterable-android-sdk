@@ -2,7 +2,7 @@
 <Button
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/embedded_message_second_button"
+    android:id="@+id/survey_score_button"
     android:layout_width="20dp"
     android:layout_height="36dp"
     android:background="@drawable/survey_score_button_background"
@@ -13,4 +13,6 @@
     android:textAllCaps="false"
     android:textSize="14sp"
     android:textColor="#3D3A3B"
+    android:clickable="true"
+    android:focusable="true"
     app:cornerRadius="4dp" />

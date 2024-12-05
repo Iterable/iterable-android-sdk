@@ -36,5 +36,7 @@
 
     <color name="title_text_color">#3D3A3B</color>
     <color name="body_text_color">#787174</color>
+    <color name="selected_score_color">#FDF5FF</color>
+    <color name="selected_score_border_color">#EBD3F1</color>
 
 </resources>

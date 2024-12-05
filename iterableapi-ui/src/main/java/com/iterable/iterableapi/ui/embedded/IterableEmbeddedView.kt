@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -174,13 +175,15 @@ class IterableEmbeddedView(
 
     private fun bindSurveyView(view: View, message: IterableEmbeddedMessage) {
         val surveyScoreContainer = view.findViewById<LinearLayout>(R.id.survey_score_buttons_container)
+        val surveySubmitBtn = view.findViewById<Button>(R.id.survey_submit_button)
 
-        addScoreButtons(surveyScoreContainer, 10)
+        addScoreButtons(surveyScoreContainer, surveySubmitBtn, 10)
     }
 
-    private fun addScoreButtons(container: LinearLayout, numberOfButtons: Int) {
+    private fun addScoreButtons(container: LinearLayout, btn: Button, numberOfButtons: Int) {
         // Get the context from the container
         val inflater = LayoutInflater.from(container.context)
+        val buttons = mutableListOf<Button>()
 
         // Create and add buttons
         for (i in 0..numberOfButtons) {
@@ -190,7 +193,28 @@ class IterableEmbeddedView(
             // Set unique ID and text
             buttonView.text = String.format(Locale.getDefault(), "%d", i)
 
+            buttonView.setOnClickListener { clickedButton ->
+                // Reset all buttons to white
+                buttons.forEach { button ->
+                    button.background = ContextCompat.getDrawable(
+                        requireContext(),
+                        R.drawable.survey_score_button_background
+                    )
+                }
+                // Set clicked button to dark grey
+                clickedButton.background = ContextCompat.getDrawable(
+                    requireContext(),
+                    R.drawable.selected_survey_score_button_background
+                )
+                btn.background = ContextCompat.getDrawable(
+                    requireContext(),
+                    R.drawable.primary_banner_button_background
+                )
+                btn.setTextColor(resources.getColor(R.color.banner_background_color))
+            }
+
             // Add the button to the container
+            buttons.add(buttonView)
             container.addView(buttonView)
         }
     }
