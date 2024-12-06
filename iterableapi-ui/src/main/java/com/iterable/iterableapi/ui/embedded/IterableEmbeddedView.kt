@@ -22,6 +22,7 @@ import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.iterableapi.ui.R
+import org.json.JSONObject
 import java.util.Locale
 
 class IterableEmbeddedView(
@@ -40,6 +41,8 @@ class IterableEmbeddedView(
     private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color, R.color.body_text_color) }
     private val defaultBorderWidth = 1
     private val defaultBorderCornerRadius = 8f
+
+    var surveyScore: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -177,6 +180,12 @@ class IterableEmbeddedView(
         val surveySubmitBtn = view.findViewById<Button>(R.id.survey_submit_button)
 
         addScoreButtons(surveyScoreContainer, surveySubmitBtn, 10)
+
+        surveySubmitBtn.setOnClickListener {
+            val dataFields = JSONObject()
+            dataFields.put("score", surveyScore)
+            IterableApi.getInstance().updateUser(dataFields)
+        }
     }
 
     private fun addScoreButtons(container: LinearLayout, btn: Button, numberOfButtons: Int) {
@@ -209,7 +218,10 @@ class IterableEmbeddedView(
                     requireContext(),
                     R.drawable.primary_banner_button_background
                 )
-                btn.setTextColor(resources.getColor(R.color.banner_background_color))
+                btn.setTextColor(
+                    resources.getColor(R.color.banner_background_color))
+
+                surveyScore = buttonView.text.toString()
             }
 
             // Add the button to the container
