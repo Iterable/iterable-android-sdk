@@ -78,7 +78,7 @@
 
         <Button
             android:id="@+id/embedded_message_first_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
@@ -86,6 +86,8 @@
             android:ellipsize="end"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
             android:singleLine="true"
             android:stateListAnimator="@null"
             android:textAllCaps="false"
@@ -97,6 +99,8 @@
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_marginEnd="16dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
             android:layout_weight="1"
             android:background="@drawable/secondary_card_button_background"
             android:ellipsize="end"
