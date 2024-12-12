@@ -13,6 +13,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.5.4]
+#### Fixed
+- In-Apps are now robust with animation, resolving flickering and animation issues observed on Pixel 6 Pro with API 35.
+- Fixed an issue where AuthManager was not reset correctly when logging out a user.
+- Fixed `ConcurrentModificationException` leading to crashes during application launches.
+- Addressed a text truncation issue in Embedded Message templates for applications targeting Android 14 and Android 15.
+- Improved InboxActivity compatibility with edge-to-edge layouts, ensuring seamless handling of notches and display cutouts.
+
 ## [3.5.3]
 #### Fixed
 - Fixed an [issue](https://github.com/Iterable/react-native-sdk/issues/547) where the SDK would crash if the `IterableInAppMessage` object was null when consuming an in-app message.
