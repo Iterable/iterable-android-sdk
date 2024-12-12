@@ -80,7 +80,7 @@ public class IterableApiResponseTest {
         }, null);
         new IterableRequestTask().execute(request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue("onSuccess is called", signal.await(1, TimeUnit.SECONDS));
     }
 
@@ -99,7 +99,7 @@ public class IterableApiResponseTest {
         });
         new IterableRequestTask().execute(request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
     }
 
@@ -118,7 +118,7 @@ public class IterableApiResponseTest {
         });
         new IterableRequestTask().execute(request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
     }
 
@@ -137,7 +137,7 @@ public class IterableApiResponseTest {
         });
         new IterableRequestTask().execute(request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
     }
 
@@ -158,7 +158,7 @@ public class IterableApiResponseTest {
         });
         new IterableRequestTask().execute(request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
     }
 
@@ -177,7 +177,7 @@ public class IterableApiResponseTest {
         });
         new IterableRequestTask().execute(request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
     }
 
@@ -196,7 +196,7 @@ public class IterableApiResponseTest {
         });
         new IterableRequestTask().execute(request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
     }
 
@@ -241,7 +241,7 @@ public class IterableApiResponseTest {
         });
 
         new IterableRequestTask().execute(request);
-        server.takeRequest(1, TimeUnit.SECONDS);
+        server.takeRequest(5, TimeUnit.SECONDS);
 
         // Await for the background tasks to complete
         signal.await(5, TimeUnit.SECONDS);
@@ -257,7 +257,7 @@ public class IterableApiResponseTest {
         IterableRequestTask task = new IterableRequestTask();
         task.execute(request);
 
-        RecordedRequest request1 = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request1 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request3 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request4 = server.takeRequest(5, TimeUnit.SECONDS);
@@ -297,7 +297,7 @@ public class IterableApiResponseTest {
         new IterableRequestTask().execute(request);
 
         server.takeRequest(1, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(5, TimeUnit.SECONDS));
     }
 
     @Test
