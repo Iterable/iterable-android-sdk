@@ -13,6 +13,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Changed
 - nothing yet
 
+## [3.6.0-beta1]
+
+#### Added
+- This release includes initial support for Anonymous user activation, a feature that allows marketers to convert valuable visitors into customers. With this feature, the SDK can:
+  - Fetch anonymous profile creation criteria from your Iterable project, and then automatically create Iterable user profiles for anonymous users who meet these criteria.
+  - Save information about a user's previous interactions with your application to their anonymous profile, after it's created.
+  - Display personalized messages for anonymous users (in-app, push, and embedded messages).
+  - Merge anonymous profiles into an existing, known user profiles (when needed).
+- Anonymous user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
+
 ## [3.5.3]
 #### Fixed
 - Fixed an [issue](https://github.com/Iterable/react-native-sdk/issues/547) where the SDK would crash if the `IterableInAppMessage` object was null when consuming an in-app message.
