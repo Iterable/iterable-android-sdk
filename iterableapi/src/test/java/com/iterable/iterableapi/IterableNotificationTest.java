@@ -1,5 +1,10 @@
 package com.iterable.iterableapi;
 
+import static com.iterable.iterableapi.IterableTestUtils.getResourceString;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static org.robolectric.Shadows.shadowOf;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -18,11 +23,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowPendingIntent;
-
-import static com.iterable.iterableapi.IterableTestUtils.getResourceString;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
 public class IterableNotificationTest {
@@ -101,10 +101,10 @@ public class IterableNotificationTest {
         StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
         Notification notification = statusBarNotification.getNotification();
 
-        assertTrue((shadowOf(notification.contentIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[0].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[1].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[2].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
+        assertTrue((shadowOf(notification.contentIntent).getFlags() & PendingIntent.FLAG_MUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[0].actionIntent).getFlags() & PendingIntent.FLAG_MUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[1].actionIntent).getFlags() & PendingIntent.FLAG_MUTABLE) != 0);
+        assertTrue((shadowOf(notification.actions[2].actionIntent).getFlags() & PendingIntent.FLAG_MUTABLE) != 0);
     }
 
 }
