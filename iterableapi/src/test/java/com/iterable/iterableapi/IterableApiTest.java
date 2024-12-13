@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import com.iterable.iterableapi.util.DeviceInfoUtils;
+
 import android.app.Activity;
 import android.net.Uri;
 
@@ -15,7 +16,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 
@@ -59,8 +62,15 @@ public class IterableApiTest extends BaseTest {
     private IterableApiClient mockApiClient;
     private IterablePushRegistration.IterablePushRegistrationImpl originalPushRegistrationImpl;
 
+    @Mock
+    IterableHelper.SuccessHandler mockSuccessHandler;
+
+    @Mock
+    IterableHelper.FailureHandler mockFailureHandler;
+
     @Before
     public void setUp() {
+        MockitoAnnotations.initMocks(this);
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
@@ -810,7 +820,6 @@ public class IterableApiTest extends BaseTest {
         assertNull(requestJson.optString(IterableConstants.KEY_INBOX_SESSION_ID, null));
     }
 
-
     @Test
     public void testFetchRemoteConfigurationCalledWhenInForeground() throws Exception {
 
@@ -836,4 +845,40 @@ public class IterableApiTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
+    @Test
+    public void testSetEmailWithAuthToken() {
+        String email = "test@example.com";
+        String authToken = "authToken";
+
+        assertNotNull(mockSuccessHandler);
+        assertNotNull(mockFailureHandler);
+        assertEquals(email, "test@example.com");
+        assertEquals(authToken, "authToken");
+
+        IterableApi.getInstance().setEmail(email, authToken, mockSuccessHandler, mockFailureHandler);
+        verifyNoMoreInteractions(mockSuccessHandler);
+    }
+
+    @Test
+    public void testSetEmailWithoutAuthToken() {
+        String email = "test@example.com";
+        assertEquals(email, "test@example.com");
+        assertNotNull(mockSuccessHandler);
+        assertNotNull(mockFailureHandler);
+
+        IterableApi.getInstance().setEmail(email, null, mockSuccessHandler, mockFailureHandler);
+        verifyNoMoreInteractions(mockFailureHandler);
+    }
+
+    @Test
+    public void testSetEmailWithSameEmailAndAuthToken() {
+        IterableApi.getInstance().setEmail("test@example.com");
+
+        when(IterableApi.getInstance().getEmail()).thenReturn("test@example.com");
+        IterableApi.getInstance().setEmail("test@example.com", "authToken");
+
+        assertNotNull(mockSuccessHandler);
+        assertNotNull(mockFailureHandler);
+        verifyNoMoreInteractions(mockSuccessHandler, mockFailureHandler);
+    }
 }
