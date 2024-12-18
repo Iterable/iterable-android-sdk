@@ -2,87 +2,95 @@ package com.iterable.iterableapi
 
 import android.content.SharedPreferences
 import android.util.Base64
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
 import com.iterable.iterableapi.IterableLogger
 
-class IterableDataEncryptor(private val sharedPrefs: SharedPreferences) {
+class IterableDataEncryptor {
     private val TAG = "IterableDataEncryptor"
-    private val ALGORITHM = "AES/GCM/NoPadding"
+    private val ANDROID_KEYSTORE = "AndroidKeyStore"
+    private val TRANSFORMATION = "AES/GCM/NoPadding"
+    private val ITERABLE_KEY_ALIAS = "iterable_encryption_key"
     private val GCM_IV_LENGTH = 12
     private val GCM_TAG_LENGTH = 128
-    private val ENCRYPTION_KEY = "iterable-encryption-key"
 
-    private val key: SecretKey by lazy {
-        // Try to get existing key from SharedPreferences
-        val savedKey = sharedPrefs.getString(ENCRYPTION_KEY, null)
-        if (savedKey != null) {
-            try {
-                // Convert Base64 string back to SecretKey
-                val keyBytes = Base64.decode(savedKey, Base64.NO_WRAP)
-                return@lazy SecretKeySpec(keyBytes, "AES")
-            } catch (e: Exception) {
-                IterableLogger.e(TAG, "Error retrieving encryption key", e)
-                // If there's any error, generate and save new key
-                generateAndSaveNewKey()
-            }
-        } else {
-            // No existing key, generate and save new one
-            generateAndSaveNewKey()
+    private val keyStore: KeyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply {
+        load(null)
+    }
+
+    init {
+        if (!keyStore.containsAlias(ITERABLE_KEY_ALIAS)) {
+            generateKey()
         }
     }
 
-    private fun generateAndSaveNewKey(): SecretKey {
-        val keyGen = KeyGenerator.getInstance("AES")
-        keyGen.init(256)
-        val newKey = keyGen.generateKey()
-        
-        // Save the key to SharedPreferences
-        val keyString = Base64.encodeToString(newKey.encoded, Base64.NO_WRAP)
-        sharedPrefs.edit()
-            .putString(ENCRYPTION_KEY, keyString)
-            .apply()
-        
-        return newKey
+    private fun generateKey() {
+        val keyGenerator = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES,
+            ANDROID_KEYSTORE
+        )
+        val keyGenParameterSpec = KeyGenParameterSpec.Builder(
+            ITERABLE_KEY_ALIAS,
+            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+        )
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .build()
+
+        keyGenerator.init(keyGenParameterSpec)
+        keyGenerator.generateKey()
     }
 
-    fun encrypt(plaintext: String): String {
+    private fun getKey(): SecretKey {
+        return (keyStore.getEntry(ITERABLE_KEY_ALIAS, null) as KeyStore.SecretKeyEntry).secretKey
+    }
+
+    fun encrypt(value: String?): String? {
+        if (value == null) return null
+        
         try {
-            val cipher = Cipher.getInstance(ALGORITHM)
-            val iv = ByteArray(GCM_IV_LENGTH)
-            // In a real implementation, you'd want to use SecureRandom here
-            iv.fill(0)  
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, getKey())
             
-            val parameterSpec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
-            cipher.init(Cipher.ENCRYPT_MODE, key, parameterSpec)
+            val iv = cipher.iv
+            val encrypted = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
             
-            val ciphertext = cipher.doFinal(plaintext.toByteArray())
-            return Base64.encodeToString(ciphertext, Base64.NO_WRAP)
+            // Combine IV and encrypted data
+            val combined = ByteArray(iv.size + encrypted.size)
+            System.arraycopy(iv, 0, combined, 0, iv.size)
+            System.arraycopy(encrypted, 0, combined, iv.size, encrypted.size)
+            
+            return Base64.encodeToString(combined, Base64.NO_WRAP)
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Encryption failed", e)
-            return plaintext  // Fallback to plaintext if encryption fails
+            throw e
         }
     }
 
-    fun decrypt(encryptedData: String): String {
+    fun decrypt(value: String?): String? {
+        if (value == null) return null
+        
         try {
-            val cipher = Cipher.getInstance(ALGORITHM)
-            val iv = ByteArray(GCM_IV_LENGTH)
-            // Use same IV as encryption
-            iv.fill(0)
+            val combined = Base64.decode(value, Base64.NO_WRAP)
             
-            val parameterSpec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
-            cipher.init(Cipher.DECRYPT_MODE, key, parameterSpec)
+            // Extract IV
+            val iv = combined.copyOfRange(0, GCM_IV_LENGTH)
+            val encrypted = combined.copyOfRange(GCM_IV_LENGTH, combined.size)
             
-            val ciphertext = Base64.decode(encryptedData, Base64.NO_WRAP)
-            return String(cipher.doFinal(ciphertext))
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+            cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
+            
+            return String(cipher.doFinal(encrypted), Charsets.UTF_8)
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Decryption failed", e)
-            return encryptedData  // Fallback to encrypted data if decryption fails
+            throw e
         }
     }
 } 
