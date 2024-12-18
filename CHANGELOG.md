@@ -8,9 +8,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - nothing yet
 
 #### Removed
-- nothing yet
+- Removed `encryptionEnforced` parameter from `IterableConfig` as data is now always encoded for security
 
 #### Changed
+- Migrated from EncryptedSharedPreferences to regular SharedPreferences with Base64 encoding to prevent ANRs while maintaining data security
 - nothing yet
 
 ## [3.5.4]
