@@ -14,63 +14,52 @@ class IterableKeychain {
 
     private val TAG = "IterableKeychain"
     private var sharedPrefs: SharedPreferences
-    private var encryptionEnabled: Boolean = false
-    private val encryptor = IterableDataEncryptor()
+    private var encryptionEnabled: Boolean = true
+    private val encryptor: IterableDataEncryptor
 
     private val emailKey = "iterable-email"
     private val userIdKey = "iterable-user-id"
     private val authTokenKey = "iterable-auth-token"
 
     constructor(context: Context) {
-
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
-        encryptionEnabled = true
-        IterableLogger.v(TAG, "SharedPreferences being used with encryption: $encryptionEnabled")
+        encryptor = IterableDataEncryptor(sharedPrefs)
+        IterableLogger.v(TAG, "SharedPreferences being used with encoding")
 
         // Attempt migration from encrypted preferences
         IterableKeychainEncryptedDataMigrator(context, sharedPrefs).attemptMigration()
     }
 
     fun getEmail(): String? {
-        val value = sharedPrefs.getString(emailKey, null)
-        return if (encryptionEnabled && value != null) {
-            encryptor.decrypt(value)
-        } else {
-            value
-        }
+        return sharedPrefs.getString(emailKey, null)?.let { encryptor.decrypt(it) }
     }
 
     fun saveEmail(email: String?) {
-        val valueToSave = if (encryptionEnabled && email != null) {
-            encryptor.encrypt(email)
-        } else {
-            email
-        }
         sharedPrefs.edit()
-            .putString(emailKey, valueToSave)
+            .putString(emailKey, email?.let { encryptor.encrypt(it) })
             .apply()
     }
 
     fun getUserId(): String? {
-        return sharedPrefs.getString(userIdKey, null)
+        return sharedPrefs.getString(userIdKey, null)?.let { encryptor.decrypt(it) }
     }
 
     fun saveUserId(userId: String?) {
         sharedPrefs.edit()
-            .putString(userIdKey, userId)
+            .putString(userIdKey, userId?.let { encryptor.encrypt(it) })
             .apply()
     }
 
     fun getAuthToken(): String? {
-        return sharedPrefs.getString(authTokenKey, null)
+        return sharedPrefs.getString(authTokenKey, null)?.let { encryptor.decrypt(it) }
     }
 
     fun saveAuthToken(authToken: String?) {
         sharedPrefs.edit()
-            .putString(authTokenKey, authToken)
+            .putString(authTokenKey, authToken?.let { encryptor.encrypt(it) })
             .apply()
     }
 }
