@@ -26,15 +26,33 @@ class IterableKeychain {
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
-        encryptor = IterableDataEncryptor(sharedPrefs)
-        IterableLogger.v(TAG, "SharedPreferences being used with encoding")
+        encryptor = IterableDataEncryptor()
+        IterableLogger.v(TAG, "SharedPreferences being used with encryption")
 
         // Attempt migration from encrypted preferences
         IterableKeychainEncryptedDataMigrator(context, sharedPrefs).attemptMigration()
     }
 
+    private fun handleDecryptionError() {
+        IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
+        // Clear all stored data
+        sharedPrefs.edit()
+            .remove(emailKey)
+            .remove(userIdKey)
+            .remove(authTokenKey)
+            .apply()
+        
+        // Regenerate encryption key
+        encryptor.clearKeyAndData(sharedPrefs)
+    }
+
     fun getEmail(): String? {
-        return sharedPrefs.getString(emailKey, null)?.let { encryptor.decrypt(it) }
+        return try {
+            sharedPrefs.getString(emailKey, null)?.let { encryptor.decrypt(it) }
+        } catch (e: IterableDataEncryptor.DecryptionException) {
+            handleDecryptionError()
+            null
+        }
     }
 
     fun saveEmail(email: String?) {
@@ -44,7 +62,12 @@ class IterableKeychain {
     }
 
     fun getUserId(): String? {
-        return sharedPrefs.getString(userIdKey, null)?.let { encryptor.decrypt(it) }
+        return try {
+            sharedPrefs.getString(userIdKey, null)?.let { encryptor.decrypt(it) }
+        } catch (e: IterableDataEncryptor.DecryptionException) {
+            handleDecryptionError()
+            null
+        }
     }
 
     fun saveUserId(userId: String?) {
@@ -54,7 +77,12 @@ class IterableKeychain {
     }
 
     fun getAuthToken(): String? {
-        return sharedPrefs.getString(authTokenKey, null)?.let { encryptor.decrypt(it) }
+        return try {
+            sharedPrefs.getString(authTokenKey, null)?.let { encryptor.decrypt(it) }
+        } catch (e: IterableDataEncryptor.DecryptionException) {
+            handleDecryptionError()
+            null
+        }
     }
 
     fun saveAuthToken(authToken: String?) {

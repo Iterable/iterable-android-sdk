@@ -51,6 +51,17 @@ class IterableDataEncryptor {
         return (keyStore.getEntry(ITERABLE_KEY_ALIAS, null) as KeyStore.SecretKeyEntry).secretKey
     }
 
+    class DecryptionException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+    fun clearKeyAndData(sharedPrefs: SharedPreferences) {
+        try {
+            keyStore.deleteEntry(ITERABLE_KEY_ALIAS)
+            generateKey()
+        } catch (e: Exception) {
+            IterableLogger.e(TAG, "Failed to regenerate key", e)
+        }
+    }
+
     fun encrypt(value: String?): String? {
         if (value == null) return null
         
@@ -90,7 +101,7 @@ class IterableDataEncryptor {
             return String(cipher.doFinal(encrypted), Charsets.UTF_8)
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Decryption failed", e)
-            throw e
+            throw DecryptionException("Failed to decrypt data", e)
         }
     }
 } 
