@@ -143,7 +143,7 @@ public class IterableApi {
         }
         if (keychain == null) {
             try {
-                keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
+                keychain = new IterableKeychain(getMainActivityContext());
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
             }

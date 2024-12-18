@@ -8,37 +8,49 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 import com.iterable.iterableapi.IterableKeychainEncryptedDataMigrator
+import com.iterable.iterableapi.IterableDataEncryptor
 
 class IterableKeychain {
 
     private val TAG = "IterableKeychain"
     private var sharedPrefs: SharedPreferences
+    private var encryptionEnabled: Boolean = false
+    private val encryptor = IterableDataEncryptor()
 
     private val emailKey = "iterable-email"
     private val userIdKey = "iterable-user-id"
     private val authTokenKey = "iterable-auth-token"
 
-    private var encryptionEnabled = false
-
-    constructor(context: Context, encryptionEnforced: Boolean) {
+    constructor(context: Context) {
 
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
-        IterableLogger.v(TAG, "SharedPreferences being used")
+        encryptionEnabled = true
+        IterableLogger.v(TAG, "SharedPreferences being used with encryption: $encryptionEnabled")
 
         // Attempt migration from encrypted preferences
         IterableKeychainEncryptedDataMigrator(context, sharedPrefs).attemptMigration()
     }
 
     fun getEmail(): String? {
-        return sharedPrefs.getString(emailKey, null)
+        val value = sharedPrefs.getString(emailKey, null)
+        return if (encryptionEnabled && value != null) {
+            encryptor.decrypt(value)
+        } else {
+            value
+        }
     }
 
     fun saveEmail(email: String?) {
+        val valueToSave = if (encryptionEnabled && email != null) {
+            encryptor.encrypt(email)
+        } else {
+            email
+        }
         sharedPrefs.edit()
-            .putString(emailKey, email)
+            .putString(emailKey, valueToSave)
             .apply()
     }
 
