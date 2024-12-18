@@ -14,7 +14,6 @@ class IterableKeychain {
 
     private val TAG = "IterableKeychain"
     private var sharedPrefs: SharedPreferences
-    private var encryptionEnabled: Boolean = true
     private val encryptor: IterableDataEncryptor
 
     private val emailKey = "iterable-email"
@@ -30,19 +29,17 @@ class IterableKeychain {
         IterableLogger.v(TAG, "SharedPreferences being used with encryption")
 
         // Attempt migration from encrypted preferences
-        IterableKeychainEncryptedDataMigrator(context, sharedPrefs).attemptMigration()
+        IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this).attemptMigration()
     }
 
-    private fun handleDecryptionError() {
+    fun handleDecryptionError() {
         IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
-        // Clear all stored data
         sharedPrefs.edit()
             .remove(emailKey)
             .remove(userIdKey)
             .remove(authTokenKey)
             .apply()
         
-        // Regenerate encryption key
         encryptor.clearKeyAndData(sharedPrefs)
     }
 
