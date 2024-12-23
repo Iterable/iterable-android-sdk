@@ -57,7 +57,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             return false;
         }
         if (!IterableNotificationHelper.isGhostPush(extras)) {
-            if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            if (!IterableNotificationHelper.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
                 IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
                         context.getApplicationContext(), extras);
