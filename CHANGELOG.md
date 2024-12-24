@@ -5,14 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 #### Added
-- nothing yet
+- - Added `IterableDecryptionFailureHandler` interface to handle decryption failures of PII information. 
 
 #### Removed
 - Removed `encryptionEnforced` parameter from `IterableConfig` as data is now always encoded for security
 
 #### Changed
-- Migrated from EncryptedSharedPreferences to regular SharedPreferences with Base64 encoding to prevent ANRs while maintaining data security
-- nothing yet
+- Migrated from EncryptedSharedPreferences to regular SharedPreferences to prevent ANRs while EncryptedSharedPreferences was created on the main thread. We are now using our own encryption library to encrypt PII information before storing it in SharedPreferences.
 
 ## [3.5.4]
 #### Fixed

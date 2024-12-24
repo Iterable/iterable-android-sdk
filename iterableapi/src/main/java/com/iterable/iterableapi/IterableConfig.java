@@ -91,6 +91,12 @@ public class IterableConfig {
      */
     final boolean enableEmbeddedMessaging;
 
+    /**
+     * Handler for decryption failures of PII information. 
+     * Before calling this handler, the SDK will clear the PII information and create new encryption keys
+     */
+    final IterableDecryptionFailureHandler decryptionFailureHandler;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -107,6 +113,7 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
+        decryptionFailureHandler = builder.decryptionFailureHandler;
     }
 
     public static class Builder {
@@ -125,6 +132,7 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean enableEmbeddedMessaging = false;
+        private IterableDecryptionFailureHandler decryptionFailureHandler;
 
         public Builder() {}
 
@@ -283,6 +291,16 @@ public class IterableConfig {
          */
         public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
             this.enableEmbeddedMessaging = enableEmbeddedMessaging;
+            return this;
+        }
+
+        /**
+         * Set a handler for decryption failures that can be used to handle data recovery
+         * @param handler Decryption failure handler provided by the app
+         */
+        @NonNull
+        public Builder setDecryptionFailureHandler(@NonNull IterableDecryptionFailureHandler handler) {
+            this.decryptionFailureHandler = handler;
             return this;
         }
 

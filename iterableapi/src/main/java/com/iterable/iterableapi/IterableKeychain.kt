@@ -15,12 +15,14 @@ class IterableKeychain {
     private val TAG = "IterableKeychain"
     private var sharedPrefs: SharedPreferences
     private val encryptor: IterableDataEncryptor
+    private val decryptionFailureHandler: IterableDecryptionFailureHandler?
 
     internal val emailKey = "iterable-email"
     internal val userIdKey = "iterable-user-id"
     internal val authTokenKey = "iterable-auth-token"
 
-    constructor(context: Context) {
+    constructor(context: Context, decryptionFailureHandler: IterableDecryptionFailureHandler? = null) {
+        this.decryptionFailureHandler = decryptionFailureHandler
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
@@ -33,11 +35,11 @@ class IterableKeychain {
             IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this).attemptMigration()
         } catch (e: IterableKeychainEncryptedDataMigrator.MigrationException) {
             IterableLogger.w(TAG, "Migration failed, clearing data", e)
-            handleDecryptionError()
+            handleDecryptionError(e)
         }
     }
 
-    private fun handleDecryptionError() {
+    private fun handleDecryptionError(e: Exception? = null) {
         IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
         sharedPrefs.edit()
             .remove(emailKey)
@@ -46,13 +48,14 @@ class IterableKeychain {
             .apply()
         
         encryptor.clearKeyAndData(sharedPrefs)
+        decryptionFailureHandler?.onDecryptionFailed(e ?: Exception("Unknown decryption error"))
     }
 
     fun getEmail(): String? {
         return try {
             sharedPrefs.getString(emailKey, null)?.let { encryptor.decrypt(it) }
         } catch (e: IterableDataEncryptor.DecryptionException) {
-            handleDecryptionError()
+            handleDecryptionError(e)
             null
         }
     }
@@ -67,7 +70,7 @@ class IterableKeychain {
         return try {
             sharedPrefs.getString(userIdKey, null)?.let { encryptor.decrypt(it) }
         } catch (e: IterableDataEncryptor.DecryptionException) {
-            handleDecryptionError()
+            handleDecryptionError(e)
             null
         }
     }
@@ -82,7 +85,7 @@ class IterableKeychain {
         return try {
             sharedPrefs.getString(authTokenKey, null)?.let { encryptor.decrypt(it) }
         } catch (e: IterableDataEncryptor.DecryptionException) {
-            handleDecryptionError()
+            handleDecryptionError(e)
             null
         }
     }
