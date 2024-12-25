@@ -107,7 +107,7 @@ class IterableDataEncryptor {
 
     class DecryptionException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
-    fun clearKeyAndData(sharedPrefs: SharedPreferences) {
+    fun resetKeys() {
         try {
             keyStore.deleteEntry(ITERABLE_KEY_ALIAS)
             generateKey()

@@ -55,14 +55,14 @@ class IterableKeychain {
             .remove(KEY_AUTH_TOKEN)
             .apply()
         
-        encryptor.clearKeyAndData(sharedPrefs)
+        encryptor.resetKeys()
         decryptionFailureHandler?.onDecryptionFailed(e ?: Exception("Unknown decryption error"))
     }
 
     private fun secureGet(key: String): String? {
         return try {
             sharedPrefs.getString(key, null)?.let { encryptor.decrypt(it) }
-        } catch (e: IterableDataEncryptor.DecryptionException) {
+        } catch (e: Exception) {
             handleDecryptionError(e)
             null
         }

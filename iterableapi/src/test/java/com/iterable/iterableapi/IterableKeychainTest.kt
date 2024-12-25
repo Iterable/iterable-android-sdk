@@ -74,11 +74,15 @@ class IterableKeychainTest {
 
         // Setup encrypt/decrypt behavior
         `when`(mockEncryptor.encrypt(any())).thenAnswer { invocation ->
-            "encrypted_${invocation.arguments[0]}"
+            val input = invocation.arguments[0] as String?
+            input?.let { "encrypted_$it" }
         }
+        
         `when`(mockEncryptor.decrypt(any())).thenAnswer { invocation ->
-            val encrypted = invocation.arguments[0] as String
-            if (encrypted.startsWith("encrypted_")) {
+            val encrypted = invocation.arguments[0] as String?
+            if (encrypted == null) {
+                null
+            } else if (encrypted.startsWith("encrypted_")) {
                 encrypted.substring("encrypted_".length)
             } else {
                 throw IterableDataEncryptor.DecryptionException("Invalid encrypted value")
@@ -148,9 +152,12 @@ class IterableKeychainTest {
 
     @Test
     fun testDecryptionFailure() {
-        // Setup mock to simulate decryption failure
+        // Setup mock to throw runtime exception instead
+        `when`(mockEncryptor.decrypt(any())).thenAnswer { 
+            throw RuntimeException("Test decryption failed")
+        }
         `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull()))
-            .thenReturn("corrupted_encrypted_value")
+            .thenReturn("any_encrypted_value")
 
         val result = keychain.getEmail()
 
@@ -160,10 +167,33 @@ class IterableKeychainTest {
         verify(mockEditor).remove("iterable-auth-token")
         verify(mockEditor).apply()
 
-        // Verify failure handler was called
+        // Verify failure handler was called with any exception
         verify(mockDecryptionFailureHandler).onDecryptionFailed(any())
+        
+        // Verify encryptor keys were reset
+        verify(mockEncryptor).resetKeys()
 
         assertNull(result)
+    }
+
+    @Test
+    fun testDecryptionFailureForAllOperations() {
+        // Setup mock to throw runtime exception
+        `when`(mockEncryptor.decrypt(any())).thenAnswer { 
+            throw RuntimeException("Test decryption failed")
+        }
+        `when`(mockSharedPrefs.getString(any(), isNull())).thenReturn("any_encrypted_value")
+        
+        // Test all getter methods
+        assertNull(keychain.getEmail())
+        assertNull(keychain.getUserId())
+        assertNull(keychain.getAuthToken())
+        
+        // Verify failure handler was called exactly once for each operation
+        verify(mockDecryptionFailureHandler, times(3)).onDecryptionFailed(any())
+        
+        // Verify keys were reset for each failure
+        verify(mockEncryptor, times(3)).resetKeys()
     }
 
     @Test

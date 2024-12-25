@@ -130,12 +130,12 @@ public class IterableDataEncryptorTest extends BaseTest {
     }
 
     @Test
-    public void testClearKeyAndData() {
+    public void testResetKeys() {
         String originalText = "test data";
         String encrypted = encryptor.encrypt(originalText);
         
         // Clear the key
-        encryptor.clearKeyAndData(sharedPreferences);
+        encryptor.resetKeys();
         
         // Try to decrypt the data encrypted with the old key
         try {
@@ -180,7 +180,7 @@ public class IterableDataEncryptorTest extends BaseTest {
         String encrypted1 = encryptor1.encrypt(testData);
         
         // Delete the key
-        encryptor1.clearKeyAndData(sharedPreferences);
+        encryptor1.resetKeys();
         
         // Create second encryptor which should generate a new key
         IterableDataEncryptor encryptor2 = new IterableDataEncryptor();
@@ -279,7 +279,7 @@ public class IterableDataEncryptorTest extends BaseTest {
         String encrypted = encryptor.encrypt(testData);
         
         // Clear the key and generate a new one
-        encryptor.clearKeyAndData(sharedPreferences);
+        encryptor.resetKeys();
         
         try {
             encryptor.decrypt(encrypted);

@@ -248,4 +248,24 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         verify(mockEditor, times(2)).apply();
     }
 
+    @Test
+    public void testNullEncryptedPrefs() throws InterruptedException {
+        // Test behavior when encrypted prefs creation fails
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        migrator.setMockEncryptedPrefs(null);
+        migrator.setMigrationCompletionCallback(throwable -> {
+            error.set(throwable);
+            latch.countDown();
+            return null;
+        });
+
+        migrator.attemptMigration();
+        
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertNotNull("Should have received an error", error.get());
+        assertTrue(error.get().getMessage().contains("Failed to create or obtain encrypted preferences"));
+    }
+
 } 
