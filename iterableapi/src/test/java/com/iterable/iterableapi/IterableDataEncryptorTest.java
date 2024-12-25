@@ -13,8 +13,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertFalse;
 
 import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class IterableDataEncryptorTest extends BaseTest {
 
@@ -187,5 +193,60 @@ public class IterableDataEncryptorTest extends BaseTest {
         
         assertEquals("Encryptor 2 should decrypt Encryptor 1's data", testData, encryptor2.decrypt(encrypted1));
         assertEquals("Encryptor 1 should decrypt Encryptor 2's data", testData, encryptor1.decrypt(encrypted2));
+    }
+
+    @Test
+    public void testConcurrentAccess() throws InterruptedException {
+        int threadCount = 5;
+        int operationsPerThread = 20;
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicBoolean hasErrors = new AtomicBoolean(false);
+        List<Thread> threads = new ArrayList<>();
+
+        // Create and start multiple threads
+        for (int i = 0; i < threadCount; i++) {
+            final int threadId = i;
+            Thread thread = new Thread(() -> {
+                try {
+                    for (int j = 0; j < operationsPerThread; j++) {
+                        String originalText = "Thread-" + threadId + "-Data-" + j;
+                        String encrypted = encryptor.encrypt(originalText);
+                        String decrypted = encryptor.decrypt(encrypted);
+                        
+                        if (!originalText.equals(decrypted)) {
+                            hasErrors.set(true);
+                            IterableLogger.e("TestConcurrent", "Encryption/Decryption mismatch: " + originalText + " != " + decrypted);
+                        }
+                    }
+                } catch (Exception e) {
+                    hasErrors.set(true);
+                    IterableLogger.e("TestConcurrent", "Thread " + threadId + " failed: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+            threads.add(thread);
+            thread.start();
+        }
+
+        // Wait for all threads to complete with a shorter timeout
+        boolean completed = latch.await(5, TimeUnit.SECONDS);
+        
+        assertTrue("All threads should complete within timeout", completed);
+        assertFalse("No errors should occur", hasErrors.get());
+    }
+
+    @Test
+    public void testSpecialCharacters() {
+        String specialChars = "!@#$%^&*()_+{}[]|\"':;?/>.<,~`";
+        String encrypted = encryptor.encrypt(specialChars);
+        assertEquals(specialChars, encryptor.decrypt(encrypted));
+    }
+
+    @Test
+    public void testUnicodeStrings() {
+        String unicodeText = "Hello 世界 🌍";
+        String encrypted = encryptor.encrypt(unicodeText);
+        assertEquals(unicodeText, encryptor.decrypt(encrypted));
     }
 } 
