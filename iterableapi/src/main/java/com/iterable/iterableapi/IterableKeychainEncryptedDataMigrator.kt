@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import androidx.annotation.VisibleForTesting
 
 class IterableKeychainEncryptedDataMigrator(
     private val context: Context,
@@ -17,71 +18,116 @@ class IterableKeychainEncryptedDataMigrator(
     private val migrationStartedKey = "iterable-encrypted-migration-started"
     private val migrationCompletedKey = "iterable-encrypted-migration-completed"
 
+    // Add completion callback for testing
+    private var migrationCompletionCallback: ((Throwable?) -> Unit)? = null
+    private val migrationLock = Object()
+
     class MigrationException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
+    private var migrationTimeoutMs = 30000L // Default 30 seconds
+
+    @VisibleForTesting
+    fun setMigrationTimeout(timeoutMs: Long) {
+        migrationTimeoutMs = timeoutMs
+    }
+
     fun attemptMigration() {
-        // Skip if migration was already completed
-        if (sharedPrefs.getBoolean(migrationCompletedKey, false)) {
-            IterableLogger.v(TAG, "Migration was already completed, skipping")
-            return
-        }
-
-        // Only attempt migration on Android M and above
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            markMigrationCompleted()
-            return
-        }
-
-        // If previous migration was interrupted, mark as completed and throw exception
-        if (sharedPrefs.getBoolean(migrationStartedKey, false)) {
-            IterableLogger.w(TAG, "Previous migration attempt was interrupted")
-            markMigrationCompleted()
-            throw MigrationException("Previous migration attempt was interrupted")
-        }
-
-        // Mark migration as started
-        sharedPrefs.edit()
-            .putBoolean(migrationStartedKey, true)
-            .apply()
-
-        // Run migration in background thread
-        Thread {
-            try {
-                val masterKeyAlias = MasterKey.Builder(context)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                    .build()
-
-                val encryptedPrefs = EncryptedSharedPreferences.create(
-                    context,
-                    encryptedSharedPrefsFileName,
-                    masterKeyAlias,
-                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                )
-
-                // Migrate data using keychain methods
-                migrateData(encryptedPrefs)
-                
-                // Clear encrypted prefs after successful migration
-                encryptedPrefs.edit().clear().apply()
-                
-                // Mark migration as completed
-                markMigrationCompleted()
-                
-                IterableLogger.v(TAG, "Successfully migrated data from encrypted preferences")
-            } catch (e: Throwable) {
-                IterableLogger.w(TAG, "Failed to access encrypted preferences", e)
-                markMigrationCompleted() // Mark as completed even on failure
-                throw MigrationException("Failed to migrate data", e)
+        synchronized(migrationLock) {
+            // Skip if migration was already completed
+            if (sharedPrefs.getBoolean(migrationCompletedKey, false)) {
+                IterableLogger.v(TAG, "Migration was already completed, skipping")
+                migrationCompletionCallback?.invoke(null)
+                return
             }
-        }.start()
+
+            // Only attempt migration on Android M and above
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                markMigrationCompleted()
+                migrationCompletionCallback?.invoke(null)
+                return
+            }
+
+            // If previous migration was interrupted, mark as completed and notify via callback
+            if (sharedPrefs.getBoolean(migrationStartedKey, false)) {
+                IterableLogger.w(TAG, "Previous migration attempt was interrupted")
+                markMigrationCompleted()
+                val exception = MigrationException("Previous migration attempt was interrupted")
+                migrationCompletionCallback?.invoke(exception)
+                return
+            }
+
+            // Mark migration as started
+            sharedPrefs.edit()
+                .putBoolean(migrationStartedKey, true)
+                .apply()
+
+            // Move EncryptedSharedPreferences creation to background thread
+            Thread {
+                val prefs = mockEncryptedPrefs ?: run {
+                    try {
+                        val masterKeyAlias = MasterKey.Builder(context)
+                            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                            .build()
+
+                        EncryptedSharedPreferences.create(
+                            context,
+                            encryptedSharedPrefsFileName,
+                            masterKeyAlias,
+                            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                if (prefs == null) {
+                    val exception = MigrationException("Failed to create or obtain encrypted preferences")
+                    migrationCompletionCallback?.invoke(exception)
+                    return@Thread
+                }
+
+                val timeoutThread = Thread {
+                    try {
+                        Thread.sleep(migrationTimeoutMs)
+                        // Only trigger timeout if not interrupted
+                        if (!Thread.currentThread().isInterrupted) {
+                            markMigrationCompleted()
+                            migrationCompletionCallback?.invoke(
+                                MigrationException("Migration timed out after ${migrationTimeoutMs}ms")
+                            )
+                        }
+                    } catch (e: InterruptedException) {
+                        // Thread was cancelled, do nothing
+                    }
+                }
+                timeoutThread.start()
+
+                try {
+                    migrateData(prefs)
+                    timeoutThread.interrupt() // Cancel timeout if successful
+                    prefs.edit().clear().apply()
+                    markMigrationCompleted()
+                    migrationCompletionCallback?.invoke(null)
+                } catch (e: Throwable) {
+                    timeoutThread.interrupt() // Cancel timeout on error
+                    IterableLogger.w(TAG, "Failed to migrate data", e)
+                    markMigrationCompleted()
+                    val migrationException = MigrationException("Failed to migrate data", e)
+                    migrationCompletionCallback?.invoke(migrationException)
+                }
+            }.apply { 
+                name = "IterableKeychain-Migration"
+                start()
+            }
+        }
     }
 
     private fun migrateData(encryptedPrefs: SharedPreferences) {
-        // Use keychain methods to ensure proper encryption
-        encryptedPrefs.getString(keychain.emailKey, null)?.let { keychain.saveEmail(it) }
-        encryptedPrefs.getString(keychain.userIdKey, null)?.let { keychain.saveUserId(it) }
-        encryptedPrefs.getString(keychain.authTokenKey, null)?.let { keychain.saveAuthToken(it) }
+        // Use the correct keys for reading from encrypted preferences
+        encryptedPrefs.getString("iterable_email", null)?.let { keychain.saveEmail(it) }
+        encryptedPrefs.getString("iterable_user_id", null)?.let { keychain.saveUserId(it) }
+        encryptedPrefs.getString("iterable_auth_token", null)?.let { keychain.saveAuthToken(it) }
     }
 
     private fun markMigrationCompleted() {
@@ -90,4 +136,14 @@ class IterableKeychainEncryptedDataMigrator(
             .putBoolean(migrationCompletedKey, true)
             .apply()
     }
+
+    // Add method for tests to wait for completion
+    @VisibleForTesting
+    fun setMigrationCompletionCallback(callback: (Throwable?) -> Unit) {
+        migrationCompletionCallback = callback
+    }
+
+    // Add a property for tests to inject mock encrypted preferences
+    @VisibleForTesting
+    var mockEncryptedPrefs: SharedPreferences? = null
 } 
