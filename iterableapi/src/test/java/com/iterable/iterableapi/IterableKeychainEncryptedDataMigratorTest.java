@@ -42,10 +42,10 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         when(mockEditor.putBoolean(anyString(), anyBoolean())).thenReturn(mockEditor);
         when(mockEncryptedEditor.clear()).thenReturn(mockEncryptedEditor);
         
-        // Set up keychain keys - using the correct property names with $iterableapi_debug suffix
-        when(mockKeychain.getEmailKey$iterableapi_debug()).thenReturn("iterable-email");
-        when(mockKeychain.getUserIdKey$iterableapi_debug()).thenReturn("iterable-user-id");
-        when(mockKeychain.getAuthTokenKey$iterableapi_debug()).thenReturn("iterable-auth-token");
+        // Mock the properties instead of methods
+        ReflectionHelpers.setField(mockKeychain, "emailKey", "iterable-email");
+        ReflectionHelpers.setField(mockKeychain, "userIdKey", "iterable-user-id");
+        ReflectionHelpers.setField(mockKeychain, "authTokenKey", "iterable-auth-token");
         
         migrator = new IterableKeychainEncryptedDataMigrator(
             mockContext,

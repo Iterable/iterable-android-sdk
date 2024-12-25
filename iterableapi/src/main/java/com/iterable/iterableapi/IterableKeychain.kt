@@ -14,14 +14,19 @@ class IterableKeychain {
 
     private val TAG = "IterableKeychain"
     private var sharedPrefs: SharedPreferences
-    private val encryptor: IterableDataEncryptor
+    internal lateinit var encryptor: IterableDataEncryptor
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
 
     internal val emailKey = "iterable-email"
     internal val userIdKey = "iterable-user-id"
     internal val authTokenKey = "iterable-auth-token"
 
-    constructor(context: Context, decryptionFailureHandler: IterableDecryptionFailureHandler? = null) {
+    @JvmOverloads
+    constructor(
+        context: Context, 
+        decryptionFailureHandler: IterableDecryptionFailureHandler? = null,
+        migrator: IterableKeychainEncryptedDataMigrator? = null
+    ) {
         this.decryptionFailureHandler = decryptionFailureHandler
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
@@ -31,9 +36,9 @@ class IterableKeychain {
         IterableLogger.v(TAG, "SharedPreferences being used with encryption")
 
         try {
-            // Attempt migration from encrypted preferences
-            IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this).attemptMigration()
-        } catch (e: IterableKeychainEncryptedDataMigrator.MigrationException) {
+            val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
+            dataMigrator.attemptMigration()
+        } catch (e: Exception) {
             IterableLogger.w(TAG, "Migration failed, clearing data", e)
             handleDecryptionError(e)
         }
