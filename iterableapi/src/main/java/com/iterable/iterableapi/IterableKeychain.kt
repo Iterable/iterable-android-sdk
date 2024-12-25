@@ -11,15 +11,18 @@ import com.iterable.iterableapi.IterableKeychainEncryptedDataMigrator
 import com.iterable.iterableapi.IterableDataEncryptor
 
 class IterableKeychain {
+    companion object {
+        private const val TAG = "IterableKeychain"
+        
+        // Keys for storing encrypted data
+        private const val KEY_EMAIL = "iterable-email"
+        private const val KEY_USER_ID = "iterable-user-id"
+        private const val KEY_AUTH_TOKEN = "iterable-auth-token"
+    }
 
-    private val TAG = "IterableKeychain"
     private var sharedPrefs: SharedPreferences
     internal lateinit var encryptor: IterableDataEncryptor
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
-
-    internal val emailKey = "iterable-email"
-    internal val userIdKey = "iterable-user-id"
-    internal val authTokenKey = "iterable-auth-token"
 
     @JvmOverloads
     constructor(
@@ -47,57 +50,36 @@ class IterableKeychain {
     private fun handleDecryptionError(e: Exception? = null) {
         IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
         sharedPrefs.edit()
-            .remove(emailKey)
-            .remove(userIdKey)
-            .remove(authTokenKey)
+            .remove(KEY_EMAIL)
+            .remove(KEY_USER_ID)
+            .remove(KEY_AUTH_TOKEN)
             .apply()
         
         encryptor.clearKeyAndData(sharedPrefs)
         decryptionFailureHandler?.onDecryptionFailed(e ?: Exception("Unknown decryption error"))
     }
 
-    fun getEmail(): String? {
+    private fun secureGet(key: String): String? {
         return try {
-            sharedPrefs.getString(emailKey, null)?.let { encryptor.decrypt(it) }
+            sharedPrefs.getString(key, null)?.let { encryptor.decrypt(it) }
         } catch (e: IterableDataEncryptor.DecryptionException) {
             handleDecryptionError(e)
             null
         }
     }
 
-    fun saveEmail(email: String?) {
+    private fun secureSave(key: String, value: String?) {
         sharedPrefs.edit()
-            .putString(emailKey, email?.let { encryptor.encrypt(it) })
+            .putString(key, value?.let { encryptor.encrypt(it) })
             .apply()
     }
 
-    fun getUserId(): String? {
-        return try {
-            sharedPrefs.getString(userIdKey, null)?.let { encryptor.decrypt(it) }
-        } catch (e: IterableDataEncryptor.DecryptionException) {
-            handleDecryptionError(e)
-            null
-        }
-    }
-
-    fun saveUserId(userId: String?) {
-        sharedPrefs.edit()
-            .putString(userIdKey, userId?.let { encryptor.encrypt(it) })
-            .apply()
-    }
-
-    fun getAuthToken(): String? {
-        return try {
-            sharedPrefs.getString(authTokenKey, null)?.let { encryptor.decrypt(it) }
-        } catch (e: IterableDataEncryptor.DecryptionException) {
-            handleDecryptionError(e)
-            null
-        }
-    }
-
-    fun saveAuthToken(authToken: String?) {
-        sharedPrefs.edit()
-            .putString(authTokenKey, authToken?.let { encryptor.encrypt(it) })
-            .apply()
-    }
+    fun getEmail() = secureGet(KEY_EMAIL)
+    fun saveEmail(email: String?) = secureSave(KEY_EMAIL, email)
+    
+    fun getUserId() = secureGet(KEY_USER_ID)
+    fun saveUserId(userId: String?) = secureSave(KEY_USER_ID, userId)
+    
+    fun getAuthToken() = secureGet(KEY_AUTH_TOKEN)
+    fun saveAuthToken(authToken: String?) = secureSave(KEY_AUTH_TOKEN, authToken)
 }

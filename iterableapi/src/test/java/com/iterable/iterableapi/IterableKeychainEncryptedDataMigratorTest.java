@@ -14,16 +14,19 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
+
+    private static final String MIGRATION_STARTED_KEY = "iterable-encrypted-migration-started";
+    private static final String MIGRATION_COMPLETED_KEY = "iterable-encrypted-migration-completed";
+    private static final String OLD_EMAIL_KEY = "iterable_email";
+    private static final String OLD_USER_ID_KEY = "iterable_user_id";
+    private static final String OLD_AUTH_TOKEN_KEY = "iterable_auth_token";
 
     @Mock private Context mockContext;
     @Mock private SharedPreferences mockSharedPrefs;
@@ -37,15 +40,12 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        
+        // Setup SharedPreferences mocks
         when(mockSharedPrefs.edit()).thenReturn(mockEditor);
         when(mockEncryptedPrefs.edit()).thenReturn(mockEncryptedEditor);
         when(mockEditor.putBoolean(anyString(), anyBoolean())).thenReturn(mockEditor);
         when(mockEncryptedEditor.clear()).thenReturn(mockEncryptedEditor);
-        
-        // Mock the properties instead of methods
-        ReflectionHelpers.setField(mockKeychain, "emailKey", "iterable-email");
-        ReflectionHelpers.setField(mockKeychain, "userIdKey", "iterable-user-id");
-        ReflectionHelpers.setField(mockKeychain, "authTokenKey", "iterable-auth-token");
         
         migrator = new IterableKeychainEncryptedDataMigrator(
             mockContext,
@@ -57,7 +57,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
 
     @Test
     public void testSkipIfAlreadyCompleted() {
-        when(mockSharedPrefs.getBoolean("iterable-encrypted-migration-completed", false))
+        when(mockSharedPrefs.getBoolean(MIGRATION_COMPLETED_KEY, false))
             .thenReturn(true);
 
         migrator.attemptMigration();
@@ -71,7 +71,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         
         migrator.attemptMigration();
 
-        verify(mockEditor).putBoolean("iterable-encrypted-migration-completed", true);
+        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
         verify(mockEditor).apply();
     }
 
@@ -80,7 +80,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Throwable> error = new AtomicReference<>();
 
-        when(mockSharedPrefs.getBoolean("iterable-encrypted-migration-started", false))
+        when(mockSharedPrefs.getBoolean(MIGRATION_STARTED_KEY, false))
             .thenReturn(true);
 
         migrator.setMigrationCompletionCallback(throwable -> {
@@ -97,7 +97,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
             error.get() instanceof IterableKeychainEncryptedDataMigrator.MigrationException);
         assertEquals("Previous migration attempt was interrupted", error.get().getMessage());
 
-        verify(mockEditor).putBoolean("iterable-encrypted-migration-completed", true);
+        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
         verify(mockEditor).apply();
     }
 
@@ -110,9 +110,9 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         String testUserId = "user123";
         String testAuthToken = "auth-token-123";
 
-        when(mockEncryptedPrefs.getString(eq("iterable_email"), eq(null))).thenReturn(testEmail);
-        when(mockEncryptedPrefs.getString(eq("iterable_user_id"), eq(null))).thenReturn(testUserId);
-        when(mockEncryptedPrefs.getString(eq("iterable_auth_token"), eq(null))).thenReturn(testAuthToken);
+        when(mockEncryptedPrefs.getString(eq(OLD_EMAIL_KEY), eq(null))).thenReturn(testEmail);
+        when(mockEncryptedPrefs.getString(eq(OLD_USER_ID_KEY), eq(null))).thenReturn(testUserId);
+        when(mockEncryptedPrefs.getString(eq(OLD_AUTH_TOKEN_KEY), eq(null))).thenReturn(testAuthToken);
 
         migrator.setMigrationCompletionCallback(throwable -> {
             error.set(throwable);
@@ -125,8 +125,8 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         assertTrue("Migration timed out", latch.await(5, TimeUnit.SECONDS));
         assertNull("Migration failed with error: " + error.get(), error.get());
 
-        verify(mockEditor).putBoolean("iterable-encrypted-migration-started", true);
-        verify(mockEditor).putBoolean("iterable-encrypted-migration-completed", true);
+        verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
+        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
         
         verify(mockKeychain).saveEmail(testEmail);
         verify(mockKeychain).saveUserId(testUserId);
@@ -142,9 +142,9 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         AtomicReference<Throwable> error = new AtomicReference<>();
 
         String testEmail = "test@example.com";
-        when(mockEncryptedPrefs.getString(eq("iterable_email"), eq(null))).thenReturn(testEmail);
-        when(mockEncryptedPrefs.getString(eq("iterable_user_id"), eq(null))).thenReturn(null);
-        when(mockEncryptedPrefs.getString(eq("iterable_auth_token"), eq(null))).thenReturn(null);
+        when(mockEncryptedPrefs.getString(eq(OLD_EMAIL_KEY), eq(null))).thenReturn(testEmail);
+        when(mockEncryptedPrefs.getString(eq(OLD_USER_ID_KEY), eq(null))).thenReturn(null);
+        when(mockEncryptedPrefs.getString(eq(OLD_AUTH_TOKEN_KEY), eq(null))).thenReturn(null);
 
         migrator.setMigrationCompletionCallback(throwable -> {
             error.set(throwable);
@@ -185,7 +185,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         verify(mockKeychain, never()).saveAuthToken(anyString());
         
         verify(mockEncryptedEditor).clear();
-        verify(mockEditor).putBoolean("iterable-encrypted-migration-completed", true);
+        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
     }
 
     @Test
@@ -242,9 +242,9 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         
         // Verify both calls to apply():
         // 1. Setting migration started flag
-        verify(mockEditor).putBoolean("iterable-encrypted-migration-started", true);
+        verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
         // 2. Setting migration completed flag during timeout
-        verify(mockEditor).putBoolean("iterable-encrypted-migration-completed", true);
+        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
         verify(mockEditor, times(2)).apply();
     }
 
