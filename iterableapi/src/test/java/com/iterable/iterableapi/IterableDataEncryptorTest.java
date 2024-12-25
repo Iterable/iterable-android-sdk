@@ -7,13 +7,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.security.KeyStore;
 import java.util.ArrayList;
@@ -105,6 +99,34 @@ public class IterableDataEncryptorTest extends BaseTest {
     @Test(expected = IterableDataEncryptor.DecryptionException.class)
     public void testDecryptInvalidData() {
         encryptor.decrypt("invalid encrypted data");
+    }
+
+    @Test
+    public void testDecryptionExceptionDetails() {
+        try {
+            encryptor.decrypt("invalid_base64_data!!!");
+            fail("Should throw DecryptionException");
+        } catch (Exception e) {
+            assertTrue("Should be instance of DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertNotNull("Exception should have a cause", e.getCause());
+            assertEquals("Exception should have correct message", "Failed to decrypt data", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDecryptTamperedData() {
+        String originalText = "test data";
+        String encrypted = encryptor.encrypt(originalText);
+        // Tamper with the encrypted data while maintaining valid base64
+        String tamperedData = encrypted.substring(0, encrypted.length() - 4) + "AAAA";
+        
+        try {
+            encryptor.decrypt(tamperedData);
+            fail("Should throw DecryptionException for tampered data");
+        } catch (Exception e) {
+            assertTrue("Should be instance of DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertNotNull("Exception should have a cause", e.getCause());
+        }
     }
 
     @Test
@@ -248,5 +270,24 @@ public class IterableDataEncryptorTest extends BaseTest {
         String unicodeText = "Hello 世界 🌍";
         String encrypted = encryptor.encrypt(unicodeText);
         assertEquals(unicodeText, encryptor.decrypt(encrypted));
+    }
+
+    @Test
+    public void testDecryptionAfterKeyLoss() {
+        // Create data with original key
+        String testData = "test data";
+        String encrypted = encryptor.encrypt(testData);
+        
+        // Clear the key and generate a new one
+        encryptor.clearKeyAndData(sharedPreferences);
+        
+        try {
+            encryptor.decrypt(encrypted);
+            fail("Should throw DecryptionException when decrypting with new key");
+        } catch (Exception e) {
+            assertTrue("Should be instance of DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertNotNull("Exception should have a cause", e.getCause());
+            assertEquals("Exception should have correct message", "Failed to decrypt data", e.getMessage());
+        }
     }
 } 
