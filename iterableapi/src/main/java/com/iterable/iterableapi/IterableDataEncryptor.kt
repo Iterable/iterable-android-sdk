@@ -9,19 +9,41 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import android.os.Build
+import java.security.KeyStore.PasswordProtection
+import androidx.annotation.VisibleForTesting
 
 import com.iterable.iterableapi.IterableLogger
 
 class IterableDataEncryptor {
-    private val TAG = "IterableDataEncryptor"
-    private val ANDROID_KEYSTORE = "AndroidKeyStore"
-    private val TRANSFORMATION = "AES/GCM/NoPadding"
-    private val ITERABLE_KEY_ALIAS = "iterable_encryption_key"
-    private val GCM_IV_LENGTH = 12
-    private val GCM_TAG_LENGTH = 128
+    companion object {
+        private const val TAG = "IterableDataEncryptor"
+        private const val ANDROID_KEYSTORE = "AndroidKeyStore"
+        private const val TRANSFORMATION = "AES/GCM/NoPadding"
+        private const val ITERABLE_KEY_ALIAS = "iterable_encryption_key"
+        private const val GCM_IV_LENGTH = 12
+        private const val GCM_TAG_LENGTH = 128
+        private val TEST_KEYSTORE_PASSWORD = "test_password".toCharArray()
 
-    private val keyStore: KeyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply {
-        load(null)
+        // Make keyStore static so it's shared across instances
+        private val keyStore: KeyStore by lazy {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                try {
+                    KeyStore.getInstance(ANDROID_KEYSTORE).apply {
+                        load(null)
+                    }
+                } catch (e: Exception) {
+                    IterableLogger.e(TAG, "Failed to initialize AndroidKeyStore", e)
+                    KeyStore.getInstance("PKCS12").apply {
+                        load(null, TEST_KEYSTORE_PASSWORD)
+                    }
+                }
+            } else {
+                KeyStore.getInstance("PKCS12").apply {
+                    load(null, TEST_KEYSTORE_PASSWORD)
+                }
+            }
+        }
     }
 
     init {
@@ -31,24 +53,56 @@ class IterableDataEncryptor {
     }
 
     private fun generateKey() {
-        val keyGenerator = KeyGenerator.getInstance(
-            KeyProperties.KEY_ALGORITHM_AES,
-            ANDROID_KEYSTORE
-        )
-        val keyGenParameterSpec = KeyGenParameterSpec.Builder(
-            ITERABLE_KEY_ALIAS,
-            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-        )
-            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-            .build()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && keyStore.type == ANDROID_KEYSTORE) {
+                try {
+                    val keyGenerator = KeyGenerator.getInstance(
+                        KeyProperties.KEY_ALGORITHM_AES,
+                        ANDROID_KEYSTORE
+                    )
+                    val keyGenParameterSpec = KeyGenParameterSpec.Builder(
+                        ITERABLE_KEY_ALIAS,
+                        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                    )
+                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                        .build()
 
-        keyGenerator.init(keyGenParameterSpec)
-        keyGenerator.generateKey()
+                    keyGenerator.init(keyGenParameterSpec)
+                    keyGenerator.generateKey()
+                    return
+                } catch (e: Exception) {
+                    IterableLogger.e(TAG, "Failed to generate key using AndroidKeyStore", e)
+                }
+            }
+            
+            // Fallback for test environments or when AndroidKeyStore fails
+            val keyGenerator = KeyGenerator.getInstance("AES")
+            keyGenerator.init(256) // 256-bit AES key
+            val secretKey = keyGenerator.generateKey()
+            
+            // Store the key in the keystore with password protection only for PKCS12
+            val keyEntry = KeyStore.SecretKeyEntry(secretKey)
+            val protParam = if (keyStore.type == "PKCS12") {
+                PasswordProtection(TEST_KEYSTORE_PASSWORD)
+            } else {
+                null
+            }
+            keyStore.setEntry(ITERABLE_KEY_ALIAS, keyEntry, protParam)
+            
+        } catch (e: Exception) {
+            IterableLogger.e(TAG, "Failed to generate key", e)
+            throw e
+        }
     }
 
     private fun getKey(): SecretKey {
-        return (keyStore.getEntry(ITERABLE_KEY_ALIAS, null) as KeyStore.SecretKeyEntry).secretKey
+        val protParam = if (keyStore.type == "PKCS12") {
+            PasswordProtection(TEST_KEYSTORE_PASSWORD)
+        } else {
+            null
+        }
+        return (keyStore.getEntry(ITERABLE_KEY_ALIAS, protParam) as KeyStore.SecretKeyEntry).secretKey
     }
 
     class DecryptionException(message: String, cause: Throwable? = null) : Exception(message, cause)
@@ -104,4 +158,8 @@ class IterableDataEncryptor {
             throw DecryptionException("Failed to decrypt data", e)
         }
     }
+
+    // Add this method for testing purposes
+    @VisibleForTesting
+    fun getKeyStore(): KeyStore = keyStore
 } 
