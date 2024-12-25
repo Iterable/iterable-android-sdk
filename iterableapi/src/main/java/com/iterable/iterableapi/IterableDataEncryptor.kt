@@ -54,46 +54,57 @@ class IterableDataEncryptor {
 
     private fun generateKey() {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && keyStore.type == ANDROID_KEYSTORE) {
-                try {
-                    val keyGenerator = KeyGenerator.getInstance(
-                        KeyProperties.KEY_ALGORITHM_AES,
-                        ANDROID_KEYSTORE
-                    )
-                    val keyGenParameterSpec = KeyGenParameterSpec.Builder(
-                        ITERABLE_KEY_ALIAS,
-                        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-                    )
-                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                        .build()
-
-                    keyGenerator.init(keyGenParameterSpec)
-                    keyGenerator.generateKey()
-                    return
-                } catch (e: Exception) {
-                    IterableLogger.e(TAG, "Failed to generate key using AndroidKeyStore", e)
-                }
+            if (canUseAndroidKeyStore()) {
+                generateAndroidKeyStoreKey()?.let { return }
             }
-            
-            // Fallback for test environments or when AndroidKeyStore fails
-            val keyGenerator = KeyGenerator.getInstance("AES")
-            keyGenerator.init(256) // 256-bit AES key
-            val secretKey = keyGenerator.generateKey()
-            
-            // Store the key in the keystore with password protection only for PKCS12
-            val keyEntry = KeyStore.SecretKeyEntry(secretKey)
-            val protParam = if (keyStore.type == "PKCS12") {
-                PasswordProtection(TEST_KEYSTORE_PASSWORD)
-            } else {
-                null
-            }
-            keyStore.setEntry(ITERABLE_KEY_ALIAS, keyEntry, protParam)
-            
+            generateFallbackKey()
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Failed to generate key", e)
             throw e
         }
+    }
+
+    private fun canUseAndroidKeyStore(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && 
+               keyStore.type == ANDROID_KEYSTORE
+    }
+
+    private fun generateAndroidKeyStoreKey(): Unit? {
+        return try {
+            val keyGenerator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                ANDROID_KEYSTORE
+            )
+            
+            val keySpec = KeyGenParameterSpec.Builder(
+                ITERABLE_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .build()
+
+            keyGenerator.init(keySpec)
+            keyGenerator.generateKey()
+            Unit
+        } catch (e: Exception) {
+            IterableLogger.e(TAG, "Failed to generate key using AndroidKeyStore", e)
+            null
+        }
+    }
+
+    private fun generateFallbackKey() {
+        val keyGenerator = KeyGenerator.getInstance("AES")
+        keyGenerator.init(256) // 256-bit AES key
+        val secretKey = keyGenerator.generateKey()
+        
+        val keyEntry = KeyStore.SecretKeyEntry(secretKey)
+        val protParam = if (keyStore.type == "PKCS12") {
+            PasswordProtection(TEST_KEYSTORE_PASSWORD)
+        } else {
+            null
+        }
+        keyStore.setEntry(ITERABLE_KEY_ALIAS, keyEntry, protParam)
     }
 
     private fun getKey(): SecretKey {
