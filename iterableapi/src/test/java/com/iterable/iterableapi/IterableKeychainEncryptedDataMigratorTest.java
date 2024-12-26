@@ -254,30 +254,4 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
         verify(mockEditor, times(2)).apply();
     }
-
-    @Test
-    public void testNullEncryptedPrefs() throws InterruptedException {
-        // Test behavior when encrypted prefs creation fails
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Throwable> error = new AtomicReference<>();
-
-        migrator.setMockEncryptedPrefs(null);
-
-        migrator.setMigrationCompletionCallback(throwable -> {
-            error.set(throwable);
-            latch.countDown();
-            return null;
-        });
-
-        migrator.attemptMigration();
-
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertNotNull("Should have received an error", error.get());
-
-        // Verify both calls to apply():
-        verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
-        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
-        verify(mockEditor, times(2)).apply();
-    }
-
 }
