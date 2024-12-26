@@ -92,7 +92,7 @@ public class IterableConfig {
     final boolean enableEmbeddedMessaging;
 
     /**
-     * Handler for decryption failures of PII information. 
+     * Handler for decryption failures of PII information.
      * Before calling this handler, the SDK will clear the PII information and create new encryption keys
      */
     final IterableDecryptionFailureHandler decryptionFailureHandler;

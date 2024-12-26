@@ -9,4 +9,4 @@ public interface IterableDecryptionFailureHandler {
      * @param exception The exception that caused the decryption failure
      */
     void onDecryptionFailed(Exception exception);
-} 
+}
