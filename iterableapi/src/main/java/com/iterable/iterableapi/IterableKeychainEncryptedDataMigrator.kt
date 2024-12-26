@@ -23,7 +23,7 @@ class IterableKeychainEncryptedDataMigrator(
 
     class MigrationException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
-    private var migrationTimeoutMs = 30000L // Default 30 seconds
+    private var migrationTimeoutMs = 10000L // Default 10 seconds
 
     @VisibleForTesting
     fun setMigrationTimeout(timeoutMs: Long) {
@@ -84,11 +84,15 @@ class IterableKeychainEncryptedDataMigrator(
                             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
                         )
                     } catch (e: Exception) {
-                        markMigrationCompleted()
-                        val migrationException = MigrationException("Failed to create EncryptedSharedPreferences", e)
-                        migrationCompletionCallback?.invoke(migrationException)
-                        return@Thread
+                        null
                     }
+                }
+
+                if (prefs == null) {
+                    markMigrationCompleted()
+                    val migrationException = MigrationException("Failed to load EncryptedSharedPreferences")
+                    migrationCompletionCallback?.invoke(migrationException)
+                    return@Thread
                 }
 
                 val timeoutThread = Thread {
