@@ -35,19 +35,19 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
     @Mock private SharedPreferences.Editor mockEditor;
     @Mock private SharedPreferences.Editor mockEncryptedEditor;
     @Mock private IterableKeychain mockKeychain;
-    
+
     private IterableKeychainEncryptedDataMigrator migrator;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        
+
         // Setup SharedPreferences mocks
         when(mockSharedPrefs.edit()).thenReturn(mockEditor);
         when(mockEncryptedPrefs.edit()).thenReturn(mockEncryptedEditor);
         when(mockEditor.putBoolean(anyString(), anyBoolean())).thenReturn(mockEditor);
         when(mockEncryptedEditor.clear()).thenReturn(mockEncryptedEditor);
-        
+
         migrator = new IterableKeychainEncryptedDataMigrator(
             mockContext,
             mockSharedPrefs,
@@ -69,7 +69,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
     @Test
     public void testSkipIfBelowAndroidM() {
         ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.LOLLIPOP);
-        
+
         migrator.attemptMigration();
 
         verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
@@ -122,17 +122,17 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         });
 
         migrator.attemptMigration();
-        
+
         assertTrue("Migration timed out", latch.await(5, TimeUnit.SECONDS));
         assertNull("Migration failed with error: " + error.get(), error.get());
 
         verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
         verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
-        
+
         verify(mockKeychain).saveEmail(testEmail);
         verify(mockKeychain).saveUserId(testUserId);
         verify(mockKeychain).saveAuthToken(testAuthToken);
-        
+
         verify(mockEncryptedEditor).clear();
         verify(mockEncryptedEditor).apply();
     }
@@ -154,7 +154,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         });
 
         migrator.attemptMigration();
-        
+
         assertTrue("Migration timed out", latch.await(5, TimeUnit.SECONDS));
         assertNull("Migration failed with error: " + error.get(), error.get());
 
@@ -177,14 +177,14 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         });
 
         migrator.attemptMigration();
-        
+
         assertTrue("Migration timed out", latch.await(5, TimeUnit.SECONDS));
         assertNull("Migration failed with error: " + error.get(), error.get());
 
         verify(mockKeychain, never()).saveEmail(anyString());
         verify(mockKeychain, never()).saveUserId(anyString());
         verify(mockKeychain, never()).saveAuthToken(anyString());
-        
+
         verify(mockEncryptedEditor).clear();
         verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
     }
@@ -204,10 +204,10 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         });
 
         migrator.attemptMigration();
-        
+
         assertTrue("Migration timed out", latch.await(5, TimeUnit.SECONDS));
         assertNotNull("Should have received an error", error.get());
-        assertTrue("Exception should be MigrationException", 
+        assertTrue("Exception should be MigrationException",
             error.get() instanceof IterableKeychainEncryptedDataMigrator.MigrationException);
         assertEquals("Failed to migrate data", error.get().getMessage());
     }
@@ -233,14 +233,14 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         });
 
         migrator.attemptMigration();
-        
+
         assertTrue("Migration timed out", latch.await(1, TimeUnit.SECONDS));
         assertNotNull("Should have received an error", error.get());
-        assertTrue("Exception should be MigrationException", 
+        assertTrue("Exception should be MigrationException",
             error.get() instanceof IterableKeychainEncryptedDataMigrator.MigrationException);
-        assertTrue("Error message should mention timeout", 
+        assertTrue("Error message should mention timeout",
             error.get().getMessage().contains("Migration timed out after 50ms"));
-        
+
         // Verify both calls to apply():
         // 1. Setting migration started flag
         verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
@@ -263,10 +263,10 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         });
 
         migrator.attemptMigration();
-        
+
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertNull("Should not have received an error", error.get());
-        
+
         // Verify both calls to apply():
         // 1. Setting migration started flag
         verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
@@ -275,4 +275,4 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         verify(mockEditor, times(2)).apply();
     }
 
-} 
+}

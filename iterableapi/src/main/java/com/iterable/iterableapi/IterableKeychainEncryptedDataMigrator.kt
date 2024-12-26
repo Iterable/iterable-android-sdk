@@ -13,7 +13,7 @@ class IterableKeychainEncryptedDataMigrator(
     private val keychain: IterableKeychain
 ) {
     private val TAG = "IterableKeychainMigrator"
-    
+
     private val encryptedSharedPrefsFileName = "iterable-encrypted-shared-preferences"
     private val migrationStartedKey = "iterable-encrypted-migration-started"
     private val migrationCompletedKey = "iterable-encrypted-migration-completed"
@@ -119,7 +119,7 @@ class IterableKeychainEncryptedDataMigrator(
                     val migrationException = MigrationException("Failed to migrate data", e)
                     migrationCompletionCallback?.invoke(migrationException)
                 }
-            }.apply { 
+            }.apply {
                 name = "IterableKeychain-Migration"
                 start()
             }
@@ -149,4 +149,4 @@ class IterableKeychainEncryptedDataMigrator(
     // Add a property for tests to inject mock encrypted preferences
     @VisibleForTesting
     var mockEncryptedPrefs: SharedPreferences? = null
-} 
+}

@@ -67,7 +67,7 @@ public class IterableDataEncryptorTest extends BaseTest {
     public void testEncryptEmptyString() {
         String encrypted = encryptor.encrypt("");
         String decrypted = encryptor.decrypt(encrypted);
-        
+
         assertNotNull("Encrypted text should not be null", encrypted);
         assertEquals("Decrypted text should be empty string", "", decrypted);
     }
@@ -79,7 +79,7 @@ public class IterableDataEncryptorTest extends BaseTest {
             longString.append("test");
         }
         String originalText = longString.toString();
-        
+
         String encrypted = encryptor.encrypt(originalText);
         String decrypted = encryptor.decrypt(encrypted);
 
@@ -91,10 +91,10 @@ public class IterableDataEncryptorTest extends BaseTest {
     public void testMultipleEncryptions() {
         String text1 = "first text";
         String text2 = "second text";
-        
+
         String encrypted1 = encryptor.encrypt(text1);
         String encrypted2 = encryptor.encrypt(text2);
-        
+
         assertNotEquals("Different texts should have different encryptions", encrypted1, encrypted2);
         assertEquals("First text should decrypt correctly", text1, encryptor.decrypt(encrypted1));
         assertEquals("Second text should decrypt correctly", text2, encryptor.decrypt(encrypted2));
@@ -123,7 +123,7 @@ public class IterableDataEncryptorTest extends BaseTest {
         String encrypted = encryptor.encrypt(originalText);
         // Tamper with the encrypted data while maintaining valid base64
         String tamperedData = encrypted.substring(0, encrypted.length() - 4) + "AAAA";
-        
+
         try {
             encryptor.decrypt(tamperedData);
             fail("Should throw DecryptionException for tampered data");
@@ -137,10 +137,10 @@ public class IterableDataEncryptorTest extends BaseTest {
     public void testResetKeys() {
         String originalText = "test data";
         String encrypted = encryptor.encrypt(originalText);
-        
+
         // Clear the key
         encryptor.resetKeys();
-        
+
         // Try to decrypt the data encrypted with the old key
         try {
             encryptor.decrypt(encrypted);
@@ -149,7 +149,7 @@ public class IterableDataEncryptorTest extends BaseTest {
             // Expected behavior - old encrypted data should not be decryptable
             assertNotNull(e);
         }
-        
+
         // Verify new encryption/decryption works after clearing
         String newEncrypted = encryptor.encrypt(originalText);
         String newDecrypted = encryptor.decrypt(newEncrypted);
@@ -160,13 +160,13 @@ public class IterableDataEncryptorTest extends BaseTest {
     public void testKeyGeneration() throws Exception {
         // Create new encryptor which should trigger key generation
         IterableDataEncryptor encryptor = new IterableDataEncryptor();
-        
+
         // Get the keystore from the encryptor (we'll need to add a method to expose this)
         KeyStore keyStore = encryptor.getKeyStore();
-        
+
         // Verify the key exists in keystore
         assertTrue("Key should exist in keystore", keyStore.containsAlias("iterable_encryption_key"));
-        
+
         // Rest of the test remains the same
         String testData = "test data";
         String encrypted = encryptor.encrypt(testData);
@@ -179,19 +179,19 @@ public class IterableDataEncryptorTest extends BaseTest {
         // Create first encryptor and encrypt data
         IterableDataEncryptor encryptor1 = new IterableDataEncryptor();
         KeyStore keyStore = encryptor1.getKeyStore();
-        
+
         String testData = "test data";
         String encrypted1 = encryptor1.encrypt(testData);
-        
+
         // Delete the key
         encryptor1.resetKeys();
-        
+
         // Create second encryptor which should generate a new key
         IterableDataEncryptor encryptor2 = new IterableDataEncryptor();
-        
+
         // Rest of the test remains the same
         assertTrue("Key should be regenerated", keyStore.containsAlias("iterable_encryption_key"));
-        
+
         // Verify old encrypted data can't be decrypted with new key
         try {
             encryptor2.decrypt(encrypted1);
@@ -199,7 +199,7 @@ public class IterableDataEncryptorTest extends BaseTest {
         } catch (Exception e) {
             // Expected
         }
-        
+
         // Verify new encryption/decryption works
         String encrypted2 = encryptor2.encrypt(testData);
         String decrypted2 = encryptor2.decrypt(encrypted2);
@@ -211,12 +211,12 @@ public class IterableDataEncryptorTest extends BaseTest {
         // Create two encryptor instances
         IterableDataEncryptor encryptor1 = new IterableDataEncryptor();
         IterableDataEncryptor encryptor2 = new IterableDataEncryptor();
-        
+
         // Test that they can decrypt each other's encrypted data
         String testData = "test data";
         String encrypted1 = encryptor1.encrypt(testData);
         String encrypted2 = encryptor2.encrypt(testData);
-        
+
         assertEquals("Encryptor 2 should decrypt Encryptor 1's data", testData, encryptor2.decrypt(encrypted1));
         assertEquals("Encryptor 1 should decrypt Encryptor 2's data", testData, encryptor1.decrypt(encrypted2));
     }
@@ -238,7 +238,7 @@ public class IterableDataEncryptorTest extends BaseTest {
                         String originalText = "Thread-" + threadId + "-Data-" + j;
                         String encrypted = encryptor.encrypt(originalText);
                         String decrypted = encryptor.decrypt(encrypted);
-                        
+
                         if (!originalText.equals(decrypted)) {
                             hasErrors.set(true);
                             IterableLogger.e("TestConcurrent", "Encryption/Decryption mismatch: " + originalText + " != " + decrypted);
@@ -257,7 +257,7 @@ public class IterableDataEncryptorTest extends BaseTest {
 
         // Wait for all threads to complete with a shorter timeout
         boolean completed = latch.await(5, TimeUnit.SECONDS);
-        
+
         assertTrue("All threads should complete within timeout", completed);
         assertFalse("No errors should occur", hasErrors.get());
     }
@@ -281,10 +281,10 @@ public class IterableDataEncryptorTest extends BaseTest {
         // Create data with original key
         String testData = "test data";
         String encrypted = encryptor.encrypt(testData);
-        
+
         // Clear the key and generate a new one
         encryptor.resetKeys();
-        
+
         try {
             encryptor.decrypt(encrypted);
             fail("Should throw DecryptionException when decrypting with new key");
@@ -294,4 +294,4 @@ public class IterableDataEncryptorTest extends BaseTest {
             assertEquals("Exception should have correct message", "Failed to decrypt data", e.getMessage());
         }
     }
-} 
+}
