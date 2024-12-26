@@ -13,8 +13,6 @@ import com.iterable.iterableapi.IterableDataEncryptor
 class IterableKeychain {
     companion object {
         private const val TAG = "IterableKeychain"
-
-        // Keys for storing encrypted data
         private const val KEY_EMAIL = "iterable-email"
         private const val KEY_USER_ID = "iterable-user-id"
         private const val KEY_AUTH_TOKEN = "iterable-auth-token"

@@ -18,7 +18,6 @@ class IterableKeychainEncryptedDataMigrator(
     private val migrationStartedKey = "iterable-encrypted-migration-started"
     private val migrationCompletedKey = "iterable-encrypted-migration-completed"
 
-    // Add completion callback for testing
     private var migrationCompletionCallback: ((Throwable?) -> Unit)? = null
     private val migrationLock = Object()
 
@@ -33,6 +32,14 @@ class IterableKeychainEncryptedDataMigrator(
 
     fun attemptMigration() {
         synchronized(migrationLock) {
+            // Skip if running in JVM (for tests)
+            if (isRunningInJVM()) {
+                IterableLogger.v(TAG, "Running in JVM, skipping migration")
+                markMigrationCompleted()
+                migrationCompletionCallback?.invoke(null)
+                return
+            }
+
             // Skip if migration was already completed
             if (sharedPrefs.getBoolean(migrationCompletedKey, false)) {
                 IterableLogger.v(TAG, "Migration was already completed, skipping")
@@ -77,9 +84,9 @@ class IterableKeychainEncryptedDataMigrator(
                             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
                         )
                     } catch (e: Exception) {
-                        // Mark migration as complete if encryption fails
                         markMigrationCompleted()
-                        migrationCompletionCallback?.invoke(null)
+                        val migrationException = MigrationException("Failed to create EncryptedSharedPreferences", e)
+                        migrationCompletionCallback?.invoke(migrationException)
                         return@Thread
                     }
                 }
@@ -121,7 +128,6 @@ class IterableKeychainEncryptedDataMigrator(
     }
 
     private fun migrateData(encryptedPrefs: SharedPreferences) {
-        // Use the correct keys for reading from encrypted preferences
         encryptedPrefs.getString("iterable_email", null)?.let { keychain.saveEmail(it) }
         encryptedPrefs.getString("iterable_user_id", null)?.let { keychain.saveUserId(it) }
         encryptedPrefs.getString("iterable_auth_token", null)?.let { keychain.saveAuthToken(it) }
@@ -134,8 +140,6 @@ class IterableKeychainEncryptedDataMigrator(
             .apply()
     }
 
-    // Add method for tests to wait for completion
-    @VisibleForTesting
     fun setMigrationCompletionCallback(callback: (Throwable?) -> Unit) {
         migrationCompletionCallback = callback
     }
@@ -143,4 +147,8 @@ class IterableKeychainEncryptedDataMigrator(
     // Add a property for tests to inject mock encrypted preferences
     @VisibleForTesting
     var mockEncryptedPrefs: SharedPreferences? = null
+
+    private fun isRunningInJVM(): Boolean {
+        return System.getProperty("java.vendor")?.contains("Android") != true
+    }
 }
