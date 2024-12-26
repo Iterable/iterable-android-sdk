@@ -131,11 +131,37 @@ class IterableKeychainEncryptedDataMigrator(
         }
     }
 
-    private fun migrateData(encryptedPrefs: SharedPreferences) {
-        encryptedPrefs.getString("iterable_email", null)?.let { keychain.saveEmail(it) }
-        encryptedPrefs.getString("iterable_user_id", null)?.let { keychain.saveUserId(it) }
-        encryptedPrefs.getString("iterable_auth_token", null)?.let { keychain.saveAuthToken(it) }
-    }
+	private fun migrateData(encryptedPrefs: SharedPreferences) {
+		// Tag for logging
+		val TAG = "DataMigration"
+
+		// Fetch and migrate email
+		val email = encryptedPrefs.getString("iterable_email", null)
+		if (email != null) {
+			keychain.saveEmail(email)
+			IterableLogger.d(TAG, "Email migrated: $email")
+		} else {
+			IterableLogger.d(TAG, "No email found to migrate.")
+		}
+
+		// Fetch and migrate user ID
+		val userId = encryptedPrefs.getString("iterable_user_id", null)
+		if (userId != null) {
+			keychain.saveUserId(userId)
+			IterableLogger.d(TAG, "User ID migrated: $userId")
+		} else {
+			IterableLogger.w(TAG, "No user ID found to migrate.")
+		}
+
+		// Fetch and migrate auth token
+		val authToken = encryptedPrefs.getString("iterable_auth_token", null)
+		if (authToken != null) {
+			keychain.saveAuthToken(authToken)
+			IterableLogger.d(TAG, "Auth token migrated: $authToken")
+		} else {
+			IterableLogger.d(TAG, "No auth token found to migrate.")
+		}
+	}
 
     private fun markMigrationCompleted() {
         sharedPrefs.edit()
