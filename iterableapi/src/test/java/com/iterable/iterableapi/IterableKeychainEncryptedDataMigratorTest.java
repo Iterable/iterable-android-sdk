@@ -51,7 +51,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         // Setup SharedPreferences mocks
         when(mockSharedPrefs.edit()).thenReturn(mockEditor);
         when(mockEncryptedPrefs.edit()).thenReturn(mockEncryptedEditor);
-        
+
         // Setup editor method chaining
         when(mockEditor.putBoolean(anyString(), anyBoolean())).thenReturn(mockEditor);
         when(mockEncryptedEditor.clear()).thenReturn(mockEncryptedEditor);
