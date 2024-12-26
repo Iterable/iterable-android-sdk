@@ -75,7 +75,7 @@ class IterableKeychainEncryptedDataMigrator(
 
             // Create a single thread executor
             val executor = Executors.newSingleThreadExecutor()
-            
+
             try {
                 val future: Future<*> = executor.submit {
                     val prefs = mockEncryptedPrefs ?: run {
@@ -104,7 +104,6 @@ class IterableKeychainEncryptedDataMigrator(
 
                     // Run migration on the same thread
                     migrateData(prefs)
-                    prefs.edit().clear().apply()
                     markMigrationCompleted()
                     migrationCompletionCallback?.invoke(null)
                 }
@@ -132,10 +131,13 @@ class IterableKeychainEncryptedDataMigrator(
     }
 
 	private fun migrateData(encryptedPrefs: SharedPreferences) {
+		val editor = encryptedPrefs.edit()
+		
 		// Fetch and migrate email
 		val email = encryptedPrefs.getString(IterableKeychain.KEY_EMAIL, null)
 		if (email != null) {
 			keychain.saveEmail(email)
+			editor.remove(IterableKeychain.KEY_EMAIL)
 			IterableLogger.d(TAG, "Email migrated: $email")
 		} else {
 			IterableLogger.d(TAG, "No email found to migrate.")
@@ -145,6 +147,7 @@ class IterableKeychainEncryptedDataMigrator(
 		val userId = encryptedPrefs.getString(IterableKeychain.KEY_USER_ID, null)
 		if (userId != null) {
 			keychain.saveUserId(userId)
+			editor.remove(IterableKeychain.KEY_USER_ID)
 			IterableLogger.d(TAG, "User ID migrated: $userId")
 		} else {
 			IterableLogger.w(TAG, "No user ID found to migrate.")
@@ -154,10 +157,13 @@ class IterableKeychainEncryptedDataMigrator(
 		val authToken = encryptedPrefs.getString(IterableKeychain.KEY_AUTH_TOKEN, null)
 		if (authToken != null) {
 			keychain.saveAuthToken(authToken)
+			editor.remove(IterableKeychain.KEY_AUTH_TOKEN)
 			IterableLogger.d(TAG, "Auth token migrated: $authToken")
 		} else {
 			IterableLogger.d(TAG, "No auth token found to migrate.")
 		}
+
+		editor.apply()
 	}
 
     private fun markMigrationCompleted() {
