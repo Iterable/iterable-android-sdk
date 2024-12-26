@@ -264,8 +264,14 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         migrator.attemptMigration();
         
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertNotNull("Should have received an error", error.get());
-        assertTrue(error.get().getMessage().contains("Failed to create or obtain encrypted preferences"));
+        assertNull("Should not have received an error", error.get());
+        
+        // Verify both calls to apply():
+        // 1. Setting migration started flag
+        verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
+        // 2. Setting migration completed flag
+        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
+        verify(mockEditor, times(2)).apply();
     }
 
 } 

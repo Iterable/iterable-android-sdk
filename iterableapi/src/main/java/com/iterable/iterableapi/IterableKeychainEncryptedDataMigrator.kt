@@ -77,13 +77,16 @@ class IterableKeychainEncryptedDataMigrator(
                             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
                         )
                     } catch (e: Exception) {
-                        null
+                        // Mark migration as complete if encryption fails
+                        markMigrationCompleted()
+                        migrationCompletionCallback?.invoke(null)
+                        return@Thread
                     }
                 }
 
                 if (prefs == null) {
-                    val exception = MigrationException("Failed to create or obtain encrypted preferences")
-                    migrationCompletionCallback?.invoke(exception)
+                    markMigrationCompleted()
+                    migrationCompletionCallback?.invoke(null)
                     return@Thread
                 }
 
