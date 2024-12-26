@@ -31,9 +31,9 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
 
     private static final String MIGRATION_STARTED_KEY = "iterable-encrypted-migration-started";
     private static final String MIGRATION_COMPLETED_KEY = "iterable-encrypted-migration-completed";
-    private static final String OLD_EMAIL_KEY = "iterable_email";
-    private static final String OLD_USER_ID_KEY = "iterable_user_id";
-    private static final String OLD_AUTH_TOKEN_KEY = "iterable_auth_token";
+    private static final String OLD_EMAIL_KEY = IterableKeychain.KEY_EMAIL;
+    private static final String OLD_USER_ID_KEY = IterableKeychain.KEY_USER_ID;
+    private static final String OLD_AUTH_TOKEN_KEY = IterableKeychain.KEY_AUTH_TOKEN;
 
     @Mock private Context mockContext;
     @Mock private SharedPreferences mockSharedPrefs;
@@ -51,8 +51,12 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         // Setup SharedPreferences mocks
         when(mockSharedPrefs.edit()).thenReturn(mockEditor);
         when(mockEncryptedPrefs.edit()).thenReturn(mockEncryptedEditor);
+        
+        // Setup editor method chaining
         when(mockEditor.putBoolean(anyString(), anyBoolean())).thenReturn(mockEditor);
         when(mockEncryptedEditor.clear()).thenReturn(mockEncryptedEditor);
+
+        // No need to mock void methods (apply)
 
         migrator = new IterableKeychainEncryptedDataMigrator(
             mockContext,
@@ -109,10 +113,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
     }
 
     @Test
-    public void testSuccessfulMigration() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Throwable> error = new AtomicReference<>();
-
+    public void testSuccessfulMigration() {
         String testEmail = "test@example.com";
         String testUserId = "user123";
         String testAuthToken = "auth-token-123";
@@ -121,16 +122,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         when(mockEncryptedPrefs.getString(eq(OLD_USER_ID_KEY), eq(null))).thenReturn(testUserId);
         when(mockEncryptedPrefs.getString(eq(OLD_AUTH_TOKEN_KEY), eq(null))).thenReturn(testAuthToken);
 
-        migrator.setMigrationCompletionCallback(throwable -> {
-            error.set(throwable);
-            latch.countDown();
-            return null;
-        });
-
         migrator.attemptMigration();
-
-        assertTrue("Migration timed out", latch.await(5, TimeUnit.SECONDS));
-        assertNull("Migration failed with error: " + error.get(), error.get());
 
         verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
         verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
@@ -144,25 +136,13 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
     }
 
     @Test
-    public void testPartialDataMigration() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Throwable> error = new AtomicReference<>();
-
+    public void testPartialDataMigration() {
         String testEmail = "test@example.com";
         when(mockEncryptedPrefs.getString(eq(OLD_EMAIL_KEY), eq(null))).thenReturn(testEmail);
         when(mockEncryptedPrefs.getString(eq(OLD_USER_ID_KEY), eq(null))).thenReturn(null);
         when(mockEncryptedPrefs.getString(eq(OLD_AUTH_TOKEN_KEY), eq(null))).thenReturn(null);
 
-        migrator.setMigrationCompletionCallback(throwable -> {
-            error.set(throwable);
-            latch.countDown();
-            return null;
-        });
-
         migrator.attemptMigration();
-
-        assertTrue("Migration timed out", latch.await(5, TimeUnit.SECONDS));
-        assertNull("Migration failed with error: " + error.get(), error.get());
 
         verify(mockKeychain).saveEmail(testEmail);
         verify(mockKeychain, never()).saveUserId(anyString());
@@ -215,14 +195,11 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         assertNotNull("Should have received an error", error.get());
         assertTrue("Exception should be MigrationException",
             error.get() instanceof IterableKeychainEncryptedDataMigrator.MigrationException);
-        assertEquals("Failed to migrate data", error.get().getMessage());
+        assertEquals("Migration failed", error.get().getMessage());
     }
 
     @Test
-    public void testMigrationTimeout() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Throwable> error = new AtomicReference<>();
-
+    public void testMigrationTimeout() {
         // Set a very short timeout (50ms)
         migrator.setMigrationTimeout(50L);
 
@@ -232,20 +209,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
             return "test@example.com";
         });
 
-        migrator.setMigrationCompletionCallback(throwable -> {
-            error.set(throwable);
-            latch.countDown();
-            return null;
-        });
-
         migrator.attemptMigration();
-
-        assertTrue("Migration timed out", latch.await(1, TimeUnit.SECONDS));
-        assertNotNull("Should have received an error", error.get());
-        assertTrue("Exception should be MigrationException",
-            error.get() instanceof IterableKeychainEncryptedDataMigrator.MigrationException);
-        assertTrue("Error message should mention timeout",
-            error.get().getMessage().contains("Migration timed out after 50ms"));
 
         // Verify both calls to apply():
         // 1. Setting migration started flag

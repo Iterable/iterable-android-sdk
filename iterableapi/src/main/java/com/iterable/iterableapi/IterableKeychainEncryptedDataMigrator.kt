@@ -8,6 +8,9 @@ import androidx.security.crypto.MasterKey
 import androidx.annotation.VisibleForTesting
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeoutException
 
 class IterableKeychainEncryptedDataMigrator(
     private val context: Context,
@@ -34,8 +37,6 @@ class IterableKeychainEncryptedDataMigrator(
 
     fun attemptMigration() {
         synchronized(migrationLock) {
-            val migrationLatch = CountDownLatch(1)
-
             // Skip if running in JVM (for tests) unless mockEncryptedPrefs is present
             if (isRunningInJVM() && mockEncryptedPrefs == null) {
                 IterableLogger.v(TAG, "Running in JVM, skipping migration of encrypted shared preferences")
@@ -72,54 +73,60 @@ class IterableKeychainEncryptedDataMigrator(
                 .putBoolean(migrationStartedKey, true)
                 .apply()
 
-            // Move EncryptedSharedPreferences creation to background thread
-            Thread {
-                val prefs = mockEncryptedPrefs ?: run {
-                    try {
-                        val masterKeyAlias = MasterKey.Builder(context)
-                            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                            .build()
-                        EncryptedSharedPreferences.create(
-                            context,
-                            encryptedSharedPrefsFileName,
-                            masterKeyAlias,
-                            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                        )
-                    } catch (e: Exception) {
-                        null
+            // Create a single thread executor
+            val executor = Executors.newSingleThreadExecutor()
+            
+            try {
+                val future: Future<*> = executor.submit {
+                    val prefs = mockEncryptedPrefs ?: run {
+                        try {
+                            val masterKeyAlias = MasterKey.Builder(context)
+                                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                                .build()
+                            EncryptedSharedPreferences.create(
+                                context,
+                                encryptedSharedPrefsFileName,
+                                masterKeyAlias,
+                                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                            )
+                        } catch (e: Exception) {
+                            null
+                        }
                     }
-                }
 
-                if (prefs == null) {
-                    markMigrationCompleted()
-                    val migrationException = MigrationException("Failed to load EncryptedSharedPreferences")
-                    migrationCompletionCallback?.invoke(migrationException)
-                    migrationLatch.countDown()
-                    return@Thread
-                }
+                    if (prefs == null) {
+                        markMigrationCompleted()
+                        val migrationException = MigrationException("Failed to load EncryptedSharedPreferences")
+                        migrationCompletionCallback?.invoke(migrationException)
+                        return@submit
+                    }
 
-                try {
+                    // Run migration on the same thread
                     migrateData(prefs)
                     prefs.edit().clear().apply()
                     markMigrationCompleted()
                     migrationCompletionCallback?.invoke(null)
-                } catch (e: Throwable) {
-                    IterableLogger.w(TAG, "Failed to migrate data", e)
-                    markMigrationCompleted()
-                    val migrationException = MigrationException("Failed to migrate data", e)
-                    migrationCompletionCallback?.invoke(migrationException)
-                } finally {
-                    migrationLatch.countDown()
                 }
-            }.apply {
-                name = "IterableKeychain-Migration"
-                start()
-            }
 
-            // Wait for migration to complete
-            if (!migrationLatch.await(migrationTimeoutMs, TimeUnit.MILLISECONDS)) {
-                IterableLogger.w(TAG, "Migration wait timed out after ${migrationTimeoutMs}ms")
+                try {
+                    future.get(migrationTimeoutMs, TimeUnit.MILLISECONDS)
+                } catch (e: TimeoutException) {
+                    IterableLogger.w(TAG, "Migration timed out after ${migrationTimeoutMs}ms")
+                    future.cancel(true)
+                    if (!sharedPrefs.getBoolean(migrationCompletedKey, false)) {
+                        markMigrationCompleted()
+                        migrationCompletionCallback?.invoke(MigrationException("Migration timed out"))
+                    } else {
+                        // Migration was already completed, so we don't need to do anything
+                    }
+                } catch (e: Exception) {
+                    IterableLogger.w(TAG, "Migration failed", e)
+                    markMigrationCompleted()
+                    migrationCompletionCallback?.invoke(MigrationException("Migration failed", e))
+                }
+            } finally {
+                executor.shutdown()
             }
         }
     }
