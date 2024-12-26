@@ -72,17 +72,16 @@ class IterableKeychainEncryptedDataMigrator(
             Thread {
                 val prefs = mockEncryptedPrefs ?: run {
                     try {
-                        val masterKeyAlias = MasterKey.Builder(context)
-                            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                            .build()
-
-                        EncryptedSharedPreferences.create(
-                            context,
-                            encryptedSharedPrefsFileName,
-                            masterKeyAlias,
-                            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                        )
+						val masterKeyAlias = MasterKey.Builder(context)
+							.setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+							.build()
+						EncryptedSharedPreferences.create(
+							context,
+							encryptedSharedPrefsFileName,
+							masterKeyAlias,
+							EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+							EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+						)
                     } catch (e: Exception) {
                         null
                     }
@@ -132,11 +131,8 @@ class IterableKeychainEncryptedDataMigrator(
     }
 
 	private fun migrateData(encryptedPrefs: SharedPreferences) {
-		// Tag for logging
-		val TAG = "DataMigration"
-
 		// Fetch and migrate email
-		val email = encryptedPrefs.getString("iterable_email", null)
+		val email = encryptedPrefs.getString(IterableKeychain.KEY_EMAIL, null)
 		if (email != null) {
 			keychain.saveEmail(email)
 			IterableLogger.d(TAG, "Email migrated: $email")
@@ -145,7 +141,7 @@ class IterableKeychainEncryptedDataMigrator(
 		}
 
 		// Fetch and migrate user ID
-		val userId = encryptedPrefs.getString("iterable_user_id", null)
+		val userId = encryptedPrefs.getString(IterableKeychain.KEY_USER_ID, null)
 		if (userId != null) {
 			keychain.saveUserId(userId)
 			IterableLogger.d(TAG, "User ID migrated: $userId")
@@ -154,7 +150,7 @@ class IterableKeychainEncryptedDataMigrator(
 		}
 
 		// Fetch and migrate auth token
-		val authToken = encryptedPrefs.getString("iterable_auth_token", null)
+		val authToken = encryptedPrefs.getString(IterableKeychain.KEY_AUTH_TOKEN, null)
 		if (authToken != null) {
 			keychain.saveAuthToken(authToken)
 			IterableLogger.d(TAG, "Auth token migrated: $authToken")
