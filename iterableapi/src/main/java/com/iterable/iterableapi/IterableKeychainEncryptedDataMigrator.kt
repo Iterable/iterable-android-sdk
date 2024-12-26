@@ -34,7 +34,7 @@ class IterableKeychainEncryptedDataMigrator(
         synchronized(migrationLock) {
             // Skip if running in JVM (for tests)
             if (isRunningInJVM()) {
-                IterableLogger.v(TAG, "Running in JVM, skipping migration")
+                IterableLogger.v(TAG, "Running in JVM, skipping migration of encrypted shared preferences")
                 markMigrationCompleted()
                 migrationCompletionCallback?.invoke(null)
                 return
