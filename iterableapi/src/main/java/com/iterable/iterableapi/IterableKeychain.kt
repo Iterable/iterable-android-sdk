@@ -40,6 +40,12 @@ class IterableKeychain {
 
         try {
             val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
+            dataMigrator.setMigrationCompletionCallback { error ->
+                error?.let {
+                    IterableLogger.w(TAG, "Migration failed", it)
+                    handleDecryptionError(Exception(it))
+                }
+            }
             dataMigrator.attemptMigration()
         } catch (e: Exception) {
             IterableLogger.w(TAG, "Migration failed, clearing data", e)
