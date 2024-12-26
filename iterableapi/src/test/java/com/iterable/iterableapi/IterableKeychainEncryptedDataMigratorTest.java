@@ -131,7 +131,9 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         verify(mockKeychain).saveUserId(testUserId);
         verify(mockKeychain).saveAuthToken(testAuthToken);
 
-        verify(mockEncryptedEditor).clear();
+        verify(mockEncryptedEditor).remove(OLD_EMAIL_KEY);
+        verify(mockEncryptedEditor).remove(OLD_USER_ID_KEY);
+        verify(mockEncryptedEditor).remove(OLD_AUTH_TOKEN_KEY);
         verify(mockEncryptedEditor).apply();
     }
 
@@ -171,8 +173,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         verify(mockKeychain, never()).saveUserId(anyString());
         verify(mockKeychain, never()).saveAuthToken(anyString());
 
-        verify(mockEncryptedEditor).clear();
-        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
+        verify(mockEncryptedEditor).apply();
     }
 
     @Test
