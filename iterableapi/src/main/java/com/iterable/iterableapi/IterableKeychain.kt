@@ -21,7 +21,7 @@ class IterableKeychain {
     }
 
     private var sharedPrefs: SharedPreferences
-    internal lateinit var encryptor: IterableDataEncryptor
+    internal var encryptor: IterableDataEncryptor
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
 
     @JvmOverloads

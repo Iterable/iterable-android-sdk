@@ -84,12 +84,6 @@ class IterableKeychainEncryptedDataMigrator(
                     }
                 }
 
-                if (prefs == null) {
-                    markMigrationCompleted()
-                    migrationCompletionCallback?.invoke(null)
-                    return@Thread
-                }
-
                 val timeoutThread = Thread {
                     try {
                         Thread.sleep(migrationTimeoutMs)
