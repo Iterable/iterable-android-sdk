@@ -2,13 +2,6 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
-
-import com.iterable.iterableapi.IterableKeychainEncryptedDataMigrator
-import com.iterable.iterableapi.IterableDataEncryptor
 
 class IterableKeychain {
     companion object {

@@ -6,7 +6,6 @@ import android.os.Build
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import androidx.annotation.VisibleForTesting
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -132,7 +131,7 @@ class IterableKeychainEncryptedDataMigrator(
 
 	private fun migrateData(encryptedPrefs: SharedPreferences) {
 		val editor = encryptedPrefs.edit()
-		
+
 		// Fetch and migrate email
 		val email = encryptedPrefs.getString(IterableKeychain.KEY_EMAIL, null)
 		if (email != null) {
