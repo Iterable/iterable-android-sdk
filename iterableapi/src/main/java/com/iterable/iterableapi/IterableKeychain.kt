@@ -55,7 +55,21 @@ class IterableKeychain {
             .apply()
 
         encryptor.resetKeys()
-        decryptionFailureHandler?.onDecryptionFailed(e ?: Exception("Unknown decryption error"))
+        decryptionFailureHandler?.let { handler ->
+            val exception = e ?: Exception("Unknown decryption error")
+            try {
+                val mainLooper = android.os.Looper.getMainLooper()
+                if (mainLooper != null) {
+                    android.os.Handler(mainLooper).post {
+                        handler.onDecryptionFailed(exception)
+                    }
+                } else {
+                    throw IllegalStateException("MainLooper is unavailable")
+                }
+            } catch (ex: Exception) { 
+                handler.onDecryptionFailed(exception)
+            }
+        }
     }
 
     private fun secureGet(key: String): String? {
