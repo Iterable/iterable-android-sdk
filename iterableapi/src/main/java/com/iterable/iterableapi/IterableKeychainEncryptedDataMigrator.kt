@@ -34,6 +34,10 @@ class IterableKeychainEncryptedDataMigrator(
         migrationTimeoutMs = timeoutMs
     }
 
+    fun isMigrationCompleted(): Boolean {
+        return sharedPrefs.getBoolean(migrationCompletedKey, false)
+    }
+
     fun attemptMigration() {
         synchronized(migrationLock) {
             // Skip if running in JVM (for tests) unless mockEncryptedPrefs is present
@@ -51,14 +55,7 @@ class IterableKeychainEncryptedDataMigrator(
                 return
             }
 
-            // Only attempt migration on Android M and above
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                markMigrationCompleted()
-                migrationCompletionCallback?.invoke(null)
-                return
-            }
-
-            // If previous migration was interrupted, mark as completed and notify via callback
+            // Check for interrupted migration
             if (sharedPrefs.getBoolean(migrationStartedKey, false)) {
                 IterableLogger.w(TAG, "Previous migration attempt was interrupted")
                 markMigrationCompleted()
@@ -77,32 +74,37 @@ class IterableKeychainEncryptedDataMigrator(
 
             try {
                 val future: Future<*> = executor.submit {
-                    val prefs = mockEncryptedPrefs ?: run {
-                        try {
-                            val masterKeyAlias = MasterKey.Builder(context)
-                                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                                .build()
-                            EncryptedSharedPreferences.create(
-                                context,
-                                encryptedSharedPrefsFileName,
-                                masterKeyAlias,
-                                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                            )
-                        } catch (e: Exception) {
-                            null
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        // For Android M and above, use EncryptedSharedPreferences
+                        val prefs = mockEncryptedPrefs ?: run {
+                            try {
+                                val masterKeyAlias = MasterKey.Builder(context)
+                                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                                    .build()
+                                EncryptedSharedPreferences.create(
+                                    context,
+                                    encryptedSharedPrefsFileName,
+                                    masterKeyAlias,
+                                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                                )
+                            } catch (e: Exception) {
+                                null
+                            }
                         }
-                    }
 
-                    if (prefs == null) {
-                        markMigrationCompleted()
-                        val migrationException = MigrationException("Failed to load EncryptedSharedPreferences")
-                        migrationCompletionCallback?.invoke(migrationException)
-                        return@submit
+                        if (prefs == null) {
+                            markMigrationCompleted()
+                            val migrationException = MigrationException("Failed to load EncryptedSharedPreferences")
+                            migrationCompletionCallback?.invoke(migrationException)
+                            return@submit
+                        }
+                        migrateData(prefs)
+                    } else {
+                        // For versions below Android M, migrate directly from sharedPrefs
+                        migrateData(sharedPrefs)
                     }
-
-                    // Run migration on the same thread
-                    migrateData(prefs)
+                    
                     markMigrationCompleted()
                     migrationCompletionCallback?.invoke(null)
                 }

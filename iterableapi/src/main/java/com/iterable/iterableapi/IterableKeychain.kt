@@ -28,16 +28,18 @@ class IterableKeychain {
         )
         encryptor = IterableDataEncryptor()
         IterableLogger.v(TAG, "SharedPreferences being used with encryption")
-
+            
         try {
             val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
-            dataMigrator.setMigrationCompletionCallback { error ->
-                error?.let {
-                    IterableLogger.w(TAG, "Migration failed", it)
-                    handleDecryptionError(Exception(it))
+            if (!dataMigrator.isMigrationCompleted()) {
+                dataMigrator.setMigrationCompletionCallback { error ->
+                    error?.let {
+                        IterableLogger.w(TAG, "Migration failed", it)
+                        handleDecryptionError(Exception(it))
+                    }
                 }
+                dataMigrator.attemptMigration()
             }
-            dataMigrator.attemptMigration()
         } catch (e: Exception) {
             IterableLogger.w(TAG, "Migration failed, clearing data", e)
             handleDecryptionError(e)
@@ -66,7 +68,7 @@ class IterableKeychain {
                 } else {
                     throw IllegalStateException("MainLooper is unavailable")
                 }
-            } catch (ex: Exception) { 
+            } catch (ex: Exception) {
                 handler.onDecryptionFailed(exception)
             }
         }
