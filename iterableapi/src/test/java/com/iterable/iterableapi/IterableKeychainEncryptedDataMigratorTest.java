@@ -77,16 +77,6 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
     }
 
     @Test
-    public void testSkipIfBelowAndroidM() {
-        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.LOLLIPOP);
-
-        migrator.attemptMigration();
-
-        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
-        verify(mockEditor).apply();
-    }
-
-    @Test
     public void testThrowsExceptionIfPreviouslyInterrupted() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Throwable> error = new AtomicReference<>();
@@ -218,5 +208,26 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         // 2. Setting migration completed flag during timeout
         verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
         verify(mockEditor, times(2)).apply();
+    }
+
+    @Test
+    public void testMigrationBehaviorBelowAndroidM() {
+        // Set Android version to Lollipop (below M)
+        ReflectionHelpers.setStaticField(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.LOLLIPOP);
+
+        String testEmail = "test@example.com";
+        // Use mockSharedPrefs instead of mockEncryptedPrefs since below Android M
+        when(mockSharedPrefs.getString(eq(OLD_EMAIL_KEY), eq(null))).thenReturn(testEmail);
+
+        migrator.attemptMigration();
+
+        // Should migrate using regular SharedPreferences
+        verify(mockKeychain).saveEmail(testEmail);
+        verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
+        verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
+        verify(mockEditor, times(3)).apply(); // Called three times during the migration process
+        
+        // Verify that mockEncryptedPrefs was never used
+        verify(mockEncryptedPrefs, never()).getString(anyString(), eq(null));
     }
 }

@@ -28,7 +28,7 @@ class IterableKeychain {
         )
         encryptor = IterableDataEncryptor()
         IterableLogger.v(TAG, "SharedPreferences being used with encryption")
-            
+
         try {
             val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
             if (!dataMigrator.isMigrationCompleted()) {
