@@ -226,7 +226,7 @@ public class IterableKeychainEncryptedDataMigratorTest extends BaseTest {
         verify(mockEditor).putBoolean(MIGRATION_STARTED_KEY, true);
         verify(mockEditor).putBoolean(MIGRATION_COMPLETED_KEY, true);
         verify(mockEditor, times(3)).apply(); // Called three times during the migration process
-        
+
         // Verify that mockEncryptedPrefs was never used
         verify(mockEncryptedPrefs, never()).getString(anyString(), eq(null));
     }
