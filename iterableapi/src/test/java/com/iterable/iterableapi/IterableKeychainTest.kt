@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import android.util.Base64
+import android.os.Build
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import org.junit.Before
 import org.junit.After
 import org.junit.Test
@@ -284,5 +287,73 @@ class IterableKeychainTest {
         
         // Verify attemptMigration was called exactly once
         verify(mockMigrator, times(1)).attemptMigration()
+    }
+
+    @Test
+    fun testModernEncryption() {
+        // Mock API level 23 (modern encryption)
+        setFinalStatic(Build.VERSION::class.java.getField("SDK_INT"), Build.VERSION_CODES.M)
+        
+        val testData = "test_modern_data"
+        val encryptor = IterableDataEncryptor()
+        
+        val encrypted = encryptor.encrypt(testData)
+        assertNotNull(encrypted)
+        
+        val decrypted = encryptor.decrypt(encrypted)
+        assertEquals(testData, decrypted)
+        
+        // Verify first byte indicates modern encryption
+        val bytes = Base64.decode(encrypted, Base64.NO_WRAP)
+        assertEquals(1.toByte(), bytes[0])
+    }
+
+    @Test
+    fun testLegacyEncryption() {
+        // Mock API level 16 (legacy encryption)
+        setFinalStatic(Build.VERSION::class.java.getField("SDK_INT"), Build.VERSION_CODES.JELLY_BEAN)
+        
+        val testData = "test_legacy_data"
+        val encryptor = IterableDataEncryptor()
+        
+        val encrypted = encryptor.encrypt(testData)
+        assertNotNull(encrypted)
+        
+        val decrypted = encryptor.decrypt(encrypted)
+        assertEquals(testData, decrypted)
+        
+        // Verify first byte indicates legacy encryption
+        val bytes = Base64.decode(encrypted, Base64.NO_WRAP)
+        assertEquals(0.toByte(), bytes[0])
+    }
+
+    @Test
+    fun testCrossVersionCompatibility() {
+        val testData = "test_cross_version_data"
+        
+        // First encrypt with legacy encryption (API 16)
+        setFinalStatic(Build.VERSION::class.java.getField("SDK_INT"), Build.VERSION_CODES.JELLY_BEAN)
+        val encryptor = IterableDataEncryptor()
+        val encryptedLegacy = encryptor.encrypt(testData)
+        
+        // Then decrypt with modern version (API 23)
+        setFinalStatic(Build.VERSION::class.java.getField("SDK_INT"), Build.VERSION_CODES.M)
+        val decryptedOnModern = encryptor.decrypt(encryptedLegacy)
+        assertEquals(testData, decryptedOnModern)
+        
+        // Now encrypt with modern and decrypt with legacy
+        val encryptedModern = encryptor.encrypt(testData)
+        setFinalStatic(Build.VERSION::class.java.getField("SDK_INT"), Build.VERSION_CODES.JELLY_BEAN)
+        val decryptedOnLegacy = encryptor.decrypt(encryptedModern)
+        assertEquals(testData, decryptedOnLegacy)
+    }
+
+    // Helper method to set final static fields for testing
+    private fun setFinalStatic(field: Field, newValue: Any) {
+        field.isAccessible = true
+        val modifiersField = Field::class.java.getDeclaredField("modifiers")
+        modifiersField.isAccessible = true
+        modifiersField.setInt(field, field.modifiers and Modifier.FINAL.inv())
+        field.set(null, newValue)
     }
 } 
