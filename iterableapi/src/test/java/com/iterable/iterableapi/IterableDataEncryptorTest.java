@@ -421,6 +421,61 @@ public class IterableDataEncryptorTest extends BaseTest {
         }
     }
 
+    @Test
+    public void testLegacyEncryptionAndDecryption() {
+        // Set to API 16 (Legacy)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.JELLY_BEAN);
+        
+        String testData = "test data for legacy encryption";
+        String encrypted = encryptor.encrypt(testData);
+        String decrypted = encryptor.decrypt(encrypted);
+        
+        assertEquals("Legacy encryption/decryption should work on API 16", testData, decrypted);
+        
+        // Verify it's using legacy encryption
+        byte[] encryptedBytes = Base64.decode(encrypted, Base64.NO_WRAP);
+        assertEquals("Should use legacy encryption flag", 0, encryptedBytes[0]);
+        
+        // Test on API 18
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.JELLY_BEAN_MR2);
+        String decryptedOnApi18 = encryptor.decrypt(encrypted);
+        assertEquals("Legacy data should be decryptable on API 18", testData, decryptedOnApi18);
+        
+        String encryptedOnApi18 = encryptor.encrypt(testData);
+        String decryptedFromApi18 = encryptor.decrypt(encryptedOnApi18);
+        assertEquals("API 18 encryption/decryption should work", testData, decryptedFromApi18);
+        
+        // Verify API 18 also uses legacy encryption
+        byte[] api18EncryptedBytes = Base64.decode(encryptedOnApi18, Base64.NO_WRAP);
+        assertEquals("Should use legacy encryption flag on API 18", 0, api18EncryptedBytes[0]);
+    }
+
+    @Test
+    public void testModernEncryptionAndDecryption() {
+        String testData = "test data for modern encryption";
+        
+        // Test on API 19 (First modern version)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.KITKAT);
+        String encryptedOnApi19 = encryptor.encrypt(testData);
+        String decryptedOnApi19 = encryptor.decrypt(encryptedOnApi19);
+        assertEquals("Modern encryption should work on API 19", testData, decryptedOnApi19);
+        
+        byte[] api19EncryptedBytes = Base64.decode(encryptedOnApi19, Base64.NO_WRAP);
+        assertEquals("Should use modern encryption flag on API 19", 1, api19EncryptedBytes[0]);
+        
+        // Test on API 23
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.M);
+        String decryptedOnApi23 = encryptor.decrypt(encryptedOnApi19);
+        assertEquals("API 19 data should be decryptable on API 23", testData, decryptedOnApi23);
+        
+        String encryptedOnApi23 = encryptor.encrypt(testData);
+        String decryptedFromApi23 = encryptor.decrypt(encryptedOnApi23);
+        assertEquals("API 23 encryption/decryption should work", testData, decryptedFromApi23);
+        
+        byte[] api23EncryptedBytes = Base64.decode(encryptedOnApi23, Base64.NO_WRAP);
+        assertEquals("Should use modern encryption flag on API 23", 1, api23EncryptedBytes[0]);
+    }
+
     private static void setFinalStatic(Class<?> clazz, String fieldName, Object newValue) {
         try {
             Field field = clazz.getDeclaredField(fieldName);
