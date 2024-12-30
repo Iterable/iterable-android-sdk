@@ -4,9 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import android.util.Base64
-import android.os.Build
-import java.lang.reflect.Field
-import java.lang.reflect.Modifier
 import org.junit.Before
 import org.junit.After
 import org.junit.Test
@@ -288,6 +285,4 @@ class IterableKeychainTest {
         // Verify attemptMigration was called exactly once
         verify(mockMigrator, times(1)).attemptMigration()
     }
-
-
 } 
