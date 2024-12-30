@@ -49,7 +49,7 @@ public class IterableApi {
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
-    private IterableKeychain keychain;
+    public IterableKeychain keychain;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
