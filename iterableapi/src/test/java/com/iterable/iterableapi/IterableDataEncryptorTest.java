@@ -361,6 +361,66 @@ public class IterableDataEncryptorTest extends BaseTest {
         assertEquals("Modern encryption should have flag 1", 1, modernBytes[0]);
     }
 
+    @Test
+    public void testDecryptCorruptData() {
+        String testData = "test data";
+        String encrypted = encryptor.encrypt(testData);
+        byte[] bytes = Base64.decode(encrypted, Base64.NO_WRAP);
+        
+        // Corrupt the data portion
+        bytes[bytes.length - 1] ^= 0xFF;
+        String corrupted = Base64.encodeToString(bytes, Base64.NO_WRAP);
+        
+        try {
+            encryptor.decrypt(corrupted);
+            fail("Should throw exception for corrupted data");
+        } catch (Exception e) {
+            assertTrue("Should be DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertNotNull("Should have a cause", e.getCause());
+        }
+    }
+
+    @Test
+    public void testDecryptManipulatedIV() {
+        String testData = "test data";
+        String encrypted = encryptor.encrypt(testData);
+        byte[] bytes = Base64.decode(encrypted, Base64.NO_WRAP);
+        
+        // Manipulate the IV
+        bytes[1] ^= 0xFF;  // First byte after version flag
+        String manipulated = Base64.encodeToString(bytes, Base64.NO_WRAP);
+        
+        try {
+            encryptor.decrypt(manipulated);
+            fail("Should throw exception for manipulated IV");
+        } catch (Exception e) {
+            assertTrue("Should be DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertNotNull("Should have a cause", e.getCause());
+        }
+    }
+
+    @Test
+    public void testDecryptManipulatedVersionFlag() {
+        // Test on API 16 device
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.JELLY_BEAN);
+        
+        String testData = "test data";
+        String encrypted = encryptor.encrypt(testData);
+        byte[] bytes = Base64.decode(encrypted, Base64.NO_WRAP);
+        
+        // Change version flag from legacy (0) to modern (1)
+        bytes[0] = 1;
+        String manipulated = Base64.encodeToString(bytes, Base64.NO_WRAP);
+        
+        try {
+            encryptor.decrypt(manipulated);
+            fail("Should throw exception for manipulated version flag");
+        } catch (Exception e) {
+            assertTrue("Should be DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertEquals("Modern encryption cannot be decrypted on legacy devices", e.getMessage());
+        }
+    }
+
     private static void setFinalStatic(Class<?> clazz, String fieldName, Object newValue) {
         try {
             Field field = clazz.getDeclaredField(fieldName);
