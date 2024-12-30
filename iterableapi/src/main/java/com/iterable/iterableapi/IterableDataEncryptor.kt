@@ -11,18 +11,21 @@ import javax.crypto.spec.GCMParameterSpec
 import android.os.Build
 import java.security.KeyStore.PasswordProtection
 import androidx.annotation.VisibleForTesting
+import java.security.SecureRandom
+import javax.crypto.spec.IvParameterSpec
+import android.annotation.TargetApi
 
 class IterableDataEncryptor {
     companion object {
         private const val TAG = "IterableDataEncryptor"
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        private const val TRANSFORMATION = "AES/GCM/NoPadding"
+        private const val TRANSFORMATION_MODERN = "AES/GCM/NoPadding"
+        private const val TRANSFORMATION_LEGACY = "AES/CBC/PKCS5Padding"
         private const val ITERABLE_KEY_ALIAS = "iterable_encryption_key"
-        private const val GCM_IV_LENGTH = 12
         private const val GCM_TAG_LENGTH = 128
+        private const val IV_LENGTH = 16
         private val TEST_KEYSTORE_PASSWORD = "test_password".toCharArray()
 
-        // Make keyStore static so it's shared across instances
         private val keyStore: KeyStore by lazy {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 try {
@@ -62,28 +65,33 @@ class IterableDataEncryptor {
     }
 
     private fun canUseAndroidKeyStore(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 &&
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
                keyStore.type == ANDROID_KEYSTORE
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
     private fun generateAndroidKeyStoreKey(): Unit? {
         return try {
-            val keyGenerator = KeyGenerator.getInstance(
-                KeyProperties.KEY_ALGORITHM_AES,
-                ANDROID_KEYSTORE
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val keyGenerator = KeyGenerator.getInstance(
+                    KeyProperties.KEY_ALGORITHM_AES,
+                    ANDROID_KEYSTORE
+                )
 
-            val keySpec = KeyGenParameterSpec.Builder(
-                ITERABLE_KEY_ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-            )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .build()
+                val keySpec = KeyGenParameterSpec.Builder(
+                    ITERABLE_KEY_ALIAS,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM, KeyProperties.BLOCK_MODE_CBC)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE, KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                    .build()
 
-            keyGenerator.init(keySpec)
-            keyGenerator.generateKey()
-            Unit
+                keyGenerator.init(keySpec)
+                keyGenerator.generateKey()
+                Unit
+            } else {
+                null
+            }
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Failed to generate key using AndroidKeyStore", e)
             null
@@ -92,7 +100,7 @@ class IterableDataEncryptor {
 
     private fun generateFallbackKey() {
         val keyGenerator = KeyGenerator.getInstance("AES")
-        keyGenerator.init(256) // 256-bit AES key
+        keyGenerator.init(256)
         val secretKey = keyGenerator.generateKey()
 
         val keyEntry = KeyStore.SecretKeyEntry(secretKey)
@@ -113,31 +121,22 @@ class IterableDataEncryptor {
         return (keyStore.getEntry(ITERABLE_KEY_ALIAS, protParam) as KeyStore.SecretKeyEntry).secretKey
     }
 
-    class DecryptionException(message: String, cause: Throwable? = null) : Exception(message, cause)
-
-    fun resetKeys() {
-        try {
-            keyStore.deleteEntry(ITERABLE_KEY_ALIAS)
-            generateKey()
-        } catch (e: Exception) {
-            IterableLogger.e(TAG, "Failed to regenerate key", e)
-        }
-    }
-
     fun encrypt(value: String?): String? {
         if (value == null) return null
 
         try {
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, getKey())
+            val data = value.toByteArray(Charsets.UTF_8)
+            val encryptedData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                encryptModern(data)
+            } else {
+                encryptLegacy(data)
+            }
 
-            val iv = cipher.iv
-            val encrypted = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
-
-            // Combine IV and encrypted data
-            val combined = ByteArray(iv.size + encrypted.size)
-            System.arraycopy(iv, 0, combined, 0, iv.size)
-            System.arraycopy(encrypted, 0, combined, iv.size, encrypted.size)
+            // Combine isModern flag, IV, and encrypted data
+            val combined = ByteArray(1 + encryptedData.iv.size + encryptedData.data.size)
+            combined[0] = if (encryptedData.isModernEncryption) 1 else 0
+            System.arraycopy(encryptedData.iv, 0, combined, 1, encryptedData.iv.size)
+            System.arraycopy(encryptedData.data, 0, combined, 1 + encryptedData.iv.size, encryptedData.data.size)
 
             return Base64.encodeToString(combined, Base64.NO_WRAP)
         } catch (e: Exception) {
@@ -151,23 +150,81 @@ class IterableDataEncryptor {
 
         try {
             val combined = Base64.decode(value, Base64.NO_WRAP)
+            
+            // Extract components
+            val isModern = combined[0] == 1.toByte()
+            val iv = combined.copyOfRange(1, 1 + IV_LENGTH)
+            val encrypted = combined.copyOfRange(1 + IV_LENGTH, combined.size)
 
-            // Extract IV
-            val iv = combined.copyOfRange(0, GCM_IV_LENGTH)
-            val encrypted = combined.copyOfRange(GCM_IV_LENGTH, combined.size)
+            val encryptedData = EncryptedData(encrypted, iv, isModern)
+            val decrypted = if (isModern && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                decryptModern(encryptedData)
+            } else {
+                decryptLegacy(encryptedData)
+            }
 
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
-            cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
-
-            return String(cipher.doFinal(encrypted), Charsets.UTF_8)
+            return String(decrypted, Charsets.UTF_8)
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Decryption failed", e)
             throw DecryptionException("Failed to decrypt data", e)
         }
     }
 
-    // Add this method for testing purposes
+    private fun encryptModern(data: ByteArray): EncryptedData {
+        val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
+        val iv = generateIV()
+        val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+        cipher.init(Cipher.ENCRYPT_MODE, getKey(), spec)
+        val encrypted = cipher.doFinal(data)
+        return EncryptedData(encrypted, iv, true)
+    }
+
+    private fun encryptLegacy(data: ByteArray): EncryptedData {
+        val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
+        val iv = generateIV()
+        val spec = IvParameterSpec(iv)
+        cipher.init(Cipher.ENCRYPT_MODE, getKey(), spec)
+        val encrypted = cipher.doFinal(data)
+        return EncryptedData(encrypted, iv, false)
+    }
+
+    private fun decryptModern(encryptedData: EncryptedData): ByteArray {
+        val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
+        val spec = GCMParameterSpec(GCM_TAG_LENGTH, encryptedData.iv)
+        cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
+        return cipher.doFinal(encryptedData.data)
+    }
+
+    private fun decryptLegacy(encryptedData: EncryptedData): ByteArray {
+        val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
+        val spec = IvParameterSpec(encryptedData.iv)
+        cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
+        return cipher.doFinal(encryptedData.data)
+    }
+
+    private fun generateIV(): ByteArray {
+        val iv = ByteArray(IV_LENGTH)
+        SecureRandom().nextBytes(iv)
+        return iv
+    }
+
+    data class EncryptedData(
+        val data: ByteArray,
+        val iv: ByteArray,
+        val isModernEncryption: Boolean
+    )
+
+    class DecryptionException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+    fun resetKeys() {
+        try {
+            keyStore.deleteEntry(ITERABLE_KEY_ALIAS)
+            generateKey()
+        } catch (e: Exception) {
+            IterableLogger.e(TAG, "Failed to regenerate key", e)
+        }
+    }
+
     @VisibleForTesting
     fun getKeyStore(): KeyStore = keyStore
 }
