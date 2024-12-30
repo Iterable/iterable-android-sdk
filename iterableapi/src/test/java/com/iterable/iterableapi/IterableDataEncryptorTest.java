@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.content.SharedPreferences;
+import android.os.Build;
+import android.util.Base64;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,6 +17,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
@@ -294,6 +298,81 @@ public class IterableDataEncryptorTest extends BaseTest {
             assertTrue("Should be instance of DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
             assertNotNull("Exception should have a cause", e.getCause());
             assertEquals("Exception should have correct message", "Failed to decrypt data", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testEncryptionAcrossApiLevels() {
+        String testData = "test data for cross-version compatibility";
+        
+        // Test API 16 (Legacy)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.JELLY_BEAN);
+        String encryptedOnApi16 = encryptor.encrypt(testData);
+        
+        // Test API 18 (Legacy)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.JELLY_BEAN_MR2);
+        String encryptedOnApi18 = encryptor.encrypt(testData);
+        assertEquals("Legacy decryption should work on API 18", testData, encryptor.decrypt(encryptedOnApi16));
+        
+        // Test API 19 (Modern - First version with GCM support)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.KITKAT);
+        String encryptedOnApi19 = encryptor.encrypt(testData);
+        assertEquals("Should decrypt legacy data on API 19", testData, encryptor.decrypt(encryptedOnApi16));
+        assertEquals("Should decrypt legacy data on API 19", testData, encryptor.decrypt(encryptedOnApi18));
+        
+        // Test API 23 (Modern with KeyStore)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.M);
+        String encryptedOnApi23 = encryptor.encrypt(testData);
+        assertEquals("Should decrypt legacy data on API 23", testData, encryptor.decrypt(encryptedOnApi16));
+        assertEquals("Should decrypt API 19 data on API 23", testData, encryptor.decrypt(encryptedOnApi19));
+        
+        // Test that modern encryption fails on legacy devices
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.JELLY_BEAN);
+        try {
+            encryptor.decrypt(encryptedOnApi19);
+            fail("Should not be able to decrypt modern encryption on legacy device");
+        } catch (Exception e) {
+            assertTrue("Should be DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertEquals("Should have correct error message", "Modern encryption cannot be decrypted on legacy devices", e.getMessage());
+        }
+        try {
+            encryptor.decrypt(encryptedOnApi23);
+            fail("Should not be able to decrypt modern encryption on legacy device");
+        } catch (Exception e) {
+            assertTrue("Should be DecryptionException", e instanceof IterableDataEncryptor.DecryptionException);
+            assertEquals("Should have correct error message", "Modern encryption cannot be decrypted on legacy devices", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testEncryptionMethodFlag() {
+        String testData = "test data for encryption method verification";
+        
+        // Test legacy encryption flag (API 16)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.JELLY_BEAN);
+        String legacyEncrypted = encryptor.encrypt(testData);
+        byte[] legacyBytes = Base64.decode(legacyEncrypted, Base64.NO_WRAP);
+        assertEquals("Legacy encryption should have flag 0", 0, legacyBytes[0]);
+        
+        // Test modern encryption flag (API 19)
+        setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.KITKAT);
+        String modernEncrypted = encryptor.encrypt(testData);
+        byte[] modernBytes = Base64.decode(modernEncrypted, Base64.NO_WRAP);
+        assertEquals("Modern encryption should have flag 1", 1, modernBytes[0]);
+    }
+
+    private static void setFinalStatic(Class<?> clazz, String fieldName, Object newValue) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+            
+            field.set(null, newValue);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
