@@ -256,4 +256,33 @@ class IterableKeychainTest {
         // Verify failure handler was called
         verify(mockDecryptionFailureHandler).onDecryptionFailed(migrationException)
     }
+
+    @Test
+    fun testMigrationOnlyAttemptedOnce() {
+        // Create mock migrator
+        val mockMigrator = mock(IterableKeychainEncryptedDataMigrator::class.java)
+        // First check returns false, subsequent checks return true
+        `when`(mockMigrator.isMigrationCompleted())
+            .thenReturn(false)  // first call
+        
+        // First initialization
+        keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler,
+            mockMigrator
+        )
+
+        `when`(mockMigrator.isMigrationCompleted())
+            .thenReturn(true)  // subsequent calls
+        
+        // Second initialization
+        keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler,
+            mockMigrator
+        )
+        
+        // Verify attemptMigration was called exactly once
+        verify(mockMigrator, times(1)).attemptMigration()
+    }
 } 
