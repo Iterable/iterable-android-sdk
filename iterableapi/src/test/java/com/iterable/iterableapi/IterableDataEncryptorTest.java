@@ -18,6 +18,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.KeyStore;
 import java.util.ArrayList;
@@ -481,9 +482,33 @@ public class IterableDataEncryptorTest extends BaseTest {
             Field field = clazz.getDeclaredField(fieldName);
             field.setAccessible(true);
 
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+            // On Java 8 and lower, use modifiers field
+            try {
+                Field modifiersField = Field.class.getDeclaredField("modifiers");
+                modifiersField.setAccessible(true);
+                modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+            } catch (NoSuchFieldException e) {
+                // On Java 9+, use VarHandle to modify final fields
+                try {
+                    // Get the internal Field.modifiers field via JDK internal API
+                    Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+                    getDeclaredFields0.setAccessible(true);
+                    Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+                    Field modifiersField = null;
+                    for (Field f : fields) {
+                        if ("modifiers".equals(f.getName())) {
+                            modifiersField = f;
+                            break;
+                        }
+                    }
+                    if (modifiersField != null) {
+                        modifiersField.setAccessible(true);
+                        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+                    }
+                } catch (Exception ignored) {
+                    // If all attempts fail, try setting the value anyway
+                }
+            }
 
             field.set(null, newValue);
         } catch (Exception e) {
