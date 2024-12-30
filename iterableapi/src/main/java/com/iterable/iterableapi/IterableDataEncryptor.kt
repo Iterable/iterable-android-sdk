@@ -157,20 +157,35 @@ class IterableDataEncryptor {
             val encrypted = combined.copyOfRange(1 + IV_LENGTH, combined.size)
 
             val encryptedData = EncryptedData(encrypted, iv, isModern)
-            val decrypted = if (isModern && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            
+            // If it's modern encryption and we're on an old device, fail fast
+            if (isModern && Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                throw DecryptionException("Modern encryption cannot be decrypted on legacy devices")
+            }
+
+            // Use the appropriate decryption method
+            val decrypted = if (isModern) {
                 decryptModern(encryptedData)
             } else {
                 decryptLegacy(encryptedData)
             }
 
             return String(decrypted, Charsets.UTF_8)
+        } catch (e: DecryptionException) {
+            // Re-throw DecryptionException directly
+            throw e
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Decryption failed", e)
             throw DecryptionException("Failed to decrypt data", e)
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     private fun encryptModern(data: ByteArray): EncryptedData {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            return encryptLegacy(data)
+        }
+        
         val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
         val iv = generateIV()
         val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
@@ -188,7 +203,12 @@ class IterableDataEncryptor {
         return EncryptedData(encrypted, iv, false)
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     private fun decryptModern(encryptedData: EncryptedData): ByteArray {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            throw DecryptionException("Cannot decrypt modern encryption on legacy device")
+        }
+        
         val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
         val spec = GCMParameterSpec(GCM_TAG_LENGTH, encryptedData.iv)
         cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
