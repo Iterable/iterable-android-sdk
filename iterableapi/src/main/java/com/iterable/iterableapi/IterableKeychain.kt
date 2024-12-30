@@ -39,13 +39,12 @@ class IterableKeychain {
                     }
                 }
                 dataMigrator.attemptMigration()
-            }
+				IterableLogger.v(TAG, "Migration completed")
+			}
         } catch (e: Exception) {
             IterableLogger.w(TAG, "Migration failed, clearing data", e)
             handleDecryptionError(e)
         }
-
-        IterableLogger.v(TAG, "Migration completed")
     }
 
     private fun handleDecryptionError(e: Exception? = null) {
