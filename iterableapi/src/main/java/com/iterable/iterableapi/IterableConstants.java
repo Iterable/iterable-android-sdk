@@ -16,6 +16,7 @@ public final class IterableConstants {
 
     //API Fields
     public static final String HEADER_API_KEY           = "Api-Key";
+    public static final String HTTP_STATUS_CODE         = "httpStatusCode";
     public static final String HEADER_SDK_PLATFORM      = "SDK-Platform";
     public static final String HEADER_SDK_VERSION       = "SDK-Version";
     public static final String HEADER_SDK_AUTHORIZATION = "Authorization";
@@ -56,6 +57,8 @@ public final class IterableConstants {
     public static final String KEY_EMBEDDED_SESSION_ID     = "id";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
     public static final String KEY_FIRETV = "FireTV";
+    public static final String KEY_CREATE_NEW_FIELDS    = "createNewFields";
+    public static final String KEY_ANON_SESSION_CONTEXT = "anonSessionContext";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -80,6 +83,11 @@ public final class IterableConstants {
     public static final String ENDPOINT_TRACK_EMBEDDED_RECEIVED   = "embedded-messaging/events/received";
     public static final String ENDPOINT_TRACK_EMBEDDED_CLICK   = "embedded-messaging/events/click";
     public static final String ENDPOINT_TRACK_EMBEDDED_SESSION   = "embedded-messaging/events/session";
+    public static final String ENDPOINT_GET_USER_BY_USERID      = "users/byUserId";
+    public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
+    public static final String ENDPOINT_MERGE_USER              = "users/merge";
+    public static final String ENDPOINT_CRITERIA_LIST           = "anonymoususer/list";
+    public static final String ENDPOINT_TRACK_ANON_SESSION      = "anonymoususer/events/session";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -107,6 +115,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";
     public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
+    public static final String SHARED_PREFS_USERIDANON_KEY = "itbl_userid_anon";
     public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
     public static final String SHARED_PREFS_AUTH_TOKEN_KEY = "itbl_authtoken";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
@@ -118,6 +127,18 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
+    public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
+    public static final String SHARED_PREFS_USER_UPDATE_OBJECT_KEY = "itbl_user_update_object";
+    public static final String SHARED_PREFS_ANON_SESSIONS = "itbl_anon_sessions";
+    public static final String SHARED_PREFS_SESSION_NO = "totalAnonSessionCount";
+    public static final String SHARED_PREFS_LAST_SESSION = "lastAnonSession";
+    public static final String SHARED_PREFS_FIRST_SESSION = "firstAnonSession";
+    public static final String SHARED_PREFS_EVENT_TYPE = "eventType";
+    public static final String SHARED_PREFS_CRITERIA = "criteria";
+    public static final String SHARED_PREFS_CRITERIA_ID = "matchedCriteriaId";
+    public static final String SHARED_PREFS_PUSH_OPT_IN = "mobilePushOptIn";
+    public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED = "itbl_visitor_usage_track";
+    public static final String SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED = "itbl_notifications_enabled";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -158,6 +179,7 @@ public final class IterableConstants {
     public static final String REQUEST_CODE             = "requestCode";
     public static final String ACTION_IDENTIFIER        = "actionIdentifier";
     public static final String USER_INPUT               = "userInput";
+    public static final String DATA_REPLACE             = "dataReplace";
 
     //Firebase
     public static final String FIREBASE_SENDER_ID       = "gcm_defaultSenderId";
@@ -296,4 +318,38 @@ public final class IterableConstants {
 
     public static final String NO_MESSAGES_TITLE = "noMessagesTitle";
     public static final String NO_MESSAGES_BODY = "noMessagesBody";
+
+    // Criteria constants
+    public static final String CRITERIA_SETS = "criteriaSets";
+    public static final String SEARCH_QUERIES = "searchQueries";
+    public static final String SEARCH_QUERY = "searchQuery";
+    public static final String CRITERIA_ID = "criteriaId";
+    public static final String COMBINATOR = "combinator";
+    public static final String SEARCH_COMBO = "searchCombo";
+    public static final String FIELD = "field";
+    public static final String VALUE = "value";
+    public static final String VALUES = "values";
+    public static final String DATA_TYPE = "dataType";
+    public static final String COMPARATOR_TYPE = "comparatorType";
+    public static final String UPDATECART_ITEM_PREFIX = "updateCart.updatedShoppingCartItems.";
+    public static final String PURCHASE_ITEM = "shoppingCartItems";
+    public static final String PURCHASE_ITEM_PREFIX = PURCHASE_ITEM + ".";
+    public static final String MIN_MATCH = "minMatch";
+
+
+    //Tracking types
+    public static final String TRACK_EVENT = "customEvent";
+    public static final String TRACK_PURCHASE = "purchase";
+    public static final String TRACK_UPDATE_CART = "cartUpdate";
+    public static final String UPDATE_CART = "updateCart";
+    public static final String TRACK_TOKEN_REGISTRATION = "tokenRegistration";
+    public static final String UPDATE_USER = "user";
+    public static final String SOURCE_EMAIL = "sourceEmail";
+    public static final String SOURCE_USER_ID = "sourceUserId";
+    public static final String DESTINATION_EMAIL = "destinationEmail";
+    public static final String DESTINATION_USER_ID = "destinationUserId";
+
+    // Merge user constants
+    public static final String MERGE_SUCCESSFUL = "merge_successful";
+    public static final String MERGE_NOTREQUIRED = "merge_notrequired";
 }
