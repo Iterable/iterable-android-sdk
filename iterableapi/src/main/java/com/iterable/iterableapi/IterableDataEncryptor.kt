@@ -23,7 +23,8 @@ class IterableDataEncryptor {
         private const val TRANSFORMATION_LEGACY = "AES/CBC/PKCS5Padding"
         private const val ITERABLE_KEY_ALIAS = "iterable_encryption_key"
         private const val GCM_TAG_LENGTH = 128
-        private const val IV_LENGTH = 16
+        private const val GCM_IV_LENGTH = 12
+        private const val CBC_IV_LENGTH = 16
         private val TEST_KEYSTORE_PASSWORD = "test_password".toCharArray()
 
         private val keyStore: KeyStore by lazy {
@@ -132,11 +133,12 @@ class IterableDataEncryptor {
                 encryptLegacy(data)
             }
 
-            // Combine isModern flag, IV, and encrypted data
-            val combined = ByteArray(1 + encryptedData.iv.size + encryptedData.data.size)
+            // Combine isModern flag, IV length, IV, and encrypted data
+            val combined = ByteArray(1 + 1 + encryptedData.iv.size + encryptedData.data.size)
             combined[0] = if (encryptedData.isModernEncryption) 1 else 0
-            System.arraycopy(encryptedData.iv, 0, combined, 1, encryptedData.iv.size)
-            System.arraycopy(encryptedData.data, 0, combined, 1 + encryptedData.iv.size, encryptedData.data.size)
+            combined[1] = encryptedData.iv.size.toByte()  // Store IV length
+            System.arraycopy(encryptedData.iv, 0, combined, 2, encryptedData.iv.size)
+            System.arraycopy(encryptedData.data, 0, combined, 2 + encryptedData.iv.size, encryptedData.data.size)
 
             return Base64.encodeToString(combined, Base64.NO_WRAP)
         } catch (e: Exception) {
@@ -153,8 +155,9 @@ class IterableDataEncryptor {
             
             // Extract components
             val isModern = combined[0] == 1.toByte()
-            val iv = combined.copyOfRange(1, 1 + IV_LENGTH)
-            val encrypted = combined.copyOfRange(1 + IV_LENGTH, combined.size)
+            val ivLength = combined[1].toInt()
+            val iv = combined.copyOfRange(2, 2 + ivLength)
+            val encrypted = combined.copyOfRange(2 + ivLength, combined.size)
 
             val encryptedData = EncryptedData(encrypted, iv, isModern)
             
@@ -187,16 +190,15 @@ class IterableDataEncryptor {
         }
         
         val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
-        val iv = generateIV()
-        val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
-        cipher.init(Cipher.ENCRYPT_MODE, getKey(), spec)
+        cipher.init(Cipher.ENCRYPT_MODE, getKey())
+        val iv = cipher.iv
         val encrypted = cipher.doFinal(data)
         return EncryptedData(encrypted, iv, true)
     }
 
     private fun encryptLegacy(data: ByteArray): EncryptedData {
         val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
-        val iv = generateIV()
+        val iv = generateIV(isModern = false)
         val spec = IvParameterSpec(iv)
         cipher.init(Cipher.ENCRYPT_MODE, getKey(), spec)
         val encrypted = cipher.doFinal(data)
@@ -222,8 +224,9 @@ class IterableDataEncryptor {
         return cipher.doFinal(encryptedData.data)
     }
 
-    private fun generateIV(): ByteArray {
-        val iv = ByteArray(IV_LENGTH)
+    private fun generateIV(isModern: Boolean = false): ByteArray {
+        val length = if (isModern) GCM_IV_LENGTH else CBC_IV_LENGTH
+        val iv = ByteArray(length)
         SecureRandom().nextBytes(iv)
         return iv
     }
