@@ -2,11 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-
 ## [3.5.6]
 
 #### Fixed
-- Fixed IV length handling in encryption to properly support both modern (GCM) and legacy (CBC) encryption modes.
+- Fixed Crash while initializing IterableSDK on some devices (Unsupported IV Length).
 
 ## [3.5.5]
 
