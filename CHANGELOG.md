@@ -2,16 +2,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-
 ## [3.5.6]
 
 #### Fixed
-- Fixed IV length handling in encryption to properly support both modern (GCM) and legacy (CBC) encryption modes.
+- Fixed Crash while initializing IterableSDK on some devices (Unsupported IV Length).
 
 ## [3.5.5]
 
 #### Added
-- - Added `IterableDecryptionFailureHandler` interface to handle decryption failures of PII information. 
+- - Added `IterableDecryptionFailureHandler` interface to handle decryption failures of PII information.
 
 #### Removed
 - Removed `encryptionEnforced` parameter from `IterableConfig` as data is now always encoded for security
@@ -69,7 +68,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.4.17](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.17)
 #### Added
-- when JWT is invalid, `IterableAuthManager` is updated to fetch and store a new JWT token locally 
+- when JWT is invalid, `IterableAuthManager` is updated to fetch and store a new JWT token locally
 - `IterableRequestTask` now has a retry mechanism that fetches a new JWT token and retries the request if JWT is invalid
 - retries are capped at a max of 5
 
@@ -175,12 +174,12 @@ rest:
 (Note that Iterable's Android SDK does not store the last push payload at
 rest—before or after this update.)
 
-For more information about this encryption in Android, examine the source code 
+For more information about this encryption in Android, examine the source code
 for Iterable's Android SDK: [`IterableKeychain`](https://github.com/Iterable/iterable-android-sdk/blob/master/iterableapi/src/main/java/com/iterable/iterableapi/IterableKeychain.kt).
 
 #### Storing in-app messages in memory
 
-This release also allows you to have your Android apps (regardless of `minSdkVersion`) 
+This release also allows you to have your Android apps (regardless of `minSdkVersion`)
 store in-app messages in memory, rather than in an unencrypted local file.
 However, an unencrypted local file is still the default option.
 
@@ -206,14 +205,14 @@ IterableApi.initialize(context, "<YOUR_API_KEY>", configBuilder.build());
 ```
 
 When users upgrade to a version of your Android app that uses this version of
-the SDK (or higher), and you've set this configuration option to `true`, the 
+the SDK (or higher), and you've set this configuration option to `true`, the
 local file used for in-app message storage (if it already exists) is deleted
 However, no data is lost.
 
 #### Android upgrade instructions
 
 If your app targets API level 23 or higher, this is a standard SDK upgrade, with
-no special instructions. 
+no special instructions.
 
 If your app targets an API level less than 23, you'll need to make the following
 changes to your project (which allow your app to build, even though it won't
@@ -227,10 +226,10 @@ encrypt data):
 ## [3.4.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.9)
 #### Added
 - Added new methods for `setEmail`, `setUserId` and `updateEmail` which accepts `authToken`, providing more ways to pass `authToken` to SDK
-- Added two interface methods - `onTokenRegistrationSuccessful` and `onTokenRegistrationFailed`. Override these methods to see if authToken was successfully received by the SDK.  
+- Added two interface methods - `onTokenRegistrationSuccessful` and `onTokenRegistrationFailed`. Override these methods to see if authToken was successfully received by the SDK.
 
 #### Changed
-- `setAuthToken` method is now public allowing additional way to provide `authToken` to SDK. 
+- `setAuthToken` method is now public allowing additional way to provide `authToken` to SDK.
 
 ## [3.4.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/3.4.8)
 #### Removed
@@ -365,8 +364,8 @@ encrypt data):
   - `sku` - The item's SKU
   - `description` - A description of the item
   - `url` - A URL associated with the item
-  - `imageUrl` - A URL that points to an image of the item 
-  - `categories` - Categories associated with the item 
+  - `imageUrl` - A URL that points to an image of the item
+  - `categories` - Categories associated with the item
 
   Set these values on `CommerceItem` objects passed to the `IterableApi.trackPurchase` method.
 
@@ -386,7 +385,7 @@ encrypt data):
       ...
   }
   ```
-  
+
 - Updated minimum version for `firebase-messaging` to 20.3.0 to use `FirebaseMessaging.getToken()` instead of deprecated `FirebaseInstanceId.getToken()`.
 - Notifications will now show timestamp.
 
@@ -601,7 +600,7 @@ Please refer to the [Migration guide](https://github.com/Iterable/iterable-andro
 
 #### Changed
 - **BREAKING CHANGE:** Added `IterableContext` argument to `IterableCustomActionHandler`
-  
+
   The new method signature is:
   ```java
   boolean handleIterableCustomAction(IterableAction action, IterableActionContext actionContext)
@@ -722,69 +721,69 @@ IterableApi.initialize(context, "YOUR API KEY", config);
 
 ## [2.2.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.5)
  _Released on 2018-03-31_
- 
+
 #### Changed
 - Updated requests to not send when there is an exception while constructing the JSON request body.
- 
+
 #### Fixed
 - Fixed the reference to internal fields in NotificationCompat.Builder for buildVersion 27.
 
 ## [2.2.4](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.4)
  _Released on 2018-03-07_
- 
+
 #### Fixed
 - Fixed the load sequence for retrieving a notification image.
 
 ## [2.2.3](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.3)
  _Released on 2018-01-22_
- 
+
 #### Added
 - Added non-empty data body for notification rendering.
 - Added default channel id support.
 
 ## [2.2.2](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.2)
  _Released on 2017-11-30_
- 
+
 #### Fixed
 - Fixed error in IterablePushRegistration when `getDeviceToken` returns an empty PushRegistrationObject.
 
 ## [2.2.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.1)
  _Released on 2017-11-20_
- 
+
 #### Added
 - Added the `updateSubscriptions` function to create to modify channel, list, and message subscription preferences.
 
 ## [2.2.0](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.2.0)
  _Released on 2017-11-03_
- 
+
 #### Added
 - Added support for html based in-app notifications.
 
 ## [2.1.9](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.9)
  _Released on 2017-10-20_
- 
- 
+
+
 #### Fixed
 - Fixed payload path for image url.
 
 ## [2.1.8](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.8)
  _Released on 2017-07-28_
- 
+
 #### Added
 - Added support for android image notifications.
- 
+
 #### Fixed
 - Fixed load error for empty image url.
 
 ## [2.1.7](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.7)
  _Released on 2017-07-19_
- 
+
 #### Fixed
 - Fixed in-app button clicks without an action defined.
 
 ## [2.1.6](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.6)
  _Released on 2017-07-19_
- 
+
 #### Added
 - Added the in-app consume logic to automatically remove the notification from list of in-app notifications.
 
@@ -793,7 +792,7 @@ IterableApi.initialize(context, "YOUR API KEY", config);
 
 ## [2.1.5](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.1.5)
  _Released on 2017-06-09_
- 
+
 #### Added
 - Added full support for newly created Firebase applications
 - Added new functionality for `registerForPush` which takes in the optional pushServicePlatform
@@ -835,7 +834,7 @@ IterableApi.initialize(context, "YOUR API KEY", config);
  _Released on 2016-12-28_
 
 - added support for In-App Notifications with different views layouts
-	- Full screen 
+	- Full screen
 	- Bottom
 	- Center
 	- Top
@@ -844,6 +843,6 @@ IterableApi.initialize(context, "YOUR API KEY", config);
 
 ## [2.0.1](https://github.com/Iterable/iterable-android-sdk/releases/tag/2.0.1)
  _Released on 2016-10-13_
- 
-#### Added 
+
+#### Added
 - Added ability to send data by userId
