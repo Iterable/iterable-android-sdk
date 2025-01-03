@@ -414,7 +414,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
-                if (response == InAppResponse.SHOW) {
+                if (response == InAppResponse.SHOW && !message.isJsonOnly()) {
                     boolean consume = !message.isInboxMessage();
                     showMessage(message, consume, null);
                     return;

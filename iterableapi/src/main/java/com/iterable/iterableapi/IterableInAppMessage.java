@@ -25,6 +25,7 @@ public class IterableInAppMessage {
     private final @Nullable Boolean saveToInbox;
     private final @Nullable InboxMetadata inboxMetadata;
     private final @Nullable Long campaignId;
+    private final boolean jsonOnly;
     private boolean processed = false;
     private boolean consumed = false;
     private boolean read = false;
@@ -41,7 +42,8 @@ public class IterableInAppMessage {
                          @NonNull Double priorityLevel,
                          @Nullable Boolean saveToInbox,
                          @Nullable InboxMetadata inboxMetadata,
-                         @Nullable Long campaignId) {
+                         @Nullable Long campaignId,
+                         boolean jsonOnly) {
 
         this.messageId = messageId;
         this.content = content;
@@ -53,6 +55,7 @@ public class IterableInAppMessage {
         this.saveToInbox = saveToInbox;
         this.inboxMetadata = inboxMetadata;
         this.campaignId = campaignId;
+        this.jsonOnly = jsonOnly;
     }
 
     static class Trigger {
@@ -371,6 +374,7 @@ public class IterableInAppMessage {
         JSONObject inboxPayloadJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA);
         InboxMetadata inboxMetadata = InboxMetadata.fromJSONObject(inboxPayloadJson);
 
+        boolean jsonOnly = contentJson.optBoolean(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_JSON_ONLY, false);
 
         IterableInAppMessage message = new IterableInAppMessage(
                 messageId,
@@ -382,7 +386,8 @@ public class IterableInAppMessage {
                 priorityLevel,
                 saveToInbox,
                 inboxMetadata,
-                campaignId);
+                campaignId,
+                jsonOnly);
 
         message.inAppStorageInterface = storageInterface;
         if (html != null) {
@@ -444,6 +449,8 @@ public class IterableInAppMessage {
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PROCESSED, processed);
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONSUMED, consumed);
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_READ, read);
+
+            contentJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_JSON_ONLY, jsonOnly);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "Error while serializing an in-app message", e);
         }
@@ -528,5 +535,9 @@ public class IterableInAppMessage {
             paddingJson.putOpt("percentage", padding);
         }
         return paddingJson;
+    }
+
+    public boolean isJsonOnly() {
+        return jsonOnly;
     }
 }
