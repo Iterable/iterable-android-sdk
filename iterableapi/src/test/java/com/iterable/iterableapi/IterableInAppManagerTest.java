@@ -427,13 +427,14 @@ public class IterableInAppManagerTest extends BaseTest {
         assertNotNull(message);
         assertTrue(message.isJsonOnly());
 
-        // Verify that the message is processed but not displayed
+        // Set up mocks
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
-        when(mockDisplayer.showMessage(any(IterableInAppMessage.class), any(IterableInAppLocation.class), any(IterableHelper.IterableUrlCallback.class))).thenReturn(true);
+        IterableInAppHandler mockHandler = mock(IterableInAppHandler.class);
+        when(mockHandler.onNewInApp(any(IterableInAppMessage.class))).thenReturn(InAppResponse.SHOW);
 
         IterableInAppManager inAppManager = new IterableInAppManager(
                 iterableApi,
-                new IterableDefaultInAppHandler(),
+                mockHandler,
                 30.0,
                 new IterableInAppMemoryStorage(),
                 activityMonitor,
@@ -445,11 +446,14 @@ public class IterableInAppManagerTest extends BaseTest {
         inAppManager.syncWithRemoteQueue(Arrays.asList(message));
         inAppManager.processMessages();
 
+        // Verify that onNewInApp was called
+        verify(mockHandler).onNewInApp(eq(message));
+
         // Verify that the message was processed
         assertTrue(message.isProcessed());
 
-        // Verify that the displayer was called with the message
-        verify(mockDisplayer).showMessage(eq(message), any(IterableInAppLocation.class), any(IterableHelper.IterableUrlCallback.class));
+        // Verify that the displayer was never called since it's a JSON-only message
+        verify(mockDisplayer, never()).showMessage(any(IterableInAppMessage.class), any(IterableInAppLocation.class), any(IterableHelper.IterableUrlCallback.class));
     }
 
     @Test
