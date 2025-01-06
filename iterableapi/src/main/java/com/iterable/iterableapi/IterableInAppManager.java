@@ -234,6 +234,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {
+        if (message.isJsonOnly()) {
+            setRead(message, true, null, null);
+            if (consume) {
+                message.markForDeletion(true);
+            }
+            return;
+        }
+
         if (displayer.showMessage(message, inAppLocation, new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
@@ -405,7 +413,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         IterableLogger.printInfo();
 
         List<IterableInAppMessage> messages = getMessages();
-
         List<IterableInAppMessage> messagesByPriorityLevel = getMessagesSortedByPriorityLevel(messages);
 
         for (IterableInAppMessage message : messagesByPriorityLevel) {
@@ -414,7 +421,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
-                if (response == InAppResponse.SHOW && !message.isJsonOnly()) {
+                
+                if (response == InAppResponse.SHOW) {
+                    if (message.isJsonOnly()) {
+                        // For JSON-only messages, just mark as consumed and continue processing other messages
+                        message.setConsumed(true);
+                        continue;
+                    }
+                    
                     boolean consume = !message.isInboxMessage();
                     showMessage(message, consume, null);
                     return;

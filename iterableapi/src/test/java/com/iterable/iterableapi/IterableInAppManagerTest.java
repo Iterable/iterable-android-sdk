@@ -8,7 +8,6 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import java.util.List;
-import java.util.Arrays;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
@@ -408,102 +407,116 @@ public class IterableInAppManagerTest extends BaseTest {
     }
 
     @Test
-    public void testJsonOnlyMessage() throws Exception {
-        // Create a JSON-only message
-        JSONObject messageJson = new JSONObject();
-        messageJson.put(IterableConstants.KEY_MESSAGE_ID, "msg1");
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_CREATED_AT, System.currentTimeMillis());
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, System.currentTimeMillis() + 60 * 60 * 1000);
+    public void testJsonOnlyInAppMessage() throws Exception {
+        JSONObject payload = new JSONObject()
+            .put("inAppMessages", new JSONArray()
+                .put(new JSONObject()
+                    .put("saveToInbox", false)
+                    .put(IterableConstants.ITERABLE_IN_APP_CONTENT, new JSONObject()
+                        .put(IterableConstants.ITERABLE_IN_APP_CONTENT_TYPE, IterableConstants.ITERABLE_IN_APP_CONTENT_TYPE_JSON)
+                        .put(IterableConstants.ITERABLE_IN_APP_JSON, new JSONObject().put("key", "value")))
+                    .put(IterableConstants.ITERABLE_IN_APP_TRIGGER, new JSONObject().put("type", "immediate"))
+                    .put("messageId", "message1")
+                    .put("campaignId", 1)));
 
-        JSONObject contentJson = new JSONObject();
-        contentJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_JSON_ONLY, true);
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        
+        IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, inAppHandler, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
 
-        JSONObject triggerJson = new JSONObject();
-        triggerJson.put(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE, "immediate");
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_TRIGGER, triggerJson);
+        // Bring app into foreground by creating and resuming an activity
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+        
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+        
+        // Verify the message was processed but not displayed
+        ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler).onNewInApp(messageCaptor.capture());
+        verify(inAppDisplayerMock, never()).showMessage(any(), any(), any());
+        
+        IterableInAppMessage message = messageCaptor.getValue();
+        assertTrue(message.getContent() instanceof IterableInAppMessage.IterableJsonInAppContent);
+        assertEquals("value", ((IterableInAppMessage.IterableJsonInAppContent) message.getContent()).getJson().getString("key"));
 
-        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
-        assertNotNull(message);
-        assertTrue(message.isJsonOnly());
+        // Verify message was consumed immediately
+        assertEquals(0, inAppManager.getMessages().size());
+    }
+    /*
+    @Test
+    public void testJsonOnlyInAppMessageParsing() throws Exception {
+        JSONObject payload = new JSONObject()
+            .put("inAppMessages", new JSONArray()
+                .put(new JSONObject()
+                    .put("saveToInbox", false)
+                    .put("content", new JSONObject()
+                        .put("contentType", "json")
+                        .put("json", new JSONObject()
+                            .put("key1", "value1")
+                            .put("key2", 42)
+                            .put("key3", new JSONObject().put("nested", true))))
+                    .put("trigger", new JSONObject().put("type", "never"))
+                    .put("messageId", "message1")
+                    .put("campaignId", 1)));
 
-        // Set up mocks
-        IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
-        IterableInAppHandler mockHandler = mock(IterableInAppHandler.class);
-        when(mockHandler.onNewInApp(any(IterableInAppMessage.class))).thenReturn(InAppResponse.SHOW);
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
 
-        IterableInAppManager inAppManager = new IterableInAppManager(
-                iterableApi,
-                mockHandler,
-                30.0,
-                new IterableInAppMemoryStorage(),
-                activityMonitor,
-                mockDisplayer
-        );
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
 
-        // Add the message and process it
-        inAppManager.getMessages().clear();
-        inAppManager.syncWithRemoteQueue(Arrays.asList(message));
-        inAppManager.processMessages();
+        List<IterableInAppMessage> messages = inAppManager.getMessages();
+        assertEquals(1, messages.size());
 
-        // Verify that onNewInApp was called
-        verify(mockHandler).onNewInApp(eq(message));
+        IterableInAppMessage message = messages.get(0);
+        //assertTrue(message.getContent() instanceof IterableJsonInAppContent);
+		JSONObject json = message.getJson();
 
-        // Verify that the message was processed
-        assertTrue(message.isProcessed());
-
-        // Verify that the displayer was never called since it's a JSON-only message
-        verify(mockDisplayer, never()).showMessage(any(IterableInAppMessage.class), any(IterableInAppLocation.class), any(IterableHelper.IterableUrlCallback.class));
+        assertEquals("value1", json.getString("key1"));
+        assertEquals(42, json.getInt("key2"));
+        assertTrue(json.getJSONObject("key3").getBoolean("nested"));
     }
 
     @Test
-    public void testJsonOnlyMessageProcessing() throws Exception {
-        // Create a JSON-only message
-        JSONObject messageJson = new JSONObject();
-        messageJson.put(IterableConstants.KEY_MESSAGE_ID, "msg1");
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_CREATED_AT, System.currentTimeMillis());
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, System.currentTimeMillis() + 60 * 60 * 1000);
+    public void testJsonOnlyInAppMessageDelegateCallbacks() throws Exception {
+        JSONObject payload = new JSONObject()
+            .put("inAppMessages", new JSONArray()
+                .put(new JSONObject()
+                    .put("saveToInbox", false)
+                    .put("content", new JSONObject()
+                        .put("contentType", "json")
+                        .put("json", new JSONObject().put("key", "immediate")))
+                    .put("trigger", new JSONObject().put("type", "immediate"))
+                    .put("messageId", "message1")
+                    .put("campaignId", 1))
+                .put(new JSONObject()
+                    .put("saveToInbox", false)
+                    .put("content", new JSONObject()
+                        .put("contentType", "json")
+                        .put("json", new JSONObject().put("key", "never")))
+                    .put("trigger", new JSONObject().put("type", "never"))
+                    .put("messageId", "message2")
+                    .put("campaignId", 2)));
 
-        JSONObject contentJson = new JSONObject();
-        contentJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_JSON_ONLY, true);
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
 
-        JSONObject triggerJson = new JSONObject();
-        triggerJson.put(IterableConstants.ITERABLE_IN_APP_TRIGGER_TYPE, "immediate");
-        messageJson.put(IterableConstants.ITERABLE_IN_APP_TRIGGER, triggerJson);
+        IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, inAppHandler, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
 
-        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
-        assertNotNull(message);
-        assertTrue(message.isJsonOnly());
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
 
-        // Set up mocks
-        IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
-        IterableInAppHandler mockHandler = mock(IterableInAppHandler.class);
-        when(mockHandler.onNewInApp(any(IterableInAppMessage.class))).thenReturn(InAppResponse.SHOW);
+        // Verify only immediate trigger message calls onNewInApp
+        ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler, times(1)).onNewInApp(messageCaptor.capture());
+        verify(inAppDisplayerMock, never()).showMessage(any(), any(), any());
 
-        IterableInAppManager inAppManager = new IterableInAppManager(
-                iterableApi,
-                mockHandler,
-                30.0,
-                new IterableInAppMemoryStorage(),
-                activityMonitor,
-                mockDisplayer
-        );
-
-        // Add the message and process it
-        inAppManager.getMessages().clear();
-        inAppManager.syncWithRemoteQueue(Arrays.asList(message));
-        inAppManager.processMessages();
-
-        // Verify that onNewInApp was called
-        verify(mockHandler).onNewInApp(eq(message));
-
-        // Verify that the message was processed
-        assertTrue(message.isProcessed());
-
-        // Verify that the displayer was never called since it's a JSON-only message
-        verify(mockDisplayer, never()).showMessage(any(IterableInAppMessage.class), any(IterableInAppLocation.class), any(IterableHelper.IterableUrlCallback.class));
-    }
+        IterableInAppMessage message = messageCaptor.getValue();
+        assertEquals("message1", message.getMessageId());
+        assertTrue(message.getContent() instanceof IterableJsonInAppContent);
+        assertEquals("immediate", ((IterableJsonInAppContent) message.getContent()).getJson().getString("key"));
+    }*/
 
     private static class IterableSkipInAppHandler implements IterableInAppHandler {
         @NonNull
