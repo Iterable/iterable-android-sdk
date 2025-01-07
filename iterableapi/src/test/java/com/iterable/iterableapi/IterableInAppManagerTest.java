@@ -51,6 +51,7 @@ import static org.robolectric.Shadows.shadowOf;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
 
 public class IterableInAppManagerTest extends BaseTest {
 
@@ -711,6 +712,67 @@ public class IterableInAppManagerTest extends BaseTest {
         List<IterableInAppMessage> messages = inAppManager.getMessages();
         assertEquals(1, messages.size());
         assertEquals("customValue", messages.get(0).getCustomPayload().getString("key"));
+    }
+
+    @Test
+    public void testJsonOnlyInAppMessageProcessingAndDisplay() throws Exception {
+        // Create payload similar to iOS test
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject()
+                                        .put("key", "value"))
+                                .put("content", new JSONObject()
+                                        .put("html", "<meta name=\"viewport\" content=\"width=device-width\">")
+                                        .put("inAppDisplaySettings", new JSONObject()
+                                                .put("left", new JSONObject().put("percentage", 0))
+                                                .put("top", new JSONObject().put("percentage", 0))
+                                                .put("right", new JSONObject().put("percentage", 0))
+                                                .put("bottom", new JSONObject().put("percentage", 0))))
+                                .put("trigger", new JSONObject().put("type", "immediate"))
+                                .put("messageId", "message1")
+                                .put("campaignId", 1)));
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+
+        // Create InAppManager with mock handler and displayer
+        IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
+        final IterableInAppHandler inAppHandler = mock(IterableInAppHandler.class);
+        // Configure mock handler to return SHOW response
+        when(inAppHandler.onNewInApp(any(IterableInAppMessage.class))).thenReturn(IterableInAppHandler.InAppResponse.SHOW);
+        
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(
+                IterableApi.sharedInstance,
+                inAppHandler,
+                30.0,
+                new IterableInAppMemoryStorage(),
+                IterableActivityMonitor.getInstance(),
+                mockDisplayer));
+        IterableApi.sharedInstance = new IterableApi(inAppManager);
+
+        // First sync to get messages
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+
+        // Process messages by bringing app to foreground
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        // Verify handler was called with correct message
+        ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler).onNewInApp(messageCaptor.capture());
+        assertEquals("value", messageCaptor.getValue().getCustomPayload().getString("key"));
+
+        // Verify displayer was never called
+        verify(mockDisplayer, never()).showMessage(
+            any(IterableInAppMessage.class),
+            any(IterableInAppLocation.class),
+            any(IterableHelper.IterableUrlCallback.class));
+
+        // Verify message was consumed (not in queue)
+        assertEquals(0, inAppManager.getMessages().size());
     }
 
     private String createJsonOnlyPayload() throws JSONException {
