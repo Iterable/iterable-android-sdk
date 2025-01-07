@@ -352,6 +352,9 @@ public class IterableInAppMessage {
             if (contentJson == null) {
                 return null;
             }
+            if (customPayload == null) {
+                customPayload = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_LEGACY_PAYLOAD);
+            }
 
             String html = contentJson.optString(IterableConstants.ITERABLE_IN_APP_HTML, null);
             JSONObject inAppDisplaySettingsJson = contentJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS);
