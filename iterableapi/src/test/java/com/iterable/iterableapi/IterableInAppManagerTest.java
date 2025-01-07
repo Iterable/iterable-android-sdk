@@ -740,7 +740,6 @@ public class IterableInAppManagerTest extends BaseTest {
         // Create InAppManager with mock handler and displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
         final IterableInAppHandler inAppHandler = mock(IterableInAppHandler.class);
-        // No need to configure mock handler response since JSON-only messages are consumed automatically
         
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,

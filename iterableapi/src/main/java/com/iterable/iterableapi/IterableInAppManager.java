@@ -236,9 +236,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {
         if (message.isJsonOnly()) {
             setRead(message, true, null, null);
-            if (consume) {
-                message.markForDeletion(true);
-            }
+            message.setConsumed(true);
             return;
         }
 
@@ -421,14 +419,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
-                
-                if (message.isJsonOnly()) {
-                    // For JSON-only messages, always mark as consumed regardless of handler response
-                    message.setConsumed(true);
-                    continue;
-                }
-                
-                if (response == InAppResponse.SHOW) {
+
+                if (response == InAppResponse.SHOW || message.isJsonOnly()) {
                     boolean consume = !message.isInboxMessage();
                     showMessage(message, consume, null);
                     return;
