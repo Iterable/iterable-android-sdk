@@ -50,7 +50,7 @@ public class IterableApi {
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
-    private IterableKeychain keychain;
+    public IterableKeychain keychain;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -395,7 +395,11 @@ public class IterableApi {
         boolean isNotificationEnable = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized() && isNotificationEnable != systemNotificationEnabled) {
             IterableLogger.d(TAG, "Performing automatic push registration");
-            sharedInstance.registerForPush();
+            if(systemNotificationEnabled) {
+                sharedInstance.registerForPush();
+            } else {
+                sharedInstance.disablePush();
+            }
         }
         fetchRemoteConfiguration();
 
