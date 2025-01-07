@@ -50,7 +50,6 @@ import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.when;
 
 public class IterableInAppManagerTest extends BaseTest {
 
