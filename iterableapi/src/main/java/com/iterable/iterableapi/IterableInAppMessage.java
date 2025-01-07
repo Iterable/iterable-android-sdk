@@ -368,7 +368,9 @@ public class IterableInAppMessage {
             }
 
             InAppDisplaySettings inAppDisplaySettings = new InAppDisplaySettings(shouldAnimate, new InAppBgColor(bgColorInHex, bgAlpha));
-
+            if (html != null) {
+                message.setLoadedHtmlFromJson(true);
+            }
             content = new Content(html, padding, backgroundAlpha, shouldAnimate, inAppDisplaySettings);
         }
 
@@ -403,9 +405,6 @@ public class IterableInAppMessage {
                 jsonOnly);
 
         message.inAppStorageInterface = storageInterface;
-        if (html != null && !jsonOnly) {
-            message.setLoadedHtmlFromJson(true);
-        }
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         message.read = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_READ, false);
