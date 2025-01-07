@@ -414,26 +414,26 @@ public class IterableInAppManagerTest extends BaseTest {
     public void testJsonOnlyMessageProcessing() throws Exception {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(createJsonOnlyPayload()));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
-        
+
         // First sync to get messages
         inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
-        
+
         // Bring app to foreground to trigger processing of immediate messages
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
         shadowOf(getMainLooper()).idle();
-        
+
         // Verify immediate trigger message was processed
         ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(messageCaptor.capture());
-        
+
         IterableInAppMessage message = messageCaptor.getValue();
         assertEquals("message1", message.getMessageId());
         assertEquals("immediate", message.getCustomPayload().getString("key"));
         assertTrue(message.isJsonOnly());
-        
+
         // Verify never trigger message was not processed
-        verify(inAppHandler, never()).onNewInApp(argThat(msg -> 
+        verify(inAppHandler, never()).onNewInApp(argThat(msg ->
             msg.getMessageId().equals("message2")));
     }
 
@@ -448,9 +448,9 @@ public class IterableInAppManagerTest extends BaseTest {
                                 .put("customPayload", new JSONObject().put("key", "never"))
                                 .put("trigger", new JSONObject().put("type", "never"))
                                 .put("messageId", "message1")));
-        
+
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
-        
+
         // Create InAppManager with mock displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
@@ -461,14 +461,14 @@ public class IterableInAppManagerTest extends BaseTest {
                 IterableActivityMonitor.getInstance(),
                 mockDisplayer));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
-        
+
         // Process messages
         inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
-        
+
         // Only the "never" trigger message should remain in queue
         assertEquals(1, inAppManager.getMessages().size());
-        
+
         // Verify no messages were displayed
         verify(mockDisplayer, never()).showMessage(
             any(IterableInAppMessage.class),
@@ -489,14 +489,14 @@ public class IterableInAppManagerTest extends BaseTest {
                                         .put("title", "Test Title")
                                         .put("subtitle", "Test Subtitle"))
                                 .put("messageId", "message1")));
-        
+
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
-        
+
         // Directly sync messages since we're testing inbox state rather than trigger behavior
         inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
-        
+
         // Verify message is not in inbox
         List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
         assertEquals(0, inboxMessages.size());
@@ -515,18 +515,18 @@ public class IterableInAppManagerTest extends BaseTest {
                                                 .put("key", "contentValue")))
                                 .put("trigger", new JSONObject().put("type", "immediate"))
                                 .put("messageId", "message1")));
-        
+
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
-        
+
         // First sync to get messages
         inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
-        
+
         // Bring app to foreground to trigger immediate message
         Robolectric.buildActivity(Activity.class).create().start().resume();
         shadowOf(getMainLooper()).idle();
-        
+
         // Verify customPayload is used instead of content.payload
         ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(messageCaptor.capture());
@@ -583,7 +583,7 @@ public class IterableInAppManagerTest extends BaseTest {
                                 .put("messageId", "message2")));
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
-        
+
         // Create InAppManager with mock handler
         final IterableInAppHandler inAppHandler = mock(IterableInAppHandler.class);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
@@ -610,7 +610,7 @@ public class IterableInAppManagerTest extends BaseTest {
         assertEquals("message1", messageCaptor.getValue().getMessageId());
 
         // Verify never trigger message was not processed
-        verify(inAppHandler, never()).onNewInApp(argThat(msg -> 
+        verify(inAppHandler, never()).onNewInApp(argThat(msg ->
             msg.getMessageId().equals("message2")));
     }
 
@@ -634,7 +634,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         List<IterableInAppMessage> messages = inAppManager.getMessages();
         assertEquals(1, messages.size());
-        
+
         // In Android, when customPayload is not provided, an empty JSONObject is created
         JSONObject customPayload = messages.get(0).getCustomPayload();
         assertNotNull("Custom payload should not be null", customPayload);
@@ -740,7 +740,7 @@ public class IterableInAppManagerTest extends BaseTest {
         // Create InAppManager with mock handler and displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
         final IterableInAppHandler inAppHandler = mock(IterableInAppHandler.class);
-        
+
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,
                 inAppHandler,
