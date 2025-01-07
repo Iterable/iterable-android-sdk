@@ -379,12 +379,12 @@ public class IterableInAppMessage {
         JSONObject triggerJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_TRIGGER);
         Trigger trigger = Trigger.fromJSONObject(triggerJson);
 
-        double priorityLevel = messageJson.optDouble(IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL, 
+        double priorityLevel = messageJson.optDouble(IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL,
             IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL_UNASSIGNED);
 
-        Boolean saveToInbox = messageJson.has(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX) ? 
+        Boolean saveToInbox = messageJson.has(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX) ?
             messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX) : null;
-        
+
         JSONObject inboxPayloadJson = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA);
         InboxMetadata inboxMetadata = InboxMetadata.fromJSONObject(inboxPayloadJson);
 
@@ -414,27 +414,51 @@ public class IterableInAppMessage {
     @NonNull
     JSONObject toJSONObject() {
         JSONObject messageJson = new JSONObject();
+        JSONObject contentJson = new JSONObject();
+        JSONObject inAppDisplaySettingsJson;
         try {
             messageJson.putOpt(IterableConstants.KEY_MESSAGE_ID, messageId);
             if (campaignId != null && IterableUtil.isValidCampaignId(campaignId)) {
                 messageJson.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
             }
-            
+            if (createdAt != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CREATED_AT, createdAt.getTime());
+            }
+            if (expiresAt != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_EXPIRES_AT, expiresAt.getTime());
+            }
             if (jsonOnly) {
                 messageJson.put(IterableConstants.ITERABLE_IN_APP_JSON_ONLY, 1);
             }
 
-            if (!jsonOnly) {
-                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
-                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD, customPayload);
-                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL, priorityLevel);
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_TRIGGER, trigger.toJSONObject());
 
-                if (saveToInbox != null && !jsonOnly) {
-                    messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX, saveToInbox);
-                }
-                if (inboxMetadata != null && !jsonOnly) {
-                    messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA, inboxMetadata.toJSONObject());
-                }
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PRIORITY_LEVEL, priorityLevel);
+
+            inAppDisplaySettingsJson = encodePaddingRectToJson(content.padding);
+
+            inAppDisplaySettingsJson.put(IterableConstants.ITERABLE_IN_APP_SHOULD_ANIMATE, content.inAppDisplaySettings.shouldAnimate);
+            if (content.inAppDisplaySettings.inAppBgColor != null && content.inAppDisplaySettings.inAppBgColor.bgHexColor != null) {
+                JSONObject bgColorJson = new JSONObject();
+                bgColorJson.put(IterableConstants.ITERABLE_IN_APP_BGCOLOR_ALPHA, content.inAppDisplaySettings.inAppBgColor.bgAlpha);
+                bgColorJson.putOpt(IterableConstants.ITERABLE_IN_APP_BGCOLOR_HEX, content.inAppDisplaySettings.inAppBgColor.bgHexColor);
+                inAppDisplaySettingsJson.put(IterableConstants.ITERABLE_IN_APP_BGCOLOR, bgColorJson);
+            }
+
+            contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_DISPLAY_SETTINGS, inAppDisplaySettingsJson);
+
+            if (content.backgroundAlpha != 0) {
+                contentJson.putOpt(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ALPHA, content.backgroundAlpha);
+            }
+
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CONTENT, contentJson);
+            messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD, customPayload);
+
+            if (saveToInbox != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_SAVE_TO_INBOX, saveToInbox);
+            }
+            if (inboxMetadata != null) {
+                messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_INBOX_METADATA, inboxMetadata.toJSONObject());
             }
 
             messageJson.putOpt(IterableConstants.ITERABLE_IN_APP_PROCESSED, processed);
