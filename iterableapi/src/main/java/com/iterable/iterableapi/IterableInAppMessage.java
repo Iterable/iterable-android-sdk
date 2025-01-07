@@ -249,7 +249,7 @@ public class IterableInAppMessage {
 
     @NonNull
     public Content getContent() {
-        if (content.html == null) {
+        if (content.html == null && !jsonOnly) {
             content.html = inAppStorageInterface.getHTML(messageId);
         }
         return content;
