@@ -48,6 +48,8 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.junit.Assert.assertNull;
 
 public class IterableInAppManagerTest extends BaseTest {
 
@@ -433,16 +435,27 @@ public class IterableInAppManagerTest extends BaseTest {
     @Test
     public void testJsonOnlyMessageDisplay() throws Exception {
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(createJsonOnlyPayload()));
-        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        
+        // Create InAppManager with mock displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
-        inAppManager.setDisplayer(mockDisplayer);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(
+                IterableApi.sharedInstance,
+                new IterableDefaultInAppHandler(),
+                30.0,
+                new IterableInAppMemoryStorage(),
+                IterableActivityMonitor.getInstance(),
+                mockDisplayer));
+        IterableApi.sharedInstance = new IterableApi(inAppManager);
         
         // Process messages
         inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
         
         // Verify no messages were displayed
-        verify(mockDisplayer, never()).showMessage(any());
+        verify(mockDisplayer, never()).showMessage(
+            any(IterableInAppMessage.class),
+            any(IterableInAppLocation.class),
+            any(IterableHelper.IterableUrlCallback.class));
         assertEquals(0, inAppManager.getMessages().size());
     }
 
@@ -508,9 +521,17 @@ public class IterableInAppManagerTest extends BaseTest {
                                 .put("messageId", "message1")));
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
-        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        
+        // Create InAppManager with mock displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
-        inAppManager.setDisplayer(mockDisplayer);
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(
+                IterableApi.sharedInstance,
+                new IterableDefaultInAppHandler(),
+                30.0,
+                new IterableInAppMemoryStorage(),
+                IterableActivityMonitor.getInstance(),
+                mockDisplayer));
+        IterableApi.sharedInstance = new IterableApi(inAppManager);
 
         // Process messages
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
@@ -522,7 +543,10 @@ public class IterableInAppManagerTest extends BaseTest {
         assertEquals("value", messageCaptor.getValue().getCustomPayload().getString("key"));
 
         // Verify message was not displayed
-        verify(mockDisplayer, never()).showMessage(any());
+        verify(mockDisplayer, never()).showMessage(
+            any(IterableInAppMessage.class),
+            any(IterableInAppLocation.class),
+            any(IterableHelper.IterableUrlCallback.class));
 
         // Verify message was consumed
         assertEquals(0, inAppManager.getMessages().size());
