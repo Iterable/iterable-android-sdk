@@ -740,8 +740,6 @@ public class IterableInAppManagerTest extends BaseTest {
         // Create InAppManager with mock handler and displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
         final IterableInAppHandler inAppHandler = mock(IterableInAppHandler.class);
-        // Configure mock handler to return SHOW response
-        when(inAppHandler.onNewInApp(any(IterableInAppMessage.class))).thenReturn(IterableInAppHandler.InAppResponse.SHOW);
         
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,

@@ -422,13 +422,13 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
                 
+                if (message.isJsonOnly()) {
+                    // For JSON-only messages, always mark as consumed regardless of handler response
+                    message.setConsumed(true);
+                    continue;
+                }
+                
                 if (response == InAppResponse.SHOW) {
-                    if (message.isJsonOnly()) {
-                        // For JSON-only messages, just mark as consumed and continue processing other messages
-                        message.setConsumed(true);
-                        continue;
-                    }
-                    
                     boolean consume = !message.isInboxMessage();
                     showMessage(message, consume, null);
                     return;
