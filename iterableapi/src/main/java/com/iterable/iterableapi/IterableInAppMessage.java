@@ -340,7 +340,7 @@ public class IterableInAppMessage {
         boolean jsonOnly = messageJson.optInt(IterableConstants.ITERABLE_IN_APP_JSON_ONLY, 0) == 1;
 
         JSONObject customPayload = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD);
-        if (customPayload == null) {
+        if (customPayload == null && jsonOnly) {
             customPayload = new JSONObject();
         }
 
@@ -403,6 +403,9 @@ public class IterableInAppMessage {
                 jsonOnly);
 
         message.inAppStorageInterface = storageInterface;
+        if (html != null && !jsonOnly) {
+            message.setLoadedHtmlFromJson(true);
+        }
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         message.read = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_READ, false);
