@@ -93,7 +93,7 @@ public class IterableNotificationTest {
     }
 
     @Test
-    public void testPendingIntentImmutable() throws Exception {
+    public void testPendingIntentMutable() throws Exception {
         Bundle notif = new Bundle();
         notif.putString(IterableConstants.ITERABLE_DATA_KEY, getResourceString("push_payload_action_buttons.json"));
 
