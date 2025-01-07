@@ -52,7 +52,7 @@ public class IterableInAppMessage {
         this.expiresAt = expiresAt;
         this.trigger = trigger;
         this.priorityLevel = priorityLevel;
-        this.saveToInbox = jsonOnly ? false : saveToInbox;
+        this.saveToInbox = saveToInbox != null ? (saveToInbox && !jsonOnly) : null;
         this.inboxMetadata = inboxMetadata;
         this.campaignId = campaignId;
         this.jsonOnly = jsonOnly;
@@ -368,9 +368,6 @@ public class IterableInAppMessage {
             }
 
             InAppDisplaySettings inAppDisplaySettings = new InAppDisplaySettings(shouldAnimate, new InAppBgColor(bgColorInHex, bgAlpha));
-            if (html != null) {
-                message.setLoadedHtmlFromJson(true);
-            }
             content = new Content(html, padding, backgroundAlpha, shouldAnimate, inAppDisplaySettings);
         }
 
@@ -405,6 +402,9 @@ public class IterableInAppMessage {
                 jsonOnly);
 
         message.inAppStorageInterface = storageInterface;
+        if (content.html != null && content.html.length() > 0 && !jsonOnly) {
+            message.setLoadedHtmlFromJson(true);
+        }
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);
         message.consumed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_CONSUMED, false);
         message.read = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_READ, false);
