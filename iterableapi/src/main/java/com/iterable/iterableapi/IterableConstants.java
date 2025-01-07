@@ -228,12 +228,8 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_TYPE             = "displayType";
     public static final String ITERABLE_IN_APP_CLICKED_URL      = "clickedUrl";
     public static final String ITERABLE_IN_APP_HTML             = "html";
-    public static final String ITERABLE_IN_APP_JSON             = "json";
     public static final String ITERABLE_IN_APP_CREATED_AT       = "createdAt";
     public static final String ITERABLE_IN_APP_EXPIRES_AT       = "expiresAt";
-	public static final String ITERABLE_IN_APP_CONTENT_TYPE 	= "contentType";
-	public static final String ITERABLE_IN_APP_CONTENT_TYPE_JSON = "json";
-	public static final String ITERABLE_IN_APP_CONTENT_TYPE_HTML = "html";
     public static final String ITERABLE_IN_APP_LEGACY_PAYLOAD   = "payload";
     public static final String ITERABLE_IN_APP_CUSTOM_PAYLOAD   = "customPayload";
     public static final String ITERABLE_IN_APP_TRIGGER          = "trigger";

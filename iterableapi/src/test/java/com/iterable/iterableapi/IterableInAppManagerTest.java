@@ -407,116 +407,272 @@ public class IterableInAppManagerTest extends BaseTest {
     }
 
     @Test
-    public void testJsonOnlyInAppMessage() throws Exception {
-        JSONObject payload = new JSONObject()
-            .put("inAppMessages", new JSONArray()
-                .put(new JSONObject()
-                    .put("saveToInbox", false)
-                    .put(IterableConstants.ITERABLE_IN_APP_CONTENT, new JSONObject()
-                        .put(IterableConstants.ITERABLE_IN_APP_CONTENT_TYPE, IterableConstants.ITERABLE_IN_APP_CONTENT_TYPE_JSON)
-                        .put(IterableConstants.ITERABLE_IN_APP_JSON, new JSONObject().put("key", "value")))
-                    .put(IterableConstants.ITERABLE_IN_APP_TRIGGER, new JSONObject().put("type", "immediate"))
-                    .put("messageId", "message1")
-                    .put("campaignId", 1)));
-
-        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+    public void testJsonOnlyMessageProcessing() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(createJsonOnlyPayload()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         
-        IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, inAppHandler, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
-
-        // Bring app into foreground by creating and resuming an activity
-        Robolectric.buildActivity(Activity.class).create().start().resume();
+        // Bring app to foreground to trigger processing
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
         shadowOf(getMainLooper()).idle();
+        
+        // Verify immediate trigger message was processed
+        ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler).onNewInApp(messageCaptor.capture());
+        
+        IterableInAppMessage message = messageCaptor.getValue();
+        assertEquals("message1", message.getMessageId());
+        assertEquals("immediate", message.getCustomPayload().getString("key"));
+        assertTrue(message.isJsonOnly());
+        assertTrue(message.isConsumed());
+        
+        // Verify never trigger message was not processed
+        verify(inAppHandler, never()).onNewInApp(argThat(msg -> 
+            msg.getMessageId().equals("message2")));
+    }
+
+    @Test
+    public void testJsonOnlyMessageDisplay() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(createJsonOnlyPayload()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
+        inAppManager.setDisplayer(mockDisplayer);
+        
+        // Process messages
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+        
+        // Verify no messages were displayed
+        verify(mockDisplayer, never()).showMessage(any());
+        assertEquals(0, inAppManager.getMessages().size());
+    }
+
+    @Test
+    public void testJsonOnlyMessageInboxBehavior() throws Exception {
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", true)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject().put("key", "value"))
+                                .put("inboxMetadata", new JSONObject()
+                                        .put("title", "Test Title")
+                                        .put("subtitle", "Test Subtitle"))
+                                .put("messageId", "message1")));
+        
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
         
         inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
         
-        // Verify the message was processed but not displayed
+        // Verify message is not in inbox
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertEquals(0, inboxMessages.size());
+    }
+
+    @Test
+    public void testJsonOnlyMessageContentBehavior() throws Exception {
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject()
+                                        .put("key", "customValue"))
+                                .put("content", new JSONObject()
+                                        .put("payload", new JSONObject()
+                                                .put("key", "contentValue")))
+                                .put("messageId", "message1")));
+        
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+        
+        // Verify customPayload is used instead of content.payload
         ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(messageCaptor.capture());
-        verify(inAppDisplayerMock, never()).showMessage(any(), any(), any());
-        
-        IterableInAppMessage message = messageCaptor.getValue();
-        assertTrue(message.getContent() instanceof IterableInAppMessage.IterableJsonInAppContent);
-        assertEquals("value", ((IterableInAppMessage.IterableJsonInAppContent) message.getContent()).getJson().getString("key"));
+        assertEquals("customValue", messageCaptor.getValue().getCustomPayload().getString("key"));
+    }
 
-        // Verify message was consumed immediately
+    @Test
+    public void testJsonOnlyInAppMessage() throws Exception {
+        // Create mock in-app message with immediate trigger
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject().put("key", "value"))
+                                .put("trigger", new JSONObject().put("type", "immediate"))
+                                .put("messageId", "message1")));
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
+        inAppManager.setDisplayer(mockDisplayer);
+
+        // Process messages
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        // Verify onNew was called with correct payload
+        ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler).onNewInApp(messageCaptor.capture());
+        assertEquals("value", messageCaptor.getValue().getCustomPayload().getString("key"));
+
+        // Verify message was not displayed
+        verify(mockDisplayer, never()).showMessage(any());
+
+        // Verify message was consumed
         assertEquals(0, inAppManager.getMessages().size());
     }
-    /*
+
     @Test
     public void testJsonOnlyInAppMessageParsing() throws Exception {
         JSONObject payload = new JSONObject()
-            .put("inAppMessages", new JSONArray()
-                .put(new JSONObject()
-                    .put("saveToInbox", false)
-                    .put("content", new JSONObject()
-                        .put("contentType", "json")
-                        .put("json", new JSONObject()
-                            .put("key1", "value1")
-                            .put("key2", 42)
-                            .put("key3", new JSONObject().put("nested", true))))
-                    .put("trigger", new JSONObject().put("type", "never"))
-                    .put("messageId", "message1")
-                    .put("campaignId", 1)));
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject()
+                                        .put("key1", "value1")
+                                        .put("key2", 42)
+                                        .put("key3", new JSONObject().put("nested", true)))
+                                .put("trigger", new JSONObject().put("type", "never"))
+                                .put("messageId", "message1")));
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
 
-        inAppManager.syncInApp();
+        // Bring app into foreground by creating and resuming an activity
+        Robolectric.buildActivity(Activity.class).create().start().resume();
         shadowOf(getMainLooper()).idle();
 
         List<IterableInAppMessage> messages = inAppManager.getMessages();
         assertEquals(1, messages.size());
 
         IterableInAppMessage message = messages.get(0);
-        //assertTrue(message.getContent() instanceof IterableJsonInAppContent);
-		JSONObject json = message.getJson();
-
-        assertEquals("value1", json.getString("key1"));
-        assertEquals(42, json.getInt("key2"));
-        assertTrue(json.getJSONObject("key3").getBoolean("nested"));
+        assertEquals("value1", message.getCustomPayload().getString("key1"));
+        assertEquals(42, message.getCustomPayload().getInt("key2"));
+        assertTrue(message.getCustomPayload().getJSONObject("key3").getBoolean("nested"));
     }
 
     @Test
-    public void testJsonOnlyInAppMessageDelegateCallbacks() throws Exception {
+    public void testJsonOnlyInAppMessageWithoutCustomPayload() throws Exception {
         JSONObject payload = new JSONObject()
-            .put("inAppMessages", new JSONArray()
-                .put(new JSONObject()
-                    .put("saveToInbox", false)
-                    .put("content", new JSONObject()
-                        .put("contentType", "json")
-                        .put("json", new JSONObject().put("key", "immediate")))
-                    .put("trigger", new JSONObject().put("type", "immediate"))
-                    .put("messageId", "message1")
-                    .put("campaignId", 1))
-                .put(new JSONObject()
-                    .put("saveToInbox", false)
-                    .put("content", new JSONObject()
-                        .put("contentType", "json")
-                        .put("json", new JSONObject().put("key", "never")))
-                    .put("trigger", new JSONObject().put("type", "never"))
-                    .put("messageId", "message2")
-                    .put("campaignId", 2)));
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("trigger", new JSONObject().put("type", "never"))
+                                .put("messageId", "message1")));
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
 
-        IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, inAppHandler, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
-
-        inAppManager.syncInApp();
+        // Bring app into foreground by creating and resuming an activity
+        Robolectric.buildActivity(Activity.class).create().start().resume();
         shadowOf(getMainLooper()).idle();
 
-        // Verify only immediate trigger message calls onNewInApp
-        ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
-        verify(inAppHandler, times(1)).onNewInApp(messageCaptor.capture());
-        verify(inAppDisplayerMock, never()).showMessage(any(), any(), any());
+        List<IterableInAppMessage> messages = inAppManager.getMessages();
+        assertEquals(1, messages.size());
+        assertNull(messages.get(0).getCustomPayload());
+    }
 
-        IterableInAppMessage message = messageCaptor.getValue();
-        assertEquals("message1", message.getMessageId());
-        assertTrue(message.getContent() instanceof IterableJsonInAppContent);
-        assertEquals("immediate", ((IterableJsonInAppContent) message.getContent()).getJson().getString("key"));
-    }*/
+    @Test
+    public void testJsonOnlyMessageWithEmptyPayload() throws Exception {
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject())
+                                .put("trigger", new JSONObject().put("type", "never"))
+                                .put("messageId", "message1")));
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+
+        // Bring app into foreground by creating and resuming an activity
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        List<IterableInAppMessage> messages = inAppManager.getMessages();
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0).getCustomPayload().length() == 0);
+    }
+
+    @Test
+    public void testJsonOnlyMessageCannotBeSavedToInbox() throws Exception {
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", true)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject().put("key", "value"))
+                                .put("trigger", new JSONObject().put("type", "never"))
+                                .put("messageId", "message1")
+                                .put("inboxMetadata", new JSONObject()
+                                        .put("title", "JSON Message")
+                                        .put("subtitle", "Test Subtitle")
+                                        .put("icon", "test-icon.png"))));
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+
+        // Bring app into foreground by creating and resuming an activity
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        List<IterableInAppMessage> inboxMessages = inAppManager.getInboxMessages();
+        assertEquals(0, inboxMessages.size());
+    }
+
+    @Test
+    public void testJsonOnlyMessageIgnoresContentPayload() throws Exception {
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject()
+                                        .put("key", "customValue"))
+                                .put("content", new JSONObject()
+                                        .put("payload", new JSONObject()
+                                                .put("key", "contentValue")))
+                                .put("trigger", new JSONObject().put("type", "never"))
+                                .put("messageId", "message1")));
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+
+        // Bring app into foreground by creating and resuming an activity
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        List<IterableInAppMessage> messages = inAppManager.getMessages();
+        assertEquals(1, messages.size());
+        assertEquals("customValue", messages.get(0).getCustomPayload().getString("key"));
+    }
+
+    private String createJsonOnlyPayload() throws JSONException {
+        return new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()  // Immediate trigger
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject().put("key", "immediate"))
+                                .put("trigger", new JSONObject().put("type", "immediate"))
+                                .put("messageId", "message1"))
+                        .put(new JSONObject()  // Never trigger
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject().put("key", "never"))
+                                .put("trigger", new JSONObject().put("type", "never"))
+                                .put("messageId", "message2")))
+                .toString();
+    }
 
     private static class IterableSkipInAppHandler implements IterableInAppHandler {
         @NonNull
