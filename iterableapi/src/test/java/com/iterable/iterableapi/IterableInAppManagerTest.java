@@ -796,4 +796,42 @@ public class IterableInAppManagerTest extends BaseTest {
             return InAppResponse.SKIP;
         }
     }
+
+    @Test
+    public void testJsonOnlyMessageConsume() throws Exception {
+        // Create payload with a JSON-only message
+        JSONObject payload = new JSONObject()
+                .put("inAppMessages", new JSONArray()
+                        .put(new JSONObject()
+                                .put("saveToInbox", false)
+                                .put("jsonOnly", 1)
+                                .put("customPayload", new JSONObject().put("key", "value"))
+                                .put("trigger", new JSONObject().put("type", "immediate"))
+                                .put("messageId", "message1")));
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
+        
+        // Create InAppManager with spied IterableApi
+        IterableApi spyApi = spy(IterableApi.sharedInstance);
+        IterableInAppManager inAppManager = new IterableInAppManager(
+                spyApi,
+                new IterableDefaultInAppHandler(),
+                30.0,
+                new IterableInAppMemoryStorage(),
+                IterableActivityMonitor.getInstance(),
+                mock(IterableInAppDisplayer.class));
+
+        // Process messages by bringing app to foreground
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        // Verify inAppConsume was called with the correct parameters
+        verify(spyApi).inAppConsume(
+            argThat(message -> message.getMessageId().equals("message1")),
+            eq(null),
+            eq(null),
+            eq(null),
+            eq(null)
+        );
+    }
 }

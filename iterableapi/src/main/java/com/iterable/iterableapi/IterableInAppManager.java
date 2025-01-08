@@ -234,12 +234,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {
-        if (message.isJsonOnly()) {
-            setRead(message, true, null, null);
-            message.setConsumed(true);
-            return;
-        }
-
         if (displayer.showMessage(message, inAppLocation, new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
@@ -420,7 +414,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
 
-                if (response == InAppResponse.SHOW || message.isJsonOnly()) {
+                if (message.isJsonOnly()) {
+                    setRead(message, true, null, null);
+                    message.setConsumed(true);
+                    api.inAppConsume(message, null, null, null, null);
+                    return;
+                }
+
+                if (response == InAppResponse.SHOW) {
                     boolean consume = !message.isInboxMessage();
                     showMessage(message, consume, null);
                     return;
