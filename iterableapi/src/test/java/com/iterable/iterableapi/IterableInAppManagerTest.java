@@ -810,7 +810,7 @@ public class IterableInAppManagerTest extends BaseTest {
                                 .put("messageId", "message1")));
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
-        
+
         // Create InAppManager with spied IterableApi
         IterableApi spyApi = spy(IterableApi.sharedInstance);
         IterableInAppManager inAppManager = new IterableInAppManager(
