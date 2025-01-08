@@ -394,7 +394,6 @@ public class IterableApi {
         SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         boolean isNotificationEnable = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized() && isNotificationEnable != systemNotificationEnabled) {
-            IterableLogger.d(TAG, "Performing automatic push registration");
             if(systemNotificationEnabled) {
                 sharedInstance.registerForPush();
             } else {
