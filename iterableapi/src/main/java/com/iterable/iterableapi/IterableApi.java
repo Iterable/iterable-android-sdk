@@ -393,6 +393,12 @@ public class IterableApi {
         boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
         SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
+
+        if (!_firstForegroundHandled) {
+            _firstForegroundHandled = true;
+            fetchRemoteConfiguration();
+        }
+
         if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized() && isNotificationEnabled != systemNotificationEnabled) {
             if(systemNotificationEnabled) {
                 sharedInstance.registerForPush();
@@ -400,7 +406,6 @@ public class IterableApi {
                 sharedInstance.disablePush();
             }
         }
-        fetchRemoteConfiguration();
 
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
@@ -469,9 +474,6 @@ public class IterableApi {
                 getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
             }
         }
-    }
-
-    public void isSystemNotificationEnabled() {
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
