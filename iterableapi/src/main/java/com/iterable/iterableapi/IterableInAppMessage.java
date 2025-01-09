@@ -405,7 +405,7 @@ public class IterableInAppMessage {
                 jsonOnly);
 
         message.inAppStorageInterface = storageInterface;
-        if (content.html != null && content.html.length() > 0 && !jsonOnly) {
+        if (!jsonOnly && content.html != null && !content.html.isEmpty()) {
             message.setLoadedHtmlFromJson(true);
         }
         message.processed = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_PROCESSED, false);

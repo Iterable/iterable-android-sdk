@@ -658,7 +658,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         List<IterableInAppMessage> messages = inAppManager.getMessages();
         assertEquals(1, messages.size());
-        assertTrue("Custom payload should be empty", messages.get(0).getCustomPayload().length() == 0);
+        assertEquals("Custom payload should be empty", 0, messages.get(0).getCustomPayload().length());
     }
 
     @Test
