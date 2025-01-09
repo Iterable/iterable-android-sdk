@@ -118,6 +118,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
+    public static final String SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED = "itbl_notifications_enabled";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
