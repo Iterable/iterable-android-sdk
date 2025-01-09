@@ -50,7 +50,7 @@ public class IterableApi {
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
-    public IterableKeychain keychain;
+    private IterableKeychain keychain;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -389,11 +389,11 @@ public class IterableApi {
         public void onSwitchToBackground() {}
     };
 
-    private void onForeground() {
+    void onForeground() {
         boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
         SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        boolean isNotificationEnable = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
-        if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized() && isNotificationEnable != systemNotificationEnabled) {
+        boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
+        if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized() && isNotificationEnabled != systemNotificationEnabled) {
             if(systemNotificationEnabled) {
                 sharedInstance.registerForPush();
             } else {
@@ -469,6 +469,9 @@ public class IterableApi {
                 getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
             }
         }
+    }
+
+    public void isSystemNotificationEnabled() {
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
