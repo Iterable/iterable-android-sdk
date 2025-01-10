@@ -408,6 +408,8 @@ public class IterableApi {
             if (hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
                 if (!systemNotificationEnabled) {
                     sharedInstance.disablePush();
+                } else {
+                    sharedInstance.registerForPush();
                 }
             }
             
