@@ -392,11 +392,10 @@ public class IterableApi {
     private void onForeground() {
         if (!_firstForegroundHandled) {
             _firstForegroundHandled = true;
-            fetchRemoteConfiguration();
-
 			if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
 				sharedInstance.registerForPush();
 			}
+			fetchRemoteConfiguration();
 		}
 
 		boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
@@ -407,11 +406,11 @@ public class IterableApi {
 			if (!systemNotificationEnabled) {
 				sharedInstance.disablePush();
 			}
-		}
 
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
-        editor.apply();
+			SharedPreferences.Editor editor = sharedPref.edit();
+			editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
+			editor.apply();
+		}
     }
 
     private boolean isInitialized() {
