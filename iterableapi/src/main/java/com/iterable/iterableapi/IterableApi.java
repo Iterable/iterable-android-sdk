@@ -398,6 +398,11 @@ public class IterableApi {
             fetchRemoteConfiguration();
         }
 
+        if (_applicationContext == null || sharedInstance.getMainActivityContext() == null) {
+            IterableLogger.w(TAG, "onForeground: _applicationContext is null");
+            return;
+        }
+
         boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
         SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
 
