@@ -404,11 +404,13 @@ public class IterableApi {
         boolean hasStoredPermission = sharedPref.contains(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED);
         boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
 
-        if (sharedInstance.isInitialized() && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
-            if (!systemNotificationEnabled) {
-                sharedInstance.disablePush();
+        if (sharedInstance.isInitialized()) {
+            if (hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
+                if (!systemNotificationEnabled) {
+                    sharedInstance.disablePush();
+                }
             }
-
+            
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
             editor.apply();
