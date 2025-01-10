@@ -337,7 +337,7 @@ public class IterableInAppMessage {
 
         String messageId = messageJson.optString(IterableConstants.KEY_MESSAGE_ID);
         final Long campaignId = IterableUtil.retrieveValidCampaignIdOrNull(messageJson, IterableConstants.KEY_CAMPAIGN_ID);
-        boolean jsonOnly = messageJson.optInt(IterableConstants.ITERABLE_IN_APP_JSON_ONLY, 0) == 1;
+        boolean jsonOnly = messageJson.optBoolean(IterableConstants.ITERABLE_IN_APP_JSON_ONLY, false);
 
         JSONObject customPayload = messageJson.optJSONObject(IterableConstants.ITERABLE_IN_APP_CUSTOM_PAYLOAD);
         if (customPayload == null && jsonOnly) {
