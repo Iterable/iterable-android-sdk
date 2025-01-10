@@ -390,26 +390,33 @@ public class IterableApi {
     };
 
     private void onForeground() {
-        boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
-        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
-
         if (!_firstForegroundHandled) {
             _firstForegroundHandled = true;
+            if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
+                sharedInstance.registerForPush();
+            }
             fetchRemoteConfiguration();
         }
 
-        if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized() && isNotificationEnabled != systemNotificationEnabled) {
-            if (systemNotificationEnabled) {
-                sharedInstance.registerForPush();
-            } else {
-                sharedInstance.disablePush();
-            }
-        }
+        boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
 
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
-        editor.apply();
+        boolean hasStoredPermission = sharedPref.contains(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED);
+        boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
+
+        if (sharedInstance.isInitialized()) {
+            if (hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
+                if (!systemNotificationEnabled) {
+                    sharedInstance.disablePush();
+                } else {
+                    sharedInstance.registerForPush();
+                }
+            }
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
+            editor.apply();
+        }
     }
 
     private boolean isInitialized() {
