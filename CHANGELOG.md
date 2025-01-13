@@ -8,9 +8,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Support for JSON-only in-app messages, JSON-only messages are now handled by the `onNewInApp` handler and consumed after retrieval
 - Enhanced notification state tracking to align with system notification permissions changes
 
-#### Fixed
-- Fixed Crash while initializing IterableSDK on some devices (Unsupported IV Length).
-
 ## [3.5.6]
 
 #### Fixed
