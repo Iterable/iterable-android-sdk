@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [3.5.7]
 
 ### Added
-- Support for JSON-only in-app messages, JSON-only messages are now handled by the onNewInApp handler and consumes after retrieval
+- Support for JSON-only in-app messages, JSON-only messages are now handled by the `onNewInApp` handler and consumed after retrieval
 - Enhanced notification state tracking to align with system notification permissions changes
 
 #### Fixed
