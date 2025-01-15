@@ -60,7 +60,9 @@ public class IterableConfig {
      */
     final IterableAuthHandler authHandler;
 
-
+    /**
+     * Handler that can be used to retrieve the anonymous user id
+     */
     final IterableAnonUserHandler iterableAnonUserHandler;
 
     /**
@@ -92,10 +94,20 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    /**
+     * Enables anonymous user activation
+     */
     final boolean enableAnonActivation;
 
+    /**
+     * Disables fetching of anonymous user criteria on foregrounding when set to true
+     * By default, the SDK will fetch anonymous user criteria on foregrounding.
+     */
     final boolean disableForegroundCriteriaFetching;
 
+    /**
+     * The number of anonymous events stored in local storage
+     */
     final int eventThresholdLimit;
 
     /**
@@ -126,11 +138,11 @@ public class IterableConfig {
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
         enableAnonActivation = builder.enableAnonActivation;
+        disableForegroundCriteriaFetching = builder.disableForegroundCriteriaFetching;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
         iterableAnonUserHandler = builder.iterableAnonUserHandler;
-        disableForegroundCriteriaFetching = builder.disableForegroundCriteriaFetching;
     }
 
     public static class Builder {
@@ -334,6 +346,11 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set whether the SDK should disable criteria fetching on foregrounding. Set this to `true`
+         * if you want criteria to only be fetched on app launch.
+         * @param disableForegroundCriteriaFetching `true` will fetch criteria only on app launch.
+         */
         public Builder setDisableForegroundCriteriaFetching(boolean disableForegroundCriteriaFetching) {
             this.disableForegroundCriteriaFetching = disableForegroundCriteriaFetching;
             return this;
