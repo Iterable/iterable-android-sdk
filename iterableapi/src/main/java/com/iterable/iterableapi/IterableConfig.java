@@ -94,6 +94,8 @@ public class IterableConfig {
 
     final boolean enableAnonActivation;
 
+    final boolean disableForegroundCriteriaFetching;
+
     final int eventThresholdLimit;
 
     /**
@@ -128,6 +130,7 @@ public class IterableConfig {
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
         iterableAnonUserHandler = builder.iterableAnonUserHandler;
+        disableForegroundCriteriaFetching = builder.disableForegroundCriteriaFetching;
     }
 
     public static class Builder {
@@ -147,6 +150,7 @@ public class IterableConfig {
         private boolean useInMemoryStorageForInApps = false;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
+        private boolean disableForegroundCriteriaFetching = false;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
@@ -327,6 +331,11 @@ public class IterableConfig {
          */
         public Builder setEnableAnonActivation(boolean enableAnonActivation) {
             this.enableAnonActivation = enableAnonActivation;
+            return this;
+        }
+
+        public Builder setDisableForegroundCriteriaFetching(boolean disableForegroundCriteriaFetching) {
+            this.disableForegroundCriteriaFetching = disableForegroundCriteriaFetching;
             return this;
         }
 
