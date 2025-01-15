@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.5.8]
+
+### Fixed
+- Fixed logic issue where notifications were being disabled even when auto push registration was turned off
+
 ## [3.5.7]
 
 ### Added
