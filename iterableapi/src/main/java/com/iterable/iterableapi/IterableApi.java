@@ -411,11 +411,7 @@ public class IterableApi {
 
         if (sharedInstance.isInitialized()) {
             if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
-                if (!systemNotificationEnabled) {
-                    sharedInstance.disablePush();
-                } else {
-                    sharedInstance.registerForPush();
-                }
+                sharedInstance.registerForPush();
             }
 
             SharedPreferences.Editor editor = sharedPref.edit();
