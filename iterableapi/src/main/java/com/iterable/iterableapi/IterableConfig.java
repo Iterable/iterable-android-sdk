@@ -60,6 +60,9 @@ public class IterableConfig {
      */
     final IterableAuthHandler authHandler;
 
+
+    final IterableAnonUserHandler iterableAnonUserHandler;
+
     /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
@@ -86,12 +89,27 @@ public class IterableConfig {
      * By default, the SDK will save in-apps to disk.
      */
     final boolean useInMemoryStorageForInApps;
+
+    final boolean encryptionEnforced;
+
+    final boolean enableAnonActivation;
+
+    final int eventThresholdLimit;
+
     /**
      * Allows for fetching embedded messages.
      */
     final boolean enableEmbeddedMessaging;
 
     /**
+
+	/**
+     * This controls whether the SDK should allow event replay from local storage to logged in profile
+     * and merging between the generated anonymous profile and the logged in profile by default.
+     */
+    final IterableIdentityResolution identityResolution;
+
+	/**
      * Handler for decryption failures of PII information.
      * Before calling this handler, the SDK will clear the PII information and create new encryption keys
      */
@@ -112,7 +130,12 @@ public class IterableConfig {
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
+        encryptionEnforced = builder.encryptionEnforced;
+        enableAnonActivation = builder.enableAnonActivation;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
+        eventThresholdLimit = builder.eventThresholdLimit;
+        identityResolution = builder.identityResolution;
+        iterableAnonUserHandler = builder.iterableAnonUserHandler;
         decryptionFailureHandler = builder.decryptionFailureHandler;
     }
 
@@ -131,8 +154,21 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
+		private IterableDecryptionFailureHandler decryptionFailureHandler;
+
+        private boolean encryptionEnforced = false;
+        private boolean enableAnonActivation = false;
         private boolean enableEmbeddedMessaging = false;
-        private IterableDecryptionFailureHandler decryptionFailureHandler;
+        private int eventThresholdLimit = 100;
+        private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+        private IterableAnonUserHandler iterableAnonUserHandler;
+		private IterableDecryptionFailureHandler decryptionFailureHandler;
+
+        @NonNull
+        public Builder setIterableAnonUserHandler(@NonNull IterableAnonUserHandler iterableAnonUserHandler) {
+            this.iterableAnonUserHandler = iterableAnonUserHandler;
+            return this;
+        }
 
         public Builder() {}
 
@@ -286,6 +322,21 @@ public class IterableConfig {
         }
 
         /**
+         * Set whether the SDK should track events for anonymous users. Set this to `true`
+         * if you want to track all events when users are not logged into the application.
+         * @param enableAnonActivation `true` will track events for anonymous users.
+         */
+        public Builder setEnableAnonActivation(boolean enableAnonActivation) {
+            this.enableAnonActivation = enableAnonActivation;
+            return this;
+        }
+
+        public Builder setEventThresholdLimit(int eventThresholdLimit) {
+            this.eventThresholdLimit = eventThresholdLimit;
+            return this;
+        }
+
+        /**
          * Allows for fetching embedded messages.
          * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
          */
@@ -295,6 +346,19 @@ public class IterableConfig {
         }
 
         /**
+
+		/**
+         * Set whether the SDK should replay events from local storage to the logged in profile
+         * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
+         * This can be overwritten by a parameter passed into setEmail or setUserId.
+         * @param identityResolution
+         * @return
+         */
+
+        public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
+            this.identityResolution = identityResolution;
+
+		/**
          * Set a handler for decryption failures that can be used to handle data recovery
          * @param handler Decryption failure handler provided by the app
          */
