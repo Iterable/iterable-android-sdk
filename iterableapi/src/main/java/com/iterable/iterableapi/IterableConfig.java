@@ -170,7 +170,6 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
 		private IterableDecryptionFailureHandler decryptionFailureHandler;
-
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
         private boolean disableForegroundCriteriaFetching = false;
@@ -178,7 +177,6 @@ public class IterableConfig {
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableAnonUserHandler iterableAnonUserHandler;
-		private IterableDecryptionFailureHandler decryptionFailureHandler;
 
         @NonNull
         public Builder setIterableAnonUserHandler(@NonNull IterableAnonUserHandler iterableAnonUserHandler) {
@@ -330,7 +328,6 @@ public class IterableConfig {
          * Set whether the SDK should store in-apps only in memory, or in file storage
          * @param useInMemoryStorageForInApps `true` will have in-apps be only in memory
          */
-
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
@@ -380,9 +377,10 @@ public class IterableConfig {
          * @param identityResolution
          * @return
          */
-
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
             this.identityResolution = identityResolution;
+            return this;
+        }
 
 		/**
          * Set a handler for decryption failures that can be used to handle data recovery
