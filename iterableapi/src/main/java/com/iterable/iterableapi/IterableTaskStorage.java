@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -184,6 +185,7 @@ class IterableTaskStorage {
         return task;
     }
 
+    @SuppressLint("Range")
     private IterableTask createTaskFromCursor(Cursor cursor) {
         String id, name;
         IterableTaskType type = null;
