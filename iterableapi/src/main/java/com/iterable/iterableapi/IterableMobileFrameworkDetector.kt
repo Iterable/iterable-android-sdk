@@ -4,76 +4,124 @@ import android.content.Context
 import android.content.pm.PackageManager
 
 object IterableMobileFrameworkDetector {
-    private const val TAG = "IterableMobileFrameworkDetector"
+    private const val TAG = "FrameworkDetector"
+    private lateinit var context: Context
 
-    private object FrameworkClasses {
-        val FLUTTER = arrayOf(
-            "io.flutter.embedding.android.FlutterActivity",
-            "io.flutter.embedding.engine.FlutterEngine",
-            "io.flutter.plugin.common.MethodChannel",
-            "io.flutter.app.FlutterApplication"
-        )
+    // Thread-safe cached framework type
+    @Volatile
+    private var cachedFrameworkType: IterableAPIMobileFrameworkType? = null
 
-        val REACT_NATIVE = arrayOf(
-            "com.facebook.react.ReactActivity",
-            "com.facebook.react.ReactApplication",
-            "com.facebook.react.bridge.ReactContext",
-            "com.facebook.react.ReactRootView",
-            "com.facebook.react.bridge.ReactApplicationContext"
-        )
-    }
-
-    private var cachedFrameworkType: IterableMobileFrameworkType? = null
-
-    fun detectFramework(context: Context): IterableMobileFrameworkType {
-        cachedFrameworkType?.let { return it }
-
-        return try {
-            val pm = context.packageManager
-            val appInfo = pm.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-
-            // Combine both approaches: Use more framework classes for better detection
-            val hasFlutter = hasFrameworkClasses(FrameworkClasses.FLUTTER)
-            val hasReactNative = hasFrameworkClasses(FrameworkClasses.REACT_NATIVE)
-
-            when {
-                hasFlutter && hasReactNative -> {
-                    IterableLogger.e(TAG, "Both Flutter and React Native frameworks detected. This is unexpected.")
-                    // Use BuildConfig.APPLICATION_ID for more reliable package name check
-                    if (BuildConfig.APPLICATION_ID.endsWith(".flutter") || 
-                        appInfo.metaData?.containsKey("flutterEmbedding") == true) {
-                        IterableMobileFrameworkType.FLUTTER
-                    } else {
-                        IterableMobileFrameworkType.REACT_NATIVE
-                    }
-                }
-                hasFlutter -> IterableMobileFrameworkType.FLUTTER
-                hasReactNative -> IterableMobileFrameworkType.REACT_NATIVE
-                else -> {
-                    // Second check: Manifest metadata
-                    when {
-                        appInfo.metaData?.containsKey("flutterEmbedding") == true -> 
-                            IterableMobileFrameworkType.FLUTTER
-                        appInfo.metaData?.containsKey("react_native_version") == true -> 
-                            IterableMobileFrameworkType.REACT_NATIVE
-                        else -> IterableMobileFrameworkType.NATIVE
-                    }
-                }
-            }.also { cachedFrameworkType = it }
-        } catch (e: Exception) {
-            IterableLogger.e(TAG, "Error detecting framework type", e)
-            IterableMobileFrameworkType.NATIVE
+    fun initialize(context: Context) {
+        if (context.applicationContext != null) {
+            this.context = context.applicationContext
+        } else {
+            this.context = context
+        }
+        // Initialize cache on first initialization
+        if (cachedFrameworkType == null) {
+            cachedFrameworkType = detectFrameworkInternal(context)
         }
     }
 
-    private fun hasFrameworkClasses(classNames: Array<String>): Boolean {
-        return classNames.any { className ->
-            try {
-                Class.forName(className)
-                true
-            } catch (ignored: ClassNotFoundException) {
-                false
+    // Static detection method with caching
+    fun detectFramework(context: Context): IterableAPIMobileFrameworkType {
+        return cachedFrameworkType ?: synchronized(this) {
+            cachedFrameworkType ?: detectFrameworkInternal(context).also { 
+                cachedFrameworkType = it 
             }
         }
     }
-} 
+
+    // For backward compatibility - uses initialized context
+    fun frameworkType(): IterableAPIMobileFrameworkType {
+        return cachedFrameworkType ?: detectFramework(context)
+    }
+
+    // Internal detection logic
+    private fun detectFrameworkInternal(context: Context): IterableAPIMobileFrameworkType {
+        val hasFlutter = hasFrameworkClasses(FrameworkClasses.flutter)
+        val hasReactNative = hasFrameworkClasses(FrameworkClasses.reactNative)
+
+        return when {
+            hasFlutter && hasReactNative -> {
+                println("$TAG: Both Flutter and React Native frameworks detected. This is unexpected.")
+                // Check multiple indicators for Flutter
+                when {
+                    context.packageName.endsWith(".flutter") -> IterableAPIMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableAPIMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableAPIMobileFrameworkType.REACT_NATIVE
+                    else -> IterableAPIMobileFrameworkType.REACT_NATIVE
+                }
+            }
+            hasFlutter -> IterableAPIMobileFrameworkType.FLUTTER
+            hasReactNative -> IterableAPIMobileFrameworkType.REACT_NATIVE
+            else -> {
+                // Check manifest metadata as fallback
+                when {
+                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableAPIMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableAPIMobileFrameworkType.REACT_NATIVE
+                    else -> IterableAPIMobileFrameworkType.NATIVE
+                }
+            }
+        }
+    }
+
+    private object FrameworkClasses {
+        val flutter = listOf(
+            "io.flutter.embedding.engine.FlutterEngine",
+            "io.flutter.plugin.common.MethodChannel",
+            "io.flutter.embedding.android.FlutterActivity",
+            "io.flutter.embedding.android.FlutterFragment"
+        )
+
+        val reactNative = listOf(
+            "com.facebook.react.ReactRootView",
+            "com.facebook.react.bridge.ReactApplicationContext",
+            "com.facebook.react.ReactActivity",
+            "com.facebook.react.ReactApplication",
+            "com.facebook.react.bridge.ReactContext"
+        )
+    }
+
+    private object ManifestMetadata {
+        // Flutter metadata keys
+        val flutter = listOf(
+            "flutterEmbedding",
+            "io.flutter.embedding.android.NormalTheme",
+            "io.flutter.embedding.android.SplashScreenDrawable"
+        )
+        
+        // React Native metadata keys
+        val reactNative = listOf(
+            "react_native_version",
+            "expo.modules.updates.ENABLED",
+            "com.facebook.react.selected.ReactActivity"
+        )
+    }
+
+    private fun hasFrameworkClasses(classNames: List<String>): Boolean {
+        return classNames.any { hasClass(it) }
+    }
+
+    private fun hasClass(className: String): Boolean {
+        return try {
+            Class.forName(className)
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
+    }
+
+    private fun hasManifestMetadata(context: Context, metadataKeys: List<String>): Boolean {
+        return try {
+            val applicationInfo = context.packageManager.getApplicationInfo(
+                context.packageName,
+                PackageManager.GET_META_DATA
+            )
+            metadataKeys.any { key -> applicationInfo.metaData?.containsKey(key) == true }
+        } catch (e: Exception) {
+            println("$TAG: Error checking manifest metadata: ${e.message}")
+            false
+        }
+    }
+}
