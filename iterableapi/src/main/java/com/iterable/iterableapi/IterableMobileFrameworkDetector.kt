@@ -32,15 +32,15 @@ object IterableMobileFrameworkDetector {
             val pm = context.packageManager
             val appInfo = pm.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
 
-            // First check: Framework classes
+            // Combine both approaches: Use more framework classes for better detection
             val hasFlutter = hasFrameworkClasses(FrameworkClasses.FLUTTER)
             val hasReactNative = hasFrameworkClasses(FrameworkClasses.REACT_NATIVE)
 
             when {
                 hasFlutter && hasReactNative -> {
                     IterableLogger.e(TAG, "Both Flutter and React Native frameworks detected. This is unexpected.")
-                    // Resolve ambiguity using package name and metadata
-                    if (context.packageName.endsWith(".flutter") || 
+                    // Use BuildConfig.APPLICATION_ID for more reliable package name check
+                    if (BuildConfig.APPLICATION_ID.endsWith(".flutter") || 
                         appInfo.metaData?.containsKey("flutterEmbedding") == true) {
                         IterableMobileFrameworkType.FLUTTER
                     } else {
