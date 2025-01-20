@@ -11,6 +11,16 @@ object IterableMobileFrameworkDetector {
     @Volatile
     private var cachedFrameworkType: IterableMobileFrameworkType? = null
 
+    // Add this as a more flexible way to check for classes
+    private var hasClass: (String) -> Boolean = { className ->
+        try {
+            Class.forName(className)
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
+    }
+
     fun initialize(context: Context) {
         if (context.applicationContext != null) {
             this.context = context.applicationContext
@@ -102,15 +112,6 @@ object IterableMobileFrameworkDetector {
 
     private fun hasFrameworkClasses(classNames: List<String>): Boolean {
         return classNames.any { hasClass(it) }
-    }
-
-    private fun hasClass(className: String): Boolean {
-        return try {
-            Class.forName(className)
-            true
-        } catch (e: ClassNotFoundException) {
-            false
-        }
     }
 
     private fun hasManifestMetadata(context: Context, metadataKeys: List<String>): Boolean {
