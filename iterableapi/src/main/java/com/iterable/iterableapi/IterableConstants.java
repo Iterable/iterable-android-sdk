@@ -56,6 +56,9 @@ public final class IterableConstants {
     public static final String KEY_EMBEDDED_SESSION_ID     = "id";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
     public static final String KEY_FIRETV = "FireTV";
+    public static final String KEY_MOBILE_FRAMEWORK_INFO = "mobileFrameworkInfo";
+    public static final String KEY_FRAMEWORK_TYPE       = "frameworkType";
+    public static final String KEY_ITERABLE_SDK_VERSION = "iterableSdkVersion";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";

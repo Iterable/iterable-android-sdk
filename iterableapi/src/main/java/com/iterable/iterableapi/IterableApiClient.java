@@ -559,6 +559,19 @@ class IterableApiClient {
             DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId());
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(context).areNotificationsEnabled());
 
+            // Add mobile framework info
+            IterableMobileFrameworkInfo frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo;
+            if (frameworkInfo == null) {
+                frameworkInfo = new IterableMobileFrameworkInfo(
+                    IterableMobileFrameworkDetector.detectFramework(context),
+                    IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER
+                );
+            }
+            JSONObject mobileFrameworkJson = new JSONObject();
+            mobileFrameworkJson.put(IterableConstants.KEY_FRAMEWORK_TYPE, frameworkInfo.getFrameworkType().getValue());
+            mobileFrameworkJson.put(IterableConstants.KEY_ITERABLE_SDK_VERSION, frameworkInfo.getIterableSdkVersion() != null ? frameworkInfo.getIterableSdkVersion() : "unknown");
+            dataFields.put(IterableConstants.KEY_MOBILE_FRAMEWORK_INFO, mobileFrameworkJson);
+
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, deviceToken);
             device.put(IterableConstants.KEY_PLATFORM, IterableConstants.MESSAGING_PLATFORM_GOOGLE);
