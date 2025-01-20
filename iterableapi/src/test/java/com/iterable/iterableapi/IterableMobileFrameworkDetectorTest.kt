@@ -2,8 +2,11 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -11,7 +14,8 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertEquals
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 class IterableMobileFrameworkDetectorTest {
@@ -23,6 +27,9 @@ class IterableMobileFrameworkDetectorTest {
     private lateinit var mockPackageManager: PackageManager
 
     @Mock
+    private lateinit var mockPackageInfo: PackageInfo
+
+    @Mock
     private lateinit var mockApplicationInfo: ApplicationInfo
 
     @Before
@@ -30,9 +37,22 @@ class IterableMobileFrameworkDetectorTest {
         MockitoAnnotations.openMocks(this)
         `when`(mockContext.packageManager).thenReturn(mockPackageManager)
         `when`(mockContext.packageName).thenReturn("com.test.app")
+        
         mockApplicationInfo.metaData = Bundle()
-        `when`(mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA))
-            .thenReturn(mockApplicationInfo)
+        mockPackageInfo.applicationInfo = mockApplicationInfo
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            `when`(mockPackageManager.getPackageInfo(
+                mockContext.packageName,
+                PackageManager.PackageInfoFlags.of(PackageManager.GET_META_DATA.toLong())
+            )).thenReturn(mockPackageInfo)
+        } else {
+            @Suppress("DEPRECATION")
+            `when`(mockPackageManager.getPackageInfo(
+                mockContext.packageName,
+                PackageManager.GET_META_DATA
+            )).thenReturn(mockPackageInfo)
+        }
     }
 
     @Test
@@ -78,8 +98,19 @@ class IterableMobileFrameworkDetectorTest {
 
     @Test
     fun `test error handling returns native`() {
-        `when`(mockPackageManager.getApplicationInfo(mockContext.packageName, PackageManager.GET_META_DATA))
-            .thenThrow(PackageManager.NameNotFoundException())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            `when`(mockPackageManager.getPackageInfo(
+                mockContext.packageName,
+                PackageManager.PackageInfoFlags.of(PackageManager.GET_META_DATA.toLong())
+            )).thenThrow(PackageManager.NameNotFoundException())
+        } else {
+            @Suppress("DEPRECATION")
+            `when`(mockPackageManager.getPackageInfo(
+                mockContext.packageName,
+                PackageManager.GET_META_DATA
+            )).thenThrow(PackageManager.NameNotFoundException())
+        }
+        
         val result = IterableMobileFrameworkDetector.detectFramework(mockContext)
         assertEquals(IterableMobileFrameworkType.NATIVE, result)
     }

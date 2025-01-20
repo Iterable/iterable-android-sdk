@@ -9,7 +9,7 @@ object IterableMobileFrameworkDetector {
 
     // Thread-safe cached framework type
     @Volatile
-    private var cachedFrameworkType: IterableAPIMobileFrameworkType? = null
+    private var cachedFrameworkType: IterableMobileFrameworkType? = null
 
     fun initialize(context: Context) {
         if (context.applicationContext != null) {
@@ -24,7 +24,8 @@ object IterableMobileFrameworkDetector {
     }
 
     // Static detection method with caching
-    fun detectFramework(context: Context): IterableAPIMobileFrameworkType {
+    @JvmStatic
+    fun detectFramework(context: Context): IterableMobileFrameworkType {
         return cachedFrameworkType ?: synchronized(this) {
             cachedFrameworkType ?: detectFrameworkInternal(context).also { 
                 cachedFrameworkType = it 
@@ -33,12 +34,12 @@ object IterableMobileFrameworkDetector {
     }
 
     // For backward compatibility - uses initialized context
-    fun frameworkType(): IterableAPIMobileFrameworkType {
+    fun frameworkType(): IterableMobileFrameworkType {
         return cachedFrameworkType ?: detectFramework(context)
     }
 
     // Internal detection logic
-    private fun detectFrameworkInternal(context: Context): IterableAPIMobileFrameworkType {
+    private fun detectFrameworkInternal(context: Context): IterableMobileFrameworkType {
         val hasFlutter = hasFrameworkClasses(FrameworkClasses.flutter)
         val hasReactNative = hasFrameworkClasses(FrameworkClasses.reactNative)
 
@@ -47,20 +48,20 @@ object IterableMobileFrameworkDetector {
                 println("$TAG: Both Flutter and React Native frameworks detected. This is unexpected.")
                 // Check multiple indicators for Flutter
                 when {
-                    context.packageName.endsWith(".flutter") -> IterableAPIMobileFrameworkType.FLUTTER
-                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableAPIMobileFrameworkType.FLUTTER
-                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableAPIMobileFrameworkType.REACT_NATIVE
-                    else -> IterableAPIMobileFrameworkType.REACT_NATIVE
+                    context.packageName.endsWith(".flutter") -> IterableMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableMobileFrameworkType.REACT_NATIVE
+                    else -> IterableMobileFrameworkType.REACT_NATIVE
                 }
             }
-            hasFlutter -> IterableAPIMobileFrameworkType.FLUTTER
-            hasReactNative -> IterableAPIMobileFrameworkType.REACT_NATIVE
+            hasFlutter -> IterableMobileFrameworkType.FLUTTER
+            hasReactNative -> IterableMobileFrameworkType.REACT_NATIVE
             else -> {
                 // Check manifest metadata as fallback
                 when {
-                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableAPIMobileFrameworkType.FLUTTER
-                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableAPIMobileFrameworkType.REACT_NATIVE
-                    else -> IterableAPIMobileFrameworkType.NATIVE
+                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableMobileFrameworkType.REACT_NATIVE
+                    else -> IterableMobileFrameworkType.NATIVE
                 }
             }
         }
@@ -114,11 +115,13 @@ object IterableMobileFrameworkDetector {
 
     private fun hasManifestMetadata(context: Context, metadataKeys: List<String>): Boolean {
         return try {
-            val applicationInfo = context.packageManager.getApplicationInfo(
+            // Using packageManager.getPackageInfo instead of getApplicationInfo
+            val packageInfo = context.packageManager.getPackageInfo(
                 context.packageName,
                 PackageManager.GET_META_DATA
             )
-            metadataKeys.any { key -> applicationInfo.metaData?.containsKey(key) == true }
+            val metadata = packageInfo.applicationInfo.metaData
+            metadataKeys.any { key -> metadata?.containsKey(key) == true }
         } catch (e: Exception) {
             println("$TAG: Error checking manifest metadata: ${e.message}")
             false
