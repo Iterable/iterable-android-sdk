@@ -155,14 +155,12 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
 		private IterableDecryptionFailureHandler decryptionFailureHandler;
-
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableAnonUserHandler iterableAnonUserHandler;
-		private IterableDecryptionFailureHandler decryptionFailureHandler;
 
         @NonNull
         public Builder setIterableAnonUserHandler(@NonNull IterableAnonUserHandler iterableAnonUserHandler) {
