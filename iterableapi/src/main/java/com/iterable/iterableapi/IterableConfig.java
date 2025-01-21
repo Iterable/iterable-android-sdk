@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 /**
@@ -86,6 +87,7 @@ public class IterableConfig {
      * By default, the SDK will save in-apps to disk.
      */
     final boolean useInMemoryStorageForInApps;
+
     /**
      * Allows for fetching embedded messages.
      */
@@ -96,6 +98,12 @@ public class IterableConfig {
      * Before calling this handler, the SDK will clear the PII information and create new encryption keys
      */
     final IterableDecryptionFailureHandler decryptionFailureHandler;
+
+    /**
+     * Mobile framework information for the app
+     */
+    @Nullable
+    final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -114,6 +122,7 @@ public class IterableConfig {
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         decryptionFailureHandler = builder.decryptionFailureHandler;
+        mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
 
     public static class Builder {
@@ -133,6 +142,7 @@ public class IterableConfig {
         private boolean useInMemoryStorageForInApps = false;
         private boolean enableEmbeddedMessaging = false;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
+        private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
         public Builder() {}
 
@@ -301,6 +311,16 @@ public class IterableConfig {
         @NonNull
         public Builder setDecryptionFailureHandler(@NonNull IterableDecryptionFailureHandler handler) {
             this.decryptionFailureHandler = handler;
+            return this;
+        }
+
+        /**
+         * Set mobile framework information for the app
+         * @param mobileFrameworkInfo Mobile framework information
+         */
+        @NonNull
+        public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
+            this.mobileFrameworkInfo = mobileFrameworkInfo;
             return this;
         }
 

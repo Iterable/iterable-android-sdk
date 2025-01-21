@@ -641,7 +641,7 @@ public class IterableApi {
             try {
                 JSONObject dataFields = new JSONObject();
                 JSONObject deviceDetails = new JSONObject();
-                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
+                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
                 sharedInstance.apiClient.updateUser(dataFields, false);
             } catch (JSONException e) {
