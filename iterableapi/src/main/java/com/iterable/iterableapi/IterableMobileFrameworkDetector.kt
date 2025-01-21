@@ -9,7 +9,7 @@ object IterableMobileFrameworkDetector {
 
     // Thread-safe cached framework type
     @Volatile
-    private var cachedFrameworkType: IterableMobileFrameworkType? = null
+    private var cachedFrameworkType: IterableAPIMobileFrameworkType? = null
 
     // Add this as a more flexible way to check for classes
     private var hasClass: (String) -> Boolean = { className ->
@@ -35,7 +35,7 @@ object IterableMobileFrameworkDetector {
 
     // Static detection method with caching
     @JvmStatic
-    fun detectFramework(context: Context): IterableMobileFrameworkType {
+    fun detectFramework(context: Context): IterableAPIMobileFrameworkType {
         return cachedFrameworkType ?: synchronized(this) {
             cachedFrameworkType ?: detectFrameworkInternal(context).also { 
                 cachedFrameworkType = it 
@@ -44,12 +44,12 @@ object IterableMobileFrameworkDetector {
     }
 
     // For backward compatibility - uses initialized context
-    fun frameworkType(): IterableMobileFrameworkType {
+    fun frameworkType(): IterableAPIMobileFrameworkType {
         return cachedFrameworkType ?: detectFramework(context)
     }
 
     // Internal detection logic
-    private fun detectFrameworkInternal(context: Context): IterableMobileFrameworkType {
+    private fun detectFrameworkInternal(context: Context): IterableAPIMobileFrameworkType {
         val hasFlutter = hasFrameworkClasses(FrameworkClasses.flutter)
         val hasReactNative = hasFrameworkClasses(FrameworkClasses.reactNative)
 
@@ -58,20 +58,20 @@ object IterableMobileFrameworkDetector {
                 println("$TAG: Both Flutter and React Native frameworks detected. This is unexpected.")
                 // Check multiple indicators for Flutter
                 when {
-                    context.packageName.endsWith(".flutter") -> IterableMobileFrameworkType.FLUTTER
-                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableMobileFrameworkType.FLUTTER
-                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableMobileFrameworkType.REACT_NATIVE
-                    else -> IterableMobileFrameworkType.REACT_NATIVE
+                    context.packageName.endsWith(".flutter") -> IterableAPIMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableAPIMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableAPIMobileFrameworkType.REACT_NATIVE
+                    else -> IterableAPIMobileFrameworkType.REACT_NATIVE
                 }
             }
-            hasFlutter -> IterableMobileFrameworkType.FLUTTER
-            hasReactNative -> IterableMobileFrameworkType.REACT_NATIVE
+            hasFlutter -> IterableAPIMobileFrameworkType.FLUTTER
+            hasReactNative -> IterableAPIMobileFrameworkType.REACT_NATIVE
             else -> {
                 // Check manifest metadata as fallback
                 when {
-                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableMobileFrameworkType.FLUTTER
-                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableMobileFrameworkType.REACT_NATIVE
-                    else -> IterableMobileFrameworkType.NATIVE
+                    hasManifestMetadata(context, ManifestMetadata.flutter) -> IterableAPIMobileFrameworkType.FLUTTER
+                    hasManifestMetadata(context, ManifestMetadata.reactNative) -> IterableAPIMobileFrameworkType.REACT_NATIVE
+                    else -> IterableAPIMobileFrameworkType.NATIVE
                 }
             }
         }

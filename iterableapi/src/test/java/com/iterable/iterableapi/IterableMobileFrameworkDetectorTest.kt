@@ -80,28 +80,28 @@ class IterableMobileFrameworkDetectorTest {
     @Test
     fun `detect native framework when no metadata`() {
         val result = IterableMobileFrameworkDetector.detectFramework(mockContext)
-        assertEquals(IterableMobileFrameworkType.NATIVE, result)
+        assertEquals(IterableAPIMobileFrameworkType.NATIVE, result)
     }
 
     @Test
     fun `detect flutter framework through package name`() {
         `when`(mockContext.packageName).thenReturn("com.example.flutter.app")
         val result = IterableMobileFrameworkDetector.detectFramework(mockContext)
-        assertEquals(IterableMobileFrameworkType.FLUTTER, result)
+        assertEquals(IterableAPIMobileFrameworkType.FLUTTER, result)
     }
 
     @Test
     fun `detect flutter framework through metadata`() {
         mockApplicationInfo.metaData.putBoolean("flutterEmbedding", true)
         val result = IterableMobileFrameworkDetector.detectFramework(mockContext)
-        assertEquals(IterableMobileFrameworkType.FLUTTER, result)
+        assertEquals(IterableAPIMobileFrameworkType.FLUTTER, result)
     }
 
     @Test
     fun `detect react native framework through metadata`() {
         mockApplicationInfo.metaData.putString("react_native_version", "0.70.0")
         val result = IterableMobileFrameworkDetector.detectFramework(mockContext)
-        assertEquals(IterableMobileFrameworkType.REACT_NATIVE, result)
+        assertEquals(IterableAPIMobileFrameworkType.REACT_NATIVE, result)
     }
 
     @Test
@@ -110,7 +110,7 @@ class IterableMobileFrameworkDetectorTest {
         mockApplicationInfo.metaData.putString("react_native_version", "0.70.0")
         
         val result = IterableMobileFrameworkDetector.detectFramework(mockContext)
-        assertEquals(IterableMobileFrameworkType.FLUTTER, result)
+        assertEquals(IterableAPIMobileFrameworkType.FLUTTER, result)
     }
 
     @Test
@@ -119,6 +119,6 @@ class IterableMobileFrameworkDetectorTest {
         mockApplicationInfo.metaData.putString("react_native_version", "0.70.0")
         
         val result = IterableMobileFrameworkDetector.detectFramework(mockContext)
-        assertEquals(IterableMobileFrameworkType.FLUTTER, result)
+        assertEquals(IterableAPIMobileFrameworkType.FLUTTER, result)
     }
 } 

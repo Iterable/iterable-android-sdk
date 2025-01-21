@@ -13,7 +13,7 @@ public class IterableAPIMobileFrameworkInfo {
     }
 
     @NonNull
-    public IterableMobileFrameworkType getFrameworkType() {
+    public IterableAPIMobileFrameworkType getFrameworkType() {
         return frameworkType;
     }
 

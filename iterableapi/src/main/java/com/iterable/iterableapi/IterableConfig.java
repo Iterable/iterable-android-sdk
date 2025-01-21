@@ -103,7 +103,7 @@ public class IterableConfig {
      * Mobile framework information for the app
      */
     @Nullable
-    final IterableMobileFrameworkInfo mobileFrameworkInfo;
+    final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -142,7 +142,7 @@ public class IterableConfig {
         private boolean useInMemoryStorageForInApps = false;
         private boolean enableEmbeddedMessaging = false;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
-        private IterableMobileFrameworkInfo mobileFrameworkInfo;
+        private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
         public Builder() {}
 
@@ -319,7 +319,7 @@ public class IterableConfig {
          * @param mobileFrameworkInfo Mobile framework information
          */
         @NonNull
-        public Builder setMobileFrameworkInfo(@NonNull IterableMobileFrameworkInfo mobileFrameworkInfo) {
+        public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
             this.mobileFrameworkInfo = mobileFrameworkInfo;
             return this;
         }

@@ -367,7 +367,7 @@ public class IterableApiTest extends BaseTest {
         // Verify mobile framework info
         JSONObject mobileFrameworkInfo = dataFields.getJSONObject(IterableConstants.KEY_MOBILE_FRAMEWORK_INFO);
         assertNotNull(mobileFrameworkInfo);
-        assertEquals(IterableMobileFrameworkType.NATIVE.getValue(), mobileFrameworkInfo.getString(IterableConstants.KEY_FRAMEWORK_TYPE));
+        assertEquals(IterableAPIMobileFrameworkType.NATIVE.getValue(), mobileFrameworkInfo.getString(IterableConstants.KEY_FRAMEWORK_TYPE));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, mobileFrameworkInfo.getString(IterableConstants.KEY_ITERABLE_SDK_VERSION));
     }
 
@@ -376,7 +376,7 @@ public class IterableApiTest extends BaseTest {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         IterableConfig config = new IterableConfig.Builder()
             .setAutoPushRegistration(false)
-            .setMobileFrameworkInfo(new IterableMobileFrameworkInfo(IterableMobileFrameworkType.FLUTTER, "1.0.0"))
+            .setMobileFrameworkInfo(new IterableAPIMobileFrameworkInfo(IterableAPIMobileFrameworkType.FLUTTER, "1.0.0"))
             .build();
         IterableApi.initialize(getContext(), "apiKey", config);
         IterableApi.getInstance().setEmail("test@email.com");
@@ -390,7 +390,7 @@ public class IterableApiTest extends BaseTest {
         JSONObject dataFields = requestJson.getJSONObject("device").getJSONObject("dataFields");
         JSONObject mobileFrameworkInfo = dataFields.getJSONObject(IterableConstants.KEY_MOBILE_FRAMEWORK_INFO);
         assertNotNull(mobileFrameworkInfo);
-        assertEquals(IterableMobileFrameworkType.FLUTTER.getValue(), mobileFrameworkInfo.getString(IterableConstants.KEY_FRAMEWORK_TYPE));
+        assertEquals(IterableAPIMobileFrameworkType.FLUTTER.getValue(), mobileFrameworkInfo.getString(IterableConstants.KEY_FRAMEWORK_TYPE));
         assertEquals("1.0.0", mobileFrameworkInfo.getString(IterableConstants.KEY_ITERABLE_SDK_VERSION));
     }
 
