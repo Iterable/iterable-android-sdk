@@ -55,7 +55,7 @@ object IterableMobileFrameworkDetector {
 
         return when {
             hasFlutter && hasReactNative -> {
-                println("$TAG: Both Flutter and React Native frameworks detected. This is unexpected.")
+                IterableLogger.d("$TAG: Both Flutter and React Native frameworks detected. This is unexpected.")
                 // Check multiple indicators for Flutter
                 when {
                     context.packageName.endsWith(".flutter") -> IterableAPIMobileFrameworkType.FLUTTER
@@ -124,7 +124,7 @@ object IterableMobileFrameworkDetector {
             val metadata = packageInfo.applicationInfo.metaData
             metadataKeys.any { key -> metadata?.containsKey(key) == true }
         } catch (e: Exception) {
-            println("$TAG: Error checking manifest metadata: ${e.message}")
+            IterableLogger.e("$TAG: Error checking manifest metadata: ${e.message}")
             false
         }
     }
