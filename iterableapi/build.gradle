@@ -19,7 +19,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 31
 
-        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.5.7\""
+        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.5.9\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
