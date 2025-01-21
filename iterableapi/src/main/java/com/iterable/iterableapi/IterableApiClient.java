@@ -559,8 +559,8 @@ class IterableApiClient {
 
             IterableAPIMobileFrameworkInfo frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo;
             if (frameworkInfo == null) {
-                IterableMobileFrameworkType detectedFramework = IterableMobileFrameworkDetector.detectFramework(context);
-                String sdkVersion = detectedFramework == IterableMobileFrameworkType.NATIVE 
+                IterableAPIMobileFrameworkType detectedFramework = IterableMobileFrameworkDetector.detectFramework(context);
+                String sdkVersion = detectedFramework == IterableAPIMobileFrameworkType.NATIVE 
                     ? IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER 
                     : null;
                 
@@ -570,13 +570,8 @@ class IterableApiClient {
                 );
             }
 
-            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId());
+            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId(), frameworkInfo);
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(context).areNotificationsEnabled());
-
-            JSONObject mobileFrameworkJson = new JSONObject();
-            mobileFrameworkJson.put(IterableConstants.KEY_FRAMEWORK_TYPE, frameworkInfo.getFrameworkType().getValue());
-            mobileFrameworkJson.put(IterableConstants.KEY_ITERABLE_SDK_VERSION, frameworkInfo.getIterableSdkVersion() != null ? frameworkInfo.getIterableSdkVersion() : "unknown");
-            dataFields.put(IterableConstants.KEY_MOBILE_FRAMEWORK_INFO, mobileFrameworkJson);
 
             JSONObject device = new JSONObject();
             device.put(IterableConstants.KEY_TOKEN, deviceToken);

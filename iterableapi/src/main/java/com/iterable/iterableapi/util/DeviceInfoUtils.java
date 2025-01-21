@@ -6,6 +6,7 @@ import android.os.Build;
 
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableUtil;
+import com.iterable.iterableapi.IterableAPIMobileFrameworkInfo;
 
 import org.json.JSONException;
 import org.json.JSONObject;
