@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.5.10]
+
+### Added
+- Added `mobileFrameworkInfo` configuration option to `IterableConfig` to identify the mobile framework (Flutter, React Native, or Native) being used with the SDK.
+- Support for push notifications with text input. Pending intent is now mutable when buttons are of text input type.
+
 ## [3.5.9]
 
 ### Fixed
