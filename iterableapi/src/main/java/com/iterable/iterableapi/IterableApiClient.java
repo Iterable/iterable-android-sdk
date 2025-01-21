@@ -560,10 +560,10 @@ class IterableApiClient {
             IterableAPIMobileFrameworkInfo frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo;
             if (frameworkInfo == null) {
                 IterableAPIMobileFrameworkType detectedFramework = IterableMobileFrameworkDetector.detectFramework(context);
-                String sdkVersion = detectedFramework == IterableAPIMobileFrameworkType.NATIVE 
-                    ? IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER 
+                String sdkVersion = detectedFramework == IterableAPIMobileFrameworkType.NATIVE
+                    ? IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER
                     : null;
-                
+
                 frameworkInfo = new IterableAPIMobileFrameworkInfo(
                     detectedFramework,
                     sdkVersion

@@ -38,7 +38,7 @@ public final class DeviceInfoUtils {
         if (frameworkInfo != null && frameworkInfo.getFrameworkType() != null) {
             JSONObject mobileFrameworkJson = new JSONObject();
             mobileFrameworkJson.put(IterableConstants.DEVICE_FRAMEWORK_TYPE, frameworkInfo.getFrameworkType().getValue());
-            mobileFrameworkJson.put(IterableConstants.DEVICE_ITERABLE_SDK_VERSION, 
+            mobileFrameworkJson.put(IterableConstants.DEVICE_ITERABLE_SDK_VERSION,
                 frameworkInfo.getIterableSdkVersion() != null ? frameworkInfo.getIterableSdkVersion() : "unknown");
             dataFields.put(IterableConstants.DEVICE_MOBILE_FRAMEWORK_INFO, mobileFrameworkJson);
         }
