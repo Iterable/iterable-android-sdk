@@ -154,6 +154,16 @@ class IterableKeychainEncryptedDataMigrator(
 			IterableLogger.w(TAG, "No user ID found to migrate.")
 		}
 
+        // Fetch and migrate anonymous user ID
+        val anonUserId = encryptedPrefs.getString(IterableKeychain.KEY_ANON_USER_ID, null)
+        if (userId != null) {
+            keychain.saveUserIdAnon(anonUserId)
+            editor.remove(IterableKeychain.KEY_ANON_USER_ID)
+            IterableLogger.d(TAG, "Anonymous User ID migrated: $anonUserId")
+        } else {
+            IterableLogger.w(TAG, "No anon user ID found to migrate.")
+        }
+
 		// Fetch and migrate auth token
 		val authToken = encryptedPrefs.getString(IterableKeychain.KEY_AUTH_TOKEN, null)
 		if (authToken != null) {

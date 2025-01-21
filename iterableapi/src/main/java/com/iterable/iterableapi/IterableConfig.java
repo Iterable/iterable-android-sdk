@@ -357,6 +357,8 @@ public class IterableConfig {
 
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
             this.identityResolution = identityResolution;
+            return this;
+        }
 
 		/**
          * Set a handler for decryption failures that can be used to handle data recovery
