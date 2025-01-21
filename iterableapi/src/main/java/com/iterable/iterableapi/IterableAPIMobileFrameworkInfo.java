@@ -3,11 +3,11 @@ package com.iterable.iterableapi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-public class IterableMobileFrameworkInfo {
-    @NonNull private final IterableMobileFrameworkType frameworkType;
+public class IterableAPIMobileFrameworkInfo {
+    @NonNull private final IterableAPIMobileFrameworkType frameworkType;
     @Nullable private final String iterableSdkVersion;
 
-    public IterableMobileFrameworkInfo(@NonNull IterableMobileFrameworkType frameworkType, @Nullable String iterableSdkVersion) {
+    public IterableAPIMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkType frameworkType, @Nullable String iterableSdkVersion) {
         this.frameworkType = frameworkType;
         this.iterableSdkVersion = iterableSdkVersion;
     }

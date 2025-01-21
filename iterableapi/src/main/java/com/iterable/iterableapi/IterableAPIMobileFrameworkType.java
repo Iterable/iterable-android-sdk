@@ -1,13 +1,13 @@
 package com.iterable.iterableapi;
 
-public enum IterableMobileFrameworkType {
+public enum IterableAPIMobileFrameworkType {
     FLUTTER("flutter"),
     REACT_NATIVE("reactnative"),
     NATIVE("native");
 
     private final String value;
 
-    IterableMobileFrameworkType(String value) {
+    IterableAPIMobileFrameworkType(String value) {
         this.value = value;
     }
 
