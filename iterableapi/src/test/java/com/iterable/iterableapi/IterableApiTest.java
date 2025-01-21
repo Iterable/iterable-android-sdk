@@ -388,10 +388,10 @@ public class IterableApiTest extends BaseTest {
 
         JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
         JSONObject dataFields = requestJson.getJSONObject("device").getJSONObject("dataFields");
-        JSONObject mobileFrameworkInfo = dataFields.getJSONObject(IterableConstants.KEY_MOBILE_FRAMEWORK_INFO);
+        JSONObject mobileFrameworkInfo = dataFields.getJSONObject("mobileFrameworkInfo");
         assertNotNull(mobileFrameworkInfo);
-        assertEquals(IterableAPIMobileFrameworkType.FLUTTER.getValue(), mobileFrameworkInfo.getString(IterableConstants.KEY_FRAMEWORK_TYPE));
-        assertEquals("1.0.0", mobileFrameworkInfo.getString(IterableConstants.KEY_ITERABLE_SDK_VERSION));
+        assertEquals("flutter", mobileFrameworkInfo.getString("frameworkType"));
+        assertEquals("1.0.0", mobileFrameworkInfo.getString("iterableSdkVersion"));
     }
 
     @Test
