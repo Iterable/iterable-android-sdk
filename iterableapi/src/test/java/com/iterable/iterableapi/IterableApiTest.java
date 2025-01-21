@@ -365,10 +365,10 @@ public class IterableApiTest extends BaseTest {
         assertEquals(true, dataFields.getBoolean("notificationsEnabled"));
 
         // Verify mobile framework info
-        JSONObject mobileFrameworkInfo = dataFields.getJSONObject(IterableConstants.KEY_MOBILE_FRAMEWORK_INFO);
+        JSONObject mobileFrameworkInfo = dataFields.getJSONObject("mobileFrameworkInfo");
         assertNotNull(mobileFrameworkInfo);
-        assertEquals(IterableAPIMobileFrameworkType.NATIVE.getValue(), mobileFrameworkInfo.getString(IterableConstants.KEY_FRAMEWORK_TYPE));
-        assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, mobileFrameworkInfo.getString(IterableConstants.KEY_ITERABLE_SDK_VERSION));
+        assertEquals("native", mobileFrameworkInfo.getString("frameworkType"));
+        assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, mobileFrameworkInfo.getString("iterableSdkVersion"));
     }
 
     @Test
