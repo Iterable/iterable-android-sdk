@@ -560,9 +560,9 @@ class IterableApiClient {
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(context).areNotificationsEnabled());
 
             // Add mobile framework info
-            IterableMobileFrameworkInfo frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo;
+            IterableAPIMobileFrameworkInfo frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo;
             if (frameworkInfo == null) {
-                frameworkInfo = new IterableMobileFrameworkInfo(
+                frameworkInfo = new IterableAPIMobileFrameworkInfo(
                     IterableMobileFrameworkDetector.detectFramework(context),
                     IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER
                 );
