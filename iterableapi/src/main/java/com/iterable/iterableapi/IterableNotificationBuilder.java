@@ -137,13 +137,11 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             IterableLogger.d(TAG, "Go through TrampolineActivity");
             buttonIntent.setClass(context, IterableTrampolineActivity.class);
             buttonIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//            int pendingIntentFlag = pendingIntentFlag;
             pendingButtonIntent = PendingIntent.getActivity(context, buttonIntent.hashCode(),
                     buttonIntent, pendingIntentFlag);
         } else {
             IterableLogger.d(TAG, "Go through IterablePushActionReceiver");
             buttonIntent.setClass(context, IterablePushActionReceiver.class);
-//            int pendingIntentFlag = pendingIntentFlag;
             pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
                     buttonIntent, pendingIntentFlag);
         }
