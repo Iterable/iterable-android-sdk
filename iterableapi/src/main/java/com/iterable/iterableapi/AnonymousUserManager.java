@@ -3,7 +3,6 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
-import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -22,6 +21,7 @@ import org.json.JSONObject;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -102,7 +102,7 @@ public class AnonymousUserManager {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.UPDATE_USER);
-            storeEventListToLocalStorage(newDataObject, true);
+            storeUserUpdateToLocalStorage(newDataObject);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -114,7 +114,7 @@ public class AnonymousUserManager {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_TOKEN, token);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_TOKEN_REGISTRATION);
-            storeEventListToLocalStorage(newDataObject, false);
+            storeEventListToLocalStorage(newDataObject);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -176,12 +176,16 @@ public class AnonymousUserManager {
     private String checkCriteriaCompletion() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String criteriaData = sharedPref.getString(IterableConstants.SHARED_PREFS_CRITERIA, "");
-        JSONArray localStoredEventList = getEventListFromLocalStorage();
+
+        JSONArray localStoredEventListAndUserUpdates = getEventListFromLocalStorage();
+        JSONObject localStoredUserUpdateObj = getUserUpdateObjFromLocalStorage();
+
+        localStoredEventListAndUserUpdates.put(localStoredUserUpdateObj);
 
         try {
-            if (!criteriaData.isEmpty() && localStoredEventList.length() > 0) {
+            if (!criteriaData.isEmpty() && localStoredEventListAndUserUpdates.length() > 0) {
                 CriteriaCompletionChecker checker = new CriteriaCompletionChecker();
-                return checker.getMatchedCriteria(criteriaData, localStoredEventList);
+                return checker.getMatchedCriteria(criteriaData, localStoredEventListAndUserUpdates);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -190,7 +194,7 @@ public class AnonymousUserManager {
         return null;
     }
 
-    private void createKnownUser(String criteriaId) {
+    private void createAnonymousUser(String criteriaId) {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         updateAnonSession();
 
@@ -202,30 +206,11 @@ public class AnonymousUserManager {
 
         try {
             if (!userData.isEmpty()) {
-                JSONArray trackEventList = getEventListFromLocalStorage();
-                JSONObject updateUserTrack = null;
-                int updateUserTrackPosition = 0;
-
-                //find last update user event data fields and position
-                for (int i = 0; i < trackEventList.length(); i++) {
-                    JSONObject trackEvent = trackEventList.getJSONObject(i);
-                    if ((trackEvent.has(IterableConstants.SHARED_PREFS_EVENT_TYPE)
-                            && trackEvent.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(IterableConstants.KEY_USER))
-                            && trackEvent.has(IterableConstants.KEY_DATA_FIELDS)) {
-                        updateUserTrackPosition = i;
-                        updateUserTrack = trackEvent.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
-                        break;
-                    }
+                JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
+                JSONObject updateUserDataFields = null;
+                if (updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) {
+                    updateUserDataFields = updateUserObj.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
                 }
-
-                //remove update user event from local event list
-                if (updateUserTrack != null) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                        trackEventList.remove(updateUserTrackPosition);
-                    }
-                }
-                saveEventListToLocalStorage(trackEventList);
-
                 JSONObject userSessionDataJson = new JSONObject(userData);
                 JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
 
@@ -236,13 +221,12 @@ public class AnonymousUserManager {
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
 
                 //track anon session with new user
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserTrack, data -> {
+                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
                     // success handler
                     if (IterableApi.getInstance().config.iterableAnonUserHandler != null) {
                         IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
                     }
                     IterableApi.getInstance().setAnonUser(userId);
-                    syncEvents();
                 }, (reason, data) -> handleTrackFailure(data));
             }
 
@@ -264,11 +248,12 @@ public class AnonymousUserManager {
         }
     }
 
-    void syncEvents() {
+    void syncEventsAndUserUpdate() {
         JSONArray trackEventList = getEventListFromLocalStorage();
+        JSONObject updateUserObj = getUserUpdateObjFromLocalStorage();
         Gson gson = new GsonBuilder().create();
 
-        if (trackEventList.length() == 0) return;
+        if (trackEventList.length() == 0 && !updateUserObj.has(IterableConstants.KEY_DATA_FIELDS)) return;
 
         for (int i = 0; i < trackEventList.length(); i++) {
             try {
@@ -287,19 +272,19 @@ public class AnonymousUserManager {
                         handleUpdateCart(event, gson);
                         break;
                     }
-                    case IterableConstants.UPDATE_USER: {
-                        handleUpdateUser(event);
-                        break;
-                    }
                     default:
                         break;
                 }
             } catch (JSONException e) {
-                e.printStackTrace();
+                IterableLogger.d(TAG, "Event Sync Failure");
             }
         }
 
-        clearAnonEventsData();
+        try {
+            handleUpdateUser(updateUserObj);
+        } catch (JSONException e) {
+            IterableLogger.d(TAG, "Handle User Update Failure");
+        }
     }
 
     private void handleTrackEvent(JSONObject event) throws JSONException {
@@ -340,66 +325,67 @@ public class AnonymousUserManager {
         return event.has(IterableConstants.KEY_DATA_FIELDS) ? new JSONObject(event.getString(IterableConstants.KEY_DATA_FIELDS)) : null;
     }
 
-    public void clearAnonEventsData() {
+    public void clearVisitorEventsAndUserData() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
         editor.apply();
     }
 
     private void storeEventListToLocalStorage(JSONObject newDataObject) {
-        if (iterableApi.getAnonymousUsageTracked()) {
-            storeEventListToLocalStorage(newDataObject, false);
-        }
-    }
-
-    private void storeEventListToLocalStorage(JSONObject newDataObject, boolean shouldOverWrite) {
-        if (!iterableApi.getAnonymousUsageTracked()) {
+        if (!iterableApi.getVisitorUsageTracked()) {
             return;
         }
-        JSONArray previousDataArray = getEventListFromLocalStorage();
-        if (shouldOverWrite) {
-            previousDataArray = removeDuplicateEvent(previousDataArray, newDataObject);
-        }
+        JSONArray eventList = getEventListFromLocalStorage();
 
-        previousDataArray.put(newDataObject);
+        eventList.put(newDataObject);
 
-        previousDataArray = enforceEventThresholdLimit(previousDataArray);
-        saveEventListToLocalStorage(previousDataArray);
+        eventList = enforceEventThresholdLimit(eventList);
+        saveEventListToLocalStorage(eventList);
 
         String criteriaId = checkCriteriaCompletion();
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null) {
-            createKnownUser(criteriaId);
+            createAnonymousUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
 
-    private JSONArray removeDuplicateEvent(JSONArray previousDataArray, JSONObject newDataObject) {
-        try {
-            String trackingType = newDataObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE);
-            for (int i = 0; i < previousDataArray.length(); i++) {
-                JSONObject jsonObject = previousDataArray.getJSONObject(i);
-                if (jsonObject.getString(IterableConstants.SHARED_PREFS_EVENT_TYPE).equals(trackingType)) {
-                    return removeEventAtIndex(previousDataArray, i);
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
+    private void storeUserUpdateToLocalStorage(JSONObject newDataObject) throws JSONException {
+        if (!iterableApi.getVisitorUsageTracked()) {
+            return;
         }
-        return previousDataArray;
+
+        JSONObject userUpdateObject = getUserUpdateObjFromLocalStorage();
+        mergeUpdateUserObjects(userUpdateObject, newDataObject);
+
+        saveUserUpdateObjectToLocalStorage(userUpdateObject);
+
+        String criteriaId = checkCriteriaCompletion();
+        Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
+
+        if (criteriaId != null) {
+            createAnonymousUser(criteriaId);
+        }
+        Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
 
-    private JSONArray removeEventAtIndex(JSONArray array, int indexToRemove) throws JSONException {
-        JSONArray newArray = new JSONArray();
-        for (int i = 0; i < array.length(); i++) {
-            if (i != indexToRemove) {
-                newArray.put(array.get(i));
+    private void mergeUpdateUserObjects(JSONObject target, JSONObject source) throws JSONException {
+        Iterator<String> keys = source.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            Object value = source.get(key);
+            // if value is an object, recurse
+            if (value instanceof JSONObject && target.has(key)) {
+                mergeUpdateUserObjects(target.getJSONObject(key), (JSONObject) value);
+            } else {
+                // If the key doesn't exist in the target, just add it
+                target.put(key, value);
             }
         }
-        return newArray;
     }
 
     private JSONArray enforceEventThresholdLimit(JSONArray eventDataArray) {
@@ -428,6 +414,13 @@ public class AnonymousUserManager {
         editor.apply();
     }
 
+    private void saveUserUpdateObjectToLocalStorage(JSONObject userUpdateObject) {
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, userUpdateObject.toString());
+        editor.apply();
+    }
+
     private JSONArray getEventListFromLocalStorage() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         String eventListJson = sharedPref.getString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
@@ -441,6 +434,21 @@ public class AnonymousUserManager {
         }
 
         return eventListArray;
+    }
+
+    private JSONObject getUserUpdateObjFromLocalStorage() {
+        SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        String userUpdateJson = sharedPref.getString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
+        JSONObject userUpdateObject = new JSONObject();
+        try {
+            if (!userUpdateJson.isEmpty()) {
+                userUpdateObject = new JSONObject(userUpdateJson);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return userUpdateObject;
     }
 
     private long getCurrentTime() {

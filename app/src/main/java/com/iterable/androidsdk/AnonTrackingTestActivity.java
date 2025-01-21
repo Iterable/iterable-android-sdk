@@ -4,25 +4,33 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.EditText;
+
+import com.iterable.iterableapi.AuthFailure;
 import com.iterable.iterableapi.CommerceItem;
 import com.iterable.iterableapi.IterableAnonUserHandler;
 import com.iterable.iterableapi.IterableApi;
+import com.iterable.iterableapi.IterableAuthHandler;
 import com.iterable.iterableapi.IterableConfig;
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.testapp.R;
+import com.iterable.iterableapi.util.IterableJwtGenerator;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class AnonTrackingTestActivity extends AppCompatActivity implements IterableAnonUserHandler {
+public class AnonTrackingTestActivity extends AppCompatActivity implements IterableAnonUserHandler, IterableAuthHandler {
 
     private CheckBox anonymousUsageTrackedCheckBox;
 
@@ -31,27 +39,27 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
         anonymousUsageTrackedCheckBox = findViewById(R.id.anonymousUsageTracked_check_box);
-        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonTracking(true).setIterableAnonUserHandler(this).build();
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonActivation(true).setIterableAnonUserHandler(this).setAuthHandler(this).build();
 
         // clear data for testing
         SharedPreferences sharedPref = getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
-        editor.putBoolean(IterableConstants.SHARED_PREFS_ANONYMOUS_USAGE_TRACKED, false);
+        editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
         editor.apply();
 
         new Handler().postDelayed(() -> {
-            IterableApi.initialize(getBaseContext(), "18845050c4774b7c9dc48beece2f6d8b", iterableConfig);
+            IterableApi.initialize(getBaseContext(), "bef41e4c1ab24b21bb3d65e47aa57a89", iterableConfig);
             IterableApi.getInstance().setUserId(null);
             IterableApi.getInstance().setEmail(null);
             printAllSharedPreferencesData(this);
-            IterableApi.getInstance().setAnonymousUsageTracked(anonymousUsageTrackedCheckBox.isChecked());
+            IterableApi.getInstance().setVisitorUsageTracked(anonymousUsageTrackedCheckBox.isChecked());
 
         }, 1000);
 
         anonymousUsageTrackedCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            IterableApi.getInstance().setAnonymousUsageTracked(isChecked);
+            IterableApi.getInstance().setVisitorUsageTracked(isChecked);
         });
 
         findViewById(R.id.updateCart).setOnClickListener(view -> {
@@ -149,5 +157,49 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
     @Override
     public void onAnonUserCreated(String userId) {
         Log.d("userId", userId);
+    }
+
+    @Override
+    public String onAuthTokenRequested() {
+        IterableApi instance = IterableApi.getInstance();
+        if (instance.getAuthToken() == null) {
+            final String secret = "1bb125ddcda2808f118c8b5e774d341c4b03fae68ebef0d140a22da1ec0295ad24d98981fd262c93bac98fa2e63a08142c0a36fe4322c09bea90f48c161780e0";
+            String userId;
+            String userEmail;
+            String jwtToken = null;
+            if (instance.getUserId() != null) {
+                userId = instance.getUserId(); // set as destination user Id
+            } else {
+                userId = null;
+            }
+            if (instance.getEmail() != null) {
+                userEmail = instance.getEmail(); // set as destination email Id
+            } else {
+                userEmail = null;
+            }
+            final Duration days7 = Duration.ofDays(7);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                jwtToken = IterableJwtGenerator.generateToken(secret, days7, userEmail, userId);
+            }
+            return jwtToken;
+        } else {
+            return instance.getAuthToken();
+        }
+    }
+
+    @Override
+    public void onTokenRegistrationSuccessful(String authToken) {
+        Log.d("Successful", authToken);
+        if (IterableApi.getInstance().getEmail() != null) {
+            Log.d("getEmail", IterableApi.getInstance().getEmail());
+        }
+        if (IterableApi.getInstance().getUserId() != null) {
+            Log.d("getUserId", IterableApi.getInstance().getUserId());
+        }
+    }
+
+    @Override
+    public void onAuthFailure(AuthFailure authFailure) {
+        Log.d("Failure", authFailure.failureReason.toString());
     }
 }

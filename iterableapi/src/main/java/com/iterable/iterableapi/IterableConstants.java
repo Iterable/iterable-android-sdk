@@ -128,6 +128,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
     public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
+    public static final String SHARED_PREFS_USER_UPDATE_OBJECT_KEY = "itbl_user_update_object";
     public static final String SHARED_PREFS_ANON_SESSIONS = "itbl_anon_sessions";
     public static final String SHARED_PREFS_SESSION_NO = "totalAnonSessionCount";
     public static final String SHARED_PREFS_LAST_SESSION = "lastAnonSession";
@@ -136,7 +137,8 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_CRITERIA = "criteria";
     public static final String SHARED_PREFS_CRITERIA_ID = "matchedCriteriaId";
     public static final String SHARED_PREFS_PUSH_OPT_IN = "mobilePushOptIn";
-    public static final String SHARED_PREFS_ANONYMOUS_USAGE_TRACKED = "itbl_anonymous_usage_track";
+    public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED = "itbl_visitor_usage_track";
+    public static final String SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED = "itbl_notifications_enabled";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -240,6 +242,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_BUTTONS          = "buttons";
     public static final String ITERABLE_IN_APP_COLOR            = "color";
     public static final String ITERABLE_IN_APP_CONTENT          = "content";
+    public static final String ITERABLE_IN_APP_JSON_ONLY        = "jsonOnly";
     public static final String ITERABLE_IN_APP_COUNT            = "count";
     public static final String ITERABLE_IN_APP_MAIN_IMAGE       = "mainImage";
     public static final String ITERABLE_IN_APP_MESSAGE          = "inAppMessages";

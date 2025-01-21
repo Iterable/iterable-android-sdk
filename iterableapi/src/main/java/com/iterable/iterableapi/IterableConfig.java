@@ -92,7 +92,7 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
-    final boolean enableAnonTracking;
+    final boolean enableAnonActivation;
 
     final int eventThresholdLimit;
 
@@ -102,10 +102,18 @@ public class IterableConfig {
     final boolean enableEmbeddedMessaging;
 
     /**
+
+	/**
      * This controls whether the SDK should allow event replay from local storage to logged in profile
      * and merging between the generated anonymous profile and the logged in profile by default.
      */
     final IterableIdentityResolution identityResolution;
+
+	/**
+     * Handler for decryption failures of PII information.
+     * Before calling this handler, the SDK will clear the PII information and create new encryption keys
+     */
+    final IterableDecryptionFailureHandler decryptionFailureHandler;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -123,11 +131,12 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
-        enableAnonTracking = builder.enableAnonTracking;
+        enableAnonActivation = builder.enableAnonActivation;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
         iterableAnonUserHandler = builder.iterableAnonUserHandler;
+        decryptionFailureHandler = builder.decryptionFailureHandler;
     }
 
     public static class Builder {
@@ -145,12 +154,15 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
+		private IterableDecryptionFailureHandler decryptionFailureHandler;
+
         private boolean encryptionEnforced = false;
-        private boolean enableAnonTracking = false;
+        private boolean enableAnonActivation = false;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableAnonUserHandler iterableAnonUserHandler;
+		private IterableDecryptionFailureHandler decryptionFailureHandler;
 
         @NonNull
         public Builder setIterableAnonUserHandler(@NonNull IterableAnonUserHandler iterableAnonUserHandler) {
@@ -289,17 +301,6 @@ public class IterableConfig {
         }
 
         /**
-         * Set whether the SDK should enforce encryption. If set to `true`, the SDK will not use fallback mechanism
-         * of storing data in un-encrypted shared preferences if encrypted database is not available. Set this to `true`
-         * if PII confidentiality is a concern for your app.
-         * @param encryptionEnforced `true` will have the SDK enforce encryption.
-         */
-        public Builder setEncryptionEnforced(boolean encryptionEnforced) {
-            this.encryptionEnforced = encryptionEnforced;
-            return this;
-        }
-
-        /**
          * Set the data region used by the SDK
          * @param dataRegion enum value that determines which endpoint to use, defaults to IterableDataRegion.US
          */
@@ -323,10 +324,10 @@ public class IterableConfig {
         /**
          * Set whether the SDK should track events for anonymous users. Set this to `true`
          * if you want to track all events when users are not logged into the application.
-         * @param enableAnonTracking `true` will track events for anonymous users.
+         * @param enableAnonActivation `true` will track events for anonymous users.
          */
-        public Builder setEnableAnonTracking(boolean enableAnonTracking) {
-            this.enableAnonTracking = enableAnonTracking;
+        public Builder setEnableAnonActivation(boolean enableAnonActivation) {
+            this.enableAnonActivation = enableAnonActivation;
             return this;
         }
 
@@ -345,6 +346,8 @@ public class IterableConfig {
         }
 
         /**
+
+		/**
          * Set whether the SDK should replay events from local storage to the logged in profile
          * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
          * This can be overwritten by a parameter passed into setEmail or setUserId.
@@ -354,6 +357,14 @@ public class IterableConfig {
 
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
             this.identityResolution = identityResolution;
+
+		/**
+         * Set a handler for decryption failures that can be used to handle data recovery
+         * @param handler Decryption failure handler provided by the app
+         */
+        @NonNull
+        public Builder setDecryptionFailureHandler(@NonNull IterableDecryptionFailureHandler handler) {
+            this.decryptionFailureHandler = handler;
             return this;
         }
 
