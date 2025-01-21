@@ -21,4 +21,4 @@ public class IterableAPIMobileFrameworkInfo {
     public String getIterableSdkVersion() {
         return iterableSdkVersion;
     }
-} 
+}

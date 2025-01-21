@@ -14,4 +14,4 @@ public enum IterableAPIMobileFrameworkType {
     public String getValue() {
         return value;
     }
-} 
+}
