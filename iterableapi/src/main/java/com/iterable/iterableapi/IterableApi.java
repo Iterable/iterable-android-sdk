@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 
@@ -143,7 +144,7 @@ public class IterableApi {
         }
         if (keychain == null) {
             try {
-                keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
+                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
             }
@@ -392,10 +393,30 @@ public class IterableApi {
         if (!_firstForegroundHandled) {
             _firstForegroundHandled = true;
             if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
-                IterableLogger.d(TAG, "Performing automatic push registration");
                 sharedInstance.registerForPush();
             }
             fetchRemoteConfiguration();
+        }
+
+        if (_applicationContext == null || sharedInstance.getMainActivityContext() == null) {
+            IterableLogger.w(TAG, "onForeground: _applicationContext is null");
+            return;
+        }
+
+        boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+
+        boolean hasStoredPermission = sharedPref.contains(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED);
+        boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
+
+        if (sharedInstance.isInitialized()) {
+            if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
+                sharedInstance.registerForPush();
+            }
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
+            editor.apply();
         }
     }
 
