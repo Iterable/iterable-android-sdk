@@ -152,7 +152,7 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
-		private IterableDecryptionFailureHandler decryptionFailureHandler;
+        private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
         private boolean enableEmbeddedMessaging = false;
