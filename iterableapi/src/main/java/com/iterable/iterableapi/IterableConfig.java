@@ -107,7 +107,7 @@ public class IterableConfig {
      */
     final IterableIdentityResolution identityResolution;
 
-	/**
+    /**
      * Handler for decryption failures of PII information.
      * Before calling this handler, the SDK will clear the PII information and create new encryption keys
      */
