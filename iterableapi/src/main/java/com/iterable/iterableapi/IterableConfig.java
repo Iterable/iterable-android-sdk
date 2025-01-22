@@ -102,8 +102,6 @@ public class IterableConfig {
     final boolean enableEmbeddedMessaging;
 
     /**
-
-	/**
      * This controls whether the SDK should allow event replay from local storage to logged in profile
      * and merging between the generated anonymous profile and the logged in profile by default.
      */
