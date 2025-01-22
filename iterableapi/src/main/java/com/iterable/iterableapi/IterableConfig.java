@@ -341,8 +341,6 @@ public class IterableConfig {
             return this;
         }
 
-        /**
-
 		/**
          * Set whether the SDK should replay events from local storage to the logged in profile
          * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
