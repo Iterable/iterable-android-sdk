@@ -341,7 +341,7 @@ public class IterableConfig {
             return this;
         }
 
-		/**
+        /**
          * Set whether the SDK should replay events from local storage to the logged in profile
          * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
          * This can be overwritten by a parameter passed into setEmail or setUserId.
@@ -354,7 +354,7 @@ public class IterableConfig {
             return this;
         }
 
-		/**
+        /**
          * Set a handler for decryption failures that can be used to handle data recovery
          * @param handler Decryption failure handler provided by the app
          */
