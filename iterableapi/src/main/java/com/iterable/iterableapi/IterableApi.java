@@ -435,6 +435,12 @@ public class IterableApi {
             editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
             editor.apply();
         }
+
+        // fetching anonymous user criteria on foregrounding
+        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonActivation && sharedInstance.getVisitorUsageTracked()) {
+            anonymousUserManager.updateAnonSession();
+            anonymousUserManager.getCriteria();
+        }
     }
 
     private boolean isInitialized() {
