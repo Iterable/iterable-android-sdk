@@ -445,6 +445,7 @@ public class IterableApi {
             && sharedInstance._userIdAnon == null
             && sharedInstance.config.enableAnonActivation
             && sharedInstance.getVisitorUsageTracked()
+            && sharedInstance.config.foregroundCriteriaFetch
             && currentTime - lastCriteriaFetch >= CRITERIA_COOLDOWN_MS) {
 
             lastCriteriaFetch = currentTime;

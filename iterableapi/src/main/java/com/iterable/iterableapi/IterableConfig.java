@@ -170,7 +170,7 @@ public class IterableConfig {
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
-        private boolean foregroundCriteriaFetch = false;
+        private boolean foregroundCriteriaFetch = true;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
@@ -343,7 +343,7 @@ public class IterableConfig {
         }
 
         /**
-         * Set whether the SDK should disable criteria fetching on foregrounding. Set this to `true`
+         * Set whether the SDK should disable criteria fetching on foregrounding. Set this to `false`
          * if you want criteria to only be fetched on app launch.
          * @param foregroundCriteriaFetch `true` will fetch criteria only on app launch.
          */
