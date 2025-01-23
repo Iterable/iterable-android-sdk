@@ -118,6 +118,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
+    public static final String SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED = "itbl_notifications_enabled";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -143,6 +144,8 @@ public final class IterableConstants {
     public static final String DEVICE_APP_BUILD            = "appBuild";
     public static final String DEVICE_NOTIFICATIONS_ENABLED = "notificationsEnabled";
     public static final String DEVICE_ITERABLE_SDK_VERSION = "iterableSdkVersion";
+    public static final String DEVICE_MOBILE_FRAMEWORK_INFO = "mobileFrameworkInfo";
+    public static final String DEVICE_FRAMEWORK_TYPE       = "frameworkType";
 
     public static final String INSTANCE_ID_CLASS        = "com.google.android.gms.iid.InstanceID";
     public static final String ICON_FOLDER_IDENTIFIER   = "drawable";
@@ -220,6 +223,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_BUTTONS          = "buttons";
     public static final String ITERABLE_IN_APP_COLOR            = "color";
     public static final String ITERABLE_IN_APP_CONTENT          = "content";
+    public static final String ITERABLE_IN_APP_JSON_ONLY        = "jsonOnly";
     public static final String ITERABLE_IN_APP_COUNT            = "count";
     public static final String ITERABLE_IN_APP_MAIN_IMAGE       = "mainImage";
     public static final String ITERABLE_IN_APP_MESSAGE          = "inAppMessages";

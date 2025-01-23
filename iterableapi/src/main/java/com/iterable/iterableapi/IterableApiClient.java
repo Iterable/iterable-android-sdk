@@ -556,7 +556,21 @@ class IterableApiClient {
 
             dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
             dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true);
-            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId());
+
+            IterableAPIMobileFrameworkInfo frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo;
+            if (frameworkInfo == null) {
+                IterableAPIMobileFrameworkType detectedFramework = IterableMobileFrameworkDetector.detectFramework(context);
+                String sdkVersion = detectedFramework == IterableAPIMobileFrameworkType.NATIVE
+                    ? IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER
+                    : null;
+
+                frameworkInfo = new IterableAPIMobileFrameworkInfo(
+                    detectedFramework,
+                    sdkVersion
+                );
+            }
+
+            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId(), frameworkInfo);
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(context).areNotificationsEnabled());
 
             JSONObject device = new JSONObject();

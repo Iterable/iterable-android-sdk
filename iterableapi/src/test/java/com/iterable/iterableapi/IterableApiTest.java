@@ -373,6 +373,35 @@ public class IterableApiTest extends BaseTest {
         assertEquals("321", dataFields.getString("appBuild"));
         assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, dataFields.getString("iterableSdkVersion"));
         assertEquals(true, dataFields.getBoolean("notificationsEnabled"));
+
+        // Verify mobile framework info
+        JSONObject mobileFrameworkInfo = dataFields.getJSONObject("mobileFrameworkInfo");
+        assertNotNull(mobileFrameworkInfo);
+        assertEquals("native", mobileFrameworkInfo.getString("frameworkType"));
+        assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, mobileFrameworkInfo.getString("iterableSdkVersion"));
+    }
+
+    @Test
+    public void testPushRegistrationDeviceFieldsWithCustomFramework() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableConfig config = new IterableConfig.Builder()
+            .setAutoPushRegistration(false)
+            .setMobileFrameworkInfo(new IterableAPIMobileFrameworkInfo(IterableAPIMobileFrameworkType.FLUTTER, "1.0.0"))
+            .build();
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().registerDeviceToken("token");
+        Thread.sleep(100);  // Since the network request is queued from a background thread, we need to wait
+        shadowOf(getMainLooper()).idle();
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+
+        JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
+        JSONObject dataFields = requestJson.getJSONObject("device").getJSONObject("dataFields");
+        JSONObject mobileFrameworkInfo = dataFields.getJSONObject("mobileFrameworkInfo");
+        assertNotNull(mobileFrameworkInfo);
+        assertEquals("flutter", mobileFrameworkInfo.getString("frameworkType"));
+        assertEquals("1.0.0", mobileFrameworkInfo.getString("iterableSdkVersion"));
     }
 
     @Test

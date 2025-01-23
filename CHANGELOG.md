@@ -2,16 +2,51 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [3.5.10]
+
+### Added
+- Added `mobileFrameworkInfo` configuration option to `IterableConfig` to identify the mobile framework (Flutter, React Native, or Native) being used with the SDK.
+- Support for push notifications with text input. Pending intent is now mutable when buttons are of text input type.
+
+## [3.5.9]
+
+### Fixed
+- Fixed notification tracking bug that prevents SDK from receiving push notifications when system notification settings are turned off.
+
+## [3.5.8]
+
+### Fixed
+- Fixed logic issue where notifications were being disabled even when auto push registration was turned off
+
+## [3.5.7]
+
+### Added
+- Support for JSON-only in-app messages, JSON-only messages are now handled by the `onNewInApp` handler and consumed after retrieval
+- Enhanced notification state tracking to align with system notification permissions changes
+
+## [3.5.6]
+
+#### Fixed
+- Fixed Crash while initializing IterableSDK on some devices (Unsupported IV Length).
+
+## [3.5.5]
 
 #### Added
-- nothing yet
+- - Added `IterableDecryptionFailureHandler` interface to handle decryption failures of PII information. 
 
 #### Removed
-- nothing yet
+- Removed `encryptionEnforced` parameter from `IterableConfig` as data is now always encoded for security
 
 #### Changed
-- nothing yet
+- Migrated from EncryptedSharedPreferences to regular SharedPreferences to prevent ANRs while EncryptedSharedPreferences was created on the main thread. We are now using our own encryption library to encrypt PII information before storing it in SharedPreferences.
+
+## [3.5.4]
+#### Fixed
+- In-Apps are now robust with animation, resolving flickering and animation issues observed on Pixel 6 Pro with API 35.
+- Fixed an issue where AuthManager was not reset correctly when logging out a user.
+- Fixed `ConcurrentModificationException` leading to crashes during application launches.
+- Addressed a text truncation issue in Embedded Message templates for applications targeting Android 14 and Android 15.
+- Improved InboxActivity compatibility with edge-to-edge layouts, ensuring seamless handling of notches and display cutouts.
 
 ## [3.5.3]
 #### Fixed

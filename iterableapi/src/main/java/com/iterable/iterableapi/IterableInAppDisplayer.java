@@ -20,6 +20,11 @@ class IterableInAppDisplayer {
     }
 
     boolean showMessage(@NonNull IterableInAppMessage message, IterableInAppLocation location, @NonNull final IterableHelper.IterableUrlCallback clickCallback) {
+        // Early return for JSON-only messages
+        if (message.isJsonOnly()) {
+            return false;
+        }
+
         Activity currentActivity = activityMonitor.getCurrentActivity();
         // Prevent double display
         if (currentActivity != null) {
