@@ -31,6 +31,7 @@ public class IterableApi {
     static volatile IterableApi sharedInstance = new IterableApi();
 
     private static final String TAG = "IterableApi";
+    private static final long CRITERIA_COOLDOWN_MS = 60000; // 5 second cooldown
     private Context _applicationContext;
     IterableConfig config;
     private String _apiKey;
@@ -55,6 +56,7 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
+    private long lastCriteriaFetch = 0;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -436,10 +438,18 @@ public class IterableApi {
             editor.apply();
         }
 
+        long currentTime = System.currentTimeMillis();
+
         // fetching anonymous user criteria on foregrounding
-        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonActivation && sharedInstance.getVisitorUsageTracked()) {
-            anonymousUserManager.updateAnonSession();
+        if (!sharedInstance.checkSDKInitialization()
+            && sharedInstance._userIdAnon == null
+            && sharedInstance.config.enableAnonActivation
+            && sharedInstance.getVisitorUsageTracked()
+            && currentTime - lastCriteriaFetch >= CRITERIA_COOLDOWN_MS) {
+
+            lastCriteriaFetch = currentTime;
             anonymousUserManager.getCriteria();
+            IterableLogger.d(TAG, "Fetching anonymous user criteria - Foreground");
         }
     }
 
