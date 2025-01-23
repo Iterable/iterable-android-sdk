@@ -116,14 +116,12 @@ public class IterableConfig {
     final boolean enableEmbeddedMessaging;
 
     /**
-
-	/**
      * This controls whether the SDK should allow event replay from local storage to logged in profile
      * and merging between the generated anonymous profile and the logged in profile by default.
      */
     final IterableIdentityResolution identityResolution;
 
-	/**
+    /**
      * Handler for decryption failures of PII information.
      * Before calling this handler, the SDK will clear the PII information and create new encryption keys
      */
@@ -169,7 +167,7 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
-		private IterableDecryptionFailureHandler decryptionFailureHandler;
+        private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
         private boolean disableForegroundCriteriaFetching = false;
@@ -369,8 +367,6 @@ public class IterableConfig {
         }
 
         /**
-
-		/**
          * Set whether the SDK should replay events from local storage to the logged in profile
          * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
          * This can be overwritten by a parameter passed into setEmail or setUserId.
@@ -382,7 +378,7 @@ public class IterableConfig {
             return this;
         }
 
-		/**
+        /**
          * Set a handler for decryption failures that can be used to handle data recovery
          * @param handler Decryption failure handler provided by the app
          */
