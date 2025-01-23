@@ -410,12 +410,8 @@ public class IterableApi {
         boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
 
         if (sharedInstance.isInitialized()) {
-            if (hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
-                if (!systemNotificationEnabled) {
-                    sharedInstance.disablePush();
-                } else {
-                    sharedInstance.registerForPush();
-                }
+            if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
+                sharedInstance.registerForPush();
             }
 
             SharedPreferences.Editor editor = sharedPref.edit();
@@ -645,7 +641,7 @@ public class IterableApi {
             try {
                 JSONObject dataFields = new JSONObject();
                 JSONObject deviceDetails = new JSONObject();
-                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
+                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
                 sharedInstance.apiClient.updateUser(dataFields, false);
             } catch (JSONException e) {

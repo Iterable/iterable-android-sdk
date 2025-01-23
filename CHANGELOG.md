@@ -2,6 +2,28 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.5.10]
+
+### Added
+- Added `mobileFrameworkInfo` configuration option to `IterableConfig` to identify the mobile framework (Flutter, React Native, or Native) being used with the SDK.
+- Support for push notifications with text input. Pending intent is now mutable when buttons are of text input type.
+
+## [3.5.9]
+
+### Fixed
+- Fixed notification tracking bug that prevents SDK from receiving push notifications when system notification settings are turned off.
+
+## [3.5.8]
+
+### Fixed
+- Fixed logic issue where notifications were being disabled even when auto push registration was turned off
+
+## [3.5.7]
+
+### Added
+- Support for JSON-only in-app messages, JSON-only messages are now handled by the `onNewInApp` handler and consumed after retrieval
+- Enhanced notification state tracking to align with system notification permissions changes
+
 ## [3.5.6]
 
 #### Fixed
