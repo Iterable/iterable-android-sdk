@@ -848,7 +848,7 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testForegroundCriteriaFetchWhenConditionsMet() throws Exception {
         // Clear any pending requests
-        while (server.takeRequest(1, TimeUnit.SECONDS) != null) {}
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // Mock responses for expected endpoints
         addResponse(IterableConstants.ENDPOINT_CRITERIA_LIST);
