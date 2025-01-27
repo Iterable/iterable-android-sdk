@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.net.Uri;
@@ -55,6 +56,8 @@ public class IterableApiTest extends BaseTest {
 
     public static final String PACKAGE_NAME = "com.iterable.iterableapi.test";
     private MockWebServer server;
+
+    private PathBasedQueueDispatcher dispatcher;
     private IterableApiClient originalApiClient;
     private IterableApiClient mockApiClient;
     private IterablePushRegistration.IterablePushRegistrationImpl originalPushRegistrationImpl;
@@ -62,6 +65,8 @@ public class IterableApiTest extends BaseTest {
     @Before
     public void setUp() {
         server = new MockWebServer();
+        dispatcher = new PathBasedQueueDispatcher();
+        server.setDispatcher(dispatcher);
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
         reInitIterableApi();
@@ -87,6 +92,10 @@ public class IterableApiTest extends BaseTest {
         originalApiClient = IterableApi.sharedInstance.apiClient;
         mockApiClient = spy(originalApiClient);
         IterableApi.sharedInstance.apiClient = mockApiClient;
+    }
+
+    private void addResponse(String endPoint) {
+        dispatcher.enqueueResponse("/" + endPoint, new MockResponse().setResponseCode(200).setBody("{}"));
     }
 
     @Test
@@ -836,4 +845,124 @@ public class IterableApiTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
+    @Test
+    public void testForegroundCriteriaFetchWhenConditionsMet() throws Exception {
+        // Clear any pending requests
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) {}
+
+        // Mock responses for expected endpoints
+        addResponse(IterableConstants.ENDPOINT_CRITERIA_LIST);
+
+        // Initialize with anon activation and foreground fetch enabled
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableAnonActivation(true)
+            .setForegroundCriteriaFetch(true)
+            .build();
+
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+
+        // Initialize API
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+
+        // Simulate app coming to foreground
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        // Verify criteria fetch request was made
+        RecordedRequest criteriaRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Criteria request should be made on foreground", criteriaRequest);
+        assertTrue("Request URL should contain getCriteria endpoint",
+            criteriaRequest.getPath().contains(IterableConstants.ENDPOINT_CRITERIA_LIST));
+
+        // Clean up
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
+
+    @Test
+    public void testCriteriaFetchNotCalledWhenDisabled() throws Exception {
+        // Clear any pending requests
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // Mock response for remote configuration only
+        addResponse(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION);
+        addResponse(IterableConstants.ENDPOINT_CRITERIA_LIST);
+
+        // Initialize with foreground fetch disabled
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableAnonActivation(true)
+            .setForegroundCriteriaFetch(false)
+            .build();
+
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+
+        // Initialize API
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        // Simulate app coming to foreground
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        // Take the remote configuration request
+        RecordedRequest remoteConfigRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(remoteConfigRequest);
+        assertTrue(remoteConfigRequest.getPath().contains(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION));
+
+        // Verify no criteria fetch request was made
+        RecordedRequest criteriaRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNull("No criteria request should be made when feature is disabled", criteriaRequest);
+
+        // Clean up
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
+
+    @Test
+    public void testForegroundCriteriaFetchWithCooldown() throws Exception {
+        // Clear any pending requests
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // Mock responses
+        addResponse(IterableConstants.ENDPOINT_CRITERIA_LIST);
+        addResponse(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION);
+
+        // Initialize with required config
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableAnonActivation(true)
+            .setForegroundCriteriaFetch(true)
+            .build();
+
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+
+        // Initialize API
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+
+        // First foreground
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        // Verify first criteria fetch
+        RecordedRequest firstCriteriaRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("First criteria request should be made", firstCriteriaRequest);
+        assertTrue("First request URL should contain getCriteria endpoint",
+            firstCriteriaRequest.getPath().contains(IterableConstants.ENDPOINT_CRITERIA_LIST));
+
+        // Immediate second foreground
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        // Verify no criteria requests during cooldown period
+        RecordedRequest secondRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertFalse("Second request should not be a criteria request",
+            secondRequest.getPath().contains(IterableConstants.ENDPOINT_CRITERIA_LIST));
+
+        // Clean up
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
 }
