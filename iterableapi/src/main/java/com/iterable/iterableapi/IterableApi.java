@@ -36,7 +36,7 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
     private String _userId;
-    private String _userIdAnon;
+    String _userIdAnon;
     private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
@@ -47,15 +47,15 @@ public class IterableApi {
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
-    private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
     private static final AnonymousUserMerge anonymousUserMerge = new AnonymousUserMerge();
+    private @Nullable AnonymousUserManager anonymousUserManager;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
-    private long lastCriteriaFetch = 0;
+    long lastCriteriaFetch = 0;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -436,28 +436,13 @@ public class IterableApi {
             editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
             editor.apply();
         }
-
-        long currentTime = System.currentTimeMillis();
-
-        // fetching anonymous user criteria on foregrounding
-        if (!sharedInstance.checkSDKInitialization()
-            && sharedInstance._userIdAnon == null
-            && sharedInstance.config.enableAnonActivation
-            && sharedInstance.getVisitorUsageTracked()
-            && sharedInstance.config.foregroundCriteriaFetch
-            && currentTime - lastCriteriaFetch >= IterableConstants.CRITERIA_FETCHING_COOLDOWN) {
-
-            lastCriteriaFetch = currentTime;
-            anonymousUserManager.getCriteria();
-            IterableLogger.d(TAG, "Fetching anonymous user criteria - Foreground");
-        }
     }
 
     private boolean isInitialized() {
         return _apiKey != null && (_email != null || _userId != null);
     }
 
-    private boolean checkSDKInitialization() {
+    boolean checkSDKInitialization() {
         if (!isInitialized()) {
             IterableLogger.w(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
             return false;
@@ -682,12 +667,21 @@ public class IterableApi {
             );
         }
 
+        if (sharedInstance.anonymousUserManager == null) {
+            sharedInstance.anonymousUserManager = new AnonymousUserManager(
+                sharedInstance
+            );
+        }
+
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
 
-        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonActivation && sharedInstance.getVisitorUsageTracked()) {
-            anonymousUserManager.updateAnonSession();
-            anonymousUserManager.getCriteria();
+        if (!sharedInstance.checkSDKInitialization()
+            && sharedInstance._userIdAnon == null
+            && sharedInstance.config.enableAnonActivation
+            && sharedInstance.getVisitorUsageTracked()) {
+            sharedInstance.anonymousUserManager.updateAnonSession();
+            sharedInstance.anonymousUserManager.getCriteria();
         }
 
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
@@ -1599,7 +1593,10 @@ public class IterableApi {
         editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
         editor.apply();
 
+        long currentTime = System.currentTimeMillis();
+
         if (isSetVisitorUsageTracked && config.enableAnonActivation) {
+            lastCriteriaFetch = currentTime;
             anonymousUserManager.updateAnonSession();
             anonymousUserManager.getCriteria();
         }
