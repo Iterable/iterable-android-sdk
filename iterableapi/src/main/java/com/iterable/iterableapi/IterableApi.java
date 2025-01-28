@@ -404,7 +404,7 @@ public class IterableApi {
         public void onSwitchToBackground() {}
     };
 
-    void onForeground() {;
+    void onForeground() {
         if (!_firstForegroundHandled) {
             _firstForegroundHandled = true;
             if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
