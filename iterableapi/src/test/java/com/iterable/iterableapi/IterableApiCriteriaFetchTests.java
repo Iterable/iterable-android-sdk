@@ -75,7 +75,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         // Initialize with anon activation and foreground fetch enabled
         IterableConfig config = new IterableConfig.Builder()
             .setEnableAnonActivation(true)
-            .setForegroundCriteriaFetch(true)
+            .setEnableForegroundCriteriaFetch(true)
             .build();
 
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
@@ -111,7 +111,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         // Initialize with foreground fetch disabled
         IterableConfig config = new IterableConfig.Builder()
             .setEnableAnonActivation(true)
-            .setForegroundCriteriaFetch(false)
+            .setEnableForegroundCriteriaFetch(false)
             .build();
 
         // Initialize API and set visitor tracking
@@ -152,7 +152,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         // Initialize with required config
         IterableConfig config = new IterableConfig.Builder()
             .setEnableAnonActivation(true)
-            .setForegroundCriteriaFetch(true)
+            .setEnableForegroundCriteriaFetch(true)
             .build();
 
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
