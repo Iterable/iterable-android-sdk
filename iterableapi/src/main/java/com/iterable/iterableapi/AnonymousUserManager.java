@@ -157,6 +157,7 @@ public class AnonymousUserManager {
     }
 
     void getCriteria() {
+        IterableLogger.v(TAG, "getCriteria");
         iterableApi.apiClient.getCriteriaList(data -> {
             if (data != null) {
                 try {

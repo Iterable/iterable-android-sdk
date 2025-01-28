@@ -103,7 +103,7 @@ public class IterableConfig {
      * Toggles fetching of anonymous user criteria on foregrounding when set to true
      * By default, the SDK will fetch anonymous user criteria on foregrounding.
      */
-    final boolean foregroundCriteriaFetch;
+    final boolean enableForegroundCriteriaFetch;
 
     /**
      * The number of anonymous events stored in local storage
@@ -144,7 +144,7 @@ public class IterableConfig {
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
         enableAnonActivation = builder.enableAnonActivation;
-        foregroundCriteriaFetch = builder.foregroundCriteriaFetch;
+        enableForegroundCriteriaFetch = builder.enableForegroundCriteriaFetch;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
@@ -170,7 +170,7 @@ public class IterableConfig {
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
-        private boolean foregroundCriteriaFetch = true;
+        private boolean enableForegroundCriteriaFetch = true;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
@@ -345,10 +345,10 @@ public class IterableConfig {
         /**
          * Set whether the SDK should disable criteria fetching on foregrounding. Set this to `false`
          * if you want criteria to only be fetched on app launch.
-         * @param foregroundCriteriaFetch `true` will fetch criteria only on app launch.
+         * @param enableForegroundCriteriaFetch `true` will fetch criteria only on app launch.
          */
-        public Builder setForegroundCriteriaFetch(boolean foregroundCriteriaFetch) {
-            this.foregroundCriteriaFetch = foregroundCriteriaFetch;
+        public Builder setEnableForegroundCriteriaFetch(boolean enableForegroundCriteriaFetch) {
+            this.enableForegroundCriteriaFetch = enableForegroundCriteriaFetch;
             return this;
         }
 
