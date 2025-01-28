@@ -31,7 +31,6 @@ public class IterableApi {
     static volatile IterableApi sharedInstance = new IterableApi();
 
     private static final String TAG = "IterableApi";
-    private static final long CRITERIA_COOLDOWN_MS = 60000; // 5 second cooldown
     private Context _applicationContext;
     IterableConfig config;
     private String _apiKey;
@@ -446,7 +445,7 @@ public class IterableApi {
             && sharedInstance.config.enableAnonActivation
             && sharedInstance.getVisitorUsageTracked()
             && sharedInstance.config.foregroundCriteriaFetch
-            && currentTime - lastCriteriaFetch >= CRITERIA_COOLDOWN_MS) {
+            && currentTime - lastCriteriaFetch >= IterableConstants.CRITERIA_FETCHING_COOLDOWN) {
 
             lastCriteriaFetch = currentTime;
             anonymousUserManager.getCriteria();
