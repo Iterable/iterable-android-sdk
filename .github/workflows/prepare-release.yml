@@ -1,0 +1,71 @@
+name: Prepare Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version number (e.g., 3.4.0)'
+        required: true
+        type: string
+      changelog:
+        description: 'Changelog entry (supports Markdown and HTML)'
+        required: true
+        type: string
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Update Version Files
+        run: |
+          # Update iterableapi/build.gradle
+          sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ inputs.version }}'/" iterableapi/build.gradle
+          sed -i "s/versionName=\".*\"/versionName=\"${{ inputs.version }}\"/" iterableapi/build.gradle
+          
+          # Update iterableapi-ui/build.gradle
+          sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ inputs.version }}'/" iterableapi-ui/build.gradle
+
+      - name: Update CHANGELOG.md
+        env:
+          CHANGELOG: ${{ inputs.changelog }}
+        run: |
+          # Using printf to properly handle newlines and special characters
+          printf "## %s\n%s\n\n%s" "${{ inputs.version }}" "$CHANGELOG" "$(cat CHANGELOG.md)" > CHANGELOG.md
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "Release ${{ inputs.version }}"
+          body: |
+            # Release ${{ inputs.version }}
+            
+            ## Changelog
+            ${{ inputs.changelog }}
+            
+            ## Mobile Engineering SDK Release Checklist
+            - [ ] CHANGELOG.md updated
+            - [ ] Version numbers updated in build.gradle files
+            - [ ] README.md reviewed (if needed)
+            - [ ] Sample apps verified
+            - [ ] All tests passing
+            - [ ] Documentation updated (if needed)
+            - [ ] Release notes drafted
+            - [ ] Migration guide updated (if needed)
+            
+            ## Post-merge Tasks
+            - [ ] Create and push tag: `git tag '${{ inputs.version }}' && git push origin --tags`
+            - [ ] Release to Maven Central:
+                1. Go to https://oss.sonatype.org/#stagingRepositories
+                2. Login with credentials
+                3. Close the build (wait ~30s)
+                4. Release the build
+          branch: "release/${{ inputs.version }}"
+          commit-message: "Prepare for release ${{ inputs.version }}"
+          labels: release 
