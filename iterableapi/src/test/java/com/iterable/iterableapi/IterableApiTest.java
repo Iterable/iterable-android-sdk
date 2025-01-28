@@ -55,7 +55,6 @@ public class IterableApiTest extends BaseTest {
 
     public static final String PACKAGE_NAME = "com.iterable.iterableapi.test";
     private MockWebServer server;
-
     private IterableApiClient originalApiClient;
     private IterableApiClient mockApiClient;
     private IterablePushRegistration.IterablePushRegistrationImpl originalPushRegistrationImpl;
@@ -836,4 +835,5 @@ public class IterableApiTest extends BaseTest {
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
+
 }
