@@ -404,15 +404,7 @@ public class IterableApi {
         public void onSwitchToBackground() {}
     };
 
-    void onForeground() {
-        // Add debug logging here
-        IterableLogger.d(TAG, String.format("Debug values: SDK init: %b, userIdAnon: %s, enableAnon: %b, visitorTracked: %b, foregroundFetch: %b",
-            sharedInstance.checkSDKInitialization(),
-            sharedInstance._userIdAnon,
-            sharedInstance.config.enableAnonActivation,
-            sharedInstance.getVisitorUsageTracked(),
-            sharedInstance.config.foregroundCriteriaFetch));
-
+    void onForeground() {;
         if (!_firstForegroundHandled) {
             _firstForegroundHandled = true;
             if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
@@ -447,14 +439,6 @@ public class IterableApi {
         }
 
         long currentTime = System.currentTimeMillis();
-
-        IterableLogger.d(TAG, "About to check criteria fetch conditions:");
-        IterableLogger.d(TAG, String.format("Debug values: SDK init: %b, userIdAnon: %s, enableAnon: %b, visitorTracked: %b, foregroundFetch: %b",
-            sharedInstance.checkSDKInitialization(),
-            sharedInstance._userIdAnon,
-            sharedInstance.config.enableAnonActivation,
-            sharedInstance.getVisitorUsageTracked(),
-            sharedInstance.config.foregroundCriteriaFetch));
 
         // fetching anonymous user criteria on foregrounding
         if (!sharedInstance.checkSDKInitialization()
