@@ -175,7 +175,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         MockResponse response = new MockResponse().setResponseCode(200);
 
         // If it's an anonymous user list request, return the criteria mock data
-        if (endPoint.contains("anonymoususer/list")) {
+        if (endPoint.contains(IterableConstants.ENDPOINT_CRITERIA_LIST)) {
             response.setBody(criteriaMockData);
         } else {
             response.setBody("{}");
@@ -235,7 +235,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         dispatcher = new PathBasedQueueDispatcher() {
             @Override
             public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
-                if (request.getPath().contains("anonymoususer/list")) {
+                if (request.getPath().contains(IterableConstants.ENDPOINT_CRITERIA_LIST)) {
                     return new MockResponse()
                         .setResponseCode(200)
                         .setBody(criteriaMockData);
@@ -246,7 +246,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         server.setDispatcher(dispatcher);
 
         // Mock remote config
-        addResponse("mobile/getRemoteConfiguration");
+        addResponse(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION);
 
         // Initialize with foreground fetch disabled
         IterableConfig config = new IterableConfig.Builder()
@@ -266,8 +266,8 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         RecordedRequest secondRequest = server.takeRequest(1, TimeUnit.SECONDS);
         Assert.assertNotNull("Should have first criteria request", firstRequest);
         Assert.assertNotNull("Should have second criteria request", secondRequest);
-        assertTrue(firstRequest.getPath().contains("anonymoususer/list"));
-        assertTrue(secondRequest.getPath().contains("anonymoususer/list"));
+        assertTrue(firstRequest.getPath().contains(IterableConstants.ENDPOINT_CRITERIA_LIST));
+        assertTrue(secondRequest.getPath().contains(IterableConstants.ENDPOINT_CRITERIA_LIST));
 
         // Simulate app coming to foreground
         Robolectric.buildActivity(Activity.class).create().start().resume();
@@ -277,7 +277,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         RecordedRequest configRequest = server.takeRequest(1, TimeUnit.SECONDS);
         Assert.assertNotNull("Should have remote config request", configRequest);
         assertTrue("Should be a remote configuration request",
-            configRequest.getPath().contains("mobile/getRemoteConfiguration"));
+            configRequest.getPath().contains(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION));
 
         // No more requests
         RecordedRequest extraRequest = server.takeRequest(1, TimeUnit.SECONDS);

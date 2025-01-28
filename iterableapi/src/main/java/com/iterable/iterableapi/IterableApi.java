@@ -36,7 +36,7 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
     private String _userId;
-    String _userIdAnon;
+    private String _userIdAnon;
     private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
@@ -403,7 +403,7 @@ public class IterableApi {
         public void onSwitchToBackground() {}
     };
 
-    void onForeground() {
+    private void onForeground() {
         if (!_firstForegroundHandled) {
             _firstForegroundHandled = true;
             if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
