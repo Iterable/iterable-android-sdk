@@ -3,30 +3,20 @@ package com.iterable.iterableapi;
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import junit.framework.Assert;
 
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.robolectric.Robolectric;
-import org.robolectric.shadows.ShadowLog;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
