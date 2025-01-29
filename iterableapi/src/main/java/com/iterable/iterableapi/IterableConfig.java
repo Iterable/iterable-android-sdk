@@ -60,7 +60,9 @@ public class IterableConfig {
      */
     final IterableAuthHandler authHandler;
 
-
+    /**
+     * Handler that can be used to retrieve the anonymous user id
+     */
     final IterableAnonUserHandler iterableAnonUserHandler;
 
     /**
@@ -92,8 +94,20 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    /**
+     * Enables anonymous user activation
+     */
     final boolean enableAnonActivation;
 
+    /**
+     * Toggles fetching of anonymous user criteria on foregrounding when set to true
+     * By default, the SDK will fetch anonymous user criteria on foregrounding.
+     */
+    final boolean enableForegroundCriteriaFetch;
+
+    /**
+     * The number of anonymous events stored in local storage
+     */
     final int eventThresholdLimit;
 
     /**
@@ -130,6 +144,7 @@ public class IterableConfig {
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
         enableAnonActivation = builder.enableAnonActivation;
+        enableForegroundCriteriaFetch = builder.enableForegroundCriteriaFetch;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
@@ -155,6 +170,7 @@ public class IterableConfig {
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
+        private boolean enableForegroundCriteriaFetch = true;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
@@ -310,7 +326,6 @@ public class IterableConfig {
          * Set whether the SDK should store in-apps only in memory, or in file storage
          * @param useInMemoryStorageForInApps `true` will have in-apps be only in memory
          */
-
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
@@ -324,6 +339,16 @@ public class IterableConfig {
          */
         public Builder setEnableAnonActivation(boolean enableAnonActivation) {
             this.enableAnonActivation = enableAnonActivation;
+            return this;
+        }
+
+        /**
+         * Set whether the SDK should disable criteria fetching on foregrounding. Set this to `false`
+         * if you want criteria to only be fetched on app launch.
+         * @param enableForegroundCriteriaFetch `true` will fetch criteria only on app launch.
+         */
+        public Builder setEnableForegroundCriteriaFetch(boolean enableForegroundCriteriaFetch) {
+            this.enableForegroundCriteriaFetch = enableForegroundCriteriaFetch;
             return this;
         }
 
@@ -348,7 +373,6 @@ public class IterableConfig {
          * @param identityResolution
          * @return
          */
-
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
             this.identityResolution = identityResolution;
             return this;

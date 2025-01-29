@@ -7,6 +7,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.google.gson.Gson;
@@ -25,10 +26,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-public class AnonymousUserManager {
+public class AnonymousUserManager implements IterableActivityMonitor.AppStateCallback {
 
     private static final String TAG = "AnonymousUserManager";
-    private final IterableApi iterableApi = IterableApi.sharedInstance;
+    private IterableApi iterableApi = IterableApi.sharedInstance;
+    private final IterableActivityMonitor activityMonitor;
+    long lastCriteriaFetch = 0;
+
+    AnonymousUserManager(IterableApi iterableApi) {
+        this(iterableApi,
+            IterableActivityMonitor.getInstance());
+    }
+
+    @VisibleForTesting
+    AnonymousUserManager(IterableApi iterableApi,
+                         IterableActivityMonitor activityMonitor) {
+        this.iterableApi = iterableApi;
+        this.activityMonitor = activityMonitor;
+        this.activityMonitor.addCallback(this);
+    }
 
     void updateAnonSession() {
         IterableLogger.v(TAG, "updateAnonSession");
@@ -157,6 +173,8 @@ public class AnonymousUserManager {
     }
 
     void getCriteria() {
+        lastCriteriaFetch = System.currentTimeMillis();
+
         iterableApi.apiClient.getCriteriaList(data -> {
             if (data != null) {
                 try {
@@ -464,5 +482,28 @@ public class AnonymousUserManager {
         } else {
             return "";
         }
+    }
+
+    @Override
+    public void onSwitchToForeground() {
+        long currentTime = System.currentTimeMillis();
+
+        // fetching anonymous user criteria on foregrounding
+        if (!iterableApi.checkSDKInitialization()
+            && iterableApi._userIdAnon == null
+            && iterableApi.config.enableAnonActivation
+            && iterableApi.getVisitorUsageTracked()
+            && iterableApi.config.enableForegroundCriteriaFetch
+            && currentTime - lastCriteriaFetch >= IterableConstants.CRITERIA_FETCHING_COOLDOWN) {
+
+            lastCriteriaFetch = currentTime;
+            this.getCriteria();
+            IterableLogger.d(TAG, "Fetching anonymous user criteria - Foreground");
+        }
+    }
+
+    @Override
+    public void onSwitchToBackground() {
+
     }
 }

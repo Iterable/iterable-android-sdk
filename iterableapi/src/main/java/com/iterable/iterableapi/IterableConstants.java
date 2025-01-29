@@ -336,7 +336,7 @@ public final class IterableConstants {
     public static final String PURCHASE_ITEM = "shoppingCartItems";
     public static final String PURCHASE_ITEM_PREFIX = PURCHASE_ITEM + ".";
     public static final String MIN_MATCH = "minMatch";
-
+    public static final Integer CRITERIA_FETCHING_COOLDOWN = 120000;
 
     //Tracking types
     public static final String TRACK_EVENT = "customEvent";
