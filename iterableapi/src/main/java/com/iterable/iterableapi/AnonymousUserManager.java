@@ -30,8 +30,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
 
     private static final String TAG = "AnonymousUserManager";
     private IterableApi iterableApi = IterableApi.sharedInstance;
-
     private final IterableActivityMonitor activityMonitor;
+    long lastCriteriaFetch = 0;
 
     AnonymousUserManager(IterableApi iterableApi) {
         this(iterableApi,
@@ -173,7 +173,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
     }
 
     void getCriteria() {
-        IterableLogger.v(TAG, "getCriteria");
+        lastCriteriaFetch = System.currentTimeMillis();
+
         iterableApi.apiClient.getCriteriaList(data -> {
             if (data != null) {
                 try {
@@ -493,9 +494,9 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
             && iterableApi.config.enableAnonActivation
             && iterableApi.getVisitorUsageTracked()
             && iterableApi.config.enableForegroundCriteriaFetch
-            && currentTime - iterableApi.lastCriteriaFetch >= IterableConstants.CRITERIA_FETCHING_COOLDOWN) {
+            && currentTime - lastCriteriaFetch >= IterableConstants.CRITERIA_FETCHING_COOLDOWN) {
 
-            iterableApi.lastCriteriaFetch = currentTime;
+            lastCriteriaFetch = currentTime;
             this.getCriteria();
             IterableLogger.d(TAG, "Fetching anonymous user criteria - Foreground");
         }

@@ -55,7 +55,6 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
-    long lastCriteriaFetch = 0;
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -1593,10 +1592,7 @@ public class IterableApi {
         editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
         editor.apply();
 
-        long currentTime = System.currentTimeMillis();
-
         if (isSetVisitorUsageTracked && config.enableAnonActivation) {
-            lastCriteriaFetch = currentTime;
             anonymousUserManager.updateAnonSession();
             anonymousUserManager.getCriteria();
         }
