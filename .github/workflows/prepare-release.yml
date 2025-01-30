@@ -1,0 +1,100 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 3.6.0 or 1.0.0-beta1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Changelog
+        id: update_changelog
+        run: |
+          changelog_file="CHANGELOG.md"
+          
+          # Function to extract content between two patterns, including the first pattern
+          extract_between() {
+            awk "/^## \[$1\]/{p=1;print;next} /^## \[/{p=0} p" "$3"
+          }
+          
+          # Get the unreleased content
+          unreleased_content=$(extract_between "Unreleased" "[0-9]" "$changelog_file")
+          
+          if [ -z "$unreleased_content" ]; then
+            echo "No unreleased changes found in $changelog_file"
+            exit 1
+          fi
+          
+          # Get the current version
+          current_version=$(grep -oP "^## \[\K[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9]+)?(?=\])" "$changelog_file" | head -n1)
+          new_version="${{ github.event.inputs.version }}"
+          
+          # Validate version format (now includes beta versions)
+          if ! [[ $new_version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid version format. Please use semantic versioning (e.g., 3.6.0 or 1.0.0-beta1)"
+            exit 1
+          fi
+          
+          echo "new_version=${new_version}" >> $GITHUB_OUTPUT
+          
+          # Create temporary file
+          temp_file=$(mktemp)
+          
+          # Write new changelog content
+          {
+            echo "## [Unreleased]"
+            echo ""
+            echo "## [$new_version]"
+            # Remove the "## [Unreleased]" line from unreleased_content if it exists
+            echo "$unreleased_content" | sed '1{/^## \[Unreleased\]/d}'
+            # Get the rest of the file starting from the first version entry
+            sed -n '/^## \[[0-9]/,$p' "$changelog_file"
+          } > "$temp_file"
+          
+          # Replace original file
+          mv "$temp_file" "$changelog_file"
+
+      - name: Update Version Files
+        run: |
+          # Update iterableapi/build.gradle
+          sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi/build.gradle
+          sed -i "s/versionName=\".*\"/versionName=\"${{ github.event.inputs.version }}\"/" iterableapi/build.gradle
+          
+          # Update iterableapi-ui/build.gradle
+          sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi-ui/build.gradle
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Prepare for Release ${{ steps.update_changelog.outputs.new_version }}"
+          body: |
+            # Release ${{ steps.update_changelog.outputs.new_version }}
+            
+            ## Mobile Engineering SDK Release Checklist
+            - [ ] CHANGELOG.md updated
+            - [ ] Version numbers updated in build.gradle files
+            - [ ] README.md reviewed (if needed)
+            - [ ] Sample apps verified
+            - [ ] All tests passing
+            - [ ] Documentation updated (if needed)
+            - [ ] Release notes drafted
+            - [ ] Migration guide updated (if needed)
+            
+          branch: "prepare-for-release-/${{ steps.update_changelog.outputs.new_version }}"
+          commit-message: "Prepare for release ${{ steps.update_changelog.outputs.new_version }}"
+          labels: release
+          delete-branch: true 
