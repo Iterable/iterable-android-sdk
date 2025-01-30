@@ -57,12 +57,12 @@ jobs:
           {
             # Preserve the header (first 4 lines)
             head -n 4 "$changelog_file"
-            echo ""
             echo "## [Unreleased]"
             echo ""
             echo "## [$new_version]"
             # Remove the "## [Unreleased]" line from unreleased_content if it exists
             echo "$unreleased_content" | sed '1{/^## \[Unreleased\]/d}'
+            echo ""
             # Get the rest of the file starting from the first version entry
             sed -n '/^## \[[0-9]/,$p' "$changelog_file"
           } > "$temp_file"
@@ -72,6 +72,9 @@ jobs:
 
       - name: Update Version Files
         run: |
+          # Create temp file for build.gradle updates
+          temp_gradle=$(mktemp)
+          
           # Update iterableapi/build.gradle - libraryVersion and versionName
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi/build.gradle
           sed -i "s/versionName=\".*\"/versionName=\"${{ github.event.inputs.version }}\"/" iterableapi/build.gradle
@@ -84,7 +87,8 @@ jobs:
                   next
               }
           }
-          { print }' iterableapi/build.gradle > temp.gradle && mv temp.gradle iterableapi/build.gradle
+          { print }' iterableapi/build.gradle > "$temp_gradle" && cat "$temp_gradle" > iterableapi/build.gradle
+          rm "$temp_gradle"
           
           # Update iterableapi-ui/build.gradle
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi-ui/build.gradle
