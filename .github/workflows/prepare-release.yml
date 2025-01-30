@@ -76,8 +76,15 @@ jobs:
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi/build.gradle
           sed -i "s/versionName=\".*\"/versionName=\"${{ github.event.inputs.version }}\"/" iterableapi/build.gradle
           
-          # Update buildConfigField version (using different delimiter to handle quotes)
-          sed -i 's#buildConfigField "String", "ITERABLE_SDK_VERSION", "\".*\""#buildConfigField "String", "ITERABLE_SDK_VERSION", "\"${{ github.event.inputs.version }}\""#' iterableapi/build.gradle
+          # Update buildConfigField version in defaultConfig section
+          awk -v version="${{ github.event.inputs.version }}" '
+          /defaultConfig {/,/}/ {
+              if ($0 ~ /buildConfigField.*ITERABLE_SDK_VERSION/) {
+                  print "        buildConfigField \"String\", \"ITERABLE_SDK_VERSION\", \"\\\"" version "\\\"\""
+                  next
+              }
+          }
+          { print }' iterableapi/build.gradle > temp.gradle && mv temp.gradle iterableapi/build.gradle
           
           # Update iterableapi-ui/build.gradle
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi-ui/build.gradle
