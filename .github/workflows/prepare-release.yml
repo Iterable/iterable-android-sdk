@@ -53,8 +53,11 @@ jobs:
           # Create temporary file
           temp_file=$(mktemp)
           
-          # Write new changelog content
+          # Preserve header and write new content
           {
+            # Preserve the header (first 4 lines)
+            head -n 4 "$changelog_file"
+            echo ""
             echo "## [Unreleased]"
             echo ""
             echo "## [$new_version]"
@@ -72,8 +75,9 @@ jobs:
           # Update iterableapi/build.gradle - libraryVersion and versionName
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi/build.gradle
           sed -i "s/versionName=\".*\"/versionName=\"${{ github.event.inputs.version }}\"/" iterableapi/build.gradle
-          # Update buildConfigField version
-          sed -i "s/buildConfigField \"String\", \"ITERABLE_SDK_VERSION\", \"\\\".*\\\"\"/buildConfigField \"String\", \"ITERABLE_SDK_VERSION\", \"\\\"${{ github.event.inputs.version }}\\\"\"/" iterableapi/build.gradle
+          
+          # Update buildConfigField version (using different delimiter to handle quotes)
+          sed -i 's#buildConfigField "String", "ITERABLE_SDK_VERSION", "\".*\""#buildConfigField "String", "ITERABLE_SDK_VERSION", "\"${{ github.event.inputs.version }}\""#' iterableapi/build.gradle
           
           # Update iterableapi-ui/build.gradle
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi-ui/build.gradle
@@ -86,9 +90,9 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Release ${{ steps.update_changelog.outputs.new_version }}"
+          title: "Prepare for Release ${{ steps.update_changelog.outputs.new_version }}"
           body: |
-            # Release ${{ steps.update_changelog.outputs.new_version }}
+            # Prepare for Release ${{ steps.update_changelog.outputs.new_version }}
             
             ## SDK Release Checklist
             - [ ] CHANGELOG.md updated
