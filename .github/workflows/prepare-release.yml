@@ -69,32 +69,39 @@ jobs:
 
       - name: Update Version Files
         run: |
-          # Update iterableapi/build.gradle
+          # Update iterableapi/build.gradle - libraryVersion and versionName
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi/build.gradle
           sed -i "s/versionName=\".*\"/versionName=\"${{ github.event.inputs.version }}\"/" iterableapi/build.gradle
+          # Update buildConfigField version
+          sed -i "s/buildConfigField \"String\", \"ITERABLE_SDK_VERSION\", \"\\\".*\\\"\"/buildConfigField \"String\", \"ITERABLE_SDK_VERSION\", \"\\\"${{ github.event.inputs.version }}\\\"\"/" iterableapi/build.gradle
           
           # Update iterableapi-ui/build.gradle
           sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi-ui/build.gradle
+          
+          # Update sample app versions
+          sed -i "s/implementation 'com.iterable:iterableapi:[^']*'/implementation 'com.iterable:iterableapi:${{ github.event.inputs.version }}'/" sample-apps/inbox-customization/app/build.gradle
+          sed -i "s/implementation 'com.iterable:iterableapi-ui:[^']*'/implementation 'com.iterable:iterableapi-ui:${{ github.event.inputs.version }}'/" sample-apps/inbox-customization/app/build.gradle
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Prepare for Release ${{ steps.update_changelog.outputs.new_version }}"
+          title: "Release ${{ steps.update_changelog.outputs.new_version }}"
           body: |
             # Release ${{ steps.update_changelog.outputs.new_version }}
             
-            ## Mobile Engineering SDK Release Checklist
+            ## SDK Release Checklist
             - [ ] CHANGELOG.md updated
-            - [ ] Version numbers updated in build.gradle files
+            - [ ] Version numbers updated in build.gradle files:
+              - [ ] iterableapi/build.gradle (libraryVersion, versionName, and ITERABLE_SDK_VERSION)
+              - [ ] iterableapi-ui/build.gradle (libraryVersion)
+              - [ ] sample-apps/inbox-customization/app/build.gradle (both dependencies)
             - [ ] README.md reviewed (if needed)
             - [ ] Sample apps verified
             - [ ] All tests passing
             - [ ] Documentation updated (if needed)
-            - [ ] Release notes drafted
-            - [ ] Migration guide updated (if needed)
             
-          branch: "prepare-for-release-/${{ steps.update_changelog.outputs.new_version }}"
+          branch: "prepare-for-release-${{ steps.update_changelog.outputs.new_version }}"
           commit-message: "Prepare for release ${{ steps.update_changelog.outputs.new_version }}"
           labels: release
           delete-branch: true 
