@@ -55,7 +55,6 @@ Release notes:
 Support policies:
 
 - Iterable's [SDK Support Policy](https://support.iterable.com/hc/articles/360046136171)
-- Iterable's [Beta SDK Disclaimer](https://support.iterable.com/hc/articles/360034753412)
 
 Troubleshooting:
 
