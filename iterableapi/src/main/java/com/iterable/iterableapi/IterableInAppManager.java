@@ -10,7 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 
-import com.iterable.iterableapi.messaging.IterableAction;
 import com.iterable.iterableapi.messaging.IterableActionSource;
 import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;

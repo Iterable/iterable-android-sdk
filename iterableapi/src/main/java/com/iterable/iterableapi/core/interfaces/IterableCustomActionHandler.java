@@ -2,7 +2,7 @@ package com.iterable.iterableapi.core.interfaces;
 
 import androidx.annotation.NonNull;
 
-import com.iterable.iterableapi.messaging.IterableAction;
+import com.iterable.iterableapi.IterableAction;
 import com.iterable.iterableapi.messaging.IterableActionContext;
 
 /**

@@ -11,7 +11,6 @@ import java.util.List;
 
 import com.iterable.iterableapi.core.interfaces.IterableCustomActionHandler;
 import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
-import com.iterable.iterableapi.messaging.IterableAction;
 import com.iterable.iterableapi.messaging.IterableActionContext;
 import com.iterable.iterableapi.messaging.IterableActionSource;
 import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;

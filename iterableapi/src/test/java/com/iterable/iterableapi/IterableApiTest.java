@@ -3,7 +3,6 @@ package com.iterable.iterableapi;
 import com.iterable.iterableapi.core.enums.CommerceItem;
 import com.iterable.iterableapi.core.enums.IterableAPIMobileFrameworkType;
 import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
-import com.iterable.iterableapi.messaging.IterableAction;
 import com.iterable.iterableapi.messaging.IterableActionContext;
 import com.iterable.iterableapi.messaging.IterableActionSource;
 import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedImpression;

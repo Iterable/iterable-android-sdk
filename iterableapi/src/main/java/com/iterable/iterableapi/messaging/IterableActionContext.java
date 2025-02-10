@@ -2,6 +2,8 @@ package com.iterable.iterableapi.messaging;
 
 import androidx.annotation.NonNull;
 
+import com.iterable.iterableapi.IterableAction;
+
 /**
  * An object representing the action to execute and the context it is executing in
  */
