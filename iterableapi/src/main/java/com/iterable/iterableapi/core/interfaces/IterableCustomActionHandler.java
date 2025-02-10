@@ -1,6 +1,9 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.core.interfaces;
 
 import androidx.annotation.NonNull;
+
+import com.iterable.iterableapi.messaging.IterableAction;
+import com.iterable.iterableapi.messaging.IterableActionContext;
 
 /**
  * Custom action handler interface

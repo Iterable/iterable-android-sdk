@@ -1,7 +1,10 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.messaging;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.iterable.iterableapi.core.interfaces.IterableCustomActionHandler;
+import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
 
 import org.json.JSONException;
 import org.json.JSONObject;

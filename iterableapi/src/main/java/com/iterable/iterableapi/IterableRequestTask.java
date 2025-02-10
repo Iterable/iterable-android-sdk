@@ -12,6 +12,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
+import com.iterable.iterableapi.auth.enums.AuthFailureReason;
+import com.iterable.iterableapi.core.enums.IterableDataRegion;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 

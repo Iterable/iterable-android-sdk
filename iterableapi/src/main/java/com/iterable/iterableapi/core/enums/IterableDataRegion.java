@@ -1,4 +1,4 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.core.enums;
 
 public enum IterableDataRegion {
     US("https://api.iterable.com/api/"),

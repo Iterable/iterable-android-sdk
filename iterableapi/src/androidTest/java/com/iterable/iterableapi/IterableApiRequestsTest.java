@@ -24,6 +24,8 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 
+import com.iterable.iterableapi.core.enums.CommerceItem;
+
 @RunWith(AndroidJUnit4.class)
 public class IterableApiRequestsTest {
 

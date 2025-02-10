@@ -1,7 +1,10 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.core.enums;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.iterable.iterableapi.IterableApi;
+import com.iterable.iterableapi.IterableAttributionInfo;
 
 import org.json.JSONArray;
 import org.json.JSONException;

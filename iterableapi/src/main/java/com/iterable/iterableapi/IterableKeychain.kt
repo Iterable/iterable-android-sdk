@@ -2,6 +2,7 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.iterable.iterableapi.core.interfaces.IterableDecryptionFailureHandler
 
 class IterableKeychain {
     companion object {

@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.auth.interfaces.IterableAuthHandler;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.junit.After;

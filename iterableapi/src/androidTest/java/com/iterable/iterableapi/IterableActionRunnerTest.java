@@ -28,6 +28,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.iterable.iterableapi.core.interfaces.IterableCustomActionHandler;
+import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
+import com.iterable.iterableapi.messaging.IterableAction;
+import com.iterable.iterableapi.messaging.IterableActionContext;
+import com.iterable.iterableapi.messaging.IterableActionSource;
+
 @RunWith(AndroidJUnit4.class)
 public class IterableActionRunnerTest {
 

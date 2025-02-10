@@ -19,6 +19,8 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
+import com.iterable.iterableapi.messaging.inapp.interfaces.IterableInAppHandler;
+
 public class IterableInAppManagerSyncTest extends BaseTest {
 
     @Mock

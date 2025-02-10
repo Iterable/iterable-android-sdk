@@ -4,6 +4,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.iterable.iterableapi.messaging.IterableAction;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

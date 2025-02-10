@@ -1,4 +1,4 @@
-package com.iterable.iterableapi
+package com.iterable.iterableapi.messaging.embedded.classes
 
 import androidx.annotation.RestrictTo
 import java.util.Date

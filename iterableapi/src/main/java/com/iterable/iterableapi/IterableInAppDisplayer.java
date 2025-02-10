@@ -7,6 +7,8 @@ import android.graphics.Rect;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;
+
 class IterableInAppDisplayer {
 
     private final IterableActivityMonitor activityMonitor;

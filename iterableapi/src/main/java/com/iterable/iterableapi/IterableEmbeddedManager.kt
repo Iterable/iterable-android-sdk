@@ -2,6 +2,11 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import com.iterable.iterableapi.IterableHelper.SuccessHandler
+import com.iterable.iterableapi.messaging.IterableAction
+import com.iterable.iterableapi.messaging.IterableActionSource
+import com.iterable.iterableapi.messaging.embedded.classes.EmbeddedSessionManager
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedMessage
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedPlacement
 import org.json.JSONException
 import org.json.JSONObject
 

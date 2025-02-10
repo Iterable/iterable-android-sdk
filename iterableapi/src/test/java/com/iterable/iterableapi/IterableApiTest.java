@@ -1,5 +1,17 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.core.enums.CommerceItem;
+import com.iterable.iterableapi.core.enums.IterableAPIMobileFrameworkType;
+import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
+import com.iterable.iterableapi.messaging.IterableAction;
+import com.iterable.iterableapi.messaging.IterableActionContext;
+import com.iterable.iterableapi.messaging.IterableActionSource;
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedImpression;
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedMessage;
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedSession;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppCloseAction;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppDeleteActionType;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.net.Uri;

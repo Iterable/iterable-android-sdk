@@ -1,4 +1,6 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.auth.classes;
+
+import com.iterable.iterableapi.auth.enums.AuthFailureReason;
 
 /**
  * Represents an auth failure object.

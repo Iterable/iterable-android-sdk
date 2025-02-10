@@ -7,6 +7,9 @@ import android.os.Bundle;
 
 import androidx.core.app.RemoteInput;
 
+import com.iterable.iterableapi.messaging.IterableAction;
+import com.iterable.iterableapi.messaging.IterableActionSource;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 

@@ -3,6 +3,10 @@ package com.iterable.iterableapi;
 import android.util.Base64;
 import androidx.annotation.VisibleForTesting;
 
+import com.iterable.iterableapi.auth.classes.AuthFailure;
+import com.iterable.iterableapi.auth.enums.AuthFailureReason;
+import com.iterable.iterableapi.auth.interfaces.IterableAuthHandler;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 

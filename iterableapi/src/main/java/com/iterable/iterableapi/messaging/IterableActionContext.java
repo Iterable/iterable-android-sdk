@@ -1,4 +1,4 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.messaging;
 
 import androidx.annotation.NonNull;
 

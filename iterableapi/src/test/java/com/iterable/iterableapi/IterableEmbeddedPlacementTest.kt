@@ -1,5 +1,13 @@
 package com.iterable.iterableapi
 
+import com.iterable.iterableapi.messaging.embedded.classes.EmbeddedMessageElements
+import com.iterable.iterableapi.messaging.embedded.classes.EmbeddedMessageElementsButton
+import com.iterable.iterableapi.messaging.embedded.classes.EmbeddedMessageElementsButtonAction
+import com.iterable.iterableapi.messaging.embedded.classes.EmbeddedMessageElementsDefaultAction
+import com.iterable.iterableapi.messaging.embedded.classes.EmbeddedMessageElementsText
+import com.iterable.iterableapi.messaging.embedded.classes.EmbeddedMessageMetadata
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedMessage
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedPlacement
 import org.hamcrest.Matchers.`is`
 import org.json.JSONObject
 import org.junit.Assert.*

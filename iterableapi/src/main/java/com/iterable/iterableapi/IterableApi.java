@@ -12,6 +12,15 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.iterable.iterableapi.core.enums.CommerceItem;
+import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
+import com.iterable.iterableapi.messaging.IterableAction;
+import com.iterable.iterableapi.messaging.IterableActionSource;
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedMessage;
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedSession;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppCloseAction;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppDeleteActionType;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 
 import org.json.JSONException;

@@ -1,4 +1,4 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.auth.enums;
 public enum AuthFailureReason {
     AUTH_TOKEN_EXPIRED,
     AUTH_TOKEN_GENERIC_ERROR,
