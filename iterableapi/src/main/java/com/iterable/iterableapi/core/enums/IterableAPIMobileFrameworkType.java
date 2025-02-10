@@ -1,4 +1,4 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.core.enums;
 
 public enum IterableAPIMobileFrameworkType {
     FLUTTER("flutter"),

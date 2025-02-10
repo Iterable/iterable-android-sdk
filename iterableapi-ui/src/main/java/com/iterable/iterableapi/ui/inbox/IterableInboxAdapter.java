@@ -12,7 +12,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.iterable.iterableapi.IterableInAppDeleteActionType;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.IterableInAppMessage;
 import com.iterable.iterableapi.ui.BitmapLoader;
 import com.iterable.iterableapi.ui.R;

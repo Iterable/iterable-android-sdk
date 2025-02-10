@@ -1,5 +1,8 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedMessage;
+import com.iterable.iterableapi.messaging.embedded.classes.IterableEmbeddedPlacement;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 

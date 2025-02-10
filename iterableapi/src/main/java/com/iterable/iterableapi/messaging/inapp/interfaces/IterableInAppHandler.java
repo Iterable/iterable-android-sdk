@@ -1,6 +1,8 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.messaging.inapp.interfaces;
 
 import androidx.annotation.NonNull;
+
+import com.iterable.iterableapi.IterableInAppMessage;
 
 public interface IterableInAppHandler {
     enum InAppResponse {

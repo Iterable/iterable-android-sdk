@@ -2,6 +2,7 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.pm.PackageManager
+import com.iterable.iterableapi.core.enums.IterableAPIMobileFrameworkType
 
 object IterableMobileFrameworkDetector {
     private const val TAG = "FrameworkDetector"

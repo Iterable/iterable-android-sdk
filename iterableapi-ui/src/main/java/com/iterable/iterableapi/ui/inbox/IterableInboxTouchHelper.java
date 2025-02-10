@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import android.view.View;
 
-import com.iterable.iterableapi.IterableInAppDeleteActionType;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppDeleteActionType;
 import com.iterable.iterableapi.ui.R;
 
 public class IterableInboxTouchHelper extends ItemTouchHelper.SimpleCallback {

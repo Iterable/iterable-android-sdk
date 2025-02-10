@@ -9,6 +9,9 @@ import androidx.test.espresso.intent.rule.IntentsTestRule;
 import androidx.test.espresso.web.webdriver.Locator;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.iterable.iterableapi.core.interfaces.IterableCustomActionHandler;
+import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
+import com.iterable.iterableapi.messaging.inapp.interfaces.IterableInAppHandler;
 import com.iterable.iterableapi.testapp.PathBasedQueueDispatcher;
 import com.iterable.iterableapi.ui.inbox.InboxMode;
 import com.iterable.iterableapi.ui.inbox.IterableInboxActivity;

@@ -11,6 +11,10 @@ import androidx.annotation.VisibleForTesting;
 
 import android.util.Log;
 
+import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
+import com.iterable.iterableapi.messaging.IterableActionContext;
+import com.iterable.iterableapi.messaging.IterableActionSource;
+
 import java.util.List;
 
 class IterableActionRunner {

@@ -1,5 +1,7 @@
-package com.iterable.iterableapi
+package com.iterable.iterableapi.messaging.embedded.classes
 
+import com.iterable.iterableapi.IterableConstants
+import com.iterable.iterableapi.IterableLogger
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -37,7 +39,8 @@ data class IterableEmbeddedPlacement(
 
             for(i in 0 until messagesJson.length()) {
                 val messageJson: JSONObject = messagesJson.getJSONObject(i)
-                val message: IterableEmbeddedMessage = IterableEmbeddedMessage.fromJSONObject(messageJson)
+                val message: IterableEmbeddedMessage =
+                    IterableEmbeddedMessage.fromJSONObject(messageJson)
                 messages.add(message)
             }
 
@@ -57,8 +60,14 @@ data class IterableEmbeddedMessage (
             val embeddedMessageJson = JSONObject()
 
             try {
-                embeddedMessageJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA, EmbeddedMessageMetadata.toJSONObject(message.metadata))
-                embeddedMessageJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS, EmbeddedMessageElements.toJSONObject(message.elements))
+                embeddedMessageJson.put(
+                    IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA,
+                    EmbeddedMessageMetadata.toJSONObject(message.metadata)
+                )
+                embeddedMessageJson.putOpt(
+                    IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS,
+                    EmbeddedMessageElements.toJSONObject(message.elements)
+                )
                 embeddedMessageJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD, message.payload)
             } catch(e: JSONException) {
                 IterableLogger.e(TAG, "Error while serializing flex message", e)
@@ -70,10 +79,12 @@ data class IterableEmbeddedMessage (
 
         fun fromJSONObject(messageJson: JSONObject): IterableEmbeddedMessage {
             val metadataJson: JSONObject = messageJson.getJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_METADATA)
-            val metadata: EmbeddedMessageMetadata = EmbeddedMessageMetadata.fromJSONObject(metadataJson)
+            val metadata: EmbeddedMessageMetadata =
+                EmbeddedMessageMetadata.fromJSONObject(metadataJson)
 
             val elementsJson: JSONObject? = messageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_ELEMENTS)
-            val elements: EmbeddedMessageElements? = EmbeddedMessageElements.fromJSONObject(elementsJson)
+            val elements: EmbeddedMessageElements? =
+                EmbeddedMessageElements.fromJSONObject(elementsJson)
 
             val payload: JSONObject? = messageJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PAYLOAD)
 
@@ -149,7 +160,13 @@ class EmbeddedMessageElements (
                 if(elements?.buttons != null) {
                     val buttonsJson = JSONArray()
                     for(i in 0..elements.buttons.size - 1) {
-                        buttonsJson.put(EmbeddedMessageElementsButton.toJSONObject(elements.buttons.get(i)))
+                        buttonsJson.put(
+                            EmbeddedMessageElementsButton.toJSONObject(
+                                elements.buttons.get(
+                                    i
+                                )
+                            )
+                        )
                     }
                     elementsJson.putOpt(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTONS, buttonsJson)
                 }
@@ -181,7 +198,8 @@ class EmbeddedMessageElements (
             val defaultActionJson: JSONObject? = elementsJson.optJSONObject(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_DEFAULT_ACTION)
             var defaultAction: EmbeddedMessageElementsDefaultAction? = null
             if (defaultActionJson != null) {
-                defaultAction = EmbeddedMessageElementsDefaultAction.fromJSONObject(defaultActionJson)
+                defaultAction =
+                    EmbeddedMessageElementsDefaultAction.fromJSONObject(defaultActionJson)
             }
 
             val buttonsJson: JSONArray? = elementsJson.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTONS)
@@ -189,7 +207,8 @@ class EmbeddedMessageElements (
             if (buttonsJson != null) {
                 for(i in 0..buttonsJson.length() - 1) {
                     val buttonJson: JSONObject = buttonsJson.getJSONObject(i)
-                    val button: EmbeddedMessageElementsButton = EmbeddedMessageElementsButton.fromJSONObject(buttonJson)
+                    val button: EmbeddedMessageElementsButton =
+                        EmbeddedMessageElementsButton.fromJSONObject(buttonJson)
                     buttons?.add(button)
                 }
             } else {
@@ -201,7 +220,8 @@ class EmbeddedMessageElements (
             if (textsJson != null) {
                 for(i in 0..textsJson.length() - 1) {
                     val textJson: JSONObject = textsJson.getJSONObject(i)
-                    val text: EmbeddedMessageElementsText = EmbeddedMessageElementsText.fromJSONObject(textJson)
+                    val text: EmbeddedMessageElementsText =
+                        EmbeddedMessageElementsText.fromJSONObject(textJson)
                     texts?.add(text)
                 }
             } else {

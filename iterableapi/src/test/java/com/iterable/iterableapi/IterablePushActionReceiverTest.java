@@ -29,6 +29,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import com.iterable.iterableapi.messaging.IterableActionSource;
+
 public class IterablePushActionReceiverTest extends BaseTest {
 
     private MockWebServer server;

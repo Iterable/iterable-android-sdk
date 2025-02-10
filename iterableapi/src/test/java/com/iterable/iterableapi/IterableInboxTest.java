@@ -5,6 +5,10 @@ import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.iterable.iterableapi.core.interfaces.IterableCustomActionHandler;
+import com.iterable.iterableapi.core.interfaces.IterableUrlHandler;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;
+import com.iterable.iterableapi.messaging.inapp.interfaces.IterableInAppHandler;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONObject;

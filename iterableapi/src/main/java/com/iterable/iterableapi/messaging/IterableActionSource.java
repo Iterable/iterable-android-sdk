@@ -1,4 +1,4 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.messaging;
 
 /**
  * Enum representing the source of the action: push notification, app link, etc.

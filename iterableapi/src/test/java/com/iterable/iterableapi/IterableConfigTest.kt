@@ -1,5 +1,6 @@
 package com.iterable.iterableapi
 
+import com.iterable.iterableapi.core.enums.IterableDataRegion
 import org.hamcrest.Matchers.`is`
 import org.junit.Assert.*
 import org.junit.Test

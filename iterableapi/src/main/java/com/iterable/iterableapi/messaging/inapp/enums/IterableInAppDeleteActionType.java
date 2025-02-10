@@ -1,17 +1,18 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi.messaging.inapp.enums;
 
-public enum IterableInAppCloseAction {
-    BACK {
+public enum IterableInAppDeleteActionType {
+
+    INBOX_SWIPE {
         @Override
         public String toString() {
-            return "back";
+            return "inbox-swipe";
         }
     },
 
-    LINK {
+    DELETE_BUTTON {
         @Override
         public String toString() {
-            return "link";
+            return "delete-button";
         }
     },
 
@@ -21,4 +22,5 @@ public enum IterableInAppCloseAction {
             return "other";
         }
     }
+
 }

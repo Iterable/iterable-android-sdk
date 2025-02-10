@@ -12,7 +12,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.iterable.iterableapi.IterableApi;
-import com.iterable.iterableapi.IterableInAppLocation;
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;
 import com.iterable.iterableapi.IterableInAppMessage;
 import com.iterable.iterableapi.ui.R;
 

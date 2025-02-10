@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import android.util.Base64
+import com.iterable.iterableapi.core.interfaces.IterableDecryptionFailureHandler
 import org.junit.Before
 import org.junit.After
 import org.junit.Test

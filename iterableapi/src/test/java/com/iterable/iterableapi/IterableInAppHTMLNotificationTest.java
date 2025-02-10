@@ -4,6 +4,8 @@ import android.graphics.Rect;
 
 import androidx.fragment.app.FragmentActivity;
 
+import com.iterable.iterableapi.messaging.inapp.enums.IterableInAppLocation;
+
 import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
