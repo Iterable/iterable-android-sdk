@@ -80,12 +80,18 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         return placementIds
     }
 
-    //Network call to get the embedded messages
     fun syncMessages() {
+        syncMessages(emptyArray<Long>())
+    }
+
+    //Network call to get the embedded messages
+    fun syncMessages(testPlacementIds: Array<Long>) {
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
-            IterableApi.sharedInstance.getEmbeddedMessages(SuccessHandler { data ->
+            //var testPlacementIds: Array<Long?> = arrayOf(1132L)
+
+            IterableApi.sharedInstance.getEmbeddedMessages(testPlacementIds, { data ->
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 try {
                     val previousPlacementIds = getPlacementIds()
