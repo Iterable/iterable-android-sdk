@@ -13,7 +13,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region variables
     private var localPlacementMessagesMap = mutableMapOf<Long, List<IterableEmbeddedMessage>>()
-    private var placementIds = mutableListOf<Long>()
+    private var localPlacementIds = mutableListOf<Long>()
 
     private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
     private var iterableApi: IterableApi
@@ -77,7 +77,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     fun getPlacementIds(): List<Long> {
-        return placementIds
+        return localPlacementIds
     }
 
     fun syncMessages() {
@@ -85,13 +85,11 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     }
 
     //Network call to get the embedded messages
-    fun syncMessages(testPlacementIds: Array<Long>) {
+    fun syncMessages(placementIds: Array<Long>) {
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
-            //var testPlacementIds: Array<Long?> = arrayOf(1132L)
-
-            IterableApi.sharedInstance.getEmbeddedMessages(testPlacementIds, { data ->
+            IterableApi.sharedInstance.getEmbeddedMessages(placementIds, { data ->
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 try {
                     val previousPlacementIds = getPlacementIds()
@@ -141,7 +139,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                     }
 
                     //store placements from payload for next comparison
-                    placementIds = currentPlacementIds
+                    localPlacementIds = currentPlacementIds
 
                 } catch (e: JSONException) {
                     IterableLogger.e(TAG, e.toString())
