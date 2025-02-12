@@ -88,6 +88,26 @@ public class IterableEmbeddedManagerTest extends BaseTest {
     }
 
     @Test
+    public void testSyncSpecifiedPlacement() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages?placementIds=0", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_placement_id_0.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        embeddedManager.syncMessages(new Long[] {0L});
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+        assertNull(embeddedManager.getMessages(1L));
+        assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
+
+        dispatcher.enqueueResponse("/embedded-messaging/messages?placementIds=2", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_placement_id_2.json")));
+
+        embeddedManager.syncMessages(new Long[] {2L});
+        shadowOf(getMainLooper()).idle();
+        assertNull(embeddedManager.getMessages(1L));
+        assertEquals(1, embeddedManager.getMessages(2L).size());
+        assertEquals("grewdvb54ut87y", embeddedManager.getMessages(2L).get(0).getMetadata().getMessageId());
+    }
+
+    @Test
     public void testSyncEmptyPlacementsPayload() throws Exception {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
         IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
