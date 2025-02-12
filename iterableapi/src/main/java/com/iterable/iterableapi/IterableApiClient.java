@@ -222,7 +222,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
+    void getEmbeddedMessages(Long[] placementIds, @NonNull IterableHelper.IterableActionHandler onCallback) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -232,7 +232,7 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null) {
+            if (placementIds.length != 0) {
                 String path = getEmbeddedMessagesPath(placementIds);
                 sendGetRequest(path, requestJSON, onCallback);
             } else {
@@ -244,7 +244,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -254,7 +254,7 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null) {
+            if (placementIds.length != 0) {
                 String path = getEmbeddedMessagesPath(placementIds);
                 sendGetRequest(path, requestJSON, onSuccess, onFailure);
             } else {
