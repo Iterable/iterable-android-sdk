@@ -232,7 +232,7 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null &&placementIds.length != 0) {
+            if (placementIds != null && placementIds.length != 0) {
                 String path = getEmbeddedMessagesPath(placementIds);
                 sendGetRequest(path, requestJSON, onCallback);
             } else {
