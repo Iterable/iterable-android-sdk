@@ -89,7 +89,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
     @Test
     public void testSyncSpecifiedPlacement() throws Exception {
-        dispatcher.enqueueResponse("/embedded-messaging/messages?&placementIds=0", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_placement_id_0.json")));
+        dispatcher.enqueueResponse("/embedded-messaging/messages?placementIds=0", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_placement_id_0.json")));
         IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
 
         embeddedManager.syncMessages(new Long[] {0L});
@@ -98,7 +98,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         assertNull(embeddedManager.getMessages(1L));
         assertEquals("doibjo4590340oidiobnw", embeddedManager.getMessages(0L).get(0).getMetadata().getMessageId());
 
-        dispatcher.enqueueResponse("/embedded-messaging/messages?&placementIds=2", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_placement_id_2.json")));
+        dispatcher.enqueueResponse("/embedded-messaging/messages?placementIds=2", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_placement_id_2.json")));
 
         embeddedManager.syncMessages(new Long[] {2L});
         shadowOf(getMainLooper()).idle();
