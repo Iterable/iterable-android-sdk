@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 
@@ -35,7 +36,7 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
     private String _userId;
-    private String _userIdAnon;
+    String _userIdAnon;
     private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
@@ -46,8 +47,8 @@ public class IterableApi {
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
-    private static final AnonymousUserManager anonymousUserManager = new AnonymousUserManager();
     private static final AnonymousUserMerge anonymousUserMerge = new AnonymousUserMerge();
+    private @Nullable AnonymousUserManager anonymousUserManager;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
@@ -147,7 +148,7 @@ public class IterableApi {
         }
         if (keychain == null) {
             try {
-                keychain = new IterableKeychain(getMainActivityContext(), config.encryptionEnforced);
+                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
             }
@@ -405,10 +406,34 @@ public class IterableApi {
         if (!_firstForegroundHandled) {
             _firstForegroundHandled = true;
             if (sharedInstance.config.autoPushRegistration && sharedInstance.isInitialized()) {
-                IterableLogger.d(TAG, "Performing automatic push registration");
                 sharedInstance.registerForPush();
             }
             fetchRemoteConfiguration();
+        }
+
+        if (_applicationContext == null || sharedInstance.getMainActivityContext() == null) {
+            IterableLogger.w(TAG, "onForeground: _applicationContext is null");
+            return;
+        }
+
+        boolean systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext).areNotificationsEnabled();
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+
+        boolean hasStoredPermission = sharedPref.contains(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED);
+        boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
+
+        if (sharedInstance.isInitialized()) {
+            if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
+                if (!systemNotificationEnabled) {
+                    sharedInstance.disablePush();
+                } else {
+                    sharedInstance.registerForPush();
+                }
+            }
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, systemNotificationEnabled);
+            editor.apply();
         }
     }
 
@@ -416,7 +441,7 @@ public class IterableApi {
         return _apiKey != null && (_email != null || _userId != null);
     }
 
-    private boolean checkSDKInitialization() {
+    boolean checkSDKInitialization() {
         if (!isInitialized()) {
             IterableLogger.w(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
             return false;
@@ -641,12 +666,21 @@ public class IterableApi {
             );
         }
 
+        if (sharedInstance.anonymousUserManager == null) {
+            sharedInstance.anonymousUserManager = new AnonymousUserManager(
+                sharedInstance
+            );
+        }
+
         loadLastSavedConfiguration(context);
         IterablePushNotificationUtil.processPendingAction(context);
 
-        if (!sharedInstance.checkSDKInitialization() && sharedInstance._userIdAnon == null && sharedInstance.config.enableAnonActivation && sharedInstance.getVisitorUsageTracked()) {
-            anonymousUserManager.updateAnonSession();
-            anonymousUserManager.getCriteria();
+        if (!sharedInstance.checkSDKInitialization()
+            && sharedInstance._userIdAnon == null
+            && sharedInstance.config.enableAnonActivation
+            && sharedInstance.getVisitorUsageTracked()) {
+            sharedInstance.anonymousUserManager.updateAnonSession();
+            sharedInstance.anonymousUserManager.getCriteria();
         }
 
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {

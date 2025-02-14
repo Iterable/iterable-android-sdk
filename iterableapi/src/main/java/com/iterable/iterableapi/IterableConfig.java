@@ -60,7 +60,9 @@ public class IterableConfig {
      */
     final IterableAuthHandler authHandler;
 
-
+    /**
+     * Handler that can be used to retrieve the anonymous user id
+     */
     final IterableAnonUserHandler iterableAnonUserHandler;
 
     /**
@@ -92,8 +94,20 @@ public class IterableConfig {
 
     final boolean encryptionEnforced;
 
+    /**
+     * Enables anonymous user activation
+     */
     final boolean enableAnonActivation;
 
+    /**
+     * Toggles fetching of anonymous user criteria on foregrounding when set to true
+     * By default, the SDK will fetch anonymous user criteria on foregrounding.
+     */
+    final boolean enableForegroundCriteriaFetch;
+
+    /**
+     * The number of anonymous events stored in local storage
+     */
     final int eventThresholdLimit;
 
     /**
@@ -106,6 +120,12 @@ public class IterableConfig {
      * and merging between the generated anonymous profile and the logged in profile by default.
      */
     final IterableIdentityResolution identityResolution;
+
+    /**
+     * Handler for decryption failures of PII information.
+     * Before calling this handler, the SDK will clear the PII information and create new encryption keys
+     */
+    final IterableDecryptionFailureHandler decryptionFailureHandler;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -124,10 +144,12 @@ public class IterableConfig {
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
         enableAnonActivation = builder.enableAnonActivation;
+        enableForegroundCriteriaFetch = builder.enableForegroundCriteriaFetch;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
         iterableAnonUserHandler = builder.iterableAnonUserHandler;
+        decryptionFailureHandler = builder.decryptionFailureHandler;
     }
 
     public static class Builder {
@@ -145,8 +167,10 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
+        private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
+        private boolean enableForegroundCriteriaFetch = true;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
@@ -289,17 +313,6 @@ public class IterableConfig {
         }
 
         /**
-         * Set whether the SDK should enforce encryption. If set to `true`, the SDK will not use fallback mechanism
-         * of storing data in un-encrypted shared preferences if encrypted database is not available. Set this to `true`
-         * if PII confidentiality is a concern for your app.
-         * @param encryptionEnforced `true` will have the SDK enforce encryption.
-         */
-        public Builder setEncryptionEnforced(boolean encryptionEnforced) {
-            this.encryptionEnforced = encryptionEnforced;
-            return this;
-        }
-
-        /**
          * Set the data region used by the SDK
          * @param dataRegion enum value that determines which endpoint to use, defaults to IterableDataRegion.US
          */
@@ -313,7 +326,6 @@ public class IterableConfig {
          * Set whether the SDK should store in-apps only in memory, or in file storage
          * @param useInMemoryStorageForInApps `true` will have in-apps be only in memory
          */
-
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
@@ -327,6 +339,16 @@ public class IterableConfig {
          */
         public Builder setEnableAnonActivation(boolean enableAnonActivation) {
             this.enableAnonActivation = enableAnonActivation;
+            return this;
+        }
+
+        /**
+         * Set whether the SDK should disable criteria fetching on foregrounding. Set this to `false`
+         * if you want criteria to only be fetched on app launch.
+         * @param enableForegroundCriteriaFetch `true` will fetch criteria only on app launch.
+         */
+        public Builder setEnableForegroundCriteriaFetch(boolean enableForegroundCriteriaFetch) {
+            this.enableForegroundCriteriaFetch = enableForegroundCriteriaFetch;
             return this;
         }
 
@@ -351,9 +373,18 @@ public class IterableConfig {
          * @param identityResolution
          * @return
          */
-
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
             this.identityResolution = identityResolution;
+            return this;
+        }
+
+        /**
+         * Set a handler for decryption failures that can be used to handle data recovery
+         * @param handler Decryption failure handler provided by the app
+         */
+        @NonNull
+        public Builder setDecryptionFailureHandler(@NonNull IterableDecryptionFailureHandler handler) {
+            this.decryptionFailureHandler = handler;
             return this;
         }
 

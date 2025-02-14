@@ -2,175 +2,103 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 
 class IterableKeychain {
+    companion object {
+        private const val TAG = "IterableKeychain"
+        const val KEY_EMAIL = "iterable-email"
+		const val KEY_USER_ID = "iterable-user-id"
+        const val KEY_ANON_USER_ID = "iterable-anon-user-id"
+		const val KEY_AUTH_TOKEN = "iterable-auth-token"
+    }
 
-    private val TAG = "IterableKeychain"
     private var sharedPrefs: SharedPreferences
+    internal var encryptor: IterableDataEncryptor
+    private val decryptionFailureHandler: IterableDecryptionFailureHandler?
 
-    private val encryptedSharedPrefsFileName = "iterable-encrypted-shared-preferences"
-
-    private val emailKey = "iterable-email"
-    private val userIdKey = "iterable-user-id"
-    private val userIdAnonKey = "iterable-user-id-anon"
-    private val authTokenKey = "iterable-auth-token"
-
-    private var encryptionEnabled = false
-
-    constructor(context: Context, encryptionEnforced: Boolean) {
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            encryptionEnabled = false
-            sharedPrefs = context.getSharedPreferences(
-                IterableConstants.SHARED_PREFS_FILE,
-                Context.MODE_PRIVATE
-            )
-            IterableLogger.v(TAG, "SharedPreferences being used")
-        } else {
-            // See if EncryptedSharedPreferences can be created successfully
-            try {
-                val masterKeyAlias = MasterKey.Builder(context)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                    .build()
-                sharedPrefs = EncryptedSharedPreferences.create(
-                    context,
-                    encryptedSharedPrefsFileName,
-                    masterKeyAlias,
-                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                )
-                encryptionEnabled = true
-            } catch (e: Throwable) {
-                if (e is Error) {
-                    IterableLogger.e(
-                        TAG,
-                        "EncryptionSharedPreference creation failed with Error. Attempting to continue"
-                    )
-                }
-
-                if (encryptionEnforced) {
-                    //TODO: In-memory or similar solution needs to be implemented in the future.
-                    IterableLogger.w(
-                        TAG,
-                        "Encryption is enforced. PII will not be persisted due to EncryptionSharedPreference failure. Email/UserId and Auth token will have to be passed for every app session.",
-                        e
-                    )
-                    throw e.fillInStackTrace()
-                } else {
-                    sharedPrefs = context.getSharedPreferences(
-                        IterableConstants.SHARED_PREFS_FILE,
-                        Context.MODE_PRIVATE
-                    )
-                    IterableLogger.w(
-                        TAG,
-                        "Using SharedPreference as EncryptionSharedPreference creation failed."
-                    )
-                    encryptionEnabled = false
-                }
-            }
-
-            //Try to migrate data from SharedPreferences to EncryptedSharedPreferences
-            if (encryptionEnabled) {
-                migrateAuthDataFromSharedPrefsToKeychain(context)
-            }
-        }
-    }
-
-    fun getEmail(): String? {
-        return sharedPrefs.getString(emailKey, null)
-    }
-
-    fun saveEmail(email: String?) {
-        sharedPrefs.edit()
-            .putString(emailKey, email)
-            .apply()
-    }
-
-    fun getUserId(): String? {
-        return sharedPrefs.getString(userIdKey, null)
-    }
-    fun getUserIdAnon(): String? {
-        return sharedPrefs.getString(userIdAnonKey,null)
-    }
-    fun saveUserIdAnon(userId: String?) {
-        sharedPrefs.edit()
-            .putString(userIdAnonKey, userId)
-            .apply()
-    }
-    fun saveUserId(userId: String?) {
-        sharedPrefs.edit()
-            .putString(userIdKey, userId)
-            .apply()
-    }
-
-    fun getAuthToken(): String? {
-        return sharedPrefs.getString(authTokenKey, null)
-    }
-
-    fun saveAuthToken(authToken: String?) {
-        sharedPrefs.edit()
-            .putString(authTokenKey, authToken)
-            .apply()
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    private fun migrateAuthDataFromSharedPrefsToKeychain(context: Context) {
-        val oldPrefs: SharedPreferences = context.getSharedPreferences(
+    @JvmOverloads
+    constructor(
+        context: Context,
+        decryptionFailureHandler: IterableDecryptionFailureHandler? = null,
+        migrator: IterableKeychainEncryptedDataMigrator? = null
+    ) {
+        this.decryptionFailureHandler = decryptionFailureHandler
+        sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
-        val sharedPrefsEmail = oldPrefs.getString(IterableConstants.SHARED_PREFS_EMAIL_KEY, null)
-        val sharedPrefsUserId = oldPrefs.getString(IterableConstants.SHARED_PREFS_USERID_KEY, null)
-        val sharedPrefsUserIdAnon = oldPrefs.getString(IterableConstants.SHARED_PREFS_USERIDANON_KEY, null)
-        val sharedPrefsAuthToken =
-            oldPrefs.getString(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY, null)
-        val editor: SharedPreferences.Editor = oldPrefs.edit()
-        if (getEmail() == null && sharedPrefsEmail != null) {
-            saveEmail(sharedPrefsEmail)
-            editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY)
-            IterableLogger.v(
-                TAG,
-                "UPDATED: migrated email from SharedPreferences to IterableKeychain"
-            )
-        } else if (sharedPrefsEmail != null) {
-            editor.remove(IterableConstants.SHARED_PREFS_EMAIL_KEY)
-        }
+        encryptor = IterableDataEncryptor()
+        IterableLogger.v(TAG, "SharedPreferences being used with encryption")
 
-        if (getUserIdAnon() == null && sharedPrefsUserIdAnon != null) {
-            saveUserIdAnon(sharedPrefsUserIdAnon)
-            editor.remove(IterableConstants.SHARED_PREFS_USERIDANON_KEY)
-            IterableLogger.v(
-                TAG,
-                "UPDATED: migrated userIdAnon from SharedPreferences to IterableKeychain"
-            )
-        } else if (sharedPrefsUserIdAnon != null) {
-            editor.remove(IterableConstants.SHARED_PREFS_USERIDANON_KEY)
+        try {
+            val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
+            if (!dataMigrator.isMigrationCompleted()) {
+                dataMigrator.setMigrationCompletionCallback { error ->
+                    error?.let {
+                        IterableLogger.w(TAG, "Migration failed", it)
+                        handleDecryptionError(Exception(it))
+                    }
+                }
+                dataMigrator.attemptMigration()
+                IterableLogger.v(TAG, "Migration completed")
+			}
+        } catch (e: Exception) {
+            IterableLogger.w(TAG, "Migration failed, clearing data", e)
+            handleDecryptionError(e)
         }
-
-        if (getUserId() == null && sharedPrefsUserId != null) {
-            saveUserId(sharedPrefsUserId)
-            editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY)
-            IterableLogger.v(
-                TAG,
-                "UPDATED: migrated userId from SharedPreferences to IterableKeychain"
-            )
-        } else if (sharedPrefsUserId != null) {
-            editor.remove(IterableConstants.SHARED_PREFS_USERID_KEY)
-        }
-        if (getAuthToken() == null && sharedPrefsAuthToken != null) {
-            saveAuthToken(sharedPrefsAuthToken)
-            editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY)
-            IterableLogger.v(
-                TAG,
-                "UPDATED: migrated authToken from SharedPreferences to IterableKeychain"
-            )
-        } else if (sharedPrefsAuthToken != null) {
-            editor.remove(IterableConstants.SHARED_PREFS_AUTH_TOKEN_KEY)
-        }
-        editor.apply()
     }
+
+    private fun handleDecryptionError(e: Exception? = null) {
+        IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
+        sharedPrefs.edit()
+            .remove(KEY_EMAIL)
+            .remove(KEY_USER_ID)
+            .remove(KEY_ANON_USER_ID)
+            .remove(KEY_AUTH_TOKEN)
+            .apply()
+
+        encryptor.resetKeys()
+        decryptionFailureHandler?.let { handler ->
+            val exception = e ?: Exception("Unknown decryption error")
+            try {
+                val mainLooper = android.os.Looper.getMainLooper()
+                if (mainLooper != null) {
+                    android.os.Handler(mainLooper).post {
+                        handler.onDecryptionFailed(exception)
+                    }
+                } else {
+                    throw IllegalStateException("MainLooper is unavailable")
+                }
+            } catch (ex: Exception) {
+                handler.onDecryptionFailed(exception)
+            }
+        }
+    }
+
+    private fun secureGet(key: String): String? {
+        return try {
+            sharedPrefs.getString(key, null)?.let { encryptor.decrypt(it) }
+        } catch (e: Exception) {
+            handleDecryptionError(e)
+            null
+        }
+    }
+
+    private fun secureSave(key: String, value: String?) {
+        sharedPrefs.edit()
+            .putString(key, value?.let { encryptor.encrypt(it) })
+            .apply()
+    }
+
+    fun getEmail() = secureGet(KEY_EMAIL)
+    fun saveEmail(email: String?) = secureSave(KEY_EMAIL, email)
+
+    fun getUserId() = secureGet(KEY_USER_ID)
+    fun saveUserId(userId: String?) = secureSave(KEY_USER_ID, userId)
+
+    fun getAuthToken() = secureGet(KEY_AUTH_TOKEN)
+    fun saveAuthToken(authToken: String?) = secureSave(KEY_AUTH_TOKEN, authToken)
+
+    fun getUserIdAnon() = secureGet(KEY_ANON_USER_ID)
+    fun saveUserIdAnon(userIdAnon: String?) = secureSave(KEY_ANON_USER_ID, userIdAnon)
 }

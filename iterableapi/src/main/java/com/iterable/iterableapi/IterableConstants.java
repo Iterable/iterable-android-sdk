@@ -138,6 +138,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_CRITERIA_ID = "matchedCriteriaId";
     public static final String SHARED_PREFS_PUSH_OPT_IN = "mobilePushOptIn";
     public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED = "itbl_visitor_usage_track";
+    public static final String SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED = "itbl_notifications_enabled";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";
@@ -241,6 +242,7 @@ public final class IterableConstants {
     public static final String ITERABLE_IN_APP_BUTTONS          = "buttons";
     public static final String ITERABLE_IN_APP_COLOR            = "color";
     public static final String ITERABLE_IN_APP_CONTENT          = "content";
+    public static final String ITERABLE_IN_APP_JSON_ONLY        = "jsonOnly";
     public static final String ITERABLE_IN_APP_COUNT            = "count";
     public static final String ITERABLE_IN_APP_MAIN_IMAGE       = "mainImage";
     public static final String ITERABLE_IN_APP_MESSAGE          = "inAppMessages";
@@ -334,7 +336,7 @@ public final class IterableConstants {
     public static final String PURCHASE_ITEM = "shoppingCartItems";
     public static final String PURCHASE_ITEM_PREFIX = PURCHASE_ITEM + ".";
     public static final String MIN_MATCH = "minMatch";
-
+    public static final Integer CRITERIA_FETCHING_COOLDOWN = 120000;
 
     //Tracking types
     public static final String TRACK_EVENT = "customEvent";

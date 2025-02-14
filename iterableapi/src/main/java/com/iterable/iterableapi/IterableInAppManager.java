@@ -405,7 +405,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         IterableLogger.printInfo();
 
         List<IterableInAppMessage> messages = getMessages();
-
         List<IterableInAppMessage> messagesByPriorityLevel = getMessagesSortedByPriorityLevel(messages);
 
         for (IterableInAppMessage message : messagesByPriorityLevel) {
@@ -414,6 +413,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
                 message.setProcessed(true);
+
+                if (message.isJsonOnly()) {
+                    setRead(message, true, null, null);
+                    message.setConsumed(true);
+                    api.inAppConsume(message, null, null, null, null);
+                    return;
+                }
+
                 if (response == InAppResponse.SHOW) {
                     boolean consume = !message.isInboxMessage();
                     showMessage(message, consume, null);
