@@ -32,6 +32,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
     private IterableApi iterableApi = IterableApi.sharedInstance;
     private final IterableActivityMonitor activityMonitor;
     long lastCriteriaFetch = 0;
+    boolean isCriteriaMatched = false;
 
     AnonymousUserManager(IterableApi iterableApi) {
         this(iterableApi,
@@ -249,11 +250,13 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
             }
 
         } catch (JSONException e) {
+            isCriteriaMatched = false;
             e.printStackTrace();
         }
     }
 
     private void handleTrackFailure(JSONObject data) {
+        isCriteriaMatched = false;
         if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
             try {
                 int statusCode = (int) data.get(IterableConstants.HTTP_STATUS_CODE);
@@ -366,7 +369,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         String criteriaId = checkCriteriaCompletion();
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
-        if (criteriaId != null) {
+        if (criteriaId != null && !isCriteriaMatched) {
+            isCriteriaMatched = true;
             createAnonymousUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));

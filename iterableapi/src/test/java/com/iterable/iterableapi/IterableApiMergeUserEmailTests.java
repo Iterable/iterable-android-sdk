@@ -945,4 +945,35 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check that email was set
         assertEquals(email2, IterableApi.getInstance().getEmail());
     }
+
+    @Test
+    public void testCriteriaMetTwice() throws Exception {
+        // clear any pending requests
+        while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
+
+        // mock anon session response and track purchase response
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+
+        // trigger track purchase event
+        triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
+        triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
+        shadowOf(getMainLooper()).idle();
+
+        // check if only one request was sent to anon session endpoint
+        RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Anon session request should not be null", anonSessionRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+
+        // check if first request was sent to track purchase endpoint
+        RecordedRequest firstPurchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Purchase request should not be null", firstPurchaseRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, firstPurchaseRequest .getPath());
+
+        // check if second request was sent to track purchase endpoint
+        RecordedRequest secondPurchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Purchase request should not be null", secondPurchaseRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, secondPurchaseRequest.getPath());
+    }
 }
