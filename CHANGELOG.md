@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.6.0-beta2]
+
+#### Added
+- This release includes fixes for the Anonymous user activation private beta:
+    - Criteria is now fetched on foregrounding the app by default. This feature can be turned off setting enableForegroundCriteriaFetch flag to false. 
+    - anonymous user ids are only generated once when multiple track calls are made.
+- Anonymous user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
+
 ## [3.5.8]
 
 ### Fixed
