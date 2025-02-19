@@ -23,6 +23,8 @@ import org.mockito.MockedStatic
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.clearInvocations
+import org.mockito.ArgumentMatchers.matches
 
 class IterableKeychainTest {
 
@@ -202,8 +204,9 @@ class IterableKeychainTest {
         keychain.saveUserId(null)
         keychain.saveAuthToken(null)
 
-        // Verify exactly one putString call for each save operation
-        verify(mockEditor, times(3)).putString(any(), isNull())
+        // Verify remove calls for both key and plaintext flag
+        verify(mockEditor, times(6)).remove(any())  // 2 removes per save (key + plaintext flag)
+        verify(mockEditor, times(3)).remove(matches(".*_plaintext"))
         // Verify exactly one apply call for each save operation
         verify(mockEditor, times(3)).apply()
     }
@@ -284,5 +287,34 @@ class IterableKeychainTest {
         
         // Verify attemptMigration was called exactly once
         verify(mockMigrator, times(1)).attemptMigration()
+    }
+
+    @Test
+    fun testEncryptionAndDecryptionFailure() {
+        // Setup encryption and decryption to fail
+        `when`(mockEncryptor.encrypt(any())).thenThrow(RuntimeException("Simulated encryption failure"))
+        `when`(mockEncryptor.decrypt(any())).thenThrow(RuntimeException("Simulated decryption failure"))
+        
+        val testData = "test data for encryption failure"
+        
+        // Save data - should fall back to plaintext
+        keychain.saveUserId(testData)
+
+        // Verify plaintext save operations
+        verify(mockEditor).putString(eq("iterable-user-id"), eq(testData))
+        verify(mockEditor).putBoolean(eq("iterable-user-id_plaintext"), eq(true))
+
+        // Setup SharedPreferences to return the saved data
+        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testData)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
+
+        // Verify data can be retrieved
+        assertEquals(testData, keychain.getUserId())
+
+        // Test null handling
+        clearInvocations(mockEditor)
+        keychain.saveUserId(null)
+        verify(mockEditor).remove(eq("iterable-user-id"))
+        verify(mockEditor).remove(eq("iterable-user-id_plaintext"))
     }
 } 
