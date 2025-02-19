@@ -151,8 +151,8 @@ class IterableEmbeddedView(
             }
 
         } else {
-            embeddedMessageViewButton.visibility = View.GONE
-            embeddedMessageViewButton2.visibility = View.GONE
+            embeddedMessageViewButton.visibility = View.INVISIBLE
+            embeddedMessageViewButton2.visibility = View.INVISIBLE
         }
 
         return view
