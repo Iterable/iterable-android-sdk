@@ -164,6 +164,8 @@ public final class IterableConstants {
     public static final String DEVICE_APP_BUILD            = "appBuild";
     public static final String DEVICE_NOTIFICATIONS_ENABLED = "notificationsEnabled";
     public static final String DEVICE_ITERABLE_SDK_VERSION = "iterableSdkVersion";
+    public static final String DEVICE_MOBILE_FRAMEWORK_INFO = "mobileFrameworkInfo";
+    public static final String DEVICE_FRAMEWORK_TYPE       = "frameworkType";
 
     public static final String INSTANCE_ID_CLASS        = "com.google.android.gms.iid.InstanceID";
     public static final String ICON_FOLDER_IDENTIFIER   = "drawable";

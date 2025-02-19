@@ -307,14 +307,8 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null) {
-                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
-
-                for (Long placementId : placementIds) {
-                    pathBuilder.append("&placementIds=").append(placementId);
-                }
-
-                String path = pathBuilder.toString();
+            if (placementIds != null && placementIds.length != 0) {
+                String path = getEmbeddedMessagesPath(placementIds);
                 sendGetRequest(path, requestJSON, onCallback);
             } else {
                 sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onCallback);
@@ -335,14 +329,8 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
             requestJSON.put(IterableConstants.KEY_PACKAGE_NAME, authProvider.getContext().getPackageName());
 
-            if (placementIds != null) {
-                StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
-
-                for (Long placementId : placementIds) {
-                    pathBuilder.append("&placementIds=").append(placementId);
-                }
-
-                String path = pathBuilder.toString();
+            if (placementIds != null && placementIds.length != 0) {
+                String path = getEmbeddedMessagesPath(placementIds);
                 sendGetRequest(path, requestJSON, onSuccess, onFailure);
             } else {
                 sendGetRequest(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES, requestJSON, onSuccess, onFailure);
@@ -351,6 +339,23 @@ class IterableApiClient {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    @NonNull
+    private static String getEmbeddedMessagesPath(Long[] placementIds) {
+        StringBuilder pathBuilder = new StringBuilder(IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES + "?");
+
+        boolean isFirst = true;
+        for (Long placementId : placementIds) {
+            if (isFirst) {
+                pathBuilder.append("placementIds=").append(placementId);
+                isFirst = false;
+            } else {
+                pathBuilder.append("&placementIds=").append(placementId);
+            }
+        }
+
+        return pathBuilder.toString();
     }
 
     public void trackInAppOpen(@NonNull String messageId) {
@@ -631,7 +636,21 @@ class IterableApiClient {
 
             dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE);
             dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true);
-            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId());
+
+            IterableAPIMobileFrameworkInfo frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo;
+            if (frameworkInfo == null) {
+                IterableAPIMobileFrameworkType detectedFramework = IterableMobileFrameworkDetector.detectFramework(context);
+                String sdkVersion = detectedFramework == IterableAPIMobileFrameworkType.NATIVE
+                    ? IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER
+                    : null;
+
+                frameworkInfo = new IterableAPIMobileFrameworkInfo(
+                    detectedFramework,
+                    sdkVersion
+                );
+            }
+
+            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId(), frameworkInfo);
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(context).areNotificationsEnabled());
 
             JSONObject device = new JSONObject();

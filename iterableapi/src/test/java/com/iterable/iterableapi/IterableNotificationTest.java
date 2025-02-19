@@ -93,7 +93,7 @@ public class IterableNotificationTest {
     }
 
     @Test
-    public void testPendingIntentImmutable() throws Exception {
+    public void testPendingIntentFlags() throws Exception {
         Bundle notif = new Bundle();
         notif.putString(IterableConstants.ITERABLE_DATA_KEY, getResourceString("push_payload_action_buttons.json"));
 
@@ -101,10 +101,26 @@ public class IterableNotificationTest {
         StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
         Notification notification = statusBarNotification.getNotification();
 
-        assertTrue((shadowOf(notification.contentIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[0].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[1].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
-        assertTrue((shadowOf(notification.actions[2].actionIntent).getFlags() & PendingIntent.FLAG_IMMUTABLE) != 0);
+        // Test contentIntent (default action)
+        int contentIntentFlags = shadowOf(notification.contentIntent).getFlags();
+        assertTrue((contentIntentFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((contentIntentFlags & PendingIntent.FLAG_IMMUTABLE) != 0);  // Should be immutable for default action
+
+        // Test deeplink button (default type, openApp=true)
+        int deeplinkButtonFlags = shadowOf(notification.actions[0].actionIntent).getFlags();
+        assertTrue((deeplinkButtonFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((deeplinkButtonFlags & PendingIntent.FLAG_IMMUTABLE) != 0);  // Should be immutable for default type
+
+        // Test silent action button (default type, openApp=false)
+        int silentActionFlags = shadowOf(notification.actions[1].actionIntent).getFlags();
+        assertTrue((silentActionFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((silentActionFlags & PendingIntent.FLAG_IMMUTABLE) != 0);  // Should be immutable for default type
+
+        // Test text input button
+        int textInputFlags = shadowOf(notification.actions[2].actionIntent).getFlags();
+        assertTrue((textInputFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((textInputFlags & PendingIntent.FLAG_MUTABLE) != 0);  // Should be mutable for text input
+
     }
 
 }

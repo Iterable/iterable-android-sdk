@@ -424,11 +424,7 @@ public class IterableApi {
 
         if (sharedInstance.isInitialized()) {
             if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
-                if (!systemNotificationEnabled) {
-                    sharedInstance.disablePush();
-                } else {
-                    sharedInstance.registerForPush();
-                }
+                sharedInstance.registerForPush();
             }
 
             SharedPreferences.Editor editor = sharedPref.edit();
@@ -687,7 +683,7 @@ public class IterableApi {
             try {
                 JSONObject dataFields = new JSONObject();
                 JSONObject deviceDetails = new JSONObject();
-                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
+                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
                 sharedInstance.updateUser(dataFields, false);
             } catch (JSONException e) {

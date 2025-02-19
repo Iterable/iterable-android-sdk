@@ -10,6 +10,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - anonymous user ids are only generated once when multiple track calls are made.
 - Anonymous user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
 
+## [3.5.10]
+
+### Added
+- Added `mobileFrameworkInfo` configuration option to `IterableConfig` to identify the mobile framework (Flutter, React Native, or Native) being used with the SDK.
+- Support for push notifications with text input. Pending intent is now mutable when buttons are of text input type.
+
+## [3.5.9]
+
+### Fixed
+- Fixed notification tracking bug that prevents SDK from receiving push notifications when system notification settings are turned off.
+
 ## [3.5.8]
 
 ### Fixed

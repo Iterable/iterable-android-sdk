@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 /**
@@ -127,6 +128,12 @@ public class IterableConfig {
      */
     final IterableDecryptionFailureHandler decryptionFailureHandler;
 
+    /**
+     * Mobile framework information for the app
+     */
+    @Nullable
+    final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -150,6 +157,7 @@ public class IterableConfig {
         identityResolution = builder.identityResolution;
         iterableAnonUserHandler = builder.iterableAnonUserHandler;
         decryptionFailureHandler = builder.decryptionFailureHandler;
+        mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
 
     public static class Builder {
@@ -385,6 +393,16 @@ public class IterableConfig {
         @NonNull
         public Builder setDecryptionFailureHandler(@NonNull IterableDecryptionFailureHandler handler) {
             this.decryptionFailureHandler = handler;
+            return this;
+        }
+
+        /**
+         * Set mobile framework information for the app
+         * @param mobileFrameworkInfo Mobile framework information
+         */
+        @NonNull
+        public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
+            this.mobileFrameworkInfo = mobileFrameworkInfo;
             return this;
         }
 
