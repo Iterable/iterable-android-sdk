@@ -491,6 +491,7 @@ public class IterableDataEncryptorTest extends BaseTest {
         String testData = "test data for encryption failure";
         IterableDataEncryptor failingEncryptor = mock(IterableDataEncryptor.class);
         when(failingEncryptor.encrypt(anyString())).thenThrow(new RuntimeException("Simulated encryption failure"));
+        when(failingEncryptor.decrypt(anyString())).thenThrow(new RuntimeException("Simulated decryption failure"));
         
         // Create keychain with failing encryptor through reflection
         keychain = new IterableKeychain(mockContext);
@@ -502,6 +503,13 @@ public class IterableDataEncryptorTest extends BaseTest {
         // Verify plaintext save operations
         verify(editor).putString(eq(IterableKeychain.KEY_USER_ID), eq(testData));
         verify(editor).putBoolean(eq(IterableKeychain.KEY_USER_ID + "_plaintext"), eq(true));
+
+        // Mock SharedPreferences to return the saved data
+        when(sharedPreferences.getString(eq(IterableKeychain.KEY_USER_ID), isNull())).thenReturn(testData);
+        when(sharedPreferences.getBoolean(eq(IterableKeychain.KEY_USER_ID + "_plaintext"), eq(false))).thenReturn(true);
+
+        // Verify data can be retrieved
+        assertEquals(testData, keychain.getUserId());
 
         // Test null handling
         clearInvocations(editor);
