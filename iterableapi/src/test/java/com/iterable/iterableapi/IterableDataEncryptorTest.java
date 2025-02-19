@@ -1,6 +1,5 @@
 package com.iterable.iterableapi;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Base64;
@@ -10,8 +9,13 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -26,16 +30,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IterableDataEncryptorTest extends BaseTest {
 
     private IterableDataEncryptor encryptor;
-    private IterableKeychain keychain;
 
     @Mock
     private SharedPreferences sharedPreferences;
-    @Mock
-    private SharedPreferences.Editor editor;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        MockitoAnnotations.initMocks(this);
         encryptor = new IterableDataEncryptor();
     }
 
