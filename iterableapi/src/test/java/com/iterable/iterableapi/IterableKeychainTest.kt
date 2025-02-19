@@ -25,6 +25,7 @@ import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.clearInvocations
 import org.mockito.ArgumentMatchers.matches
+import org.mockito.Mockito.never
 
 class IterableKeychainTest {
 
@@ -311,10 +312,18 @@ class IterableKeychainTest {
         // Verify data can be retrieved
         assertEquals(testData, keychain.getUserId())
 
+        // Verify encryption was attempted and failed
+        verify(mockEncryptor).encrypt(eq(testData))
+        verify(mockEncryptor, never()).decrypt(any()) // Should not attempt decryption for plaintext
+
         // Test null handling
         clearInvocations(mockEditor)
         keychain.saveUserId(null)
         verify(mockEditor).remove(eq("iterable-user-id"))
         verify(mockEditor).remove(eq("iterable-user-id_plaintext"))
+
+        // Verify no more encryption attempts for null
+        verify(mockEncryptor, never()).encrypt(isNull())
+        verify(mockEncryptor, never()).decrypt(isNull())
     }
 } 
