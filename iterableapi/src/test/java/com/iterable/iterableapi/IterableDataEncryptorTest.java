@@ -1,5 +1,6 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Base64;
@@ -9,13 +10,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -30,14 +26,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IterableDataEncryptorTest extends BaseTest {
 
     private IterableDataEncryptor encryptor;
+    private IterableKeychain keychain;
 
     @Mock
     private SharedPreferences sharedPreferences;
+    @Mock
+    private SharedPreferences.Editor editor;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         encryptor = new IterableDataEncryptor();
+        
+        when(sharedPreferences.edit()).thenReturn(editor);
+        when(editor.putString(anyString(), anyString())).thenReturn(editor);
+        when(editor.putBoolean(anyString(), anyBoolean())).thenReturn(editor);
+        when(editor.remove(anyString())).thenReturn(editor);
     }
 
     @Test
@@ -475,6 +479,44 @@ public class IterableDataEncryptorTest extends BaseTest {
 
         byte[] api23EncryptedBytes = Base64.decode(encryptedOnApi23, Base64.NO_WRAP);
         assertEquals("Should use modern encryption flag on API 23", 1, api23EncryptedBytes[0]);
+    }
+
+    @Test
+    public void testEncryptionFailureAndPlaintextFallback() {
+        // Create mocked components
+        Context mockContext = mock(Context.class);
+        when(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(sharedPreferences);
+        
+        // Create test data
+        String testData = "test data for encryption failure";
+        IterableDataEncryptor failingEncryptor = mock(IterableDataEncryptor.class);
+        when(failingEncryptor.encrypt(anyString())).thenThrow(new RuntimeException("Simulated encryption failure"));
+        
+        // Create keychain with failing encryptor through reflection
+        keychain = new IterableKeychain(mockContext);
+        setEncryptorViaReflection(keychain, failingEncryptor);
+
+        // Save data - should fall back to plaintext
+        keychain.saveUserId(testData);
+
+        // Verify plaintext save operations
+        verify(editor).putString(eq(IterableKeychain.KEY_USER_ID), eq(testData));
+        verify(editor).putBoolean(eq(IterableKeychain.KEY_USER_ID + "_plaintext"), eq(true));
+
+        // Test null handling
+        clearInvocations(editor);
+        keychain.saveUserId(null);
+        verify(editor).remove(eq(IterableKeychain.KEY_USER_ID));
+    }
+
+    private void setEncryptorViaReflection(IterableKeychain keychain, IterableDataEncryptor encryptor) {
+        try {
+            Field encryptorField = IterableKeychain.class.getDeclaredField("encryptor");
+            encryptorField.setAccessible(true);
+            encryptorField.set(keychain, encryptor);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set encryptor via reflection", e);
+        }
     }
 
     private static void setFinalStatic(Class<?> clazz, String fieldName, Object newValue) {
