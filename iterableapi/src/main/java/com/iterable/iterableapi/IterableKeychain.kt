@@ -9,6 +9,7 @@ class IterableKeychain {
         const val KEY_EMAIL = "iterable-email"
 		const val KEY_USER_ID = "iterable-user-id"
 		const val KEY_AUTH_TOKEN = "iterable-auth-token"
+        private const val PLAINTEXT_SUFFIX = "_plaintext"
     }
 
     private var sharedPrefs: SharedPreferences
@@ -74,6 +75,11 @@ class IterableKeychain {
     }
 
     private fun secureGet(key: String): String? {
+        // First check if it's stored in plaintext
+        if (sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)) {
+            return sharedPrefs.getString(key, null)
+        }
+        
         return try {
             sharedPrefs.getString(key, null)?.let { encryptor.decrypt(it) }
         } catch (e: Exception) {
@@ -83,9 +89,22 @@ class IterableKeychain {
     }
 
     private fun secureSave(key: String, value: String?) {
-        sharedPrefs.edit()
-            .putString(key, value?.let { encryptor.encrypt(it) })
-            .apply()
+        val editor = sharedPrefs.edit()
+        if (value == null) {
+            editor.remove(key).remove(key + PLAINTEXT_SUFFIX).apply()
+            return
+        }
+
+        try {
+            editor.putString(key, encryptor.encrypt(value))
+                .remove(key + PLAINTEXT_SUFFIX)
+                .apply()
+        } catch (e: Exception) {
+            handleDecryptionError(e)
+            editor.putString(key, value)
+                .putBoolean(key + PLAINTEXT_SUFFIX, true)
+                .apply()
+        }
     }
 
     fun getEmail() = secureGet(KEY_EMAIL)
