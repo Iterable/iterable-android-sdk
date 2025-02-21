@@ -300,4 +300,6 @@ public final class IterableConstants {
 
     public static final String NO_MESSAGES_TITLE = "noMessagesTitle";
     public static final String NO_MESSAGES_BODY = "noMessagesBody";
+
+    public static final String TEST = "test";
 }
