@@ -9,14 +9,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed issue where text container shrinks when buttons are not present for the embedded OOTB views.
 - Fixed issue where crashes are occurring due to conflicts in deep link handling
+- Fixed data storage failures by adding plain text fallback when encryption fails.
 
 ### Added
-- Added plain text fallback for data storage when encryption fails.
 - Added support for providing a list of placement ids to sync only certain placement ids.
 - support for pre-release automation
-
-### Removed
-- Removed Beta SDK disclaimer from the readme
 
 ## [3.5.10]
 
