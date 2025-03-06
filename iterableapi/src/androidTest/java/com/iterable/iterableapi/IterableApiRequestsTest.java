@@ -9,6 +9,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -24,6 +26,10 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 @RunWith(AndroidJUnit4.class)
 public class IterableApiRequestsTest {
 
@@ -31,8 +37,27 @@ public class IterableApiRequestsTest {
 
     @Before
     public void setUp() throws Exception {
-        createIterableApi();
         server = new MockWebServer();
+
+        // Create an SSL socket factory with a permissive trust manager
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, new TrustManager[] { new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        }}, new SecureRandom());
+
+        server.useHttps(sslContext.getSocketFactory(), false);
+        server.start();
+
+        createIterableApi();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
     }
 
