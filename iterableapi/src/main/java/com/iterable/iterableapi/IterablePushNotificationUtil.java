@@ -124,11 +124,14 @@ class IterablePushNotificationUtil {
     }
 
     static void dismissNotificationPanel(Context context) {
-        // Dismiss the notifications panel
-        try {
-            context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-        } catch (SecurityException e) {
-            IterableLogger.w(TAG, e.getLocalizedMessage());
+        // On Android 12 and above, ACTION_CLOSE_SYSTEM_DIALOGS is deprecated and requires system permission
+        // The notification shade will automatically close when launching an activity, so we don't need to do anything
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) {
+            try {
+                context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            } catch (SecurityException e) {
+                IterableLogger.w(TAG, e.getLocalizedMessage());
+            }
         }
     }
 
