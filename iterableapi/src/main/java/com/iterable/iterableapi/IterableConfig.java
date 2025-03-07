@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 /**
@@ -87,12 +88,22 @@ public class IterableConfig {
      */
     final boolean useInMemoryStorageForInApps;
 
-    final boolean encryptionEnforced;
-
     /**
      * Allows for fetching embedded messages.
      */
     final boolean enableEmbeddedMessaging;
+
+    /**
+     * Handler for decryption failures of PII information.
+     * Before calling this handler, the SDK will clear the PII information and create new encryption keys
+     */
+    final IterableDecryptionFailureHandler decryptionFailureHandler;
+
+    /**
+     * Mobile framework information for the app
+     */
+    @Nullable
+    final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -109,8 +120,9 @@ public class IterableConfig {
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
-        encryptionEnforced = builder.encryptionEnforced;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
+        decryptionFailureHandler = builder.decryptionFailureHandler;
+        mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
 
     public static class Builder {
@@ -128,8 +140,9 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
-        private boolean encryptionEnforced = false;
         private boolean enableEmbeddedMessaging = false;
+        private IterableDecryptionFailureHandler decryptionFailureHandler;
+        private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
         public Builder() {}
 
@@ -262,17 +275,6 @@ public class IterableConfig {
         }
 
         /**
-         * Set whether the SDK should enforce encryption. If set to `true`, the SDK will not use fallback mechanism
-         * of storing data in un-encrypted shared preferences if encrypted database is not available. Set this to `true`
-         * if PII confidentiality is a concern for your app.
-         * @param encryptionEnforced `true` will have the SDK enforce encryption.
-         */
-        public Builder setEncryptionEnforced(boolean encryptionEnforced) {
-            this.encryptionEnforced = encryptionEnforced;
-            return this;
-        }
-
-        /**
          * Set the data region used by the SDK
          * @param dataRegion enum value that determines which endpoint to use, defaults to IterableDataRegion.US
          */
@@ -299,6 +301,26 @@ public class IterableConfig {
          */
         public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
             this.enableEmbeddedMessaging = enableEmbeddedMessaging;
+            return this;
+        }
+
+        /**
+         * Set a handler for decryption failures that can be used to handle data recovery
+         * @param handler Decryption failure handler provided by the app
+         */
+        @NonNull
+        public Builder setDecryptionFailureHandler(@NonNull IterableDecryptionFailureHandler handler) {
+            this.decryptionFailureHandler = handler;
+            return this;
+        }
+
+        /**
+         * Set mobile framework information for the app
+         * @param mobileFrameworkInfo Mobile framework information
+         */
+        @NonNull
+        public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
+            this.mobileFrameworkInfo = mobileFrameworkInfo;
             return this;
         }
 

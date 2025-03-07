@@ -22,6 +22,9 @@ jobs:
 
       - run: touch local.properties
 
+      - name: Lint Check
+        run: ./gradlew :iterableapi:lintDebug
+
       - name: Checkstyle
         run: ./gradlew :iterableapi:checkstyle :iterableapi-ui:assembleDebug
 
@@ -55,7 +58,7 @@ jobs:
 
   instrumentation-tests:
     name: Instrumentation tests
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

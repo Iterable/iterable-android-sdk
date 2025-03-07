@@ -1,0 +1,122 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 3.6.0 or 1.0.0-beta1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Changelog
+        id: update_changelog
+        run: |
+          changelog_file="CHANGELOG.md"
+          
+          # Function to extract content between two patterns, including the first pattern
+          extract_between() {
+            awk "/^## \[$1\]/{p=1;print;next} /^## \[/{p=0} p" "$3"
+          }
+          
+          # Get the unreleased content
+          unreleased_content=$(extract_between "Unreleased" "[0-9]" "$changelog_file")
+          
+          if [ -z "$unreleased_content" ]; then
+            echo "No unreleased changes found in $changelog_file"
+            exit 1
+          fi
+          
+          # Get the current version
+          current_version=$(grep -oP "^## \[\K[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9]+)?(?=\])" "$changelog_file" | head -n1)
+          new_version="${{ github.event.inputs.version }}"
+          
+          # Validate version format (now includes beta versions)
+          if ! [[ $new_version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid version format. Please use semantic versioning (e.g., 3.6.0 or 1.0.0-beta1)"
+            exit 1
+          fi
+          
+          echo "new_version=${new_version}" >> $GITHUB_OUTPUT
+          
+          # Create temporary file
+          temp_file=$(mktemp)
+          
+          # Preserve header and write new content
+          {
+            # Preserve the header (first 4 lines)
+            head -n 4 "$changelog_file"
+            echo "## [Unreleased]"
+            echo ""
+            echo "## [$new_version]"
+            # Remove the "## [Unreleased]" line from unreleased_content if it exists
+            echo "$unreleased_content" | sed '1{/^## \[Unreleased\]/d}'
+            echo ""
+            # Get the rest of the file starting from the first version entry
+            sed -n '/^## \[[0-9]/,$p' "$changelog_file"
+          } > "$temp_file"
+          
+          # Replace original file
+          mv "$temp_file" "$changelog_file"
+
+      - name: Update Version Files
+        run: |
+          # Create temp file for build.gradle updates
+          temp_gradle=$(mktemp)
+          
+          # Update iterableapi/build.gradle - libraryVersion and versionName
+          sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi/build.gradle
+          sed -i "s/versionName=\".*\"/versionName=\"${{ github.event.inputs.version }}\"/" iterableapi/build.gradle
+          
+          # Update buildConfigField version in defaultConfig section
+          awk -v version="${{ github.event.inputs.version }}" '
+          /defaultConfig {/,/}/ {
+              if ($0 ~ /buildConfigField.*ITERABLE_SDK_VERSION/) {
+                  print "        buildConfigField \"String\", \"ITERABLE_SDK_VERSION\", \"\\\"" version "\\\"\""
+                  next
+              }
+          }
+          { print }' iterableapi/build.gradle > "$temp_gradle" && cat "$temp_gradle" > iterableapi/build.gradle
+          rm "$temp_gradle"
+          
+          # Update iterableapi-ui/build.gradle
+          sed -i "s/libraryVersion = '.*'/libraryVersion = '${{ github.event.inputs.version }}'/" iterableapi-ui/build.gradle
+          
+          # Update sample app versions
+          sed -i "s/implementation 'com.iterable:iterableapi:[^']*'/implementation 'com.iterable:iterableapi:${{ github.event.inputs.version }}'/" sample-apps/inbox-customization/app/build.gradle
+          sed -i "s/implementation 'com.iterable:iterableapi-ui:[^']*'/implementation 'com.iterable:iterableapi-ui:${{ github.event.inputs.version }}'/" sample-apps/inbox-customization/app/build.gradle
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Prepare for Release ${{ steps.update_changelog.outputs.new_version }}"
+          body: |
+            # Prepare for Release ${{ steps.update_changelog.outputs.new_version }}
+            
+            ## SDK Release Checklist
+            - [ ] CHANGELOG.md updated
+            - [ ] Version numbers updated in build.gradle files:
+              - [ ] iterableapi/build.gradle (libraryVersion, versionName, and ITERABLE_SDK_VERSION)
+              - [ ] iterableapi-ui/build.gradle (libraryVersion)
+              - [ ] sample-apps/inbox-customization/app/build.gradle (both dependencies)
+            - [ ] README.md reviewed (if needed)
+            - [ ] Sample apps verified
+            - [ ] All tests passing
+            - [ ] Documentation updated (if needed)
+            
+          branch: "prepare-for-release-${{ steps.update_changelog.outputs.new_version }}"
+          commit-message: "Prepare for release ${{ steps.update_changelog.outputs.new_version }}"
+          labels: release
+          delete-branch: true 
