@@ -46,15 +46,17 @@ jobs:
       - run: touch local.properties
 
       - name: Test
-        run: ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport
+      # run: ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport  
+        run: ./gradlew :iterableapi:testDebugUnitTest :app:testDebugUnitTest
 
-      - name: Upload coverage data
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        with:
-          name: unit-tests
-          path: |
-            ./**/build/**/jacoco*.xml
-            ./**/build/**/report.xml
+      # Coverage reporting temporarily disabled
+      # - name: Upload coverage data
+      #   uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      #   with:
+      #     name: unit-tests
+      #     path: |
+      #       ./**/build/**/jacoco*.xml
+      #       ./**/build/**/report.xml
 
   instrumentation-tests:
     name: Instrumentation tests
