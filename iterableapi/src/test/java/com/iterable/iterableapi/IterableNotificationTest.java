@@ -178,21 +178,21 @@ public class IterableNotificationTest {
         IterableNotificationBuilder iterableNotification = postNotification(notif);
         StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
         Notification notification = statusBarNotification.getNotification();
-        
+
         // Assert number of actions matches JSON
         assertEquals(actionButtons.length(), notification.actions.length);
-        
+
         // Assert each action button matches JSON
         for (int i = 0; i < actionButtons.length(); i++) {
             JSONObject actionButton = actionButtons.getJSONObject(i);
             assertEquals(actionButton.getString("title"), notification.actions[i].title);
-            
+
             // Check for remote input on text input type buttons
             if ("textInput".equals(actionButton.getString("buttonType"))) {
                 assertTrue("Input action has a remote input", notification.actions[i].getRemoteInputs().length > 0);
                 if (actionButton.has("inputPlaceholder")) {
-                    assertEquals(actionButton.getString("inputPlaceholder"), 
-                               notification.actions[i].getRemoteInputs()[0].getLabel());
+                    assertEquals(actionButton.getString("inputPlaceholder"),
+                        notification.actions[i].getRemoteInputs()[0].getLabel());
                 }
             }
         }
