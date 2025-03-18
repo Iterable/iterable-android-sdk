@@ -9,6 +9,10 @@ android {
     namespace 'com.iterable.iterableapi'
     testNamespace 'iterable.com.iterableapi'
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -32,7 +36,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             manifestPlaceholders = [usesCleartextTraffic: "false"]
         }
