@@ -80,7 +80,7 @@ tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
     jacoco.excludes = ['jdk.internal.*']
 }
-//
+
 task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     group = "reporting"
     description = "Generate unified Jacoco code coverage report"
@@ -168,6 +168,3 @@ task jacocoDebugAndroidTestReport(type: JacocoReport, dependsOn: ['connectedChec
     additionalClassDirs.from = files([sdkTree, sdkUiTree])
     executionData.from = fileTree(dir: "$buildDir", include: "outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
 }
-
-// java doc
-

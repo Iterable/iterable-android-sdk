@@ -1,6 +1,5 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-//apply plugin: 'com.hiya.jacoco-android'
 apply plugin: 'checkstyle'
 
 android {
@@ -104,11 +103,6 @@ task javadoc(type: Javadoc) {
 
     exclude '**/*.kt'
 }
-
-//tasks.withType(Test) {
-//    jacoco.includeNoLocationClasses = true
-//    jacoco.excludes = ['jdk.internal.*']
-//}
 
 task checkstyle(type: Checkstyle) {
     configFile file("${project.rootDir}/checkstyle.xml")

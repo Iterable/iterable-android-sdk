@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,6 +25,8 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
+
+import static org.robolectric.Shadows.shadowOf;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -51,8 +54,6 @@ public class IterableNotificationTest {
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
         IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notificationData);
         IterableNotificationHelper.postNotificationOnDevice(appContext, iterableNotification);
-//        It looks like mNotificationManager.notify(iterableNotification.requestCode, iterableNotification.build());
-//        is the culprit here for the flaky tests. This thread is spun up by the android system. Unless we do dependency injection and mock the notificationManager, it'll be hard to make this unflake.
         Thread.sleep(1000);
         return iterableNotification;
     }
@@ -208,5 +209,35 @@ public class IterableNotificationTest {
         Notification notification = statusBarNotification.getNotification();
         //Checking if the notification time is close to system time when received. 5000ms is to compensate with delay that might occur during creation, posting and checking the notification.
         assertTrue(System.currentTimeMillis() - notification.when < 5000);
+    }
+
+    @Test
+    public void testPendingIntentFlags() throws Exception {
+        Bundle notif = new Bundle();
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, getResourceString("push_payload_action_buttons.json"));
+
+        IterableNotificationBuilder iterableNotification = postNotification(notif);
+        StatusBarNotification statusBarNotification = mNotificationManager.getActiveNotifications()[0];
+        Notification notification = statusBarNotification.getNotification();
+
+        // Test contentIntent (default action)
+        int contentIntentFlags = shadowOf(notification.contentIntent).getFlags();
+        assertTrue((contentIntentFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((contentIntentFlags & PendingIntent.FLAG_IMMUTABLE) != 0);  // Should be immutable for default action
+
+        // Test deeplink button (default type, openApp=true)
+        int deeplinkButtonFlags = shadowOf(notification.actions[0].actionIntent).getFlags();
+        assertTrue((deeplinkButtonFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((deeplinkButtonFlags & PendingIntent.FLAG_IMMUTABLE) != 0);  // Should be immutable for default type
+
+        // Test silent action button (default type, openApp=false)
+        int silentActionFlags = shadowOf(notification.actions[1].actionIntent).getFlags();
+        assertTrue((silentActionFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((silentActionFlags & PendingIntent.FLAG_IMMUTABLE) != 0);  // Should be immutable for default type
+
+        // Test text input button
+        int textInputFlags = shadowOf(notification.actions[2].actionIntent).getFlags();
+        assertTrue((textInputFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
+        assertTrue((textInputFlags & PendingIntent.FLAG_MUTABLE) != 0);  // Should be mutable for text input
     }
 }
