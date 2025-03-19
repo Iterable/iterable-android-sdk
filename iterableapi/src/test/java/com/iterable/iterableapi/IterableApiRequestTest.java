@@ -102,12 +102,10 @@ public class IterableApiRequestTest {
         String expectedRequest = new StringBuilder(
             new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
                 .append("\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],")
+                .append("\"createdAt\":").append(new Date().getTime() / 1000)
                 .append("}")).toString();
 
         String requestBody = request.getBody().readUtf8();
-        // remove createdAt field from the request body
-        requestBody = requestBody.replaceAll("\"createdAt\":[0-9]+", "");
-
         Assert.assertEquals(expectedRequest, requestBody);
     }
 
@@ -202,8 +200,6 @@ public class IterableApiRequestTest {
                 .append("}")).toString();
 
         String requestBody = request.getBody().readUtf8();
-        // remove createdAt field from the request body
-//        requestBody = requestBody.replaceAll("\"createdAt\":[0-9]+", "");
         Assert.assertEquals(expectedRequest, requestBody);
     }
 
