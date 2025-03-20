@@ -21,9 +21,10 @@ jobs:
 
       - name: Import GPG Key
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > private.gpg
-          gpg --batch --import private.gpg
-          rm private.gpg
+          mkdir -p ~/.gnupg
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > ~/.gnupg/secring.gpg
+          chmod 600 ~/.gnupg/secring.gpg
+          ls -la ~/.gnupg/
 
       - name: Build
         run: ./gradlew clean build
