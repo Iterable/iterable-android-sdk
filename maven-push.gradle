@@ -46,12 +46,13 @@ def nexus_username = System.getenv('ORG_GRADLE_PROJECT_NEXUS_USERNAME')
 def nexus_password = System.getenv('ORG_GRADLE_PROJECT_NEXUS_PASSWORD')
 
 // Ensure the key ring file exists
-if (!new File(keyRingLocation).exists()) {
-    throw new GradleException("GPG key ring file not found at: ${keyRingLocation}")
+def keyRingFile = new File(keyRingLocation)
+if (!keyRingFile.exists()) {
+    throw new GradleException("GPG key ring file not found at: ${keyRingFile.absolutePath}")
 }
 
 ext."signing.keyId" = keyID
-ext."signing.secretKeyRingFile" = keyRingLocation
+ext."signing.secretKeyRingFile" = keyRingFile.absolutePath
 ext."signing.password" = signing_password
 
 publishing {

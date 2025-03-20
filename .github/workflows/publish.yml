@@ -21,17 +21,17 @@ jobs:
 
       - name: Import GPG Key
         run: |
-          mkdir -p ~/.gnupg
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > ~/.gnupg/secring.gpg
-          chmod 600 ~/.gnupg/secring.gpg
-          ls -la ~/.gnupg/
+          mkdir -p $HOME/.gnupg
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > $HOME/.gnupg/secring.gpg
+          chmod 600 $HOME/.gnupg/secring.gpg
+          ls -la $HOME/.gnupg/
 
       - name: Build
         run: ./gradlew clean build
         env:
           ORG_GRADLE_PROJECT_SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_SIGNING_SECRET_KEY_RING_FILE: ~/.gnupg/secring.gpg
+          ORG_GRADLE_PROJECT_SIGNING_SECRET_KEY_RING_FILE: $HOME/.gnupg/secring.gpg
           ORG_GRADLE_PROJECT_NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           ORG_GRADLE_PROJECT_NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
@@ -40,6 +40,6 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_SIGNING_SECRET_KEY_RING_FILE: ~/.gnupg/secring.gpg
+          ORG_GRADLE_PROJECT_SIGNING_SECRET_KEY_RING_FILE: $HOME/.gnupg/secring.gpg
           ORG_GRADLE_PROJECT_NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           ORG_GRADLE_PROJECT_NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }} 
