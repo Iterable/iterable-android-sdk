@@ -46,8 +46,17 @@ def nexus_password = System.getenv('ORG_GRADLE_PROJECT_NEXUS_PASSWORD')
 
 println "Debug: Using GPG key ID: ${keyID}"
 
-ext."signing.keyId" = keyID
-ext."signing.password" = signing_password
+// Custom task to sign files with GPG
+tasks.register('signWithGPG') {
+    doLast {
+        def files = fileTree(dir: "${buildDir}/libs", include: '**/*.jar')
+        files.each { file ->
+            exec {
+                commandLine 'gpg', '--batch', '--yes', '--passphrase', signing_password, '--local-user', keyID, '--sign', file
+            }
+        }
+    }
+}
 
 publishing {
     publications {
@@ -101,13 +110,14 @@ publishing {
     }
 }
 
+// Disable the default signing
 signing {
-    required { isReleaseBuild() }
-    sign publishing.publications.release
+    required { false }
 }
 
 tasks.register('uploadArchives') {
     dependsOn publishReleasePublicationToOSSRHRepository
+    dependsOn signWithGPG
 }
 
 tasks.register('androidSourcesJar', Jar) {
