@@ -2,9 +2,10 @@ package com.iterable.iterableapi;
 
 import android.os.Bundle;
 
+import androidx.test.core.app.ApplicationProvider;
+
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.robolectric.RuntimeEnvironment;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,7 +49,7 @@ public class IterableTestUtils {
             builder = extender.run(builder);
         }
 
-        IterableApi.initialize(RuntimeEnvironment.application, apiKey, builder.build());
+        IterableApi.initialize(ApplicationProvider.getApplicationContext(), apiKey, builder.build());
         IterableApi.getInstance().setEmail(email);
     }
 
@@ -60,7 +61,7 @@ public class IterableTestUtils {
         InputStream inputStream = IterableTestUtils.class.getClassLoader().getResourceAsStream(fileName);
         InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        String receiveString = "";
+        String receiveString;
         StringBuilder stringBuilder = new StringBuilder();
 
         while ((receiveString = bufferedReader.readLine()) != null) {
