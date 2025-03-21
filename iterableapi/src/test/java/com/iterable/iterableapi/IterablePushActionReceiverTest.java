@@ -1,17 +1,18 @@
 package com.iterable.iterableapi;
 
+import android.app.Application;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.core.app.RemoteInput;
+import androidx.test.core.app.ApplicationProvider;
 
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.robolectric.RuntimeEnvironment;
 
 import java.util.concurrent.TimeUnit;
 
@@ -63,11 +64,12 @@ public class IterablePushActionReceiverTest extends BaseTest {
         intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_silent_action.json"));
 
         // This must not crash
-        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+        iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
     }
 
     @Test
     public void testTrackPushOpenWithCustomAction() throws Exception {
+        Application application = ApplicationProvider.getApplicationContext();
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         stubAnyRequestReturningStatusCode(server, 200, responseData);
 
@@ -76,7 +78,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
         intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
         intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
 
-        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+        iterablePushActionReceiver.onReceive(application, intent);
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
@@ -84,7 +86,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertEquals("customAction", capturedAction.getValue().getType());
 
         // Verify that the main app activity was launched
-        Intent activityIntent = shadowOf(RuntimeEnvironment.application).peekNextStartedActivity();
+        Intent activityIntent = shadowOf(application).peekNextStartedActivity();
         assertNotNull(activityIntent);
         assertEquals(Intent.ACTION_MAIN, activityIntent.getAction());
 
@@ -102,16 +104,17 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
     @Test
     public void testPushActionWithSilentAction() throws Exception {
+        Application application = ApplicationProvider.getApplicationContext();
         stubAnyRequestReturningStatusCode(server, 200, "{}");
         IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
         Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
         intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "silentButton");
         intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_silent_action.json"));
 
-        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+        iterablePushActionReceiver.onReceive(application, intent);
 
         // Verify that the main app activity was NOT launched
-        Intent activityIntent = shadowOf(RuntimeEnvironment.application).peekNextStartedActivity();
+        Intent activityIntent = shadowOf(application).peekNextStartedActivity();
         assertNull(activityIntent);
     }
 
@@ -129,7 +132,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
         clipDataIntent.putExtra(RemoteInput.EXTRA_RESULTS_DATA, resultsBundle);
         intent.setClipData(ClipData.newIntent(RESULTS_CLIP_LABEL, clipDataIntent));
 
-        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+        iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
@@ -147,7 +150,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
         intent.putExtras(IterableTestUtils.getBundleFromJsonResource("push_payload_legacy_deep_link.json"));
         intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
 
-        iterablePushActionReceiver.onReceive(RuntimeEnvironment.application, intent);
+        iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
 
         // Verify that IterableActionRunner was called with openUrl action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
