@@ -18,6 +18,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class IterableInAppManagerSyncTest extends BaseTest {
 
@@ -79,6 +81,39 @@ public class IterableInAppManagerSyncTest extends BaseTest {
         IterableApi.initialize(getApplicationContext(), "apiKey");
         IterableApi.getInstance().setEmail("test@email.com");
         verify(inAppManagerMock).syncInApp();
+    }
+
+    @Test
+    public void testRecalledMessagesAreConsumed() throws Exception {
+        // Create a test message in local storage
+        IterableInAppMessage testMessage = InAppTestUtils.getTestInboxInAppWithId("test-message-1");
+        doReturn(testMessage).when(storageMock).getMessage("test-message-1");
+        
+        // Create a storage with only this message
+        doReturn(new IterableInAppMessage[] { testMessage }).when(storageMock).getMessages();
+        
+        // Setup the API to return empty message list (simulating recall)
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                IterableHelper.IterableActionHandler handler = invocation.getArgument(1);
+                // Return an empty message list
+                handler.execute("{\"" + IterableConstants.ITERABLE_IN_APP_MESSAGE + "\": []}");
+                return null;
+            }
+        }).when(iterableApiMock).getInAppMessages(any(Integer.class), any(IterableHelper.IterableActionHandler.class));
+        
+        // Verify message is not consumed initially
+        assertFalse(testMessage.isConsumed());
+        
+        // Sync with remote queue
+        inAppManager.syncInApp();
+        
+        // Verify that the message was marked as consumed
+        assertTrue(testMessage.isConsumed());
+        
+        // Verify that inAppConsume was called
+        verify(iterableApiMock).inAppConsume(testMessage, null, null, null, null);
     }
 
 }
