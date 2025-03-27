@@ -81,7 +81,7 @@ tasks.withType(Test) {
     jacoco.excludes = ['jdk.internal.*']
 }
 
-task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest', 'createDebugCoverageReport']) {
+task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     group = "reporting"
     description = "Generate unified Jacoco code coverage report"
     reports {
@@ -116,10 +116,17 @@ task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest', 
 
     sourceDirectories.setFrom(files([mainSrc, mainKotlinSrc]))
     classDirectories.setFrom(files([debugTree, kotlinDebugTree]))
-    executionData.setFrom(fileTree(dir: "$buildDir", includes: [
-            "jacoco/testDebugUnitTest.exec",
-            "outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec"
-    ]))
+    
+    // Only include unit test execution data by default
+    def execData = fileTree(dir: "$buildDir", includes: ["jacoco/testDebugUnitTest.exec"])
+    
+    // Add instrumentation test data if available
+    def instrumentationData = fileTree(dir: "$buildDir", includes: ["outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec"])
+    if (instrumentationData.files.size() > 0) {
+        execData.include(instrumentationData.includes)
+    }
+    
+    executionData.setFrom(execData)
 }
 
 tasks.matching { it.name.contains('jacocoDebugAndroidTestReport') }.all { task ->
