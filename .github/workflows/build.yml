@@ -118,6 +118,7 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: |
             ./iterableapi/build/reports/jacoco/jacocoTestDebugUnitTestReport/jacocoTestDebugUnitTestReport.xml,
             ./iterableapi-ui/build/reports/jacoco/jacocoTestDebugUnitTestReport/jacocoTestDebugUnitTestReport.xml,
@@ -126,5 +127,8 @@ jobs:
           fail_ci_if_error: false
           verbose: true
       
-      # Fallback using bash uploader (if codecov-action fails)
-      - run: bash <(curl -s https://codecov.io/bash)
+      # Fallback using bash uploader with explicit token
+      - name: Upload to Codecov via bash uploader
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: bash <(curl -s https://codecov.io/bash) -v
