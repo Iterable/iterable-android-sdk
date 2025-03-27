@@ -367,8 +367,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 // Mark message as consumed before removing it to prevent it from being displayed
                 localMessage.setConsumed(true);
-                api.inAppConsume(localMessage, null, null, null, null);
-                
                 storage.removeMessage(localMessage);
 
                 changed = true;
