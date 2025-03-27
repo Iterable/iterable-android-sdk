@@ -1,4 +1,54 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    after_n_builds: 2
+    wait_for_ci: yes
+
 coverage:
+  precision: 2
+  round: down
+  range: "70...100"
   status:
-    project: off
-    patch: off
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: false
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+        informational: false
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+ignore:
+  - "**/test/**/*"
+  - "**/androidTest/**/*"
+  - "**/*Test.java"
+  - "**/R.class"
+  - "**/R$*.class"
+  - "**/BuildConfig.class"
+  - "**/Manifest*.*"
+  - "**/*$ViewInjector*.*"
+
+flags:
+  iterableapi:
+    paths:
+      - iterableapi/src/main/
+  iterableapi-ui:
+    paths:
+      - iterableapi-ui/src/main/
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: no
+  require_base: no
+  require_head: yes

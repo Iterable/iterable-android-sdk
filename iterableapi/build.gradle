@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'checkstyle'
+apply plugin: 'jacoco'
 
 android {
     compileSdk 34
@@ -118,4 +119,42 @@ afterEvaluate {
     javadoc.classpath += files(android.libraryVariants.collect { variant -> variant.javaCompile.classpath.files })
     javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/r/${variant.flavorName}/${variant.buildType.name}" })
     javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/buildConfig/${variant.flavorName}/${variant.buildType.name}" })
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
+}
+
+task jacocoTestDebugUnitTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
+    group = "reporting"
+    description = "Generate Jacoco code coverage report"
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+    def fileFilter = [
+            '**/*Test*.*',
+            '**/AutoValue_*.*',
+            '**/R.class',
+            '**/R$*.class',
+            '**/Manifest*.*',
+            'android/**/*.*',
+            '**/BuildConfig.*',
+            '**/Lambda$*.class',
+            '**/Lambda.class',
+            '**/*Lambda.class',
+            '**/*Lambda*.class'
+    ]
+
+    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
+    def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: fileFilter)
+    def mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.from = files([mainSrc])
+    classDirectories.from = files([debugTree, kotlinDebugTree])
+    executionData.from = fileTree(dir: "$buildDir", includes: [
+            "jacoco/testDebugUnitTest.exec"
+    ])
 }
