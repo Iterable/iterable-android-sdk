@@ -81,7 +81,7 @@ tasks.withType(Test) {
     jacoco.excludes = ['jdk.internal.*']
 }
 
-task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
+task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest', 'createDebugCoverageReport']) {
     group = "reporting"
     description = "Generate unified Jacoco code coverage report"
     reports {
@@ -109,62 +109,19 @@ task jacocoDebugTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest'])
             '**/*$ViewInjector*.class',
     ]
 
-    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
-    def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/classes", excludes: fileFilter)
-    def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/classes", excludes: fileFilter)
+    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
+    def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: fileFilter)
     def mainSrc = "${project.projectDir}/src/main/java"
-    def sdkSrc = "${project.projectDir}/../iterableapi/src/main/java"
-    def sdkUiSrc = "${project.projectDir}/../iterableapi-ui/src/main/java"
+    def mainKotlinSrc = "${project.projectDir}/src/main/kotlin"
 
-    sourceDirectories.from = files([mainSrc])
-    classDirectories.from = files([debugTree])
-    additionalSourceDirs.from = files([sdkSrc, sdkUiSrc])
-    additionalClassDirs.from = files([sdkTree, sdkUiTree])
-    executionData.from = fileTree(dir: "$buildDir", includes: [
-            "jacoco/testDebugUnitTest.exec"
-    ])
+    sourceDirectories.setFrom(files([mainSrc, mainKotlinSrc]))
+    classDirectories.setFrom(files([debugTree, kotlinDebugTree]))
+    executionData.setFrom(fileTree(dir: "$buildDir", includes: [
+            "jacoco/testDebugUnitTest.exec",
+            "outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec"
+    ]))
 }
 
-task jacocoDebugAndroidTestReport(type: JacocoReport, dependsOn: ['connectedCheck']) {
-    group = "reporting"
-    description = "Generate Jacoco code coverage report for instumentation tests"
-
-    reports {
-        xml.required = true
-        html.required = true
-        csv.required = false
-    }
-
-    def fileFilter = [
-            '**/*Test*.*',
-            '**/AutoValue_*.*',
-            '**/*JavascriptBridge.class',
-            '**/R.class',
-            '**/R$*.class',
-            '**/Manifest*.*',
-            'android/**/*.*',
-            '**/BuildConfig.*',
-            '**/*$ViewBinder*.*',
-            '**/*$ViewInjector*.*',
-            '**/Lambda$*.class',
-            '**/Lambda.class',
-            '**/*Lambda.class',
-            '**/*Lambda*.class',
-            '**/*$InjectAdapter.class',
-            '**/*$ModuleAdapter.class',
-            '**/*$ViewInjector*.class',
-    ]
-
-    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter) //we use "debug" build type for test coverage (can be other)
-    def sdkTree = fileTree(dir: "${buildDir}/../../iterableapi/build/intermediates/javac/debug/classes", excludes: fileFilter)
-    def sdkUiTree = fileTree(dir: "${buildDir}/../../iterableapi-ui/build/intermediates/javac/debug/classes", excludes: fileFilter)
-    def mainSrc = "${project.projectDir}/src/main/java"
-    def sdkSrc = "${project.projectDir}/../iterableapi/src/main/java"
-    def sdkUiSrc = "${project.projectDir}/../iterableapi-ui/src/main/java"
-
-    sourceDirectories.from = files([mainSrc])
-    classDirectories.from = files([debugTree])
-    additionalSourceDirs.from = files([sdkSrc, sdkUiSrc])
-    additionalClassDirs.from = files([sdkTree, sdkUiTree])
-    executionData.from = fileTree(dir: "$buildDir", include: "outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
+tasks.matching { it.name.contains('jacocoDebugAndroidTestReport') }.all { task ->
+    task.enabled = false
 }

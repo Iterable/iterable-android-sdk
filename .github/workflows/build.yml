@@ -46,15 +46,17 @@ jobs:
       - run: touch local.properties
 
       - name: Test
-        run: ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :iterableapi-ui:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport  
+        run: |
+          ./gradlew :iterableapi:jacocoTestDebugUnitTestReport :iterableapi-ui:jacocoTestDebugUnitTestReport :app:jacocoDebugTestReport
+          find . -name "*.xml" -path "*/build/reports/jacoco/*"
 
       - name: Upload coverage data
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: unit-tests
           path: |
-            ./**/build/**/jacoco*.xml
-            ./**/build/**/report.xml
+            ./**/build/reports/jacoco/**/*.xml
+            ./**/build/reports/coverage/**/*.xml
 
   instrumentation-tests:
     name: Instrumentation tests
@@ -125,10 +127,8 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: |
-            ./iterableapi/build/reports/jacoco/jacocoTestDebugUnitTestReport/jacocoTestDebugUnitTestReport.xml,
-            ./iterableapi-ui/build/reports/jacoco/jacocoTestDebugUnitTestReport/jacocoTestDebugUnitTestReport.xml,
-            ./app/build/reports/jacoco/jacocoDebugTestReport/jacocoDebugTestReport.xml,
-            ./iterableapi/build/reports/coverage/androidTest/debug/connected/report.xml
+            ./**/build/reports/jacoco/**/*.xml,
+            ./**/build/reports/coverage/**/*.xml
           fail_ci_if_error: false
           verbose: true
       
@@ -136,7 +136,8 @@ jobs:
       - name: Upload to Codecov via bash uploader
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: bash <(curl -s https://codecov.io/bash) -v
+        run: |
+          bash <(curl -s https://codecov.io/bash) -v -s "**/build/reports/jacoco/" -s "**/build/reports/coverage/"
 
       - uses: actions/cache@v3
         with:
