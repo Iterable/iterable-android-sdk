@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests, instrumentation-tests]
     env:
-      JACOCO_SOURCE_PATH: "iterableapi/src/main/java iterableapi-ui/src/main/java"
+      JACOCO_SOURCE_PATH: "iterableapi/src/main/java iterableapi-ui/src/main/java app/src/main/java"
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

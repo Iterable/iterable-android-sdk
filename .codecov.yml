@@ -45,6 +45,9 @@ flags:
   iterableapi-ui:
     paths:
       - iterableapi-ui/src/main/
+  app:
+    paths:
+      - app/src/main/
 
 comment:
   layout: "reach,diff,flags,files,footer"
