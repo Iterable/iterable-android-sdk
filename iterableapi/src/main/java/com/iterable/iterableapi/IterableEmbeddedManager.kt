@@ -163,7 +163,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
+    public fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
         if ((clickedUrl != null) && clickedUrl.toString().isNotEmpty()) {
             if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
                 // This is an action:// URL, pass that to the custom action handler
