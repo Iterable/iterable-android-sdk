@@ -21,6 +21,8 @@ import static org.mockito.Mockito.verify;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+
 public class IterableInAppManagerSyncTest extends BaseTest {
 
     @Mock
@@ -90,7 +92,7 @@ public class IterableInAppManagerSyncTest extends BaseTest {
         doReturn(testMessage).when(storageMock).getMessage("test-message-1");
         
         // Create a storage with only this message
-        doReturn(new IterableInAppMessage[] { testMessage }).when(storageMock).getMessages();
+        doReturn(Arrays.asList(testMessage)).when(storageMock).getMessages();
         
         // Setup the API to return empty message list (simulating recall)
         doAnswer(new Answer() {
