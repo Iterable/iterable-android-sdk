@@ -17,6 +17,10 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 34
@@ -120,9 +124,4 @@ android.libraryVariants.configureEach { variant ->
         javadoc.classpath += files("build/generated/source/r/${variant.flavorName}/${variant.buildType.name}")
         javadoc.classpath += files("build/generated/source/buildConfig/${variant.flavorName}/${variant.buildType.name}")
     }
-}
-
-// Add this kotlin block to match Java's JVM target
-kotlin {
-    jvmToolchain(17)
 }
