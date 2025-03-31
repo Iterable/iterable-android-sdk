@@ -6,7 +6,6 @@ android {
     compileSdk 34
 
     namespace 'com.iterable.iterableapi'
-    testNamespace 'iterable.com.iterableapi'
 
     buildFeatures {
         buildConfig = true
