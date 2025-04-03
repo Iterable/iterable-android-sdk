@@ -21,23 +21,24 @@ jobs:
 
       - name: Import GPG Key
         run: |
-          mkdir -p $HOME/.gnupg
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
-          gpg --list-secret-keys
-          echo "GPG key imported successfully"
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d > private.gpg
+          gpg --batch --import private.gpg
+          rm private.gpg
 
       - name: Build
-        run: ./gradlew clean build --info --build-cache
+        run: ./gradlew clean build
         env:
           ORG_GRADLE_PROJECT_SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_SIGNING_SECRET_KEY_RING_FILE: ~/.gnupg/secring.gpg
           ORG_GRADLE_PROJECT_NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           ORG_GRADLE_PROJECT_NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
       - name: Publish to Maven Central
-        run: ./gradlew uploadArchives --info --build-cache
+        run: ./gradlew uploadArchives
         env:
           ORG_GRADLE_PROJECT_SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_SIGNING_SECRET_KEY_RING_FILE: ~/.gnupg/secring.gpg
           ORG_GRADLE_PROJECT_NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           ORG_GRADLE_PROJECT_NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }} 
