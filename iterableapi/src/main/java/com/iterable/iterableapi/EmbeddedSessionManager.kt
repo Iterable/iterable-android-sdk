@@ -1,9 +1,7 @@
 package com.iterable.iterableapi
 
-import androidx.annotation.RestrictTo
 import java.util.Date
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class EmbeddedSessionManager {
 
     private val TAG = "EmbeddedSessionManager"
