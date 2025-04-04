@@ -90,10 +90,10 @@ public class IterableInAppManagerSyncTest extends BaseTest {
         // Create a test message in local storage
         IterableInAppMessage testMessage = InAppTestUtils.getTestInboxInAppWithId("test-message-1");
         doReturn(testMessage).when(storageMock).getMessage("test-message-1");
-        
+
         // Create a storage with only this message
         doReturn(Arrays.asList(testMessage)).when(storageMock).getMessages();
-        
+
         // Setup the API to return empty message list (simulating recall)
         doAnswer(new Answer() {
             @Override
@@ -104,16 +104,16 @@ public class IterableInAppManagerSyncTest extends BaseTest {
                 return null;
             }
         }).when(iterableApiMock).getInAppMessages(any(Integer.class), any(IterableHelper.IterableActionHandler.class));
-        
+
         // Verify message is not consumed initially
         assertFalse(testMessage.isConsumed());
-        
+
         // Sync with remote queue
         inAppManager.syncInApp();
-        
+
         // Verify that the message was marked as consumed
         assertTrue(testMessage.isConsumed());
-        
+
         // Verify that inAppConsume was called
         verify(iterableApiMock).inAppConsume(testMessage, null, null, null, null);
     }
