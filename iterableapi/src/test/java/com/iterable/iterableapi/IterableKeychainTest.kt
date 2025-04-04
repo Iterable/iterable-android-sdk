@@ -326,4 +326,52 @@ class IterableKeychainTest {
         verify(mockEncryptor, never()).encrypt(isNull())
         verify(mockEncryptor, never()).decrypt(isNull())
     }
+
+    @Test
+    fun testEncryptionDisabled() {
+        // Create a new keychain with encryption disabled
+        val plaintextKeychain = IterableKeychain(
+            mockContext,
+            mockDecryptionFailureHandler,
+            null,
+            true
+        )
+        
+        val testEmail = "test@example.com"
+        val testUserId = "user123"
+        val testToken = "auth-token-123"
+        
+        // Mock the SharedPreferences to return plaintext values
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull())).thenReturn(testEmail)
+        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testUserId)
+        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull())).thenReturn(testToken)
+
+        // Mock plaintext flag checks to return true when encryption is disabled
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-auth-token_plaintext"), eq(false))).thenReturn(true)
+        
+        // Test save operations
+        plaintextKeychain.saveEmail(testEmail)
+        plaintextKeychain.saveUserId(testUserId)
+        plaintextKeychain.saveAuthToken(testToken)
+        
+        // Verify values are stored as plaintext
+        verify(mockEditor).putString(eq("iterable-email"), eq(testEmail))
+        verify(mockEditor).putString(eq("iterable-user-id"), eq(testUserId))
+        verify(mockEditor).putString(eq("iterable-auth-token"), eq(testToken))
+        
+        // Verify plaintext suffix flags are set for better compatibility
+        verify(mockEditor).putBoolean(eq("iterable-email_plaintext"), eq(true))
+        verify(mockEditor).putBoolean(eq("iterable-user-id_plaintext"), eq(true))
+        verify(mockEditor).putBoolean(eq("iterable-auth-token_plaintext"), eq(true))
+        
+        // Test get operations
+        assertEquals(testEmail, plaintextKeychain.getEmail())
+        assertEquals(testUserId, plaintextKeychain.getUserId())
+        assertEquals(testToken, plaintextKeychain.getAuthToken())
+        
+        // Verify IterableDataEncryptor was never created
+        assertNull(plaintextKeychain.encryptor)
+    }
 } 
