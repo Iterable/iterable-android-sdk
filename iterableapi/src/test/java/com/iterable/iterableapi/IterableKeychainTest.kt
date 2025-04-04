@@ -345,6 +345,11 @@ class IterableKeychainTest {
         `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull())).thenReturn(testEmail)
         `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testUserId)
         `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull())).thenReturn(testToken)
+
+        // Mock plaintext flag checks to return true when encryption is disabled
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-auth-token_plaintext"), eq(false))).thenReturn(true)
         
         // Test save operations
         plaintextKeychain.saveEmail(testEmail)
@@ -356,8 +361,10 @@ class IterableKeychainTest {
         verify(mockEditor).putString(eq("iterable-user-id"), eq(testUserId))
         verify(mockEditor).putString(eq("iterable-auth-token"), eq(testToken))
         
-        // Verify no plaintext suffix flags are used
-        verify(mockEditor, never()).putBoolean(matches(".*_plaintext"), anyBoolean())
+        // Verify plaintext suffix flags are set for better compatibility
+        verify(mockEditor).putBoolean(eq("iterable-email_plaintext"), eq(true))
+        verify(mockEditor).putBoolean(eq("iterable-user-id_plaintext"), eq(true))
+        verify(mockEditor).putBoolean(eq("iterable-auth-token_plaintext"), eq(true))
         
         // Test get operations
         assertEquals(testEmail, plaintextKeychain.getEmail())
