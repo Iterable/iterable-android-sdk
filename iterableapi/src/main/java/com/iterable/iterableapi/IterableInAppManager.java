@@ -321,6 +321,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     synchronized void removeMessage(String messageId) {
         IterableInAppMessage message = storage.getMessage(messageId);
         if (message != null) {
+            // Mark message as consumed before removing it to prevent it from being displayed
+            message.setConsumed(true);
             storage.removeMessage(message);
         }
         notifyOnChange();
@@ -365,7 +367,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
         for (IterableInAppMessage localMessage : storage.getMessages()) {
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
+                // Mark message as consumed before removing it to prevent it from being displayed
+                localMessage.setConsumed(true);
                 storage.removeMessage(localMessage);
+                api.inAppConsume(localMessage, null, null, null, null);
 
                 changed = true;
             }

@@ -6,7 +6,6 @@ android {
     compileSdk 34
 
     namespace 'com.iterable.iterableapi'
-    testNamespace 'iterable.com.iterableapi'
 
     buildFeatures {
         buildConfig = true
@@ -15,6 +14,10 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -114,8 +117,10 @@ task checkstyle(type: Checkstyle) {
 }
 
 // A hack to import the classpath and BuildConfig into the javadoc task
-afterEvaluate {
-    javadoc.classpath += files(android.libraryVariants.collect { variant -> variant.javaCompile.classpath.files })
-    javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/r/${variant.flavorName}/${variant.buildType.name}" })
-    javadoc.classpath += files(android.libraryVariants.collect { variant -> "build/generated/source/buildConfig/${variant.flavorName}/${variant.buildType.name}" })
+android.libraryVariants.configureEach { variant ->
+    javadoc.doFirst {
+        javadoc.classpath += files(variant.javaCompileProvider.get().classpath.files)
+        javadoc.classpath += files("build/generated/source/r/${variant.flavorName}/${variant.buildType.name}")
+        javadoc.classpath += files("build/generated/source/buildConfig/${variant.flavorName}/${variant.buildType.name}")
+    }
 }
