@@ -22,38 +22,46 @@ class IterableKeychain {
     }
 
     private var sharedPrefs: SharedPreferences
-    internal var encryptor: IterableDataEncryptor
+    internal var encryptor: IterableDataEncryptor? = null
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
+    private val encryptionDisabled: Boolean
 
     @JvmOverloads
     constructor(
         context: Context,
         decryptionFailureHandler: IterableDecryptionFailureHandler? = null,
-        migrator: IterableKeychainEncryptedDataMigrator? = null
+        migrator: IterableKeychainEncryptedDataMigrator? = null,
+        encryptionDisabled: Boolean = false
     ) {
         this.decryptionFailureHandler = decryptionFailureHandler
+        this.encryptionDisabled = encryptionDisabled
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
-        encryptor = IterableDataEncryptor()
-        IterableLogger.v(TAG, "SharedPreferences being used with encryption")
+        
+        if (encryptionDisabled) {
+            IterableLogger.v(TAG, "SharedPreferences being used without encryption")
+        } else {
+            encryptor = IterableDataEncryptor()
+            IterableLogger.v(TAG, "SharedPreferences being used with encryption")
 
-        try {
-            val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
-            if (!dataMigrator.isMigrationCompleted()) {
-                dataMigrator.setMigrationCompletionCallback { error ->
-                    error?.let {
-                        IterableLogger.w(TAG, "Migration failed", it)
-                        handleDecryptionError(Exception(it))
+            try {
+                val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
+                if (!dataMigrator.isMigrationCompleted()) {
+                    dataMigrator.setMigrationCompletionCallback { error ->
+                        error?.let {
+                            IterableLogger.w(TAG, "Migration failed", it)
+                            handleDecryptionError(Exception(it))
+                        }
                     }
+                    dataMigrator.attemptMigration()
+                    IterableLogger.v(TAG, "Migration completed")
                 }
-                dataMigrator.attemptMigration()
-				IterableLogger.v(TAG, "Migration completed")
-			}
-        } catch (e: Exception) {
-            IterableLogger.w(TAG, "Migration failed, clearing data", e)
-            handleDecryptionError(e)
+            } catch (e: Exception) {
+                IterableLogger.w(TAG, "Migration failed, clearing data", e)
+                handleDecryptionError(e)
+            }
         }
     }
 
@@ -71,7 +79,7 @@ class IterableKeychain {
 
         try {
             // Use timeout for key reset operation
-            runWithTimeout { encryptor.resetKeys(); Unit }
+            encryptor?.let { runWithTimeout { it.resetKeys(); Unit } }
         } catch (ex: Exception) {
             // Just log if resetKeys times out or fails - don't recurse
             IterableLogger.e(TAG, "Failed to reset keys with timeout", ex)
@@ -95,6 +103,10 @@ class IterableKeychain {
     }
 
     private fun secureGet(key: String): String? {
+        if (encryptionDisabled) {
+            return sharedPrefs.getString(key, null)
+        }
+        
         // First check if it's stored in plaintext
         if (sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)) {
             return sharedPrefs.getString(key, null)
@@ -103,7 +115,7 @@ class IterableKeychain {
         val encryptedValue = sharedPrefs.getString(key, null) ?: return null
         
         return try {
-            runWithTimeout { encryptor.decrypt(encryptedValue) }
+            encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } }
         } catch (e: Exception) {
             handleDecryptionError(e)
             null
@@ -113,15 +125,26 @@ class IterableKeychain {
     private fun secureSave(key: String, value: String?) {
         val editor = sharedPrefs.edit()
         if (value == null) {
-            editor.remove(key).remove(key + PLAINTEXT_SUFFIX).apply()
+            if (encryptionDisabled) {
+                editor.remove(key).apply()
+            } else {
+                editor.remove(key).remove(key + PLAINTEXT_SUFFIX).apply()
+            }
+            return
+        }
+
+        if (encryptionDisabled) {
+            editor.putString(key, value).apply()
             return
         }
 
         try {
-            val encrypted = runWithTimeout { encryptor.encrypt(value) }
-            editor.putString(key, encrypted)
-                .remove(key + PLAINTEXT_SUFFIX)
-                .apply()
+            encryptor?.let {
+                val encrypted = runWithTimeout { it.encrypt(value) }
+                editor.putString(key, encrypted)
+                    .remove(key + PLAINTEXT_SUFFIX)
+                    .apply()
+            }
         } catch (e: Exception) {
             handleDecryptionError(e)
             editor.putString(key, value)
