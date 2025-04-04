@@ -2,12 +2,9 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Handler
-import android.os.Looper
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 class IterableKeychain {
     companion object {
@@ -78,10 +75,8 @@ class IterableKeychain {
             .apply()
 
         try {
-            // Use timeout for key reset operation
             encryptor?.let { runWithTimeout { it.resetKeys(); Unit } }
         } catch (ex: Exception) {
-            // Just log if resetKeys times out or fails - don't recurse
             IterableLogger.e(TAG, "Failed to reset keys with timeout", ex)
         }
 
@@ -103,17 +98,18 @@ class IterableKeychain {
     }
 
     private fun secureGet(key: String): String? {
+        val hasPlainText = sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)
         if (encryptionDisabled) {
-            return sharedPrefs.getString(key, null)
-        }
-        
-        // First check if it's stored in plaintext
-        if (sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)) {
+            if (hasPlainText) {
+                return sharedPrefs.getString(key, null)
+            } else {
+                return null
+            }
+        } else if (hasPlainText) {
             return sharedPrefs.getString(key, null)
         }
         
         val encryptedValue = sharedPrefs.getString(key, null) ?: return null
-        
         return try {
             encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } }
         } catch (e: Exception) {
@@ -125,16 +121,12 @@ class IterableKeychain {
     private fun secureSave(key: String, value: String?) {
         val editor = sharedPrefs.edit()
         if (value == null) {
-            if (encryptionDisabled) {
-                editor.remove(key).apply()
-            } else {
-                editor.remove(key).remove(key + PLAINTEXT_SUFFIX).apply()
-            }
+            editor.remove(key).remove(key + PLAINTEXT_SUFFIX).apply()
             return
         }
 
         if (encryptionDisabled) {
-            editor.putString(key, value).apply()
+            editor.putString(key, value).putBoolean(key + PLAINTEXT_SUFFIX, true).apply()
             return
         }
 
