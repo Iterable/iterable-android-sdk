@@ -2,6 +2,12 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Handler
+import android.os.Looper
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 class IterableKeychain {
     companion object {
@@ -10,6 +16,9 @@ class IterableKeychain {
 		const val KEY_USER_ID = "iterable-user-id"
 		const val KEY_AUTH_TOKEN = "iterable-auth-token"
         private const val PLAINTEXT_SUFFIX = "_plaintext"
+        private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
+        
+        private val cryptoExecutor = Executors.newSingleThreadExecutor()
     }
 
     private var sharedPrefs: SharedPreferences
@@ -48,6 +57,10 @@ class IterableKeychain {
         }
     }
 
+    private fun <T> runWithTimeout(callable: Callable<T>): T {
+        return cryptoExecutor.submit(callable).get(CRYPTO_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+    }
+
     private fun handleDecryptionError(e: Exception? = null) {
         IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
         sharedPrefs.edit()
@@ -56,7 +69,14 @@ class IterableKeychain {
             .remove(KEY_AUTH_TOKEN)
             .apply()
 
-        encryptor.resetKeys()
+        try {
+            // Use timeout for key reset operation
+            runWithTimeout { encryptor.resetKeys(); Unit }
+        } catch (ex: Exception) {
+            // Just log if resetKeys times out or fails - don't recurse
+            IterableLogger.e(TAG, "Failed to reset keys with timeout", ex)
+        }
+
         decryptionFailureHandler?.let { handler ->
             val exception = e ?: Exception("Unknown decryption error")
             try {
@@ -80,8 +100,10 @@ class IterableKeychain {
             return sharedPrefs.getString(key, null)
         }
         
+        val encryptedValue = sharedPrefs.getString(key, null) ?: return null
+        
         return try {
-            sharedPrefs.getString(key, null)?.let { encryptor.decrypt(it) }
+            runWithTimeout { encryptor.decrypt(encryptedValue) }
         } catch (e: Exception) {
             handleDecryptionError(e)
             null
@@ -96,7 +118,8 @@ class IterableKeychain {
         }
 
         try {
-            editor.putString(key, encryptor.encrypt(value))
+            val encrypted = runWithTimeout { encryptor.encrypt(value) }
+            editor.putString(key, encrypted)
                 .remove(key + PLAINTEXT_SUFFIX)
                 .apply()
         } catch (e: Exception) {
