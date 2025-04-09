@@ -14,6 +14,7 @@ class IterableKeychain {
 		const val KEY_AUTH_TOKEN = "iterable-auth-token"
         private const val PLAINTEXT_SUFFIX = "_plaintext"
         private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
+        private const val KEY_ENCRYPTION_DISABLED = "iterable-encryption-disabled"
         
         private val cryptoExecutor = Executors.newSingleThreadExecutor()
     }
@@ -31,7 +32,7 @@ class IterableKeychain {
         encryptionDisabled: Boolean = false
     ) {
         this.decryptionFailureHandler = decryptionFailureHandler
-        this.encryptionDisabled = encryptionDisabled
+        this.encryptionDisabled = encryptionDisabled || sharedPrefs.getBoolean(KEY_ENCRYPTION_DISABLED, false)
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
@@ -67,11 +68,14 @@ class IterableKeychain {
     }
 
     private fun handleDecryptionError(e: Exception? = null) {
-        IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
+        IterableLogger.w(TAG, "Decryption failed, permanently disabling encryption")
+        
+        // Permanently disable encryption for this device
         sharedPrefs.edit()
             .remove(KEY_EMAIL)
             .remove(KEY_USER_ID)
             .remove(KEY_AUTH_TOKEN)
+            .putBoolean(KEY_ENCRYPTION_DISABLED, true)
             .apply()
 
         try {
