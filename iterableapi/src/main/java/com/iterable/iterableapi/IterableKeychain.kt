@@ -68,7 +68,7 @@ class IterableKeychain {
     }
 
     private fun handleDecryptionError(e: Exception? = null) {
-        IterableLogger.w(TAG, "Decryption failed, permanently disabling encryption")
+        IterableLogger.w(TAG, "Decryption failed, permanently disabling encryption for this device please login again"
         
         // Permanently disable encryption for this device
         sharedPrefs.edit()
@@ -77,6 +77,8 @@ class IterableKeychain {
             .remove(KEY_AUTH_TOKEN)
             .putBoolean(KEY_ENCRYPTION_DISABLED, true)
             .apply()
+
+        encryptionDisabled = true
 
         try {
             encryptor?.let { runWithTimeout { it.resetKeys(); Unit } }
