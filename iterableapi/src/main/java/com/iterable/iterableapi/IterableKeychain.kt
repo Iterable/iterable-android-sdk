@@ -22,7 +22,7 @@ class IterableKeychain {
     private var sharedPrefs: SharedPreferences
     internal var encryptor: IterableDataEncryptor? = null
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
-    private val encryptionDisabled: Boolean
+    private var encryptionDisabled: Boolean
 
     @JvmOverloads
     constructor(
@@ -31,13 +31,13 @@ class IterableKeychain {
         migrator: IterableKeychainEncryptedDataMigrator? = null,
         encryptionDisabled: Boolean = false
     ) {
-        this.decryptionFailureHandler = decryptionFailureHandler
-        this.encryptionDisabled = encryptionDisabled || sharedPrefs.getBoolean(KEY_ENCRYPTION_DISABLED, false)
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
-        
+        this.decryptionFailureHandler = decryptionFailureHandler
+        this.encryptionDisabled = encryptionDisabled || sharedPrefs.getBoolean(KEY_ENCRYPTION_DISABLED, false)
+
         if (encryptionDisabled) {
             IterableLogger.v(TAG, "SharedPreferences being used without encryption")
         } else {
