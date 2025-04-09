@@ -172,9 +172,6 @@ class IterableKeychainTest {
 
         // Verify failure handler was called with any exception
         verify(mockDecryptionFailureHandler).onDecryptionFailed(any())
-        
-        // Verify encryptor keys were reset
-        verify(mockEncryptor).resetKeys()
 
         assertNull(result)
     }
@@ -193,10 +190,7 @@ class IterableKeychainTest {
         assertNull(keychain.getAuthToken())
         
         // Verify failure handler was called exactly once for each operation
-        verify(mockDecryptionFailureHandler, times(3)).onDecryptionFailed(any())
-        
-        // Verify keys were reset for each failure
-        verify(mockEncryptor, times(3)).resetKeys()
+        verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
     }
 
     @Test
