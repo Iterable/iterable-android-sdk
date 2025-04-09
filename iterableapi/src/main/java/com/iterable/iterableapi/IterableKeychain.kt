@@ -68,7 +68,7 @@ class IterableKeychain {
     }
 
     private fun handleDecryptionError(e: Exception? = null) {
-        IterableLogger.w(TAG, "Decryption failed, permanently disabling encryption for this device please login again"
+        IterableLogger.w(TAG, "Decryption failed, permanently disabling encryption for this device. Please login again.")
         
         // Permanently disable encryption for this device
         sharedPrefs.edit()
@@ -79,12 +79,6 @@ class IterableKeychain {
             .apply()
 
         encryptionDisabled = true
-
-        try {
-            encryptor?.let { runWithTimeout { it.resetKeys(); Unit } }
-        } catch (ex: Exception) {
-            IterableLogger.e(TAG, "Failed to reset keys with timeout", ex)
-        }
 
         decryptionFailureHandler?.let { handler ->
             val exception = e ?: Exception("Unknown decryption error")
