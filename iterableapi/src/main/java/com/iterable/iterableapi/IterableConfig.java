@@ -97,7 +97,7 @@ public class IterableConfig {
      * When set to true, disables encryption for keychain storage.
      * By default, encryption is enabled for storing sensitive user data.
      */
-    final boolean disableKeychainEncryption;
+    final boolean keychainEncryption;
 
     /**
      * Handler for decryption failures of PII information.
@@ -127,7 +127,7 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
-        disableKeychainEncryption = builder.disableKeychainEncryption;
+        keychainEncryption = builder.keychainEncryption;
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
@@ -148,7 +148,7 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean enableEmbeddedMessaging = false;
-        private boolean disableKeychainEncryption = false;
+        private boolean keychainEncryption = true;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
@@ -314,11 +314,11 @@ public class IterableConfig {
         /**
          * When set to true, disables encryption for Iterable's keychain storage.
          * By default, encryption is enabled for storing sensitive user data.
-         * @param disableKeychainEncryption Whether to disable encryption for keychain
+         * @param keychainEncryption Whether to disable encryption for keychain
          */
         @NonNull
-        public Builder setDisableKeychainEncryption(boolean disableKeychainEncryption) {
-            this.disableKeychainEncryption = disableKeychainEncryption;
+        public Builder setKeychainEncryption(boolean keychainEncryption) {
+            this.keychainEncryption = keychainEncryption;
             return this;
         }
 
