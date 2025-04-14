@@ -62,12 +62,14 @@ class IterableKeychainTest {
 
         // Mock migration-related SharedPreferences calls
         `when`(mockSharedPrefs.contains(any<String>())).thenReturn(false)
-        `when`(mockSharedPrefs.getBoolean(any<String>(), anyBoolean())).thenReturn(false)
+        // Mock encryption flag to be true by default
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-encryption-enabled"), anyBoolean())).thenReturn(true)
         `when`(mockSharedPrefs.getString(any<String>(), any())).thenReturn(null)
         
         // Mock editor.apply() to do nothing
         Mockito.doNothing().`when`(mockEditor).apply()
 
+        // Create keychain with encryption enabled (default)
         keychain = IterableKeychain(
             mockContext, 
             mockDecryptionFailureHandler
@@ -328,7 +330,7 @@ class IterableKeychainTest {
             mockContext,
             mockDecryptionFailureHandler,
             null,
-            true
+            false  // encryption = false means encryption is disabled
         )
         
         val testEmail = "test@example.com"

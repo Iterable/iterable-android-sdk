@@ -14,7 +14,7 @@ class IterableKeychain {
 		const val KEY_AUTH_TOKEN = "iterable-auth-token"
         private const val PLAINTEXT_SUFFIX = "_plaintext"
         private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
-        private const val KEY_ENCRYPTION_DISABLED = "iterable-encryption-disabled"
+        private const val KEY_ENCRYPTION_ENABLED = "iterable-encryption-enabled"
         
         private val cryptoExecutor = Executors.newSingleThreadExecutor()
     }
@@ -22,23 +22,23 @@ class IterableKeychain {
     private var sharedPrefs: SharedPreferences
     internal var encryptor: IterableDataEncryptor? = null
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
-    private var encryptionDisabled: Boolean
+    private var encryption: Boolean
 
     @JvmOverloads
     constructor(
         context: Context,
         decryptionFailureHandler: IterableDecryptionFailureHandler? = null,
         migrator: IterableKeychainEncryptedDataMigrator? = null,
-        encryptionDisabled: Boolean = false
+        encryption: Boolean = true
     ) {
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
         this.decryptionFailureHandler = decryptionFailureHandler
-        this.encryptionDisabled = encryptionDisabled || sharedPrefs.getBoolean(KEY_ENCRYPTION_DISABLED, false)
+        this.encryption = encryption && sharedPrefs.getBoolean(KEY_ENCRYPTION_ENABLED, true)
 
-        if (encryptionDisabled) {
+        if (!encryption) {
             IterableLogger.v(TAG, "SharedPreferences being used without encryption")
         } else {
             encryptor = IterableDataEncryptor()
@@ -75,10 +75,10 @@ class IterableKeychain {
             .remove(KEY_EMAIL)
             .remove(KEY_USER_ID)
             .remove(KEY_AUTH_TOKEN)
-            .putBoolean(KEY_ENCRYPTION_DISABLED, true)
+            .putBoolean(KEY_ENCRYPTION_ENABLED, false)
             .apply()
 
-        encryptionDisabled = true
+        encryption = false
 
         decryptionFailureHandler?.let { handler ->
             val exception = e ?: Exception("Unknown decryption error")
@@ -99,7 +99,7 @@ class IterableKeychain {
 
     private fun secureGet(key: String): String? {
         val hasPlainText = sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)
-        if (encryptionDisabled) {
+        if (!encryption) {
             if (hasPlainText) {
                 return sharedPrefs.getString(key, null)
             } else {
@@ -125,7 +125,7 @@ class IterableKeychain {
             return
         }
 
-        if (encryptionDisabled) {
+        if (!encryption) {
             editor.putString(key, value).putBoolean(key + PLAINTEXT_SUFFIX, true).apply()
             return
         }
