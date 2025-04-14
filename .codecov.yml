@@ -7,7 +7,7 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: "50...100"
   status:
     project:
       default:
@@ -45,6 +45,9 @@ flags:
   iterableapi-ui:
     paths:
       - iterableapi-ui/src/main/
+  app:
+    paths:
+      - app/src/main/
 
 comment:
   layout: "reach,diff,flags,files,footer"
