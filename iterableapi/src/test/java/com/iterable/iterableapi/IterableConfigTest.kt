@@ -25,14 +25,14 @@ class IterableConfigTest {
     fun defaultDisableKeychainEncryption() {
         val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
         val config: IterableConfig = configBuilder.build()
-        assertFalse(config.disableKeychainEncryption)
+        assertTrue(config.keychainEncryption)
     }
     
     @Test
     fun setDisableKeychainEncryption() {
         val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
-            .setDisableKeychainEncryption(true)
+            .setKeychainEncryption(false)
         val config: IterableConfig = configBuilder.build()
-        assertTrue(config.disableKeychainEncryption)
+        assertFalse(config.keychainEncryption)
     }
 }

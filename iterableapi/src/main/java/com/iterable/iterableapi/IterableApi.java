@@ -144,7 +144,7 @@ public class IterableApi {
         }
         if (keychain == null) {
             try {
-                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler, null, config.disableKeychainEncryption);
+                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler, null, config.keychainEncryption);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
             }
