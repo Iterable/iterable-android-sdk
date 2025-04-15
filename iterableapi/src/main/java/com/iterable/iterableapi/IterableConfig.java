@@ -94,6 +94,12 @@ public class IterableConfig {
     final boolean enableEmbeddedMessaging;
 
     /**
+     * When set to true, disables encryption for keychain storage.
+     * By default, encryption is enabled for storing sensitive user data.
+     */
+    final boolean keychainEncryption;
+
+    /**
      * Handler for decryption failures of PII information.
      * Before calling this handler, the SDK will clear the PII information and create new encryption keys
      */
@@ -121,6 +127,7 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
+        keychainEncryption = builder.keychainEncryption;
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
@@ -141,6 +148,7 @@ public class IterableConfig {
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
         private boolean enableEmbeddedMessaging = false;
+        private boolean keychainEncryption = true;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
@@ -288,7 +296,6 @@ public class IterableConfig {
          * Set whether the SDK should store in-apps only in memory, or in file storage
          * @param useInMemoryStorageForInApps `true` will have in-apps be only in memory
          */
-
         @NonNull
         public Builder setUseInMemoryStorageForInApps(boolean useInMemoryStorageForInApps) {
             this.useInMemoryStorageForInApps = useInMemoryStorageForInApps;
@@ -301,6 +308,17 @@ public class IterableConfig {
          */
         public Builder setEnableEmbeddedMessaging(boolean enableEmbeddedMessaging) {
             this.enableEmbeddedMessaging = enableEmbeddedMessaging;
+            return this;
+        }
+
+        /**
+         * When set to true, disables encryption for Iterable's keychain storage.
+         * By default, encryption is enabled for storing sensitive user data.
+         * @param keychainEncryption Whether to disable encryption for keychain
+         */
+        @NonNull
+        public Builder setKeychainEncryption(boolean keychainEncryption) {
+            this.keychainEncryption = keychainEncryption;
             return this;
         }
 
