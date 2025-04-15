@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.5.12]
+
 ### Fixed
 - `EmbeddedSessionManager` methods is now accessible which were library group restricted before.
 

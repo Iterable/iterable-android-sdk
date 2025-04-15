@@ -61,7 +61,7 @@ dependencies {
 
 ext {
     libraryName = 'iterableapi-ui'
-    libraryVersion = '3.5.11'
+    libraryVersion = '3.5.12'
 }
 
 if (hasProperty("mavenPublishEnabled")) {
