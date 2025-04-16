@@ -24,6 +24,9 @@ IterableConfig config = new IterableConfig.Builder()
 IterableApi.initialize(context, apiKey, config);
 ```
 
+### Changed
+- Thanks to @MGaetan89 for modernizing the test infrastructure by replacing deprecated Robolectric APIs with AndroidX Test alternatives and removing unnecessary dependencies.
+
 ## [3.5.11]
 
 ### Fixed
