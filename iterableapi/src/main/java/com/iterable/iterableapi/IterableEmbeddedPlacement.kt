@@ -46,7 +46,7 @@ data class IterableEmbeddedPlacement(
     }
 }
 
-data class IterableEmbeddedMessage (
+public data class IterableEmbeddedMessage (
     val metadata: EmbeddedMessageMetadata,
     val elements: EmbeddedMessageElements? = null,
     val payload: JSONObject? = null
@@ -82,7 +82,7 @@ data class IterableEmbeddedMessage (
     }
 }
 
-class EmbeddedMessageMetadata(
+public class EmbeddedMessageMetadata(
     var messageId: String,
     val placementId: Long,
     val campaignId: Int? = null,
@@ -117,7 +117,7 @@ class EmbeddedMessageMetadata(
     }
 }
 
-class EmbeddedMessageElements (
+public class EmbeddedMessageElements (
     val title: String? = null,
     val body: String? = null,
     val mediaURL: String? = null,
@@ -213,7 +213,7 @@ class EmbeddedMessageElements (
     }
 }
 
-class EmbeddedMessageElementsButton (
+public class EmbeddedMessageElementsButton (
     val id: String,
     val title: String? = null,
     val action: EmbeddedMessageElementsButtonAction? = null
@@ -258,7 +258,7 @@ class EmbeddedMessageElementsButton (
     }
 }
 
-class EmbeddedMessageElementsDefaultAction (
+public class EmbeddedMessageElementsDefaultAction (
     val type: String,
     val data: String
 ) {
@@ -287,7 +287,7 @@ class EmbeddedMessageElementsDefaultAction (
     }
 }
 
-class EmbeddedMessageElementsButtonAction (
+public class EmbeddedMessageElementsButtonAction (
     val type: String,
     val data: String
 ) {
@@ -315,7 +315,7 @@ class EmbeddedMessageElementsButtonAction (
         }
     }
 }
-class EmbeddedMessageElementsText (
+public class EmbeddedMessageElementsText (
     val id: String,
     val text: String? = null,
     val label: String? = null

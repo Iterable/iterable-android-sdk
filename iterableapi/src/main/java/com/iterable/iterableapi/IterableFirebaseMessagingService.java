@@ -78,6 +78,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
                         String messageId = extras.getString("messageId");
                         if (messageId != null) {
                             IterableApi.getInstance().getInAppManager().removeMessage(messageId);
+                            IterableApi.getInstance().getInAppManager().syncInApp();
                         }
                         break;
                     case "UpdateEmbedded":
