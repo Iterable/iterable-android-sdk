@@ -6,8 +6,23 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.5.12]
 
+### Added
+- `EmbeddedSessionManager` methods are now public (previously library-scoped)
+
 ### Fixed
-- `EmbeddedSessionManager` methods is now accessible which were library group restricted before.
+- Added timeout for crypto operations to prevent ANRs.
+
+### Disabling Keychain Encryption
+The Iterable SDK provides an option to disable encryption for keychain storage. By default, encryption is enabled to securely store sensitive user data.
+To disable keychain encryption, set the `keychainEncryption` parameter to `false` when initializing the SDK:
+
+```java
+IterableConfig config = new IterableConfig.Builder()
+    .setKeychainEncryption(false)  // Disable encryption for keychain storage
+    .build();
+
+IterableApi.initialize(context, apiKey, config);
+```
 
 ## [3.5.11]
 
