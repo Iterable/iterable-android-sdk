@@ -3,8 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.5.13]
 ### Fixed
-- SDK now retries `trackPushOpen` call when JWT is missing or expired, ensuring reliable push tracking after token acquisition.
+- SDK now retries `trackPushOpen` call when JWT is missing, expired or invalid, ensuring reliable push tracking after token acquisition.
 
 ## [3.5.12]
 
