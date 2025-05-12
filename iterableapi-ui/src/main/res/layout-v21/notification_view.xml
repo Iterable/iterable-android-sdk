@@ -58,34 +58,34 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/embedded_message_first_button"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
+            android:layout_height="48dp"
             android:layout_marginStart="16dp"
-            android:layout_marginEnd="8dp"
-            android:textColor="@color/notification_text_color"
-            android:background="@drawable/primary_notification_button_background"
             android:ellipsize="end"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:singleLine="true"
             android:stateListAnimator="@null"
             android:textAllCaps="false"
             android:textSize="14sp"
-            app:cornerRadius="32dp" />
+            app:cornerRadius="32dp"
+            app:strokeColor="@color/notification_button_border_color"
+            app:strokeWidth="1dp"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/embedded_message_second_button"
+            style="@style/Widget.MaterialComponents.Button"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:textColor="@color/notification_text_color"
-            android:background="@drawable/secondary_notification_button_background"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
             android:ellipsize="end"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:singleLine="true"
