@@ -12,7 +12,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class IterableAuthManager {
+public class IterableAuthManager implements IterableActivityMonitor.AppStateCallback {
     private static final String TAG = "IterableAuth";
     private static final String expirationString = "exp";
 
@@ -29,6 +29,8 @@ public class IterableAuthManager {
     int retryCount;
     private boolean isLastAuthTokenValid;
     private boolean isTimerScheduled;
+    private boolean isInForeground = false;
+    private String pendingJWT = null;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -37,6 +39,22 @@ public class IterableAuthManager {
         this.authHandler = authHandler;
         this.authRetryPolicy = authRetryPolicy;
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
+        IterableActivityMonitor.getInstance().addCallback(this);
+    }
+
+    @Override
+    public void onSwitchToForeground() {
+        isInForeground = true;
+        if (pendingJWT != null) {
+            queueExpirationRefresh(pendingJWT);
+            pendingJWT = null;
+        }
+    }
+
+    @Override
+    public void onSwitchToBackground() {
+        isInForeground = false;
+        clearRefreshTimer();
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
@@ -51,6 +69,7 @@ public class IterableAuthManager {
     void reset() {
         clearRefreshTimer();
         setIsLastAuthTokenValid(false);
+        pendingJWT = null;
     }
 
     void setIsLastAuthTokenValid(boolean isValid) {
@@ -147,6 +166,10 @@ public class IterableAuthManager {
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
             long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
             if (triggerExpirationRefreshTime > 0) {
+                if (!isInForeground) {
+                    pendingJWT = encodedJWT;
+                    return;
+                }
                 scheduleAuthTokenRefresh(triggerExpirationRefreshTime, true, null);
             } else {
                 IterableLogger.w(TAG, "The expiringAuthTokenRefreshPeriod has already passed for the current JWT");

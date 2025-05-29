@@ -8,6 +8,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.android.controller.ActivityController;
 
 import java.io.IOException;
 import java.util.Timer;
@@ -478,6 +479,138 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
 
         //TODO: Verify if registerForPush is invoked
+    }
+
+    @Test
+    public void testAuthRefreshOnlyInForeground() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+        Timer timer = IterableApi.getInstance().getAuthManager().timer;
+        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+
+        // Set up initial state
+        String email = "test@example.com";
+        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Verify initial state
+        assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
+        assertNotNull(authManager.timer);
+
+        // Simulate going to background
+        ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class).create().start().resume();
+        activity.pause().stop();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Timer should be cleared in background
+        assertNull(authManager.timer);
+
+        // Queue a refresh while in background
+        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+        authManager.queueExpirationRefresh(validJWT);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Verify no timer was created in background
+        assertNull(authManager.timer);
+        assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
+
+        // Simulate coming to foreground
+        activity.start().resume();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Timer should be recreated and JWT refresh should be scheduled
+        assertNotNull(authManager.timer);
+    }
+
+    @Test
+    public void testAuthRefreshTimingAccuracy() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+
+        // Create activity to simulate foreground
+        ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Set up initial state with a JWT that expires in 1 hour
+        String email = "test@example.com";
+        long expirationTime = System.currentTimeMillis()/1000 + 3600; // 1 hour from now
+        String testJWT = generateTestJWT(expirationTime);
+        doReturn(testJWT).when(authHandler).onAuthTokenRequested();
+        
+        IterableApi.getInstance().setEmail(email);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Verify initial timer is set
+        assertNotNull(authManager.timer);
+
+        // Go to background
+        activity.pause().stop();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+        assertNull(authManager.timer);
+
+        // Queue refresh while in background
+        authManager.queueExpirationRefresh(testJWT);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Come back to foreground after some time
+        activity.start().resume();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Verify timer is recreated
+        assertNotNull(authManager.timer);
+    }
+
+    @Test
+    public void testMultipleAuthRefreshRequests() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+
+        // Create activity to simulate foreground
+        ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Set up initial state
+        String email = "test@example.com";
+        doReturn(validJWT).when(authHandler).onAuthTokenRequested();
+        IterableApi.getInstance().setEmail(email);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        Timer firstTimer = authManager.timer;
+        assertNotNull(firstTimer);
+
+        // Queue another refresh
+        doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+        authManager.queueExpirationRefresh(validJWT);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Verify old timer was cleared and new one created
+        assertNotEquals(firstTimer, authManager.timer);
+        assertNotNull(authManager.timer);
+
+        // Go to background
+        activity.pause().stop();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+        assertNull(authManager.timer);
+
+        // Multiple refresh requests in background
+        authManager.queueExpirationRefresh(validJWT);
+        authManager.queueExpirationRefresh(newJWT);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Come back to foreground
+        activity.start().resume();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Verify only one timer is created
+        assertNotNull(authManager.timer);
+    }
+
+    private String generateTestJWT(long expirationTime) {
+        // Create a simple test JWT with the given expiration time
+        String header = Base64.encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(), Base64.URL_SAFE | Base64.NO_WRAP);
+        String payload = Base64.encodeToString(("{\"exp\":" + expirationTime + "}").getBytes(), Base64.URL_SAFE | Base64.NO_WRAP);
+        String signature = Base64.encodeToString("test-signature".getBytes(), Base64.URL_SAFE | Base64.NO_WRAP);
+        return header + "." + payload + "." + signature;
     }
 
 }
