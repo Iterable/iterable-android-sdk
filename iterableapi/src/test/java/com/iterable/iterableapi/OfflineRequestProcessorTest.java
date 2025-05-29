@@ -66,7 +66,8 @@ public class OfflineRequestProcessorTest extends BaseTest {
                 IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE,
                 IterableConstants.ENDPOINT_TRACK_INBOX_SESSION,
                 IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY,
-                IterableConstants.ENDPOINT_INAPP_CONSUME};
+                IterableConstants.ENDPOINT_INAPP_CONSUME,
+                IterableConstants.ENDPOINT_DISABLE_DEVICE};
         for (String uri : offlineApis) {
             assertTrue(offlineRequestProcessor.isRequestOfflineCompatible(uri));
         }
