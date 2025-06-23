@@ -483,29 +483,29 @@ public class IterableApiAuthTests extends BaseTest {
     @Test
     public void testAuthTokenRefreshPausesOnBackground() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
-
+        
         IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
-
+        
         // Set up a valid token and user to trigger normal expiration refresh
         doReturn(validJWT).when(authHandler).onAuthTokenRequested();
         IterableApi.getInstance().setEmail("test@example.com");
         shadowOf(getMainLooper()).runToEndOfTasks();
-
+        
         // Request auth token which should set a timer for expiration refresh
         authManager.requestNewAuthToken(false);
         shadowOf(getMainLooper()).runToEndOfTasks();
-
+        
         // The timer might be null if the token is considered expired, so let's test the behavior
-        // rather than the internal timer state. We'll check that onSwitchToBackground and
+        // rather than the internal timer state. We'll check that onSwitchToBackground and 
         // onSwitchToForeground can be called without exceptions
-
+        
         // Simulate app going to background - should clear any timer
         authManager.onSwitchToBackground();
-
+        
         // Simulate app coming to foreground - should re-evaluate token state
         authManager.onSwitchToForeground();
         shadowOf(getMainLooper()).runToEndOfTasks();
-
+        
         // Test passes if no exceptions were thrown and lifecycle methods executed successfully
     }
 

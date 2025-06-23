@@ -98,21 +98,21 @@ public class IterableActivityMonitorTest extends BaseTest {
                 return builder.setAuthHandler(mockAuthHandler);
             }
         }, null);
-
+        
         IterableApi.getInstance().setEmail("test@example.com");
         IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
-
+        
         // Verify AuthManager is registered as a callback
         ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class).create().start().resume();
         Robolectric.flushForegroundThreadScheduler();
-
+        
         // Verify we can trigger lifecycle methods without errors
         authManager.onSwitchToBackground();
         authManager.onSwitchToForeground();
-
+        
         // Test that reset() unregisters the callback
         authManager.reset();
-
+        
         // After reset, lifecycle methods should still work (no exceptions)
         authManager.onSwitchToBackground();
         authManager.onSwitchToForeground();

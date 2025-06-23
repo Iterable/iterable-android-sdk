@@ -256,33 +256,22 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     @Override
     public void onSwitchToBackground() {
-        try {
-            IterableLogger.v(TAG, "App switched to background. Clearing auth refresh timer.");
-            clearRefreshTimer();
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error in onSwitchToBackground", e);
-        }
+        IterableLogger.v(TAG, "App switched to background. Clearing auth refresh timer.");
+        clearRefreshTimer();
     }
 
     @Override
     public void onSwitchToForeground() {
-        try {
-            IterableLogger.v(TAG, "App switched to foreground. Re-evaluating auth token refresh.");
-            String authToken = api.getAuthToken();
-
-            if (authToken != null) {
-                queueExpirationRefresh(authToken);
-                // If queueExpirationRefresh didn't schedule a timer (expired token case), request new token
-                if (!isTimerScheduled && !pendingAuth) {
-                    IterableLogger.d(TAG, "Token expired, requesting new token on foreground");
-                    requestNewAuthToken(false, null, true);
-                }
-            } else if ((api.getEmail() != null || api.getUserId() != null) && !pendingAuth) {
-                IterableLogger.d(TAG, "App foregrounded, user identified, no auth token present. Requesting new token.");
-                requestNewAuthToken(false, null, true);
-            }
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Error in onSwitchToForeground", e);
+        IterableLogger.v(TAG, "App switched to foreground. Re-evaluating auth token refresh.");
+        String authToken = api.getAuthToken();
+        
+        if (authToken != null) {
+            // Try to queue normal expiration refresh - if token is expired, this will handle it appropriately
+            queueExpirationRefresh(authToken);
+        } else if ((api.getEmail() != null || api.getUserId() != null) && !pendingAuth) {
+            // No token but user is set - request new token
+            IterableLogger.d(TAG, "App foregrounded, user identified, no auth token present. Requesting new token.");
+            requestNewAuthToken(false, null, true);
         }
     }
 }
