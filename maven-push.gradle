@@ -17,40 +17,27 @@
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
 def isReleaseBuild() {
     return libraryVersion.contains("SNAPSHOT") == false
 }
 
 def getReleaseRepositoryUrl() {
     return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
-            : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            : "https://central.sonatype.com/api/v1/publisher/upload"
 }
 
 def getSnapshotRepositoryUrl() {
     return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
-            : "https://oss.sonatype.org/content/repositories/snapshots/"
+            : "https://central.sonatype.com/api/v1/publisher/upload"
 }
 
 def getRepositoryUsername() {
-    return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
+    return hasProperty('mavenCentralUsername') ? mavenCentralUsername : ""
 }
 
 def getRepositoryPassword() {
-    return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
+    return hasProperty('mavenCentralPassword') ? mavenCentralPassword : ""
 }
-
-def keyID = properties.getProperty("signing.keyId")
-def signing_password = properties.getProperty("signing.password")
-def keyRingLocation = properties.getProperty("signing.secretKeyRingFile")
-def nexus_username = properties.getProperty("NEXUS_USERNAME")
-def nexus_password = properties.getProperty("NEXUS_PASSWORD")
-
-ext."signing.keyId" = keyID
-ext."signing.secretKeyRingFile" = keyRingLocation
-ext."signing.password" = signing_password
 
 publishing {
     publications {
@@ -87,6 +74,7 @@ publishing {
                     developer {
                         id = POM_DEVELOPER_ID
                         name = POM_DEVELOPER_NAME
+                        email = POM_DEVELOPER_EMAIL
                     }
                 }
             }
@@ -94,11 +82,11 @@ publishing {
     }
     repositories {
         maven {
-            name = "OSSRH"
+            name = "CentralPortal"
             url = isReleaseBuild() ? getReleaseRepositoryUrl() : getSnapshotRepositoryUrl()
             credentials {
-                username = nexus_username
-                password = nexus_password
+                username = getRepositoryUsername()
+                password = getRepositoryPassword()
             }
         }
     }
@@ -106,11 +94,12 @@ publishing {
 
 signing {
     required { isReleaseBuild() }
+    useGpgCmd()
     sign publishing.publications.release
 }
 
 tasks.register('uploadArchives') {
-    dependsOn publishReleasePublicationToOSSRHRepository
+    dependsOn publishReleasePublicationToCentralPortalRepository
 }
 
 tasks.register('androidSourcesJar', Jar) {

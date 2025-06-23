@@ -1,3 +1,4 @@
+// Using native Gradle maven-publish plugin instead
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
@@ -64,9 +65,7 @@ ext {
     libraryVersion = '3.5.13'
 }
 
-if (hasProperty("mavenPublishEnabled")) {
-    apply from: '../maven-push.gradle'
-}
+apply from: '../maven-push.gradle'
 
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
