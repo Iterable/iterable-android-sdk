@@ -17,9 +17,12 @@ import com.iterable.iterableapi.util.DeviceInfoUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -27,6 +30,14 @@ import java.util.UUID;
 public class IterableApi {
 //region SDK (private/internal)
 //---------------------------------------------------------------------------------------
+    
+    // Initialization state management
+    private enum InitializationState {
+        UNINITIALIZED,
+        INITIALIZING, 
+        INITIALIZED
+    }
+    
     static volatile IterableApi sharedInstance = new IterableApi();
 
     private static final String TAG = "IterableApi";
@@ -44,6 +55,11 @@ public class IterableApi {
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
+    // Async initialization fields
+    private volatile InitializationState initState = InitializationState.UNINITIALIZED;
+    private final List<Runnable> pendingOperations = new ArrayList<>();
+    private final ExecutorService initExecutor = Executors.newSingleThreadExecutor();
+    
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
@@ -431,6 +447,25 @@ public class IterableApi {
         }
         return true;
     }
+    
+    /**
+     * Executes operation immediately if SDK is ready, otherwise queues it for later execution
+     */
+    private void executeWhenReady(Runnable operation) {
+        if (initState == InitializationState.INITIALIZED) {
+            operation.run();
+        } else {
+            synchronized (pendingOperations) {
+                if (initState == InitializationState.INITIALIZED) {
+                    // Double-check in case state changed while acquiring lock
+                    operation.run();
+                } else {
+                    IterableLogger.v(TAG, "SDK still initializing, queuing operation");
+                    pendingOperations.add(operation);
+                }
+            }
+        }
+    }
 
     private SharedPreferences getPreferences() {
         return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
@@ -608,6 +643,7 @@ public class IterableApi {
     }
 
     public static void initialize(@NonNull Context context, @NonNull String apiKey, @Nullable IterableConfig config) {
+        // Immediate setup only - no blocking operations
         sharedInstance._applicationContext = context.getApplicationContext();
         sharedInstance._apiKey = apiKey;
         sharedInstance.config = config;
@@ -616,36 +652,137 @@ public class IterableApi {
             sharedInstance.config = new IterableConfig.Builder().build();
         }
 
-        sharedInstance.retrieveEmailAndUserId();
-
-        IterablePushNotificationUtil.processPendingAction(context);
+        // Mark as initializing and start background work
+        sharedInstance.initState = InitializationState.INITIALIZING;
+        
+        // Immediate non-blocking setup
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
+        
+        // Submit all heavy work to background thread
+        sharedInstance.initExecutor.submit(() -> sharedInstance.doBackgroundInitialization(context));
+    }
+    
+    private void doBackgroundInitialization(Context context) {
+        try {
+            IterableLogger.v(TAG, "Starting background initialization");
+            
+            // All the heavy operations happen here on background thread
+            retrieveEmailAndUserId();
 
-        if (sharedInstance.inAppManager == null) {
-            sharedInstance.inAppManager = new IterableInAppManager(
-                    sharedInstance,
-                    sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayInterval,
-                    sharedInstance.config.useInMemoryStorageForInApps);
+            IterablePushNotificationUtil.processPendingAction(context);
+
+            if (inAppManager == null) {
+                inAppManager = new IterableInAppManager(
+                        this,
+                        config.inAppHandler,
+                        config.inAppDisplayInterval,
+                        config.useInMemoryStorageForInApps);
+            }
+
+            if (embeddedManager == null) {
+                embeddedManager = new IterableEmbeddedManager(this);
+            }
+
+            loadLastSavedConfiguration(context);
+            
+            if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
+                try {
+                    JSONObject dataFields = new JSONObject();
+                    JSONObject deviceDetails = new JSONObject();
+                    DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, getDeviceId(), null);
+                    dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
+                    apiClient.updateUser(dataFields, false);
+                } catch (JSONException e) {
+                    IterableLogger.e(TAG, "doBackgroundInitialization: exception", e);
+                }
+            }
+            
+            // Mark as initialized and flush pending operations
+            synchronized (pendingOperations) {
+                initState = InitializationState.INITIALIZED;
+                IterableLogger.v(TAG, "Background initialization complete, flushing " + pendingOperations.size() + " pending operations");
+                
+                for (Runnable operation : pendingOperations) {
+                    try {
+                        operation.run();
+                    } catch (Exception e) {
+                        IterableLogger.w(TAG, "Error executing pending operation", e);
+                    }
+                }
+                pendingOperations.clear();
+            }
+            
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Background initialization failed", e);
+            // Even if initialization fails, mark as initialized to prevent hanging
+            synchronized (pendingOperations) {
+                initState = InitializationState.INITIALIZED;
+                pendingOperations.clear();
+            }
         }
-
-        if (sharedInstance.embeddedManager == null) {
-            sharedInstance.embeddedManager = new IterableEmbeddedManager(
-                    sharedInstance
-            );
+    }
+    
+    /**
+     * Waits for initialization to complete. Used primarily for testing to ensure
+     * synchronous behavior when needed.
+     */
+    public static void waitForInitialization() {
+        waitForInitialization(5000); // 5 second timeout
+    }
+    
+    /**
+     * Waits for initialization to complete with specified timeout
+     */
+    public static void waitForInitialization(long timeoutMs) {
+        if (sharedInstance.initState == InitializationState.INITIALIZED) {
+            // Also wait for keychain to be ready if it exists
+            if (sharedInstance.keychain != null) {
+                long keychainStartTime = System.currentTimeMillis();
+                while (!sharedInstance.keychain.isReady()) {
+                    if (System.currentTimeMillis() - keychainStartTime > timeoutMs) {
+                        IterableLogger.w(TAG, "Timeout waiting for keychain to be ready");
+                        break;
+                    }
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+            return;
         }
-
-        loadLastSavedConfiguration(context);
-        if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
+        
+        long startTime = System.currentTimeMillis();
+        while (sharedInstance.initState != InitializationState.INITIALIZED) {
+            if (System.currentTimeMillis() - startTime > timeoutMs) {
+                IterableLogger.w(TAG, "Timeout waiting for initialization to complete");
+                break;
+            }
             try {
-                JSONObject dataFields = new JSONObject();
-                JSONObject deviceDetails = new JSONObject();
-                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
-                dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
-                sharedInstance.apiClient.updateUser(dataFields, false);
-            } catch (JSONException e) {
-                    IterableLogger.e(TAG, "initialize: exception", e);
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        
+        // After API initialization, also wait for keychain to be ready
+        if (sharedInstance.keychain != null) {
+            long keychainStartTime = System.currentTimeMillis();
+            while (!sharedInstance.keychain.isReady()) {
+                if (System.currentTimeMillis() - keychainStartTime > timeoutMs) {
+                    IterableLogger.w(TAG, "Timeout waiting for keychain to be ready");
+                    break;
+                }
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
         }
     }
@@ -1054,12 +1191,14 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
-        IterableLogger.printInfo();
-        if (!checkSDKInitialization()) {
-            return;
-        }
+        executeWhenReady(() -> {
+            IterableLogger.printInfo();
+            if (!checkSDKInitialization()) {
+                return;
+            }
 
-        apiClient.track(eventName, campaignId, templateId, dataFields);
+            apiClient.track(eventName, campaignId, templateId, dataFields);
+        });
     }
 
     /**
@@ -1067,11 +1206,13 @@ public class IterableApi {
      * @param items
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
+        executeWhenReady(() -> {
+            if (!checkSDKInitialization()) {
+                return;
+            }
 
-        apiClient.updateCart(items);
+            apiClient.updateCart(items);
+        });
     }
 
     /**
@@ -1090,11 +1231,13 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
+        executeWhenReady(() -> {
+            if (!checkSDKInitialization()) {
+                return;
+            }
 
-        apiClient.trackPurchase(total, items, dataFields, null);
+            apiClient.trackPurchase(total, items, dataFields, null);
+        });
     }
 
     /**
@@ -1105,11 +1248,13 @@ public class IterableApi {
      * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
+        executeWhenReady(() -> {
+            if (!checkSDKInitialization()) {
+                return;
+            }
 
-        apiClient.trackPurchase(total, items, dataFields, attributionInfo);
+            apiClient.trackPurchase(total, items, dataFields, attributionInfo);
+        });
     }
 
     /**
@@ -1193,10 +1338,12 @@ public class IterableApi {
      * user email or user ID is set before calling this method.
      */
     public void registerForPush() {
-        if (checkSDKInitialization()) {
-            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-            IterablePushRegistration.executePushRegistrationTask(data);
-        }
+        executeWhenReady(() -> {
+            if (checkSDKInitialization()) {
+                IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+                IterablePushRegistration.executePushRegistrationTask(data);
+            }
+        });
     }
 
     /**

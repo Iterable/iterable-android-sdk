@@ -13,5 +13,7 @@ public class IterableTestUtils {
 
     public static void initIterableApi(IterableConfig config) {
         IterableApi.initialize(getApplicationContext(), "fake_key", config);
+        // Wait for initialization to complete before proceeding with test setup
+        IterableApi.waitForInitialization();
     }
 }
