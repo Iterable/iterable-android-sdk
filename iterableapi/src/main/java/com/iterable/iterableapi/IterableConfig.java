@@ -111,6 +111,11 @@ public class IterableConfig {
     @Nullable
     final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
+    /**
+     * Custom credential provider that can be used to provide email/userId dynamically
+     */
+    final IterableCredentialProvider credentialProvider;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -130,6 +135,7 @@ public class IterableConfig {
         keychainEncryption = builder.keychainEncryption;
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
+        credentialProvider = builder.credentialProvider;
     }
 
     public static class Builder {
@@ -151,6 +157,7 @@ public class IterableConfig {
         private boolean keychainEncryption = true;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
+        private IterableCredentialProvider credentialProvider;
 
         public Builder() {}
 
@@ -342,9 +349,24 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set a custom credential provider that can be used to provide email/userId dynamically
+         * @param credentialProvider Credential provider provided by the app
+         */
+        @NonNull
+        public Builder setCredentialProvider(@NonNull IterableCredentialProvider credentialProvider) {
+            this.credentialProvider = credentialProvider;
+            return this;
+        }
+
         @NonNull
         public IterableConfig build() {
             return new IterableConfig(this);
         }
+    }
+
+    public interface IterableCredentialProvider {
+        @Nullable String getEmail();
+        @Nullable String getUserId();
     }
 }
