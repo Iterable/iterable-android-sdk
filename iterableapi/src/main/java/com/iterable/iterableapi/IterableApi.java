@@ -76,10 +76,18 @@ public class IterableApi {
     }
 
     public String getEmail() {
+        if (config != null && config.credentialProvider != null) {
+            String provided = config.credentialProvider.getEmail();
+            if (provided != null) return provided;
+        }
         return _email;
     }
 
     public String getUserId() {
+        if (config != null && config.credentialProvider != null) {
+            String provided = config.credentialProvider.getUserId();
+            if (provided != null) return provided;
+        }
         return _userId;
     }
 
@@ -465,15 +473,20 @@ public class IterableApi {
         if (_applicationContext == null) {
             return;
         }
-        IterableKeychain iterableKeychain = getKeychain();
-        if (iterableKeychain != null) {
-            _email = iterableKeychain.getEmail();
-            _userId = iterableKeychain.getUserId();
-            _authToken = iterableKeychain.getAuthToken();
+        if (config != null && config.credentialProvider != null) {
+            _email = config.credentialProvider.getEmail();
+            _userId = config.credentialProvider.getUserId();
+            // Optionally, do not load from keychain if provider is present
         } else {
-            IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
+            IterableKeychain iterableKeychain = getKeychain();
+            if (iterableKeychain != null) {
+                _email = iterableKeychain.getEmail();
+                _userId = iterableKeychain.getUserId();
+                _authToken = iterableKeychain.getAuthToken();
+            } else {
+                IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
+            }
         }
-
         if (config.authHandler != null && checkSDKInitialization()) {
             if (_authToken != null) {
                 getAuthManager().queueExpirationRefresh(_authToken);
@@ -1058,7 +1071,14 @@ public class IterableApi {
         if (!checkSDKInitialization()) {
             return;
         }
-
+        // Example: If credentialProvider is present, rely on it for credentials
+        // This is handled in getEmail()/getUserId(), so apiClient will always get the right value
+        // String email = getEmail();
+        // String userId = getUserId();
+        // If needed, you could log or assert here:
+        // if (config != null && config.credentialProvider != null) {
+        //     IterableLogger.d(TAG, "Using credentials from credentialProvider");
+        // }
         apiClient.track(eventName, campaignId, templateId, dataFields);
     }
 
@@ -1404,6 +1424,8 @@ public class IterableApi {
             return;
         }
 
+        // If credentialProvider is present, getEmail/getUserId will use it
+        // This ensures the API call uses the latest credentials from the app
         apiClient.trackInboxSession(session, inboxSessionId);
     }
 
