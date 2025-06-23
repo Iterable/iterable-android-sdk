@@ -4,7 +4,17 @@ import android.content.Context
 import android.content.SharedPreferences
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+
+// Helper class for immediate cache access
+private class CompletedFuture<T>(private val value: T) : Future<T> {
+    override fun cancel(mayInterruptIfRunning: Boolean): Boolean = false
+    override fun isCancelled(): Boolean = false
+    override fun isDone(): Boolean = true
+    override fun get(): T = value
+    override fun get(timeout: Long, unit: TimeUnit): T = value
+}
 
 class IterableKeychain {
     companion object {
@@ -23,6 +33,11 @@ class IterableKeychain {
     internal var encryptor: IterableDataEncryptor? = null
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
     private var encryption: Boolean
+    
+    // Cached futures for non-blocking access
+    @Volatile private var cachedEmail: Future<String?>
+    @Volatile private var cachedUserId: Future<String?>
+    @Volatile private var cachedAuthToken: Future<String?>
 
     @JvmOverloads
     constructor(
@@ -61,6 +76,11 @@ class IterableKeychain {
                 handleDecryptionError(e)
             }
         }
+        
+        // Start background loading of cached values
+        cachedEmail = cryptoExecutor.submit(Callable { retrieve(KEY_EMAIL) })
+        cachedUserId = cryptoExecutor.submit(Callable { retrieve(KEY_USER_ID) })
+        cachedAuthToken = cryptoExecutor.submit(Callable { retrieve(KEY_AUTH_TOKEN) })
     }
 
     private fun <T> runWithTimeout(callable: Callable<T>): T {
@@ -97,7 +117,7 @@ class IterableKeychain {
         }
     }
 
-    private fun secureGet(key: String): String? {
+    private fun retrieve(key: String): String? {
         val hasPlainText = sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)
         if (!encryption) {
             if (hasPlainText) {
@@ -145,12 +165,43 @@ class IterableKeychain {
         }
     }
 
-    fun getEmail() = secureGet(KEY_EMAIL)
-    fun saveEmail(email: String?) = secureSave(KEY_EMAIL, email)
+    // Helper method to get cached value without blocking
+    private fun getCachedValue(future: Future<String?>, valueName: String): String? = try {
+        if (future.isDone) future.get() else null
+    } catch (e: Exception) {
+        IterableLogger.w(TAG, "Failed to get cached $valueName", e)
+        null
+    }
+    
+    // Helper method to save value asynchronously
+    private fun saveValueAsync(key: String, value: String?, updateCache: (Future<String?>) -> Unit) {
+        // Create a completed future for immediate cache access
+        val completedFuture = CompletedFuture(value)
+        // Update cache immediately
+        updateCache(completedFuture)
+        // Save to storage asynchronously to avoid blocking
+        cryptoExecutor.submit { secureSave(key, value) }
+    }
 
-    fun getUserId() = secureGet(KEY_USER_ID)
-    fun saveUserId(userId: String?) = secureSave(KEY_USER_ID, userId)
+    // Public API methods - clean and DRY
+    fun getEmail(): String? = getCachedValue(cachedEmail, "email")
+    
+    fun saveEmail(email: String?) = saveValueAsync(KEY_EMAIL, email) { future ->
+        cachedEmail = future
+    }
 
-    fun getAuthToken() = secureGet(KEY_AUTH_TOKEN)
-    fun saveAuthToken(authToken: String?) = secureSave(KEY_AUTH_TOKEN, authToken)
+    fun getUserId(): String? = getCachedValue(cachedUserId, "userId")
+    
+    fun saveUserId(userId: String?) = saveValueAsync(KEY_USER_ID, userId) { future ->
+        cachedUserId = future
+    }
+
+    fun getAuthToken(): String? = getCachedValue(cachedAuthToken, "authToken")
+    
+    fun saveAuthToken(authToken: String?) = saveValueAsync(KEY_AUTH_TOKEN, authToken) { future ->
+        cachedAuthToken = future
+    }
+    
+    // Method to check if initialization is complete
+    fun isReady(): Boolean = cachedEmail.isDone && cachedUserId.isDone && cachedAuthToken.isDone
 }
