@@ -1,12 +1,12 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi
 
-import android.net.Uri;
-import androidx.annotation.NonNull;
+import android.net.Uri
+import androidx.annotation.NonNull
 
 /**
  * Custom URL handler interface
  */
-public interface IterableUrlHandler {
+interface IterableUrlHandler {
 
     /**
      * Callback called for a deeplink action. Return YES to override default behavior
@@ -14,6 +14,6 @@ public interface IterableUrlHandler {
      * @param actionContext  The action context
      * @return Boolean value. Return YES if the URL was handled to override default behavior.
      */
-    boolean handleIterableURL(@NonNull Uri uri, @NonNull IterableActionContext actionContext);
+    fun handleIterableURL(@NonNull uri: Uri, @NonNull actionContext: IterableActionContext): Boolean
 
 }

@@ -1,9 +1,9 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi
 
 /**
  * Enum representing the source of the action: push notification, app link, etc.
  */
-public enum IterableActionSource {
+enum class IterableActionSource {
     /** Push Notification */
     PUSH,
 
