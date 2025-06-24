@@ -29,6 +29,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     int retryCount;
     private boolean isLastAuthTokenValid;
     private boolean isTimerScheduled;
+    private String lastProcessedToken;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -52,6 +53,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     void reset() {
         clearRefreshTimer();
         setIsLastAuthTokenValid(false);
+        lastProcessedToken = null;
         IterableActivityMonitor.getInstance().removeCallback(this);
     }
 
@@ -120,11 +122,13 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     private void handleAuthTokenSuccess(String authToken, IterableHelper.SuccessHandler successCallback) {
         if (authToken != null) {
+            lastProcessedToken = authToken;
             if (successCallback != null) {
                 handleSuccessForAuthToken(authToken, successCallback);
             }
             queueExpirationRefresh(authToken);
         } else {
+            lastProcessedToken = null;
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
             IterableApi.getInstance().setAuthToken(authToken);
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
@@ -268,7 +272,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     public void onSwitchToForeground() {
         try {
             IterableLogger.v(TAG, "App switched to foreground. Re-evaluating auth token refresh.");
-            String authToken = api.getAuthToken();
+            String authToken = lastProcessedToken;
 
             if (authToken != null) {
                 queueExpirationRefresh(authToken);
