@@ -1,6 +1,7 @@
 // Using native Gradle maven-publish plugin instead
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.vanniktech.maven.publish'
 
 android {
     compileSdk 34
@@ -60,12 +61,35 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.6.1'
 }
 
-ext {
-    libraryName = 'iterableapi-ui'
-    libraryVersion = '3.5.13'
-}
+mavenPublishing {
+    coordinates("com.iterable", "iterableapi-ui", "3.5.13")
+    publishToMavenCentral("S01", true)
+    signAllPublications()
 
-apply from: '../maven-push.gradle'
+    pom {
+        name = "iterableapi-ui"
+        description = "Iterable's official Android SDK for UI components"
+        url = "https://github.com/Iterable/iterable-android-sdk"
+        licenses {
+            license {
+                name = "MIT License"
+                url = "https://opensource.org/licenses/MIT"
+            }
+        }
+        developers {
+            developer {
+                id = "iterable"
+                name = "Iterable"
+                email = "eng-mobile@iterable.com"
+            }
+        }
+        scm {
+            connection = "scm:git:git@github.com:Iterable/iterable-android-sdk.git"
+            developerConnection = "scm:git:git@github.com:Iterable/iterable-android-sdk.git"
+            url = "https://github.com/Iterable/iterable-android-sdk"
+        }
+    }
+}
 
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
