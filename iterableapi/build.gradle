@@ -1,6 +1,9 @@
+// Using native Gradle maven-publish plugin instead
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'checkstyle'
+apply plugin: 'com.vanniktech.maven.publish'
+
 
 android {
     compileSdk 34
@@ -86,13 +89,34 @@ dependencies {
     androidTestImplementation 'org.mockito:mockito-android:4.8.0'
 }
 
-ext {
-    libraryName = 'iterableapi'
-    libraryVersion = '3.5.13'
-}
+mavenPublishing {
+    coordinates("com.iterable", "iterableapi", "3.5.13")
+    publishToMavenCentral("S01", true)
+    signAllPublications()
 
-if (hasProperty("mavenPublishEnabled")) {
-    apply from: '../maven-push.gradle'
+    pom {
+        name = "iterableapi"
+        description = "Iterable's official Android SDK"
+        url = "https://github.com/Iterable/iterable-android-sdk"
+        licenses {
+            license {
+                name = "MIT License"
+                url = "https://opensource.org/licenses/MIT"
+            }
+        }
+        developers {
+            developer {
+                id = "iterable"
+                name = "Iterable"
+                email = "eng-mobile@iterable.com"
+            }
+        }
+        scm {
+            connection = "scm:git:git@github.com:Iterable/iterable-android-sdk.git"
+            developerConnection = "scm:git:git@github.com:Iterable/iterable-android-sdk.git"
+            url = "https://github.com/Iterable/iterable-android-sdk"
+        }
+    }
 }
 
 task javadoc(type: Javadoc) {
