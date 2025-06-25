@@ -266,6 +266,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     @Override
     public void onSwitchToForeground() {
+        if (pendingAuth) return;
         try {
             IterableLogger.v(TAG, "App switched to foreground. Re-evaluating auth token refresh.");
             String authToken = api.getAuthToken();
