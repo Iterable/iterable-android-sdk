@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 /**
@@ -116,6 +117,12 @@ public class IterableConfig {
     final boolean enableEmbeddedMessaging;
 
     /**
+     * When set to true, disables encryption for keychain storage.
+     * By default, encryption is enabled for storing sensitive user data.
+     */
+    final boolean keychainEncryption;
+
+    /*
      * This controls whether the SDK should allow event replay from local storage to logged in profile
      * and merging between the generated anonymous profile and the logged in profile by default.
      */
@@ -126,6 +133,12 @@ public class IterableConfig {
      * Before calling this handler, the SDK will clear the PII information and create new encryption keys
      */
     final IterableDecryptionFailureHandler decryptionFailureHandler;
+
+    /**
+     * Mobile framework information for the app
+     */
+    @Nullable
+    final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
@@ -146,10 +159,12 @@ public class IterableConfig {
         enableAnonActivation = builder.enableAnonActivation;
         enableForegroundCriteriaFetch = builder.enableForegroundCriteriaFetch;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
+        keychainEncryption = builder.keychainEncryption;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
         iterableAnonUserHandler = builder.iterableAnonUserHandler;
         decryptionFailureHandler = builder.decryptionFailureHandler;
+        mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
 
     public static class Builder {
@@ -167,6 +182,8 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
+        private boolean keychainEncryption = true;
+        private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
         private boolean enableAnonActivation = false;
@@ -367,6 +384,17 @@ public class IterableConfig {
         }
 
         /**
+         * When set to true, disables encryption for Iterable's keychain storage.
+         * By default, encryption is enabled for storing sensitive user data.
+         * @param keychainEncryption Whether to disable encryption for keychain
+         */
+        @NonNull
+        public Builder setKeychainEncryption(boolean keychainEncryption) {
+            this.keychainEncryption = keychainEncryption;
+			return this;
+		}
+
+		/**
          * Set whether the SDK should replay events from local storage to the logged in profile
          * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
          * This can be overwritten by a parameter passed into setEmail or setUserId.
@@ -385,6 +413,16 @@ public class IterableConfig {
         @NonNull
         public Builder setDecryptionFailureHandler(@NonNull IterableDecryptionFailureHandler handler) {
             this.decryptionFailureHandler = handler;
+            return this;
+        }
+
+        /**
+         * Set mobile framework information for the app
+         * @param mobileFrameworkInfo Mobile framework information
+         */
+        @NonNull
+        public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
+            this.mobileFrameworkInfo = mobileFrameworkInfo;
             return this;
         }
 

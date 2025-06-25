@@ -12,7 +12,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class IterableAuthManager {
+public class IterableAuthManager implements IterableActivityMonitor.AppStateCallback {
     private static final String TAG = "IterableAuth";
     private static final String expirationString = "exp";
 
@@ -37,6 +37,7 @@ public class IterableAuthManager {
         this.authHandler = authHandler;
         this.authRetryPolicy = authRetryPolicy;
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
+        IterableActivityMonitor.getInstance().addCallback(this);
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, IterableHelper.SuccessHandler successCallback) {
@@ -51,6 +52,7 @@ public class IterableAuthManager {
     void reset() {
         clearRefreshTimer();
         setIsLastAuthTokenValid(false);
+        IterableActivityMonitor.getInstance().removeCallback(this);
     }
 
     void setIsLastAuthTokenValid(boolean isValid) {
@@ -249,6 +251,39 @@ public class IterableAuthManager {
             timer.cancel();
             timer = null;
             isTimerScheduled = false;
+        }
+    }
+
+    @Override
+    public void onSwitchToBackground() {
+        try {
+            IterableLogger.v(TAG, "App switched to background. Clearing auth refresh timer.");
+            clearRefreshTimer();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error in onSwitchToBackground", e);
+        }
+    }
+
+    @Override
+    public void onSwitchToForeground() {
+        if (pendingAuth) return;
+        try {
+            IterableLogger.v(TAG, "App switched to foreground. Re-evaluating auth token refresh.");
+            String authToken = api.getAuthToken();
+
+            if (authToken != null) {
+                queueExpirationRefresh(authToken);
+                // If queueExpirationRefresh didn't schedule a timer (expired token case), request new token
+                if (!isTimerScheduled && !pendingAuth) {
+                    IterableLogger.d(TAG, "Token expired, requesting new token on foreground");
+                    requestNewAuthToken(false, null, true);
+                }
+            } else if ((api.getEmail() != null || api.getUserId() != null) && !pendingAuth) {
+                IterableLogger.d(TAG, "App foregrounded, user identified, no auth token present. Requesting new token.");
+                requestNewAuthToken(false, null, true);
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error in onSwitchToForeground", e);
         }
     }
 }

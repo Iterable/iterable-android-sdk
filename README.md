@@ -15,7 +15,7 @@ This SDK helps you integrate your Android apps with Iterable.
 
 ## Supported Android versions
 
-Iterable's Android SDK supports Android versions 4.1.2 (API level 16) and higher.
+Iterable's Android SDK supports Android versions 5.0 (API level 21) and higher.
 
 ## Installation
 
@@ -55,7 +55,6 @@ Release notes:
 Support policies:
 
 - Iterable's [SDK Support Policy](https://support.iterable.com/hc/articles/360046136171)
-- Iterable's [Beta SDK Disclaimer](https://support.iterable.com/hc/articles/360034753412)
 
 Troubleshooting:
 
@@ -67,7 +66,7 @@ Questions? Contact your Iterable customer success manager.
 
 ## License
 
-This SDK is released under the MIT License. For more information, read [LICENSE](LICENSE.md).
+This SDK is released under the MIT License. For more information, read [LICENSE](LICENSE).
 
 ## Want to contribute?
 

@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.os.AsyncTask;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,19 +18,19 @@ class OnlineRequestProcessor implements RequestProcessor {
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onCallback);
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onSuccess, onFailure);
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
     }
 
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
     }
 
     @Override

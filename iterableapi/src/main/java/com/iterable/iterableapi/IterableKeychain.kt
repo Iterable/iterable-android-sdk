@@ -2,6 +2,9 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class IterableKeychain {
     companion object {
@@ -10,54 +13,75 @@ class IterableKeychain {
 		const val KEY_USER_ID = "iterable-user-id"
         const val KEY_ANON_USER_ID = "iterable-anon-user-id"
 		const val KEY_AUTH_TOKEN = "iterable-auth-token"
+        private const val PLAINTEXT_SUFFIX = "_plaintext"
+        private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
+        private const val KEY_ENCRYPTION_ENABLED = "iterable-encryption-enabled"
+        
+        private val cryptoExecutor = Executors.newSingleThreadExecutor()
     }
 
     private var sharedPrefs: SharedPreferences
-    internal var encryptor: IterableDataEncryptor
+    internal var encryptor: IterableDataEncryptor? = null
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
+    private var encryption: Boolean
 
     @JvmOverloads
     constructor(
         context: Context,
         decryptionFailureHandler: IterableDecryptionFailureHandler? = null,
-        migrator: IterableKeychainEncryptedDataMigrator? = null
+        migrator: IterableKeychainEncryptedDataMigrator? = null,
+        encryption: Boolean = true
     ) {
-        this.decryptionFailureHandler = decryptionFailureHandler
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
             Context.MODE_PRIVATE
         )
-        encryptor = IterableDataEncryptor()
-        IterableLogger.v(TAG, "SharedPreferences being used with encryption")
+        this.decryptionFailureHandler = decryptionFailureHandler
+        this.encryption = encryption && sharedPrefs.getBoolean(KEY_ENCRYPTION_ENABLED, true)
 
-        try {
-            val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
-            if (!dataMigrator.isMigrationCompleted()) {
-                dataMigrator.setMigrationCompletionCallback { error ->
-                    error?.let {
-                        IterableLogger.w(TAG, "Migration failed", it)
-                        handleDecryptionError(Exception(it))
+        if (!encryption) {
+            IterableLogger.v(TAG, "SharedPreferences being used without encryption")
+        } else {
+            encryptor = IterableDataEncryptor()
+            IterableLogger.v(TAG, "SharedPreferences being used with encryption")
+
+            try {
+                val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
+                if (!dataMigrator.isMigrationCompleted()) {
+                    dataMigrator.setMigrationCompletionCallback { error ->
+                        error?.let {
+                            IterableLogger.w(TAG, "Migration failed", it)
+                            handleDecryptionError(Exception(it))
+                        }
                     }
+                    dataMigrator.attemptMigration()
+                    IterableLogger.v(TAG, "Migration completed")
                 }
-                dataMigrator.attemptMigration()
-                IterableLogger.v(TAG, "Migration completed")
-			}
-        } catch (e: Exception) {
-            IterableLogger.w(TAG, "Migration failed, clearing data", e)
-            handleDecryptionError(e)
+            } catch (e: Exception) {
+                IterableLogger.w(TAG, "Migration failed, clearing data", e)
+                handleDecryptionError(e)
+            }
         }
     }
 
+    private fun <T> runWithTimeout(callable: Callable<T>): T {
+        return cryptoExecutor.submit(callable).get(CRYPTO_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+    }
+
     private fun handleDecryptionError(e: Exception? = null) {
-        IterableLogger.w(TAG, "Decryption failed, clearing all data and regenerating key")
+        IterableLogger.w(TAG, "Decryption failed, permanently disabling encryption for this device. Please login again.")
+        
+        // Permanently disable encryption for this device
         sharedPrefs.edit()
             .remove(KEY_EMAIL)
             .remove(KEY_USER_ID)
             .remove(KEY_ANON_USER_ID)
             .remove(KEY_AUTH_TOKEN)
+            .putBoolean(KEY_ENCRYPTION_ENABLED, false)
             .apply()
 
-        encryptor.resetKeys()
+        encryption = false
+
         decryptionFailureHandler?.let { handler ->
             val exception = e ?: Exception("Unknown decryption error")
             try {
@@ -76,8 +100,20 @@ class IterableKeychain {
     }
 
     private fun secureGet(key: String): String? {
+        val hasPlainText = sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)
+        if (!encryption) {
+            if (hasPlainText) {
+                return sharedPrefs.getString(key, null)
+            } else {
+                return null
+            }
+        } else if (hasPlainText) {
+            return sharedPrefs.getString(key, null)
+        }
+        
+        val encryptedValue = sharedPrefs.getString(key, null) ?: return null
         return try {
-            sharedPrefs.getString(key, null)?.let { encryptor.decrypt(it) }
+            encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } }
         } catch (e: Exception) {
             handleDecryptionError(e)
             null
@@ -85,9 +121,30 @@ class IterableKeychain {
     }
 
     private fun secureSave(key: String, value: String?) {
-        sharedPrefs.edit()
-            .putString(key, value?.let { encryptor.encrypt(it) })
-            .apply()
+        val editor = sharedPrefs.edit()
+        if (value == null) {
+            editor.remove(key).remove(key + PLAINTEXT_SUFFIX).apply()
+            return
+        }
+
+        if (!encryption) {
+            editor.putString(key, value).putBoolean(key + PLAINTEXT_SUFFIX, true).apply()
+            return
+        }
+
+        try {
+            encryptor?.let {
+                val encrypted = runWithTimeout { it.encrypt(value) }
+                editor.putString(key, encrypted)
+                    .remove(key + PLAINTEXT_SUFFIX)
+                    .apply()
+            }
+        } catch (e: Exception) {
+            handleDecryptionError(e)
+            editor.putString(key, value)
+                .putBoolean(key + PLAINTEXT_SUFFIX, true)
+                .apply()
+        }
     }
 
     fun getEmail() = secureGet(KEY_EMAIL)

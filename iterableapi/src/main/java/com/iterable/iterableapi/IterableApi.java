@@ -148,7 +148,7 @@ public class IterableApi {
         }
         if (keychain == null) {
             try {
-                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler);
+                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler, null, config.keychainEncryption);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
             }
@@ -424,11 +424,7 @@ public class IterableApi {
 
         if (sharedInstance.isInitialized()) {
             if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
-                if (!systemNotificationEnabled) {
-                    sharedInstance.disablePush();
-                } else {
-                    sharedInstance.registerForPush();
-                }
+                sharedInstance.registerForPush();
             }
 
             SharedPreferences.Editor editor = sharedPref.edit();
@@ -649,6 +645,7 @@ public class IterableApi {
 
         sharedInstance.retrieveEmailAndUserId();
 
+        IterablePushNotificationUtil.processPendingAction(context);
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
@@ -687,7 +684,7 @@ public class IterableApi {
             try {
                 JSONObject dataFields = new JSONObject();
                 JSONObject deviceDetails = new JSONObject();
-                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId());
+                DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
                 sharedInstance.updateUser(dataFields, false);
             } catch (JSONException e) {

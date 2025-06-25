@@ -2,6 +2,57 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+## [3.5.13]
+### Fixed
+- SDK now retries `trackPushOpen` call when JWT is missing, expired or invalid, ensuring reliable push tracking after token acquisition.
+
+## [3.5.12]
+
+### Added
+- `EmbeddedSessionManager` methods are now public (previously library-scoped)
+
+### Fixed
+- Added timeout for crypto operations to prevent ANRs.
+
+### Disabling Keychain Encryption
+The Iterable SDK provides an option to disable encryption for keychain storage. By default, encryption is enabled to securely store sensitive user data.
+To disable keychain encryption, set the `keychainEncryption` parameter to `false` when initializing the SDK:
+
+```java
+IterableConfig config = new IterableConfig.Builder()
+    .setKeychainEncryption(false)  // Disable encryption for keychain storage
+    .build();
+
+IterableApi.initialize(context, apiKey, config);
+```
+
+### Changed
+- Thanks to @MGaetan89 for modernizing the test infrastructure by replacing deprecated Robolectric APIs with AndroidX Test alternatives and removing unnecessary dependencies.
+
+## [3.5.11]
+
+### Fixed
+- Fixed issue where text container shrinks when buttons are not present for the embedded OOTB views.
+- Fixed issue where crashes are occurring due to conflicts in deep link handling
+- Fixed data storage failures by adding plain text fallback when encryption fails.
+
+### Added
+- Added support for providing a list of placement ids to sync only certain placement ids.
+- support for pre-release automation
+
+## [3.5.10]
+
+### Added
+- Added `mobileFrameworkInfo` configuration option to `IterableConfig` to identify the mobile framework (Flutter, React Native, or Native) being used with the SDK.
+- Support for push notifications with text input. Pending intent is now mutable when buttons are of text input type.
+
+## [3.5.9]
+
+### Fixed
+- Fixed notification tracking bug that prevents SDK from receiving push notifications when system notification settings are turned off.
+
 ## [3.5.8]
 
 ### Fixed

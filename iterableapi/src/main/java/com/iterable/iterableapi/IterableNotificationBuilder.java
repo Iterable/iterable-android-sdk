@@ -81,7 +81,6 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                 if (notificationImage != null) {
                     style = new NotificationCompat.BigPictureStyle()
                             .bigPicture(notificationImage)
-                            .bigLargeIcon(null)
                             .setSummaryText(expandedContent);
                     this.setLargeIcon(notificationImage);
                 } else {
@@ -129,17 +128,21 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         buttonIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, button.identifier);
         buttonIntent.putExtra(IterableConstants.ACTION_IDENTIFIER, button.identifier);
 
+        int pendingIntentFlag = button.buttonType.equals(IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT) ?
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE :
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
+
         if (button.openApp) {
             IterableLogger.d(TAG, "Go through TrampolineActivity");
             buttonIntent.setClass(context, IterableTrampolineActivity.class);
             buttonIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             pendingButtonIntent = PendingIntent.getActivity(context, buttonIntent.hashCode(),
-                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    buttonIntent, pendingIntentFlag);
         } else {
             IterableLogger.d(TAG, "Go through IterablePushActionReceiver");
             buttonIntent.setClass(context, IterablePushActionReceiver.class);
             pendingButtonIntent = PendingIntent.getBroadcast(context, buttonIntent.hashCode(),
-                    buttonIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    buttonIntent, pendingIntentFlag);
         }
 
         return pendingButtonIntent;
