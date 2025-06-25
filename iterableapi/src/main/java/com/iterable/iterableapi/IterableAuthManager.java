@@ -40,8 +40,8 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         IterableActivityMonitor.getInstance().addCallback(this);
     }
 
-    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
-        requestNewAuthToken(hasFailedPriorAuth, null, true);
+    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, IterableHelper.SuccessHandler successCallback) {
+        requestNewAuthToken(hasFailedPriorAuth, successCallback, true);
     }
 
     public void pauseAuthRetries(boolean pauseRetry) {
