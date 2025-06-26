@@ -17,6 +17,7 @@ buildscript {
             exclude group: 'org.codehaus.groovy', module: 'groovy-all'
         }
         classpath "com.github.dcendents:android-maven-gradle-plugin:2.1"
+        classpath "com.gradleup.nmcp:nmcp:0.0.8"
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
