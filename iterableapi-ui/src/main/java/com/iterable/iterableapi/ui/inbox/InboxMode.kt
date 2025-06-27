@@ -1,9 +1,9 @@
-package com.iterable.iterableapi.ui.inbox;
+package com.iterable.iterableapi.ui.inbox
 
 /**
  * Controls the way messages are displayed in Inbox
  */
-public enum InboxMode {
+enum class InboxMode {
     /**
      * Display messages in a new activity
      */

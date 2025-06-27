@@ -1,30 +1,24 @@
-package com.iterable.iterableapi;
+package com.iterable.iterableapi
 
-
-public class RetryPolicy {
-
+class RetryPolicy(
     /**
      * Number of consecutive JWT refresh retries the SDK should attempt before disabling JWT refresh attempts altogether.
      */
-    int maxRetry;
-
+    val maxRetry: Int,
     /**
      * Configurable duration between JWT refresh retries. Starting point for the retry backoff.
      */
-    long retryInterval;
-
+    retryInterval: Long,
     /**
      * Linear or Exponential. Determines the backoff pattern to apply between retry attempts.
      */
-    RetryPolicy.Type retryBackoff;
-    public enum Type {
+    val retryBackoff: Type
+) {
+    val retryInterval: Long = retryInterval * 1000L
+
+    enum class Type {
         LINEAR,
         EXPONENTIAL
-    }
-    public RetryPolicy(int maxRetry, long retryInterval, RetryPolicy.Type retryBackoff) {
-        this.maxRetry = maxRetry;
-        this.retryInterval = retryInterval * 1000L;
-        this.retryBackoff = retryBackoff;
     }
 }
 
