@@ -169,6 +169,19 @@ public class IterableApi {
         return keychain;
     }
 
+    // Internal setters for Kotlin coroutine helper
+    void setEmailInternal(String email) {
+        this._email = email;
+    }
+
+    void setUserIdInternal(String userId) {
+        this._userId = userId;
+    }
+
+    void setAuthTokenInternal(String authToken) {
+        this._authToken = authToken;
+    }
+
     static void loadLastSavedConfiguration(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
@@ -501,22 +514,24 @@ public class IterableApi {
             return;
         }
         IterableKeychain iterableKeychain = getKeychain();
-        if (iterableKeychain != null) {
-            _email = iterableKeychain.getEmail();
-            _userId = iterableKeychain.getUserId();
-            _authToken = iterableKeychain.getAuthToken();
-        } else {
-            IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
-        }
-
-        if (config.authHandler != null && checkSDKInitialization()) {
-            if (_authToken != null) {
-                getAuthManager().queueExpirationRefresh(_authToken);
-            } else {
-                IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
-                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
+        
+        // Use Kotlin coroutines for async keychain access
+        IterableApiInitializer.retrieveEmailAndUserIdAsync(this, iterableKeychain, (email, userId, authToken) -> {
+            _email = email;
+            _userId = userId;
+            _authToken = authToken;
+            
+            // Handle auth token refresh after values are loaded
+            if (config.authHandler != null && checkSDKInitialization()) {
+                if (_authToken != null) {
+                    getAuthManager().queueExpirationRefresh(_authToken);
+                } else {
+                    IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
+                    getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
+                }
             }
-        }
+            return null; // Unit function, return null
+        });
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
@@ -659,68 +674,56 @@ public class IterableApi {
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
         
-        // Submit all heavy work to background thread
-        sharedInstance.initExecutor.submit(() -> sharedInstance.doBackgroundInitialization(context));
-    }
-    
-    private void doBackgroundInitialization(Context context) {
-        try {
-            IterableLogger.v(TAG, "Starting background initialization");
-            
-            // All the heavy operations happen here on background thread
-            retrieveEmailAndUserId();
+        // Use Kotlin coroutines for background initialization
+        IterableApiInitializer.doBackgroundInitializationAsync(sharedInstance, context, () -> {
+            // Complete remaining initialization work
+            try {
+                IterablePushNotificationUtil.processPendingAction(context);
 
-            IterablePushNotificationUtil.processPendingAction(context);
-
-            if (inAppManager == null) {
-                inAppManager = new IterableInAppManager(
-                        this,
-                        config.inAppHandler,
-                        config.inAppDisplayInterval,
-                        config.useInMemoryStorageForInApps);
-            }
-
-            if (embeddedManager == null) {
-                embeddedManager = new IterableEmbeddedManager(this);
-            }
-
-            loadLastSavedConfiguration(context);
-            
-            if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
-                try {
-                    JSONObject dataFields = new JSONObject();
-                    JSONObject deviceDetails = new JSONObject();
-                    DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, getDeviceId(), null);
-                    dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
-                    apiClient.updateUser(dataFields, false);
-                } catch (JSONException e) {
-                    IterableLogger.e(TAG, "doBackgroundInitialization: exception", e);
+                if (sharedInstance.inAppManager == null) {
+                    sharedInstance.inAppManager = new IterableInAppManager(
+                            sharedInstance,
+                            sharedInstance.config.inAppHandler,
+                            sharedInstance.config.inAppDisplayInterval,
+                            sharedInstance.config.useInMemoryStorageForInApps);
                 }
+
+                if (sharedInstance.embeddedManager == null) {
+                    sharedInstance.embeddedManager = new IterableEmbeddedManager(sharedInstance);
+                }
+                
+                if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
+                    try {
+                        JSONObject dataFields = new JSONObject();
+                        JSONObject deviceDetails = new JSONObject();
+                        DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
+                        dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
+                        sharedInstance.apiClient.updateUser(dataFields, false);
+                    } catch (JSONException e) {
+                        IterableLogger.e(TAG, "doBackgroundInitialization: exception", e);
+                    }
+                }
+                
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Background initialization failed", e);
             }
             
             // Mark as initialized and flush pending operations
-            synchronized (pendingOperations) {
-                initState = InitializationState.INITIALIZED;
-                IterableLogger.v(TAG, "Background initialization complete, flushing " + pendingOperations.size() + " pending operations");
+            synchronized (sharedInstance.pendingOperations) {
+                sharedInstance.initState = InitializationState.INITIALIZED;
+                IterableLogger.v(TAG, "Background initialization complete, flushing " + sharedInstance.pendingOperations.size() + " pending operations");
                 
-                for (Runnable operation : pendingOperations) {
+                for (Runnable operation : sharedInstance.pendingOperations) {
                     try {
                         operation.run();
                     } catch (Exception e) {
                         IterableLogger.w(TAG, "Error executing pending operation", e);
                     }
                 }
-                pendingOperations.clear();
+                sharedInstance.pendingOperations.clear();
             }
-            
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "Background initialization failed", e);
-            // Even if initialization fails, mark as initialized to prevent hanging
-            synchronized (pendingOperations) {
-                initState = InitializationState.INITIALIZED;
-                pendingOperations.clear();
-            }
-        }
+            return null; // Unit function, return null
+        });
     }
     
     /**
@@ -736,22 +739,6 @@ public class IterableApi {
      */
     public static void waitForInitialization(long timeoutMs) {
         if (sharedInstance.initState == InitializationState.INITIALIZED) {
-            // Also wait for keychain to be ready if it exists
-            if (sharedInstance.keychain != null) {
-                long keychainStartTime = System.currentTimeMillis();
-                while (!sharedInstance.keychain.isReady()) {
-                    if (System.currentTimeMillis() - keychainStartTime > timeoutMs) {
-                        IterableLogger.w(TAG, "Timeout waiting for keychain to be ready");
-                        break;
-                    }
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            }
             return;
         }
         
@@ -766,23 +753,6 @@ public class IterableApi {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
-            }
-        }
-        
-        // After API initialization, also wait for keychain to be ready
-        if (sharedInstance.keychain != null) {
-            long keychainStartTime = System.currentTimeMillis();
-            while (!sharedInstance.keychain.isReady()) {
-                if (System.currentTimeMillis() - keychainStartTime > timeoutMs) {
-                    IterableLogger.w(TAG, "Timeout waiting for keychain to be ready");
-                    break;
-                }
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
             }
         }
     }

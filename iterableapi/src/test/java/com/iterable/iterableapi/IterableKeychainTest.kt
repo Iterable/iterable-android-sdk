@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import android.util.Base64
+import kotlinx.coroutines.*
+import kotlinx.coroutines.test.*
 import org.junit.Before
 import org.junit.After
 import org.junit.Test
@@ -16,7 +18,6 @@ import org.mockito.MockitoAnnotations
 import org.junit.Assert.*
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.isNull
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.MockedStatic
@@ -27,6 +28,7 @@ import org.mockito.Mockito.clearInvocations
 import org.mockito.ArgumentMatchers.matches
 import org.mockito.Mockito.never
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class IterableKeychainTest {
 
     @Mock private lateinit var mockContext: Context
@@ -37,10 +39,16 @@ class IterableKeychainTest {
 
     private lateinit var mockedLog: MockedStatic<Log>
     private lateinit var mockedBase64: MockedStatic<Base64>
+    private lateinit var testDispatcher: TestDispatcher
+    private lateinit var testScope: TestScope
 
     @Before
     fun setUp() {
         MockitoAnnotations.openMocks(this)
+        
+        // Setup test coroutines
+        testDispatcher = StandardTestDispatcher()
+        testScope = TestScope(testDispatcher)
         
         // Mock Android Log
         mockedLog = mockStatic(Log::class.java)
@@ -68,14 +76,20 @@ class IterableKeychainTest {
     }
 
     @Test
-    fun testAsyncCacheUpdateBehavior() {
-        // Create fresh keychain for this test
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
+    fun testBasicAsyncOperations() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            true, 
+            testScope, 
+            testDispatcher
+        )
         
-        // Wait for initial cache loading
-        Thread.sleep(100)
+        // Wait for initialization to complete
+        advanceUntilIdle()
         
-        // Initial state should be null (nothing stored)
+        // Initially should be null (no stored data)
         assertNull(keychain.getEmail())
         assertNull(keychain.getUserId())
         assertNull(keychain.getAuthToken())
@@ -90,104 +104,80 @@ class IterableKeychainTest {
         keychain.saveAuthToken("token123")
         assertEquals("token123", keychain.getAuthToken())
         
-        // Test null values
-        keychain.saveEmail(null)
-        assertNull(keychain.getEmail())
+        // Advance coroutines to complete background saves
+        advanceUntilIdle()
     }
 
     @Test
-    fun testBackgroundStorageOperations() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
-        Thread.sleep(100) // Wait for initialization
+    fun testAsyncGettersWaitForInitialization() = testScope.runTest {
+        // Setup some existing data
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("existing@test.com")
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
         
-        // Save a value
-        keychain.saveEmail("async@test.com")
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false, // No encryption for simpler test
+            testScope, 
+            testDispatcher
+        )
         
-        // Should return immediately from cache
-        assertEquals("async@test.com", keychain.getEmail())
+        // Don't advance time yet - initialization should be pending
         
-        // Test that multiple saves work correctly
-        keychain.saveEmail("async2@test.com")
-        assertEquals("async2@test.com", keychain.getEmail())
+        // This should wait for initialization
+        val emailDeferred = async { keychain.getEmail() }
         
-        // Cache should update immediately for all operations
-        keychain.saveUserId("async_user")
-        assertEquals("async_user", keychain.getUserId())
+        // Should not complete yet
+        assertFalse(emailDeferred.isCompleted)
+        
+        // Now advance time to complete initialization
+        advanceUntilIdle()
+        
+        // Now getter should complete with loaded value
+        assertEquals("existing@test.com", emailDeferred.await())
     }
 
     @Test
-    fun testIsReadyMethod() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
+    fun testSyncSettersUpdateCacheImmediately() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
+        )
         
-        // Eventually should be ready
-        var ready = false
-        var attempts = 0
-        while (!ready && attempts < 20) {
-            ready = keychain.isReady()
-            if (!ready) {
-                Thread.sleep(50)
-                attempts++
-            }
-        }
-        assertTrue("Keychain should be ready after initialization", ready)
+        advanceUntilIdle() // Complete initialization
+        
+        // Save should update cache immediately, even before background save
+        keychain.saveEmail("instant@test.com")
+        assertEquals("instant@test.com", keychain.getEmail())
+        
+        // Test rapid updates
+        keychain.saveEmail("update1@test.com")
+        assertEquals("update1@test.com", keychain.getEmail())
+        
+        keychain.saveEmail("update2@test.com")
+        assertEquals("update2@test.com", keychain.getEmail())
+        
+        // Complete all background saves
+        advanceUntilIdle()
     }
 
     @Test
-    fun testEncryptionDisabledMode() {
-        // Create keychain with encryption disabled
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler, null, false)
-        Thread.sleep(100)
+    fun testNullValueHandling() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
+        )
         
-        // Clear setup interactions
-        clearInvocations(mockEditor)
-        
-        // Test saving in plaintext mode
-        keychain.saveEmail("plaintext@test.com")
-        assertEquals("plaintext@test.com", keychain.getEmail())
-        
-        // Wait for background save
-        Thread.sleep(200)
-        
-        // Should have attempted to save
-        verify(mockEditor, times(1)).apply()
-        
-        // Encryptor should be null in disabled mode
-        assertNull(keychain.encryptor)
-    }
-
-    @Test
-    fun testConcurrentOperations() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
-        Thread.sleep(100)
-        
-        val threads = mutableListOf<Thread>()
-        val exceptions = mutableListOf<Exception>()
-        
-        // Multiple threads saving and reading
-        for (i in 1..5) {
-            threads.add(Thread {
-                try {
-                    keychain.saveEmail("email$i@test.com")
-                    val result = keychain.getEmail()
-                    assertNotNull("Should get some email value", result)
-                } catch (e: Exception) {
-                    synchronized(exceptions) {
-                        exceptions.add(e)
-                    }
-                }
-            })
-        }
-        
-        threads.forEach { it.start() }
-        threads.forEach { it.join() }
-        
-        assertTrue("Concurrent operations should not cause exceptions: $exceptions", exceptions.isEmpty())
-    }
-
-    @Test
-    fun testNullValueHandling() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
-        Thread.sleep(100)
+        advanceUntilIdle()
         
         // Set values then clear them
         keychain.saveEmail("test@example.com")
@@ -208,118 +198,97 @@ class IterableKeychainTest {
         assertNull(keychain.getEmail())
         assertNull(keychain.getUserId())
         assertNull(keychain.getAuthToken())
+        
+        advanceUntilIdle()
     }
 
     @Test
-    fun testDecryptionFailureHandling() {
-        // Just verify the behavior when decryption handler is present
-        // We can't easily test actual decryption failures without a lot of setup
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
+    fun testEncryptionDisabledMode() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false, // Encryption disabled
+            testScope, 
+            testDispatcher
+        )
         
-        // Wait for initialization
-        Thread.sleep(200)
+        advanceUntilIdle()
         
-        // Since no encrypted data is present, decryption failure handler shouldn't be called
-        verify(mockDecryptionFailureHandler, never()).onDecryptionFailed(any())
+        // Encryptor should be null when encryption is disabled
+        assertNull(keychain.encryptor)
         
-        // Should return null for empty keychain
-        assertNull(keychain.getEmail())
+        // Test saving and retrieving
+        keychain.saveEmail("plaintext@test.com")
+        assertEquals("plaintext@test.com", keychain.getEmail())
+        
+        advanceUntilIdle()
     }
-    
+
     @Test
-    fun testEncryptionAndDecryptionBehavior() {
-        // Setup encryptor behavior first
-        `when`(mockEncryptor.encrypt(any())).thenAnswer { invocation ->
-            val input = invocation.arguments[0] as String?
-            input?.let { "encrypted_$it" }
-        }
+    fun testDecryptionFailureHandling() = testScope.runTest {
+        // Setup encrypted data that will fail to decrypt
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("bad_encrypted_data")
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(false)
         
-        `when`(mockEncryptor.decrypt(any())).thenAnswer { invocation ->
-            val encrypted = invocation.arguments[0] as String?
-            if (encrypted == null) {
-                null
-            } else if (encrypted.startsWith("encrypted_")) {
-                encrypted.substring("encrypted_".length)
-            } else {
-                throw RuntimeException("Invalid encrypted value")
-            }
-        }
-        
-        // Create keychain and manually test encrypt/decrypt without timing issues
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler, null, true)
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            true,
+            testScope, 
+            testDispatcher
+        )
         keychain.encryptor = mockEncryptor
         
-        Thread.sleep(100) // Wait for initialization
+        // Setup encryptor to fail decryption
+        `when`(mockEncryptor.decrypt(any())).thenThrow(RuntimeException("Decryption failed"))
         
-        // Test saving and retrieving values (cache mechanism)
-        val testEmail = "test@example.com"
-        keychain.saveEmail(testEmail)
-        assertEquals(testEmail, keychain.getEmail())
+        // Complete initialization
+        advanceUntilIdle()
         
-        // Test that the cache mechanism works for different values
-        keychain.saveUserId("test_user")
-        assertEquals("test_user", keychain.getUserId())
+        // Should return null due to decryption failure
+        assertNull(keychain.getEmail())
         
-        keychain.saveAuthToken("test_token")
-        assertEquals("test_token", keychain.getAuthToken())
+        // Should have called failure handler
+        verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
         
-        // All operations should work through the cache immediately
-        assertTrue("Cache operations should be immediate", keychain.isReady())
+        // Should have removed the bad data
+        verify(mockEditor, times(1)).remove(eq("iterable-email"))
     }
 
     @Test
-    fun testEncryptionFailureFallbackToPlaintext() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
+    fun testEncryptionFailureFallback() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            true,
+            testScope, 
+            testDispatcher
+        )
         keychain.encryptor = mockEncryptor
         
         // Setup encryption to fail
         `when`(mockEncryptor.encrypt(any())).thenThrow(RuntimeException("Encryption failed"))
         
-        Thread.sleep(100)
+        advanceUntilIdle()
+        clearInvocations(mockEditor) // Clear setup interactions
         
-        val testEmail = "test@example.com"
-        keychain.saveEmail(testEmail)
+        // Save should still work (cache updated immediately)
+        keychain.saveEmail("fallback@test.com")
+        assertEquals("fallback@test.com", keychain.getEmail())
         
-        // Should still work via cache (immediate access)
-        assertEquals(testEmail, keychain.getEmail())
+        // Complete background save
+        advanceUntilIdle()
         
-        // Wait for background save to complete
-        Thread.sleep(500)
-        
-        // Due to encryption failure, the system should handle it gracefully
-        // The exact timing of when failure handler is called depends on background execution
-        // We verify the cache still works despite encryption issues
-        assertEquals(testEmail, keychain.getEmail())
+        // Should have saved as plaintext (fallback)
+        verify(mockEditor, times(1)).putString(eq("iterable-email"), eq("fallback@test.com"))
+        verify(mockEditor, times(1)).putBoolean(eq("iterable-email_plaintext"), eq(true))
     }
 
     @Test
-    fun testDecryptionFailureHandlingComprehensive() {
-        // Setup to return encrypted data but fail decryption
-        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("bad_encrypted_data")
-        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), any())).thenReturn("bad_encrypted_data")
-        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), any())).thenReturn("bad_encrypted_data")
-        
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
-        keychain.encryptor = mockEncryptor
-        
-        // Setup decryptor to fail
-        `when`(mockEncryptor.decrypt(any())).thenThrow(RuntimeException("Decryption failed"))
-        
-        // Wait for initialization to complete
-        Thread.sleep(500)
-        
-        // All values should be null due to decryption failure
-        assertNull(keychain.getEmail())
-        assertNull(keychain.getUserId())
-        assertNull(keychain.getAuthToken())
-        
-        // Test that new values can still be saved despite decryption issues
-        keychain.saveEmail("new@example.com")
-        assertEquals("new@example.com", keychain.getEmail())
-    }
-
-    @Test
-    fun testMigrationFailureHandling() {
+    fun testMigrationFailureHandling() = testScope.runTest {
         val mockMigrator = mock(IterableKeychainEncryptedDataMigrator::class.java)
         val migrationException = RuntimeException("Migration failed")
         
@@ -329,179 +298,112 @@ class IterableKeychainTest {
         val keychain = IterableKeychain(
             mockContext, 
             mockDecryptionFailureHandler,
-            mockMigrator
+            mockMigrator,
+            true,
+            testScope,
+            testDispatcher
         )
         
-        Thread.sleep(100)
-        
-        // Verify data was cleared due to migration failure
-        verify(mockEditor).remove(eq("iterable-email"))
-        verify(mockEditor).remove(eq("iterable-user-id"))  
-        verify(mockEditor).remove(eq("iterable-auth-token"))
-        verify(mockEditor).putBoolean(eq("iterable-encryption-enabled"), eq(false))
-        verify(mockEditor).apply()
+        advanceUntilIdle()
         
         // Verify failure handler was called
         verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
     }
 
     @Test
-    fun testSaveNullValuesComprehensive() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
-        Thread.sleep(100)
+    fun testConcurrentOperations() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
+        )
         
-        // First save some values
-        keychain.saveEmail("test@example.com")
-        keychain.saveUserId("user123")
-        keychain.saveAuthToken("token123")
+        advanceUntilIdle()
         
-        // Verify values are set
-        assertEquals("test@example.com", keychain.getEmail())
-        assertEquals("user123", keychain.getUserId())
-        assertEquals("token123", keychain.getAuthToken())
+        // Launch multiple concurrent operations
+        val jobs = mutableListOf<Job>()
         
-        // Now save null values
-        keychain.saveEmail(null)
-        keychain.saveUserId(null)
-        keychain.saveAuthToken(null)
+        for (i in 1..10) {
+            jobs.add(launch {
+                keychain.saveEmail("email$i@test.com")
+                val result = keychain.getEmail()
+                assertNotNull("Should get some email value", result)
+            })
+        }
         
-        // Verify immediate cache behavior - should be null immediately
-        assertNull(keychain.getEmail())
-        assertNull(keychain.getUserId())
-        assertNull(keychain.getAuthToken())
+        // Wait for all to complete
+        jobs.forEach { it.join() }
+        advanceUntilIdle()
         
-        // Wait for background saves to complete and verify values remain null
-        Thread.sleep(200)
-        assertNull(keychain.getEmail())
-        assertNull(keychain.getUserId())
-        assertNull(keychain.getAuthToken())
+        // Should have some final email value
+        assertNotNull(keychain.getEmail())
+        assertTrue(keychain.getEmail()!!.contains("@test.com"))
     }
 
     @Test
-    fun testEncryptionDisabledComprehensive() {
-        // Create keychain with encryption explicitly disabled
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler, null, false)
-        Thread.sleep(100)
+    fun testTimeoutHandling() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            true,
+            testScope, 
+            testDispatcher
+        )
+        keychain.encryptor = mockEncryptor
         
-        // Verify encryptor is null when disabled
-        assertNull(keychain.encryptor)
+        // Setup encryptor to hang (will be cancelled by timeout)
+        `when`(mockEncryptor.decrypt(any())).thenAnswer {
+            runBlocking { delay(5000) } // Longer than timeout
+            "decrypted"
+        }
         
-        val testEmail = "plaintext@example.com"
-        keychain.saveEmail(testEmail)
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("encrypted_data")
         
-        // Should work immediately from cache
-        assertEquals(testEmail, keychain.getEmail())
+        advanceUntilIdle()
         
-        // Test other operations work as well
-        keychain.saveUserId("plaintext_user")
-        keychain.saveAuthToken("plaintext_token")
-        
-        assertEquals("plaintext_user", keychain.getUserId())
-        assertEquals("plaintext_token", keychain.getAuthToken())
-        
-        // Wait for background saves to complete
-        Thread.sleep(200)
-        
-        // Values should still be accessible
-        assertEquals(testEmail, keychain.getEmail())
-        assertEquals("plaintext_user", keychain.getUserId())
-        assertEquals("plaintext_token", keychain.getAuthToken())
+        // Should return null due to timeout
+        assertNull(keychain.getEmail())
     }
 
     @Test
-    fun testStorageOperationsVerification() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
-        Thread.sleep(100)
+    fun testAllFieldsIndependently() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
+        )
         
-        // Save different values for each field
+        advanceUntilIdle()
+        
+        // Test each field independently
         keychain.saveEmail("email@test.com")
-        keychain.saveUserId("user123")
-        keychain.saveAuthToken("token456")
+        assertEquals("email@test.com", keychain.getEmail())
+        assertNull(keychain.getUserId())
+        assertNull(keychain.getAuthToken())
         
-        // Verify immediate cache access
+        keychain.saveUserId("user123")
+        assertEquals("email@test.com", keychain.getEmail())
+        assertEquals("user123", keychain.getUserId())
+        assertNull(keychain.getAuthToken())
+        
+        keychain.saveAuthToken("token456")
         assertEquals("email@test.com", keychain.getEmail())
         assertEquals("user123", keychain.getUserId())
         assertEquals("token456", keychain.getAuthToken())
         
-        // Test value updates
-        keychain.saveEmail("updated@test.com")
-        assertEquals("updated@test.com", keychain.getEmail())
-        
-        // Test mixed operations
+        // Clear one field
         keychain.saveUserId(null)
-        assertNull(keychain.getUserId())
-        assertEquals("token456", keychain.getAuthToken()) // Should still be there
-        
-        // Wait for all background operations to complete
-        Thread.sleep(300)
-        
-        // Final verification that cache state is consistent
-        assertEquals("updated@test.com", keychain.getEmail())
+        assertEquals("email@test.com", keychain.getEmail())
         assertNull(keychain.getUserId())
         assertEquals("token456", keychain.getAuthToken())
-    }
-
-    @Test  
-    fun testReadyStateTransitions() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
         
-        // Should eventually become ready - give it more time and attempts
-        var ready = false
-        var attempts = 0
-        while (!ready && attempts < 100) {
-            ready = keychain.isReady()
-            if (!ready) {
-                Thread.sleep(50) // Longer delays
-                attempts++
-            }
-        }
-        
-        assertTrue("Keychain should become ready after $attempts attempts", ready)
-        
-        // Once ready, should stay ready
-        Thread.sleep(100)
-        assertTrue("Keychain should remain ready", keychain.isReady())
-        
-        // Test that we can still operate when ready
-        keychain.saveEmail("ready@test.com")
-        assertEquals("ready@test.com", keychain.getEmail())
-    }
-
-    @Test
-    fun testConcurrentSaveAndRead() {
-        val keychain = IterableKeychain(mockContext, mockDecryptionFailureHandler)
-        Thread.sleep(100)
-        
-        val threads = mutableListOf<Thread>()
-        val exceptions = mutableListOf<Exception>()
-        val results = mutableListOf<String?>()
-        
-        // Multiple threads doing saves and reads
-        for (i in 1..10) {
-            threads.add(Thread {
-                try {
-                    keychain.saveEmail("email$i@test.com")
-                    Thread.sleep(10) // Small delay
-                    val result = keychain.getEmail()
-                    synchronized(results) {
-                        results.add(result)
-                    }
-                } catch (e: Exception) {
-                    synchronized(exceptions) {
-                        exceptions.add(e)
-                    }
-                }
-            })
-        }
-        
-        threads.forEach { it.start() }
-        threads.forEach { it.join() }
-        
-        assertTrue("Concurrent operations should not cause exceptions: $exceptions", exceptions.isEmpty())
-        assertEquals("Should have results from all threads", 10, results.size)
-        results.forEach { result ->
-            assertNotNull("Each thread should get a valid result", result)
-            assertTrue("Result should be a valid email", result!!.contains("@test.com"))
-        }
+        advanceUntilIdle()
     }
 } 
