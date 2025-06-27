@@ -466,22 +466,24 @@ public class IterableApi {
             return;
         }
         IterableKeychain iterableKeychain = getKeychain();
-        if (iterableKeychain != null) {
-            _email = iterableKeychain.getEmail();
-            _userId = iterableKeychain.getUserId();
-            _authToken = iterableKeychain.getAuthToken();
-        } else {
-            IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
-        }
-
-        if (config.authHandler != null && checkSDKInitialization()) {
-            if (_authToken != null) {
-                getAuthManager().queueExpirationRefresh(_authToken);
-            } else {
-                IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
-                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
+        
+        // Use Kotlin coroutines for async keychain access
+        IterableApiInitializer.retrieveEmailAndUserIdAsync(iterableKeychain, (email, userId, authToken) -> {
+            _email = email;
+            _userId = userId;
+            _authToken = authToken;
+            
+            // Handle auth token refresh after values are loaded
+            if (config.authHandler != null && checkSDKInitialization()) {
+                if (_authToken != null) {
+                    getAuthManager().queueExpirationRefresh(_authToken);
+                } else {
+                    IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
+                    getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
+                }
             }
-        }
+            return null; // Unit function, return null
+        });
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
