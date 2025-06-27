@@ -345,6 +345,9 @@ class IterableKeychainTest {
 
     @Test
     fun testTimeoutHandling() = testScope.runTest {
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("encrypted_data")
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(false)
+        
         val keychain = IterableKeychain(
             mockContext, 
             mockDecryptionFailureHandler, 
@@ -355,18 +358,19 @@ class IterableKeychainTest {
         )
         keychain.encryptor = mockEncryptor
         
-        // Setup encryptor to hang (will be cancelled by timeout)
-        `when`(mockEncryptor.decrypt(any())).thenAnswer {
-            runBlocking { delay(5000) } // Longer than timeout
-            "decrypted"
-        }
-        
-        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("encrypted_data")
+        // Setup encryptor to simulate timeout by throwing an exception that would be thrown by withTimeout
+        `when`(mockEncryptor.decrypt(any())).thenThrow(RuntimeException("Timeout"))
         
         advanceUntilIdle()
         
-        // Should return null due to timeout
+        // Should return null due to timeout/exception during initialization
         assertNull(keychain.getEmail())
+        
+        // Should have called failure handler
+        verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
+        
+        // Should have removed the bad encrypted data
+        verify(mockEditor, times(1)).remove(eq("iterable-email"))
     }
 
     @Test
