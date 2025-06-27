@@ -94,23 +94,11 @@ class IterableEmbeddedView(
         val titleText = view.findViewById<TextView>(R.id.embedded_message_title)
         val bodyText = view.findViewById<TextView>(R.id.embedded_message_body)
 
-        if(config?.primaryBtnBackgroundColor != null) {
-            val primaryBtnBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
-                ContextCompat.getDrawable(requireContext(), R.drawable.primary_notification_button_background) as? GradientDrawable
-                else ContextCompat.getDrawable(requireContext(), R.drawable.primary_banner_button_background) as? GradientDrawable
-            primaryBtnBackgroundDrawable?.setColor(primaryBtnBackgroundColor)
+        firstButton.setBackgroundColor(primaryBtnBackgroundColor)
+        firstButton.setTextColor(primaryBtnTextColor)
 
-            firstButton.background = primaryBtnBackgroundDrawable
-        }
-
-        if(config?.secondaryBtnBackgroundColor != null) {
-            val secondaryBtnBackgroundDrawable = if(viewType == IterableEmbeddedViewType.NOTIFICATION)
-                ContextCompat.getDrawable(requireContext(), R.drawable.secondary_notification_button_background) as? GradientDrawable
-                else ContextCompat.getDrawable(requireContext(), R.drawable.secondary_banner_button_background) as? GradientDrawable
-            secondaryBtnBackgroundDrawable?.setColor(secondaryBtnBackgroundColor)
-
-            secondButton.background = secondaryBtnBackgroundDrawable
-        }
+        secondButton.setBackgroundColor(secondaryBtnBackgroundColor)
+        secondButton.setTextColor(secondaryBtnTextColor)
 
         firstButton.setTextColor(primaryBtnTextColor)
         secondButton.setTextColor(secondaryBtnTextColor)
