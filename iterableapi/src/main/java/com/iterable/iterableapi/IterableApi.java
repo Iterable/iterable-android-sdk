@@ -850,25 +850,27 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        //Only if passed in same non-null email
-        if (_email != null && _email.equals(email)) {
-            checkAndUpdateAuthToken(authToken);
-            return;
-        }
+        executeWhenReady(() -> {
+            //Only if passed in same non-null email
+            if (_email != null && _email.equals(email)) {
+                checkAndUpdateAuthToken(authToken);
+                return;
+            }
 
-        if (_email == null && _userId == null && email == null) {
-            return;
-        }
+            if (_email == null && _userId == null && email == null) {
+                return;
+            }
 
-        logoutPreviousUser();
+            logoutPreviousUser();
 
-        _email = email;
-        _userId = null;
-        _setUserSuccessCallbackHandler = successHandler;
-        _setUserFailureCallbackHandler = failureHandler;
-        storeAuthData();
+            _email = email;
+            _userId = null;
+            _setUserSuccessCallbackHandler = successHandler;
+            _setUserFailureCallbackHandler = failureHandler;
+            storeAuthData();
 
-        onLogin(authToken);
+            onLogin(authToken);
+        });
     }
 
     public void setUserId(@Nullable String userId) {
@@ -884,25 +886,27 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        //If same non null userId is passed
-        if (_userId != null && _userId.equals(userId)) {
-            checkAndUpdateAuthToken(authToken);
-            return;
-        }
+        executeWhenReady(() -> {
+            //If same non null userId is passed
+            if (_userId != null && _userId.equals(userId)) {
+                checkAndUpdateAuthToken(authToken);
+                return;
+            }
 
-        if (_email == null && _userId == null && userId == null) {
-            return;
-        }
+            if (_email == null && _userId == null && userId == null) {
+                return;
+            }
 
-        logoutPreviousUser();
+            logoutPreviousUser();
 
-        _email = null;
-        _userId = userId;
-        _setUserSuccessCallbackHandler = successHandler;
-        _setUserFailureCallbackHandler = failureHandler;
-        storeAuthData();
+            _email = null;
+            _userId = userId;
+            _setUserSuccessCallbackHandler = successHandler;
+            _setUserFailureCallbackHandler = failureHandler;
+            storeAuthData();
 
-        onLogin(authToken);
+            onLogin(authToken);
+        });
     }
 
     public void setAuthToken(String authToken) {
