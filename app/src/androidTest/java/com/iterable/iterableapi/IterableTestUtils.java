@@ -46,10 +46,6 @@ public class IterableTestUtils {
         }
 
         IterableApi.initialize(ApplicationProvider.getApplicationContext(), apiKey, builder.build());
-        
-        // Wait for initialization to complete before proceeding with test setup
-        IterableApi.waitForInitialization();
-        
         IterableApi.getInstance().setEmail(userEmail);
     }
 
