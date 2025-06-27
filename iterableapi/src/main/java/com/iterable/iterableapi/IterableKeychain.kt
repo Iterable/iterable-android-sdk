@@ -2,34 +2,44 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.*
 
 class IterableKeychain {
     companion object {
         private const val TAG = "IterableKeychain"
         const val KEY_EMAIL = "iterable-email"
-		const val KEY_USER_ID = "iterable-user-id"
-		const val KEY_AUTH_TOKEN = "iterable-auth-token"
+        const val KEY_USER_ID = "iterable-user-id"
+        const val KEY_AUTH_TOKEN = "iterable-auth-token"
         private const val PLAINTEXT_SUFFIX = "_plaintext"
-        private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
+        private const val CRYPTO_OPERATION_TIMEOUT_MS = 2000L
         private const val KEY_ENCRYPTION_ENABLED = "iterable-encryption-enabled"
-        
-        private val cryptoExecutor = Executors.newSingleThreadExecutor()
     }
 
     private var sharedPrefs: SharedPreferences
     internal var encryptor: IterableDataEncryptor? = null
     private val decryptionFailureHandler: IterableDecryptionFailureHandler?
     private var encryption: Boolean
+    private val ioDispatcher: CoroutineDispatcher
+    
+    // Background scope for I/O operations - can be managed externally
+    private val backgroundScope: CoroutineScope
+    
+    // Simple cache - instant access, no blocking
+    @Volatile private var cachedEmail: String? = null
+    @Volatile private var cachedUserId: String? = null
+    @Volatile private var cachedAuthToken: String? = null
+    
+    // Deferred for initialization completion
+    private val initializationComplete: Deferred<Unit>
 
     @JvmOverloads
     constructor(
         context: Context,
         decryptionFailureHandler: IterableDecryptionFailureHandler? = null,
         migrator: IterableKeychainEncryptedDataMigrator? = null,
-        encryption: Boolean = true
+        encryption: Boolean = true,
+        scope: CoroutineScope? = null,
+        ioDispatcher: CoroutineDispatcher = Dispatchers.IO
     ) {
         sharedPrefs = context.getSharedPreferences(
             IterableConstants.SHARED_PREFS_FILE,
@@ -37,6 +47,10 @@ class IterableKeychain {
         )
         this.decryptionFailureHandler = decryptionFailureHandler
         this.encryption = encryption && sharedPrefs.getBoolean(KEY_ENCRYPTION_ENABLED, true)
+        this.ioDispatcher = ioDispatcher
+        
+        // Use provided scope or create our own with SupervisorJob
+        this.backgroundScope = scope ?: CoroutineScope(ioDispatcher + SupervisorJob())
 
         if (!encryption) {
             IterableLogger.v(TAG, "SharedPreferences being used without encryption")
@@ -57,100 +71,126 @@ class IterableKeychain {
                     IterableLogger.v(TAG, "Migration completed")
                 }
             } catch (e: Exception) {
-                IterableLogger.w(TAG, "Migration failed, clearing data", e)
+                IterableLogger.w(TAG, "Migration failed", e)
                 handleDecryptionError(e)
             }
         }
-    }
-
-    private fun <T> runWithTimeout(callable: Callable<T>): T {
-        return cryptoExecutor.submit(callable).get(CRYPTO_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-    }
-
-    private fun handleDecryptionError(e: Exception? = null) {
-        IterableLogger.w(TAG, "Decryption failed, permanently disabling encryption for this device. Please login again.")
         
-        // Permanently disable encryption for this device
-        sharedPrefs.edit()
-            .remove(KEY_EMAIL)
-            .remove(KEY_USER_ID)
-            .remove(KEY_AUTH_TOKEN)
-            .putBoolean(KEY_ENCRYPTION_ENABLED, false)
-            .apply()
+        // Load cache in background
+        initializationComplete = backgroundScope.async {
+            cachedEmail = retrieve(KEY_EMAIL)
+            cachedUserId = retrieve(KEY_USER_ID)
+            cachedAuthToken = retrieve(KEY_AUTH_TOKEN)
+        }
+    }
 
-        encryption = false
-
+    private fun handleDecryptionError(e: Exception) {
+        IterableLogger.w(TAG, "Decryption failed", e)
+        
+        // Just call the failure handler - don't clear data
         decryptionFailureHandler?.let { handler ->
-            val exception = e ?: Exception("Unknown decryption error")
             try {
                 val mainLooper = android.os.Looper.getMainLooper()
                 if (mainLooper != null) {
                     android.os.Handler(mainLooper).post {
-                        handler.onDecryptionFailed(exception)
+                        handler.onDecryptionFailed(e)
                     }
                 } else {
-                    throw IllegalStateException("MainLooper is unavailable")
+                    handler.onDecryptionFailed(e)
                 }
             } catch (ex: Exception) {
-                handler.onDecryptionFailed(exception)
+                handler.onDecryptionFailed(e)
             }
         }
     }
 
-    private fun secureGet(key: String): String? {
+    private suspend fun retrieve(key: String): String? = withContext(ioDispatcher) {
         val hasPlainText = sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)
         if (!encryption) {
             if (hasPlainText) {
-                return sharedPrefs.getString(key, null)
+                sharedPrefs.getString(key, null)
             } else {
-                return null
+                null
             }
         } else if (hasPlainText) {
-            return sharedPrefs.getString(key, null)
-        }
-        
-        val encryptedValue = sharedPrefs.getString(key, null) ?: return null
-        return try {
-            encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } }
-        } catch (e: Exception) {
-            handleDecryptionError(e)
-            null
+            sharedPrefs.getString(key, null)
+        } else {
+            val encryptedValue = sharedPrefs.getString(key, null) ?: return@withContext null
+            try {
+                encryptor?.let { 
+                    withTimeout(CRYPTO_OPERATION_TIMEOUT_MS) {
+                        it.decrypt(encryptedValue)
+                    }
+                }
+            } catch (e: Exception) {
+                IterableLogger.w(TAG, "Failed to decrypt $key, clearing this value", e)
+                // Clear this specific item and call failure handler
+                sharedPrefs.edit().remove(key).apply()
+                handleDecryptionError(e)
+                null
+            }
         }
     }
 
-    private fun secureSave(key: String, value: String?) {
+    private suspend fun secureSave(key: String, value: String?) = withContext(ioDispatcher) {
         val editor = sharedPrefs.edit()
         if (value == null) {
             editor.remove(key).remove(key + PLAINTEXT_SUFFIX).apply()
-            return
+            return@withContext
         }
 
         if (!encryption) {
             editor.putString(key, value).putBoolean(key + PLAINTEXT_SUFFIX, true).apply()
-            return
+            return@withContext
         }
 
         try {
             encryptor?.let {
-                val encrypted = runWithTimeout { it.encrypt(value) }
+                val encrypted = withTimeout(CRYPTO_OPERATION_TIMEOUT_MS) {
+                    it.encrypt(value)
+                }
                 editor.putString(key, encrypted)
                     .remove(key + PLAINTEXT_SUFFIX)
                     .apply()
             }
         } catch (e: Exception) {
-            handleDecryptionError(e)
+            IterableLogger.w(TAG, "Failed to encrypt $key, saving as plaintext", e)
+            // Fallback to plaintext for this specific value
             editor.putString(key, value)
                 .putBoolean(key + PLAINTEXT_SUFFIX, true)
                 .apply()
         }
     }
 
-    fun getEmail() = secureGet(KEY_EMAIL)
-    fun saveEmail(email: String?) = secureSave(KEY_EMAIL, email)
+    // Async getters - wait for initialization if needed
+    suspend fun getEmail(): String? {
+        initializationComplete.await()
+        return cachedEmail
+    }
+    
+    suspend fun getUserId(): String? {
+        initializationComplete.await()
+        return cachedUserId
+    }
 
-    fun getUserId() = secureGet(KEY_USER_ID)
-    fun saveUserId(userId: String?) = secureSave(KEY_USER_ID, userId)
-
-    fun getAuthToken() = secureGet(KEY_AUTH_TOKEN)
-    fun saveAuthToken(authToken: String?) = secureSave(KEY_AUTH_TOKEN, authToken)
+    suspend fun getAuthToken(): String? {
+        initializationComplete.await()
+        return cachedAuthToken
+    }
+    
+    // Sync setters - instant cache update + background save
+    fun saveEmail(email: String?) {
+        cachedEmail = email
+        backgroundScope.launch { secureSave(KEY_EMAIL, email) }
+    }
+    
+    fun saveUserId(userId: String?) {
+        cachedUserId = userId
+        backgroundScope.launch { secureSave(KEY_USER_ID, userId) }
+    }
+    
+    fun saveAuthToken(authToken: String?) {
+        cachedAuthToken = authToken
+        backgroundScope.launch { secureSave(KEY_AUTH_TOKEN, authToken) }
+    }
 }

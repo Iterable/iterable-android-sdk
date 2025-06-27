@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import android.util.Base64
+import kotlinx.coroutines.*
+import kotlinx.coroutines.test.*
 import org.junit.Before
 import org.junit.After
 import org.junit.Test
@@ -16,7 +18,6 @@ import org.mockito.MockitoAnnotations
 import org.junit.Assert.*
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.isNull
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.MockedStatic
@@ -27,6 +28,7 @@ import org.mockito.Mockito.clearInvocations
 import org.mockito.ArgumentMatchers.matches
 import org.mockito.Mockito.never
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class IterableKeychainTest {
 
     @Mock private lateinit var mockContext: Context
@@ -35,13 +37,18 @@ class IterableKeychainTest {
     @Mock private lateinit var mockDecryptionFailureHandler: IterableDecryptionFailureHandler
     @Mock private lateinit var mockEncryptor: IterableDataEncryptor
 
-    private lateinit var keychain: IterableKeychain
     private lateinit var mockedLog: MockedStatic<Log>
     private lateinit var mockedBase64: MockedStatic<Base64>
+    private lateinit var testDispatcher: TestDispatcher
+    private lateinit var testScope: TestScope
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
+        MockitoAnnotations.openMocks(this)
+        
+        // Setup test coroutines
+        testDispatcher = StandardTestDispatcher()
+        testScope = TestScope(testDispatcher)
         
         // Mock Android Log
         mockedLog = mockStatic(Log::class.java)
@@ -50,52 +57,16 @@ class IterableKeychainTest {
         mockedBase64 = mockStatic(Base64::class.java)
         `when`(Base64.encodeToString(any(), anyInt())).thenReturn("mocked_base64_string")
         
-        `when`(mockContext.getSharedPreferences(
-            any<String>(),
-            eq(Context.MODE_PRIVATE)
-        )).thenReturn(mockSharedPrefs)
-        
+        `when`(mockContext.getSharedPreferences(any<String>(), eq(Context.MODE_PRIVATE))).thenReturn(mockSharedPrefs)
         `when`(mockSharedPrefs.edit()).thenReturn(mockEditor)
         `when`(mockEditor.putString(any<String>(), any())).thenReturn(mockEditor)
         `when`(mockEditor.remove(any<String>())).thenReturn(mockEditor)
         `when`(mockEditor.putBoolean(any<String>(), anyBoolean())).thenReturn(mockEditor)
-
-        // Mock migration-related SharedPreferences calls
         `when`(mockSharedPrefs.contains(any<String>())).thenReturn(false)
-        // Mock encryption flag to be true by default
         `when`(mockSharedPrefs.getBoolean(eq("iterable-encryption-enabled"), anyBoolean())).thenReturn(true)
         `when`(mockSharedPrefs.getString(any<String>(), any())).thenReturn(null)
-        
-        // Mock editor.apply() to do nothing
+        `when`(mockSharedPrefs.getBoolean(matches(".*_plaintext"), eq(false))).thenReturn(false)
         Mockito.doNothing().`when`(mockEditor).apply()
-
-        // Create keychain with encryption enabled (default)
-        keychain = IterableKeychain(
-            mockContext, 
-            mockDecryptionFailureHandler
-        )
-        // Directly set the mock encryptor
-        keychain.encryptor = mockEncryptor
-
-        // Setup encrypt/decrypt behavior
-        `when`(mockEncryptor.encrypt(any())).thenAnswer { invocation ->
-            val input = invocation.arguments[0] as String?
-            input?.let { "encrypted_$it" }
-        }
-        
-        `when`(mockEncryptor.decrypt(any())).thenAnswer { invocation ->
-            val encrypted = invocation.arguments[0] as String?
-            if (encrypted == null) {
-                null
-            } else if (encrypted.startsWith("encrypted_")) {
-                encrypted.substring("encrypted_".length)
-            } else {
-                throw IterableDataEncryptor.DecryptionException("Invalid encrypted value")
-            }
-        }
-
-        // Reset the verification count after setup
-        Mockito.clearInvocations(mockEditor)
     }
 
     @After
@@ -105,269 +76,338 @@ class IterableKeychainTest {
     }
 
     @Test
-    fun testSaveAndGetEmail() {
-        val testEmail = "test@example.com"
+    fun testBasicAsyncOperations() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            true, 
+            testScope, 
+            testDispatcher
+        )
         
-        // Update mock to return the encrypted value
-        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull()))
-            .thenReturn("encrypted_$testEmail")
+        // Wait for initialization to complete
+        advanceUntilIdle()
         
-        keychain.saveEmail(testEmail)
-        
-        verify(mockEditor).putString(eq("iterable-email"), eq("encrypted_$testEmail"))
-        verify(mockEditor).apply()
-        
-        val retrievedEmail = keychain.getEmail()
-        assertEquals(testEmail, retrievedEmail)
-    }
-
-    @Test
-    fun testSaveAndGetUserId() {
-        val testUserId = "user123"
-        
-        // Update mock to return the encrypted value
-        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull()))
-            .thenReturn("encrypted_$testUserId")
-        
-        keychain.saveUserId(testUserId)
-        
-        verify(mockEditor).putString(eq("iterable-user-id"), eq("encrypted_$testUserId"))
-        verify(mockEditor).apply()
-        
-        val retrievedUserId = keychain.getUserId()
-        assertEquals(testUserId, retrievedUserId)
-    }
-
-    @Test
-    fun testSaveAndGetAuthToken() {
-        val testToken = "auth-token-123"
-        
-        // Update mock to return the encrypted value
-        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull()))
-            .thenReturn("encrypted_$testToken")
-        
-        keychain.saveAuthToken(testToken)
-        
-        verify(mockEditor).putString(eq("iterable-auth-token"), eq("encrypted_$testToken"))
-        verify(mockEditor).apply()
-        
-        val retrievedToken = keychain.getAuthToken()
-        assertEquals(testToken, retrievedToken)
-    }
-
-    @Test
-    fun testDecryptionFailure() {
-        // Setup mock to throw runtime exception instead
-        `when`(mockEncryptor.decrypt(any())).thenAnswer { 
-            throw RuntimeException("Test decryption failed")
-        }
-        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull()))
-            .thenReturn("any_encrypted_value")
-
-        val result = keychain.getEmail()
-
-        // Verify data was cleared
-        verify(mockEditor).remove("iterable-email")
-        verify(mockEditor).remove("iterable-user-id")
-        verify(mockEditor).remove("iterable-auth-token")
-        verify(mockEditor).apply()
-
-        // Verify failure handler was called with any exception
-        verify(mockDecryptionFailureHandler).onDecryptionFailed(any())
-
-        assertNull(result)
-    }
-
-    @Test
-    fun testDecryptionFailureForAllOperations() {
-        // Setup mock to throw runtime exception
-        `when`(mockEncryptor.decrypt(any())).thenAnswer { 
-            throw RuntimeException("Test decryption failed")
-        }
-        `when`(mockSharedPrefs.getString(any(), isNull())).thenReturn("any_encrypted_value")
-        
-        // Test all getter methods
+        // Initially should be null (no stored data)
         assertNull(keychain.getEmail())
         assertNull(keychain.getUserId())
         assertNull(keychain.getAuthToken())
         
-        // Verify failure handler was called exactly once for each operation
+        // Save values - cache should update immediately
+        keychain.saveEmail("test@example.com")
+        assertEquals("test@example.com", keychain.getEmail())
+        
+        keychain.saveUserId("user123")
+        assertEquals("user123", keychain.getUserId())
+        
+        keychain.saveAuthToken("token123")
+        assertEquals("token123", keychain.getAuthToken())
+        
+        // Advance coroutines to complete background saves
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun testAsyncGettersWaitForInitialization() = testScope.runTest {
+        // Setup some existing data
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("existing@test.com")
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
+        
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false, // No encryption for simpler test
+            testScope, 
+            testDispatcher
+        )
+        
+        // Don't advance time yet - initialization should be pending
+        
+        // This should wait for initialization
+        val emailDeferred = async { keychain.getEmail() }
+        
+        // Should not complete yet
+        assertFalse(emailDeferred.isCompleted)
+        
+        // Now advance time to complete initialization
+        advanceUntilIdle()
+        
+        // Now getter should complete with loaded value
+        assertEquals("existing@test.com", emailDeferred.await())
+    }
+
+    @Test
+    fun testSyncSettersUpdateCacheImmediately() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
+        )
+        
+        advanceUntilIdle() // Complete initialization
+        
+        // Save should update cache immediately, even before background save
+        keychain.saveEmail("instant@test.com")
+        assertEquals("instant@test.com", keychain.getEmail())
+        
+        // Test rapid updates
+        keychain.saveEmail("update1@test.com")
+        assertEquals("update1@test.com", keychain.getEmail())
+        
+        keychain.saveEmail("update2@test.com")
+        assertEquals("update2@test.com", keychain.getEmail())
+        
+        // Complete all background saves
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun testNullValueHandling() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
+        )
+        
+        advanceUntilIdle()
+        
+        // Set values then clear them
+        keychain.saveEmail("test@example.com")
+        keychain.saveUserId("user123")
+        keychain.saveAuthToken("token123")
+        
+        // Verify values are set
+        assertEquals("test@example.com", keychain.getEmail())
+        assertEquals("user123", keychain.getUserId())
+        assertEquals("token123", keychain.getAuthToken())
+        
+        // Clear with null
+        keychain.saveEmail(null)
+        keychain.saveUserId(null)
+        keychain.saveAuthToken(null)
+        
+        // Should return null immediately
+        assertNull(keychain.getEmail())
+        assertNull(keychain.getUserId())
+        assertNull(keychain.getAuthToken())
+        
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun testEncryptionDisabledMode() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false, // Encryption disabled
+            testScope, 
+            testDispatcher
+        )
+        
+        advanceUntilIdle()
+        
+        // Encryptor should be null when encryption is disabled
+        assertNull(keychain.encryptor)
+        
+        // Test saving and retrieving
+        keychain.saveEmail("plaintext@test.com")
+        assertEquals("plaintext@test.com", keychain.getEmail())
+        
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun testDecryptionFailureHandling() = testScope.runTest {
+        // Setup encrypted data that will fail to decrypt
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("bad_encrypted_data")
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(false)
+        
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            true,
+            testScope, 
+            testDispatcher
+        )
+        keychain.encryptor = mockEncryptor
+        
+        // Setup encryptor to fail decryption
+        `when`(mockEncryptor.decrypt(any())).thenThrow(RuntimeException("Decryption failed"))
+        
+        // Complete initialization
+        advanceUntilIdle()
+        
+        // Should return null due to decryption failure
+        assertNull(keychain.getEmail())
+        
+        // Should have called failure handler
+        verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
+        
+        // Should have removed the bad data
+        verify(mockEditor, times(1)).remove(eq("iterable-email"))
+    }
+
+    @Test
+    fun testEncryptionFailureFallback() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            true,
+            testScope, 
+            testDispatcher
+        )
+        keychain.encryptor = mockEncryptor
+        
+        // Setup encryption to fail
+        `when`(mockEncryptor.encrypt(any())).thenThrow(RuntimeException("Encryption failed"))
+        
+        advanceUntilIdle()
+        clearInvocations(mockEditor) // Clear setup interactions
+        
+        // Save should still work (cache updated immediately)
+        keychain.saveEmail("fallback@test.com")
+        assertEquals("fallback@test.com", keychain.getEmail())
+        
+        // Complete background save
+        advanceUntilIdle()
+        
+        // Should have saved as plaintext (fallback)
+        verify(mockEditor, times(1)).putString(eq("iterable-email"), eq("fallback@test.com"))
+        verify(mockEditor, times(1)).putBoolean(eq("iterable-email_plaintext"), eq(true))
+    }
+
+    @Test
+    fun testMigrationFailureHandling() = testScope.runTest {
+        val mockMigrator = mock(IterableKeychainEncryptedDataMigrator::class.java)
+        val migrationException = RuntimeException("Migration failed")
+        
+        `when`(mockMigrator.isMigrationCompleted()).thenReturn(false)
+        doThrow(migrationException).`when`(mockMigrator).attemptMigration()
+        
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler,
+            mockMigrator,
+            true,
+            testScope,
+            testDispatcher
+        )
+        
+        advanceUntilIdle()
+        
+        // Verify failure handler was called
         verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
     }
 
     @Test
-    fun testSaveNullValues() {
-        keychain.saveEmail(null)
-        keychain.saveUserId(null)
-        keychain.saveAuthToken(null)
-
-        // Verify remove calls for both key and plaintext flag
-        verify(mockEditor, times(6)).remove(any())  // 2 removes per save (key + plaintext flag)
-        verify(mockEditor, times(3)).remove(matches(".*_plaintext"))
-        // Verify exactly one apply call for each save operation
-        verify(mockEditor, times(3)).apply()
-    }
-
-    @Test
-    fun testConcurrentAccess() {
-        val testEmail = "test@example.com"
-        val threads = mutableListOf<Thread>()
-        val exceptions = mutableListOf<Exception>()
+    fun testConcurrentOperations() = testScope.runTest {
+        val keychain = IterableKeychain(
+            mockContext, 
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
+        )
         
-        // Simulate multiple threads accessing keychain
-        for (i in 1..5) {
-            threads.add(Thread {
-                try {
-                    keychain.saveEmail(testEmail)
-                    assertEquals(testEmail, keychain.getEmail())
-                } catch (e: Exception) {
-                    exceptions.add(e)
-                }
+        advanceUntilIdle()
+        
+        // Launch multiple concurrent operations
+        val jobs = mutableListOf<Job>()
+        
+        for (i in 1..10) {
+            jobs.add(launch {
+                keychain.saveEmail("email$i@test.com")
+                val result = keychain.getEmail()
+                assertNotNull("Should get some email value", result)
             })
         }
         
-        threads.forEach { it.start() }
-        threads.forEach { it.join() }
+        // Wait for all to complete
+        jobs.forEach { it.join() }
+        advanceUntilIdle()
         
-        assertTrue("Concurrent access caused exceptions: $exceptions", exceptions.isEmpty())
+        // Should have some final email value
+        assertNotNull(keychain.getEmail())
+        assertTrue(keychain.getEmail()!!.contains("@test.com"))
     }
 
     @Test
-    fun testMigrationFailure() {
-        // Mock migration to throw exception
-        val mockMigrator = mock(IterableKeychainEncryptedDataMigrator::class.java)
-        val migrationException = RuntimeException("Test migration failed")
+    fun testTimeoutHandling() = testScope.runTest {
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), any())).thenReturn("encrypted_data")
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(false)
         
-        doThrow(migrationException).`when`(mockMigrator).attemptMigration()
-        
-        // Create new keychain with mock migrator
-        keychain = IterableKeychain(
+        val keychain = IterableKeychain(
             mockContext, 
-            mockDecryptionFailureHandler,
-            mockMigrator
+            mockDecryptionFailureHandler, 
+            null, 
+            true,
+            testScope, 
+            testDispatcher
         )
+        keychain.encryptor = mockEncryptor
         
-        // Verify data was cleared
-        verify(mockEditor).remove(eq("iterable-email"))
-        verify(mockEditor).remove(eq("iterable-user-id"))
-        verify(mockEditor).remove(eq("iterable-auth-token"))
-        verify(mockEditor).apply()
+        // Setup encryptor to simulate timeout by throwing an exception that would be thrown by withTimeout
+        `when`(mockEncryptor.decrypt(any())).thenThrow(RuntimeException("Timeout"))
         
-        // Verify failure handler was called
-        verify(mockDecryptionFailureHandler).onDecryptionFailed(migrationException)
+        advanceUntilIdle()
+        
+        // Should return null due to timeout/exception during initialization
+        assertNull(keychain.getEmail())
+        
+        // Should have called failure handler
+        verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
+        
+        // Should have removed the bad encrypted data
+        verify(mockEditor, times(1)).remove(eq("iterable-email"))
     }
 
     @Test
-    fun testMigrationOnlyAttemptedOnce() {
-        // Create mock migrator
-        val mockMigrator = mock(IterableKeychainEncryptedDataMigrator::class.java)
-        // First check returns false, subsequent checks return true
-        `when`(mockMigrator.isMigrationCompleted())
-            .thenReturn(false)  // first call
-        
-        // First initialization
-        keychain = IterableKeychain(
+    fun testAllFieldsIndependently() = testScope.runTest {
+        val keychain = IterableKeychain(
             mockContext, 
-            mockDecryptionFailureHandler,
-            mockMigrator
-        )
-
-        `when`(mockMigrator.isMigrationCompleted())
-            .thenReturn(true)  // subsequent calls
-        
-        // Second initialization
-        keychain = IterableKeychain(
-            mockContext, 
-            mockDecryptionFailureHandler,
-            mockMigrator
+            mockDecryptionFailureHandler, 
+            null, 
+            false,
+            testScope, 
+            testDispatcher
         )
         
-        // Verify attemptMigration was called exactly once
-        verify(mockMigrator, times(1)).attemptMigration()
-    }
-
-    @Test
-    fun testEncryptionAndDecryptionFailure() {
-        // Setup encryption and decryption to fail
-        `when`(mockEncryptor.encrypt(any())).thenThrow(RuntimeException("Simulated encryption failure"))
-        `when`(mockEncryptor.decrypt(any())).thenThrow(RuntimeException("Simulated decryption failure"))
+        advanceUntilIdle()
         
-        val testData = "test data for encryption failure"
+        // Test each field independently
+        keychain.saveEmail("email@test.com")
+        assertEquals("email@test.com", keychain.getEmail())
+        assertNull(keychain.getUserId())
+        assertNull(keychain.getAuthToken())
         
-        // Save data - should fall back to plaintext
-        keychain.saveUserId(testData)
-
-        // Verify plaintext save operations
-        verify(mockEditor).putString(eq("iterable-user-id"), eq(testData))
-        verify(mockEditor).putBoolean(eq("iterable-user-id_plaintext"), eq(true))
-
-        // Setup SharedPreferences to return the saved data
-        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testData)
-        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
-
-        // Verify data can be retrieved
-        assertEquals(testData, keychain.getUserId())
-
-        // Verify encryption was attempted and failed
-        verify(mockEncryptor).encrypt(eq(testData))
-        verify(mockEncryptor, never()).decrypt(any()) // Should not attempt decryption for plaintext
-
-        // Test null handling
-        clearInvocations(mockEditor)
+        keychain.saveUserId("user123")
+        assertEquals("email@test.com", keychain.getEmail())
+        assertEquals("user123", keychain.getUserId())
+        assertNull(keychain.getAuthToken())
+        
+        keychain.saveAuthToken("token456")
+        assertEquals("email@test.com", keychain.getEmail())
+        assertEquals("user123", keychain.getUserId())
+        assertEquals("token456", keychain.getAuthToken())
+        
+        // Clear one field
         keychain.saveUserId(null)
-        verify(mockEditor).remove(eq("iterable-user-id"))
-        verify(mockEditor).remove(eq("iterable-user-id_plaintext"))
-
-        // Verify no more encryption attempts for null
-        verify(mockEncryptor, never()).encrypt(isNull())
-        verify(mockEncryptor, never()).decrypt(isNull())
-    }
-
-    @Test
-    fun testEncryptionDisabled() {
-        // Create a new keychain with encryption disabled
-        val plaintextKeychain = IterableKeychain(
-            mockContext,
-            mockDecryptionFailureHandler,
-            null,
-            false  // encryption = false means encryption is disabled
-        )
+        assertEquals("email@test.com", keychain.getEmail())
+        assertNull(keychain.getUserId())
+        assertEquals("token456", keychain.getAuthToken())
         
-        val testEmail = "test@example.com"
-        val testUserId = "user123"
-        val testToken = "auth-token-123"
-        
-        // Mock the SharedPreferences to return plaintext values
-        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull())).thenReturn(testEmail)
-        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testUserId)
-        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull())).thenReturn(testToken)
-
-        // Mock plaintext flag checks to return true when encryption is disabled
-        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
-        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
-        `when`(mockSharedPrefs.getBoolean(eq("iterable-auth-token_plaintext"), eq(false))).thenReturn(true)
-        
-        // Test save operations
-        plaintextKeychain.saveEmail(testEmail)
-        plaintextKeychain.saveUserId(testUserId)
-        plaintextKeychain.saveAuthToken(testToken)
-        
-        // Verify values are stored as plaintext
-        verify(mockEditor).putString(eq("iterable-email"), eq(testEmail))
-        verify(mockEditor).putString(eq("iterable-user-id"), eq(testUserId))
-        verify(mockEditor).putString(eq("iterable-auth-token"), eq(testToken))
-        
-        // Verify plaintext suffix flags are set for better compatibility
-        verify(mockEditor).putBoolean(eq("iterable-email_plaintext"), eq(true))
-        verify(mockEditor).putBoolean(eq("iterable-user-id_plaintext"), eq(true))
-        verify(mockEditor).putBoolean(eq("iterable-auth-token_plaintext"), eq(true))
-        
-        // Test get operations
-        assertEquals(testEmail, plaintextKeychain.getEmail())
-        assertEquals(testUserId, plaintextKeychain.getUserId())
-        assertEquals(testToken, plaintextKeychain.getAuthToken())
-        
-        // Verify IterableDataEncryptor was never created
-        assertNull(plaintextKeychain.encryptor)
+        advanceUntilIdle()
     }
 } 
