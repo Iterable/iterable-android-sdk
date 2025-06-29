@@ -134,14 +134,14 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
         relativeLayout.addView(webView, layoutParams)
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
-            IterableApi.sharedInstance.trackInAppOpen(messageId, location)
+            IterableApi.sharedInstance.trackInAppOpen(messageId, location!!)
         }
 
         prepareToShowWebView()
         return relativeLayout
     }
 
-    fun setLoaded(loaded: Boolean) {
+    override fun setLoaded(loaded: Boolean) {
         this.loaded = loaded
     }
 
@@ -174,8 +174,8 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
     }
 
     override fun onUrlClicked(url: String) {
-        IterableApi.sharedInstance.trackInAppClick(messageId, url, location)
-        IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location)
+        IterableApi.sharedInstance.trackInAppClick(messageId, url, location!!)
+        IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location!!)
 
         if (clickCallback != null) {
             clickCallback!!.execute(Uri.parse(url))
@@ -190,7 +190,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
      */
     fun onBackPressed() {
         IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON)
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location)
+        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location!!)
 
         processMessageRemoval()
     }
@@ -306,9 +306,9 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            webView.postOnAnimationDelayed(dismissWebViewRunnable, 400)
+            webView.postOnAnimationDelayed(dismissWebViewRunnable, 400L)
         } else {
-            webView.postDelayed(dismissWebViewRunnable, 400)
+            webView.postDelayed(dismissWebViewRunnable, 400L)
         }
     }
 
@@ -320,7 +320,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
         }
 
         if (message.isMarkedForDeletion() && !message.isConsumed()) {
-            IterableApi.sharedInstance.inAppManager.removeMessage(message, null, null)
+            IterableApi.sharedInstance.inAppManager?.removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP)
         }
     }
 
