@@ -70,16 +70,16 @@ class IterableFirebaseMessagingService : FirebaseMessagingService() {
                 if (notificationType != null && IterableApi.getInstance().mainActivityContext != null) {
                     when (notificationType) {
                         "InAppUpdate" -> {
-                            IterableApi.getInstance().inAppManager.syncInApp()
+                            IterableApi.getInstance().inAppManager?.syncInApp()
                         }
                         "InAppRemove" -> {
                             val messageId = extras.getString("messageId")
                             if (messageId != null) {
-                                IterableApi.getInstance().inAppManager.removeMessage(messageId)
+                                IterableApi.getInstance().inAppManager?.removeMessage(messageId)
                             }
                         }
                         "UpdateEmbedded" -> {
-                            IterableApi.getInstance().embeddedManager.syncMessages()
+                            IterableApi.getInstance().embeddedManager?.syncMessages()
                         }
                     }
                 }

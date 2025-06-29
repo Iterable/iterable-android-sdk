@@ -38,10 +38,10 @@ class IterableInAppManager @VisibleForTesting constructor(
         @JvmStatic
         private fun getInAppStorageModel(iterableApi: IterableApi, useInMemoryForInAppStorage: Boolean): IterableInAppStorage {
             return if (useInMemoryForInAppStorage) {
-                checkAndDeleteUnusedInAppFileStorage(iterableApi.getMainActivityContext())
+                checkAndDeleteUnusedInAppFileStorage(iterableApi.getMainActivityContext()!!)
                 IterableInAppMemoryStorage()
             } else {
-                IterableInAppFileStorage(iterableApi.getMainActivityContext())
+                IterableInAppFileStorage(iterableApi.getMainActivityContext()!!)
             }
         }
 
@@ -61,7 +61,7 @@ class IterableInAppManager @VisibleForTesting constructor(
         fun onInboxUpdated()
     }
 
-    private val context: Context = api.getMainActivityContext()
+    private val context: Context = api.getMainActivityContext()!!
     private val listeners = mutableListOf<Listener>()
     private var lastSyncTime = 0L
     private var lastInAppShown = 0L

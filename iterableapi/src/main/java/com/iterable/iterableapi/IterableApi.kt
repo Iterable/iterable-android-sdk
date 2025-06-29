@@ -741,7 +741,7 @@ class IterableApi {
             getPreferences(),
             IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
             attributionInfo.toJSONObject(),
-            3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+            3600L * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
         )
     }
 
