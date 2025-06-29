@@ -104,7 +104,7 @@ class IterableAuthManager(
                         try {
                             if (isLastAuthTokenValid && !shouldIgnoreRetryPolicy) {
                                 // if some JWT retry had valid token it will not fetch the auth token again from developer function
-                                handleAuthTokenSuccess(IterableApi.getInstance().authToken, successCallback)
+                                handleAuthTokenSuccess(IterableApi.getInstance().getAuthToken(), successCallback)
                                 pendingAuth = false
                                 return@submit
                             }
@@ -208,8 +208,8 @@ class IterableAuthManager(
         try {
             timer!!.schedule(object : TimerTask() {
                 override fun run() {
-                    if (api.email != null || api.userId != null) {
-                        api.authManager.requestNewAuthToken(false, successCallback, isScheduledRefresh)
+                    if (api.getEmail() != null || api.getUserId() != null) {
+                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh)
                     } else {
                         IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh")
                     }
@@ -223,8 +223,8 @@ class IterableAuthManager(
     }
 
     private fun getEmailOrUserId(): String? {
-        val email = api.email
-        val userId = api.userId
+        val email = api.getEmail()
+        val userId = api.getUserId()
 
         return if (email != null) {
             email

@@ -14,7 +14,7 @@ import java.io.File
 object IterableUtil {
     @VisibleForTesting
     @JvmStatic
-    var instance: IterableUtilImpl = IterableUtilImpl()
+    internal var instance: IterableUtilImpl = IterableUtilImpl()
 
     @JvmStatic
     fun currentTimeMillis(): Long {

@@ -70,7 +70,7 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (offlineMode) {
                 if (this.requestProcessor == null || this.requestProcessor!!.javaClass != OfflineRequestProcessor::class.java) {
-                    this.requestProcessor = OfflineRequestProcessor(authProvider.getContext())
+                    this.requestProcessor = OfflineRequestProcessor(authProvider.getContext()!!)
                 }
             } else {
                 if (this.requestProcessor == null || this.requestProcessor!!.javaClass != OnlineRequestProcessor::class.java) {
@@ -492,8 +492,8 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
         try {
             addEmailOrUserIdToJson(requestJSON)
 
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_START, session.sessionStartTime.time)
-            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_END, session.sessionEndTime.time)
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_START, session.sessionStartTime?.time ?: 0)
+            requestJSON.put(IterableConstants.ITERABLE_INBOX_SESSION_END, session.sessionEndTime?.time ?: 0)
             requestJSON.put(IterableConstants.ITERABLE_INBOX_START_TOTAL_MESSAGE_COUNT, session.startTotalMessageCount)
             requestJSON.put(IterableConstants.ITERABLE_INBOX_START_UNREAD_MESSAGE_COUNT, session.startUnreadMessageCount)
             requestJSON.put(IterableConstants.ITERABLE_INBOX_END_TOTAL_MESSAGE_COUNT, session.endTotalMessageCount)
@@ -531,8 +531,8 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
             if (session.getId() != null) {
                 sessionJson.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getId())
             }
-            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getStart().time)
-            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getEnd().time)
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getStart()?.time ?: 0)
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getEnd()?.time ?: 0)
 
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION, sessionJson)
 
@@ -631,7 +631,7 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
 
             var frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo
             if (frameworkInfo == null) {
-                val detectedFramework = IterableMobileFrameworkDetector.detectFramework(context)
+                val detectedFramework = IterableMobileFrameworkDetector.detectFramework(context!!)
                 val sdkVersion = if (detectedFramework == IterableAPIMobileFrameworkType.NATIVE) 
                     IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER 
                 else 
@@ -643,7 +643,7 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
                 )
             }
 
-            DeviceInfoUtils.populateDeviceDetails(dataFields, context, authProvider.getDeviceId(), frameworkInfo)
+            DeviceInfoUtils.populateDeviceDetails(dataFields, context!!, authProvider.getDeviceId()!!, frameworkInfo)
             dataFields.put(IterableConstants.DEVICE_NOTIFICATIONS_ENABLED, NotificationManagerCompat.from(context!!).areNotificationsEnabled())
 
             val device = JSONObject()

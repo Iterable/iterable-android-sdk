@@ -917,7 +917,7 @@ class IterableApi {
     @NonNull
     fun getInAppManager(): IterableInAppManager {
         if (inAppManager == null) {
-            inAppManager = IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval, config.isInMemoryStorageForInApps)
+            inAppManager = IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval, config.useInMemoryStorageForInApps)
         }
         return inAppManager!!
     }
@@ -925,7 +925,7 @@ class IterableApi {
     @NonNull
     fun getEmbeddedManager(): IterableEmbeddedManager {
         if (embeddedManager == null) {
-            embeddedManager = IterableEmbeddedManager()
+            embeddedManager = IterableEmbeddedManager(this)
         }
         return embeddedManager!!
     }
@@ -1041,8 +1041,9 @@ class IterableApi {
         }
 
         if (this::config.isInitialized && config.authHandler != null && checkSDKInitialization()) {
-            if (_authToken != null) {
-                getAuthManager().queueExpirationRefresh(_authToken)
+            val authToken = _authToken
+            if (authToken != null) {
+                getAuthManager().queueExpirationRefresh(authToken)
             } else {
                 IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh")
                 getAuthManager().scheduleAuthTokenRefresh(authManager!!.getNextRetryInterval(), true, null)

@@ -51,6 +51,8 @@ data class IterableEmbeddedMessage (
     val elements: EmbeddedMessageElements? = null,
     val payload: JSONObject? = null
 ) {
+    
+    fun getMetadata(): EmbeddedMessageMetadata = metadata
     companion object {
         val TAG = "ItblEmbeddedMessage"
         fun toJSONObject(message: IterableEmbeddedMessage): JSONObject {
@@ -88,6 +90,8 @@ class EmbeddedMessageMetadata(
     val campaignId: Int? = null,
     val isProof: Boolean = false
 ) {
+    
+    fun getMessageId(): String = messageId
     companion object {
         val TAG = "ItblEmbeddedMessageMetadata"
 
