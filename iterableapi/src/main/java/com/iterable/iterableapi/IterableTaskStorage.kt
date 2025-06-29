@@ -33,14 +33,12 @@ internal class IterableTaskStorage private constructor(context: Context?) {
 
     init {
         try {
-            if (context == null) {
-                return
+            if (context != null) {
+                if (databaseManager == null) {
+                    databaseManager = IterableDatabaseManager(context)
+                }
+                database = databaseManager!!.writableDatabase
             }
-
-            if (databaseManager == null) {
-                databaseManager = IterableDatabaseManager(context)
-            }
-            database = databaseManager!!.writableDatabase
         } catch (e: SQLException) {
             IterableLogger.e(TAG, "Database cannot be opened for writing")
         }

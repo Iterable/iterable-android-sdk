@@ -13,18 +13,18 @@ import java.util.ArrayList
 /**
  * Created by davidtruong on 5/23/16.
  */
-internal class IterableNotificationData {
+class IterableNotificationData {
     
     companion object {
         const val TAG = "IterableNoticationData"
     }
 
-    private var campaignId: Int = 0
-    private var templateId: Int = 0
-    private var messageId: String? = null
-    private var isGhostPush: Boolean = false
-    private var defaultAction: IterableAction? = null
-    private var actionButtons: List<Button>? = null
+    internal var campaignId: Int = 0
+    internal var templateId: Int = 0
+    internal var messageId: String? = null
+    internal var isGhostPush: Boolean = false
+    internal var defaultAction: IterableAction? = null
+    internal var actionButtons: List<Button>? = null
 
     /**
      * Creates the notification data from a string

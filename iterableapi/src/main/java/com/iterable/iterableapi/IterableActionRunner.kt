@@ -43,7 +43,7 @@ internal object IterableActionRunner {
             val actionContext = IterableActionContext(action, source)
 
             return if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
-                openUri(context, Uri.parse(action.data), actionContext)
+                openUri(context, Uri.parse(action.getData()), actionContext)
             } else {
                 callCustomActionIfSpecified(action, actionContext)
             }
@@ -113,7 +113,7 @@ internal object IterableActionRunner {
          * `false` if the action is invalid or the handler returned `false`
          */
         private fun callCustomActionIfSpecified(@NonNull action: IterableAction, @NonNull actionContext: IterableActionContext): Boolean {
-            if (!action.type.isNullOrEmpty()) {
+            if (!action.getType().isNullOrEmpty()) {
                 // Call custom action handler
                 if (IterableApi.sharedInstance.config.customActionHandler != null) {
                     return IterableApi.sharedInstance.config.customActionHandler!!.handleIterableCustomAction(action, actionContext)

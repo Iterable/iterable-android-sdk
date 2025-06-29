@@ -12,7 +12,7 @@ internal class ImpressionData(
     var displayCount = 0
     var duration = 0.0f
 
-    private var impressionStarted: Date? = null
+    internal var impressionStarted: Date? = null
 
     fun startImpression() {
         this.impressionStarted = Date()

@@ -10,8 +10,8 @@ import org.json.JSONObject
 import java.util.*
 
 class IterableInAppMessage internal constructor(
-    @NonNull private val messageId: String,
-    @NonNull private val content: Content,
+    @NonNull internal val messageId: String,
+    @NonNull internal val content: Content,
     @NonNull private val customPayload: JSONObject,
     @NonNull private val createdAt: Date,
     @NonNull private val expiresAt: Date,
@@ -20,7 +20,7 @@ class IterableInAppMessage internal constructor(
     @Nullable private val saveToInbox: Boolean?,
     @Nullable private val inboxMetadata: InboxMetadata?,
     @Nullable private val campaignId: Long?,
-    private val jsonOnly: Boolean
+    internal val jsonOnly: Boolean
 ) {
 
     companion object {
@@ -392,7 +392,7 @@ class IterableInAppMessage internal constructor(
         onChanged()
     }
 
-    internal fun isConsumed(): Boolean {
+    fun isConsumed(): Boolean {
         return consumed
     }
 

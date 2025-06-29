@@ -117,12 +117,12 @@ class IterableApi {
 
     internal lateinit var apiClient: IterableApiClient
     @Nullable
-    private var inAppManager: IterableInAppManager? = null
+    internal var inAppManager: IterableInAppManager? = null
     @Nullable 
-    private var embeddedManager: IterableEmbeddedManager? = null
-    private var inboxSessionId: String? = null
-    private var authManager: IterableAuthManager? = null
-    private val deviceAttributes = HashMap<String, String>()
+    internal var embeddedManager: IterableEmbeddedManager? = null
+    internal var inboxSessionId: String? = null
+    internal var authManager: IterableAuthManager? = null
+    internal val deviceAttributes = HashMap<String, String>()
     private var keychain: IterableKeychain? = null
 
     // Constructors
@@ -140,7 +140,7 @@ class IterableApi {
     }
 
     @VisibleForTesting
-    constructor(apiClient: IterableApiClient, inAppManager: IterableInAppManager) {
+    internal constructor(apiClient: IterableApiClient, inAppManager: IterableInAppManager) {
         this.apiClient = apiClient
         this.inAppManager = inAppManager
     }
@@ -389,13 +389,13 @@ class IterableApi {
             IterableDeeplinkManager.getAndTrackDeeplink(uri, object : IterableHelper.IterableActionHandler {
                 override fun execute(originalUrl: String?) {
                     val action = IterableAction.actionOpenUrl(originalUrl)
-                    IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK)
+                    IterableActionRunner.executeAction(getInstance().getMainActivityContext()!!, action, IterableActionSource.APP_LINK)
                 }
             })
             true
         } else {
             val action = IterableAction.actionOpenUrl(uri)
-            IterableActionRunner.executeAction(getInstance().getMainActivityContext(), action, IterableActionSource.APP_LINK)
+            IterableActionRunner.executeAction(getInstance().getMainActivityContext()!!, action, IterableActionSource.APP_LINK)
         }
     }
 
@@ -907,6 +907,12 @@ class IterableApi {
      * Returns the current context for the application.
      */
     fun getMainActivityContext(): Context? = _applicationContext
+    
+    /**
+     * Property accessor for main activity context
+     */
+    val mainActivityContext: Context?
+        get() = _applicationContext
 
     @NonNull
     fun getInAppManager(): IterableInAppManager {

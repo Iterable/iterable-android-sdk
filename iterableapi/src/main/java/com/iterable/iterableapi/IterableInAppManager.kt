@@ -139,6 +139,18 @@ class IterableInAppManager @VisibleForTesting constructor(
         return unreadInboxMessageCount
     }
 
+    /**
+     * Property accessor for inbox messages
+     */
+    val inboxMessages: List<IterableInAppMessage>
+        get() = getInboxMessages()
+
+    /**
+     * Property accessor for unread inbox messages count
+     */
+    val unreadInboxMessagesCount: Int
+        get() = getUnreadInboxMessagesCount()
+
     @Synchronized
     fun setRead(@NonNull message: IterableInAppMessage, read: Boolean) {
         setRead(message, read, null, null)

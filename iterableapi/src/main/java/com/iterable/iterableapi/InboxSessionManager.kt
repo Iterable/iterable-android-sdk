@@ -30,8 +30,8 @@ class InboxSessionManager {
         session = IterableInboxSession(
             Date(),
             null,
-            IterableApi.getInstance().inAppManager.inboxMessages.size,
-            IterableApi.getInstance().inAppManager.unreadInboxMessagesCount,
+            IterableApi.getInstance().inAppManager?.inboxMessages?.size ?: 0,
+            IterableApi.getInstance().inAppManager?.unreadInboxMessagesCount ?: 0,
             0,
             0,
             null
@@ -59,8 +59,8 @@ class InboxSessionManager {
             Date(),
             session.startTotalMessageCount,
             session.startUnreadMessageCount,
-            IterableApi.getInstance().inAppManager.inboxMessages.size,
-            IterableApi.getInstance().inAppManager.unreadInboxMessagesCount,
+            IterableApi.getInstance().inAppManager?.inboxMessages?.size ?: 0,
+            IterableApi.getInstance().inAppManager?.unreadInboxMessagesCount ?: 0,
             getImpressionList()
         )
 
@@ -102,7 +102,10 @@ class InboxSessionManager {
 
         //start all impressions designated to start
         for (messageId in impressionsToStart) {
-            onMessageImpressionStarted(IterableApi.getInstance().inAppManager.getMessageById(messageId))
+            val message = IterableApi.getInstance().inAppManager?.getMessageById(messageId)
+            if (message != null) {
+                onMessageImpressionStarted(message)
+            }
         }
 
         //end all impressions designated to end
@@ -115,7 +118,7 @@ class InboxSessionManager {
         IterableLogger.printInfo()
 
         val messageId = message.messageId
-        startImpression(messageId, message.isSilentInboxMessage)
+        startImpression(messageId, message.isSilentInboxMessage())
     }
 
     fun onMessageImpressionEnded(message: IterableInAppMessage) {

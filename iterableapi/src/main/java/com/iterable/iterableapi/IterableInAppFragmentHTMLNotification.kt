@@ -319,7 +319,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
             return
         }
 
-        if (message.isMarkedForDeletion && !message.isConsumed) {
+        if (message.isMarkedForDeletion() && !message.isConsumed()) {
             IterableApi.sharedInstance.inAppManager.removeMessage(message, null, null)
         }
     }
