@@ -27,7 +27,7 @@ class IterableInAppMessage internal constructor(
         private const val TAG = "IterableInAppMessage"
 
         @JvmStatic
-        fun fromJSONObject(@NonNull messageJson: JSONObject?, @Nullable storageInterface: IterableInAppStorage?): IterableInAppMessage? {
+        internal fun fromJSONObject(@NonNull messageJson: JSONObject?, @Nullable storageInterface: IterableInAppStorage?): IterableInAppMessage? {
             if (messageJson == null) {
                 return null
             }
@@ -346,9 +346,8 @@ class IterableInAppMessage internal constructor(
     private var inAppStorageInterface: IterableInAppStorage? = null
     private var onChangeListener: OnChangeListener? = null
 
-    init {
-        this.saveToInbox = if (saveToInbox != null) (saveToInbox && !jsonOnly) else null
-    }
+    // Computed property for saveToInbox validation
+    private val processedSaveToInbox: Boolean? = if (saveToInbox != null) (saveToInbox && !jsonOnly) else null
 
     @NonNull
     fun getMessageId(): String {
@@ -410,7 +409,7 @@ class IterableInAppMessage internal constructor(
     }
 
     fun isInboxMessage(): Boolean {
-        return saveToInbox ?: false
+        return processedSaveToInbox ?: false
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
