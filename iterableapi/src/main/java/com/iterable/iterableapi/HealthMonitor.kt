@@ -1,6 +1,6 @@
 package com.iterable.iterableapi
 
-class HealthMonitor(
+internal class HealthMonitor(
     private val iterableTaskStorage: IterableTaskStorage
 ) : IterableTaskStorage.IterableDatabaseStatusListeners {
     

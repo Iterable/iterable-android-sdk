@@ -25,14 +25,14 @@ internal class IterableInAppDisplayer(
         // Prevent double display
         if (currentActivity != null) {
             return showIterableFragmentNotificationHTML(currentActivity,
-                    message.content.html,
+                    message.content.html ?: "",
                     message.messageId,
                     clickCallback,
                     message.content.backgroundAlpha,
                     message.content.padding,
                     message.content.inAppDisplaySettings.shouldAnimate,
-                    message.content.inAppDisplaySettings.inAppBgColor,
-                    true, location)
+                    message.content.inAppDisplaySettings.inAppBgColor ?: IterableInAppMessage.InAppBgColor(null, 0.0f),
+                    true, location ?: IterableInAppLocation.IN_APP)
         }
         return false
     }
@@ -57,7 +57,7 @@ internal class IterableInAppDisplayer(
                         return false
                     }
 
-                    val notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, shouldAnimate, bgColor)
+                    val notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location ?: IterableInAppLocation.IN_APP, messageId, backgroundAlpha, padding, shouldAnimate, bgColor ?: IterableInAppMessage.InAppBgColor(null, 0.0f))
                     notification.show(currentActivity.supportFragmentManager, "iterable_in_app")
                     return true
                 }

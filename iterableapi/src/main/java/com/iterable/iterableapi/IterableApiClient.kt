@@ -785,7 +785,7 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
     }
 
     fun onLogout() {
-        getRequestProcessor().onLogout(authProvider.getContext())
+        getRequestProcessor().onLogout(authProvider.getContext()!!)
         authProvider.resetAuth()
     }
 }

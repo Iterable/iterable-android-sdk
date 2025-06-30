@@ -89,7 +89,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
-            IterableApi.sharedInstance.getEmbeddedMessages(placementIds, { data ->
+            IterableApi.sharedInstance.getEmbeddedMessages(placementIds, { data: JSONObject ->
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 try {
                     val previousPlacementIds = getPlacementIds()

@@ -135,7 +135,7 @@ class IterableAuthManager(
             queueExpirationRefresh(authToken)
         } else {
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL)
-            IterableApi.getInstance().setAuthToken(authToken)
+            IterableApi.getInstance().setAuthToken(null)
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null)
             return
         }
@@ -184,7 +184,7 @@ class IterableAuthManager(
     // This method is called is used to call the authHandler.onAuthFailure method with appropriate AuthFailureReason
     fun handleAuthFailure(authToken: String?, failureReason: AuthFailureReason) {
         if (authHandler != null) {
-            authHandler.onAuthFailure(AuthFailure(getEmailOrUserId(), authToken, IterableUtil.currentTimeMillis(), failureReason))
+            authHandler.onAuthFailure(AuthFailure(getEmailOrUserId() ?: "", authToken, IterableUtil.currentTimeMillis(), failureReason))
         }
     }
 
