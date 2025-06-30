@@ -52,17 +52,17 @@ internal class OfflineRequestProcessor : RequestProcessor {
     }
 
     override fun processGetRequest(apiKey: String?, @NonNull resourcePath: String, @NonNull json: JSONObject, authToken: String?, onCallback: IterableHelper.IterableActionHandler?) {
-        val request = IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback)
+        val request = IterableApiRequest(apiKey ?: "", resourcePath, json, IterableApiRequest.GET, authToken, onCallback)
         IterableRequestTask().execute(request)
     }
 
     override fun processGetRequest(apiKey: String?, @NonNull resourcePath: String, @NonNull json: JSONObject, authToken: String?, onSuccess: IterableHelper.SuccessHandler?, onFailure: IterableHelper.FailureHandler?) {
-        val request = IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onSuccess, onFailure)
+        val request = IterableApiRequest(apiKey ?: "", resourcePath, json, IterableApiRequest.GET, authToken, onSuccess, onFailure)
         IterableRequestTask().execute(request)
     }
 
     override fun processPostRequest(apiKey: String?, @NonNull resourcePath: String, @NonNull json: JSONObject, authToken: String?, onSuccess: IterableHelper.SuccessHandler?, onFailure: IterableHelper.FailureHandler?) {
-        val request = IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure)
+        val request = IterableApiRequest(apiKey ?: "", resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure)
         if (isRequestOfflineCompatible(request.resourcePath) && healthMonitor.canSchedule()) {
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE)
             taskScheduler.scheduleTask(request, onSuccess, onFailure)
@@ -116,15 +116,15 @@ internal class TaskScheduler(
     }
 
     @MainThread
-    override fun onTaskCompleted(taskId: String, result: IterableTaskRunner.TaskResult, response: IterableApiResponse) {
+    override fun onTaskCompleted(taskId: String, result: IterableTaskRunner.TaskResult, response: IterableApiResponse?) {
         val onSuccess = successCallbackMap[taskId]
         val onFailure = failureCallbackMap[taskId]
         successCallbackMap.remove(taskId)
         failureCallbackMap.remove(taskId)
-        if (response.success) {
-            onSuccess?.onSuccess(response.responseJson)
+        if (response?.success == true) {
+            onSuccess?.onSuccess(response.responseJson ?: JSONObject())
         } else {
-            onFailure?.onFailure(response.errorMessage, response.responseJson)
+            onFailure?.onFailure(response?.errorMessage ?: "", response?.responseJson)
         }
     }
 }

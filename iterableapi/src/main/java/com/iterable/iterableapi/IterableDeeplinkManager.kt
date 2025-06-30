@@ -107,7 +107,7 @@ internal object IterableDeeplinkManager {
                     }
                 }
             } catch (e: Exception) {
-                IterableLogger.e(TAG, e.message)
+                IterableLogger.e(TAG, e.message ?: "Unknown error")
             } finally {
                 urlConnection?.disconnect()
             }
@@ -115,7 +115,7 @@ internal object IterableDeeplinkManager {
         }
 
         override fun onPostExecute(s: String?) {
-            callback?.execute(s)
+            callback?.execute(s ?: "")
 
             if (campaignId != 0) {
                 val attributionInfo = IterableAttributionInfo(campaignId, templateId, messageId)

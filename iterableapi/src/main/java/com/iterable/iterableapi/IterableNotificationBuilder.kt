@@ -16,7 +16,7 @@ import java.net.URL
 /**
  * Created by David Truong dt@iterable.com
  */
-class IterableNotificationBuilder protected constructor(
+class IterableNotificationBuilder internal constructor(
     val context: Context,
     channelId: String
 ) : NotificationCompat.Builder(context, channelId) {

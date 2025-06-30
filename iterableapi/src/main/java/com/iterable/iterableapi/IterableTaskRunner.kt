@@ -122,9 +122,14 @@ internal class IterableTaskRunner(
             var response: IterableApiResponse? = null
             var result = TaskResult.FAILURE
             try {
-                val request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), null, null)
-                request.processorType = IterableApiRequest.ProcessorType.OFFLINE
-                response = IterableRequestTask.executeApiRequest(request)
+                val taskData = getTaskDataWithDate(task)
+                if (taskData != null) {
+                    val request = IterableApiRequest.fromJSON(taskData, null, null)
+                    request?.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE)
+                    if (request != null) {
+                        response = IterableRequestTask.executeApiRequest(request)
+                    }
+                }
             } catch (e: Exception) {
                 IterableLogger.e(TAG, "Error while processing request task", e)
                 healthMonitor.onDBError()
@@ -134,19 +139,21 @@ internal class IterableTaskRunner(
                 if (response.success) {
                     result = TaskResult.SUCCESS
                 } else {
-                    if (isRetriableError(response.errorMessage)) {
+                    val errorMsg = response.errorMessage ?: ""
+                    if (isRetriableError(errorMsg)) {
                         result = TaskResult.RETRY
                     } else {
                         result = TaskResult.FAILURE
                     }
                 }
             }
-            callTaskCompletedListeners(task.id, result, response)
+            val taskId = task.id ?: ""
+            callTaskCompletedListeners(taskId, result, response)
             if (result == TaskResult.RETRY) {
                 // Keep the task, stop further processing
                 return false
             } else {
-                taskStorage.deleteTask(task.id)
+                taskStorage.deleteTask(taskId)
                 return true
             }
         }
@@ -164,8 +171,8 @@ internal class IterableTaskRunner(
         }
     }
 
-    private fun isRetriableError(errorMessage: String?): Boolean {
-        return errorMessage?.contains("failed to connect") == true
+    private fun isRetriableError(errorMessage: String): Boolean {
+        return errorMessage.contains("failed to connect")
     }
 
     @WorkerThread

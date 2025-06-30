@@ -138,7 +138,7 @@ internal class IterableNotificationHelper {
             var notificationBody: String?
             var soundName: String?
             var messageId: String?
-            var pushImage: String?
+            var pushImage: String? = null
             var soundUri: Uri
             //TODO: When backend supports channels, these strings needs to change (channelName, channelId, channelDescription).
             val channelDescription = ""
@@ -314,7 +314,10 @@ internal class IterableNotificationHelper {
                         IterableNotificationBuilder.TAG, "Creating notification: channelId = " + channelId + " channelName = " +
                                 channelName + " channelDescription = " + channelDescription
                     )
-                    mNotificationManager.createNotificationChannel(createNotificationChannel(channelId, channelName, channelDescription, context, soundUri))
+                    val notificationChannel = createNotificationChannel(channelId, channelName, channelDescription, context, soundUri)
+                    if (notificationChannel != null) {
+                        mNotificationManager.createNotificationChannel(notificationChannel)
+                    }
                 }
             }
         }

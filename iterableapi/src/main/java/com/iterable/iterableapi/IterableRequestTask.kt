@@ -178,7 +178,7 @@ internal class IterableRequestTask : AsyncTask<IterableApiRequest, Void, Iterabl
                         responseCode == 401 -> {
                             if (matchesJWTErrorCodes(jsonResponse)) {
                                 apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error")
-                                IterableApi.getInstance().authManager.handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse))
+                                IterableApi.getInstance().authManager?.handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse) ?: AuthFailureReason.AUTH_TOKEN_GENERIC_ERROR)
                                 // We handle the JWT Retry for both online and offline here rather than handling online request in onPostExecute
                                 requestNewAuthTokenAndRetry(iterableApiRequest)
                             } else {
@@ -248,7 +248,7 @@ internal class IterableRequestTask : AsyncTask<IterableApiRequest, Void, Iterabl
         private fun getBaseUrl(): String {
             val config = IterableApi.getInstance().config
             val dataRegion = config.dataRegion
-            var baseUrl = dataRegion.endpoint
+            var baseUrl = dataRegion.getEndpoint()
 
             if (overrideUrl != null && overrideUrl!!.isNotEmpty()) {
                 baseUrl = overrideUrl!!
@@ -302,7 +302,7 @@ internal class IterableRequestTask : AsyncTask<IterableApiRequest, Void, Iterabl
         private fun logError(iterableApiRequest: IterableApiRequest, baseUrl: String, e: Exception) {
             IterableLogger.e(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" +
                     "Exception occurred for : " + baseUrl + iterableApiRequest.resourcePath)
-            IterableLogger.e(TAG, e.message, e)
+            IterableLogger.e(TAG, e.message ?: "Unknown error", e)
         }
 
         @JvmStatic
@@ -328,16 +328,19 @@ internal class IterableRequestTask : AsyncTask<IterableApiRequest, Void, Iterabl
 
         @JvmStatic
         private fun requestNewAuthTokenAndRetry(iterableApiRequest: IterableApiRequest) {
-            IterableApi.getInstance().authManager.setIsLastAuthTokenValid(false)
-            val retryInterval = IterableApi.getInstance().authManager.getNextRetryInterval()
-            IterableApi.getInstance().authManager.scheduleAuthTokenRefresh(retryInterval, false) { data ->
+            val authManager = IterableApi.getInstance().authManager
+            authManager?.setIsLastAuthTokenValid(false)
+            val retryInterval = authManager?.getNextRetryInterval() ?: 0
+            authManager?.scheduleAuthTokenRefresh(retryInterval, false, object : IterableHelper.SuccessHandler {
+                override fun onSuccess(data: JSONObject) {
                 try {
-                    val newAuthToken = data.getString("newAuthToken")
+                    val newAuthToken = data.optString("newAuthToken", "")
                     retryRequestWithNewAuthToken(newAuthToken, iterableApiRequest)
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
-            }
+                }
+            })
         }
     }
 
@@ -394,19 +397,20 @@ internal class IterableRequestTask : AsyncTask<IterableApiRequest, Void, Iterabl
     private fun handleSuccessResponse(response: IterableApiResponse) {
         if (!Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_GET_REMOTE_CONFIGURATION) && 
             !Objects.equals(iterableApiRequest.resourcePath, ENDPOINT_DISABLE_DEVICE)) {
-            IterableApi.getInstance().authManager.resetFailedAuth()
-            IterableApi.getInstance().authManager.pauseAuthRetries(false)
-            IterableApi.getInstance().authManager.setIsLastAuthTokenValid(true)
+            val authManager = IterableApi.getInstance().authManager
+            authManager?.resetFailedAuth()
+            authManager?.pauseAuthRetries(false)
+            authManager?.setIsLastAuthTokenValid(true)
         }
 
         if (iterableApiRequest.successCallback != null) {
-            iterableApiRequest.successCallback!!.onSuccess(response.responseJson)
+            iterableApiRequest.successCallback!!.onSuccess(response.responseJson ?: JSONObject())
         }
     }
 
     private fun handleErrorResponse(response: IterableApiResponse) {
         if (iterableApiRequest.failureCallback != null) {
-            iterableApiRequest.failureCallback!!.onFailure(response.errorMessage, response.responseJson)
+            iterableApiRequest.failureCallback!!.onFailure(response.errorMessage ?: "", response.responseJson)
         }
     }
 

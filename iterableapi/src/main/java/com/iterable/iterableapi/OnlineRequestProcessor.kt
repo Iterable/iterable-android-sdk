@@ -18,17 +18,17 @@ internal class OnlineRequestProcessor : RequestProcessor {
     }
 
     override fun processGetRequest(apiKey: String?, @NonNull resourcePath: String, @NonNull json: JSONObject, authToken: String?, onCallback: IterableHelper.IterableActionHandler?) {
-        val request = IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onCallback)
+        val request = IterableApiRequest(apiKey ?: "", resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onCallback)
         IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request)
     }
 
     override fun processGetRequest(apiKey: String?, @NonNull resourcePath: String, @NonNull json: JSONObject, authToken: String?, onSuccess: IterableHelper.SuccessHandler?, onFailure: IterableHelper.FailureHandler?) {
-        val request = IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onSuccess, onFailure)
+        val request = IterableApiRequest(apiKey ?: "", resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onSuccess, onFailure)
         IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request)
     }
 
     override fun processPostRequest(apiKey: String?, @NonNull resourcePath: String, @NonNull json: JSONObject, authToken: String?, onSuccess: IterableHelper.SuccessHandler?, onFailure: IterableHelper.FailureHandler?) {
-        val request = IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.POST, authToken, onSuccess, onFailure)
+        val request = IterableApiRequest(apiKey ?: "", resourcePath, addCreatedAtToJson(json), IterableApiRequest.POST, authToken, onSuccess, onFailure)
         IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request)
     }
 

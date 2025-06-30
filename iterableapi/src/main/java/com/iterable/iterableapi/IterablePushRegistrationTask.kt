@@ -25,11 +25,12 @@ internal class IterablePushRegistrationTask : AsyncTask<IterablePushRegistration
             if (pushRegistrationObject != null) {
                 when (iterablePushRegistrationData?.pushRegistrationAction) {
                     IterablePushRegistrationData.PushRegistrationAction.ENABLE -> {
+                        val registrationData = iterablePushRegistrationData!!
                         IterableApi.sharedInstance.registerDeviceToken(
-                                iterablePushRegistrationData?.email,
-                                iterablePushRegistrationData?.userId,
-                                iterablePushRegistrationData?.authToken,
-                                iterablePushRegistrationData?.pushIntegrationName,
+                                registrationData.email,
+                                registrationData.userId,
+                                registrationData.authToken,
+                                registrationData.pushIntegrationName ?: "",
                                 pushRegistrationObject.token,
                                 IterableApi.getInstance().deviceAttributes)
                     }
@@ -69,7 +70,7 @@ internal class IterablePushRegistrationTask : AsyncTask<IterablePushRegistration
                 return null
             }
 
-            PushRegistrationObject(Util.getFirebaseToken())
+            PushRegistrationObject(Util.getFirebaseToken() ?: "")
 
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Exception while retrieving the device token: check that firebase is added to the build dependencies", e)
@@ -82,7 +83,7 @@ internal class IterablePushRegistrationTask : AsyncTask<IterablePushRegistration
         var instance: UtilImpl = UtilImpl()
 
         @JvmStatic
-        fun getFirebaseToken(): String {
+        fun getFirebaseToken(): String? {
             return instance.getFirebaseToken()
         }
 
@@ -92,7 +93,7 @@ internal class IterablePushRegistrationTask : AsyncTask<IterablePushRegistration
         }
 
         internal class UtilImpl {
-            fun getFirebaseToken(): String {
+            fun getFirebaseToken(): String? {
                 return IterableFirebaseMessagingService.getFirebaseToken()
             }
 

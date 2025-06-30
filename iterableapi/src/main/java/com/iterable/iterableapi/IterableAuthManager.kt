@@ -126,7 +126,7 @@ class IterableAuthManager(
                 requiresAuthRefresh = true
             }
         } else {
-            IterableApi.getInstance().setAuthToken(null)
+            IterableApi.getInstance().setAuthToken("")
         }
     }
 
@@ -136,15 +136,14 @@ class IterableAuthManager(
                 handleSuccessForAuthToken(authToken, successCallback)
             }
             queueExpirationRefresh(authToken)
+            IterableApi.getInstance().setAuthToken(authToken)
+            reSyncAuth()
+            authHandler?.onTokenRegistrationSuccessful(authToken)
         } else {
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL)
-            IterableApi.getInstance().setAuthToken(null)
+            IterableApi.getInstance().setAuthToken("")
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null)
-            return
         }
-        IterableApi.getInstance().setAuthToken(authToken!!)
-        reSyncAuth()
-        authHandler?.onTokenRegistrationSuccessful(authToken)
     }
 
     // This method is called when there is an error receiving an the auth token.
@@ -212,7 +211,7 @@ class IterableAuthManager(
             timer!!.schedule(object : TimerTask() {
                 override fun run() {
                     if (api.getEmail() != null || api.getUserId() != null) {
-                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh)
+                        api.getAuthManager()?.requestNewAuthToken(false, successCallback, isScheduledRefresh)
                     } else {
                         IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh")
                     }

@@ -31,7 +31,7 @@ internal class IterablePushNotificationUtil {
             IterableApi.sharedInstance.trackPushOpen(
                 action.notificationData.campaignId,
                 action.notificationData.templateId,
-                action.notificationData.messageId,
+                action.notificationData.messageId ?: "",
                 action.dataFields
             )
 
@@ -63,10 +63,10 @@ internal class IterablePushNotificationUtil {
                     } else {
                         dataFields.put(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, actionIdentifier)
                         val button = notificationData.getActionButton(actionIdentifier)
-                        action = button.action
-                        openApp = button.openApp
+                        action = button?.action
+                        openApp = button?.openApp ?: true
 
-                        if (button.buttonType == IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT) {
+                        if (button?.buttonType == IterableNotificationData.Button.BUTTON_TYPE_TEXT_INPUT) {
                             val results = RemoteInput.getResultsFromIntent(intent)
                             if (results != null) {
                                 val userInput = results.getString(IterableConstants.USER_INPUT)
@@ -113,7 +113,7 @@ internal class IterablePushNotificationUtil {
             }
         }
 
-        private class PendingAction(
+        internal class PendingAction(
             val intent: Intent,
             val notificationData: IterableNotificationData,
             val iterableAction: IterableAction?,

@@ -110,7 +110,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
 
         webView = IterableWebView(requireContext())
         webView.id = R.id.webView
-        webView.createWithHtml(this, htmlString)
+        webView.createWithHtml(this, htmlString ?: "")
 
         if (orientationListener == null) {
             orientationListener = object : OrientationEventListener(requireContext(), SensorManager.SENSOR_DELAY_NORMAL) {
@@ -134,7 +134,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
         relativeLayout.addView(webView, layoutParams)
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
-            IterableApi.sharedInstance.trackInAppOpen(messageId, location!!)
+            IterableApi.sharedInstance.trackInAppOpen(messageId ?: "", location!!)
         }
 
         prepareToShowWebView()
@@ -325,7 +325,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
     }
 
     override fun runResizeScript() {
-        resize(webView.contentHeight)
+        resize(webView.contentHeight.toFloat())
     }
 
     /**
@@ -369,7 +369,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
                     window!!.setLayout(webViewWidth, webViewHeight)
                     requireDialog().window!!.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
                 } else {
-                    val relativeHeight = (height * resources.displayMetrics.density).toDouble()
+                    val relativeHeight = height * resources.displayMetrics.density
                     val webViewLayout = RelativeLayout.LayoutParams(resources.displayMetrics.widthPixels, relativeHeight.toInt())
                     webView.layoutParams = webViewLayout
                 }
