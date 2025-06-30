@@ -104,7 +104,10 @@ class IterableAuthManager(
                         try {
                             if (isLastAuthTokenValid && !shouldIgnoreRetryPolicy) {
                                 // if some JWT retry had valid token it will not fetch the auth token again from developer function
-                                handleAuthTokenSuccess(IterableApi.getInstance().getAuthToken(), successCallback)
+                                val currentToken = IterableApi.getInstance().getAuthToken()
+                                if (currentToken != null) {
+                                    handleAuthTokenSuccess(currentToken, successCallback)
+                                }
                                 pendingAuth = false
                                 return@submit
                             }
@@ -123,7 +126,7 @@ class IterableAuthManager(
                 requiresAuthRefresh = true
             }
         } else {
-            IterableApi.getInstance().setAuthToken(null, true)
+            IterableApi.getInstance().setAuthToken(null)
         }
     }
 
@@ -184,7 +187,7 @@ class IterableAuthManager(
     // This method is called is used to call the authHandler.onAuthFailure method with appropriate AuthFailureReason
     fun handleAuthFailure(authToken: String?, failureReason: AuthFailureReason) {
         if (authHandler != null) {
-            authHandler.onAuthFailure(AuthFailure(getEmailOrUserId() ?: "", authToken, IterableUtil.currentTimeMillis(), failureReason))
+            authHandler.onAuthFailure(AuthFailure(getEmailOrUserId() ?: "", authToken ?: "", IterableUtil.currentTimeMillis(), failureReason))
         }
     }
 

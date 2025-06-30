@@ -65,7 +65,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
         if (args != null) {
             htmlString = args.getString(HTML_STRING, null)
             callbackOnCancel = args.getBoolean(CALLBACK_ON_CANCEL, false)
-            messageId = args.getString(MESSAGE_ID, "")
+            messageId = args.getString(MESSAGE_ID) ?: ""
             backgroundAlpha = args.getDouble(BACKGROUND_ALPHA)
             insetPadding = args.getParcelable(INSET_PADDING) ?: Rect()
             inAppBackgroundAlpha = args.getDouble(IN_APP_BG_ALPHA)
@@ -369,7 +369,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
                     window!!.setLayout(webViewWidth, webViewHeight)
                     requireDialog().window!!.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
                 } else {
-                    val relativeHeight = height.toDouble() * resources.displayMetrics.density
+                    val relativeHeight = (height * resources.displayMetrics.density).toDouble()
                     val webViewLayout = RelativeLayout.LayoutParams(resources.displayMetrics.widthPixels, relativeHeight.toInt())
                     webView.layoutParams = webViewLayout
                 }

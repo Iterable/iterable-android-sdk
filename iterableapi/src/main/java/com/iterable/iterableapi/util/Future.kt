@@ -28,7 +28,7 @@ class Future<T> private constructor(callable: Callable<T>) {
         if (looper == null) {
             looper = Looper.getMainLooper()
         }
-        callbackHandler = Handler(looper)
+        callbackHandler = Handler(looper!!)
 
         EXECUTOR.submit {
             try {
