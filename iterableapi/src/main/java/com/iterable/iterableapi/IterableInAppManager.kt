@@ -21,7 +21,7 @@ import java.util.*
  *
  * The IterableInAppManager handles creating and rendering different types of InApp Notifications received from the IterableApi
  */
-class IterableInAppManager @VisibleForTesting constructor(
+class IterableInAppManager @VisibleForTesting internal constructor(
     private val api: IterableApi,
     private val handler: IterableInAppHandler,
     private val inAppDisplayInterval: Double,

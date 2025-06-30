@@ -182,7 +182,7 @@ class IterableInAppFileStorage(private val context: Context) : IterableInAppStor
     private fun saveHTMLContent() {
         for (message in messages.values) {
             if (message.hasLoadedHtmlFromJson()) {
-                saveHTML(message.messageId, message.content.html)
+                saveHTML(message.messageId, message.content.html ?: "")
                 message.setLoadedHtmlFromJson(false)
             }
         }

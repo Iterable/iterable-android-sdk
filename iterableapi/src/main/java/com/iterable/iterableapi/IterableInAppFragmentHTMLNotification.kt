@@ -65,7 +65,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
         if (args != null) {
             htmlString = args.getString(HTML_STRING, null)
             callbackOnCancel = args.getBoolean(CALLBACK_ON_CANCEL, false)
-            messageId = args.getString(MESSAGE_ID) ?: ""
+            messageId = args.getString(MESSAGE_ID, "")
             backgroundAlpha = args.getDouble(BACKGROUND_ALPHA)
             insetPadding = args.getParcelable(INSET_PADDING) ?: Rect()
             inAppBackgroundAlpha = args.getDouble(IN_APP_BG_ALPHA)
@@ -313,7 +313,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
     }
 
     private fun processMessageRemoval() {
-        val message = IterableApi.sharedInstance.inAppManager.getMessageById(messageId)
+        val message = IterableApi.sharedInstance.inAppManager?.getMessageById(messageId)
         if (message == null) {
             IterableLogger.e(TAG, "Message with id $messageId does not exist")
             return
@@ -438,7 +438,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
             @NonNull backgroundAlpha: Double,
             @NonNull padding: Rect
         ): IterableInAppFragmentHTMLNotification {
-            return createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, false, IterableInAppMessage.InAppBgColor(null, 0.0f))
+            return createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, false, IterableInAppMessage.InAppBgColor(null, 0.0))
         }
 
         @JvmStatic
