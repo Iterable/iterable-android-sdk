@@ -369,7 +369,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
                     window!!.setLayout(webViewWidth, webViewHeight)
                     requireDialog().window!!.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
                 } else {
-                    val relativeHeight = height * resources.displayMetrics.density
+                    val relativeHeight = height.toDouble() * resources.displayMetrics.density
                     val webViewLayout = RelativeLayout.LayoutParams(resources.displayMetrics.widthPixels, relativeHeight.toInt())
                     webView.layoutParams = webViewLayout
                 }

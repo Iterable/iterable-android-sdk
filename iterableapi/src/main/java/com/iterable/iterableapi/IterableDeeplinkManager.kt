@@ -98,7 +98,7 @@ internal object IterableDeeplinkManager {
                                 when (cookie.name) {
                                     "iterableEmailCampaignId" -> campaignId = cookie.value.toInt()
                                     "iterableTemplateId" -> templateId = cookie.value.toInt()
-                                    "iterableMessageId" -> messageId = cookie.value ?: ""
+                                    "iterableMessageId" -> messageId = cookie.value
                                 }
                             }
                         }

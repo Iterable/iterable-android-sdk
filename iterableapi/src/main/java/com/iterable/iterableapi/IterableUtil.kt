@@ -23,12 +23,12 @@ object IterableUtil {
 
     @JvmStatic
     fun getAppVersion(context: Context): String {
-        return instance.getAppVersion(context)
+        return instance.getAppVersion(context) ?: ""
     }
 
     @JvmStatic
     fun getAppVersionCode(context: Context): String {
-        return instance.getAppVersionCode(context)
+        return instance.getAppVersionCode(context) ?: ""
     }
 
     /**
@@ -101,6 +101,6 @@ object IterableUtil {
 
     @JvmStatic
     fun isUrlOpenAllowed(@NonNull url: String): Boolean {
-        return instance.isUrlOpenAllowed(url)
+        return IterableUtilImpl.isUrlOpenAllowed(url)
     }
 }
