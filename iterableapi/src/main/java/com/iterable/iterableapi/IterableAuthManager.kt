@@ -108,7 +108,7 @@ class IterableAuthManager(
                                 pendingAuth = false
                                 return@submit
                             }
-                            val authToken = authHandler.onAuthTokenRequested()
+                            val authToken: String? = authHandler.onAuthTokenRequested()
                             pendingAuth = false
                             retryCount++
                             handleAuthTokenSuccess(authToken, successCallback)
@@ -139,7 +139,7 @@ class IterableAuthManager(
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null)
             return
         }
-        IterableApi.getInstance().setAuthToken(authToken)
+        IterableApi.getInstance().setAuthToken(authToken!!)
         reSyncAuth()
         authHandler?.onTokenRegistrationSuccessful(authToken)
     }

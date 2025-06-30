@@ -89,8 +89,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
-            IterableApi.sharedInstance.getEmbeddedMessages(placementIds, { data: JSONObject ->
-                IterableLogger.v(TAG, "Got response from network call to get embedded messages")
+            IterableApi.sharedInstance.getEmbeddedMessages(placementIds, object : IterableHelper.SuccessHandler {
+                override fun onSuccess(data: JSONObject) {
+                    IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 try {
                     val previousPlacementIds = getPlacementIds()
                     val currentPlacementIds: MutableList<Long> = mutableListOf()
@@ -143,6 +144,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
                 } catch (e: JSONException) {
                     IterableLogger.e(TAG, e.toString())
+                }
                 }
             }, object : IterableHelper.FailureHandler {
                 override fun onFailure(reason: String, data: JSONObject?) {

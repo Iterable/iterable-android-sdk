@@ -31,7 +31,7 @@ internal class IterableInAppDisplayer(
                     message.content.backgroundAlpha,
                     message.content.padding,
                     message.content.inAppDisplaySettings.shouldAnimate,
-                    message.content.inAppDisplaySettings.inAppBgColor ?: IterableInAppMessage.InAppBgColor(null, 0.0f),
+                    message.content.inAppDisplaySettings.inAppBgColor ?: IterableInAppMessage.InAppBgColor(null, 0.0),
                     true, location ?: IterableInAppLocation.IN_APP)
         }
         return false
@@ -57,7 +57,7 @@ internal class IterableInAppDisplayer(
                         return false
                     }
 
-                    val notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location ?: IterableInAppLocation.IN_APP, messageId, backgroundAlpha, padding, shouldAnimate, bgColor ?: IterableInAppMessage.InAppBgColor(null, 0.0f))
+                    val notification = IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location ?: IterableInAppLocation.IN_APP, messageId, backgroundAlpha, padding, shouldAnimate, bgColor ?: IterableInAppMessage.InAppBgColor(null, 0.0))
                     notification.show(currentActivity.supportFragmentManager, "iterable_in_app")
                     return true
                 }
