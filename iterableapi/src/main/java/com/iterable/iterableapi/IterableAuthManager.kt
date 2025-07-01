@@ -211,7 +211,7 @@ class IterableAuthManager(
             timer!!.schedule(object : TimerTask() {
                 override fun run() {
                     if (api.getEmail() != null || api.getUserId() != null) {
-                        api.getAuthManager()?.requestNewAuthToken(false, successCallback, isScheduledRefresh)
+                        api.authManager.requestNewAuthToken(false, successCallback, isScheduledRefresh)
                     } else {
                         IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh")
                     }

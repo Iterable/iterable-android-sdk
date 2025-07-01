@@ -121,7 +121,14 @@ class IterableApi {
     @Nullable 
     internal var embeddedManager: IterableEmbeddedManager? = null
     internal var inboxSessionId: String? = null
-    internal var authManager: IterableAuthManager? = null
+    internal val authManager: IterableAuthManager
+        get() {
+            if (_authManager == null) {
+                _authManager = IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod)
+            }
+            return _authManager!!
+        }
+    private var _authManager: IterableAuthManager? = null
     internal val deviceAttributes = HashMap<String, String>()
     private var keychain: IterableKeychain? = null
 
@@ -158,7 +165,7 @@ class IterableApi {
         _applicationContext = context.applicationContext
 
         // Register activity monitor callback
-        IterableActivityMonitor.getInstance().addCallback(activityMonitorListener)
+        IterableActivityMonitor.instance.addCallback(activityMonitorListener)
 
         // Load stored email/userId if available
         retrieveEmailAndUserId()
@@ -255,7 +262,7 @@ class IterableApi {
             return
         }
 
-        getAuthManager().resetFailedAuth()
+        authManager.resetFailedAuth()
         completeUserLogin()
     }
 
@@ -389,13 +396,13 @@ class IterableApi {
             IterableDeeplinkManager.getAndTrackDeeplink(uri, object : IterableHelper.IterableActionHandler {
                 override fun execute(originalUrl: String?) {
                     val action = IterableAction.actionOpenUrl(originalUrl)
-                    IterableActionRunner.executeAction(getInstance().getMainActivityContext()!!, action, IterableActionSource.APP_LINK)
+                    IterableActionRunner.executeAction(getInstance().mainActivityContext!!, action, IterableActionSource.APP_LINK)
                 }
             })
             true
         } else {
             val action = IterableAction.actionOpenUrl(uri)
-            IterableActionRunner.executeAction(getInstance().getMainActivityContext()!!, action, IterableActionSource.APP_LINK)
+            IterableActionRunner.executeAction(getInstance().mainActivityContext!!, action, IterableActionSource.APP_LINK)
         }
     }
 
@@ -494,7 +501,7 @@ class IterableApi {
                 }
 
                 storeAuthData()
-                getAuthManager().requestNewAuthToken(false)
+                authManager.requestNewAuthToken(false)
 
                 successHandler?.onSuccess(data)
             }
@@ -696,7 +703,7 @@ class IterableApi {
             return
         }
 
-        if (session.getStart() == null || session.getEnd() == null) {
+        if (session.start == null || session.end == null) {
             IterableLogger.e(TAG, "trackEmbeddedSession: sessionStartTime and sessionEndTime must be set")
             return
         }
@@ -705,7 +712,6 @@ class IterableApi {
     }
 
     // Internal methods
-    internal fun getDeviceAttributes(): HashMap<String, String> = deviceAttributes
 
     internal fun setDebugMode(debugMode: Boolean) {
         _debugMode = debugMode
@@ -764,7 +770,7 @@ class IterableApi {
             IterableLogger.e(TAG, "Iterable SDK must be initialized before calling pauseAuthRetries")
             return
         }
-        getAuthManager().pauseAuthRetries(pauseRetry)
+        authManager.pauseAuthRetries(pauseRetry)
     }
 
     internal fun getInAppMessages(count: Int, @NonNull onCallback: IterableHelper.IterableActionHandler) {
@@ -857,7 +863,7 @@ class IterableApi {
 
         getInAppManager().reset()
         getEmbeddedManager().reset()
-        getAuthManager().reset()
+        authManager.reset()
 
         apiClient.onLogout()
     }
@@ -868,11 +874,11 @@ class IterableApi {
             return
         }
 
-        getAuthManager().pauseAuthRetries(false)
+        authManager.pauseAuthRetries(false)
         if (authToken != null) {
             setAuthToken(authToken)
         } else {
-            getAuthManager().requestNewAuthToken(false)
+            authManager.requestNewAuthToken(false)
         }
     }
 
@@ -906,11 +912,6 @@ class IterableApi {
     /**
      * Returns the current context for the application.
      */
-    fun getMainActivityContext(): Context? = _applicationContext
-    
-    /**
-     * Property accessor for main activity context
-     */
     val mainActivityContext: Context?
         get() = _applicationContext
 
@@ -930,13 +931,7 @@ class IterableApi {
         return embeddedManager!!
     }
 
-    @NonNull
-    internal fun getAuthManager(): IterableAuthManager {
-        if (authManager == null) {
-            authManager = IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod)
-        }
-        return authManager!!
-    }
+
 
     @Nullable
     internal fun getKeychain(): IterableKeychain? {
@@ -945,7 +940,7 @@ class IterableApi {
         }
         if (keychain == null) {
             try {
-                keychain = IterableKeychain(getMainActivityContext()!!, config.decryptionFailureHandler, null, config.keychainEncryption)
+                keychain = IterableKeychain(mainActivityContext!!, config.decryptionFailureHandler, null, config.keychainEncryption)
             } catch (e: Exception) {
                 IterableLogger.e(TAG, "Failed to create IterableKeychain", e)
             }
@@ -975,13 +970,13 @@ class IterableApi {
             fetchRemoteConfiguration()
         }
 
-        if (_applicationContext == null || getMainActivityContext() == null) {
+        if (_applicationContext == null || mainActivityContext == null) {
             IterableLogger.w(TAG, "onForeground: _applicationContext is null")
             return
         }
 
         val systemNotificationEnabled = NotificationManagerCompat.from(_applicationContext!!).areNotificationsEnabled()
-        val sharedPref = getMainActivityContext()!!.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE)
+        val sharedPref = mainActivityContext!!.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE)
 
         val hasStoredPermission = sharedPref.contains(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED)
         val isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false)
@@ -1043,10 +1038,10 @@ class IterableApi {
         if (this::config.isInitialized && config.authHandler != null && checkSDKInitialization()) {
             val authToken = _authToken
             if (authToken != null) {
-                getAuthManager().queueExpirationRefresh(authToken)
+                authManager.queueExpirationRefresh(authToken)
             } else {
                 IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh")
-                getAuthManager().scheduleAuthTokenRefresh(authManager!!.getNextRetryInterval(), true, null)
+                authManager.scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null)
             }
         }
     }
@@ -1062,7 +1057,7 @@ class IterableApi {
                     val jsonData = JSONObject(data)
                     val offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE)
                     sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration)
-                    val sharedPref = sharedInstance.getMainActivityContext()!!.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                    val sharedPref = sharedInstance.mainActivityContext!!.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
                     val editor = sharedPref.edit()
                     editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration)
                     editor.apply()

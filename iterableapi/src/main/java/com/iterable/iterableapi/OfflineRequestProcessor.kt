@@ -37,7 +37,7 @@ internal class OfflineRequestProcessor : RequestProcessor {
         taskStorage = IterableTaskStorage.sharedInstance(context)
         healthMonitor = HealthMonitor(taskStorage)
         taskRunner = IterableTaskRunner(taskStorage,
-                IterableActivityMonitor.getInstance(),
+                IterableActivityMonitor.instance,
                 networkConnectivityManager,
                 healthMonitor)
         taskScheduler = TaskScheduler(taskStorage, taskRunner)

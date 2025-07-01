@@ -121,12 +121,9 @@ class IterableActivityMonitor {
     companion object {
         private var initialized = false
         private const val BACKGROUND_DELAY_MS = 1000
-        val instance = IterableActivityMonitor()
-
+        
         @NonNull
         @JvmStatic
-        fun getInstance(): IterableActivityMonitor {
-            return instance
-        }
+        val instance = IterableActivityMonitor()
     }
 }

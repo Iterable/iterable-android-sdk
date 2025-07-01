@@ -34,7 +34,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         this.iterableApi = iterableApi
         this.context = iterableApi.mainActivityContext!!
         if(iterableApi.config.enableEmbeddedMessaging) {
-            activityMonitor = IterableActivityMonitor.getInstance()
+            activityMonitor = IterableActivityMonitor.instance
             activityMonitor?.addCallback(this)
         }
     }
@@ -218,7 +218,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         remoteMessageList.forEach {
             if (!localMessageMap.containsKey(it.metadata.messageId)) {
                 localMessagesChanged = true
-                IterableApi.getInstance().trackEmbeddedMessageReceived(it)
+                IterableApi.sharedInstance.trackEmbeddedMessageReceived(it)
             }
         }
 

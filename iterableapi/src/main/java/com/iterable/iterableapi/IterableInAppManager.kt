@@ -38,10 +38,10 @@ class IterableInAppManager @VisibleForTesting internal constructor(
         @JvmStatic
         private fun getInAppStorageModel(iterableApi: IterableApi, useInMemoryForInAppStorage: Boolean): IterableInAppStorage {
             return if (useInMemoryForInAppStorage) {
-                checkAndDeleteUnusedInAppFileStorage(iterableApi.getMainActivityContext()!!)
+                checkAndDeleteUnusedInAppFileStorage(iterableApi.mainActivityContext!!)
                 IterableInAppMemoryStorage()
             } else {
-                IterableInAppFileStorage(iterableApi.getMainActivityContext()!!)
+                IterableInAppFileStorage(iterableApi.mainActivityContext!!)
             }
         }
 
@@ -61,7 +61,7 @@ class IterableInAppManager @VisibleForTesting internal constructor(
         fun onInboxUpdated()
     }
 
-    private val context: Context = api.getMainActivityContext()!!
+    private val context: Context = api.mainActivityContext!!
     private val listeners = mutableListOf<Listener>()
     private var lastSyncTime = 0L
     private var lastInAppShown = 0L
@@ -77,8 +77,8 @@ class IterableInAppManager @VisibleForTesting internal constructor(
         handler,
         inAppDisplayInterval,
         getInAppStorageModel(iterableApi, useInMemoryStorageForInApps),
-        IterableActivityMonitor.getInstance(),
-        IterableInAppDisplayer(IterableActivityMonitor.getInstance())
+        IterableActivityMonitor.instance,
+        IterableInAppDisplayer(IterableActivityMonitor.instance)
     )
 
     init {
@@ -112,44 +112,31 @@ class IterableInAppManager @VisibleForTesting internal constructor(
      * Get the list of inbox messages
      * @return A [List] of [IterableInAppMessage] objects stored in inbox
      */
-    @NonNull
-    @Synchronized
-    fun getInboxMessages(): List<IterableInAppMessage> {
-        val filteredList = mutableListOf<IterableInAppMessage>()
-        for (message in storage.getMessages()) {
-            if (!message.isConsumed() && !isMessageExpired(message) && message.isInboxMessage()) {
-                filteredList.add(message)
+    val inboxMessages: List<IterableInAppMessage>
+        @Synchronized get() {
+            val filteredList = mutableListOf<IterableInAppMessage>()
+            for (message in storage.getMessages()) {
+                if (!message.isConsumed() && !isMessageExpired(message) && message.isInboxMessage()) {
+                    filteredList.add(message)
+                }
             }
+            return filteredList
         }
-        return filteredList
-    }
 
     /**
      * Get the count of unread inbox messages
      * @return Unread inbox messages count
      */
-    @Synchronized
-    fun getUnreadInboxMessagesCount(): Int {
-        var unreadInboxMessageCount = 0
-        for (message in getInboxMessages()) {
-            if (!message.isRead()) {
-                unreadInboxMessageCount++
-            }
-        }
-        return unreadInboxMessageCount
-    }
-
-    /**
-     * Property accessor for inbox messages
-     */
-    val inboxMessages: List<IterableInAppMessage>
-        get() = getInboxMessages()
-
-    /**
-     * Property accessor for unread inbox messages count
-     */
     val unreadInboxMessagesCount: Int
-        get() = getUnreadInboxMessagesCount()
+        @Synchronized get() {
+            var unreadInboxMessageCount = 0
+            for (message in inboxMessages) {
+                if (!message.isRead()) {
+                    unreadInboxMessageCount++
+                }
+            }
+            return unreadInboxMessageCount
+        }
 
     @Synchronized
     fun setRead(@NonNull message: IterableInAppMessage, read: Boolean) {

@@ -388,7 +388,7 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
 
         try {
             addEmailOrUserIdToJson(requestJSON)
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId())
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.metadata.messageId)
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_IDENTIFIER, buttonIdentifier)
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_BUTTON_TARGET_URL, clickedUrl)
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson())
@@ -446,7 +446,7 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
 
         try {
             addEmailOrUserIdToJson(requestJSON)
-            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.getMetadata().getMessageId())
+            requestJSON.put(IterableConstants.KEY_MESSAGE_ID, message.metadata.messageId)
             requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson())
             sendPostRequest(IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED, requestJSON)
         } catch (e: JSONException) {
@@ -528,22 +528,20 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
             addEmailOrUserIdToJson(requestJSON)
 
             val sessionJson = JSONObject()
-            if (session.getId() != null) {
-                sessionJson.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.getId())
-            }
-            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.getStart()?.time ?: 0)
-            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.getEnd()?.time ?: 0)
+            sessionJson.put(IterableConstants.KEY_EMBEDDED_SESSION_ID, session.id)
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_START, session.start?.time ?: 0)
+            sessionJson.put(IterableConstants.ITERABLE_EMBEDDED_SESSION_END, session.end?.time ?: 0)
 
             requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_SESSION, sessionJson)
 
-            if (session.getImpressions() != null) {
+            if (session.impressions != null) {
                 val impressionsJsonArray = JSONArray()
-                for (impression in session.getImpressions()!!) {
+                for (impression in session.impressions!!) {
                     val impressionJson = JSONObject()
-                    impressionJson.put(IterableConstants.KEY_MESSAGE_ID, impression.getMessageId())
-                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, impression.getPlacementId())
-                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT, impression.getDisplayCount())
-                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION, impression.getDuration())
+                    impressionJson.put(IterableConstants.KEY_MESSAGE_ID, impression.messageId)
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENT_ID, impression.placementId)
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_COUNT, impression.displayCount)
+                    impressionJson.put(IterableConstants.ITERABLE_EMBEDDED_IMP_DISPLAY_DURATION, impression.duration)
                     impressionsJsonArray.put(impressionJson)
                 }
                 requestJSON.put(IterableConstants.ITERABLE_EMBEDDED_IMPRESSIONS, impressionsJsonArray)

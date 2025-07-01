@@ -16,11 +16,6 @@ public data class IterableEmbeddedSession(
         end: Date?,
         impressions: List<IterableEmbeddedImpression>?
     ) : this(start, end, impressions, UUID.randomUUID().toString())
-    
-    fun getStart(): Date? = start
-    fun getEnd(): Date? = end
-    fun getId(): String? = id
-    fun getImpressions(): List<IterableEmbeddedImpression>? = impressions
 }
 
 class IterableEmbeddedImpression(
@@ -28,9 +23,4 @@ class IterableEmbeddedImpression(
     val placementId: Long,
     val displayCount: Int,
     val duration: Float
-) {
-    fun getMessageId(): String = messageId
-    fun getPlacementId(): Long = placementId
-    fun getDisplayCount(): Int = displayCount
-    fun getDuration(): Float = duration
-}
+)
