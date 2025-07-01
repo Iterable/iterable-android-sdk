@@ -134,7 +134,7 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
         relativeLayout.addView(webView, layoutParams)
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
-            IterableApi.sharedInstance.trackInAppOpen(messageId ?: "", location!!)
+            IterableApi.getInstance().trackInAppOpen(messageId ?: "", location!!)
         }
 
         prepareToShowWebView()
@@ -174,8 +174,8 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
     }
 
     override fun onUrlClicked(url: String) {
-        IterableApi.sharedInstance.trackInAppClick(messageId, url, location!!)
-        IterableApi.sharedInstance.trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location!!)
+        IterableApi.getInstance().trackInAppClick(messageId, url, location!!)
+        IterableApi.getInstance().trackInAppClose(messageId, url, IterableInAppCloseAction.LINK, location!!)
 
         if (clickCallback != null) {
             clickCallback!!.execute(Uri.parse(url))
@@ -189,8 +189,8 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
      * Tracks a button click when the back button is pressed
      */
     fun onBackPressed() {
-        IterableApi.sharedInstance.trackInAppClick(messageId, BACK_BUTTON)
-        IterableApi.sharedInstance.trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location!!)
+        IterableApi.getInstance().trackInAppClick(messageId, BACK_BUTTON)
+        IterableApi.getInstance().trackInAppClose(messageId, BACK_BUTTON, IterableInAppCloseAction.BACK, location!!)
 
         processMessageRemoval()
     }
@@ -313,14 +313,14 @@ class IterableInAppFragmentHTMLNotification : DialogFragment(), IterableWebView.
     }
 
     private fun processMessageRemoval() {
-        val message = IterableApi.sharedInstance.inAppManager?.getMessageById(messageId)
+        val message = IterableApi.getInstance().inAppManager?.getMessageById(messageId)
         if (message == null) {
             IterableLogger.e(TAG, "Message with id $messageId does not exist")
             return
         }
 
         if (message.isMarkedForDeletion() && !message.isConsumed()) {
-            IterableApi.sharedInstance.inAppManager?.removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP)
+            IterableApi.getInstance().inAppManager?.removeMessage(message, IterableInAppDeleteActionType.DELETE_BUTTON, IterableInAppLocation.IN_APP)
         }
     }
 

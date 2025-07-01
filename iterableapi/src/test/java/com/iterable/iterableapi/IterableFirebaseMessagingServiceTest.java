@@ -39,35 +39,22 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     private IterableNotificationHelper.IterableNotificationHelperImpl notificationHelperSpy;
 
     @Before
-    public void setUp() throws Exception {
-        IterableTestUtils.resetIterableApi();
-        IterableTestUtils.createIterableApiNew();
-        server = new MockWebServer();
-        IterableApi.overrideURLEndpointPath(server.url("").toString());
-
-        controller = Robolectric.buildService(IterableFirebaseMessagingService.class);
-        Intent intent = new Intent(getContext(), IterableFirebaseMessagingService.class);
-        controller.withIntent(intent).startCommand(0, 0);
-
-        originalApi = IterableApi.sharedInstance;
-        apiMock = spy(IterableApi.sharedInstance);
-        IterableApi.sharedInstance = apiMock;
+    public void setUp() {
+        super.setUp();
+        originalApi = IterableApi.getInstance();
+        apiMock = spy(IterableApi.getInstance());
+        IterableApi.setSharedInstanceForTesting(apiMock);
 
         originalNotificationHelper = IterableNotificationHelper.instance;
-        notificationHelperSpy = spy(originalNotificationHelper);
+        notificationHelperSpy = spy(new IterableNotificationHelper());
         IterableNotificationHelper.instance = notificationHelperSpy;
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         IterableNotificationHelper.instance = originalNotificationHelper;
-        notificationHelperSpy = null;
-
-        controller.destroy();
-        IterableApi.sharedInstance = originalApi;
-
-        server.shutdown();
-        server = null;
+        IterableApi.setSharedInstanceForTesting(originalApi);
+        super.tearDown();
     }
 
     @Test

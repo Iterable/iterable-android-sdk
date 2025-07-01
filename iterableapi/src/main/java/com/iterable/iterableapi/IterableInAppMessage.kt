@@ -443,6 +443,10 @@ class IterableInAppMessage internal constructor(
         return markedForDeletion
     }
 
+    fun isExpired(): Boolean {
+        return expiresAt.before(Date())
+    }
+
     fun markForDeletion(delete: Boolean) {
         this.markedForDeletion = delete
     }

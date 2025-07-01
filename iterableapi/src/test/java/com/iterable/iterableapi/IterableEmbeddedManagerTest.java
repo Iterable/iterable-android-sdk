@@ -27,12 +27,13 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
     @Before
     public void setUp() throws IOException {
+        super.setUp();
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
         server.setDispatcher(dispatcher);
 
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.setSharedInstanceForTesting(new IterableApi());
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -215,7 +216,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_multiple_1.json")));
 
         IterableApi iterableApiSpy = spy(IterableApi.getInstance());
-        IterableApi.sharedInstance = iterableApiSpy;
+        IterableApi.setSharedInstanceForTesting(iterableApiSpy);
 
         IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
         embeddedManager.syncMessages();

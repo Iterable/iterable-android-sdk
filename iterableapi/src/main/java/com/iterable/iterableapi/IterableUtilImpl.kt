@@ -32,7 +32,7 @@ internal class IterableUtilImpl {
                 return true
             }
 
-            for (allowedProtocol in IterableApi.sharedInstance.config.allowedProtocols) {
+            for (allowedProtocol in IterableApi.getInstance().config.allowedProtocols) {
                 if (urlProtocol == allowedProtocol) {
                     return true
                 }
@@ -142,12 +142,13 @@ internal class IterableUtilImpl {
         return sdkCacheDir
     }
 
-    internal fun getSDKFilesDirectory(context: Context): File {
-        val iterableSDKRootDirectory = File(context.filesDir, "com.iterable.sdk")
-        if (!iterableSDKRootDirectory.exists()) {
-            iterableSDKRootDirectory.mkdirs()
+    fun getSDKFilesDirectory(context: Context): File {
+        val filesDir = context.filesDir
+        val sdkFilesDirectory = File(filesDir, "iterable")
+        if (!sdkFilesDirectory.exists()) {
+            sdkFilesDirectory.mkdirs()
         }
-        return iterableSDKRootDirectory
+        return sdkFilesDirectory
     }
 
     internal fun getDirectory(folder: File, subFolder: String): File {

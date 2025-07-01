@@ -627,7 +627,7 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
             dataFields.put(IterableConstants.FIREBASE_TOKEN_TYPE, IterableConstants.MESSAGING_PLATFORM_FIREBASE)
             dataFields.put(IterableConstants.FIREBASE_COMPATIBLE, true)
 
-            var frameworkInfo = IterableApi.sharedInstance.config.mobileFrameworkInfo
+            var frameworkInfo = IterableApi.getInstance().config.mobileFrameworkInfo
             if (frameworkInfo == null) {
                 val detectedFramework = IterableMobileFrameworkDetector.detectFramework(context!!)
                 val sdkVersion = if (detectedFramework == IterableAPIMobileFrameworkType.NATIVE) 
@@ -785,5 +785,9 @@ internal class IterableApiClient(@NonNull private val authProvider: AuthProvider
     fun onLogout() {
         getRequestProcessor().onLogout(authProvider.getContext()!!)
         authProvider.resetAuth()
+    }
+
+    fun getAndTrackDeeplink(@NonNull requestJSON: JSONObject, @NonNull onCallback: IterableHelper.IterableActionHandler) {
+        sendPostRequest(IterableConstants.ENDPOINT_TRACK_DEEPLINK, requestJSON, onCallback)
     }
 }

@@ -67,8 +67,8 @@ internal object IterableActionRunner {
                 return false
             }
 
-            if (IterableApi.sharedInstance.config.urlHandler != null) {
-                if (IterableApi.sharedInstance.config.urlHandler!!.handleIterableURL(uri, actionContext)) {
+            if (IterableApi.getInstance().config.urlHandler != null) {
+                if (IterableApi.getInstance().config.urlHandler!!.handleIterableURL(uri, actionContext)) {
                     return true
                 }
             }
@@ -115,8 +115,8 @@ internal object IterableActionRunner {
         private fun callCustomActionIfSpecified(@NonNull action: IterableAction, @NonNull actionContext: IterableActionContext): Boolean {
             if (!action.getType().isNullOrEmpty()) {
                 // Call custom action handler
-                if (IterableApi.sharedInstance.config.customActionHandler != null) {
-                    return IterableApi.sharedInstance.config.customActionHandler!!.handleIterableCustomAction(action, actionContext)
+                if (IterableApi.getInstance().config.customActionHandler != null) {
+                    return IterableApi.getInstance().config.customActionHandler!!.handleIterableCustomAction(action, actionContext)
                 }
             }
             return false

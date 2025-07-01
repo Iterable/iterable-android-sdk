@@ -54,7 +54,7 @@ public class IterableTestUtils {
     }
 
     public static void resetIterableApi() {
-        IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class));
+        IterableApi.resetSharedInstance();
     }
 
     public static String getResourceString(String fileName) throws IOException {

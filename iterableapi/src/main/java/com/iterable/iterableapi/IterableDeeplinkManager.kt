@@ -1,5 +1,6 @@
 package com.iterable.iterableapi
 
+import android.net.Uri
 import android.os.AsyncTask
 import androidx.annotation.NonNull
 import androidx.annotation.Nullable
@@ -10,7 +11,17 @@ import java.net.URL
 import java.util.ArrayList
 import java.util.regex.Pattern
 
+import org.json.JSONException
+import org.json.JSONObject
+
 internal object IterableDeeplinkManager {
+
+    private const val ITERABLE_DEEPLINK_IDENTIFIER = "iterable://"
+    private const val ITBL_KEY_CAMPAIGN_ID = "campaignId"
+    private const val ITBL_KEY_TEMPLATE_ID = "templateId"
+    private const val ITBL_KEY_MESSAGE_ID = "messageId"
+    private const val ITBL_KEY_ACTION_IDENTIFIER = "actionIdentifier"
+    private const val KEY_URL = "url"
 
     private val deeplinkPattern = Pattern.compile(IterableConstants.ITBL_DEEPLINK_IDENTIFIER)
 
@@ -119,8 +130,18 @@ internal object IterableDeeplinkManager {
 
             if (campaignId != 0) {
                 val attributionInfo = IterableAttributionInfo(campaignId, templateId, messageId)
-                IterableApi.sharedInstance.setAttributionInfo(attributionInfo)
+                IterableApi.getInstance().setAttributionInfo(attributionInfo)
             }
+        }
+    }
+
+    fun getAndTrackDeeplink(uri: String, onCallback: IterableHelper.IterableActionHandler) {
+        val requestJSON = JSONObject()
+        try {
+            requestJSON.put(KEY_URL, uri)
+            IterableApi.getInstance().apiClient.getAndTrackDeeplink(requestJSON, onCallback)
+        } catch (e: JSONException) {
+            e.printStackTrace()
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.iterable.iterableapi
 
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -26,9 +27,9 @@ internal class IterablePushNotificationUtil {
         @JvmStatic
         fun executeAction(context: Context, action: PendingAction): Boolean {
             // Automatic tracking
-            IterableApi.sharedInstance.setPayloadData(action.intent)
-            IterableApi.sharedInstance.setNotificationData(action.notificationData)
-            IterableApi.sharedInstance.trackPushOpen(
+            IterableApi.getInstance().setPayloadData(action.intent)
+            IterableApi.getInstance().setNotificationData(action.notificationData)
+            IterableApi.getInstance().trackPushOpen(
                 action.notificationData.campaignId,
                 action.notificationData.templateId,
                 action.notificationData.messageId ?: "",
@@ -140,6 +141,13 @@ internal class IterablePushNotificationUtil {
             val requestCode = notificationIntent.getIntExtra(IterableConstants.REQUEST_CODE, 0)
             val mNotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             mNotificationManager.cancel(requestCode)
+        }
+
+        fun trackPushOpen(messageId: String, dataFields: JSONObject?) {
+            val notificationData = IterableNotificationData(dataFields?.toString())
+            if (notificationData != null) {
+                IterableApi.getInstance().trackPushOpen(notificationData.campaignId, notificationData.templateId, messageId, dataFields)
+            }
         }
     }
 }

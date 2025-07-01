@@ -18,14 +18,36 @@ import java.util.*
 /**
  * Created by David Truong dt@iterable.com
  */
-class IterableApi {
-    companion object {
-        @Volatile
-        @JvmStatic
-        var sharedInstance = IterableApi()
-            private set
+@JvmField
+@VisibleForTesting
+internal var sharedInstance: IterableApi = IterableApi()
 
+@VisibleForTesting
+interface TestableApi {
+    fun getInAppMessages(count: Int, handler: IterableHelper.IterableActionHandler)
+    fun trackInAppDelivery(message: IterableInAppMessage)
+    fun trackEmbeddedMessageReceived(message: IterableEmbeddedMessage)
+    fun setAttributionInfo(attributionInfo: IterableAttributionInfo)
+    fun syncInApp()
+    fun reset()
+}
+
+class IterableApi : TestableApi {
+    @get:VisibleForTesting
+    internal val apiClient: IterableApiClient
+        get() = _apiClient
+
+    @get:VisibleForTesting
+    internal val inAppManager: IterableInAppManager
+        get() = _inAppManager ?: throw IllegalStateException("InAppManager not initialized")
+
+    @get:VisibleForTesting
+    internal val embeddedManager: IterableEmbeddedManager
+        get() = _embeddedManager ?: throw IllegalStateException("EmbeddedManager not initialized")
+
+    companion object {
         private const val TAG = "IterableApi"
+        private const val MESSAGES_TO_FETCH = 100
 
         /**
          * Initialize the API
@@ -55,9 +77,7 @@ class IterableApi {
          */
         @JvmStatic
         @NonNull
-        fun getInstance(): IterableApi {
-            return sharedInstance
-        }
+        fun getInstance(): IterableApi = sharedInstance
 
         /**
          * Set the notification icon with the given iconName.
@@ -98,6 +118,18 @@ class IterableApi {
             val offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false)
             sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode)
         }
+
+        @JvmStatic
+        @VisibleForTesting
+        fun setSharedInstanceForTesting(instance: IterableApi) {
+            sharedInstance = instance
+        }
+
+        @JvmStatic
+        @VisibleForTesting
+        fun resetSharedInstance() {
+            sharedInstance = IterableApi()
+        }
     }
 
     // Private fields
@@ -115,11 +147,11 @@ class IterableApi {
     private var _setUserSuccessCallbackHandler: IterableHelper.SuccessHandler? = null
     private var _setUserFailureCallbackHandler: IterableHelper.FailureHandler? = null
 
-    internal lateinit var apiClient: IterableApiClient
+    private lateinit var _apiClient: IterableApiClient
     @Nullable
-    internal var inAppManager: IterableInAppManager? = null
+    private var _inAppManager: IterableInAppManager? = null
     @Nullable 
-    internal var embeddedManager: IterableEmbeddedManager? = null
+    private var _embeddedManager: IterableEmbeddedManager? = null
     internal var inboxSessionId: String? = null
     internal val authManager: IterableAuthManager
         get() {
@@ -137,19 +169,19 @@ class IterableApi {
 
     @VisibleForTesting
     constructor(inAppManager: IterableInAppManager) {
-        this.inAppManager = inAppManager
+        this._inAppManager = inAppManager
     }
 
     @VisibleForTesting
     constructor(inAppManager: IterableInAppManager, embeddedManager: IterableEmbeddedManager) {
-        this.inAppManager = inAppManager
-        this.embeddedManager = embeddedManager
+        this._inAppManager = inAppManager
+        this._embeddedManager = embeddedManager
     }
 
     @VisibleForTesting
     internal constructor(apiClient: IterableApiClient, inAppManager: IterableInAppManager) {
-        this.apiClient = apiClient
-        this.inAppManager = inAppManager
+        this._apiClient = apiClient
+        this._inAppManager = inAppManager
     }
 
     private fun internalInitialize(context: Context, apiKey: String, config: IterableConfig) {
@@ -157,8 +189,8 @@ class IterableApi {
             this.config = config
         }
         
-        if (!this::apiClient.isInitialized) {
-            this.apiClient = IterableApiClient(IterableApiAuthProvider())
+        if (!this::_apiClient.isInitialized) {
+            this._apiClient = IterableApiClient(IterableApiAuthProvider())
         }
 
         _apiKey = apiKey
@@ -737,7 +769,7 @@ class IterableApi {
         }
     }
 
-    internal fun setAttributionInfo(attributionInfo: IterableAttributionInfo) {
+    override fun setAttributionInfo(attributionInfo: IterableAttributionInfo) {
         if (_applicationContext == null) {
             IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.")
             return
@@ -773,11 +805,11 @@ class IterableApi {
         authManager.pauseAuthRetries(pauseRetry)
     }
 
-    internal fun getInAppMessages(count: Int, @NonNull onCallback: IterableHelper.IterableActionHandler) {
+    override fun getInAppMessages(count: Int, handler: IterableHelper.IterableActionHandler) {
         if (!checkSDKInitialization()) {
             return
         }
-        apiClient.getInAppMessages(count, onCallback)
+        apiClient.getInAppMessages(count, handler)
     }
 
     fun getEmbeddedMessages(@Nullable placementIds: Array<Long>?, @NonNull onCallback: IterableHelper.IterableActionHandler) {
@@ -801,7 +833,7 @@ class IterableApi {
         apiClient.getEmbeddedMessages(null, onSuccess, onFailure)
     }
 
-    internal fun trackInAppDelivery(@NonNull message: IterableInAppMessage) {
+    override fun trackInAppDelivery(message: IterableInAppMessage) {
         if (!checkSDKInitialization()) {
             return
         }
@@ -814,7 +846,7 @@ class IterableApi {
         apiClient.trackInAppDelivery(message)
     }
 
-    internal fun trackEmbeddedMessageReceived(@NonNull message: IterableEmbeddedMessage) {
+    override fun trackEmbeddedMessageReceived(message: IterableEmbeddedMessage) {
         if (!checkSDKInitialization()) {
             return
         }
@@ -917,21 +949,19 @@ class IterableApi {
 
     @NonNull
     fun getInAppManager(): IterableInAppManager {
-        if (inAppManager == null) {
-            inAppManager = IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval, config.useInMemoryStorageForInApps)
+        if (_inAppManager == null) {
+            _inAppManager = IterableInAppManager(this, config.inAppHandler, config.inAppDisplayInterval, config.useInMemoryStorageForInApps)
         }
-        return inAppManager!!
+        return _inAppManager!!
     }
 
     @NonNull
     fun getEmbeddedManager(): IterableEmbeddedManager {
-        if (embeddedManager == null) {
-            embeddedManager = IterableEmbeddedManager(this)
+        if (_embeddedManager == null) {
+            _embeddedManager = IterableEmbeddedManager(this)
         }
-        return embeddedManager!!
+        return _embeddedManager!!
     }
-
-
 
     @Nullable
     internal fun getKeychain(): IterableKeychain? {
@@ -1091,5 +1121,46 @@ class IterableApi {
             _authToken = null
             storeAuthData()
         }
+    }
+
+    override fun syncInApp() {
+        IterableLogger.printInfo()
+        this.getInAppMessages(MESSAGES_TO_FETCH, object : IterableHelper.IterableActionHandler {
+            override fun execute(payload: String?) {
+                if (payload != null && payload.isNotEmpty()) {
+                    try {
+                        val messages = mutableListOf<IterableInAppMessage>()
+                        val mainObject = JSONObject(payload)
+                        val jsonArray = mainObject.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE)
+                        if (jsonArray != null) {
+                            for (i in 0 until jsonArray.length()) {
+                                val messageJson = jsonArray.optJSONObject(i)
+                                val message = IterableInAppMessage.fromJSONObject(messageJson, null)
+                                if (message != null) {
+                                    messages.add(message)
+                                }
+                            }
+
+                            // Process messages
+                            for (message in messages) {
+                                if (!message.isConsumed() && !message.isExpired()) {
+                                    inAppManager.showMessage(message)
+                                }
+                            }
+                        }
+                    } catch (e: JSONException) {
+                        IterableLogger.e(TAG, e.toString())
+                    }
+                }
+            }
+        })
+    }
+
+    override fun reset() {
+        IterableLogger.printInfo()
+        inAppManager.reset()
+        embeddedManager.reset()
+        authManager.reset()
+        apiClient.onLogout()
     }
 }

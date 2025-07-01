@@ -61,32 +61,29 @@ public class IterableApiTest extends BaseTest {
 
     @Before
     public void setUp() {
+        super.setUp();
         server = new MockWebServer();
-        IterableApi.overrideURLEndpointPath(server.url("").toString());
-
-        reInitIterableApi();
-
         originalPushRegistrationImpl = IterablePushRegistration.instance;
         IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
+
+        reInitIterableApi();
     }
 
     @After
     public void tearDown() throws IOException {
-        IterablePushRegistration.instance = originalPushRegistrationImpl;
-
         server.shutdown();
-        server = null;
+        IterablePushRegistration.instance = originalPushRegistrationImpl;
+        super.tearDown();
     }
 
     private void reInitIterableApi() {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
         IterableEmbeddedManager embeddedManagerMock = mock(IterableEmbeddedManager.class);
 
-        IterableApi.sharedInstance = new IterableApi(inAppManagerMock, embeddedManagerMock);
-
-        originalApiClient = IterableApi.sharedInstance.apiClient;
-        mockApiClient = spy(originalApiClient);
-        IterableApi.sharedInstance.apiClient = mockApiClient;
+        IterableApi.setSharedInstanceForTesting(new IterableApi(inAppManagerMock, embeddedManagerMock));
+        originalApiClient = IterableApi.getInstance().apiClient;
+        mockApiClient = mock(IterableApiClient.class);
+        IterableApi.getInstance().apiClient = mockApiClient;
     }
 
     @Test
@@ -417,7 +414,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
-        verify(IterableApi.sharedInstance.getInAppManager(), times(2)).reset();
+        verify(IterableApi.getInstance().inAppManager, times(2)).reset();
     }
 
     @Ignore("Ignoring this test as it fails on CI for some reason")
@@ -426,8 +423,8 @@ public class IterableApiTest extends BaseTest {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(getContext());
         taskStorage.createTask("Test", IterableTaskType.API, "data");
         assertFalse(taskStorage.getAllTaskIds().isEmpty());
-        IterableApi.sharedInstance.apiClient.setOfflineProcessingEnabled(true);
-        IterableApi.sharedInstance.setEmail("test@email.com");
+        IterableApi.getInstance().apiClient.setOfflineProcessingEnabled(true);
+        IterableApi.getInstance().setEmail("test@email.com");
         assertTrue(taskStorage.getAllTaskIds().isEmpty());
     }
 
