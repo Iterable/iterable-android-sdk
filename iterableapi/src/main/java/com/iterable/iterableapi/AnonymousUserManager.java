@@ -242,8 +242,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
                 //track anon session with new user
                 iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
                     // success handler
-                    if (IterableApi.getInstance().config.iterableAnonUserHandler != null) {
-                        IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
+                    if (IterableApi.getInstance().config.iterableUnknownUserHandler != null) {
+                        IterableApi.getInstance().config.iterableUnknownUserHandler.onUnknownUserCreated(userId);
                     }
                     IterableApi.getInstance().setAnonUser(userId);
                 }, (reason, data) -> handleTrackFailure(data));

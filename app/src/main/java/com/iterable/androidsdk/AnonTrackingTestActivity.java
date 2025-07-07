@@ -13,7 +13,7 @@ import android.widget.EditText;
 
 import com.iterable.iterableapi.AuthFailure;
 import com.iterable.iterableapi.CommerceItem;
-import com.iterable.iterableapi.IterableAnonUserHandler;
+import com.iterable.iterableapi.IterableUnknownUserHandler;
 import com.iterable.iterableapi.IterableApi;
 import com.iterable.iterableapi.IterableAuthHandler;
 import com.iterable.iterableapi.IterableConfig;
@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class AnonTrackingTestActivity extends AppCompatActivity implements IterableAnonUserHandler, IterableAuthHandler {
+public class AnonTrackingTestActivity extends AppCompatActivity implements IterableUnknownUserHandler, IterableAuthHandler {
 
     private CheckBox anonymousUsageTrackedCheckBox;
 
@@ -39,7 +39,7 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
         anonymousUsageTrackedCheckBox = findViewById(R.id.anonymousUsageTracked_check_box);
-        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonActivation(true).setIterableAnonUserHandler(this).setAuthHandler(this).build();
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableUnknownUserActivation(true).setUnknownUserHandler(this).setAuthHandler(this).build();
 
         // clear data for testing
         SharedPreferences sharedPref = getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
@@ -155,7 +155,7 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
     }
 
     @Override
-    public void onAnonUserCreated(String userId) {
+    public void onUnknownUserCreated(String userId) {
         Log.d("userId", userId);
     }
 
