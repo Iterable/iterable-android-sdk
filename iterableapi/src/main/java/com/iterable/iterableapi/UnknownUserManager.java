@@ -26,32 +26,32 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-public class AnonymousUserManager implements IterableActivityMonitor.AppStateCallback {
+public class UnknownUserManager implements IterableActivityMonitor.AppStateCallback {
 
-    private static final String TAG = "AnonymousUserManager";
+    private static final String TAG = "UnknownUserManager";
     private IterableApi iterableApi = IterableApi.sharedInstance;
     private final IterableActivityMonitor activityMonitor;
     long lastCriteriaFetch = 0;
     boolean isCriteriaMatched = false;
 
-    AnonymousUserManager(IterableApi iterableApi) {
+    UnknownUserManager(IterableApi iterableApi) {
         this(iterableApi,
             IterableActivityMonitor.getInstance());
     }
 
     @VisibleForTesting
-    AnonymousUserManager(IterableApi iterableApi,
-                         IterableActivityMonitor activityMonitor) {
+    UnknownUserManager(IterableApi iterableApi,
+                       IterableActivityMonitor activityMonitor) {
         this.iterableApi = iterableApi;
         this.activityMonitor = activityMonitor;
         this.activityMonitor.addCallback(this);
     }
 
-    void updateAnonSession() {
-        IterableLogger.v(TAG, "updateAnonSession");
+    void updateUnknownSession() {
+        IterableLogger.v(TAG, "updateUnknownSession");
 
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        String previousData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
+        String previousData = sharedPref.getString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
 
         try {
             int sessionNo = 0;
@@ -60,14 +60,14 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
             //If previous session data exists, get previous session number and first session date
             if (!previousData.isEmpty()) {
                 JSONObject previousDataJson = new JSONObject(previousData);
-                JSONObject sessionObject = previousDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+                JSONObject sessionObject = previousDataJson.getJSONObject(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS);
                 sessionNo = sessionObject.getInt(IterableConstants.SHARED_PREFS_SESSION_NO);
                 firstSessionDate = sessionObject.getString(IterableConstants.SHARED_PREFS_FIRST_SESSION);
             }
 
             //create new session data object and save it to local storage
             JSONObject newDataObject = createNewSessionData(sessionNo, firstSessionDate);
-            saveAnonSessionData(sharedPref, newDataObject);
+            saveUnknownSessionData(sharedPref, newDataObject);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -87,17 +87,17 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         return newDataObject;
     }
 
-    private void saveAnonSessionData(SharedPreferences sharedPref, JSONObject newDataObject) throws JSONException {
-        JSONObject anonSessionData = new JSONObject();
-        anonSessionData.put(IterableConstants.SHARED_PREFS_ANON_SESSIONS, newDataObject);
+    private void saveUnknownSessionData(SharedPreferences sharedPref, JSONObject newDataObject) throws JSONException {
+        JSONObject unknownSessionData = new JSONObject();
+        unknownSessionData.put(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, newDataObject);
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, anonSessionData.toString());
+        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, unknownSessionData.toString());
         editor.apply();
     }
 
-    void trackAnonEvent(String eventName, JSONObject dataFields) {
-        IterableLogger.v(TAG, "trackAnonEvent");
+    void trackUnknownEvent(String eventName, JSONObject dataFields) {
+        IterableLogger.v(TAG, "trackUnknownEvent");
 
         try {
             JSONObject newDataObject = new JSONObject();
@@ -113,8 +113,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         }
     }
 
-    void trackAnonUpdateUser(JSONObject dataFields) {
-        IterableLogger.v(TAG, "updateAnonUser");
+    void trackUnknownUpdateUser(JSONObject dataFields) {
+        IterableLogger.v(TAG, "updateUnknownUser");
         try {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
@@ -125,8 +125,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         }
     }
 
-    void trackAnonTokenRegistration(String token) {
-        IterableLogger.v(TAG, "trackAnonTokenRegistration");
+    void trackUnknownTokenRegistration(String token) {
+        IterableLogger.v(TAG, "trackUnknownTokenRegistration");
         try {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_TOKEN, token);
@@ -137,9 +137,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         }
     }
 
-    void trackAnonPurchaseEvent(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-
-        IterableLogger.v(TAG, "trackAnonPurchaseEvent");
+    void trackUnknownPurchaseEvent(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
+        IterableLogger.v(TAG, "trackUnknownPurchaseEvent");
         try {
             JSONObject newDataObject = new JSONObject();
             Gson gson = new GsonBuilder().create();
@@ -156,9 +155,8 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         }
     }
 
-    void trackAnonUpdateCart(@NonNull List<CommerceItem> items) {
-
-        IterableLogger.v(TAG, "trackAnonUpdateCart");
+    void trackUnknownUpdateCart(@NonNull List<CommerceItem> items) {
+        IterableLogger.v(TAG, "trackUnknownUpdateCart");
 
         try {
             Gson gson = new GsonBuilder().create();
@@ -213,14 +211,14 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         return null;
     }
 
-    private void createAnonymousUser(String criteriaId) {
+    private void createUnknownUser(String criteriaId) {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        updateAnonSession();
+        updateUnknownSession();
 
         //get session data
-        String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
+        String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
 
-        //generate anon user id
+        //generate unknown user id
         String userId = UUID.randomUUID().toString();
 
         try {
@@ -231,7 +229,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
                     updateUserDataFields = updateUserObj.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
                 }
                 JSONObject userSessionDataJson = new JSONObject(userData);
-                JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_ANON_SESSIONS);
+                JSONObject userDataJson = userSessionDataJson.getJSONObject(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS);
 
                 //update user data
                 if (!getPushStatus().isEmpty()) {
@@ -239,13 +237,13 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
                 }
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
 
-                //track anon session with new user
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
+                //track unknown user session with new user
+                iterableApi.apiClient.trackUnknownUserSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
                     // success handler
-                    if (IterableApi.getInstance().config.iterableAnonUserHandler != null) {
-                        IterableApi.getInstance().config.iterableAnonUserHandler.onAnonUserCreated(userId);
+                    if (IterableApi.getInstance().config.iterableUnknownUserHandler != null) {
+                        IterableApi.getInstance().config.iterableUnknownUserHandler.onUnknownUserCreated(userId);
                     }
-                    IterableApi.getInstance().setAnonUser(userId);
+                    IterableApi.getInstance().setUnknownUser(userId);
                 }, (reason, data) -> handleTrackFailure(data));
             }
 
@@ -349,7 +347,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
     public void clearVisitorEventsAndUserData() {
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.SHARED_PREFS_ANON_SESSIONS, "");
+        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
         editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
         editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
         editor.apply();
@@ -371,7 +369,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
 
         if (criteriaId != null && !isCriteriaMatched) {
             isCriteriaMatched = true;
-            createAnonymousUser(criteriaId);
+            createUnknownUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
@@ -390,7 +388,7 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null) {
-            createAnonymousUser(criteriaId);
+            createUnknownUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
@@ -492,17 +490,17 @@ public class AnonymousUserManager implements IterableActivityMonitor.AppStateCal
     public void onSwitchToForeground() {
         long currentTime = System.currentTimeMillis();
 
-        // fetching anonymous user criteria on foregrounding
+        // fetching unknown user criteria on foregrounding
         if (!iterableApi.checkSDKInitialization()
-            && iterableApi._userIdAnon == null
-            && iterableApi.config.enableAnonActivation
+            && iterableApi._userIdUnknown == null
+            && iterableApi.config.enableUnknownUserActivation
             && iterableApi.getVisitorUsageTracked()
             && iterableApi.config.enableForegroundCriteriaFetch
             && currentTime - lastCriteriaFetch >= IterableConstants.CRITERIA_FETCHING_COOLDOWN) {
 
             lastCriteriaFetch = currentTime;
             this.getCriteria();
-            IterableLogger.d(TAG, "Fetching anonymous user criteria - Foreground");
+            IterableLogger.d(TAG, "Fetching unknown user criteria - Foreground");
         }
     }
 

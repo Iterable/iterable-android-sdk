@@ -35,7 +35,7 @@ public class IterableApiCustomEventTests extends BaseTest {
         server.setDispatcher(dispatcher);
         reInitIterableApi();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonActivation(true).build();
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableUnknownUserActivation(true).build();
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
 
         String criteriaMockData = "{\n" +
