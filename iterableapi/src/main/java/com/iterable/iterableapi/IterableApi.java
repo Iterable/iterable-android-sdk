@@ -47,8 +47,8 @@ public class IterableApi {
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
-    private static final UnknownUserMerge anonymousUserMerge = new UnknownUserMerge();
-    private @Nullable UnknownUserManager anonymousUserManager;
+    private static final UnknownUserMerge unknownUserMerge = new UnknownUserMerge();
+    private @Nullable UnknownUserManager unknownUserManager;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
@@ -360,7 +360,7 @@ public class IterableApi {
             boolean isEmail,
             boolean merge,
             boolean replay,
-            boolean isAnon,
+            boolean isUnknown,
             @Nullable IterableHelper.FailureHandler failureHandler
     ) {
         if (!isInitialized()) {
@@ -371,9 +371,9 @@ public class IterableApi {
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
-            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isAnon, failureHandler);
+            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
         } else {
-            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isAnon, failureHandler));
+            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler));
         }
     }
 
@@ -564,8 +564,8 @@ public class IterableApi {
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
         if (deviceToken != null) {
             if (!checkSDKInitialization() && _userIdUnknown == null) {
-                if (sharedInstance.config.enableAnonActivation) {
-                    anonymousUserManager.trackUnknownTokenRegistration(deviceToken);
+                if (sharedInstance.config.enableUnknownUserActivation) {
+                    unknownUserManager.trackUnknownTokenRegistration(deviceToken);
                 }
                 return;
             }
@@ -663,8 +663,8 @@ public class IterableApi {
             );
         }
 
-        if (sharedInstance.anonymousUserManager == null) {
-            sharedInstance.anonymousUserManager = new UnknownUserManager(
+        if (sharedInstance.unknownUserManager == null) {
+            sharedInstance.unknownUserManager = new UnknownUserManager(
                 sharedInstance
             );
         }
@@ -674,10 +674,10 @@ public class IterableApi {
 
         if (!sharedInstance.checkSDKInitialization()
             && sharedInstance._userIdUnknown == null
-            && sharedInstance.config.enableAnonActivation
+            && sharedInstance.config.enableUnknownUserActivation
             && sharedInstance.getVisitorUsageTracked()) {
-            sharedInstance.anonymousUserManager.updateUnknownSession();
-            sharedInstance.anonymousUserManager.getCriteria();
+            sharedInstance.unknownUserManager.updateUnknownSession();
+            sharedInstance.unknownUserManager.getCriteria();
         }
 
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
@@ -867,7 +867,7 @@ public class IterableApi {
        setUserId(userId, authToken, null, successHandler, failureHandler, false);
     }
 
-    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isAnon) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
@@ -886,14 +886,14 @@ public class IterableApi {
         _userId = userId;
 
         if (config.authHandler == null) {
-            attemptMergeAndEventReplay(userId, false, merge, replay, isAnon, failureHandler);
+            attemptMergeAndEventReplay(userId, false, merge, replay, isUnknown, failureHandler);
         }
 
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
-        onLogin(authToken, userId, false, merge, replay, isAnon, failureHandler);
+        onLogin(authToken, userId, false, merge, replay, isUnknown, failureHandler);
     }
 
     private boolean isMerge(@Nullable IterableIdentityResolution iterableIdentityResolution) {
@@ -904,26 +904,26 @@ public class IterableApi {
         return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
     }
 
-    private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isAnon, IterableHelper.FailureHandler failureHandler) {
-        if (config.enableAnonActivation) {
+    private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
+        if (config.enableUnknownUserActivation) {
             if (emailOrUserId != null && !emailOrUserId.equals(_userIdUnknown)) {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
             }
 
             if (replay && (_userId != null || _email != null)) {
-                anonymousUserManager.syncEventsAndUserUpdate();
+                unknownUserManager.syncEventsAndUserUpdate();
             }
 
-            if (!isAnon) {
+            if (!isUnknown) {
                 _userIdUnknown = null;
             }
 
-            anonymousUserManager.clearVisitorEventsAndUserData();
+            unknownUserManager.clearVisitorEventsAndUserData();
         }
     }
 
-    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, IterableHelper.FailureHandler failureHandler, String anonymousUserId) {
-        anonymousUserMerge.tryMergeUser(apiClient, anonymousUserId, destinationUser, isEmail, merge, (mergeResult, error) -> {
+    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, IterableHelper.FailureHandler failureHandler, String unknownUserId) {
+        unknownUserMerge.tryMergeUser(apiClient, unknownUserId, destinationUser, isEmail, merge, (mergeResult, error) -> {
             if (!(Objects.equals(mergeResult, IterableConstants.MERGE_SUCCESSFUL) || Objects.equals(mergeResult, IterableConstants.MERGE_NOTREQUIRED))) {
                 if (failureHandler != null) {
                     failureHandler.onFailure(error, null);
@@ -1190,8 +1190,8 @@ public class IterableApi {
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
         if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableAnonActivation) {
-                anonymousUserManager.trackUnknownEvent(eventName, dataFields);
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownEvent(eventName, dataFields);
             }
             return;
         }
@@ -1205,8 +1205,8 @@ public class IterableApi {
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
         if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableAnonActivation) {
-                anonymousUserManager.trackUnknownUpdateCart(items);
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownUpdateCart(items);
             }
             return;
         }
@@ -1243,8 +1243,8 @@ public class IterableApi {
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
         if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableAnonActivation) {
-                anonymousUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
             }
             return;
         }
@@ -1321,8 +1321,8 @@ public class IterableApi {
      */
     public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
         if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableAnonActivation) {
-                anonymousUserManager.trackUnknownUpdateUser(dataFields);
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownUpdateUser(dataFields);
             }
             return;
         }
@@ -1589,9 +1589,9 @@ public class IterableApi {
         editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
         editor.apply();
 
-        if (isSetVisitorUsageTracked && config.enableAnonActivation) {
-            anonymousUserManager.updateUnknownSession();
-            anonymousUserManager.getCriteria();
+        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
+            unknownUserManager.updateUnknownSession();
+            unknownUserManager.getCriteria();
         }
     }
 

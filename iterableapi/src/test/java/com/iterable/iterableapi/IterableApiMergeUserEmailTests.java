@@ -187,7 +187,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -232,7 +232,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -278,7 +278,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -319,7 +319,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -360,7 +360,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -370,7 +370,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, anonSessionRequest.getPath());
 
         // check if request was sent to track purchase endpoint
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -402,7 +402,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -412,7 +412,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, anonSessionRequest.getPath());
 
         // check if request was sent to track purchase endpoint
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -442,7 +442,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -452,7 +452,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, anonSessionRequest.getPath());
 
         // check if request was sent to track purchase endpoint
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -568,7 +568,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -613,7 +613,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -659,7 +659,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -700,7 +700,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -741,7 +741,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -751,7 +751,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, anonSessionRequest.getPath());
 
         // check if request was sent to track purchase endpoint
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -783,7 +783,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -793,7 +793,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, anonSessionRequest.getPath());
 
         // check if request was sent to track purchase endpoint
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -826,7 +826,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
@@ -836,7 +836,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, anonSessionRequest.getPath());
 
         // check if request was sent to track purchase endpoint
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -952,7 +952,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
         // mock anon session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
@@ -964,7 +964,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if only one request was sent to anon session endpoint
         RecordedRequest anonSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Anon session request should not be null", anonSessionRequest);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, anonSessionRequest.getPath());
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, anonSessionRequest.getPath());
 
         // check if first request was sent to track purchase endpoint
         RecordedRequest firstPurchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
