@@ -468,7 +468,7 @@ public class IterableApi {
         if (iterableKeychain != null) {
             iterableKeychain.saveEmail(_email);
             iterableKeychain.saveUserId(_userId);
-            iterableKeychain.saveUserIdAnon(_userIdUnknown);
+            iterableKeychain.saveUserIdUnknown(_userIdUnknown);
             iterableKeychain.saveAuthToken(_authToken);
         } else {
             IterableLogger.e(TAG, "Shared preference creation failed. ");
@@ -483,7 +483,7 @@ public class IterableApi {
         if (iterableKeychain != null) {
             _email = iterableKeychain.getEmail();
             _userId = iterableKeychain.getUserId();
-            _userIdUnknown = iterableKeychain.getUserIdAnon();
+            _userIdUnknown = iterableKeychain.getUserIdUnknown();
             _authToken = iterableKeychain.getAuthToken();
         } else {
             IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
@@ -514,7 +514,7 @@ public class IterableApi {
 
         @Nullable
         @Override
-        public String getUserIdAnon() {
+        public String getUserIdUnknown() {
             return _userIdUnknown;
         }
 

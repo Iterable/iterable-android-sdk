@@ -30,15 +30,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class AnonTrackingTestActivity extends AppCompatActivity implements IterableUnknownUserHandler, IterableAuthHandler {
+public class UnknownUserTrackingTestActivity extends AppCompatActivity implements IterableUnknownUserHandler, IterableAuthHandler {
 
-    private CheckBox anonymousUsageTrackedCheckBox;
+    private CheckBox unknownUsageTrackedCheckBox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-        anonymousUsageTrackedCheckBox = findViewById(R.id.anonymousUsageTracked_check_box);
+        unknownUsageTrackedCheckBox = findViewById(R.id.unknownUsageTracked_check_box);
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableUnknownUserActivation(true).setUnknownUserHandler(this).setAuthHandler(this).build();
 
         // clear data for testing
@@ -54,11 +54,11 @@ public class AnonTrackingTestActivity extends AppCompatActivity implements Itera
             IterableApi.getInstance().setUserId(null);
             IterableApi.getInstance().setEmail(null);
             printAllSharedPreferencesData(this);
-            IterableApi.getInstance().setVisitorUsageTracked(anonymousUsageTrackedCheckBox.isChecked());
+            IterableApi.getInstance().setVisitorUsageTracked(unknownUsageTrackedCheckBox.isChecked());
 
         }, 1000);
 
-        anonymousUsageTrackedCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        unknownUsageTrackedCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             IterableApi.getInstance().setVisitorUsageTracked(isChecked);
         });
 

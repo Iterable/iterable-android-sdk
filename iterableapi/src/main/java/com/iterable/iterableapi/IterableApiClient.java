@@ -28,7 +28,7 @@ class IterableApiClient {
         @Nullable
         String getUserId();
         @Nullable
-        String getUserIdAnon();
+        String getUserIdUnknown();
         @Nullable
         String getAuthToken();
         @Nullable
@@ -246,7 +246,7 @@ class IterableApiClient {
             addEmailOrUserIdToJson(requestJSON);
 
             // Create the user by userId if it doesn't exist
-            if (authProvider.getEmail() == null && (authProvider.getUserIdAnon() != null || authProvider.getUserId() != null)) {
+            if (authProvider.getEmail() == null && (authProvider.getUserIdUnknown() != null || authProvider.getUserId() != null)) {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
@@ -680,8 +680,8 @@ class IterableApiClient {
             if (authProvider.getEmail() != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail());
             } else {
-                if (authProvider.getUserIdAnon() != null) {
-                    requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserIdAnon());
+                if (authProvider.getUserIdUnknown() != null) {
+                    requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserIdUnknown());
                 } else {
                     requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
                 }
@@ -808,7 +808,7 @@ class IterableApiClient {
         sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
     }
 
-    void trackAnonSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserTrack, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void trackUnknownUserSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserTrack, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         try {
             JSONObject requestObject = new JSONObject();
 

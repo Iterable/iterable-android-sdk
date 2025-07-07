@@ -72,7 +72,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         // Mock responses for expected endpoints
         addResponse(IterableConstants.ENDPOINT_CRITERIA_LIST);
 
-        // Initialize with anon activation and foreground fetch enabled
+        // Initialize with unknown user activation and foreground fetch enabled
         IterableConfig config = new IterableConfig.Builder()
             .setEnableUnknownUserActivation(true)
             .setEnableForegroundCriteriaFetch(true)

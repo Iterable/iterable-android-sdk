@@ -115,7 +115,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";
     public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
-    public static final String SHARED_PREFS_USERIDANON_KEY = "itbl_userid_anon";
+    public static final String SHARED_PREFS_USERIDUNKNOWN_KEY = "itbl_userid_unknown";
     public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
     public static final String SHARED_PREFS_AUTH_TOKEN_KEY = "itbl_authtoken";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";

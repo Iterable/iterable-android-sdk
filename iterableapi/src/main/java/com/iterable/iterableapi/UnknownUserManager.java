@@ -88,11 +88,11 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
     }
 
     private void saveUnknownSessionData(SharedPreferences sharedPref, JSONObject newDataObject) throws JSONException {
-        JSONObject anonSessionData = new JSONObject();
-        anonSessionData.put(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, newDataObject);
+        JSONObject unknownSessionData = new JSONObject();
+        unknownSessionData.put(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, newDataObject);
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, anonSessionData.toString());
+        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, unknownSessionData.toString());
         editor.apply();
     }
 
@@ -238,7 +238,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
 
                 //track unknown user session with new user
-                iterableApi.apiClient.trackAnonSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
+                iterableApi.apiClient.trackUnknownUserSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
                     // success handler
                     if (IterableApi.getInstance().config.iterableUnknownUserHandler != null) {
                         IterableApi.getInstance().config.iterableUnknownUserHandler.onUnknownUserCreated(userId);
@@ -490,7 +490,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
     public void onSwitchToForeground() {
         long currentTime = System.currentTimeMillis();
 
-        // fetching anonymous user criteria on foregrounding
+        // fetching unknown user criteria on foregrounding
         if (!iterableApi.checkSDKInitialization()
             && iterableApi._userIdUnknown == null
             && iterableApi.config.enableUnknownUserActivation

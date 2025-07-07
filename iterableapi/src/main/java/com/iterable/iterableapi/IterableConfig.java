@@ -101,13 +101,13 @@ public class IterableConfig {
     final boolean enableUnknownUserActivation;
 
     /**
-     * Toggles fetching of anonymous user criteria on foregrounding when set to true
-     * By default, the SDK will fetch anonymous user criteria on foregrounding.
+     * Toggles fetching of unknown user criteria on foregrounding when set to true
+     * By default, the SDK will fetch unknown user criteria on foregrounding.
      */
     final boolean enableForegroundCriteriaFetch;
 
     /**
-     * The number of anonymous events stored in local storage
+     * The number of unknown user events stored in local storage
      */
     final int eventThresholdLimit;
 
@@ -124,7 +124,7 @@ public class IterableConfig {
 
     /**
      * This controls whether the SDK should allow event replay from local storage to logged in profile
-     * and merging between the generated anonymous profile and the logged in profile by default.
+     * and merging between the generated unknown user profile and the logged in profile by default.
      */
     final IterableIdentityResolution identityResolution;
 
