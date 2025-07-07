@@ -132,7 +132,7 @@ public class IterableApiCustomEventTests extends BaseTest {
     @Test
     public void testCustomEventTrackApi() throws Exception {
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK);
         final String userId = "testUser2";
 

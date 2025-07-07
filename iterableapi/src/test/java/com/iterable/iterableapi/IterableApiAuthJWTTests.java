@@ -206,7 +206,7 @@ public class IterableApiAuthJWTTests extends BaseTest {
 
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) {
         }
-        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
@@ -246,7 +246,7 @@ public class IterableApiAuthJWTTests extends BaseTest {
 
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) {
         }
-        addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
+        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_MERGE_USER);
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
