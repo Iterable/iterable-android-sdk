@@ -399,7 +399,7 @@ public class IterableConfig {
         @NonNull
         public Builder setKeychainEncryption(boolean keychainEncryption) {
             this.keychainEncryption = keychainEncryption;
-			return this;
+            return this;
 		}
 
 		/**
