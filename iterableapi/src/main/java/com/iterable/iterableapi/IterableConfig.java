@@ -400,7 +400,7 @@ public class IterableConfig {
         public Builder setKeychainEncryption(boolean keychainEncryption) {
             this.keychainEncryption = keychainEncryption;
             return this;
-		}
+        }
 
 		/**
          * Set whether the SDK should replay events from local storage to the logged in profile
