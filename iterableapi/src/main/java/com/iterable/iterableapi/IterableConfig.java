@@ -122,7 +122,7 @@ public class IterableConfig {
      */
     final boolean keychainEncryption;
 
-    /*
+    /**
      * This controls whether the SDK should allow event replay from local storage to logged in profile
      * and merging between the generated anonymous profile and the logged in profile by default.
      */
@@ -193,6 +193,8 @@ public class IterableConfig {
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableUnknownUserHandler iterableUnknownUserHandler;
 
+        public Builder() {}
+
         /**
          * Set a custom unknown user handler which is called when an unknown user is generated
          * @param iterableUnknownUserHandler Custom unknown user handler provided by the app
@@ -202,8 +204,6 @@ public class IterableConfig {
             this.iterableUnknownUserHandler = iterableUnknownUserHandler;
             return this;
         }
-
-        public Builder() {}
 
         /**
          * Push integration name - used for token registration
@@ -373,6 +373,10 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set the number of unknown user events stored in local storage
+         * @param eventThresholdLimit the number of unknown user events stored in local storage
+         */
         public Builder setEventThresholdLimit(int eventThresholdLimit) {
             this.eventThresholdLimit = eventThresholdLimit;
             return this;
@@ -402,7 +406,7 @@ public class IterableConfig {
          * Set whether the SDK should replay events from local storage to the logged in profile
          * and set whether the SDK should merge the generated unknown user profile and the logged in profile.
          * This can be overwritten by a parameter passed into setEmail or setUserId.
-         * @param identityResolution
+         * @param identityResolution identify resolution object
          * @return
          */
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
