@@ -17,8 +17,6 @@ import com.iterable.iterableapi.util.DeviceInfoUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.time.Instant;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
