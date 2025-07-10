@@ -391,10 +391,10 @@ public class IterableConfig {
         @NonNull
         public Builder setKeychainEncryption(boolean keychainEncryption) {
             this.keychainEncryption = keychainEncryption;
-			return this;
-		}
+            return this;
+        }
 
-		/**
+        /**
          * Set whether the SDK should replay events from local storage to the logged in profile
          * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
          * This can be overwritten by a parameter passed into setEmail or setUserId.
