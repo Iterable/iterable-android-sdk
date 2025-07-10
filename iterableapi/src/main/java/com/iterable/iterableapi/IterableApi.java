@@ -1445,6 +1445,28 @@ public class IterableApi {
         apiClient.trackEmbeddedClick(message, buttonIdentifier, clickedUrl);
     }
 
+    public void setVisitorUsageTracked(@NonNull Boolean isSetVisitorUsageTracked) {
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
+        editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
+        editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
+        editor.apply();
+
+        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
+            unknownUserManager.updateUnknownSession();
+            unknownUserManager.getCriteria();
+        }
+    }
+
+    public boolean getVisitorUsageTracked() {
+        SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
+    }
+
 //endregion
 
 //region DEPRECATED - API public functions
@@ -1577,27 +1599,6 @@ public class IterableApi {
         }
 
         apiClient.trackEmbeddedSession(session);
-    }
-
-    public void setVisitorUsageTracked(@NonNull Boolean isSetVisitorUsageTracked) {
-        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
-        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
-        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
-        editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
-        editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
-        editor.apply();
-
-        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
-            unknownUserManager.updateUnknownSession();
-            unknownUserManager.getCriteria();
-        }
-    }
-
-    public boolean getVisitorUsageTracked() {
-        SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
     }
 //endregion
 }
