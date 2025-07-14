@@ -59,6 +59,8 @@ public final class IterableConstants {
     public static final String KEY_FIRETV = "FireTV";
     public static final String KEY_CREATE_NEW_FIELDS    = "createNewFields";
     public static final String KEY_ANON_SESSION_CONTEXT = "anonSessionContext";
+    public static final String KEY_IS_USER_KNOWN = "isUserKnown";
+    public static final String KEY_CONSENT_TIMESTAMP = "consentTimestamp";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -87,7 +89,8 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
     public static final String ENDPOINT_MERGE_USER              = "users/merge";
     public static final String ENDPOINT_CRITERIA_LIST           = "anonymoususer/list";
-    public static final String ENDPOINT_TRACK_ANON_SESSION = "anonymoususer/events/session";
+    public static final String ENDPOINT_TRACK_ANON_SESSION      = "anonymoususer/events/session";
+    public static final String ENDPOINT_TRACK_CONSENT      = "unknownuser/consent";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";

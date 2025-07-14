@@ -215,8 +215,9 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         updateUnknownSession();
 
-        //get session data
+        //get session data and stored time of consent
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
+        Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
 
         //generate unknown user id
         String userId = UUID.randomUUID().toString();
@@ -244,6 +245,10 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
                         IterableApi.getInstance().config.iterableUnknownUserHandler.onUnknownUserCreated(userId);
                     }
                     IterableApi.getInstance().setUnknownUser(userId);
+                    // Track consent for the newly created unknown user (unknown user = false since ID is generated)
+                    if (timeOfConsent > 0) {
+                        iterableApi.apiClient.trackConsent(userId, null, timeOfConsent, false);
+                    }
                 }, (reason, data) -> handleTrackFailure(data));
             }
 
@@ -251,6 +256,10 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
             isCriteriaMatched = false;
             e.printStackTrace();
         }
+    }
+
+    private void handleTrackSuccess() {
+
     }
 
     private void handleTrackFailure(JSONObject data) {

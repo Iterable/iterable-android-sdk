@@ -905,7 +905,8 @@ public class IterableApi {
     }
 
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
-        if (config.enableUnknownUserActivation) {
+        if (config.enableUnknownUserActivation && getVisitorUsageTracked()) {
+
             if (emailOrUserId != null && !emailOrUserId.equals(_userIdUnknown)) {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
             }
@@ -918,6 +919,8 @@ public class IterableApi {
                 _userIdUnknown = null;
             }
 
+            // Track consent for the newly identified user (known user = true since they're signing in)
+            trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
             unknownUserManager.clearVisitorEventsAndUserData();
         }
     }
@@ -1465,6 +1468,26 @@ public class IterableApi {
     public boolean getVisitorUsageTracked() {
         SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
+    }
+
+    /**
+     * Tracks user consent with the timestamp from when visitor usage was first tracked.
+     * This should be called when transitioning from unknown to known user.
+     * @param email User email (if available)
+     * @param userId User ID (if available)
+     * @param isUserKnown true if user is signing in (known user), false if user meets criteria and ID is generated
+     */
+    private void trackConsentForUser(@Nullable String email, @Nullable String userId, boolean isUserKnown) {
+        if (!config.enableUnknownUserActivation || !getVisitorUsageTracked()) {
+            return;
+        }
+        
+        SharedPreferences sharedPref = getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
+        
+        if (timeOfConsent > 0) {
+            apiClient.trackConsent(userId, email, timeOfConsent, isUserKnown);
+        }
     }
 
 //endregion

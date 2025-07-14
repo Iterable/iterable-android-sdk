@@ -829,4 +829,26 @@ class IterableApiClient {
             e.printStackTrace();
         }
     }
+
+    void trackConsent(String userId, String email, @NonNull Long timestamp, boolean isUserKnown) {
+        JSONObject requestJSON = new JSONObject();
+        
+        try {
+            requestJSON.put(IterableConstants.KEY_CONSENT_TIMESTAMP, timestamp);
+            
+            if (email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, email);
+            }
+            if (userId != null) {
+                requestJSON.put(IterableConstants.KEY_USER_ID, userId);
+            }
+            
+            requestJSON.put(IterableConstants.KEY_IS_USER_KNOWN, isUserKnown);
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_CONSENT, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }
