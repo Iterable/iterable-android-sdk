@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.mainLayout).setOnLongClickListener(v -> {
-            Intent intent = new Intent(this, AnonTrackingTestActivity.class);
+            Intent intent = new Intent(this, UnknownUserTrackingTestActivity.class);
             startActivity(intent);
             return true;
         });

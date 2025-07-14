@@ -36,7 +36,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         reInitIterableApi();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
-        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableAnonActivation(true).build();
+        IterableConfig iterableConfig = new IterableConfig.Builder().setEnableUnknownUserActivation(true).build();
         IterableApi.initialize(getContext(), "apiKey", iterableConfig);
         IterableApi.getInstance().setVisitorUsageTracked(true);
     }
@@ -72,9 +72,9 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         // Mock responses for expected endpoints
         addResponse(IterableConstants.ENDPOINT_CRITERIA_LIST);
 
-        // Initialize with anon activation and foreground fetch enabled
+        // Initialize with unknown user activation and foreground fetch enabled
         IterableConfig config = new IterableConfig.Builder()
-            .setEnableAnonActivation(true)
+            .setEnableUnknownUserActivation(true)
             .setEnableForegroundCriteriaFetch(true)
             .build();
 
@@ -110,7 +110,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
     public void testCriteriaFetchNotCalledWhenDisabled() throws Exception {
         // Initialize with foreground fetch disabled
         IterableConfig config = new IterableConfig.Builder()
-            .setEnableAnonActivation(true)
+            .setEnableUnknownUserActivation(true)
             .setEnableForegroundCriteriaFetch(false)
             .build();
 
@@ -151,7 +151,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
 
         // Initialize with required config
         IterableConfig config = new IterableConfig.Builder()
-            .setEnableAnonActivation(true)
+            .setEnableUnknownUserActivation(true)
             .setEnableForegroundCriteriaFetch(true)
             .build();
 

@@ -11,7 +11,7 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="com.iterable.androidsdk.AnonTrackingTestActivity"
+            android:name="com.iterable.androidsdk.UnknownUserTrackingTestActivity"
             android:exported="false" />
         <activity
             android:name="com.iterable.androidsdk.MainActivity"

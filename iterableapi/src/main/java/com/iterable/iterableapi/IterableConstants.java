@@ -87,7 +87,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
     public static final String ENDPOINT_MERGE_USER              = "users/merge";
     public static final String ENDPOINT_CRITERIA_LIST           = "anonymoususer/list";
-    public static final String ENDPOINT_TRACK_ANON_SESSION      = "anonymoususer/events/session";
+    public static final String ENDPOINT_TRACK_ANON_SESSION = "anonymoususer/events/session";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -115,7 +115,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FILE = "com.iterable.iterableapi";
     public static final String SHARED_PREFS_EMAIL_KEY = "itbl_email";
     public static final String SHARED_PREFS_USERID_KEY = "itbl_userid";
-    public static final String SHARED_PREFS_USERIDANON_KEY = "itbl_userid_anon";
+    public static final String SHARED_PREFS_USERIDUNKNOWN_KEY = "itbl_userid_unknown";
     public static final String SHARED_PREFS_DEVICEID_KEY = "itbl_deviceid";
     public static final String SHARED_PREFS_AUTH_TOKEN_KEY = "itbl_authtoken";
     public static final String SHARED_PREFS_EXPIRATION_SUFFIX = "_expiration";
@@ -129,7 +129,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
     public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
     public static final String SHARED_PREFS_USER_UPDATE_OBJECT_KEY = "itbl_user_update_object";
-    public static final String SHARED_PREFS_ANON_SESSIONS = "itbl_anon_sessions";
+    public static final String SHARED_PREFS_UNKNOWN_SESSIONS = "itbl_unknown_sessions";
     public static final String SHARED_PREFS_SESSION_NO = "totalAnonSessionCount";
     public static final String SHARED_PREFS_LAST_SESSION = "lastAnonSession";
     public static final String SHARED_PREFS_FIRST_SESSION = "firstAnonSession";
