@@ -11,7 +11,7 @@ class IterableKeychain {
         private const val TAG = "IterableKeychain"
         const val KEY_EMAIL = "iterable-email"
 		const val KEY_USER_ID = "iterable-user-id"
-        const val KEY_ANON_USER_ID = "iterable-anon-user-id"
+        const val KEY_UNKNOWN_USER_ID = "iterable-unknown-user-id"
 		const val KEY_AUTH_TOKEN = "iterable-auth-token"
         private const val PLAINTEXT_SUFFIX = "_plaintext"
         private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
@@ -75,7 +75,7 @@ class IterableKeychain {
         sharedPrefs.edit()
             .remove(KEY_EMAIL)
             .remove(KEY_USER_ID)
-            .remove(KEY_ANON_USER_ID)
+            .remove(KEY_UNKNOWN_USER_ID)
             .remove(KEY_AUTH_TOKEN)
             .putBoolean(KEY_ENCRYPTION_ENABLED, false)
             .apply()
@@ -156,6 +156,6 @@ class IterableKeychain {
     fun getAuthToken() = secureGet(KEY_AUTH_TOKEN)
     fun saveAuthToken(authToken: String?) = secureSave(KEY_AUTH_TOKEN, authToken)
 
-    fun getUserIdAnon() = secureGet(KEY_ANON_USER_ID)
-    fun saveUserIdAnon(userIdAnon: String?) = secureSave(KEY_ANON_USER_ID, userIdAnon)
+    fun getUserIdUnknown() = secureGet(KEY_UNKNOWN_USER_ID)
+    fun saveUserIdUnknown(userIdUnknown: String?) = secureSave(KEY_UNKNOWN_USER_ID, userIdUnknown)
 }

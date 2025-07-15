@@ -62,9 +62,9 @@ public class IterableConfig {
     final IterableAuthHandler authHandler;
 
     /**
-     * Handler that can be used to retrieve the anonymous user id
+     * Handler that can be used to retrieve the unknown user id
      */
-    final IterableAnonUserHandler iterableAnonUserHandler;
+    final IterableUnknownUserHandler iterableUnknownUserHandler;
 
     /**
      * Duration prior to an auth expiration that a new auth token should be requested.
@@ -96,18 +96,18 @@ public class IterableConfig {
     final boolean encryptionEnforced;
 
     /**
-     * Enables anonymous user activation
+     * Enables unknown user activation
      */
-    final boolean enableAnonActivation;
+    final boolean enableUnknownUserActivation;
 
     /**
-     * Toggles fetching of anonymous user criteria on foregrounding when set to true
-     * By default, the SDK will fetch anonymous user criteria on foregrounding.
+     * Toggles fetching of unknown user criteria on foregrounding when set to true
+     * By default, the SDK will fetch unknown user criteria on foregrounding.
      */
     final boolean enableForegroundCriteriaFetch;
 
     /**
-     * The number of anonymous events stored in local storage
+     * The number of unknown user events stored in local storage
      */
     final int eventThresholdLimit;
 
@@ -122,9 +122,9 @@ public class IterableConfig {
      */
     final boolean keychainEncryption;
 
-    /*
+    /**
      * This controls whether the SDK should allow event replay from local storage to logged in profile
-     * and merging between the generated anonymous profile and the logged in profile by default.
+     * and merging between the generated unknown user profile and the logged in profile by default.
      */
     final IterableIdentityResolution identityResolution;
 
@@ -156,13 +156,13 @@ public class IterableConfig {
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
         encryptionEnforced = builder.encryptionEnforced;
-        enableAnonActivation = builder.enableAnonActivation;
+        enableUnknownUserActivation = builder.enableUnknownUserActivation;
         enableForegroundCriteriaFetch = builder.enableForegroundCriteriaFetch;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         keychainEncryption = builder.keychainEncryption;
         eventThresholdLimit = builder.eventThresholdLimit;
         identityResolution = builder.identityResolution;
-        iterableAnonUserHandler = builder.iterableAnonUserHandler;
+        iterableUnknownUserHandler = builder.iterableUnknownUserHandler;
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
@@ -186,20 +186,24 @@ public class IterableConfig {
         private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
         private boolean encryptionEnforced = false;
-        private boolean enableAnonActivation = false;
+        private boolean enableUnknownUserActivation = false;
         private boolean enableForegroundCriteriaFetch = true;
         private boolean enableEmbeddedMessaging = false;
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
-        private IterableAnonUserHandler iterableAnonUserHandler;
-
-        @NonNull
-        public Builder setIterableAnonUserHandler(@NonNull IterableAnonUserHandler iterableAnonUserHandler) {
-            this.iterableAnonUserHandler = iterableAnonUserHandler;
-            return this;
-        }
+        private IterableUnknownUserHandler iterableUnknownUserHandler;
 
         public Builder() {}
+
+        /**
+         * Set a custom unknown user handler which is called when an unknown user is generated
+         * @param iterableUnknownUserHandler Custom unknown user handler provided by the app
+         */
+        @NonNull
+        public Builder setUnknownUserHandler(@NonNull IterableUnknownUserHandler iterableUnknownUserHandler) {
+            this.iterableUnknownUserHandler = iterableUnknownUserHandler;
+            return this;
+        }
 
         /**
          * Push integration name - used for token registration
@@ -350,12 +354,12 @@ public class IterableConfig {
         }
 
         /**
-         * Set whether the SDK should track events for anonymous users. Set this to `true`
+         * Set whether the SDK should track events for unknown users. Set this to `true`
          * if you want to track all events when users are not logged into the application.
-         * @param enableAnonActivation `true` will track events for anonymous users.
+         * @param enableUnknownUserActivation `true` will track events for unknown users.
          */
-        public Builder setEnableAnonActivation(boolean enableAnonActivation) {
-            this.enableAnonActivation = enableAnonActivation;
+        public Builder setEnableUnknownUserActivation(boolean enableUnknownUserActivation) {
+            this.enableUnknownUserActivation = enableUnknownUserActivation;
             return this;
         }
 
@@ -369,6 +373,10 @@ public class IterableConfig {
             return this;
         }
 
+        /**
+         * Set the number of unknown user events stored in local storage
+         * @param eventThresholdLimit the number of unknown user events stored in local storage
+         */
         public Builder setEventThresholdLimit(int eventThresholdLimit) {
             this.eventThresholdLimit = eventThresholdLimit;
             return this;
@@ -396,9 +404,9 @@ public class IterableConfig {
 
         /**
          * Set whether the SDK should replay events from local storage to the logged in profile
-         * and set whether the SDK should merge the generated anonymous profile and the logged in profile.
+         * and set whether the SDK should merge the generated unknown user profile and the logged in profile.
          * This can be overwritten by a parameter passed into setEmail or setUserId.
-         * @param identityResolution
+         * @param identityResolution identify resolution object
          * @return
          */
         public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
