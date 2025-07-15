@@ -21,7 +21,6 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -76,10 +75,10 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
     private JSONObject createNewSessionData(int sessionNo, String firstSessionDate) throws JSONException {
         JSONObject newDataObject = new JSONObject();
         newDataObject.put(IterableConstants.SHARED_PREFS_SESSION_NO, sessionNo + 1);
-        newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, getCurrentTime());
+        newDataObject.put(IterableConstants.SHARED_PREFS_LAST_SESSION, IterableUtil.currentTimeMillis());
 
         if (firstSessionDate.isEmpty()) {
-            newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, getCurrentTime());
+            newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, IterableUtil.currentTimeMillis());
         } else {
             newDataObject.put(IterableConstants.SHARED_PREFS_FIRST_SESSION, firstSessionDate);
         }
@@ -102,7 +101,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         try {
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_EVENT_NAME, eventName);
-            newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
+            newDataObject.put(IterableConstants.KEY_CREATED_AT, IterableUtil.currentTimeMillis());
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_EVENT);
@@ -144,7 +143,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
             Gson gson = new GsonBuilder().create();
 
             newDataObject.put(IterableConstants.KEY_ITEMS, gson.toJsonTree(items).getAsJsonArray().toString());
-            newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
+            newDataObject.put(IterableConstants.KEY_CREATED_AT, IterableUtil.currentTimeMillis());
             newDataObject.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
             newDataObject.put(IterableConstants.KEY_TOTAL, total);
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_PURCHASE);
@@ -163,7 +162,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
             JSONObject newDataObject = new JSONObject();
             newDataObject.put(IterableConstants.KEY_ITEMS, gson.toJsonTree(items).getAsJsonArray().toString());
             newDataObject.put(IterableConstants.SHARED_PREFS_EVENT_TYPE, IterableConstants.TRACK_UPDATE_CART);
-            newDataObject.put(IterableConstants.KEY_CREATED_AT, getCurrentTime());
+            newDataObject.put(IterableConstants.KEY_CREATED_AT, IterableUtil.currentTimeMillis());
             storeEventListToLocalStorage(newDataObject);
 
         } catch (JSONException e) {
@@ -239,7 +238,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
                 userDataJson.put(IterableConstants.SHARED_PREFS_CRITERIA_ID, Integer.valueOf(criteriaId));
 
                 //track unknown user session with new user
-                iterableApi.apiClient.trackUnknownUserSession(getCurrentTime(), userId, userDataJson, updateUserDataFields, data -> {
+                iterableApi.apiClient.trackUnknownUserSession(IterableUtil.currentTimeMillis(), userId, userDataJson, updateUserDataFields, data -> {
                     // success handler
                     if (IterableApi.getInstance().config.iterableUnknownUserHandler != null) {
                         IterableApi.getInstance().config.iterableUnknownUserHandler.onUnknownUserCreated(userId);
@@ -474,10 +473,6 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         }
 
         return userUpdateObject;
-    }
-
-    private long getCurrentTime() {
-        return Calendar.getInstance().getTimeInMillis() / 1000;
     }
 
     private String getPushStatus() {
