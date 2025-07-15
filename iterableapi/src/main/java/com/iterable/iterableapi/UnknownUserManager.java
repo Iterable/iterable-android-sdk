@@ -257,11 +257,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
             e.printStackTrace();
         }
     }
-
-    private void handleTrackSuccess() {
-
-    }
-
+    
     private void handleTrackFailure(JSONObject data) {
         isCriteriaMatched = false;
         if (data != null && data.has(IterableConstants.HTTP_STATUS_CODE)) {
