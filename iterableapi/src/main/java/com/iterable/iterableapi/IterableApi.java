@@ -913,13 +913,13 @@ public class IterableApi {
 
             if (replay && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
+//                trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
             }
 
             if (!isUnknown) {
                 _userIdUnknown = null;
             }
 
-            trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
             unknownUserManager.clearVisitorEventsAndUserData();
         }
     }
