@@ -214,9 +214,8 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         updateUnknownSession();
 
-        //get session data and stored time of consent
+        //get session data
         String userData = sharedPref.getString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
-        Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
 
         //generate unknown user id
         String userId = UUID.randomUUID().toString();
