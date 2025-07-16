@@ -919,7 +919,6 @@ public class IterableApi {
                 _userIdUnknown = null;
             }
 
-            // Track consent for the newly identified user (known user = true since they're signing in)
             trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
             unknownUserManager.clearVisitorEventsAndUserData();
         }
@@ -1477,17 +1476,15 @@ public class IterableApi {
      * @param userId User ID (if available)
      * @param isUserKnown true if user is signing in (known user), false if user meets criteria and ID is generated
      */
-    private void trackConsentForUser(@Nullable String email, @Nullable String userId, boolean isUserKnown) {
+    void trackConsentForUser(@Nullable String email, @Nullable String userId, boolean isUserKnown) {
         if (!config.enableUnknownUserActivation || !getVisitorUsageTracked()) {
             return;
         }
         
         SharedPreferences sharedPref = getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
-        
-        if (timeOfConsent > 0) {
-            apiClient.trackConsent(userId, email, timeOfConsent, isUserKnown);
-        }
+
+        apiClient.trackConsent(userId, email, timeOfConsent, isUserKnown);
     }
 
 //endregion

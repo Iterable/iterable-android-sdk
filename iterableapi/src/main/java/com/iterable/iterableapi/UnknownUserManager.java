@@ -244,10 +244,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
                         IterableApi.getInstance().config.iterableUnknownUserHandler.onUnknownUserCreated(userId);
                     }
                     IterableApi.getInstance().setUnknownUser(userId);
-                    // Track consent for the newly created unknown user (unknown user = false since ID is generated)
-                    if (timeOfConsent > 0) {
-                        iterableApi.apiClient.trackConsent(userId, null, timeOfConsent, false);
-                    }
+                    IterableApi.getInstance().trackConsentForUser(null, userId, false);
                 }, (reason, data) -> handleTrackFailure(data));
             }
 
