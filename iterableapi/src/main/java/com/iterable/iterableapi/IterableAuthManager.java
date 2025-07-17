@@ -120,17 +120,18 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     private void handleAuthTokenSuccess(String authToken, IterableHelper.SuccessHandler successCallback) {
         if (authToken != null) {
+            IterableApi.getInstance().setAuthToken(authToken);
+            queueExpirationRefresh(authToken);
+
             if (successCallback != null) {
                 handleSuccessForAuthToken(authToken, successCallback);
             }
-            queueExpirationRefresh(authToken);
         } else {
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
             IterableApi.getInstance().setAuthToken(authToken);
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
             return;
         }
-        IterableApi.getInstance().setAuthToken(authToken);
         reSyncAuth();
         authHandler.onTokenRegistrationSuccessful(authToken);
     }

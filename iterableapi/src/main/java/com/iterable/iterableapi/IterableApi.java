@@ -823,8 +823,6 @@ public class IterableApi {
             attemptMergeAndEventReplay(email, true, merge, replay, false, failureHandler);
         }
 
-        _userIdUnknown = null;
-
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
