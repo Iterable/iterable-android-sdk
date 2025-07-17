@@ -824,7 +824,7 @@ public class IterableApi {
             attemptMergeAndEventReplay(email, true, merge, replay, false, failureHandler);
         }
 
-        if(email == null) {
+        if (email == null) {
             unknownUserManager.setCriteriaMatched(false);
             setEventReplayHandled(false);
         }
@@ -893,7 +893,7 @@ public class IterableApi {
             attemptMergeAndEventReplay(userId, false, merge, replay, isUnknown, failureHandler);
         }
 
-        if(userId == null) {
+        if (userId == null) {
             unknownUserManager.setCriteriaMatched(false);
             setEventReplayHandled(false);
         }
@@ -1494,7 +1494,7 @@ public class IterableApi {
         if (!config.enableUnknownUserActivation || !getVisitorUsageTracked()) {
             return;
         }
-        
+
         SharedPreferences sharedPref = getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
 

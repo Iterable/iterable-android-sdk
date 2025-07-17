@@ -373,7 +373,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
 
         // verify track consent request body contains proper isUserKnown flag
-        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
         assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
@@ -427,7 +427,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
 
         // verify track consent request body contains proper isUserKnown flag
-        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
         assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
@@ -478,7 +478,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
 
         // verify track consent request body contains proper isUserKnown flag
-        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
         assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
@@ -806,7 +806,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
 
         // verify track consent request body contains proper isUserKnown flag
-        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
         assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
@@ -863,7 +863,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
 
         // verify track consent request body contains proper isUserKnown flag
-        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
         assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
@@ -917,7 +917,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
 
         // verify track consent request body contains proper isUserKnown flag
-        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
         assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
@@ -1065,7 +1065,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
 
         // verify track consent request body contains proper isUserKnown flag
-        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
         assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
     }
 }
