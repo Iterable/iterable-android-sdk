@@ -43,6 +43,7 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private boolean _eventReplayHandled = false;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
@@ -823,6 +824,10 @@ public class IterableApi {
             attemptMergeAndEventReplay(email, true, merge, replay, false, failureHandler);
         }
 
+        if(email == null) {
+            unknownUserManager.setCriteriaMatched(false);
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
@@ -887,6 +892,10 @@ public class IterableApi {
             attemptMergeAndEventReplay(userId, false, merge, replay, isUnknown, failureHandler);
         }
 
+        if(userId == null) {
+            unknownUserManager.setCriteriaMatched(false);
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
@@ -909,13 +918,15 @@ public class IterableApi {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
             }
 
-            if (replay && (_userId != null || _email != null)) {
+            if (replay && !_eventReplayHandled && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
                 trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, !isUnknown);
+                _eventReplayHandled = true;
             }
 
             if (!isUnknown) {
                 _userIdUnknown = null;
+                _eventReplayHandled = false;
             }
 
             unknownUserManager.clearVisitorEventsAndUserData();
