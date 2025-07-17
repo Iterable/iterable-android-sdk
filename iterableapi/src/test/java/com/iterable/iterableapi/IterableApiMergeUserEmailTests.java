@@ -2,9 +2,11 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -13,6 +15,7 @@ import android.content.SharedPreferences;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -186,10 +189,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
-        // mock unknown user session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
-        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
@@ -204,9 +203,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-
-        // mock merge response
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         // set user id
         final String userId = "testUser2";
@@ -217,10 +213,16 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(purchaseRequest2);
         assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE), purchaseRequest2.getPath());
 
-        // check that request was not sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        // check that request was not sent to merge endpoint and was sent to the consent tracking endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(consentRequest);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), consentRequest.getPath());
+        assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), consentRequest.getPath());
+
+        // verify track consent request body contains proper user ID and isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
+        assertEquals(userId, consentRequestJson.getString(IterableConstants.KEY_USER_ID));
+        assertTrue(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -230,10 +232,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
     public void testCriteriaNotMetUserIdReplayTrueMergeFalse() throws Exception {
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-
-        // mock unknown user session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
-        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
@@ -249,9 +247,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
 
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-
-        // mock merge response
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         // set user id
         final String userId = "testUser2";
@@ -263,10 +258,16 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(purchaseRequest2);
         assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE), purchaseRequest2.getPath());
 
-        // check that request was not sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        // check that request was not sent to merge endpoint and was sent to the consent tracking endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(consentRequest);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), consentRequest.getPath());
+        assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), consentRequest.getPath());
+
+        // verify track consent request body contains proper user ID and isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
+        assertEquals(userId, consentRequestJson.getString(IterableConstants.KEY_USER_ID));
+        assertTrue(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -277,10 +278,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
-        // mock unknown user session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
-        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
@@ -296,18 +293,16 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
-        // mock merge response
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
-
         // set user id
         final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, false);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
-        // check that request was not sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        // check that request was not sent to merge endpoint or track consent endpoint
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), request.getPath());
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), request.getPath());
 
         // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -318,10 +313,6 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
-        // mock unknown user session response and track purchase response
-        addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
-        addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
-
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 5, 1);
         shadowOf(getMainLooper()).idle();
@@ -337,18 +328,16 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
-        // mock merge response
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
-
         // set user id
         final String userId = "testUser2";
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(false, true);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
-        // check that request was not sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        // check that request was not sent to merge endpoint or track consent endpoint
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), request.getPath());
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), request.getPath());
 
         // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -362,6 +351,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
@@ -377,11 +367,17 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
 
+        // check if request was sent to track consent endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Consent tracking request should be sent", consentRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
+
+        // verify track consent request body contains proper isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
+
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
-
-        // mock merge response
-        addResponse(IterableConstants.ENDPOINT_MERGE_USER);
 
         // set user id
         final String userId = "testUser2";
@@ -391,6 +387,11 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+
+        // check that a second consent tracking request was not sent
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
 
         // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -404,13 +405,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
 
         // check if request was sent to unknown user session endpoint
-        RecordedRequest unknownSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest                                                                                                                                                                              unknownSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Unknown user session request should not be null", unknownSessionRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_ANON_SESSION, unknownSessionRequest.getPath());
 
@@ -418,6 +420,15 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to track consent endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Consent tracking request should be sent", consentRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
+
+        // verify track consent request body contains proper isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
@@ -427,10 +438,11 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, false);
         IterableApi.getInstance().setUserId(userId, identityResolution);
 
-        // check that request was not sent to merge endpoint
+        // check that request was not sent to merge endpoint or consent tracking endpoint
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         assertNotEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, mergeRequest.getPath());
 
         // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -444,6 +456,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
@@ -459,6 +472,15 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
 
+        // check if request was sent to track consent endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Consent tracking request should be sent", consentRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
+
+        // verify track consent request body contains proper isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
+
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
 
@@ -471,6 +493,11 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+
+        // check that a second consent tracking request was not sent
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
 
         // check that user id was set
         assertEquals(userId, IterableApi.getInstance().getUserId());
@@ -598,10 +625,16 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(purchaseRequest2);
         assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE), purchaseRequest2.getPath());
 
-        // check that request was not sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        // check that request was not sent to merge endpoint and sent to consent tracking endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(consentRequest);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), consentRequest.getPath());
+        assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), consentRequest.getPath());
+
+        // verify track consent request body contains proper email and isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
+        assertEquals(email, consentRequestJson.getString(IterableConstants.KEY_EMAIL));
+        assertTrue(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // check that email was set
         assertEquals(email, IterableApi.getInstance().getEmail());
@@ -644,10 +677,16 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(purchaseRequest2);
         assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE), purchaseRequest2.getPath());
 
-        // check that request was not sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        // check that request was not sent to merge endpoint and sent to consent tracking endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(consentRequest);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), consentRequest.getPath());
+        assertEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), consentRequest.getPath());
+
+        // verify track consent request body contains proper email and isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());
+        assertEquals(email, consentRequestJson.getString(IterableConstants.KEY_EMAIL));
+        assertTrue(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // check that email was set
         assertEquals(email, IterableApi.getInstance().getEmail());
@@ -689,6 +728,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), mergeRequest.getPath());
 
         // check that email was set
         assertEquals(email, IterableApi.getInstance().getEmail());
@@ -727,9 +767,10 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setEmail(email, identityResolution);
 
         // check that request was not sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(mergeRequest);
-        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), request.getPath());
+        assertNotEquals(("/" + IterableConstants.ENDPOINT_TRACK_CONSENT), request.getPath());
 
         // check that email was set
         assertEquals(email, IterableApi.getInstance().getEmail());
@@ -743,6 +784,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
@@ -757,6 +799,15 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to track consent endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Consent tracking request should be sent", consentRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
+
+        // verify track consent request body contains proper isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
@@ -773,6 +824,11 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         assertNotNull(mergeRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
 
+        // check that a second consent tracking request was not sent
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
+
         // check that email was set
         assertEquals(email, IterableApi.getInstance().getEmail());
     }
@@ -785,6 +841,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
@@ -799,6 +856,15 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to track consent endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Consent tracking request should be sent", consentRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
+
+        // verify track consent request body contains proper isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
@@ -815,6 +881,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         assertNotEquals(("/" + IterableConstants.ENDPOINT_MERGE_USER), mergeRequest.getPath());
+        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, mergeRequest.getPath());
 
         // check that email was set
         assertEquals(email, IterableApi.getInstance().getEmail());
@@ -828,6 +895,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
@@ -842,6 +910,15 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to track consent endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Consent tracking request should be sent", consentRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
+
+        // verify track consent request body contains proper isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
 
         // clear any pending requests
         while (server.takeRequest(1, TimeUnit.SECONDS) != null) { }
@@ -858,6 +935,11 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(mergeRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
+
+        // check that a second consent tracking request was not sent
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertNotEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
 
         // check that email was set
         assertEquals(email, IterableApi.getInstance().getEmail());
@@ -955,6 +1037,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         addResponse(IterableConstants.ENDPOINT_TRACK_ANON_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
@@ -975,5 +1058,14 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest secondPurchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", secondPurchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, secondPurchaseRequest.getPath());
+
+        // check if request was sent to track consent endpoint
+        RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Consent tracking request should be sent", consentRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, consentRequest.getPath());
+
+        // verify track consent request body contains proper isUserKnown flag
+        JSONObject consentRequestJson = new JSONObject(consentRequest.getBody().readUtf8());;
+        assertFalse(consentRequestJson.getBoolean(IterableConstants.KEY_IS_USER_KNOWN));
     }
 }

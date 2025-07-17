@@ -826,6 +826,7 @@ public class IterableApi {
 
         if(email == null) {
             unknownUserManager.setCriteriaMatched(false);
+            setEventReplayHandled(false);
         }
 
         _setUserSuccessCallbackHandler = successHandler;
@@ -894,6 +895,7 @@ public class IterableApi {
 
         if(userId == null) {
             unknownUserManager.setCriteriaMatched(false);
+            setEventReplayHandled(false);
         }
 
         _setUserSuccessCallbackHandler = successHandler;
@@ -911,6 +913,10 @@ public class IterableApi {
         return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
     }
 
+    void setEventReplayHandled(boolean eventReplayHandled) {
+        this._eventReplayHandled = eventReplayHandled;
+    }
+
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
         if (config.enableUnknownUserActivation && getVisitorUsageTracked()) {
 
@@ -921,12 +927,11 @@ public class IterableApi {
             if (replay && !_eventReplayHandled && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
                 trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, !isUnknown);
-                _eventReplayHandled = true;
+                setEventReplayHandled(true);
             }
 
             if (!isUnknown) {
                 _userIdUnknown = null;
-                _eventReplayHandled = false;
             }
 
             unknownUserManager.clearVisitorEventsAndUserData();
