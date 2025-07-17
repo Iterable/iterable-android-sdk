@@ -492,7 +492,7 @@ public class IterableApiAuthTests extends BaseTest {
         shadowOf(getMainLooper()).runToEndOfTasks();
 
         // Request auth token which should set a timer for expiration refresh
-        authManager.requestNewAuthToken(false);
+        authManager.requestNewAuthToken(false, null);
         shadowOf(getMainLooper()).runToEndOfTasks();
 
         // The timer might be null if the token is considered expired, so let's test the behavior
