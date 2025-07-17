@@ -4,7 +4,7 @@ apply plugin: 'kotlin-android'
 
 android {
     namespace "com.iterable.inbox_customization"
-    compileSdkVersion 34
+    compileSdk 34
     buildToolsVersion "33.0.2"
     defaultConfig {
         applicationId "com.iterable.inbox_customization"
