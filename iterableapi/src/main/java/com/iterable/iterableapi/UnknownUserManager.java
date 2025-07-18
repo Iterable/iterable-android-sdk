@@ -367,10 +367,14 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null && !isCriteriaMatched) {
-            isCriteriaMatched = true;
+            setCriteriaMatched(true);
             createUnknownUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
+    }
+
+    void setCriteriaMatched(boolean isCriteriaMatched) {
+        this.isCriteriaMatched = isCriteriaMatched;
     }
 
     private void storeUserUpdateToLocalStorage(JSONObject newDataObject) throws JSONException {
