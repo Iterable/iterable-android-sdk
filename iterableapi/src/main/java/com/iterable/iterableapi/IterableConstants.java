@@ -58,9 +58,9 @@ public final class IterableConstants {
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
     public static final String KEY_FIRETV = "FireTV";
     public static final String KEY_CREATE_NEW_FIELDS    = "createNewFields";
-    public static final String KEY_ANON_SESSION_CONTEXT = "anonSessionContext";
     public static final String KEY_IS_USER_KNOWN = "isUserKnown";
     public static final String KEY_CONSENT_TIMESTAMP = "consentTimestamp";
+    public static final String KEY_UNKNOWN_SESSION_CONTEXT = "unknownSessionContext";
 
     //API Endpoint Key Constants
     public static final String ENDPOINT_DISABLE_DEVICE          = "users/disableDevice";
@@ -88,9 +88,9 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_USER_BY_USERID      = "users/byUserId";
     public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
     public static final String ENDPOINT_MERGE_USER              = "users/merge";
-    public static final String ENDPOINT_CRITERIA_LIST           = "anonymoususer/list";
-    public static final String ENDPOINT_TRACK_ANON_SESSION      = "anonymoususer/events/session";
     public static final String ENDPOINT_TRACK_CONSENT      = "unknownuser/consent";
+    public static final String ENDPOINT_CRITERIA_LIST           = "unknownuser/list";
+    public static final String ENDPOINT_TRACK_UNKNOWN_SESSION      = "unknownuser/events/session";
 
     public static final String PUSH_APP_ID                      = "IterableAppId";
     public static final String PUSH_GCM_PROJECT_NUMBER          = "GCMProjectNumber";
@@ -133,9 +133,9 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
     public static final String SHARED_PREFS_USER_UPDATE_OBJECT_KEY = "itbl_user_update_object";
     public static final String SHARED_PREFS_UNKNOWN_SESSIONS = "itbl_unknown_sessions";
-    public static final String SHARED_PREFS_SESSION_NO = "totalAnonSessionCount";
-    public static final String SHARED_PREFS_LAST_SESSION = "lastAnonSession";
-    public static final String SHARED_PREFS_FIRST_SESSION = "firstAnonSession";
+    public static final String SHARED_PREFS_SESSION_NO = "totalUnknownSessionCount";
+    public static final String SHARED_PREFS_LAST_SESSION = "lastUnknownSession";
+    public static final String SHARED_PREFS_FIRST_SESSION = "firstUnknownSession";
     public static final String SHARED_PREFS_EVENT_TYPE = "eventType";
     public static final String SHARED_PREFS_CRITERIA = "criteria";
     public static final String SHARED_PREFS_CRITERIA_ID = "matchedCriteriaId";
