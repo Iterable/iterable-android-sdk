@@ -43,7 +43,6 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
-    private boolean _eventReplayHandled = false;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
@@ -826,7 +825,6 @@ public class IterableApi {
 
         if (email == null) {
             unknownUserManager.setCriteriaMatched(false);
-            setEventReplayHandled(false);
         }
 
         _setUserSuccessCallbackHandler = successHandler;
@@ -895,7 +893,6 @@ public class IterableApi {
 
         if (userId == null) {
             unknownUserManager.setCriteriaMatched(false);
-            setEventReplayHandled(false);
         }
 
         _setUserSuccessCallbackHandler = successHandler;
@@ -913,10 +910,6 @@ public class IterableApi {
         return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
     }
 
-    void setEventReplayHandled(boolean eventReplayHandled) {
-        this._eventReplayHandled = eventReplayHandled;
-    }
-
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
         if (config.enableUnknownUserActivation && getVisitorUsageTracked()) {
 
@@ -924,10 +917,12 @@ public class IterableApi {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
             }
 
-            if (replay && !_eventReplayHandled && (_userId != null || _email != null)) {
+            if (replay && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
-                trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, !isUnknown);
-                setEventReplayHandled(true);
+
+                if(_userIdUnknown == null) {
+                    trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
+                }
             }
 
             if (!isUnknown) {
@@ -1473,7 +1468,7 @@ public class IterableApi {
         if (isSetVisitorUsageTracked) {
             editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
         } else {
-            editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
+            editor.remove(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME);
         }
 
         editor.apply();
@@ -1502,7 +1497,7 @@ public class IterableApi {
         }
 
         SharedPreferences sharedPref = getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
+        Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
 
         apiClient.trackConsent(userId, email, timeOfConsent, isUserKnown);
     }

@@ -830,7 +830,7 @@ class IterableApiClient {
         }
     }
 
-    void trackConsent(String userId, String email, @NonNull Long timestamp, boolean isUserKnown) {
+    void trackConsent(@Nullable String userId, @Nullable String email, @NonNull Long timestamp, boolean isUserKnown) {
         JSONObject requestJSON = new JSONObject();
 
         try {
