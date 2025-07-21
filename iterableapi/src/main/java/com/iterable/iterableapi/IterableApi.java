@@ -1469,7 +1469,13 @@ public class IterableApi {
         editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
         editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
         editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
-        editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
+
+        if(isSetVisitorUsageTracked) {
+            editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
+        } else {
+            editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, 0);
+        }
+
         editor.apply();
 
         if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
