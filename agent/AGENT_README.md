@@ -20,10 +20,10 @@ This is the **Iterable Android SDK** for Android app integration. The SDK provid
 ### 🔨 Building the SDK
 ```bash
 # Fast incremental build (default)
-./agent/agent_build.sh
+./agent/build.sh
 
 # Clean build (slower, but ensures clean state)
-./agent/agent_build.sh --clean
+./agent/build.sh --clean
 ```
 - Validates compilation for Android
 - Uses incremental builds by default for speed
@@ -33,22 +33,22 @@ This is the **Iterable Android SDK** for Android app integration. The SDK provid
 ### Listing All Available Tests
 ```bash
 # List all available test suites
-./agent/agent_test.sh --list
+./agent/test.sh --list
 ```
 
 ### 🧪 Running Tests  
 ```bash
 # Run all tests
-./agent/agent_test.sh
+./agent/test.sh
 
 # Run specific test class
-./agent/agent_test.sh IterableApiTest
+./agent/test.sh IterableApiTest
 
 # Run specific test method (dot notation - recommended)
-./agent/agent_test.sh "IterableKeychainTest.testSaveAndGetEmail"
+./agent/test.sh "IterableKeychainTest.testSaveAndGetEmail"
 
 # Run any specific test with full path 
-./agent/agent_test.sh ":iterableapi:testDebugUnitTest --tests com.iterable.iterableapi.IterableApiTest.testSetEmail"
+./agent/test.sh ":iterableapi:testDebugUnitTest --tests com.iterable.iterableapi.IterableApiTest.testSetEmail"
 ```
 - Executes unit tests with accurate pass/fail reporting
 - Returns exit code 0 for success, 1 for failures
@@ -90,11 +90,11 @@ iterable-android-sdk/
 ## Common Tasks
 
 ### Adding New Features
-1. Build first: `./agent/agent_build.sh` (fast incremental)
+1. Build first: `./agent/build.sh` (fast incremental)
 2. Implement in `iterableapi/src/main/java/com/iterable/iterableapi/`
 3. Add tests in `iterableapi/src/test/java/`
-4. Verify: `./agent/agent_test.sh` (all tests) or `./agent/agent_test.sh IterableKeychainTest` (specific class)
-5. For final verification: `./agent/agent_build.sh --clean` (ensures clean state)
+4. Verify: `./agent/test.sh` (all tests) or `./agent/test.sh IterableKeychainTest` (specific class)
+5. For final verification: `./agent/build.sh --clean` (ensures clean state)
 
 ### Debugging Build Issues
 - Build script shows compilation errors with file paths
@@ -104,7 +104,7 @@ iterable-android-sdk/
 
 ### Test Failures
 - Test script shows specific failures with line numbers and detailed error messages
-- Run failing tests individually: `./agent/agent_test.sh "TestClass.testMethod"`
+- Run failing tests individually: `./agent/test.sh "TestClass.testMethod"`
 - Mock classes available in test directories
 - Update method signatures when refactoring APIs
 
@@ -115,24 +115,24 @@ iterable-android-sdk/
 - **Android Build Tools**: Latest stable version
 
 ## Quick Start for AI Agents
-1. Run `./agent/agent_build.sh` to verify project builds (fast incremental)
-2. Run `./agent/agent_test.sh` to check test health (or `./agent/agent_test.sh TestClass` for specific class)
+1. Run `./agent/build.sh` to verify project builds (fast incremental)
+2. Run `./agent/test.sh` to check test health (or `./agent/test.sh TestClass` for specific class)
 3. Make changes to source files
 4. Re-run both scripts to validate (incremental builds are fast)
-5. Debug failing tests: `./agent/agent_test.sh "IterableKeychainTest.testSaveAndGetEmail"`
-6. Before committing: `./agent/agent_build.sh --clean` to ensure clean state
+5. Debug failing tests: `./agent/test.sh "IterableKeychainTest.testSaveAndGetEmail"`
+6. Before committing: `./agent/build.sh --clean` to ensure clean state
 7. Commit when both pass ✅
 
 ## Test Filtering Examples
 ```bash
 # Debug specific failing tests
-./agent/agent_test.sh "IterableKeychainTest.testSaveAndGetEmail"
+./agent/test.sh "IterableKeychainTest.testSaveAndGetEmail"
 
 # Run a problematic test class
-./agent/agent_test.sh IterableInAppManagerTest
+./agent/test.sh IterableInAppManagerTest
 
 # Check auth-related tests
-./agent/agent_test.sh IterableAuthManagerTest
+./agent/test.sh IterableAuthManagerTest
 ```
 
 ## AI Agent Memory System

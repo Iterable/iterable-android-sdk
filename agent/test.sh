@@ -71,9 +71,9 @@ if [[ "$LIST_TESTS" == true ]]; then
     
     echo ""
     echo "🔍 Example Usage:"
-    echo "  ./agent/agent_test.sh IterableKeychainTest"
-    echo "  ./agent/agent_test.sh \"IterableKeychainTest.testSaveAndGetEmail\""
-    echo "  ./agent/agent_test.sh \":iterableapi:testDebugUnitTest --tests com.iterable.iterableapi.IterableKeychainTest\""
+    echo "  ./agent/test.sh IterableKeychainTest"
+    echo "  ./agent/test.sh \"IterableKeychainTest.testSaveAndGetEmail\""
+    echo "  ./agent/test.sh \":iterableapi:testDebugUnitTest --tests com.iterable.iterableapi.IterableKeychainTest\""
     
     exit 0
 fi

@@ -4,7 +4,7 @@
 # It uses Gradle to build the project and shows errors in a clean format.
 # It also checks if the build is successful and exits with the correct status.
 # 
-# Usage: ./agent/agent_build.sh [--clean]
+# Usage: ./agent/build.sh [--clean]
 #   --clean: Force a clean build (slower, but ensures clean state)
 
 # Note: Not using set -e because we need to handle build failures gracefully
