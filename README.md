@@ -13,6 +13,13 @@ message and web push notifications to your customers.
 
 This SDK helps you integrate your Android apps with Iterable.
 
+## For AI Agents & Developers
+
+Looking for quick build and test scripts? Check out the [`agent/`](agent/) folder for:
+- **Build script**: `./agent/agent_build.sh` (fast incremental builds)  
+- **Test script**: `./agent/agent_test.sh` (comprehensive test runner)
+- **Documentation**: [`agent/AGENT_README.md`](agent/AGENT_README.md) (detailed guide)
+
 ## Supported Android versions
 
 Iterable's Android SDK supports Android versions 5.0 (API level 21) and higher.
