@@ -42,6 +42,14 @@ IterableApi.initialize(context, apiKey, config);
 - Added support for providing a list of placement ids to sync only certain placement ids.
 - support for pre-release automation
 
+## [3.6.0-beta2]
+
+### Fixed
+- This release includes fixes for the Unknown user activation private beta:
+  - Criteria is now fetched on foregrounding the app by default. This feature can be turned off setting enableForegroundCriteriaFetch flag to false.
+  - Unknown user ids are only generated once when multiple track calls are made.
+- Unknown user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
+
 ## [3.5.10]
 
 ### Added
@@ -91,12 +99,12 @@ IterableApi.initialize(context, apiKey, config);
 ## [3.6.0-beta1]
 
 #### Added
-- This release includes initial support for Anonymous user activation, a feature that allows marketers to convert valuable visitors into customers. With this feature, the SDK can:
-  - Fetch anonymous profile creation criteria from your Iterable project, and then automatically create Iterable user profiles for anonymous users who meet these criteria.
-  - Save information about a user's previous interactions with your application to their anonymous profile, after it's created.
-  - Display personalized messages for anonymous users (in-app, push, and embedded messages).
-  - Merge anonymous profiles into an existing, known user profiles (when needed).
-- Anonymous user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
+- This release includes initial support for Unknown user activation, a feature that allows marketers to convert valuable visitors into customers. With this feature, the SDK can:
+  - Fetch unknown user profile creation criteria from your Iterable project, and then automatically create Iterable user profiles for unknown users who meet these criteria.
+  - Save information about a visitor's previous interactions with your application to their unknown user profile, after it's created.
+  - Display personalized messages for unknown users (in-app, push, and embedded messages).
+  - Merge unknown user profiles into an existing, known user profiles (when needed).
+- Unknown user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
 
 ## [3.5.3]
 #### Fixed
