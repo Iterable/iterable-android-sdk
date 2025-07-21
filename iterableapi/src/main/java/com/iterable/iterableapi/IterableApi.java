@@ -920,7 +920,7 @@ public class IterableApi {
             if (replay && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
 
-                if(_userIdUnknown == null) {
+                if (_userIdUnknown == null) {
                     trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
                 }
             }
