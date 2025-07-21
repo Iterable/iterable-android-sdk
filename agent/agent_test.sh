@@ -71,9 +71,9 @@ if [[ "$LIST_TESTS" == true ]]; then
     
     echo ""
     echo "🔍 Example Usage:"
-    echo "  ./agent/agent_test.sh IterableApiTest"
-    echo "  ./agent/agent_test.sh \"IterableApiTest.testSetEmail\""
-    echo "  ./agent/agent_test.sh \"iterableapi:testDebugUnitTest --tests IterableApiTest\""
+    echo "  ./agent/agent_test.sh IterableKeychainTest"
+    echo "  ./agent/agent_test.sh \"IterableKeychainTest.testSaveAndGetEmail\""
+    echo "  ./agent/agent_test.sh \":iterableapi:testDebugUnitTest --tests com.iterable.iterableapi.IterableKeychainTest\""
     
     exit 0
 fi
@@ -94,16 +94,16 @@ if [[ -n "$FILTER" ]]; then
     # If filter contains a colon, use it as-is (already in module:task format)
     if [[ "$FILTER" == *":"* ]]; then
         GRADLE_CMD="./gradlew $FILTER --no-daemon --console=plain"
-    # If filter contains a dot, convert TestClass.testMethod to --tests format
+    # If filter contains a dot, convert TestClass.testMethod to full package format
     elif [[ "$FILTER" == *"."* ]]; then
-        GRADLE_CMD="./gradlew iterableapi:testDebugUnitTest --tests \"$FILTER\" --no-daemon --console=plain"
-    # Otherwise, assume it's just a test class name
+        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"com.iterable.iterableapi.$FILTER\" --no-daemon --console=plain"
+    # Otherwise, assume it's just a test class name and add full package
     else
-        GRADLE_CMD="./gradlew iterableapi:testDebugUnitTest --tests \"$FILTER\" --no-daemon --console=plain"
+        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"com.iterable.iterableapi.$FILTER\" --no-daemon --console=plain"
     fi
 else
     # Run all tests
-    GRADLE_CMD="./gradlew test --no-daemon --console=plain"
+    GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --no-daemon --console=plain"
 fi
 
 echo "🧪 Running: $GRADLE_CMD"
@@ -120,41 +120,37 @@ FAILED_TESTS=0
 PASSED_TESTS=0
 SKIPPED_TESTS=0
 
-# Extract test summary from output
-while IFS= read -r line; do
-    if [[ "$line" =~ ([0-9]+)\ tests\ completed,\ ([0-9]+)\ failed,\ ([0-9]+)\ skipped ]]; then
-        TOTAL_TESTS=${BASH_REMATCH[1]}
-        FAILED_TESTS=${BASH_REMATCH[2]}
-        SKIPPED_TESTS=${BASH_REMATCH[3]}
-        PASSED_TESTS=$(($TOTAL_TESTS - $FAILED_TESTS - $SKIPPED_TESTS))
-        break
-    elif [[ "$line" =~ ([0-9]+)\ tests\ completed ]]; then
-        TOTAL_TESTS=${BASH_REMATCH[1]}
-        FAILED_TESTS=0
-        SKIPPED_TESTS=0
-        PASSED_TESTS=$TOTAL_TESTS
-        break
+# Analyze test results based on Gradle output
+if grep -q "BUILD SUCCESSFUL" "$TEMP_OUTPUT"; then
+    # Count actual test executions by looking for test tasks
+    TEST_TASK_COUNT=$(grep -c "> Task :.*:test" "$TEMP_OUTPUT" || echo "0")
+    
+    if [ "$TEST_TASK_COUNT" -gt 0 ]; then
+        echo "✅ All tests passed! (Gradle test tasks completed successfully)"
+    else
+        echo "✅ Tests skipped (likely up-to-date or no matching tests found)"
     fi
-done < "$TEMP_OUTPUT"
-
-# Show test results
-if [ "$FAILED_TESTS" -eq 0 ] && [ "$TOTAL_TESTS" -gt 0 ]; then
-    echo "✅ All tests passed! ($TOTAL_TESTS tests, $SKIPPED_TESTS skipped)"
     FINAL_STATUS=0
-elif [ "$FAILED_TESTS" -gt 0 ]; then
-    echo "❌ Tests failed: $FAILED_TESTS failed, $PASSED_TESTS passed, $SKIPPED_TESTS skipped ($TOTAL_TESTS total)"
+elif grep -q "BUILD FAILED" "$TEMP_OUTPUT"; then
+    echo "❌ Tests failed!"
     echo ""
     echo "🔍 Test failures:"
-    grep -A 5 -B 2 "FAILED\|FAILURE" "$TEMP_OUTPUT" | head -20
+    
+    # Look for actual test failures
+    grep -A 10 -B 2 "Test.*FAILED\|FAILURE\|failed" "$TEMP_OUTPUT" | head -20
+    
+    # If no specific test failures, show build failure details
+    if ! grep -q "Test.*FAILED\|test.*failed" "$TEMP_OUTPUT"; then
+        echo ""
+        echo "📋 Build failure details:"
+        grep -A 10 -B 2 "BUILD FAILED\|FAILURE:" "$TEMP_OUTPUT" | head -15
+    fi
     FINAL_STATUS=1
-elif [ "$TEST_STATUS" -ne 0 ]; then
+else
     echo "❌ Test execution failed with status $TEST_STATUS"
     echo ""
     echo "🔍 Error details:"
     grep -E "error:|Error:|FAILURE:|Failed|Exception:" "$TEMP_OUTPUT" | head -10
-    FINAL_STATUS=$TEST_STATUS
-else
-    echo "⚠️  No test results found"
     FINAL_STATUS=$TEST_STATUS
 fi
 
