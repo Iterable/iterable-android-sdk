@@ -7,7 +7,7 @@
 # Usage: ./agent/agent_build.sh [--clean]
 #   --clean: Force a clean build (slower, but ensures clean state)
 
-set -e
+# Note: Not using set -e because we need to handle build failures gracefully
 
 echo "Building Iterable Android SDK..."
 
@@ -36,13 +36,12 @@ fi
 if [ "$CLEAN_BUILD" = true ]; then
     echo "🔨 Clean building all modules..."
     ./gradlew clean build -x test --no-daemon --console=plain > "$TEMP_OUTPUT" 2>&1
+    BUILD_STATUS=$?
 else
     echo "🔨 Building all modules (incremental)..."
     ./gradlew build -x test --no-daemon --console=plain > "$TEMP_OUTPUT" 2>&1
+    BUILD_STATUS=$?
 fi
-
-# Check the exit status
-BUILD_STATUS=$?
 
 # Show appropriate output based on build result
 if [ $BUILD_STATUS -eq 0 ]; then
@@ -57,12 +56,19 @@ else
     echo ""
     echo "🔍 Build errors:"
     
-    # Extract and show compilation errors
-    grep -E "error:|Error:|FAILURE:|Failed|Exception:" "$TEMP_OUTPUT" | head -15
+    # Extract and show compilation errors with file paths and line numbers
+    grep -E "\.java:[0-9]+: error:|\.kt:[0-9]+: error:|error:|Error:|FAILURE:|Failed|Exception:" "$TEMP_OUTPUT" | head -20
     
     echo ""
     echo "⚠️  Build warnings:"
-    grep -E "warning:|Warning:" "$TEMP_OUTPUT" | head -5
+    grep -E "\.java:[0-9]+: warning:|\.kt:[0-9]+: warning:|warning:|Warning:" "$TEMP_OUTPUT" | head -10
+    
+    # If no specific errors found, show the failure section
+    if ! grep -q -E "\.java:[0-9]+: error:|\.kt:[0-9]+: error:|error:" "$TEMP_OUTPUT"; then
+        echo ""
+        echo "📋 Build failure details:"
+        grep -A 10 -B 2 "FAILURE\|BUILD FAILED" "$TEMP_OUTPUT" | head -15
+    fi
     
     echo ""
     echo "💡 Common solutions:"
