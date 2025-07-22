@@ -80,7 +80,28 @@ fi
 
 echo "Running Iterable Android SDK tests..."
 
-# Create a temporary file for the test output
+# Build the gradle command
+if [[ -n "$FILTER" ]]; then
+    # If filter contains a colon, use it as-is (already in module:task format)
+    if [[ "$FILTER" == *":"* ]]; then
+        GRADLE_CMD="./gradlew $FILTER --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+    # If filter contains a dot, convert TestClass.testMethod to wildcard format
+    elif [[ "$FILTER" == *"."* ]]; then
+        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"*$FILTER*\" --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+    # Otherwise, assume it's just a test class name and use wildcard
+    else
+        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"*$FILTER*\" --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+    fi
+else
+    # Run all tests with detailed test output (force execution to see individual tests)
+    GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+fi
+
+echo "🧪 Running: $GRADLE_CMD"
+echo "📊 Real-time progress:"
+echo "─────────────────────────────────────────────────────"
+
+# Create a temporary file for capturing output while showing progress
 TEMP_OUTPUT=$(mktemp)
 
 # Function to clean up temp file on exit
@@ -89,69 +110,160 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Build the gradle command
-if [[ -n "$FILTER" ]]; then
-    # If filter contains a colon, use it as-is (already in module:task format)
-    if [[ "$FILTER" == *":"* ]]; then
-        GRADLE_CMD="./gradlew $FILTER --no-daemon --console=plain"
-    # If filter contains a dot, convert TestClass.testMethod to full package format
-    elif [[ "$FILTER" == *"."* ]]; then
-        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"com.iterable.iterableapi.$FILTER\" --no-daemon --console=plain"
-    # Otherwise, assume it's just a test class name and add full package
-    else
-        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"com.iterable.iterableapi.$FILTER\" --no-daemon --console=plain"
-    fi
-else
-    # Run all tests
-    GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --no-daemon --console=plain"
-fi
+# Run the tests with real-time output parsing
+eval $GRADLE_CMD 2>&1 | tee "$TEMP_OUTPUT" | while IFS= read -r line; do
+    # Pretty print different types of Gradle output
+    case "$line" in
+        *"> Task "*)
+            # Task execution - only show important ones, simplify build tasks
+            task_name=$(echo "$line" | sed 's/.*> Task //' | sed 's/ .*//')
+            case "$task_name" in
+                *"compile"*|*"build"*|*"generate"*|*"process"*|*"merge"*|*"package"*)
+                    # Only show building status once per batch of build tasks
+                    if [[ ! -f "/tmp/gradle_building_shown" ]]; then
+                        echo "🔨 Building..."
+                        touch "/tmp/gradle_building_shown"
+                    fi
+                    ;;
+            esac
+            ;;
+        *"BUILD SUCCESSFUL"*)
+            rm -f "/tmp/gradle_building_shown" 2>/dev/null
+            echo "✅ Build completed successfully!"
+            ;;
+        *"BUILD FAILED"*)
+            rm -f "/tmp/gradle_building_shown" 2>/dev/null
+            echo "❌ Build failed!"
+            ;;
+        # JUnit test execution patterns
+        *"Test"*"started"*|*"Test"*"STARTED"*)
+            test_name=$(echo "$line" | sed 's/.*Test //' | sed 's/ started.*//' | sed 's/ STARTED.*//')
+            echo "🔄 $test_name"
+            ;;
+        *"Test"*"passed"*|*"Test"*"PASSED"*)
+            test_name=$(echo "$line" | sed 's/.*Test //' | sed 's/ passed.*//' | sed 's/ PASSED.*//')
+            echo "✅ $test_name"
+            ;;
+        *"Test"*"failed"*|*"Test"*"FAILED"*)
+            test_name=$(echo "$line" | sed 's/.*Test //' | sed 's/ failed.*//' | sed 's/ FAILED.*//')
+            echo "❌ $test_name"
+            ;;
+        *"Test"*"skipped"*|*"Test"*"SKIPPED"*)
+            test_name=$(echo "$line" | sed 's/.*Test //' | sed 's/ skipped.*//' | sed 's/ SKIPPED.*//')
+            echo "⏭️ $test_name"
+            ;;
+        # Gradle test output patterns
+        *" > "*)
+            if [[ "$line" == *"STARTED"* ]]; then
+                test_name=$(echo "$line" | sed 's/.*> //' | sed 's/ STARTED.*//')
+                echo "🔄 $test_name"
+            elif [[ "$line" == *"PASSED"* ]]; then
+                test_name=$(echo "$line" | sed 's/.*> //' | sed 's/ PASSED.*//')
+                echo "✅ $test_name"
+            elif [[ "$line" == *"FAILED"* ]]; then
+                test_name=$(echo "$line" | sed 's/.*> //' | sed 's/ FAILED.*//')
+                echo "❌ $test_name"
+            elif [[ "$line" == *"SKIPPED"* ]]; then
+                test_name=$(echo "$line" | sed 's/.*> //' | sed 's/ SKIPPED.*//')
+                echo "⏭️ $test_name"
+            fi
+            ;;
+        # Also catch the full line format for context
+        *".* > "*)
+            if [[ "$line" == *"STARTED"* ]]; then
+                class_and_method=$(echo "$line" | sed 's/ STARTED.*//')
+                method_name=$(echo "$class_and_method" | sed 's/.*> //')
+                echo "🔄 $method_name"
+            elif [[ "$line" == *"PASSED"* ]]; then
+                class_and_method=$(echo "$line" | sed 's/ PASSED.*//')
+                method_name=$(echo "$class_and_method" | sed 's/.*> //')
+                echo "✅ $method_name"
+            elif [[ "$line" == *"FAILED"* ]]; then
+                class_and_method=$(echo "$line" | sed 's/ FAILED.*//')
+                method_name=$(echo "$class_and_method" | sed 's/.*> //')
+                echo "❌ $method_name"
+            elif [[ "$line" == *"SKIPPED"* ]]; then
+                class_and_method=$(echo "$line" | sed 's/ SKIPPED.*//')
+                method_name=$(echo "$class_and_method" | sed 's/.*> //')
+                echo "⏭️ $method_name"
+            fi
+            ;;
+        # Test summary and counts
+        *"tests completed"*|*"test passed"*|*"test failed"*|*"test skipped"*)
+            echo "📊 $line"
+            ;;
+        # Method level test info
+        *"testPassed"*|*"testFailed"*|*"testSkipped"*|*"testStarted"*)
+            method_name=$(echo "$line" | sed 's/.*testMethod=//' | sed 's/,.*//')
+            if [[ "$line" == *"testPassed"* ]]; then
+                echo "✅ $method_name"
+            elif [[ "$line" == *"testFailed"* ]]; then
+                echo "❌ $method_name"
+            elif [[ "$line" == *"testSkipped"* ]]; then
+                echo "⏭️ $method_name"
+            elif [[ "$line" == *"testStarted"* ]]; then
+                echo "🔄 $method_name"
+            fi
+            ;;
+        # General failures and errors
+        *"FAILED"*|*"ERROR"*|*"Exception"*|*"error"*)
+            echo "❌ $line"
+            ;;
+        # Success indicators for individual tests
+        *"PASSED"*)
+            if [[ "$line" == *"test"* ]] || [[ "$line" == *"Test"* ]]; then
+                echo "✅ $line"
+            fi
+            ;;
+        # Timing for tests only
+        *"seconds"*|*"ms"*)
+            if [[ "$line" == *"test"* ]] || [[ "$line" == *"Test"* ]]; then
+                echo "⏱️  $line"
+            fi
+            ;;
+        *)
+            # Catch specific test method patterns
+            if [[ "$line" == *"test"* ]] && ([[ "$line" == *"pass"* ]] || [[ "$line" == *"fail"* ]] || [[ "$line" == *"start"* ]] || [[ "$line" == *"complete"* ]]); then
+                echo "🧪 $line"
+            fi
+            ;;
+    esac
+done
 
-echo "🧪 Running: $GRADLE_CMD"
-
-# Run the tests and capture all output
-eval $GRADLE_CMD > "$TEMP_OUTPUT" 2>&1
-
-# Check the exit status
-TEST_STATUS=$?
-
-# Parse test results from Gradle output
-TOTAL_TESTS=0
-FAILED_TESTS=0
-PASSED_TESTS=0
-SKIPPED_TESTS=0
-
-# Analyze test results based on Gradle output
+# Get the actual exit status from the temp file
 if grep -q "BUILD SUCCESSFUL" "$TEMP_OUTPUT"; then
-    # Count actual test executions by looking for test tasks
-    TEST_TASK_COUNT=$(grep -c "> Task :.*:test" "$TEMP_OUTPUT" || echo "0")
+    echo "─────────────────────────────────────────────────────"
+    echo "✅ All tests completed successfully!"
     
-    if [ "$TEST_TASK_COUNT" -gt 0 ]; then
-        echo "✅ All tests passed! (Gradle test tasks completed successfully)"
-    else
-        echo "✅ Tests skipped (likely up-to-date or no matching tests found)"
+    # Try to extract test summary
+    if grep -q "tests completed" "$TEMP_OUTPUT"; then
+        echo "📊 Test Summary:"
+        grep "tests completed\|test.*passed\|test.*failed\|test.*skipped" "$TEMP_OUTPUT" | tail -5
     fi
-    FINAL_STATUS=0
+    
+    exit 0
 elif grep -q "BUILD FAILED" "$TEMP_OUTPUT"; then
+    echo "─────────────────────────────────────────────────────"
     echo "❌ Tests failed!"
     echo ""
-    echo "🔍 Test failures:"
+    echo "🔍 Failure Summary:"
     
-    # Look for actual test failures
-    grep -A 10 -B 2 "Test.*FAILED\|FAILURE\|failed" "$TEMP_OUTPUT" | head -20
+    # Show specific test failures
+    grep -A 3 -B 1 "FAILED\|Failed\|failed.*test" "$TEMP_OUTPUT" | head -15
     
-    # If no specific test failures, show build failure details
-    if ! grep -q "Test.*FAILED\|test.*failed" "$TEMP_OUTPUT"; then
+    # Show build failures if no test failures
+    if ! grep -q "test.*FAILED\|test.*failed" "$TEMP_OUTPUT"; then
         echo ""
-        echo "📋 Build failure details:"
-        grep -A 10 -B 2 "BUILD FAILED\|FAILURE:" "$TEMP_OUTPUT" | head -15
+        echo "📋 Build Error Details:"
+        grep -A 5 -B 2 "BUILD FAILED\|FAILURE:" "$TEMP_OUTPUT" | head -10
     fi
-    FINAL_STATUS=1
+    
+    exit 1
 else
-    echo "❌ Test execution failed with status $TEST_STATUS"
+    echo "─────────────────────────────────────────────────────"
+    echo "❌ Test execution failed"
     echo ""
     echo "🔍 Error details:"
     grep -E "error:|Error:|FAILURE:|Failed|Exception:" "$TEMP_OUTPUT" | head -10
-    FINAL_STATUS=$TEST_STATUS
-fi
-
-exit $FINAL_STATUS 
+    exit 1
+fi 
