@@ -84,17 +84,17 @@ echo "Running Iterable Android SDK tests..."
 if [[ -n "$FILTER" ]]; then
     # If filter contains a colon, use it as-is (already in module:task format)
     if [[ "$FILTER" == *":"* ]]; then
-        GRADLE_CMD="./gradlew $FILTER --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+        GRADLE_CMD="./gradlew $FILTER --no-daemon --console=plain --rerun-tasks"
     # If filter contains a dot, convert TestClass.testMethod to wildcard format
     elif [[ "$FILTER" == *"."* ]]; then
-        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"*$FILTER*\" --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"*$FILTER*\" --no-daemon --console=plain --rerun-tasks"
     # Otherwise, assume it's just a test class name and use wildcard
     else
-        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"*$FILTER*\" --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+        GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --tests \"*$FILTER*\" --no-daemon --console=plain --rerun-tasks"
     fi
 else
     # Run all tests with detailed test output (force execution to see individual tests)
-    GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --no-daemon --console=plain --rerun-tasks -Dtest.logging.events=started,passed,failed,skipped -Dtest.logging.exceptionFormat=full"
+    GRADLE_CMD="./gradlew :iterableapi:testDebugUnitTest --no-daemon --console=plain --rerun-tasks"
 fi
 
 echo "🧪 Running: $GRADLE_CMD"
