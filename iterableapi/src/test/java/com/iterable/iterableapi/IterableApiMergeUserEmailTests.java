@@ -371,7 +371,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
         RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("InApp messages request should be sent", inAppRequest);
-        assertTrue("InApp messages request path should start with correct endpoint", 
+        assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
@@ -432,7 +432,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
         RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("InApp messages request should be sent", inAppRequest);
-        assertTrue("InApp messages request path should start with correct endpoint", 
+        assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
@@ -490,7 +490,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
         RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("InApp messages request should be sent", inAppRequest);
-        assertTrue("InApp messages request path should start with correct endpoint", 
+        assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
@@ -825,7 +825,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
         RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("InApp messages request should be sent", inAppRequest);
-        assertTrue("InApp messages request path should start with correct endpoint", 
+        assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
@@ -889,7 +889,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
         RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("InApp messages request should be sent", inAppRequest);
-        assertTrue("InApp messages request path should start with correct endpoint", 
+        assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
@@ -950,7 +950,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
         RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("InApp messages request should be sent", inAppRequest);
-        assertTrue("InApp messages request path should start with correct endpoint", 
+        assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
@@ -1105,7 +1105,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
         RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("InApp messages request should be sent", inAppRequest);
-        assertTrue("InApp messages request path should start with correct endpoint", 
+        assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
