@@ -351,6 +351,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
@@ -366,6 +367,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
+        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("InApp messages request should be sent", inAppRequest);
+        assertTrue("InApp messages request path should start with correct endpoint", 
+            inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
         RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -405,6 +412,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
@@ -420,6 +428,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
+        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("InApp messages request should be sent", inAppRequest);
+        assertTrue("InApp messages request path should start with correct endpoint", 
+            inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
         RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -456,6 +470,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
@@ -471,6 +486,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
+        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("InApp messages request should be sent", inAppRequest);
+        assertTrue("InApp messages request path should start with correct endpoint", 
+            inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
         RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -784,6 +805,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
@@ -799,6 +821,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
+        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("InApp messages request should be sent", inAppRequest);
+        assertTrue("InApp messages request path should start with correct endpoint", 
+            inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
         RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -841,6 +869,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
@@ -856,6 +885,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
+        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("InApp messages request should be sent", inAppRequest);
+        assertTrue("InApp messages request path should start with correct endpoint", 
+            inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
         RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -895,6 +930,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         // mock unknown user session response and track purchase response
         addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
@@ -910,6 +946,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
+
+        // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
+        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("InApp messages request should be sent", inAppRequest);
+        assertTrue("InApp messages request path should start with correct endpoint", 
+            inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
         RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
@@ -1037,6 +1079,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         addResponse(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
         addResponse(IterableConstants.ENDPOINT_TRACK_PURCHASE);
+        addResponse(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         addResponse(IterableConstants.ENDPOINT_TRACK_CONSENT);
 
         // trigger track purchase event
@@ -1058,6 +1101,12 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         RecordedRequest secondPurchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull("Purchase request should not be null", secondPurchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, secondPurchaseRequest.getPath());
+
+        // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
+        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("InApp messages request should be sent", inAppRequest);
+        assertTrue("InApp messages request path should start with correct endpoint", 
+            inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
 
         // check if request was sent to track consent endpoint
         RecordedRequest consentRequest = server.takeRequest(1, TimeUnit.SECONDS);
