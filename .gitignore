@@ -59,6 +59,9 @@ freeline_project_description.json
 # MacOS generated files
 .DS_Store
 
+# AI assistant configuration
+.claude/
+
 # [Maven] ========================
 target/
 pom.xml.tag
