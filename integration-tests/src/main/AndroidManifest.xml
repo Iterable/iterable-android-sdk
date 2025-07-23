@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.iterable.integration.tests">
+
+    <!-- Permissions for push notifications -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- Permissions for deep linking -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" 
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.IntegrationTests"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
+
+        <!-- Main Activity -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <!-- Deep linking intent filters -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                    android:host="iterable.integration.tests"
+                    android:pathPrefix="/" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="iterable"
+                    android:host="integration.tests" />
+            </intent-filter>
+        </activity>
+
+        <!-- Test Activities for different scenarios -->
+        <activity
+            android:name=".activities.PushNotificationTestActivity"
+            android:exported="false"
+            android:label="Push Notification Tests" />
+
+        <activity
+            android:name=".activities.InAppMessageTestActivity"
+            android:exported="false"
+            android:label="In-App Message Tests" />
+
+        <activity
+            android:name=".activities.EmbeddedMessageTestActivity"
+            android:exported="false"
+            android:label="Embedded Message Tests" />
+
+        <activity
+            android:name=".activities.DeepLinkTestActivity"
+            android:exported="false"
+            android:label="Deep Link Tests" />
+
+        <!-- Firebase Messaging Service -->
+        <service
+            android:name=".services.IntegrationFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Iterable Push Service -->
+        <service
+            android:name="com.iterable.iterableapi.IterableFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Test Receiver for push notifications -->
+        <receiver
+            android:name=".receivers.TestPushNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.iterable.integration.tests.PUSH_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Default notification channel for Android O+ -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="iterable_integration_tests" />
+
+    </application>
+
+</manifest> 
