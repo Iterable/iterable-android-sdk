@@ -17,6 +17,9 @@
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
 def isReleaseBuild() {
     return libraryVersion.contains("SNAPSHOT") == false
 }
@@ -39,24 +42,15 @@ def getRepositoryPassword() {
     return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
 }
 
-def keyID = System.getenv('ORG_GRADLE_PROJECT_SIGNING_KEY_ID')
-def signing_password = System.getenv('ORG_GRADLE_PROJECT_SIGNING_PASSWORD')
-def nexus_username = System.getenv('ORG_GRADLE_PROJECT_NEXUS_USERNAME')
-def nexus_password = System.getenv('ORG_GRADLE_PROJECT_NEXUS_PASSWORD')
+def keyID = properties.getProperty("signing.keyId")
+def signing_password = properties.getProperty("signing.password")
+def keyRingLocation = properties.getProperty("signing.secretKeyRingFile")
+def nexus_username = properties.getProperty("NEXUS_USERNAME")
+def nexus_password = properties.getProperty("NEXUS_PASSWORD")
 
-println "Debug: Using GPG key ID: ${keyID}"
-
-// Custom task to sign files with GPG
-tasks.register('signWithGPG') {
-    doLast {
-        def files = fileTree(dir: "${buildDir}/libs", include: '**/*.jar')
-        files.each { file ->
-            exec {
-                commandLine 'gpg', '--batch', '--yes', '--passphrase', signing_password, '--local-user', keyID, '--sign', file
-            }
-        }
-    }
-}
+ext."signing.keyId" = keyID
+ext."signing.secretKeyRingFile" = keyRingLocation
+ext."signing.password" = signing_password
 
 publishing {
     publications {
@@ -110,14 +104,13 @@ publishing {
     }
 }
 
-// Disable the default signing
 signing {
-    required { false }
+    required { isReleaseBuild() }
+    sign publishing.publications.release
 }
 
 tasks.register('uploadArchives') {
     dependsOn publishReleasePublicationToOSSRHRepository
-    dependsOn signWithGPG
 }
 
 tasks.register('androidSourcesJar', Jar) {
