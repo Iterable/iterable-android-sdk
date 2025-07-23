@@ -68,3 +68,4 @@ pom.xml.next
 release.properties
 
 jacoco.exec
+integration-tests/.idea/
