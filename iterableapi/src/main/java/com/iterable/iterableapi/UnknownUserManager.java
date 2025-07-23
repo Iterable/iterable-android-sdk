@@ -243,6 +243,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
                         IterableApi.getInstance().config.iterableUnknownUserHandler.onUnknownUserCreated(userId);
                     }
                     IterableApi.getInstance().setUnknownUser(userId);
+                    IterableApi.getInstance().trackConsentForUser(null, userId, false);
                 }, (reason, data) -> handleTrackFailure(data));
             }
 
@@ -367,10 +368,14 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
 
         if (criteriaId != null && !isCriteriaMatched) {
-            isCriteriaMatched = true;
+            setCriteriaMatched(true);
             createUnknownUser(criteriaId);
         }
         Log.i("criteriaId::", String.valueOf(criteriaId != null));
+    }
+
+    void setCriteriaMatched(boolean isCriteriaMatched) {
+        this.isCriteriaMatched = isCriteriaMatched;
     }
 
     private void storeUserUpdateToLocalStorage(JSONObject newDataObject) throws JSONException {

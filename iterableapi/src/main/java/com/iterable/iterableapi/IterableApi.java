@@ -823,6 +823,10 @@ public class IterableApi {
             attemptMergeAndEventReplay(email, true, merge, replay, false, failureHandler);
         }
 
+        if (email == null) {
+            unknownUserManager.setCriteriaMatched(false);
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
@@ -887,6 +891,10 @@ public class IterableApi {
             attemptMergeAndEventReplay(userId, false, merge, replay, isUnknown, failureHandler);
         }
 
+        if (userId == null) {
+            unknownUserManager.setCriteriaMatched(false);
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
@@ -903,13 +911,18 @@ public class IterableApi {
     }
 
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
-        if (config.enableUnknownUserActivation) {
+        if (config.enableUnknownUserActivation && getVisitorUsageTracked()) {
+
             if (emailOrUserId != null && !emailOrUserId.equals(_userIdUnknown)) {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
             }
 
             if (replay && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
+
+                if (_userIdUnknown == null) {
+                    trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
+                }
             }
 
             if (!isUnknown) {
@@ -1443,6 +1456,52 @@ public class IterableApi {
         apiClient.trackEmbeddedClick(message, buttonIdentifier, clickedUrl);
     }
 
+    public void setVisitorUsageTracked(@NonNull Boolean isSetVisitorUsageTracked) {
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
+        editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
+
+        if (isSetVisitorUsageTracked) {
+            editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
+        } else {
+            editor.remove(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME);
+        }
+
+        editor.apply();
+
+        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
+            unknownUserManager.updateUnknownSession();
+            unknownUserManager.getCriteria();
+        }
+    }
+
+    public boolean getVisitorUsageTracked() {
+        SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
+    }
+
+    /**
+     * Tracks user consent with the timestamp from when visitor usage was first tracked.
+     * This should be called when transitioning from unknown to known user.
+     * @param email User email (if available)
+     * @param userId User ID (if available)
+     * @param isUserKnown true if user is signing in (known user), false if user meets criteria and ID is generated
+     */
+    void trackConsentForUser(@Nullable String email, @Nullable String userId, boolean isUserKnown) {
+        if (!config.enableUnknownUserActivation || !getVisitorUsageTracked()) {
+            return;
+        }
+
+        SharedPreferences sharedPref = getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
+
+        apiClient.trackConsent(userId, email, timeOfConsent, isUserKnown);
+    }
+
 //endregion
 
 //region DEPRECATED - API public functions
@@ -1575,27 +1634,6 @@ public class IterableApi {
         }
 
         apiClient.trackEmbeddedSession(session);
-    }
-
-    public void setVisitorUsageTracked(@NonNull Boolean isSetVisitorUsageTracked) {
-        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
-        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
-        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
-        editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
-        editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
-        editor.apply();
-
-        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
-            unknownUserManager.updateUnknownSession();
-            unknownUserManager.getCriteria();
-        }
-    }
-
-    public boolean getVisitorUsageTracked() {
-        SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-        return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
     }
 //endregion
 }

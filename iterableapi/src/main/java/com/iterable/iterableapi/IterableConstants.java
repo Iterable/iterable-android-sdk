@@ -58,6 +58,8 @@ public final class IterableConstants {
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
     public static final String KEY_FIRETV = "FireTV";
     public static final String KEY_CREATE_NEW_FIELDS    = "createNewFields";
+    public static final String KEY_IS_USER_KNOWN = "isUserKnown";
+    public static final String KEY_CONSENT_TIMESTAMP = "consentTimestamp";
     public static final String KEY_UNKNOWN_SESSION_CONTEXT = "unknownSessionContext";
 
     //API Endpoint Key Constants
@@ -86,6 +88,7 @@ public final class IterableConstants {
     public static final String ENDPOINT_GET_USER_BY_USERID      = "users/byUserId";
     public static final String ENDPOINT_GET_USER_BY_EMAIL       = "users/getByEmail";
     public static final String ENDPOINT_MERGE_USER              = "users/merge";
+    public static final String ENDPOINT_TRACK_CONSENT      = "unknownuser/consent";
     public static final String ENDPOINT_CRITERIA_LIST           = "unknownuser/list";
     public static final String ENDPOINT_TRACK_UNKNOWN_SESSION      = "unknownuser/events/session";
 
@@ -138,6 +141,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_CRITERIA_ID = "matchedCriteriaId";
     public static final String SHARED_PREFS_PUSH_OPT_IN = "mobilePushOptIn";
     public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED = "itbl_visitor_usage_track";
+    public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME = "itbl_visitor_usage_track_time";
     public static final String SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED = "itbl_notifications_enabled";
 
     //Action buttons
