@@ -1,0 +1,230 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ master, develop ]
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+  schedule:
+    # Run integration tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: macos-latest
+    
+    strategy:
+      matrix:
+        api-level: [21, 29, 34]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
+          
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Create Android Virtual Device
+        run: |
+          echo "Creating AVD..."
+          echo "no" | avdmanager create avd \
+            -n "test_device_api_${{ matrix.api-level }}" \
+            -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
+            -c 2048M \
+            -f
+            
+      - name: Start Android Emulator
+        run: |
+          echo "Starting emulator..."
+          $ANDROID_SDK_ROOT/emulator/emulator \
+            -avd test_device_api_${{ matrix.api-level }} \
+            -no-audio \
+            -no-window \
+            -no-snapshot \
+            -camera-back none \
+            -camera-front none \
+            -gpu swiftshader_indirect &
+            
+      - name: Wait for emulator
+        run: |
+          echo "Waiting for emulator..."
+          adb wait-for-device
+          adb shell input keyevent 82
+          adb shell input keyevent 82
+          
+      - name: Grant notification permissions
+        run: |
+          echo "Granting notification permissions..."
+          adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
+          
+      - name: Run Integration Tests
+        env:
+          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
+          ITERABLE_PROJECT_ID: ${{ secrets.ITERABLE_PROJECT_ID }}
+          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
+        run: |
+          echo "Running integration tests..."
+          ./gradlew :integration-tests:connectedCheck \
+            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.PushNotificationIntegrationTest \
+            --info
+            
+      - name: Generate Test Report
+        if: always()
+        run: |
+          echo "Generating test report..."
+          ./gradlew :integration-tests:jacocoIntegrationTestReport
+          
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results-api-${{ matrix.api-level }}
+          path: |
+            integration-tests/build/reports/
+            integration-tests/build/outputs/
+            
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-coverage-api-${{ matrix.api-level }}
+          path: integration-tests/build/reports/jacoco/
+          
+      - name: Stop emulator
+        if: always()
+        run: |
+          echo "Stopping emulator..."
+          adb emu kill
+          
+  integration-tests-nightly:
+    name: Nightly Integration Tests
+    runs-on: macos-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
+          
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Create Android Virtual Device
+        run: |
+          echo "Creating AVD..."
+          echo "no" | avdmanager create avd \
+            -n "nightly_test_device" \
+            -k "system-images;android-34;google_apis;x86_64" \
+            -c 2048M \
+            -f
+            
+      - name: Start Android Emulator
+        run: |
+          echo "Starting emulator..."
+          $ANDROID_SDK_ROOT/emulator/emulator \
+            -avd nightly_test_device \
+            -no-audio \
+            -no-window \
+            -no-snapshot \
+            -camera-back none \
+            -camera-front none \
+            -gpu swiftshader_indirect &
+            
+      - name: Wait for emulator
+        run: |
+          echo "Waiting for emulator..."
+          adb wait-for-device
+          adb shell input keyevent 82
+          adb shell input keyevent 82
+          
+      - name: Grant notification permissions
+        run: |
+          echo "Granting notification permissions..."
+          adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
+          
+      - name: Run All Integration Tests
+        env:
+          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
+          ITERABLE_PROJECT_ID: ${{ secrets.ITERABLE_PROJECT_ID }}
+          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
+        run: |
+          echo "Running all integration tests..."
+          ./gradlew :integration-tests:connectedCheck --info
+          
+      - name: Generate Test Report
+        if: always()
+        run: |
+          echo "Generating test report..."
+          ./gradlew :integration-tests:jacocoIntegrationTestReport
+          
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: nightly-integration-test-results
+          path: |
+            integration-tests/build/reports/
+            integration-tests/build/outputs/
+            
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: nightly-integration-test-coverage
+          path: integration-tests/build/reports/jacoco/
+          
+      - name: Stop emulator
+        if: always()
+        run: |
+          echo "Stopping emulator..."
+          adb emu kill 
