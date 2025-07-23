@@ -28,6 +28,8 @@ class IterableApiClient {
         @Nullable
         String getUserId();
         @Nullable
+        String getUserIdUnknown();
+        @Nullable
         String getAuthToken();
         @Nullable
         String getApiKey();
@@ -35,7 +37,6 @@ class IterableApiClient {
         String getDeviceId();
         @Nullable
         Context getContext();
-
         void resetAuth();
     }
 
@@ -97,6 +98,31 @@ class IterableApiClient {
         }
     }
 
+    public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields, String createdAt) {
+        JSONObject requestJSON = new JSONObject();
+        try {
+            addEmailOrUserIdToJson(requestJSON);
+            requestJSON.put(IterableConstants.KEY_EVENT_NAME, eventName);
+
+            if (campaignId != 0) {
+                requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
+            }
+            if (templateId != 0) {
+                requestJSON.put(IterableConstants.KEY_TEMPLATE_ID, templateId);
+            }
+            if (dataFields != null) {
+                dataFields.remove(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+                dataFields.remove(IterableConstants.KEY_EVENT_NAME);
+            }
+            requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
+            requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            requestJSON.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void updateCart(@NonNull List<CommerceItem> items) {
         JSONObject requestJSON = new JSONObject();
 
@@ -111,6 +137,28 @@ class IterableApiClient {
             requestJSON.put(IterableConstants.KEY_USER, userObject);
 
             requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+
+            sendPostRequest(IterableConstants.ENDPOINT_UPDATE_CART, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateCart(@NonNull List<CommerceItem> items, long createdAt) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            JSONArray itemsArray = new JSONArray();
+            for (CommerceItem item : items) {
+                itemsArray.put(item.toJSONObject());
+            }
+
+            JSONObject userObject = new JSONObject();
+            addEmailOrUserIdToJson(userObject);
+            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
+            requestJSON.put(IterableConstants.KEY_USER, userObject);
+            requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+            requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_CART, requestJSON);
         } catch (JSONException e) {
@@ -147,6 +195,33 @@ class IterableApiClient {
         }
     }
 
+    public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @NonNull long createdAt) {
+        JSONObject requestJSON = new JSONObject();
+        try {
+            JSONArray itemsArray = new JSONArray();
+            for (CommerceItem item : items) {
+                itemsArray.put(item.toJSONObject());
+            }
+
+            JSONObject userObject = new JSONObject();
+            addEmailOrUserIdToJson(userObject);
+            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
+            requestJSON.put(IterableConstants.KEY_USER, userObject);
+
+            requestJSON.put(IterableConstants.KEY_ITEMS, itemsArray);
+            requestJSON.put(IterableConstants.KEY_TOTAL, total);
+            requestJSON.put(IterableConstants.KEY_CREATED_AT, createdAt);
+            if (dataFields != null) {
+                dataFields.remove(IterableConstants.SHARED_PREFS_EVENT_TYPE);
+                requestJSON.put(IterableConstants.KEY_DATA_FIELDS, dataFields);
+            }
+
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_PURCHASE, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJSON = new JSONObject();
 
@@ -171,7 +246,7 @@ class IterableApiClient {
             addEmailOrUserIdToJson(requestJSON);
 
             // Create the user by userId if it doesn't exist
-            if (authProvider.getEmail() == null && authProvider.getUserId() != null) {
+            if (authProvider.getEmail() == null && (authProvider.getUserIdUnknown() != null || authProvider.getUserId() != null)) {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
@@ -605,7 +680,11 @@ class IterableApiClient {
             if (authProvider.getEmail() != null) {
                 requestJSON.put(IterableConstants.KEY_EMAIL, authProvider.getEmail());
             } else {
-                requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
+                if (authProvider.getUserIdUnknown() != null) {
+                    requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserIdUnknown());
+                } else {
+                    requestJSON.put(IterableConstants.KEY_USER_ID, authProvider.getUserId());
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -702,5 +781,71 @@ class IterableApiClient {
     void onLogout() {
         getRequestProcessor().onLogout(authProvider.getContext());
         authProvider.resetAuth();
+    }
+
+    void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        JSONObject requestJson = new JSONObject();
+        try {
+            if (sourceEmail != null && !sourceEmail.isEmpty()) {
+                requestJson.put(IterableConstants.SOURCE_EMAIL, sourceEmail);
+            }
+            if (sourceUserId != null && !sourceUserId.isEmpty()) {
+                requestJson.put(IterableConstants.SOURCE_USER_ID, sourceUserId);
+            }
+            if (destinationEmail != null && !destinationEmail.isEmpty()) {
+                requestJson.put(IterableConstants.DESTINATION_EMAIL, destinationEmail);
+            }
+            if (destinationUserId != null && !destinationUserId.isEmpty()) {
+                requestJson.put(IterableConstants.DESTINATION_USER_ID, destinationUserId);
+            }
+            sendPostRequest(IterableConstants.ENDPOINT_MERGE_USER, requestJson, successHandler, failureHandler);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void getCriteriaList(@Nullable IterableHelper.IterableActionHandler actionHandler) {
+        sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
+    }
+
+    void trackUnknownUserSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserTrack, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        try {
+            JSONObject requestObject = new JSONObject();
+
+            JSONObject userObject = new JSONObject();
+            userObject.put(IterableConstants.KEY_USER_ID, userId);
+            userObject.put(IterableConstants.KEY_PREFER_USER_ID, true);
+            userObject.put(IterableConstants.KEY_MERGE_NESTED_OBJECTS, true);
+            userObject.put(IterableConstants.KEY_CREATE_NEW_FIELDS, true);
+            if (updateUserTrack != null) {
+                userObject.put(IterableConstants.KEY_DATA_FIELDS, updateUserTrack);
+            }
+            requestObject.put(IterableConstants.KEY_USER, userObject);
+            requestObject.put(IterableConstants.KEY_CREATED_AT, createdAt);
+            requestObject.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            requestObject.put(IterableConstants.KEY_UNKNOWN_SESSION_CONTEXT, requestJson);
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, requestObject, onSuccess, onFailure);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void trackConsent(@Nullable String userId, @Nullable String email, @NonNull Long timestamp, boolean isUserKnown) {
+        JSONObject requestJSON = new JSONObject();
+
+        try {
+            requestJSON.put(IterableConstants.KEY_CONSENT_TIMESTAMP, timestamp);
+            if (email != null) {
+                requestJSON.put(IterableConstants.KEY_EMAIL, email);
+            }
+            if (userId != null) {
+                requestJSON.put(IterableConstants.KEY_USER_ID, userId);
+            }
+            requestJSON.put(IterableConstants.KEY_IS_USER_KNOWN, isUserKnown);
+            requestJSON.put(IterableConstants.KEY_DEVICE_INFO, getDeviceInfoJson());
+            sendPostRequest(IterableConstants.ENDPOINT_TRACK_CONSENT, requestJSON);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -21,7 +21,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 34
 
-        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.5.14\""
+        buildConfigField "String", "ITERABLE_SDK_VERSION", "\"3.6.0\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,7 +61,8 @@ dependencies {
     api 'androidx.appcompat:appcompat:1.7.0'
     api 'androidx.annotation:annotation:1.9.0'
     api 'com.google.firebase:firebase-messaging:20.3.0'
-    implementation "androidx.security:security-crypto-ktx:1.1.0-alpha06"
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation "androidx.security:security-crypto:1.1.0-alpha06"
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.test:runner:1.6.2'
@@ -88,7 +89,7 @@ dependencies {
 
 ext {
     libraryName = 'iterableapi'
-    libraryVersion = '3.5.14'
+    libraryVersion = '3.6.0'
 }
 
 if (hasProperty("mavenPublishEnabled")) {
