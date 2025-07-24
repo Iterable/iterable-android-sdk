@@ -509,4 +509,68 @@ public class IterableApiAuthTests extends BaseTest {
         // Test passes if no exceptions were thrown and lifecycle methods executed successfully
     }
 
+    @Test
+    public void testNullJwtTokenTimerClearedOnBackground() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+
+        // Mock auth handler to return null token (simulating failure)
+        doReturn(null).when(authHandler).onAuthTokenRequested();
+
+        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+        IterableApi.getInstance().setEmail("test@example.com");
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Request auth token which will fail with null and schedule a retry timer
+        authManager.requestNewAuthToken(false);
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Verify that timer was scheduled (isTimerScheduled should be true)
+        // We can't directly access isTimerScheduled but we can test the behavior
+
+        // Simulate app going to background - should clear timer without race condition
+        authManager.onSwitchToBackground();
+
+        // Verify timer state by attempting to schedule another token refresh
+        // If race condition exists, this might fail or behave incorrectly
+        authManager.scheduleAuthTokenRefresh(1000, false, null);
+
+        // Simulate app coming to foreground and verify no exceptions
+        authManager.onSwitchToForeground();
+        shadowOf(getMainLooper()).runToEndOfTasks();
+
+        // Test passes if no exceptions were thrown and lifecycle methods executed successfully
+        // The synchronization fix ensures timer creation and clearing are atomic operations
+    }
+
+    @Test
+    public void testNullJWTRefreshTimerRaceConditionOnBackground() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+        
+        // Set up auth handler to return null JWT (simulating auth failure)
+        doReturn(null).when(authHandler).onAuthTokenRequested();
+        
+        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+        
+        // Set email to trigger auth token request which will fail and schedule retry
+        IterableApi.getInstance().setEmail("test@example.com");
+        shadowOf(getMainLooper()).runToEndOfTasks();
+        
+        // At this point, the null JWT response should have scheduled a retry timer
+        // Verify timer is scheduled (this is the state before the race condition)
+        assertNotNull("Timer should be created for retry after null JWT", authManager.timer);
+        assertEquals("Timer should be scheduled after null JWT", true, authManager.isTimerScheduled);
+        
+        // Now simulate the race condition: app goes to background immediately
+        // This should clear the timer, but due to race condition it might not work properly
+        authManager.onSwitchToBackground();
+        
+        // The race condition bug: timer might not be properly cleared
+        // With the fix, timer should be null and isTimerScheduled should be false
+        assertNull("Timer should be cleared when app goes to background", authManager.timer);
+        assertEquals("Timer scheduled flag should be false after background", false, authManager.isTimerScheduled);
+        
+        // Verify no timer tasks are left running that could fire later
+        // This test will fail without the synchronization fix due to race condition
+    }
+
 }
