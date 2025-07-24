@@ -28,7 +28,8 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     boolean pauseAuthRetry;
     int retryCount;
     private boolean isLastAuthTokenValid;
-    private boolean isTimerScheduled;
+    @VisibleForTesting
+    boolean isTimerScheduled;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -190,29 +191,33 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
-        if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
-            // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
-            return;
-        }
-        if (timer == null) {
-            timer = new Timer(true);
-        }
+        synchronized (this) {
+            if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
+                // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
+                return;
+            }
+            if (timer == null) {
+                timer = new Timer(true);
+            }
 
-        try {
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if (api.getEmail() != null || api.getUserId() != null) {
-                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh);
-                    } else {
-                        IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
+            try {
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (api.getEmail() != null || api.getUserId() != null) {
+                            api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh);
+                        } else {
+                            IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
+                        }
+                        synchronized (IterableAuthManager.this) {
+                            isTimerScheduled = false;
+                        }
                     }
-                    isTimerScheduled = false;
-                }
-            }, timeDuration);
-            isTimerScheduled = true;
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "timer exception: " + timer, e);
+                }, timeDuration);
+                isTimerScheduled = true;
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "timer exception: " + timer, e);
+            }
         }
     }
 
@@ -247,10 +252,12 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     void clearRefreshTimer() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-            isTimerScheduled = false;
+        synchronized (this) {
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
+                isTimerScheduled = false;
+            }
         }
     }
 
