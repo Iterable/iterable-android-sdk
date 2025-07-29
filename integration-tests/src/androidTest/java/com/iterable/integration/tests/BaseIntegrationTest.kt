@@ -62,7 +62,12 @@ abstract class BaseIntegrationTest {
             .build()
         
         IterableApi.initialize(context, BuildConfig.ITERABLE_API_KEY, config)
-        IterableApi.getInstance().setEmail("integration.test@iterable.com")
+        
+        // Set the user email for integration testing
+        val userEmail = "akshay.ayyanchira@iterable.com"
+        IterableApi.getInstance().setEmail(userEmail)
+        
+        Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: $userEmail")
     }
     
     private fun setupTestEnvironment() {
@@ -164,5 +169,35 @@ abstract class BaseIntegrationTest {
      */
     protected fun simulateDeepLink(url: String): Boolean {
         return testUtils.simulateDeepLink(url)
+    }
+    
+    /**
+     * Trigger a campaign via Iterable API
+     */
+    protected fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+        testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+    }
+    
+    /**
+     * Trigger a push campaign via Iterable API
+     */
+    protected fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+        testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+    }
+    
+    /**
+     * Wait for a campaign to be triggered and processed
+     */
+    protected fun waitForCampaignTrigger(campaignId: Int, timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
+        // Trigger the campaign
+        val triggered = triggerCampaignViaAPI(campaignId)
+        if (!triggered) {
+            return false
+        }
+        
+        // Wait for the campaign to be processed (in-app message or push notification)
+        return waitForCondition({
+            testUtils.hasInAppMessageDisplayed() || testUtils.hasReceivedPushNotification()
+        }, timeoutSeconds)
     }
 } 

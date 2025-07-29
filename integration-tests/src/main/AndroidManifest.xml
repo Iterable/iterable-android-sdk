@@ -74,6 +74,11 @@
             android:exported="false"
             android:label="Deep Link Tests" />
 
+        <activity
+            android:name=".activities.CampaignTriggerTestActivity"
+            android:exported="false"
+            android:label="Campaign Trigger Tests" />
+
         <!-- Firebase Messaging Service -->
         <service
             android:name=".services.IntegrationFirebaseMessagingService"

@@ -50,9 +50,12 @@ class MainActivity : AppCompatActivity() {
                 .build()
             
             IterableApi.initialize(this, BuildConfig.ITERABLE_API_KEY, config)
-            IterableApi.getInstance().setEmail("integration.test@iterable.com")
             
-            Log.d(TAG, "Iterable SDK initialized successfully")
+            // Set the user email for integration testing
+            val userEmail = "akshay.ayyanchira@iterable.com"
+            IterableApi.getInstance().setEmail(userEmail)
+            
+            Log.d(TAG, "Iterable SDK initialized successfully with email: $userEmail")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Iterable SDK", e)
         }
@@ -76,6 +79,10 @@ class MainActivity : AppCompatActivity() {
         
         findViewById<android.widget.Button>(R.id.btnDeepLinking).setOnClickListener {
             startActivity(Intent(this@MainActivity, DeepLinkTestActivity::class.java))
+        }
+        
+        findViewById<android.widget.Button>(R.id.btnCampaignTrigger).setOnClickListener {
+            startActivity(Intent(this@MainActivity, CampaignTriggerTestActivity::class.java))
         }
         
         findViewById<android.widget.Button>(R.id.btnRunAllTests).setOnClickListener {
