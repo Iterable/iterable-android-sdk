@@ -68,3 +68,5 @@ pom.xml.next
 release.properties
 
 jacoco.exec
+# VSCode settings
+.vscode/
