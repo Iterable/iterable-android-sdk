@@ -4,6 +4,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.6.0-beta3]
+
+### Added
+- Added consent logging functionality for unknown user activation feature
+
+### Changed
+- Enhanced unknown user activation with improved criteria fetching and user ID generation logic
+
+### Fixed
+- Fixed unknown user activation to ensure criteria is fetched on foregrounding the app by default
+- Fixed unknown user ID generation to only occur once when multiple track calls are made
+- Fixed consent timestamp handling when consent is revoked
+
 ## [3.5.14]
 ### Fixed
 - Fixed auth token refresh when app is in background, ensuring reliable token refresh in all app states.
