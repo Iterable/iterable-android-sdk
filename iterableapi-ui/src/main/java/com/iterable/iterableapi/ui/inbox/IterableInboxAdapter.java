@@ -74,7 +74,7 @@ public class IterableInboxAdapter extends RecyclerView.Adapter<IterableInboxAdap
         }
 
         if (holder.subtitle != null) {
-            holder.subtitle.setText(inboxMetadata != null ? inboxMetadata.subtitle : "");
+            holder.subtitle.setText(inboxMetadata != null && inboxMetadata.subtitle != null ? inboxMetadata.subtitle : "");
         }
 
         if (holder.icon != null && inboxMetadata != null && inboxMetadata.icon != null) {
