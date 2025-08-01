@@ -7,20 +7,23 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppManager
-import kotlinx.android.synthetic.main.activity_main.*
+import com.iterable.inbox_customization.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), IterableInAppManager.Listener {
 
+    private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         setupNavigation()
     }
 
     private fun setupNavigation() {
         val navController = Navigation.findNavController(this, R.id.mainNavigationFragment)
         setupActionBarWithNavController(navController)
-        bottomNavigationView.setupWithNavController(navController)
+        binding.bottomNavigationView.setupWithNavController(navController)
     }
 
     override fun onResume() {
@@ -40,8 +43,8 @@ class MainActivity : AppCompatActivity(), IterableInAppManager.Listener {
     }
 
     private fun updateNotificationBadge(value: Int) {
-        val simpleInboxBadge = bottomNavigationView.getOrCreateBadge(R.id.simpleInboxFragment)
-        val customInboxBadge = bottomNavigationView.getOrCreateBadge(R.id.customInboxFragment)
+        val simpleInboxBadge = binding.bottomNavigationView.getOrCreateBadge(R.id.simpleInboxFragment)
+        val customInboxBadge = binding.bottomNavigationView.getOrCreateBadge(R.id.customInboxFragment)
         simpleInboxBadge.number = value
         customInboxBadge.number = value
     }
