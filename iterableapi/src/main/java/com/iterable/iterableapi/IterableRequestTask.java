@@ -381,7 +381,13 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     private void handleErrorResponse(IterableApiResponse response) {
         if (iterableApiRequest.failureCallback != null) {
-            iterableApiRequest.failureCallback.onFailure(response.errorMessage, response.responseJson);
+            JSONObject responseJson = response.responseJson;
+            if (responseJson != null) {
+                try {
+                    responseJson.put(IterableConstants.HTTP_STATUS_CODE, response.responseCode);
+                } catch (JSONException e) {}
+            }
+            iterableApiRequest.failureCallback.onFailure(response.errorMessage, responseJson);
         }
     }
 
