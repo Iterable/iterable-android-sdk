@@ -165,7 +165,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             if (triggerExpirationRefreshTime > 0) {
                 scheduleAuthTokenRefresh(triggerExpirationRefreshTime, true, null);
             } else {
-                IterableLogger.w(TAG, "The expiringAuthTokenRefreshPeriod has already passed for the current JWT");
+                scheduleAuthTokenRefresh(getNextRetryInterval(), true, null);
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
@@ -260,6 +260,21 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         return new String(decodedBytes, "UTF-8");
     }
 
+    /**
+     * Checks if the current auth token needs to be refreshed and handles any deferred auth requests.
+     * This method is called when the app comes to foreground to ensure timely token refresh.
+     */
+    private void checkAndHandleAuthRefresh() {
+        // First, check if current auth token needs refresh based on expiration
+        String currentAuthToken = api.getAuthToken();
+        if (currentAuthToken != null) {
+            // Reuse existing queueExpirationRefresh logic to check and schedule refresh if needed
+            queueExpirationRefresh(currentAuthToken);
+        } else {
+            IterableLogger.d(TAG, "No auth token available for expiration check");
+        }
+    }
+
     void clearRefreshTimer() {
         if (timer != null) {
             timer.cancel();
@@ -268,12 +283,12 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         }
     }
 
-    //region IterableActivityMonitor.AppStateCallback implementation
-
     @Override
     public void onSwitchToForeground() {
         IterableLogger.d(TAG, "App switched to foreground - enabling auth token requests");
         isInForeground = true;
+
+        checkAndHandleAuthRefresh();
     }
 
     @Override
@@ -281,7 +296,5 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         IterableLogger.d(TAG, "App switched to background - disabling auth token requests");
         isInForeground = false;
     }
-
-    //endregion
 }
 
