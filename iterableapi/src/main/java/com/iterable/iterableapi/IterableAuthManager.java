@@ -30,7 +30,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     int retryCount;
     private boolean isLastAuthTokenValid;
     private boolean isTimerScheduled;
-    private boolean isInForeground = true; // Assume foreground initially
+    private volatile boolean isInForeground = true; // Assume foreground initially
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -295,6 +295,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     public void onSwitchToBackground() {
         IterableLogger.d(TAG, "App switched to background - disabling auth token requests");
         isInForeground = false;
+        clearRefreshTimer();
     }
 }
 
