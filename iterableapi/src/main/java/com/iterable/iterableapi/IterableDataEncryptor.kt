@@ -110,7 +110,6 @@ class IterableDataEncryptor {
         } else {
             null
         }
-        
         keyStore.setEntry(ITERABLE_KEY_ALIAS, keyEntry, protParam)
     }
 
