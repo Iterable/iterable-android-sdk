@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.util.Base64;
+
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONException;
@@ -55,10 +57,6 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     void reset() {
         clearRefreshTimer();
         setIsLastAuthTokenValid(false);
-        // Remove lifecycle callback on reset
-        if (activityMonitor != null) {
-            activityMonitor.removeCallback(this);
-        }
     }
 
     void setIsLastAuthTokenValid(boolean isValid) {
@@ -157,8 +155,13 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
     }
 
-    public void queueExpirationRefresh(String encodedJWT) {
+    public void queueExpirationRefresh(@Nullable String encodedJWT) {
         clearRefreshTimer();
+        if (encodedJWT == null) {
+            IterableLogger.d(TAG, "JWT is null. Scheduling token refresh");
+            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
+            return;
+        }
         try {
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
             long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
@@ -266,12 +269,11 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
      */
     private void checkAndHandleAuthRefresh() {
         // First, check if current auth token needs refresh based on expiration
-        String currentAuthToken = api.getAuthToken();
-        if (currentAuthToken != null) {
-            // Reuse existing queueExpirationRefresh logic to check and schedule refresh if needed
+        if (api.getEmail() != null || api.getUserId() != null) {
+            String currentAuthToken = api.getAuthToken();
             queueExpirationRefresh(currentAuthToken);
         } else {
-            IterableLogger.d(TAG, "No auth token available for expiration check");
+            IterableLogger.d(TAG, "Email or userId is not available. Skipping token refresh");
         }
     }
 
