@@ -110,7 +110,15 @@ class IterableDataEncryptor {
         } else {
             null
         }
-        keyStore.setEntry(ITERABLE_KEY_ALIAS, keyEntry, protParam)
+        
+        try {
+            keyStore.setEntry(ITERABLE_KEY_ALIAS, keyEntry, protParam)
+        } catch (e: java.security.KeyStoreException) {
+            // Some Android KeyStore implementations don't support SecretKeyEntry
+            // Re-throw the exception to be handled by the caller
+            IterableLogger.e(TAG, "KeyStore doesn't support SecretKeyEntry", e)
+            throw e
+        }
     }
 
     private fun getKey(): SecretKey {
