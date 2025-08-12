@@ -31,7 +31,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     boolean pauseAuthRetry;
     int retryCount;
     private boolean isLastAuthTokenValid;
-    private boolean isTimerScheduled;
+    private volatile boolean isTimerScheduled;
     private volatile boolean isInForeground = true; // Assume foreground initially
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -157,12 +157,15 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     public void queueExpirationRefresh(@Nullable String encodedJWT) {
         clearRefreshTimer();
-        if (encodedJWT == null) {
-            IterableLogger.d(TAG, "JWT is null. Scheduling token refresh");
-            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
-            return;
-        }
         try {
+            if (encodedJWT == null) {
+                IterableLogger.d(TAG, "JWT is null. Scheduling token refresh");
+                if (!isTimerScheduled) {
+                    scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
+                }
+                return;
+            }
+
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
             long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
             if (triggerExpirationRefreshTime > 0) {
@@ -287,17 +290,24 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     @Override
     public void onSwitchToForeground() {
-        IterableLogger.d(TAG, "App switched to foreground - enabling auth token requests");
-        isInForeground = true;
-
-        checkAndHandleAuthRefresh();
+        try {
+            IterableLogger.d(TAG, "App switched to foreground - enabling auth token requests");
+            isInForeground = true;
+            checkAndHandleAuthRefresh();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error occurred in handling auth token refresh", e);
+        }
     }
 
     @Override
     public void onSwitchToBackground() {
-        IterableLogger.d(TAG, "App switched to background - disabling auth token requests");
-        isInForeground = false;
-        clearRefreshTimer();
+        try {
+            IterableLogger.d(TAG, "App switched to background - disabling auth token requests");
+            isInForeground = false;
+            clearRefreshTimer();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while switching to background", e);
+        }
     }
 }
 
