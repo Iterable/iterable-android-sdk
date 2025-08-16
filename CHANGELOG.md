@@ -5,20 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ## [3.5.15]
-### Added
-- Enhanced JWT token refresh handling with improved background and foreground state management
-- Added null safety checks for JWT operations to prevent crashes
-- Improved token refresh retry logic with proper period handling
-
 ### Fixed
 - Fixed JWT token refresh issues when app is in background, ensuring reliable token refresh in all app states
-- Fixed null pointer exceptions in JWT operations by adding proper null checks
 - Fixed inbox metadata null check issues to prevent crashes in inbox display
 
 ### Changed
 - Migrated embedded message OOTB views to use Material Design buttons for better UI consistency
 - Updated sample app Gradle configuration to use newer versions for better compatibility
-- Improved JWT flow housekeeping with better error handling and retry policies
 
 ## [3.5.14]
 ### Fixed
