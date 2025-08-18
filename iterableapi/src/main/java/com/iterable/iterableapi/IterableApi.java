@@ -144,7 +144,7 @@ public class IterableApi {
         }
         if (keychain == null) {
             try {
-                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler);
+                keychain = new IterableKeychain(getMainActivityContext(), config.decryptionFailureHandler, null, config.keychainEncryption);
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Failed to create IterableKeychain", e);
             }
@@ -618,6 +618,7 @@ public class IterableApi {
 
         sharedInstance.retrieveEmailAndUserId();
 
+        IterablePushNotificationUtil.processPendingAction(context);
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
@@ -636,7 +637,6 @@ public class IterableApi {
         }
 
         loadLastSavedConfiguration(context);
-        IterablePushNotificationUtil.processPendingAction(context);
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
             try {
                 JSONObject dataFields = new JSONObject();

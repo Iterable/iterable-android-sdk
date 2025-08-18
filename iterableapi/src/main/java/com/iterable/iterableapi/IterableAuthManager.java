@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.util.Base64;
+
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONException;
@@ -12,13 +14,14 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class IterableAuthManager {
+public class IterableAuthManager implements IterableActivityMonitor.AppStateCallback {
     private static final String TAG = "IterableAuth";
     private static final String expirationString = "exp";
 
     private final IterableApi api;
     private final IterableAuthHandler authHandler;
     private final long expiringAuthTokenRefreshPeriod;
+    private final IterableActivityMonitor activityMonitor;
     @VisibleForTesting
     Timer timer;
     private boolean hasFailedPriorAuth;
@@ -28,7 +31,8 @@ public class IterableAuthManager {
     boolean pauseAuthRetry;
     int retryCount;
     private boolean isLastAuthTokenValid;
-    private boolean isTimerScheduled;
+    private volatile boolean isTimerScheduled;
+    private volatile boolean isInForeground = true; // Assume foreground initially
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -37,6 +41,8 @@ public class IterableAuthManager {
         this.authHandler = authHandler;
         this.authRetryPolicy = authRetryPolicy;
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
+        this.activityMonitor = IterableActivityMonitor.getInstance();
+        this.activityMonitor.addCallback(this);
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth) {
@@ -95,6 +101,14 @@ public class IterableAuthManager {
                                     pendingAuth = false;
                                     return;
                                 }
+
+                                // Only request new auth token if app is in foreground
+                                if (!isInForeground) {
+                                    IterableLogger.w(TAG, "Auth token request skipped - app is in background");
+                                    pendingAuth = false;
+                                    return;
+                                }
+
                                 final String authToken = authHandler.onAuthTokenRequested();
                                 pendingAuth = false;
                                 retryCount++;
@@ -141,15 +155,23 @@ public class IterableAuthManager {
         scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
     }
 
-    public void queueExpirationRefresh(String encodedJWT) {
+    public void queueExpirationRefresh(@Nullable String encodedJWT) {
         clearRefreshTimer();
         try {
+            if (encodedJWT == null) {
+                IterableLogger.d(TAG, "JWT is null. Scheduling token refresh");
+                if (!isTimerScheduled) {
+                    scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
+                }
+                return;
+            }
+
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
             long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
             if (triggerExpirationRefreshTime > 0) {
                 scheduleAuthTokenRefresh(triggerExpirationRefreshTime, true, null);
             } else {
-                IterableLogger.w(TAG, "The expiringAuthTokenRefreshPeriod has already passed for the current JWT");
+                scheduleAuthTokenRefresh(getNextRetryInterval(), true, null);
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
@@ -244,11 +266,47 @@ public class IterableAuthManager {
         return new String(decodedBytes, "UTF-8");
     }
 
+    /**
+     * Checks if the current auth token needs to be refreshed and handles any deferred auth requests.
+     * This method is called when the app comes to foreground to ensure timely token refresh.
+     */
+    private void checkAndHandleAuthRefresh() {
+        // First, check if current auth token needs refresh based on expiration
+        if (api.getEmail() != null || api.getUserId() != null) {
+            String currentAuthToken = api.getAuthToken();
+            queueExpirationRefresh(currentAuthToken);
+        } else {
+            IterableLogger.d(TAG, "Email or userId is not available. Skipping token refresh");
+        }
+    }
+
     void clearRefreshTimer() {
         if (timer != null) {
             timer.cancel();
             timer = null;
             isTimerScheduled = false;
+        }
+    }
+
+    @Override
+    public void onSwitchToForeground() {
+        try {
+            IterableLogger.d(TAG, "App switched to foreground - enabling auth token requests");
+            isInForeground = true;
+            checkAndHandleAuthRefresh();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error occurred in handling auth token refresh", e);
+        }
+    }
+
+    @Override
+    public void onSwitchToBackground() {
+        try {
+            IterableLogger.d(TAG, "App switched to background - disabling auth token requests");
+            isInForeground = false;
+            clearRefreshTimer();
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while switching to background", e);
         }
     }
 }

@@ -32,7 +32,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
 
@@ -61,7 +61,7 @@ dependencies {
 
 ext {
     libraryName = 'iterableapi-ui'
-    libraryVersion = '3.5.11'
+    libraryVersion = '3.5.15'
 }
 
 if (hasProperty("mavenPublishEnabled")) {

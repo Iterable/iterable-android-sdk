@@ -4,6 +4,46 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.5.15]
+### Fixed
+- Fixed JWT token refresh issues when app is in background, ensuring reliable token refresh in all app states
+- Fixed inbox metadata null check issues to prevent crashes in inbox display
+
+### Changed
+- Migrated embedded message OOTB views to use Material Design buttons for better UI consistency
+- Updated sample app Gradle configuration to use newer versions for better compatibility
+
+## [3.5.14]
+### Fixed
+- Fixed auth token refresh when app is in background, ensuring reliable token refresh in all app states.
+
+## [3.5.13]
+### Fixed
+- SDK now retries `trackPushOpen` call when JWT is missing, expired or invalid, ensuring reliable push tracking after token acquisition.
+
+## [3.5.12]
+
+### Added
+- `EmbeddedSessionManager` methods are now public (previously library-scoped)
+
+### Fixed
+- Added timeout for crypto operations to prevent ANRs.
+
+### Disabling Keychain Encryption
+The Iterable SDK provides an option to disable encryption for keychain storage. By default, encryption is enabled to securely store sensitive user data.
+To disable keychain encryption, set the `keychainEncryption` parameter to `false` when initializing the SDK:
+
+```java
+IterableConfig config = new IterableConfig.Builder()
+    .setKeychainEncryption(false)  // Disable encryption for keychain storage
+    .build();
+
+IterableApi.initialize(context, apiKey, config);
+```
+
+### Changed
+- Thanks to @MGaetan89 for modernizing the test infrastructure by replacing deprecated Robolectric APIs with AndroidX Test alternatives and removing unnecessary dependencies.
+
 ## [3.5.11]
 
 ### Fixed

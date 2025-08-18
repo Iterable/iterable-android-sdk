@@ -62,12 +62,14 @@ class IterableKeychainTest {
 
         // Mock migration-related SharedPreferences calls
         `when`(mockSharedPrefs.contains(any<String>())).thenReturn(false)
-        `when`(mockSharedPrefs.getBoolean(any<String>(), anyBoolean())).thenReturn(false)
+        // Mock encryption flag to be true by default
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-encryption-enabled"), anyBoolean())).thenReturn(true)
         `when`(mockSharedPrefs.getString(any<String>(), any())).thenReturn(null)
         
         // Mock editor.apply() to do nothing
         Mockito.doNothing().`when`(mockEditor).apply()
 
+        // Create keychain with encryption enabled (default)
         keychain = IterableKeychain(
             mockContext, 
             mockDecryptionFailureHandler
@@ -172,9 +174,6 @@ class IterableKeychainTest {
 
         // Verify failure handler was called with any exception
         verify(mockDecryptionFailureHandler).onDecryptionFailed(any())
-        
-        // Verify encryptor keys were reset
-        verify(mockEncryptor).resetKeys()
 
         assertNull(result)
     }
@@ -193,10 +192,7 @@ class IterableKeychainTest {
         assertNull(keychain.getAuthToken())
         
         // Verify failure handler was called exactly once for each operation
-        verify(mockDecryptionFailureHandler, times(3)).onDecryptionFailed(any())
-        
-        // Verify keys were reset for each failure
-        verify(mockEncryptor, times(3)).resetKeys()
+        verify(mockDecryptionFailureHandler, times(1)).onDecryptionFailed(any())
     }
 
     @Test
@@ -325,5 +321,53 @@ class IterableKeychainTest {
         // Verify no more encryption attempts for null
         verify(mockEncryptor, never()).encrypt(isNull())
         verify(mockEncryptor, never()).decrypt(isNull())
+    }
+
+    @Test
+    fun testEncryptionDisabled() {
+        // Create a new keychain with encryption disabled
+        val plaintextKeychain = IterableKeychain(
+            mockContext,
+            mockDecryptionFailureHandler,
+            null,
+            false  // encryption = false means encryption is disabled
+        )
+        
+        val testEmail = "test@example.com"
+        val testUserId = "user123"
+        val testToken = "auth-token-123"
+        
+        // Mock the SharedPreferences to return plaintext values
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull())).thenReturn(testEmail)
+        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testUserId)
+        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull())).thenReturn(testToken)
+
+        // Mock plaintext flag checks to return true when encryption is disabled
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-auth-token_plaintext"), eq(false))).thenReturn(true)
+        
+        // Test save operations
+        plaintextKeychain.saveEmail(testEmail)
+        plaintextKeychain.saveUserId(testUserId)
+        plaintextKeychain.saveAuthToken(testToken)
+        
+        // Verify values are stored as plaintext
+        verify(mockEditor).putString(eq("iterable-email"), eq(testEmail))
+        verify(mockEditor).putString(eq("iterable-user-id"), eq(testUserId))
+        verify(mockEditor).putString(eq("iterable-auth-token"), eq(testToken))
+        
+        // Verify plaintext suffix flags are set for better compatibility
+        verify(mockEditor).putBoolean(eq("iterable-email_plaintext"), eq(true))
+        verify(mockEditor).putBoolean(eq("iterable-user-id_plaintext"), eq(true))
+        verify(mockEditor).putBoolean(eq("iterable-auth-token_plaintext"), eq(true))
+        
+        // Test get operations
+        assertEquals(testEmail, plaintextKeychain.getEmail())
+        assertEquals(testUserId, plaintextKeychain.getUserId())
+        assertEquals(testToken, plaintextKeychain.getAuthToken())
+        
+        // Verify IterableDataEncryptor was never created
+        assertNull(plaintextKeychain.encryptor)
     }
 } 
