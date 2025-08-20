@@ -388,6 +388,13 @@ public class IterableApi {
             _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
 
+        // Track consent when user login completes
+        if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
+            // Use _userIdUnknown state to determine if user is known
+            boolean isUserKnown = (_userIdUnknown == null);
+            trackConsentForUser(_email, _userId, isUserKnown);
+        }
+
         getInAppManager().syncInApp();
         getEmbeddedManager().syncMessages();
     }
@@ -919,10 +926,6 @@ public class IterableApi {
 
             if (replay && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
-
-                if (_userIdUnknown == null) {
-                    trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
-                }
             }
 
             if (!isUnknown) {
