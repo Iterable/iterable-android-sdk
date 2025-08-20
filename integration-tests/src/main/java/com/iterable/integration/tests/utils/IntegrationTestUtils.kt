@@ -138,32 +138,38 @@ class IntegrationTestUtils(private val context: Context) {
         }
     }
     
-    fun sendSilentPushNotification(campaignId: String): Boolean {
-        return try {
-            val payload = createIterableSilentPushNotificationPayload(campaignId)
-            
-            val request = Request.Builder()
-                .url("$ITERABLE_API_BASE_URL$ITERABLE_SEND_PUSH_ENDPOINT")
-                .addHeader("Api-Key", BuildConfig.ITERABLE_API_KEY)
-                .addHeader("Content-Type", "application/json")
-                .post(payload.toRequestBody("application/json".toMediaType()))
-                .build()
-            
-            val response = httpClient.newCall(request).execute()
-            val success = response.isSuccessful
-            
-            if (success) {
-                silentPushProcessed.set(true)
-                Log.d(TAG, "Silent push notification sent via Iterable backend successfully")
-            } else {
-                Log.e(TAG, "Failed to send silent push notification: ${response.code} - ${response.body?.string()}")
+    fun sendSilentPushNotification(campaignId: String, recipientEmail: String = "akshay.ayyanchira@iterable.com", callback: ((Boolean) -> Unit)? = null) {
+        // Execute on background thread to avoid NetworkOnMainThreadException
+        Thread {
+            try {
+                val payload = createIterableSilentPushNotificationPayload(campaignId, recipientEmail)
+                
+                val request = Request.Builder()
+                    .url("$ITERABLE_API_BASE_URL$ITERABLE_SEND_PUSH_ENDPOINT")
+                    .addHeader("Api-Key", BuildConfig.ITERABLE_SERVER_API_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .post(payload.toRequestBody("application/json".toMediaType()))
+                    .build()
+                
+                val response = httpClient.newCall(request).execute()
+                val success = response.isSuccessful
+                
+                if (success) {
+                    silentPushProcessed.set(true)
+                    Log.d(TAG, "Silent push notification sent via Iterable backend successfully")
+                } else {
+                    val errorBody = response.body?.string() ?: "No error body"
+                    Log.e(TAG, "Failed to send silent push notification: ${response.code} - $errorBody")
+                    lastErrorMessage = "HTTP ${response.code}: $errorBody"
+                }
+                
+                callback?.invoke(success)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending silent push notification via Iterable backend", e)
+                lastErrorMessage = e.message ?: "Unknown error"
+                callback?.invoke(false)
             }
-            
-            success
-        } catch (e: Exception) {
-            Log.e(TAG, "Error sending silent push notification via Iterable backend", e)
-            false
-        }
+        }.start()
     }
     
     fun hasReceivedPushNotification(): Boolean {
@@ -330,7 +336,7 @@ class IntegrationTestUtils(private val context: Context) {
         }.toString()
     }
     
-    private fun createIterableSilentPushNotificationPayload(campaignId: String): String {
+    private fun createIterableSilentPushNotificationPayload(campaignId: String, recipientEmail: String): String {
         val dataFields = JSONObject().apply {
             put("testType", "silent_push")
             put("campaignId", campaignId)
@@ -345,7 +351,7 @@ class IntegrationTestUtils(private val context: Context) {
         
         return JSONObject().apply {
             put("campaignId", campaignId)
-            put("recipientEmail", "integration.test@iterable.com")
+            put("recipientEmail", recipientEmail)
             put("dataFields", dataFields)
             put("allowRepeatMarketingSends", false)
             put("metadata", metadata)
