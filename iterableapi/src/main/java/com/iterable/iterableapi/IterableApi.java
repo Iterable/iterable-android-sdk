@@ -634,7 +634,7 @@ public class IterableApi {
                             setConsentLogged(true);
                         }
                     }
-                    
+
                     // Call the original success handler
                     originalSuccessHandler.onSuccess(data);
                 }

@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -15,7 +14,6 @@ import android.content.SharedPreferences;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
