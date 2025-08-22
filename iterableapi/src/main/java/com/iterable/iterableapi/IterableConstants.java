@@ -143,6 +143,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED = "itbl_visitor_usage_track";
     public static final String SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME = "itbl_visitor_usage_track_time";
     public static final String SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED = "itbl_notifications_enabled";
+    public static final String SHARED_PREFS_CONSENT_LOGGED = "itbl_consent_logged";
 
     //Action buttons
     public static final String ITBL_BUTTON_IDENTIFIER        = "identifier";

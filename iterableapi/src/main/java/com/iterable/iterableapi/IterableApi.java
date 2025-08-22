@@ -619,7 +619,41 @@ public class IterableApi {
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, _setUserSuccessCallbackHandler, _setUserFailureCallbackHandler);
+        // Create a wrapper success handler that tracks consent before calling the original success handler
+        IterableHelper.SuccessHandler wrappedSuccessHandler = null;
+        if (_setUserSuccessCallbackHandler != null) {
+            final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
+            wrappedSuccessHandler = new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(@NonNull JSONObject data) {
+                    // Track consent now that user has been created/updated via device registration
+                    if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
+                        if (!getConsentLogged()) {
+                            boolean isUserKnown = (_userIdUnknown == null);
+                            trackConsentForUser(_email, _userId, isUserKnown);
+                            setConsentLogged(true);
+                        }
+                    }
+
+                    // Call the original success handler
+                    originalSuccessHandler.onSuccess(data);
+                }
+            };
+        } else if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
+            // Even if there's no original success handler, we still need to track consent
+            wrappedSuccessHandler = new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(@NonNull JSONObject data) {
+                    if (!getConsentLogged()) {
+                        boolean isUserKnown = (_userIdUnknown == null);
+                        trackConsentForUser(_email, _userId, isUserKnown);
+                        setConsentLogged(true);
+                    }
+                }
+            };
+        }
+
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, _setUserFailureCallbackHandler);
     }
 //endregion
 
@@ -825,6 +859,7 @@ public class IterableApi {
 
         if (email == null) {
             unknownUserManager.setCriteriaMatched(false);
+            setConsentLogged(false);
         }
 
         _setUserSuccessCallbackHandler = successHandler;
@@ -893,6 +928,7 @@ public class IterableApi {
 
         if (userId == null) {
             unknownUserManager.setCriteriaMatched(false);
+            setConsentLogged(false);
         }
 
         _setUserSuccessCallbackHandler = successHandler;
@@ -919,10 +955,6 @@ public class IterableApi {
 
             if (replay && (_userId != null || _email != null)) {
                 unknownUserManager.syncEventsAndUserUpdate();
-
-                if (_userIdUnknown == null) {
-                    trackConsentForUser(isEmail ? emailOrUserId : null, isEmail ? null : emailOrUserId, true);
-                }
             }
 
             if (!isUnknown) {
@@ -1482,6 +1514,28 @@ public class IterableApi {
     public boolean getVisitorUsageTracked() {
         SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
         return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
+    }
+
+    private boolean getConsentLogged() {
+        if (_applicationContext == null) {
+            return false;
+        }
+        SharedPreferences sharedPreferences = _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_CONSENT_LOGGED, false);
+    }
+
+    private void setConsentLogged(boolean consentLogged) {
+        if (_applicationContext == null) {
+            return;
+        }
+        SharedPreferences sharedPref = _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        if (consentLogged) {
+            editor.putBoolean(IterableConstants.SHARED_PREFS_CONSENT_LOGGED, true);
+        } else {
+            editor.remove(IterableConstants.SHARED_PREFS_CONSENT_LOGGED);
+        }
+        editor.apply();
     }
 
     /**
