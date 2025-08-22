@@ -1,6 +1,7 @@
 package com.iterable.integration.tests
 
 import android.content.Context
+import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -12,6 +13,7 @@ import org.awaitility.core.ConditionTimeoutException
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
@@ -189,8 +191,22 @@ abstract class BaseIntegrationTest {
      * Wait for a campaign to be triggered and processed
      */
     protected fun waitForCampaignTrigger(campaignId: Int, timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
-        // Trigger the campaign
-        val triggered = triggerCampaignViaAPI(campaignId)
+        // Trigger the campaign with callback
+        var triggered = false
+        val latch = CountDownLatch(1)
+        
+        triggerCampaignViaAPI(campaignId, "akshay.ayyanchira@iterable.com", null) { success ->
+            triggered = success
+            latch.countDown()
+        }
+        
+        // Wait for callback
+        try {
+            latch.await(10, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            return false
+        }
+        
         if (!triggered) {
             return false
         }

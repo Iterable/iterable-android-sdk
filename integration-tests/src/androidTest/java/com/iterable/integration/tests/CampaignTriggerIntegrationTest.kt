@@ -5,6 +5,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
@@ -30,13 +32,16 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         
         // Trigger the campaign via API with callback
         var campaignTriggered = false
+        val latch = CountDownLatch(1)
+        
         triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL) { success ->
             campaignTriggered = success
+            latch.countDown()
         }
         
-        // Wait for campaign to be triggered
-        val triggered = waitForCondition({ campaignTriggered }, 10)
-        assertTrue("Campaign trigger should succeed", triggered)
+        // Wait for callback
+        assertTrue("Campaign trigger should complete within timeout", latch.await(10, TimeUnit.SECONDS))
+        assertTrue("Campaign trigger should succeed", campaignTriggered)
         
         // Wait for the in-app message to be displayed
         val displayed = waitForInAppMessage()
@@ -54,13 +59,16 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         
         // Trigger the push campaign via API with callback
         var campaignTriggered = false
+        val latch = CountDownLatch(1)
+        
         triggerPushCampaignViaAPI(TEST_PUSH_CAMPAIGN_ID, TEST_USER_EMAIL) { success ->
             campaignTriggered = success
+            latch.countDown()
         }
         
-        // Wait for campaign to be triggered
-        val triggered = waitForCondition({ campaignTriggered }, 10)
-        assertTrue("Push campaign trigger should succeed", triggered)
+        // Wait for callback
+        assertTrue("Push campaign trigger should complete within timeout", latch.await(10, TimeUnit.SECONDS))
+        assertTrue("Push campaign trigger should succeed", campaignTriggered)
         
         // Wait for the push notification to be received
         val received = waitForPushNotification()
@@ -85,7 +93,16 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         )
         
         // Trigger the campaign via API with data fields
-        val success = triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL, dataFields)
+        var success = false
+        val latch = CountDownLatch(1)
+        
+        triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL, dataFields) { result ->
+            success = result
+            latch.countDown()
+        }
+        
+        // Wait for callback
+        assertTrue("Campaign trigger should complete within timeout", latch.await(10, TimeUnit.SECONDS))
         assertTrue("Campaign trigger with data fields should succeed", success)
         
         // Wait for the campaign to be processed
@@ -106,7 +123,16 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         val customUserEmail = "integration.test@iterable.com"
         
         // Trigger the campaign via API for custom user
-        val success = triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, customUserEmail)
+        var success = false
+        val latch = CountDownLatch(1)
+        
+        triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, customUserEmail) { result ->
+            success = result
+            latch.countDown()
+        }
+        
+        // Wait for callback
+        assertTrue("Campaign trigger should complete within timeout", latch.await(10, TimeUnit.SECONDS))
         assertTrue("Campaign trigger for custom user should succeed", success)
         
         // Wait for the campaign to be processed
@@ -124,9 +150,24 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         testUtils.resetTestStates()
         
         // Trigger multiple campaigns
-        val campaign1Success = triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL)
-        val campaign2Success = triggerPushCampaignViaAPI(TEST_PUSH_CAMPAIGN_ID, TEST_USER_EMAIL)
+        var campaign1Success = false
+        var campaign2Success = false
+        val latch1 = CountDownLatch(1)
+        val latch2 = CountDownLatch(1)
         
+        triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL) { result ->
+            campaign1Success = result
+            latch1.countDown()
+        }
+        
+        triggerPushCampaignViaAPI(TEST_PUSH_CAMPAIGN_ID, TEST_USER_EMAIL) { result ->
+            campaign2Success = result
+            latch2.countDown()
+        }
+        
+        // Wait for both callbacks
+        assertTrue("First campaign trigger should complete within timeout", latch1.await(10, TimeUnit.SECONDS))
+        assertTrue("Second campaign trigger should complete within timeout", latch2.await(10, TimeUnit.SECONDS))
         assertTrue("First campaign trigger should succeed", campaign1Success)
         assertTrue("Second campaign trigger should succeed", campaign2Success)
         
@@ -145,19 +186,39 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         
         // Test with invalid campaign ID
         val invalidCampaignId = 99999999
-        val success = triggerCampaignViaAPI(invalidCampaignId, TEST_USER_EMAIL)
+        var success = false
+        val latch1 = CountDownLatch(1)
         
-        // The API call might succeed but the campaign might not exist
-        // We'll just verify the method doesn't crash
-        Log.d(TAG, "Campaign trigger with invalid ID result: $success")
+        triggerCampaignViaAPI(invalidCampaignId, TEST_USER_EMAIL) { result ->
+            success = result
+            latch1.countDown()
+        }
+        
+        // Wait for callback
+        try {
+            latch1.await(10, TimeUnit.SECONDS)
+            Log.d(TAG, "Campaign trigger with invalid ID result: $success")
+        } catch (e: InterruptedException) {
+            Log.d(TAG, "Campaign trigger with invalid ID timed out")
+        }
         
         // Test with invalid email
         val invalidEmail = "invalid@email.com"
-        val success2 = triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, invalidEmail)
+        var success2 = false
+        val latch2 = CountDownLatch(1)
         
-        // The API call might succeed but the user might not exist
-        // We'll just verify the method doesn't crash
-        Log.d(TAG, "Campaign trigger with invalid email result: $success2")
+        triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, invalidEmail) { result ->
+            success2 = result
+            latch2.countDown()
+        }
+        
+        // Wait for callback
+        try {
+            latch2.await(10, TimeUnit.SECONDS)
+            Log.d(TAG, "Campaign trigger with invalid email result: $success2")
+        } catch (e: InterruptedException) {
+            Log.d(TAG, "Campaign trigger with invalid email timed out")
+        }
         
         Log.d(TAG, "Campaign trigger error handling test completed")
     }

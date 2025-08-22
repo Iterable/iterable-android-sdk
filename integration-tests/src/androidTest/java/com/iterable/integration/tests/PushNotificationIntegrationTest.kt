@@ -17,6 +17,8 @@ import com.iterable.iterableapi.IterableConfig
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class PushNotificationIntegrationTest : BaseIntegrationTest() {
@@ -194,7 +196,22 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
     }
     
     private fun sendSilentPushNotification(campaignId: String): Boolean {
-        return testUtils.sendSilentPushNotification(campaignId)
+        var success = false
+        val latch = CountDownLatch(1)
+        
+        testUtils.sendSilentPushNotification(campaignId) { result ->
+            success = result
+            latch.countDown()
+        }
+        
+        // Wait for callback
+        try {
+            latch.await(10, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            return false
+        }
+        
+        return success
     }
     
     private fun waitForSilentPushProcessed(): Boolean {
