@@ -373,34 +373,31 @@ class IterableKeychainTest {
 
     @Test
     fun testEncryptorInitializationFailureScenario() {
-        // This test documents the MOB-11856 fix behavior
-        // When IterableDataEncryptor() constructor throws KeyStoreException (like on Nexus 5):
-        // 1. Exception is caught in keychain initialization
-        // 2. handleDecryptionError() is called
-        // 3. Encryption is disabled permanently 
-        // 4. App continues to work with plaintext storage
+        // This test validates the MOB-11856 fix behavior
+        // When IterableDataEncryptor() constructor throws an exception (like KeyStoreException on Nexus 5):
+        // 1. Exception is caught in keychain initialization  
+        // 2. handleDecryptionError() is called which disables encryption permanently
+        // 3. App continues to work with plaintext storage
         
-        // We can't easily test the constructor failure directly due to final class,
-        // but this test documents the expected behavior and verifies the fallback works
+        // Test the actual scenario where encryption is disabled after init failure
+        // First, mock SharedPreferences to return false for encryption-enabled (as it would after failure)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-encryption-enabled"), eq(true))).thenReturn(false)
         
-        // Simulate a keychain that has had encryption disabled due to init failure
+        // Create keychain with encryption=true but it will be disabled due to the flag
         val keychainAfterInitFailure = IterableKeychain(
             mockContext,
             mockDecryptionFailureHandler,
             null,
-            false  // encryption disabled (as would happen after init failure)
+            true  // encryption requested but will be disabled due to stored flag
         )
         
         val testEmail = "nexus5@example.com"
         val testUserId = "nexus5-user-123"
         
-        // Setup mocks to simulate plaintext storage (what happens after init failure)
-        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull())).thenReturn(testEmail)
-        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testUserId)
-        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
-        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
+        // Verify that encryption is actually disabled (as it would be after init failure)
+        assertNull("Encryptor should be null when encryption flag is disabled", keychainAfterInitFailure.encryptor)
         
-        // Verify that after initialization failure, the keychain works in plaintext mode
+        // Test that the keychain works in plaintext mode after the simulated failure
         keychainAfterInitFailure.saveEmail(testEmail)
         keychainAfterInitFailure.saveUserId(testUserId)
         
@@ -410,16 +407,19 @@ class IterableKeychainTest {
         verify(mockEditor).putBoolean(eq("iterable-email_plaintext"), eq(true))
         verify(mockEditor).putBoolean(eq("iterable-user-id_plaintext"), eq(true))
         
-        // Verify retrieval works  
+        // Mock retrieval to test that data can be read back
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull())).thenReturn(testEmail)
+        `when`(mockSharedPrefs.getString(eq("iterable-user-id"), isNull())).thenReturn(testUserId)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-email_plaintext"), eq(false))).thenReturn(true)
+        `when`(mockSharedPrefs.getBoolean(eq("iterable-user-id_plaintext"), eq(false))).thenReturn(true)
+        
+        // Verify retrieval works in plaintext mode
         assertEquals("Email should be retrieved from plaintext storage", testEmail, keychainAfterInitFailure.getEmail())
         assertEquals("UserId should be retrieved from plaintext storage", testUserId, keychainAfterInitFailure.getUserId())
         
-        // Verify no encryptor was created (encryption disabled)
-        assertNull("Encryptor should be null when encryption is disabled", keychainAfterInitFailure.encryptor)
-        
         // This test validates that the MOB-11856 fix ensures:
-        // - App doesn't crash on Nexus 5 KeyStore issues
-        // - Graceful fallback to plaintext storage
-        // - Normal app functionality continues
+        // - When encryption-enabled flag is false (set after KeyStore failure), encryption is disabled
+        // - App continues to work with plaintext storage
+        // - Normal save/retrieve operations work correctly
     }
 } 

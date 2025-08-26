@@ -38,7 +38,7 @@ class IterableKeychain {
         this.decryptionFailureHandler = decryptionFailureHandler
         this.encryption = encryption && sharedPrefs.getBoolean(KEY_ENCRYPTION_ENABLED, true)
 
-        if (!encryption) {
+        if (!this.encryption) {
             IterableLogger.v(TAG, "SharedPreferences being used without encryption")
         } else {
             try {
