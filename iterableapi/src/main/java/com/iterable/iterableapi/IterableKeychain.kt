@@ -38,11 +38,17 @@ class IterableKeychain {
         this.decryptionFailureHandler = decryptionFailureHandler
         this.encryption = encryption && sharedPrefs.getBoolean(KEY_ENCRYPTION_ENABLED, true)
 
-        if (!encryption) {
+        if (!this.encryption) {
             IterableLogger.v(TAG, "SharedPreferences being used without encryption")
         } else {
-            encryptor = IterableDataEncryptor()
-            IterableLogger.v(TAG, "SharedPreferences being used with encryption")
+            try {
+                encryptor = IterableDataEncryptor()
+                IterableLogger.v(TAG, "SharedPreferences being used with encryption")
+            } catch (e: Exception) {
+                IterableLogger.e(TAG, "Failed to initialize encryption, falling back to plain text", e)
+                handleDecryptionError(e)
+                return
+            }
 
             try {
                 val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
