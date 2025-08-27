@@ -620,40 +620,26 @@ public class IterableApi {
         }
 
         // Create a wrapper success handler that tracks consent before calling the original success handler
-        IterableHelper.SuccessHandler wrappedSuccessHandler = null;
-        if (_setUserSuccessCallbackHandler != null) {
-            final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
-            wrappedSuccessHandler = new IterableHelper.SuccessHandler() {
-                @Override
-                public void onSuccess(@NonNull JSONObject data) {
-                    // Track consent now that user has been created/updated via device registration
-                    if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
-                        if (!getConsentLogged()) {
-                            boolean isUserKnown = (_userIdUnknown == null);
-                            trackConsentForUser(_email, _userId, isUserKnown);
-                            setConsentLogged(true);
-                        }
-                    }
+        IterableHelper.SuccessHandler wrappedSuccessHandler = getSuccessHandler();
 
-                    // Call the original success handler
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, _setUserFailureCallbackHandler);
+    }
+
+    private IterableHelper.SuccessHandler getSuccessHandler() {
+        IterableHelper.SuccessHandler wrappedSuccessHandler = null;
+        if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
+            final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
+            wrappedSuccessHandler = data -> {
+                // Track consent now that user has been created/updated via device registration
+                trackConsentOnDeviceRegistration();
+
+                // Call the original success handler if it exists
+                if (originalSuccessHandler != null) {
                     originalSuccessHandler.onSuccess(data);
                 }
             };
-        } else if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
-            // Even if there's no original success handler, we still need to track consent
-            wrappedSuccessHandler = new IterableHelper.SuccessHandler() {
-                @Override
-                public void onSuccess(@NonNull JSONObject data) {
-                    if (!getConsentLogged()) {
-                        boolean isUserKnown = (_userIdUnknown == null);
-                        trackConsentForUser(_email, _userId, isUserKnown);
-                        setConsentLogged(true);
-                    }
-                }
-            };
         }
-
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, _setUserFailureCallbackHandler);
+        return wrappedSuccessHandler;
     }
 //endregion
 
@@ -1536,6 +1522,19 @@ public class IterableApi {
             editor.remove(IterableConstants.SHARED_PREFS_CONSENT_LOGGED);
         }
         editor.apply();
+    }
+
+    /**
+     * Tracks consent during device registration if conditions are met.
+     */
+    private void trackConsentOnDeviceRegistration() {
+        if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
+            if (!getConsentLogged()) {
+                boolean isUserKnown = (_userIdUnknown == null);
+                trackConsentForUser(_email, _userId, isUserKnown);
+                setConsentLogged(true);
+            }
+        }
     }
 
     /**
