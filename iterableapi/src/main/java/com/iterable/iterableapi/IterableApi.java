@@ -26,7 +26,7 @@ import java.util.UUID;
  * Created by David Truong dt@iterable.com
  */
 public class IterableApi {
-    //region SDK (private/internal)
+//region SDK (private/internal)
 //---------------------------------------------------------------------------------------
     static volatile IterableApi sharedInstance = new IterableApi();
 
@@ -109,10 +109,10 @@ public class IterableApi {
         }
 
         IterableUtil.saveExpirableJsonObject(
-            getPreferences(),
-            IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
-            attributionInfo.toJSONObject(),
-            3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+                getPreferences(),
+                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
+                attributionInfo.toJSONObject(),
+                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
         );
     }
 
@@ -355,13 +355,13 @@ public class IterableApi {
     }
 
     private void onLogin(
-        @Nullable String authToken,
-        String userIdOrEmail,
-        boolean isEmail,
-        boolean merge,
-        boolean replay,
-        boolean isUnknown,
-        @Nullable IterableHelper.FailureHandler failureHandler
+            @Nullable String authToken,
+            String userIdOrEmail,
+            boolean isEmail,
+            boolean merge,
+            boolean replay,
+            boolean isUnknown,
+            @Nullable IterableHelper.FailureHandler failureHandler
     ) {
         if (!isInitialized()) {
             setAuthToken(null);
@@ -547,7 +547,7 @@ public class IterableApi {
     }
 //endregion
 
-    //region API functions (private/internal)
+//region API functions (private/internal)
 //---------------------------------------------------------------------------------------
     void setAuthToken(String authToken, boolean bypassAuth) {
         if (isInitialized()) {
@@ -620,30 +620,44 @@ public class IterableApi {
         }
 
         // Create a wrapper success handler that tracks consent before calling the original success handler
-        IterableHelper.SuccessHandler wrappedSuccessHandler = getSuccessHandler();
-
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, _setUserFailureCallbackHandler);
-    }
-
-    private IterableHelper.SuccessHandler getSuccessHandler() {
         IterableHelper.SuccessHandler wrappedSuccessHandler = null;
-        if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
+        if (_setUserSuccessCallbackHandler != null) {
             final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
-            wrappedSuccessHandler = data -> {
-                // Track consent now that user has been created/updated via device registration
-                trackConsentOnDeviceRegistration();
+            wrappedSuccessHandler = new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(@NonNull JSONObject data) {
+                    // Track consent now that user has been created/updated via device registration
+                    if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
+                        if (!getConsentLogged()) {
+                            boolean isUserKnown = (_userIdUnknown == null);
+                            trackConsentForUser(_email, _userId, isUserKnown);
+                            setConsentLogged(true);
+                        }
+                    }
 
-                // Call the original success handler if it exists
-                if (originalSuccessHandler != null) {
+                    // Call the original success handler
                     originalSuccessHandler.onSuccess(data);
                 }
             };
+        } else if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
+            // Even if there's no original success handler, we still need to track consent
+            wrappedSuccessHandler = new IterableHelper.SuccessHandler() {
+                @Override
+                public void onSuccess(@NonNull JSONObject data) {
+                    if (!getConsentLogged()) {
+                        boolean isUserKnown = (_userIdUnknown == null);
+                        trackConsentForUser(_email, _userId, isUserKnown);
+                        setConsentLogged(true);
+                    }
+                }
+            };
         }
-        return wrappedSuccessHandler;
+
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, _setUserFailureCallbackHandler);
     }
 //endregion
 
-    //region SDK initialization
+//region SDK initialization
 //---------------------------------------------------------------------------------------
     @NonNull
     public static IterableApi getInstance() {
@@ -671,15 +685,15 @@ public class IterableApi {
 
         if (sharedInstance.inAppManager == null) {
             sharedInstance.inAppManager = new IterableInAppManager(
-                sharedInstance,
-                sharedInstance.config.inAppHandler,
-                sharedInstance.config.inAppDisplayInterval,
-                sharedInstance.config.useInMemoryStorageForInApps);
+                    sharedInstance,
+                    sharedInstance.config.inAppHandler,
+                    sharedInstance.config.inAppDisplayInterval,
+                    sharedInstance.config.useInMemoryStorageForInApps);
         }
 
         if (sharedInstance.embeddedManager == null) {
             sharedInstance.embeddedManager = new IterableEmbeddedManager(
-                sharedInstance
+                    sharedInstance
             );
         }
 
@@ -753,7 +767,7 @@ public class IterableApi {
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
             throw new RuntimeException("IterableApi must be initialized before calling getInAppManager(). " +
-                "Make sure you call IterableApi#initialize() in Application#onCreate");
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return inAppManager;
     }
@@ -762,7 +776,7 @@ public class IterableApi {
     public IterableEmbeddedManager getEmbeddedManager() {
         if (embeddedManager == null) {
             throw new RuntimeException("IterableApi must be initialized before calling getEmbeddedManager(). " +
-                "Make sure you call IterableApi#initialize() in Application#onCreate");
+                    "Make sure you call IterableApi#initialize() in Application#onCreate");
         }
         return embeddedManager;
     }
@@ -778,7 +792,7 @@ public class IterableApi {
             return null;
         }
         return IterableAttributionInfo.fromJSONObject(
-            IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
+                IterableUtil.retrieveExpirableJsonObject(getPreferences(), IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY)
         );
     }
 
@@ -887,7 +901,7 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, authToken, null, successHandler, failureHandler, false);
+       setUserId(userId, authToken, null, successHandler, failureHandler, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
@@ -1308,10 +1322,10 @@ public class IterableApi {
     public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
-                "calling updateEmail");
+                    "calling updateEmail");
             if (failureHandler != null) {
                 failureHandler.onFailure("The Iterable SDK must be initialized with email or " +
-                    "userId before calling updateEmail", null);
+                        "userId before calling updateEmail", null);
             }
 
             return;
@@ -1525,19 +1539,6 @@ public class IterableApi {
     }
 
     /**
-     * Tracks consent during device registration if conditions are met.
-     */
-    private void trackConsentOnDeviceRegistration() {
-        if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
-            if (!getConsentLogged()) {
-                boolean isUserKnown = (_userIdUnknown == null);
-                trackConsentForUser(_email, _userId, isUserKnown);
-                setConsentLogged(true);
-            }
-        }
-    }
-
-    /**
      * Tracks user consent with the timestamp from when visitor usage was first tracked.
      * This should be called when transitioning from unknown to known user.
      * @param email User email (if available)
@@ -1639,7 +1640,7 @@ public class IterableApi {
     }
 //endregion
 
-    //region library scoped
+//region library scoped
 //---------------------------------------------------------------------------------------
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void trackInboxSession(@NonNull IterableInboxSession session) {
