@@ -619,10 +619,10 @@ public class IterableApi {
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        // Create a wrapper success handler that tracks consent before calling the original success handler
         IterableHelper.SuccessHandler wrappedSuccessHandler = getSuccessHandler();
+        IterableHelper.FailureHandler wrappedFailureHandler = getFailureHandler();
 
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, _setUserFailureCallbackHandler);
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, wrappedFailureHandler);
     }
 
     private IterableHelper.SuccessHandler getSuccessHandler() {
@@ -630,16 +630,29 @@ public class IterableApi {
         if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
             final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
             wrappedSuccessHandler = data -> {
-                // Track consent now that user has been created/updated via device registration
                 trackConsentOnDeviceRegistration();
 
-                // Call the original success handler if it exists
                 if (originalSuccessHandler != null) {
                     originalSuccessHandler.onSuccess(data);
                 }
             };
         }
         return wrappedSuccessHandler;
+    }
+
+    private IterableHelper.FailureHandler getFailureHandler() {
+        IterableHelper.FailureHandler wrappedFailureHandler = null;
+        if (_setUserFailureCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
+            final IterableHelper.FailureHandler originalFailureHandler = _setUserFailureCallbackHandler;
+            wrappedFailureHandler = (reason, data) -> {
+                trackConsentOnDeviceRegistration();
+
+                if (originalFailureHandler != null) {
+                    originalFailureHandler.onFailure(reason, data);
+                }
+            };
+        }
+        return wrappedFailureHandler;
     }
 //endregion
 
