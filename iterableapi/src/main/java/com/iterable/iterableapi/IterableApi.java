@@ -845,6 +845,7 @@ public class IterableApi {
 
         if (email == null) {
             unknownUserManager.setCriteriaMatched(false);
+            _userIdUnknown = null;
             setConsentLogged(false);
         }
 
@@ -914,6 +915,7 @@ public class IterableApi {
 
         if (userId == null) {
             unknownUserManager.setCriteriaMatched(false);
+            _userIdUnknown = null;
             setConsentLogged(false);
         }
 
