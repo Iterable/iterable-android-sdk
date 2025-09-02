@@ -339,7 +339,7 @@ public class IterableApiTest extends BaseTest {
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
 
         ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
-        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
+        verify(IterablePushRegistration.instance, atLeastOnce()).executePushRegistrationTask(capturedPushRegistrationData.capture());
         assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
 
         activityController.pause().stop().destroy();
