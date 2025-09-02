@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.6.0]
+
 ## [3.5.16]
 ### Added
 - Added offline support for disable push API requests, allowing requests to be queued and processed when network connectivity is restored
