@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -10,10 +10,51 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.iterable.androidsdk.MainActivity"
-    tools:showIn="@layout/activity_main">
+    tools:showIn="@layout/activity_main"
+    android:gravity="center"
+    android:orientation="vertical">
 
-    <TextView
+    <Button
+        android:id="@+id/btn_track_event"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
-</RelativeLayout>
+        android:text="Browse Mocha" />
+
+    <Button
+        android:id="@+id/btn_update_cart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Update cart" />
+
+    <Button
+        android:id="@+id/btn_buy_mocha"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Buy Black Coffee - $2" />
+
+    <Button
+        android:id="@+id/btn_buy_coffee"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Buy Black Coffee - $5" />
+
+    <Button
+        android:id="@+id/btn_set_user"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="set user id" />
+
+    <Button
+        android:id="@+id/btn_update_user"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="set user name" />
+
+    <Button
+        android:visibility="gone"
+        android:id="@+id/btn_logout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Logout"/>
+
+</LinearLayout>

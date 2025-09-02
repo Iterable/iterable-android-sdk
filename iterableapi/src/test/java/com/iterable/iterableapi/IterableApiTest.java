@@ -2,6 +2,8 @@ package com.iterable.iterableapi;
 
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -173,7 +175,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
-        IterableApi.getInstance().setEmail(email, null, new IterableHelper.SuccessHandler() {
+        IterableApi.getInstance().setEmail(email, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 assertTrue(true); // callback should be called with success
@@ -191,7 +193,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "test_user_id";
-        IterableApi.getInstance().setUserId(userId, null, new IterableHelper.SuccessHandler() {
+        IterableApi.getInstance().setUserId(userId, new IterableHelper.SuccessHandler() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 assertTrue(true); // callback should be called with success
@@ -865,5 +867,336 @@ public class IterableApiTest extends BaseTest {
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
+
+    //region Consent Logging Tests - Direct Unit Tests
+    //---------------------------------------------------------------------------------------
+
+    @Test
+    public void testTrackConsentForUser_WithValidConditions() throws Exception {
+        // Setup: Configure for consent logging
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setIdentityResolution(identityResolution)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        // Set up conditions for consent logging
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        IterableApi.getInstance().setEmail("test@example.com");
+
+        // Mock the API client to verify trackConsent is called
+        IterableApiClient mockClient = mock(IterableApiClient.class);
+        IterableApi.getInstance().apiClient = mockClient;
+
+        // Execute: Call trackConsentForUser directly
+        IterableApi.getInstance().trackConsentForUser("test@example.com", null, true);
+
+        // Verify: trackConsent was called on the API client
+        verify(mockClient).trackConsent(
+            nullable(String.class),
+            eq("test@example.com"),
+            any(Long.class),
+            eq(true)
+        );
+    }
+
+    @Test
+    public void testTrackConsentForUser_DoesNotCallWhenUnknownUserActivationDisabled() throws Exception {
+        // Setup: Configure WITHOUT unknown user activation
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(false)  // Disabled!
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        // Set up other conditions
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        IterableApi.getInstance().setEmail("test@example.com");
+
+        // Mock the API client
+        IterableApiClient mockClient = mock(IterableApiClient.class);
+        IterableApi.getInstance().apiClient = mockClient;
+
+        // Execute: Call trackConsentForUser
+        IterableApi.getInstance().trackConsentForUser("test@example.com", null, true);
+
+        // Verify: trackConsent was NOT called (unknown user activation disabled)
+        verify(mockClient, never()).trackConsent(any(), any(), any(Long.class), any(Boolean.class));
+    }
+
+    @Test
+    public void testTrackConsentForUser_DoesNotCallWhenVisitorUsageNotTracked() throws Exception {
+        // Setup: Configure for consent logging
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        // Set visitor usage NOT tracked
+        IterableApi.getInstance().setVisitorUsageTracked(false);
+        IterableApi.getInstance().setEmail("test@example.com");
+
+        // Mock the API client
+        IterableApiClient mockClient = mock(IterableApiClient.class);
+        IterableApi.getInstance().apiClient = mockClient;
+
+        // Execute: Call trackConsentForUser
+        IterableApi.getInstance().trackConsentForUser("test@example.com", null, true);
+
+        // Verify: trackConsent was NOT called (visitor usage not tracked)
+        verify(mockClient, never()).trackConsent(any(), any(), any(Long.class), any(Boolean.class));
+    }
+
+    @Test
+    public void testConsentLoggingConditions_AllTrue() throws Exception {
+        // Setup: All conditions should be true
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setIdentityResolution(identityResolution)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+
+        // Clear consent logged flag
+        SharedPreferences sharedPref = getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.remove(IterableConstants.SHARED_PREFS_CONSENT_LOGGED);
+        editor.apply();
+
+        IterableApi api = IterableApi.getInstance();
+
+        // Verify all conditions are met
+        assertTrue("enableUnknownUserActivation should be true", api.config.enableUnknownUserActivation);
+        assertTrue("getVisitorUsageTracked should be true", api.getVisitorUsageTracked());
+        assertTrue("getReplayOnVisitorToKnown should be true", api.config.identityResolution.getReplayOnVisitorToKnown());
+        assertFalse("getConsentLogged should be false",
+            sharedPref.getBoolean(IterableConstants.SHARED_PREFS_CONSENT_LOGGED, false));
+    }
+
+    @Test
+    public void testConsentLoggingConditions_ConsentAlreadyLogged() throws Exception {
+        // Setup
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setIdentityResolution(identityResolution)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+
+        // Set consent already logged
+        SharedPreferences sharedPref = getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(IterableConstants.SHARED_PREFS_CONSENT_LOGGED, true);
+        editor.apply();
+
+        // Verify consent is already logged
+        assertTrue("getConsentLogged should be true",
+            sharedPref.getBoolean(IterableConstants.SHARED_PREFS_CONSENT_LOGGED, false));
+    }
+
+    @Test
+    public void testRegisterDeviceTokenSuccessCallback_CreatesWrappedHandler() throws Exception {
+        // Setup
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setIdentityResolution(identityResolution)
+            .setAutoPushRegistration(false)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+
+        // Create a mock success handler
+        IterableHelper.SuccessHandler originalHandler = mock(IterableHelper.SuccessHandler.class);
+
+        // Set up user with success handler
+        IterableApi.getInstance().setEmail("test@example.com", originalHandler, null);
+
+        // Spy on the API client to capture the success handler passed to registerDeviceToken
+        IterableApiClient mockClient = spy(IterableApi.getInstance().apiClient);
+        IterableApi.getInstance().apiClient = mockClient;
+
+        // Execute: Call registerDeviceToken
+        IterableApi.getInstance().registerDeviceToken("test_token");
+
+        // Wait for async thread
+        Thread.sleep(100);
+        shadowOf(getMainLooper()).idle();
+
+        // Verify: registerDeviceToken was called with a success handler
+        ArgumentCaptor<IterableHelper.SuccessHandler> successCaptor = ArgumentCaptor.forClass(IterableHelper.SuccessHandler.class);
+        verify(mockClient, timeout(1000)).registerDeviceToken(
+            eq("test@example.com"),
+            nullable(String.class),
+            nullable(String.class),
+            any(String.class),
+            eq("test_token"),
+            nullable(JSONObject.class),
+            any(),
+            successCaptor.capture(),
+            nullable(IterableHelper.FailureHandler.class)
+        );
+
+        // The captured handler should not be null (a wrapper was created)
+        assertNotNull("Success handler should not be null", successCaptor.getValue());
+    }
+
+    @Test
+    public void testRegisterDeviceTokenSuccessCallback_WithoutOriginalHandler() throws Exception {
+        // Setup
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setIdentityResolution(identityResolution)
+            .setAutoPushRegistration(false)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        IterableApi.getInstance().setUserId("test_user_123");
+
+        // Spy on the API client to capture the success handler passed to registerDeviceToken
+        IterableApiClient mockClient = spy(IterableApi.getInstance().apiClient);
+        IterableApi.getInstance().apiClient = mockClient;
+
+        // Execute: Call registerDeviceToken without setting an explicit success handler
+        IterableApi.getInstance().registerDeviceToken("test_token");
+
+        // Wait for async thread
+        Thread.sleep(100);
+        shadowOf(getMainLooper()).idle();
+
+        // Verify: registerDeviceToken was called with a success handler (the wrapper)
+        ArgumentCaptor<IterableHelper.SuccessHandler> successCaptor = ArgumentCaptor.forClass(IterableHelper.SuccessHandler.class);
+        verify(mockClient, timeout(1000)).registerDeviceToken(
+            nullable(String.class),
+            eq("test_user_123"),
+            nullable(String.class),
+            any(String.class),
+            eq("test_token"),
+            nullable(JSONObject.class),
+            any(),
+            successCaptor.capture(),
+            nullable(IterableHelper.FailureHandler.class)
+        );
+
+        // The captured handler should not be null (wrapper was created for consent logging)
+        assertNotNull("Success handler should not be null", successCaptor.getValue());
+    }
+
+    @Test
+    public void testRegisterDeviceTokenIntegration_ConsentLoggingTriggered() throws Exception {
+        // Setup: Mock server responses
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));  // for registerDeviceToken
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));  // for trackConsent
+
+        // Setup: Configure for consent logging
+        IterableIdentityResolution identityResolution = new IterableIdentityResolution(true, true);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setIdentityResolution(identityResolution)
+            .setAutoPushRegistration(false)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        // Set up conditions for consent logging
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+
+        // Create a success handler and set user
+        IterableHelper.SuccessHandler successHandler = mock(IterableHelper.SuccessHandler.class);
+        IterableApi.getInstance().setEmail("test@example.com", successHandler, null);
+
+        // Execute: Register device token
+        IterableApi.getInstance().registerDeviceToken("test_token");
+
+        // Wait for async operations
+        Thread.sleep(200);
+        shadowOf(getMainLooper()).idle();
+
+        // Verify: At least 2 requests were made (registerDeviceToken + consent, potentially others for auth)
+        assertTrue("Should have made at least 2 requests", server.getRequestCount() >= 2);
+
+        // Verify: consent request was made (check all requests for it)
+        boolean foundRegisterRequest = false;
+        boolean foundConsentRequest = false;
+
+        for (int i = 0; i < server.getRequestCount(); i++) {
+            RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+            if (request != null) {
+                if (request.getPath().contains("registerDeviceToken")) {
+                    foundRegisterRequest = true;
+                } else if (request.getPath().contains("unknownuser/consent")) {
+                    foundConsentRequest = true;
+                }
+            }
+        }
+
+        assertTrue("Should have made registerDeviceToken request", foundRegisterRequest);
+        assertTrue("Should have made consent request", foundConsentRequest);
+
+        // Verify: Original success handler was called at least once
+        verify(successHandler, atLeastOnce()).onSuccess(any(JSONObject.class));
+    }
+
+    @Test
+    public void testRegisterDeviceTokenIntegration_ConsentLoggingNotTriggeredWhenDisabled() throws Exception {
+        // Setup: Mock server response
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));  // for registerDeviceToken only
+
+        // Setup: Configure WITHOUT consent logging (unknown user activation disabled)
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(false)  // Disabled
+            .setAutoPushRegistration(false)
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        // Set up other conditions
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        IterableHelper.SuccessHandler successHandler = mock(IterableHelper.SuccessHandler.class);
+        IterableApi.getInstance().setEmail("test@example.com", successHandler, null);
+
+        // Execute: Register device token
+        IterableApi.getInstance().registerDeviceToken("test_token");
+
+        // Wait for async operations
+        Thread.sleep(200);
+        shadowOf(getMainLooper()).idle();
+
+        // Verify: At least one request was made but no consent
+        assertTrue("Should have made at least 1 request", server.getRequestCount() >= 1);
+
+        // Verify: No consent request was made (check all requests)
+        boolean foundRegisterRequest = false;
+        boolean foundConsentRequest = false;
+
+        for (int i = 0; i < server.getRequestCount(); i++) {
+            RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+            if (request != null) {
+                if (request.getPath().contains("registerDeviceToken")) {
+                    foundRegisterRequest = true;
+                } else if (request.getPath().contains("unknownuser/consent")) {
+                    foundConsentRequest = true;
+                }
+            }
+        }
+
+        assertTrue("Should have made registerDeviceToken request", foundRegisterRequest);
+        assertFalse("Should NOT have made consent request", foundConsentRequest);
+
+        // Verify: Original success handler was called at least once
+        verify(successHandler, atLeastOnce()).onSuccess(any(JSONObject.class));
+    }
+
+    //endregion
 
 }

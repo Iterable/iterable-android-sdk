@@ -256,4 +256,94 @@ public class IterableApiRequestTest {
         assertNotNull(request3);
         Assert.assertEquals("{\"currentEmail\":\"test@example.com\",\"newEmail\":\"another@email.com\"}", request3.getBody().readUtf8());
     }
+
+    @Test
+    public void testTrackConsentWithUserId() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        // Test track consent with userId
+        long timestamp = 1234567890L;
+        IterableApi.sharedInstance.apiClient.trackConsent("testUser123", null, timestamp, true);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(request);
+        Assert.assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
+
+        JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
+        assertTrue("Request should contain userId", requestJson.has("userId"));
+        assertTrue("Request should contain consentTimestamp", requestJson.has("consentTimestamp"));
+        assertTrue("Request should contain isUserKnown", requestJson.has("isUserKnown"));
+        assertTrue("Request should contain deviceInfo", requestJson.has("deviceInfo"));
+        assertFalse("Request should not contain email", requestJson.has("email"));
+
+        Assert.assertEquals("testUser123", requestJson.getString("userId"));
+        Assert.assertEquals(timestamp, requestJson.getLong("consentTimestamp"));
+        assertTrue("isUserKnown should be true", requestJson.getBoolean("isUserKnown"));
+    }
+
+    @Test
+    public void testTrackConsentWithEmail() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        // Test track consent with email
+        long timestamp = 9876543210L;
+        IterableApi.sharedInstance.apiClient.trackConsent(null, "test@example.com", timestamp, false);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(request);
+        Assert.assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
+
+        JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
+        assertTrue("Request should contain email", requestJson.has("email"));
+        assertTrue("Request should contain consentTimestamp", requestJson.has("consentTimestamp"));
+        assertTrue("Request should contain isUserKnown", requestJson.has("isUserKnown"));
+        assertTrue("Request should contain deviceInfo", requestJson.has("deviceInfo"));
+        assertFalse("Request should not contain userId", requestJson.has("userId"));
+
+        Assert.assertEquals("test@example.com", requestJson.getString("email"));
+        Assert.assertEquals(timestamp, requestJson.getLong("consentTimestamp"));
+        assertFalse("isUserKnown should be false", requestJson.getBoolean("isUserKnown"));
+    }
+
+    @Test
+    public void testTrackConsentWithBothUserIdAndEmail() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        // Test track consent with both userId and email
+        long timestamp = 1111111111L;
+        IterableApi.sharedInstance.apiClient.trackConsent("user456", "user@test.com", timestamp, true);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(request);
+        Assert.assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
+
+        JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
+        assertTrue("Request should contain userId", requestJson.has("userId"));
+        assertTrue("Request should contain email", requestJson.has("email"));
+        assertTrue("Request should contain consentTimestamp", requestJson.has("consentTimestamp"));
+        assertTrue("Request should contain isUserKnown", requestJson.has("isUserKnown"));
+        assertTrue("Request should contain deviceInfo", requestJson.has("deviceInfo"));
+
+        Assert.assertEquals("user456", requestJson.getString("userId"));
+        Assert.assertEquals("user@test.com", requestJson.getString("email"));
+        Assert.assertEquals(timestamp, requestJson.getLong("consentTimestamp"));
+        assertTrue("isUserKnown should be true", requestJson.getBoolean("isUserKnown"));
+    }
+
+    @Test
+    public void testTrackConsentRequestHeaders() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        // Test track consent headers
+        long timestamp = 2222222222L;
+        IterableApi.sharedInstance.apiClient.trackConsent("headerTestUser", null, timestamp, false);
+
+        RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(request);
+        Assert.assertEquals("/" + IterableConstants.ENDPOINT_TRACK_CONSENT, request.getPath());
+        Assert.assertEquals("Android", request.getHeader(IterableConstants.HEADER_SDK_PLATFORM));
+        Assert.assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
+        Assert.assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
+        assertNotNull("sentAt header should be present", request.getHeader(IterableConstants.KEY_SENT_AT));
+    }
 }
