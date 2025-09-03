@@ -4,6 +4,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.6.0]
+#### Added
+- Introduces support for Unknown user activation: a feature that allows marketers to convert valuable visitors into customers. With this feature, the SDK can:
+    - Fetch unknown user profile creation criteria from your Iterable project, and then automatically create Iterable user profiles for unknown users who meet these criteria.
+    - Save information about a visitor's previous interactions with your application to their unknown user profile, after it's created.
+    - Display personalized messages for unknown users (in-app, push, and embedded messages).
+    - Merge unknown user profiles into an existing, known user profiles (when needed).
+- `IterableConfig` is updated with an `enableUnknownUserActivation` flag that needs to be set to true to allow use of the unknown user activation functionality
+- To learn more, read [Unknown User Activation: Developer Docs](https://support.iterable.com/hc/sections/40078809116180).
+
 ## [3.5.16]
 ### Added
 - Added offline support for disable push API requests, allowing requests to be queued and processed when network connectivity is restored

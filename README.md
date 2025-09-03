@@ -35,6 +35,7 @@ To learn more about various SDK features, read:
 - [Android App Links](https://support.iterable.com/hc/articles/360035127392)
 - [Deep Links in Push Notifications](https://support.iterable.com/hc/articles/360035453971)
 - [Embedded Messages with Iterable's Android SDK](https://support.iterable.com/hc/articles/23061877893652)
+- [Unknown User Activation: Developer Docs](https://support.iterable.com/hc/sections/40078809116180)
 
 ## Sample projects
 
