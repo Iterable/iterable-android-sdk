@@ -4,6 +4,47 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.6.0]
+#### Added
+- Introduces support for Unknown user activation: a feature that allows marketers to convert valuable visitors into customers. With this feature, the SDK can:
+    - Fetch unknown user profile creation criteria from your Iterable project, and then automatically create Iterable user profiles for unknown users who meet these criteria.
+    - Save information about a visitor's previous interactions with your application to their unknown user profile, after it's created.
+    - Display personalized messages for unknown users (in-app, push, and embedded messages).
+    - Merge unknown user profiles into an existing, known user profiles (when needed).
+- `IterableConfig` is updated with an `enableUnknownUserActivation` flag that needs to be set to true to allow use of the unknown user activation functionality
+- Unknown user activation is currently in public beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
+- To learn more, read [Unknown User Activation: Developer Docs](https://support.iterable.com/hc/sections/40078809116180).
+
+## [3.5.16]
+### Added
+- Added offline support for disable push API requests, allowing requests to be queued and processed when network connectivity is restored
+
+### Fixed
+- Fixed KeyStoreException crash on Nexus 5 devices by adding proper error handling for SecretKeyEntry operations
+- Added graceful fallback to plaintext storage when encryption initialization fails
+
+## [3.5.15]
+### Fixed
+- Fixed JWT token refresh issues when app is in background, ensuring reliable token refresh in all app states
+- Fixed inbox metadata null check issues to prevent crashes in inbox display
+
+### Changed
+- Migrated embedded message OOTB views to use Material Design buttons for better UI consistency
+- Updated sample app Gradle configuration to use newer versions for better compatibility
+
+## [3.6.0-beta3]
+
+### Added
+- Added consent logging functionality for unknown user activation feature
+
+### Changed
+- Enhanced unknown user activation with improved criteria fetching and user ID generation logic
+
+### Fixed
+- Fixed unknown user activation to ensure criteria is fetched on foregrounding the app by default
+- Fixed unknown user ID generation to only occur once when multiple track calls are made
+- Fixed consent timestamp handling when consent is revoked
+
 ## [3.5.14]
 ### Fixed
 - Fixed auth token refresh when app is in background, ensuring reliable token refresh in all app states.
@@ -45,6 +86,14 @@ IterableApi.initialize(context, apiKey, config);
 ### Added
 - Added support for providing a list of placement ids to sync only certain placement ids.
 - support for pre-release automation
+
+## [3.6.0-beta2]
+
+### Fixed
+- This release includes fixes for the Unknown user activation private beta:
+  - Criteria is now fetched on foregrounding the app by default. This feature can be turned off setting enableForegroundCriteriaFetch flag to false.
+  - Unknown user ids are only generated once when multiple track calls are made.
+- Unknown user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
 
 ## [3.5.10]
 
@@ -91,6 +140,16 @@ IterableApi.initialize(context, apiKey, config);
 - Fixed `ConcurrentModificationException` leading to crashes during application launches.
 - Addressed a text truncation issue in Embedded Message templates for applications targeting Android 14 and Android 15.
 - Improved InboxActivity compatibility with edge-to-edge layouts, ensuring seamless handling of notches and display cutouts.
+
+## [3.6.0-beta1]
+
+#### Added
+- This release includes initial support for Unknown user activation, a feature that allows marketers to convert valuable visitors into customers. With this feature, the SDK can:
+  - Fetch unknown user profile creation criteria from your Iterable project, and then automatically create Iterable user profiles for unknown users who meet these criteria.
+  - Save information about a visitor's previous interactions with your application to their unknown user profile, after it's created.
+  - Display personalized messages for unknown users (in-app, push, and embedded messages).
+  - Merge unknown user profiles into an existing, known user profiles (when needed).
+- Unknown user activation is currently in private beta. If you'd like to learn more about it or discuss using it, talk to your Iterable customer success manager (who can also provide detailed documentation).
 
 ## [3.5.3]
 #### Fixed

@@ -62,6 +62,11 @@ public class IterableConfig {
     final IterableAuthHandler authHandler;
 
     /**
+     * Handler that can be used to retrieve the unknown user id
+     */
+    final IterableUnknownUserHandler iterableUnknownUserHandler;
+
+    /**
      * Duration prior to an auth expiration that a new auth token should be requested.
      */
     final long expiringAuthTokenRefreshPeriod;
@@ -88,6 +93,24 @@ public class IterableConfig {
      */
     final boolean useInMemoryStorageForInApps;
 
+    final boolean encryptionEnforced;
+
+    /**
+     * Enables unknown user activation
+     */
+    final boolean enableUnknownUserActivation;
+
+    /**
+     * Toggles fetching of unknown user criteria on foregrounding when set to true
+     * By default, the SDK will fetch unknown user criteria on foregrounding.
+     */
+    final boolean enableForegroundCriteriaFetch;
+
+    /**
+     * The number of unknown user events stored in local storage
+     */
+    final int eventThresholdLimit;
+
     /**
      * Allows for fetching embedded messages.
      */
@@ -98,6 +121,12 @@ public class IterableConfig {
      * By default, encryption is enabled for storing sensitive user data.
      */
     final boolean keychainEncryption;
+
+    /**
+     * This controls whether the SDK should allow event replay from local storage to logged in profile
+     * and merging between the generated unknown user profile and the logged in profile by default.
+     */
+    final IterableIdentityResolution identityResolution;
 
     /**
      * Handler for decryption failures of PII information.
@@ -126,8 +155,14 @@ public class IterableConfig {
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
+        encryptionEnforced = builder.encryptionEnforced;
+        enableUnknownUserActivation = builder.enableUnknownUserActivation;
+        enableForegroundCriteriaFetch = builder.enableForegroundCriteriaFetch;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
         keychainEncryption = builder.keychainEncryption;
+        eventThresholdLimit = builder.eventThresholdLimit;
+        identityResolution = builder.identityResolution;
+        iterableUnknownUserHandler = builder.iterableUnknownUserHandler;
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
     }
@@ -147,12 +182,28 @@ public class IterableConfig {
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
-        private boolean enableEmbeddedMessaging = false;
         private boolean keychainEncryption = true;
-        private IterableDecryptionFailureHandler decryptionFailureHandler;
         private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
+        private IterableDecryptionFailureHandler decryptionFailureHandler;
+        private boolean encryptionEnforced = false;
+        private boolean enableUnknownUserActivation = false;
+        private boolean enableForegroundCriteriaFetch = true;
+        private boolean enableEmbeddedMessaging = false;
+        private int eventThresholdLimit = 100;
+        private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
+        private IterableUnknownUserHandler iterableUnknownUserHandler;
 
         public Builder() {}
+
+        /**
+         * Set a custom unknown user handler which is called when an unknown user is generated
+         * @param iterableUnknownUserHandler Custom unknown user handler provided by the app
+         */
+        @NonNull
+        public Builder setUnknownUserHandler(@NonNull IterableUnknownUserHandler iterableUnknownUserHandler) {
+            this.iterableUnknownUserHandler = iterableUnknownUserHandler;
+            return this;
+        }
 
         /**
          * Push integration name - used for token registration
@@ -303,6 +354,35 @@ public class IterableConfig {
         }
 
         /**
+         * Set whether the SDK should track events for unknown users. Set this to `true`
+         * if you want to track all events when users are not logged into the application.
+         * @param enableUnknownUserActivation `true` will track events for unknown users.
+         */
+        public Builder setEnableUnknownUserActivation(boolean enableUnknownUserActivation) {
+            this.enableUnknownUserActivation = enableUnknownUserActivation;
+            return this;
+        }
+
+        /**
+         * Set whether the SDK should disable criteria fetching on foregrounding. Set this to `false`
+         * if you want criteria to only be fetched on app launch.
+         * @param enableForegroundCriteriaFetch `true` will fetch criteria only on app launch.
+         */
+        public Builder setEnableForegroundCriteriaFetch(boolean enableForegroundCriteriaFetch) {
+            this.enableForegroundCriteriaFetch = enableForegroundCriteriaFetch;
+            return this;
+        }
+
+        /**
+         * Set the number of unknown user events stored in local storage
+         * @param eventThresholdLimit the number of unknown user events stored in local storage
+         */
+        public Builder setEventThresholdLimit(int eventThresholdLimit) {
+            this.eventThresholdLimit = eventThresholdLimit;
+            return this;
+        }
+
+        /**
          * Allows for fetching embedded messages.
          * @param enableEmbeddedMessaging `true` will allow automatically fetching embedded messaging.
          */
@@ -319,6 +399,18 @@ public class IterableConfig {
         @NonNull
         public Builder setKeychainEncryption(boolean keychainEncryption) {
             this.keychainEncryption = keychainEncryption;
+            return this;
+        }
+
+        /**
+         * Set whether the SDK should replay events from local storage to the logged in profile
+         * and set whether the SDK should merge the generated unknown user profile and the logged in profile.
+         * This can be overwritten by a parameter passed into setEmail or setUserId.
+         * @param identityResolution identify resolution object
+         * @return
+         */
+        public Builder setIdentityResolution(IterableIdentityResolution identityResolution) {
+            this.identityResolution = identityResolution;
             return this;
         }
 

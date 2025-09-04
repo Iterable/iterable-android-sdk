@@ -11,6 +11,7 @@ class IterableKeychain {
         private const val TAG = "IterableKeychain"
         const val KEY_EMAIL = "iterable-email"
 		const val KEY_USER_ID = "iterable-user-id"
+        const val KEY_UNKNOWN_USER_ID = "iterable-unknown-user-id"
 		const val KEY_AUTH_TOKEN = "iterable-auth-token"
         private const val PLAINTEXT_SUFFIX = "_plaintext"
         private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
@@ -38,11 +39,17 @@ class IterableKeychain {
         this.decryptionFailureHandler = decryptionFailureHandler
         this.encryption = encryption && sharedPrefs.getBoolean(KEY_ENCRYPTION_ENABLED, true)
 
-        if (!encryption) {
+        if (!this.encryption) {
             IterableLogger.v(TAG, "SharedPreferences being used without encryption")
         } else {
-            encryptor = IterableDataEncryptor()
-            IterableLogger.v(TAG, "SharedPreferences being used with encryption")
+            try {
+                encryptor = IterableDataEncryptor()
+                IterableLogger.v(TAG, "SharedPreferences being used with encryption")
+            } catch (e: Exception) {
+                IterableLogger.e(TAG, "Failed to initialize encryption, falling back to plain text", e)
+                handleDecryptionError(e)
+                return
+            }
 
             try {
                 val dataMigrator = migrator ?: IterableKeychainEncryptedDataMigrator(context, sharedPrefs, this)
@@ -74,6 +81,7 @@ class IterableKeychain {
         sharedPrefs.edit()
             .remove(KEY_EMAIL)
             .remove(KEY_USER_ID)
+            .remove(KEY_UNKNOWN_USER_ID)
             .remove(KEY_AUTH_TOKEN)
             .putBoolean(KEY_ENCRYPTION_ENABLED, false)
             .apply()
@@ -153,4 +161,7 @@ class IterableKeychain {
 
     fun getAuthToken() = secureGet(KEY_AUTH_TOKEN)
     fun saveAuthToken(authToken: String?) = secureSave(KEY_AUTH_TOKEN, authToken)
+
+    fun getUserIdUnknown() = secureGet(KEY_UNKNOWN_USER_ID)
+    fun saveUserIdUnknown(userIdUnknown: String?) = secureSave(KEY_UNKNOWN_USER_ID, userIdUnknown)
 }

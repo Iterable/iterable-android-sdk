@@ -19,6 +19,7 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -35,6 +36,7 @@ public class IterableApi {
     private String _apiKey;
     private String _email;
     private String _userId;
+    String _userIdUnknown;
     private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
@@ -45,6 +47,8 @@ public class IterableApi {
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    private static final UnknownUserMerge unknownUserMerge = new UnknownUserMerge();
+    private @Nullable UnknownUserManager unknownUserManager;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
@@ -350,7 +354,15 @@ public class IterableApi {
         apiClient.onLogout();
     }
 
-    private void onLogin(@Nullable String authToken) {
+    private void onLogin(
+            @Nullable String authToken,
+            String userIdOrEmail,
+            boolean isEmail,
+            boolean merge,
+            boolean replay,
+            boolean isUnknown,
+            @Nullable IterableHelper.FailureHandler failureHandler
+    ) {
         if (!isInitialized()) {
             setAuthToken(null);
             return;
@@ -359,8 +371,9 @@ public class IterableApi {
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
+            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
         } else {
-            getAuthManager().requestNewAuthToken(false);
+            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler));
         }
     }
 
@@ -424,7 +437,7 @@ public class IterableApi {
         return _apiKey != null && (_email != null || _userId != null);
     }
 
-    private boolean checkSDKInitialization() {
+    boolean checkSDKInitialization() {
         if (!isInitialized()) {
             IterableLogger.w(TAG, "Iterable SDK must be initialized with an API key and user email/userId before calling SDK methods");
             return false;
@@ -455,6 +468,7 @@ public class IterableApi {
         if (iterableKeychain != null) {
             iterableKeychain.saveEmail(_email);
             iterableKeychain.saveUserId(_userId);
+            iterableKeychain.saveUserIdUnknown(_userIdUnknown);
             iterableKeychain.saveAuthToken(_authToken);
         } else {
             IterableLogger.e(TAG, "Shared preference creation failed. ");
@@ -469,6 +483,7 @@ public class IterableApi {
         if (iterableKeychain != null) {
             _email = iterableKeychain.getEmail();
             _userId = iterableKeychain.getUserId();
+            _userIdUnknown = iterableKeychain.getUserIdUnknown();
             _authToken = iterableKeychain.getAuthToken();
         } else {
             IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
@@ -495,6 +510,12 @@ public class IterableApi {
         @Override
         public String getUserId() {
             return _userId;
+        }
+
+        @Nullable
+        @Override
+        public String getUserIdUnknown() {
+            return _userIdUnknown;
         }
 
         @Nullable
@@ -542,6 +563,12 @@ public class IterableApi {
 
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
         if (deviceToken != null) {
+            if (!checkSDKInitialization() && _userIdUnknown == null) {
+                if (sharedInstance.config.enableUnknownUserActivation) {
+                    unknownUserManager.trackUnknownTokenRegistration(deviceToken);
+                }
+                return;
+            }
             final Thread registrationThread = new Thread(new Runnable() {
                 public void run() {
                     registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
@@ -592,7 +619,40 @@ public class IterableApi {
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, _setUserSuccessCallbackHandler, _setUserFailureCallbackHandler);
+        IterableHelper.SuccessHandler wrappedSuccessHandler = getSuccessHandler();
+        IterableHelper.FailureHandler wrappedFailureHandler = getFailureHandler();
+
+        apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, wrappedFailureHandler);
+    }
+
+    private IterableHelper.SuccessHandler getSuccessHandler() {
+        IterableHelper.SuccessHandler wrappedSuccessHandler = null;
+        if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
+            final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
+            wrappedSuccessHandler = data -> {
+                trackConsentOnDeviceRegistration();
+
+                if (originalSuccessHandler != null) {
+                    originalSuccessHandler.onSuccess(data);
+                }
+            };
+        }
+        return wrappedSuccessHandler;
+    }
+
+    private IterableHelper.FailureHandler getFailureHandler() {
+        IterableHelper.FailureHandler wrappedFailureHandler = null;
+        if (_setUserFailureCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
+            final IterableHelper.FailureHandler originalFailureHandler = _setUserFailureCallbackHandler;
+            wrappedFailureHandler = (reason, data) -> {
+                trackConsentOnDeviceRegistration();
+
+                if (originalFailureHandler != null) {
+                    originalFailureHandler.onFailure(reason, data);
+                }
+            };
+        }
+        return wrappedFailureHandler;
     }
 //endregion
 
@@ -636,16 +696,32 @@ public class IterableApi {
             );
         }
 
+        if (sharedInstance.unknownUserManager == null) {
+            sharedInstance.unknownUserManager = new UnknownUserManager(
+                sharedInstance
+            );
+        }
+
         loadLastSavedConfiguration(context);
+        IterablePushNotificationUtil.processPendingAction(context);
+
+        if (!sharedInstance.checkSDKInitialization()
+            && sharedInstance._userIdUnknown == null
+            && sharedInstance.config.enableUnknownUserActivation
+            && sharedInstance.getVisitorUsageTracked()) {
+            sharedInstance.unknownUserManager.updateUnknownSession();
+            sharedInstance.unknownUserManager.getCriteria();
+        }
+
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
             try {
                 JSONObject dataFields = new JSONObject();
                 JSONObject deviceDetails = new JSONObject();
                 DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
-                sharedInstance.apiClient.updateUser(dataFields, false);
+                sharedInstance.updateUser(dataFields, false);
             } catch (JSONException e) {
-                    IterableLogger.e(TAG, "initialize: exception", e);
+                IterableLogger.e(TAG, "initialize: exception", e);
             }
         }
     }
@@ -726,24 +802,42 @@ public class IterableApi {
     public void pauseAuthRetries(boolean pauseRetry) {
         getAuthManager().pauseAuthRetries(pauseRetry);
         if (!pauseRetry) { // request new auth token as soon as unpause
-            getAuthManager().requestNewAuthToken(false);
+            getAuthManager().requestNewAuthToken(false, null);
         }
     }
 
     public void setEmail(@Nullable String email) {
-        setEmail(email, null, null, null);
+        setEmail(email, null, null, null, null);
+    }
+
+    public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution) {
+        setEmail(email, null, identityResolution, null, null);
     }
 
     public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, null, successHandler, failureHandler);
+        setEmail(email, null, null, successHandler, failureHandler);
+    }
+
+    public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        setEmail(email, null, identityResolution, successHandler, failureHandler);
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
-        setEmail(email, authToken, null, null);
+        setEmail(email, authToken, null, null, null);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable String authToken, IterableIdentityResolution identityResolution) {
+        setEmail(email, authToken, identityResolution, null, null);
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        //Only if passed in same non-null email
+        setEmail(email, authToken, null, successHandler, failureHandler);
+    }
+
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        boolean replay = isReplay(iterableIdentityResolution);
+        boolean merge = isMerge(iterableIdentityResolution);
+
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -757,27 +851,63 @@ public class IterableApi {
 
         _email = email;
         _userId = null;
+
+        if (config.authHandler == null) {
+            attemptMergeAndEventReplay(email, true, merge, replay, false, failureHandler);
+        }
+
+        if (email == null) {
+            unknownUserManager.setCriteriaMatched(false);
+            _userIdUnknown = null;
+            setConsentLogged(false);
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
-        onLogin(authToken);
+        onLogin(authToken, email, true, merge, replay, false, failureHandler);
+    }
+
+    public void setUnknownUser(@Nullable String userId) {
+        _userIdUnknown = userId;
+        setUserId(userId, null, null, null, null, true);
+        storeAuthData();
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null, null, null);
+        setUserId(userId, null, null, null, null, false);
+    }
+
+    public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution) {
+        setUserId(userId, null, identityResolution, null, null, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, successHandler, failureHandler);
+        setUserId(userId, null, null, successHandler, failureHandler, false);
+    }
+
+    public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        setUserId(userId, null, identityResolution, successHandler, failureHandler, false);
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        setUserId(userId, authToken, null, null);
+        setUserId(userId, authToken, null, null, null, false);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable String authToken, IterableIdentityResolution identityResolution) {
+        setUserId(userId, authToken, identityResolution, null, null, false);
+
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        //If same non null userId is passed
+       setUserId(userId, authToken, null, successHandler, failureHandler, false);
+    }
+
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
+        boolean replay = isReplay(iterableIdentityResolution);
+        boolean merge = isMerge(iterableIdentityResolution);
+
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
             return;
@@ -791,11 +921,59 @@ public class IterableApi {
 
         _email = null;
         _userId = userId;
+
+        if (config.authHandler == null) {
+            attemptMergeAndEventReplay(userId, false, merge, replay, isUnknown, failureHandler);
+        }
+
+        if (userId == null) {
+            unknownUserManager.setCriteriaMatched(false);
+            _userIdUnknown = null;
+            setConsentLogged(false);
+        }
+
         _setUserSuccessCallbackHandler = successHandler;
         _setUserFailureCallbackHandler = failureHandler;
         storeAuthData();
 
-        onLogin(authToken);
+        onLogin(authToken, userId, false, merge, replay, isUnknown, failureHandler);
+    }
+
+    private boolean isMerge(@Nullable IterableIdentityResolution iterableIdentityResolution) {
+        return (iterableIdentityResolution != null) ? iterableIdentityResolution.getMergeOnUnknownToKnown() : config.identityResolution.getMergeOnUnknownToKnown();
+    }
+
+    private boolean isReplay(@Nullable IterableIdentityResolution iterableIdentityResolution) {
+        return (iterableIdentityResolution != null) ? iterableIdentityResolution.getReplayOnVisitorToKnown() : config.identityResolution.getReplayOnVisitorToKnown();
+    }
+
+    private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
+        if (config.enableUnknownUserActivation && getVisitorUsageTracked()) {
+
+            if (emailOrUserId != null && !emailOrUserId.equals(_userIdUnknown)) {
+                attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
+            }
+
+            if (replay && (_userId != null || _email != null)) {
+                unknownUserManager.syncEventsAndUserUpdate();
+            }
+
+            if (!isUnknown) {
+                _userIdUnknown = null;
+            }
+
+            unknownUserManager.clearVisitorEventsAndUserData();
+        }
+    }
+
+    private void attemptAndProcessMerge(@NonNull String destinationUser, boolean isEmail, boolean merge, IterableHelper.FailureHandler failureHandler, String unknownUserId) {
+        unknownUserMerge.tryMergeUser(apiClient, unknownUserId, destinationUser, isEmail, merge, (mergeResult, error) -> {
+            if (!(Objects.equals(mergeResult, IterableConstants.MERGE_SUCCESSFUL) || Objects.equals(mergeResult, IterableConstants.MERGE_NOTREQUIRED))) {
+                if (failureHandler != null) {
+                    failureHandler.onFailure(error, null);
+                }
+            }
+        });
     }
 
     public void setAuthToken(String authToken) {
@@ -1055,7 +1233,10 @@ public class IterableApi {
      */
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && _userIdUnknown == null) {
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownEvent(eventName, dataFields);
+            }
             return;
         }
 
@@ -1067,7 +1248,10 @@ public class IterableApi {
      * @param items
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && _userIdUnknown == null) {
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownUpdateCart(items);
+            }
             return;
         }
 
@@ -1090,12 +1274,9 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        if (!checkSDKInitialization()) {
-            return;
-        }
-
-        apiClient.trackPurchase(total, items, dataFields, null);
+        trackPurchase(total, items, dataFields, null);
     }
+
 
     /**
      * Tracks a purchase.
@@ -1105,7 +1286,10 @@ public class IterableApi {
      * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && _userIdUnknown == null) {
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
+            }
             return;
         }
 
@@ -1157,7 +1341,7 @@ public class IterableApi {
                 }
 
                 storeAuthData();
-                getAuthManager().requestNewAuthToken(false);
+                getAuthManager().requestNewAuthToken(false, null);
 
                 if (successHandler != null) {
                     successHandler.onSuccess(data);
@@ -1180,7 +1364,10 @@ public class IterableApi {
      * @param mergeNestedObjects
      */
     public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
-        if (!checkSDKInitialization()) {
+        if (!checkSDKInitialization() && _userIdUnknown == null) {
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownUpdateUser(dataFields);
+            }
             return;
         }
 
@@ -1300,6 +1487,87 @@ public class IterableApi {
         }
 
         apiClient.trackEmbeddedClick(message, buttonIdentifier, clickedUrl);
+    }
+
+    public void setVisitorUsageTracked(@NonNull Boolean isSetVisitorUsageTracked) {
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(IterableConstants.SHARED_PREFS_UNKNOWN_SESSIONS, "");
+        editor.putString(IterableConstants.SHARED_PREFS_EVENT_LIST_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
+        editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, "");
+        editor.putBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, isSetVisitorUsageTracked);
+
+        if (isSetVisitorUsageTracked) {
+            editor.putLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
+        } else {
+            editor.remove(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME);
+        }
+
+        editor.apply();
+
+        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
+            unknownUserManager.updateUnknownSession();
+            unknownUserManager.getCriteria();
+        }
+    }
+
+    public boolean getVisitorUsageTracked() {
+        SharedPreferences sharedPreferences = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED, false);
+    }
+
+    private boolean getConsentLogged() {
+        if (_applicationContext == null) {
+            return false;
+        }
+        SharedPreferences sharedPreferences = _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean(IterableConstants.SHARED_PREFS_CONSENT_LOGGED, false);
+    }
+
+    private void setConsentLogged(boolean consentLogged) {
+        if (_applicationContext == null) {
+            return;
+        }
+        SharedPreferences sharedPref = _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        if (consentLogged) {
+            editor.putBoolean(IterableConstants.SHARED_PREFS_CONSENT_LOGGED, true);
+        } else {
+            editor.remove(IterableConstants.SHARED_PREFS_CONSENT_LOGGED);
+        }
+        editor.apply();
+    }
+
+    /**
+     * Tracks consent during device registration if conditions are met.
+     */
+    private void trackConsentOnDeviceRegistration() {
+        if (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown()) {
+            if (!getConsentLogged()) {
+                boolean isUserKnown = (_userIdUnknown == null);
+                trackConsentForUser(_email, _userId, isUserKnown);
+                setConsentLogged(true);
+            }
+        }
+    }
+
+    /**
+     * Tracks user consent with the timestamp from when visitor usage was first tracked.
+     * This should be called when transitioning from unknown to known user.
+     * @param email User email (if available)
+     * @param userId User ID (if available)
+     * @param isUserKnown true if user is signing in (known user), false if user meets criteria and ID is generated
+     */
+    void trackConsentForUser(@Nullable String email, @Nullable String userId, boolean isUserKnown) {
+        if (!config.enableUnknownUserActivation || !getVisitorUsageTracked()) {
+            return;
+        }
+
+        SharedPreferences sharedPref = getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+        Long timeOfConsent = sharedPref.getLong(IterableConstants.SHARED_PREFS_VISITOR_USAGE_TRACKED_TIME, IterableUtil.currentTimeMillis());
+
+        apiClient.trackConsent(userId, email, timeOfConsent, isUserKnown);
     }
 
 //endregion
