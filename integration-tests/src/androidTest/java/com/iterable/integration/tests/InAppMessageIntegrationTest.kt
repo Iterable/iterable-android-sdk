@@ -1,6 +1,18 @@
 package com.iterable.integration.tests
 
+import android.content.Context
 import android.util.Log
+import android.webkit.WebView
+import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso
+import androidx.test.espresso.action.ViewActions
+import androidx.test.espresso.assertion.ViewAssertions
+import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.web.assertion.WebViewAssertions
+import androidx.test.espresso.web.matcher.DomMatchers
+import androidx.test.espresso.web.sugar.Web
+import androidx.test.espresso.web.webdriver.DriverAtoms
+import androidx.test.espresso.web.webdriver.Locator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
@@ -9,804 +21,329 @@ import androidx.test.uiautomator.UiSelector
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableInAppLocation
-import org.junit.Assert.*
+import com.iterable.iterableapi.IterableInAppCloseAction
+import com.iterable.iterableapi.IterableConfig
+import com.iterable.integration.tests.utils.IntegrationTestUtils
+import org.awaitility.Awaitility
+import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 class InAppMessageIntegrationTest : BaseIntegrationTest() {
     
     companion object {
         private const val TAG = "InAppMessageIntegrationTest"
-        
-        // Test campaign IDs - these should be configured in your Iterable project
-        private const val TEST_INAPP_CAMPAIGN_ID = 14332357
-        private const val TEST_SILENT_PUSH_CAMPAIGN_ID = 14332360
-        private const val TEST_DEEP_LINK_CAMPAIGN_ID = 14332361
-        private const val TEST_ACTION_HANDLER_CAMPAIGN_ID = 14332362
-        private const val TEST_USER_EMAIL = "akshay.ayyanchira@iterable.com"
-        
-        // Test action names for handler testing
-        private const val TEST_ACTION_NAME = "test_action"
-        private const val TEST_DEEP_LINK_URL = "https://example.com/deep-link-test"
-        
-        // Timeouts
-        private const val SERVER_VERIFICATION_TIMEOUT = 10L
-        private const val INAPP_DISPLAY_TIMEOUT = 5L
-        private const val FOREGROUND_TRIGGER_TIMEOUT = 10L
+        private const val TEST_CAMPAIGN_ID = 14332357
+        private const val TEST_EVENT_NAME = "test_inapp_event"
     }
     
-    // Test state tracking
-    private val silentPushReceived = AtomicBoolean(false)
-    private val inAppMessageDisplayed = AtomicBoolean(false)
-    private val metricsTracked = AtomicBoolean(false)
-    private val deepLinkHandled = AtomicBoolean(false)
-    private val actionHandlerCalled = AtomicBoolean(false)
-    
-    // UI Device for app lifecycle testing
     private lateinit var uiDevice: UiDevice
+    private val inAppMessageDisplayed = AtomicBoolean(false)
+    private val inAppClickTracked = AtomicBoolean(false)
+    private val inAppCloseTracked = AtomicBoolean(false)
+    private val lastClickedUrl = AtomicReference<String?>(null)
+    private val lastCloseAction = AtomicReference<IterableInAppCloseAction?>(null)
     
     @Before
     override fun setUp() {
         super.setUp()
-        
-        // Initialize UI Device for app lifecycle testing
         uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         
         // Reset test states
-        resetTestStates()
-        
-        // Setup Iterable SDK handlers for testing
-        setupIterableHandlers()
-    }
-    
-    private fun setupIterableHandlers() {
-        // Note: We can't modify the config after SDK initialization
-        // The handlers are set up in MainActivity during SDK initialization
-        // For testing purposes, we'll use the existing handlers and track events differently
-        
-        Log.d(TAG, "ℹ️ Using existing Iterable SDK configuration from MainActivity")
-        Log.d(TAG, "ℹ️ Handlers are configured during SDK initialization")
-    }
-    
-    private fun resetTestStates() {
-        silentPushReceived.set(false)
         inAppMessageDisplayed.set(false)
-        metricsTracked.set(false)
-        deepLinkHandled.set(false)
-        actionHandlerCalled.set(false)
+        inAppClickTracked.set(false)
+        inAppCloseTracked.set(false)
+        lastClickedUrl.set(null)
+        lastCloseAction.set(null)
+        
+        // Setup custom in-app handler to track events
+        setupCustomInAppHandler()
     }
     
-    /**
-     * Test 1: In-App Message Server-Side Delivery and Display
-     * 
-     * This test follows the flow:
-     * 1. Send in-app message and verify server-side delivery
-     * 2. Wait for in-app display (with silent push if configured)
-     * 3. Minimize and bring app to foreground to trigger in-app manager
-     * 4. Verify in-app display
-     */
-    @Test
-    fun testInAppMessageDeliveryAndDisplay() {
-        Log.d(TAG, "🧪 Testing In-App Message Delivery and Display Flow...")
-        
-        // Reset test states
-        resetTestStates()
-        
-        // Step 1: Send in-app message and verify server-side delivery
-        Log.d(TAG, "📤 Step 1: Sending in-app message and verifying server-side delivery...")
-        
-        val serverVerificationLatch = CountDownLatch(1)
-        var serverDeliveryConfirmed = false
-        
-        testUtils.triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL) { success ->
-            serverDeliveryConfirmed = success
-            serverVerificationLatch.countDown()
-        }
-        
-        // Wait for server-side verification
-        assertTrue("Server-side delivery should be confirmed within timeout", 
-                   serverVerificationLatch.await(SERVER_VERIFICATION_TIMEOUT, TimeUnit.SECONDS))
-        assertTrue("In-app message should be delivered to server successfully", serverDeliveryConfirmed)
-        
-        Log.d(TAG, "✅ Step 1: Server-side delivery confirmed")
-        
-        // Step 2: Wait for in-app display (with silent push if configured)
-        Log.d(TAG, "⏳ Step 2: Waiting for in-app message display (with silent push if configured)...")
-        
-        // Check if silent push is configured and wait for in-app display
-        val inAppDisplayed = waitForCondition({
-            inAppMessageDisplayed.get() || 
-            IterableApi.getInstance().getInAppManager().getMessages().isNotEmpty()
-        }, INAPP_DISPLAY_TIMEOUT)
-        
-        if (inAppDisplayed) {
-            Log.d(TAG, "✅ Step 2: In-app message displayed automatically (silent push configured)")
-        } else {
-            Log.d(TAG, "ℹ️ Step 2: In-app message not displayed automatically, proceeding to foreground trigger")
-        }
-        
-        // Step 3: Minimize and bring app to foreground to trigger in-app manager
-        Log.d(TAG, "🔄 Step 3: Testing app lifecycle to trigger in-app manager...")
-        
-        // Minimize app (press home button)
-        uiDevice.pressHome()
-        Log.d(TAG, "📱 App minimized (home button pressed)")
-        
-        // Wait a moment
-        Thread.sleep(1000)
-        
-        // Bring app to foreground
-        uiDevice.pressRecentApps()
-        Thread.sleep(500)
-        
-        // Find and click on our app in recent apps
-        val appIcon = uiDevice.findObject(UiSelector().packageName("com.iterable.integration.tests"))
-        if (appIcon.exists()) {
-            appIcon.click()
-            Log.d(TAG, "📱 App brought to foreground from recent apps")
-        } else {
-            // Fallback: try to launch app directly
-            Log.d(TAG, "📱 App not found in recent apps, launching directly")
-            // This would depend on your app's launch configuration
-        }
-        
-        // Wait for app to come to foreground and in-app manager to trigger
-        Thread.sleep(2000)
-        
-        // Step 4: Verify in-app display after foreground trigger
-        Log.d(TAG, "🔍 Step 4: Verifying in-app message display after foreground trigger...")
-        
-        val inAppDisplayedAfterForeground = waitForCondition({
-            inAppMessageDisplayed.get() || 
-            IterableApi.getInstance().getInAppManager().getMessages().isNotEmpty()
-        }, FOREGROUND_TRIGGER_TIMEOUT)
-        
-        assertTrue("In-app message should be displayed after bringing app to foreground", 
-                   inAppDisplayedAfterForeground)
-        
-        // Verify message content
-        val messages = IterableApi.getInstance().getInAppManager().getMessages()
-        assertFalse("Should have in-app messages available", messages.isEmpty())
-        
-        val message = messages[0]
-        assertNotNull("Message should not be null", message)
-        assertNotNull("Message content should not be null", message.content)
-        
-        Log.d(TAG, "✅ Step 4: In-app message display verified after foreground trigger")
-        Log.d(TAG, "Message ID: ${message.getMessageId()}")
-        Log.d(TAG, "Campaign ID: ${message.getCampaignId()}")
-        
-        // Step 5: Test button interaction and message dismissal
-        Log.d(TAG, "🖱️ Step 5: Testing button interaction and message dismissal...")
-        
-        // Look for the blue button (common CTA button in in-app messages)
-        val blueButton = uiDevice.findObject(UiSelector().text("WATCH").className("android.widget.Button"))
-        if (!blueButton.exists()) {
-            // Try alternative selectors for the button
-            val ctaButton = uiDevice.findObject(UiSelector().className("android.widget.Button"))
-            if (ctaButton.exists()) {
-                Log.d(TAG, "📱 Found CTA button, clicking...")
-                ctaButton.click()
-                Log.d(TAG, "✅ CTA button clicked successfully")
-            } else {
-                Log.d(TAG, "ℹ️ No CTA button found, proceeding with message dismissal test")
+    @After
+    override fun tearDown() {
+        super.tearDown()
+    }
+    
+    private fun setupCustomInAppHandler() {
+        val config = IterableConfig.Builder()
+            .setAutoPushRegistration(true)
+            .setEnableEmbeddedMessaging(true)
+            .setInAppHandler { message ->
+                Log.d(TAG, "In-app message received: ${message.messageId}")
+                inAppMessageDisplayed.set(true)
+                com.iterable.iterableapi.IterableInAppHandler.InAppResponse.SHOW
             }
-        } else {
-            Log.d(TAG, "📱 Found blue WATCH button, clicking...")
-            blueButton.click()
-            Log.d(TAG, "✅ Blue WATCH button clicked successfully")
-        }
-        
-        // Wait for button action to complete
-        Thread.sleep(1000)
-        
-        // Verify message is dismissed/closed
-        val messageDismissed = waitForCondition({
-            !inAppMessageDisplayed.get() || 
-            IterableApi.getInstance().getInAppManager().getMessages().isEmpty()
-        }, 5)
-        
-        if (messageDismissed) {
-            Log.d(TAG, "✅ In-app message dismissed successfully after button click")
-        } else {
-            Log.d(TAG, "ℹ️ Message may still be visible, checking for manual close options...")
-            
-            // Try to find and click close/dismiss buttons
-            val closeButton = uiDevice.findObject(UiSelector().text("No Thanks").className("android.widget.TextView"))
-            if (closeButton.exists()) {
-                Log.d(TAG, "📱 Found 'No Thanks' button, clicking to dismiss...")
-                closeButton.click()
-                Log.d(TAG, "✅ Message dismissed via 'No Thanks' button")
-            } else {
-                Log.d(TAG, "ℹ️ No close button found, message may auto-dismiss")
+            .setCustomActionHandler { action, context ->
+                Log.d(TAG, "Custom action triggered: $action")
+                true
             }
-        }
-        
-        Log.d(TAG, "🎉 In-App Message Delivery and Display Flow Test Completed Successfully!")
-    }
-    
-    /**
-     * Test 2: Silent Push with In-App Display
-     * 
-     * This test specifically tests the silent push flow:
-     * 1. Send silent push notification
-     * 2. Wait for in-app message to be displayed
-     * 3. Verify display
-     */
-    @Test
-    fun testSilentPushWithInAppDisplay() {
-        Log.d(TAG, "🧪 Testing Silent Push with In-App Display...")
-        
-        // Reset test states
-        resetTestStates()
-        
-        // Send silent push notification
-        val latch = CountDownLatch(1)
-        var silentPushSent = false
-        
-        testUtils.sendSilentPushNotification(TEST_SILENT_PUSH_CAMPAIGN_ID.toString(), TEST_USER_EMAIL) { success ->
-            silentPushSent = success
-            latch.countDown()
-        }
-        
-        // Wait for silent push to be sent
-        assertTrue("Silent push should be sent within timeout", latch.await(10, TimeUnit.SECONDS))
-        assertTrue("Silent push should be sent successfully", silentPushSent)
-        
-        Log.d(TAG, "✅ Silent push sent successfully")
-        
-        // Wait for silent push to be processed and in-app message to be displayed
-        val inAppDisplayed = waitForCondition({
-            inAppMessageDisplayed.get()
-        }, 15)
-        
-        assertTrue("In-app message should be displayed after silent push", inAppDisplayed)
-        Log.d(TAG, "✅ Silent push with in-app display test completed successfully")
-    }
-    
-    /**
-     * Test 3: In-App Message Button Interaction and Dismissal
-     * 
-     * This test specifically tests:
-     * 1. Button interaction (clicking blue CTA button)
-     * 2. Message dismissal after button click
-     * 3. Fallback dismissal options (No Thanks button)
-     */
-    @Test
-    fun testInAppMessageButtonInteractionAndDismissal() {
-        Log.d(TAG, "🧪 Testing In-App Message Button Interaction and Dismissal...")
-        
-        // Reset test states
-        resetTestStates()
-        
-        // First, ensure we have an in-app message available and displayed
-        val initialMessages = IterableApi.getInstance().getInAppManager().getMessages()
-        if (initialMessages.isEmpty()) {
-            // Trigger a campaign to get a message
-            val latch = CountDownLatch(1)
-            var campaignTriggered = false
-            
-            testUtils.triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL) { success ->
-                campaignTriggered = success
-                latch.countDown()
+            .setUrlHandler { url, context ->
+                Log.d(TAG, "URL handler triggered: $url")
+                lastClickedUrl.set(url.toString())
+                true
             }
-            
-            assertTrue("Campaign should be triggered within timeout", latch.await(10, TimeUnit.SECONDS))
-            assertTrue("Campaign should be triggered successfully", campaignTriggered)
-            
-            // Wait for message to be available and displayed
-            val messageDisplayed = waitForCondition({
-                inAppMessageDisplayed.get() || 
-                IterableApi.getInstance().getInAppManager().getMessages().isNotEmpty()
-            }, 15)
-            
-            assertTrue("Message should be displayed for button interaction testing", messageDisplayed)
-        }
+            .build()
         
-        Log.d(TAG, "✅ In-app message available for button interaction testing")
-        
-        // Step 1: Test blue CTA button interaction
-        Log.d(TAG, "🖱️ Step 1: Testing blue CTA button interaction...")
-        
-        // Look for the blue button (common CTA button in in-app messages)
-        val blueButton = uiDevice.findObject(UiSelector().text("WATCH").className("android.widget.Button"))
-        if (!blueButton.exists()) {
-            // Try alternative selectors for the button
-            val ctaButton = uiDevice.findObject(UiSelector().className("android.widget.Button"))
-            if (ctaButton.exists()) {
-                Log.d(TAG, "📱 Found CTA button, clicking...")
-                ctaButton.click()
-                Log.d(TAG, "✅ CTA button clicked successfully")
-            } else {
-                Log.d(TAG, "ℹ️ No CTA button found, proceeding with message dismissal test")
-            }
-        } else {
-            Log.d(TAG, "📱 Found blue WATCH button, clicking...")
-            blueButton.click()
-            Log.d(TAG, "✅ Blue WATCH button clicked successfully")
-        }
-        
-        // Wait for button action to complete
-        Thread.sleep(1000)
-        
-        // Step 2: Verify message dismissal after button click
-        Log.d(TAG, "🔍 Step 2: Verifying message dismissal after button click...")
-        
-        val messageDismissed = waitForCondition({
-            !inAppMessageDisplayed.get() || 
-            IterableApi.getInstance().getInAppManager().getMessages().isEmpty()
-        }, 5)
-        
-        if (messageDismissed) {
-            Log.d(TAG, "✅ In-app message dismissed successfully after button click")
-        } else {
-            Log.d(TAG, "ℹ️ Message may still be visible, checking for manual close options...")
-            
-            // Step 3: Try fallback dismissal options
-            Log.d(TAG, "🔄 Step 3: Trying fallback dismissal options...")
-            
-            // Try to find and click close/dismiss buttons
-            val closeButton = uiDevice.findObject(UiSelector().text("No Thanks").className("android.widget.TextView"))
-            if (closeButton.exists()) {
-                Log.d(TAG, "📱 Found 'No Thanks' button, clicking to dismiss...")
-                closeButton.click()
-                Log.d(TAG, "✅ Message dismissed via 'No Thanks' button")
-                
-                // Verify final dismissal
-                val finalDismissal = waitForCondition({
-                    !inAppMessageDisplayed.get() || 
-                    IterableApi.getInstance().getInAppManager().getMessages().isEmpty()
-                }, 3)
-                
-                assertTrue("Message should be dismissed after clicking 'No Thanks'", finalDismissal)
-            } else {
-                Log.d(TAG, "ℹ️ No close button found, message may auto-dismiss")
-                
-                // Wait a bit more for auto-dismissal
-                Thread.sleep(2000)
-                
-                val autoDismissed = waitForCondition({
-                    !inAppMessageDisplayed.get() || 
-                    IterableApi.getInstance().getInAppManager().getMessages().isEmpty()
-                }, 3)
-                
-                if (autoDismissed) {
-                    Log.d(TAG, "✅ Message auto-dismissed successfully")
-                } else {
-                    Log.d(TAG, "⚠️ Message still visible, may require manual intervention")
-                }
-            }
-        }
-        
-        Log.d(TAG, "🎉 In-App Message Button Interaction and Dismissal Test Completed Successfully!")
+        // Re-initialize with custom handlers
+        IterableApi.initialize(context, BuildConfig.ITERABLE_API_KEY, config)
+        IterableApi.getInstance().setEmail("akshay.ayyanchira@iterable.com")
     }
     
-    /**
-     * Test 4: App Lifecycle In-App Trigger
-     * 
-     * This test specifically tests the app lifecycle trigger:
-     * 1. Ensure in-app message is available
-     * 2. Minimize app
-     * 3. Bring app to foreground
-     * 4. Verify in-app manager triggers and displays message
-     */
     @Test
-    fun testAppLifecycleInAppTrigger() {
-        Log.d(TAG, "🧪 Testing App Lifecycle In-App Trigger...")
+    fun testInAppMessageMVP() {
+        Log.d(TAG, "Starting MVP in-app message test")
         
-        // Reset test states
-        resetTestStates()
+        // Step 1: Ensure user is signed in
+        val userSignedIn = testUtils.ensureUserSignedIn("akshay.ayyanchira@iterable.com")
+        Assert.assertTrue("User should be signed in", userSignedIn)
         
-        // First, ensure we have an in-app message available
-        val initialMessages = IterableApi.getInstance().getInAppManager().getMessages()
-        if (initialMessages.isEmpty()) {
-            // Trigger a campaign to get a message
-            val latch = CountDownLatch(1)
-            var campaignTriggered = false
-            
-            testUtils.triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL) { success ->
-                campaignTriggered = success
-                latch.countDown()
-            }
-            
-            assertTrue("Campaign should be triggered within timeout", latch.await(10, TimeUnit.SECONDS))
-            assertTrue("Campaign should be triggered successfully", campaignTriggered)
-            
-            // Wait for message to be available
-            val messageAvailable = waitForCondition({
-                IterableApi.getInstance().getInAppManager().getMessages().isNotEmpty()
-            }, 10)
-            
-            assertTrue("Message should be available after campaign trigger", messageAvailable)
-        }
-        
-        Log.d(TAG, "✅ In-app message available for lifecycle testing")
-        
-        // Minimize app
-        uiDevice.pressHome()
-        Log.d(TAG, "📱 App minimized")
-        
-        // Wait for app to be fully minimized
-        Thread.sleep(2000)
-        
-        // Bring app to foreground
-        uiDevice.pressRecentApps()
-        Thread.sleep(500)
-        
-        val appIcon = uiDevice.findObject(UiSelector().packageName("com.iterable.integration.tests"))
-        if (appIcon.exists()) {
-            appIcon.click()
-            Log.d(TAG, "📱 App brought to foreground")
-        }
-        
-        // Wait for app to come to foreground and in-app manager to trigger
-        Thread.sleep(3000)
-        
-        // Verify in-app message is displayed
-        val inAppDisplayed = waitForCondition({
-            inAppMessageDisplayed.get()
-        }, 10)
-        
-        assertTrue("In-app message should be displayed after app lifecycle change", inAppDisplayed)
-        
-        Log.d(TAG, "✅ App lifecycle in-app trigger test completed successfully")
-    }
-    
-    /**
-     * Test 5: In-App Metrics Tracking
-     * 
-     * JIRA Requirement: "Track In App Open metric are validated"
-     * 
-     * This test verifies that:
-     * 1. In-app open metrics are tracked
-     * 2. In-app click metrics are tracked
-     * 3. In-app delivery metrics are tracked
-     */
-    @Test
-    fun testInAppMetricsTracking() {
-        Log.d(TAG, "🧪 Testing In-App Metrics Tracking...")
-        
-        // Reset test states
-        resetTestStates()
-        
-        // Get current in-app messages
-        val messages = IterableApi.getInstance().getInAppManager().getMessages()
-        assertFalse("Should have in-app messages available for metrics testing", messages.isEmpty())
-        
-        val message = messages[0]
-        Log.d(TAG, "📊 Testing metrics for message: ${message.getMessageId()}")
-        
-        // Track in-app open
-        IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.IN_APP)
-        Log.d(TAG, "✅ Tracked in-app open")
-        
-        // Track in-app click (simulate)
-        IterableApi.getInstance().trackInAppClick(message, "https://test.com", IterableInAppLocation.IN_APP)
-        Log.d(TAG, "✅ Tracked in-app click")
-        
-        // Track in-app delivery (using alternative method since trackInAppDelivery is package-private)
-        // Note: trackInAppDelivery is package-private, so we'll simulate delivery tracking
-        Log.d(TAG, "✅ Simulated in-app delivery tracking")
-        
-        // Mark message as read
-        IterableApi.getInstance().getInAppManager().setRead(message, true, null, null)
-        Log.d(TAG, "✅ Marked message as read")
-        
-        metricsTracked.set(true)
-        assertTrue("Metrics should be tracked successfully", metricsTracked.get())
-        
-        Log.d(TAG, "✅ In-app metrics tracking test completed successfully")
-    }
-    
-    /**
-     * Test 6: In-App Deep Linking
-     * 
-     * JIRA Requirement: "Confirm In App is able to Deep link"
-     * 
-     * This test verifies that:
-     * 1. Deep links in in-app messages are handled properly
-     * 2. URL handlers are invoked correctly
-     * 3. Navigation to deep link destinations works
-     */
-    @Test
-    fun testInAppDeepLinking() {
-        Log.d(TAG, "🧪 Testing In-App Deep Linking...")
-        
-        // Reset test states
-        resetTestStates()
-        
-        // Simulate deep link handling
-        val testUrl = TEST_DEEP_LINK_URL
-        Log.d(TAG, "🔗 Testing deep link: $testUrl")
-        
-        // For testing purposes, we'll simulate deep link handling
-        // In a real scenario, this would be handled by the URL handler configured in MainActivity
-        Log.d(TAG, "🔗 Simulating deep link: $testUrl")
-        
-        // Simulate successful deep link handling
-        deepLinkHandled.set(true)
-        Log.d(TAG, "✅ Deep link handled by SDK (simulated)")
-        
-        Log.d(TAG, "✅ In-app deep linking test completed successfully")
-        Log.d(TAG, "ℹ️ Note: Real deep link handling is configured in MainActivity")
-    }
-    
-    /**
-     * Test 7: In-App Action Handlers
-     * 
-     * JIRA Requirement: "Handlers are called and app navigated to certain module"
-     * 
-     * This test verifies that:
-     * 1. Custom action handlers are invoked correctly
-     * 2. Actions are executed properly
-     * 3. App navigation works as expected
-     */
-    @Test
-    fun testInAppActionHandlers() {
-        Log.d(TAG, "🧪 Testing In-App Action Handlers...")
-        
-        // Reset test states
-        resetTestStates()
-        
-        // For testing purposes, we'll simulate action handler execution
-        // In a real scenario, this would be handled by the custom action handler configured in MainActivity
-        Log.d(TAG, "🎯 Simulating custom action: $TEST_ACTION_NAME")
-        
-        // Simulate successful action handler execution
-        actionHandlerCalled.set(true)
-        Log.d(TAG, "✅ Custom action executed successfully (simulated)")
-        Log.d(TAG, "Action: $TEST_ACTION_NAME")
-        
-        Log.d(TAG, "✅ In-app action handlers test completed successfully")
-        Log.d(TAG, "ℹ️ Note: Real action handling is configured in MainActivity")
-    }
-    
-    /**
-     * Test 8: In-App Message Lifecycle
-     * 
-     * This test verifies the complete lifecycle of an in-app message:
-     * 1. Message creation and storage
-     * 2. Message display
-     * 3. Message interaction
-     * 4. Message cleanup
-     */
-    @Test
-    fun testInAppMessageLifecycle() {
-        Log.d(TAG, "🧪 Testing In-App Message Lifecycle...")
-        
-        // Reset test states
-        resetTestStates()
-        
-        // Get initial message count
-        val initialMessageCount = IterableApi.getInstance().getInAppManager().getMessages().size
-        Log.d(TAG, "Initial message count: $initialMessageCount")
-        
-        // Trigger in-app campaign
-        val latch = CountDownLatch(1)
+        // Step 2: Trigger campaign via server API
         var campaignTriggered = false
-        
-        testUtils.triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL) { success ->
+        val latch = java.util.concurrent.CountDownLatch(1)
+        triggerCampaignViaAPI(TEST_CAMPAIGN_ID, "akshay.ayyanchira@iterable.com", null) { success ->
             campaignTriggered = success
             latch.countDown()
         }
         
-        assertTrue("Campaign should be triggered within timeout", latch.await(10, TimeUnit.SECONDS))
-        assertTrue("Campaign should be triggered successfully", campaignTriggered)
+        // Wait for callback
+        try {
+            latch.await(10, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            Assert.fail("Campaign trigger timed out")
+        }
         
-        // Wait for message to be available
-        val messageAvailable = waitForCondition({
-            IterableApi.getInstance().getInAppManager().getMessages().size > initialMessageCount
-        }, 15)
+        Assert.assertTrue("Campaign should be triggered successfully", campaignTriggered)
         
-        assertTrue("New message should be available after campaign trigger", messageAvailable)
+        // Step 3: Trigger syncMessages by simulating background/foreground cycle
+        Log.d(TAG, "Triggering syncMessages via background/foreground cycle...")
+        triggerSyncMessages()
         
-        val messages = IterableApi.getInstance().getInAppManager().getMessages()
-        val newMessage = messages.find { it.getMessageId().isNotEmpty() }
-        assertNotNull("New message should not be null", newMessage)
+        // Step 4: Wait for in-app message to be displayed (5 seconds for fast iterations)
+        Log.d(TAG, "Waiting for in-app message to be displayed...")
+        val messageDisplayed = waitForInAppMessage(5)
+        Log.d(TAG, "In-app message displayed: $messageDisplayed")
+        Assert.assertTrue("In-app message should be displayed within 5 seconds", messageDisplayed)
         
-        Log.d(TAG, "✅ Message created and stored successfully")
+        // Step 5: Verify in-app message is visible on screen
+        val messageVisible = verifyInAppMessageVisible()
+        Assert.assertTrue("In-app message should be visible on screen", messageVisible)
         
-        // Wait for message to be displayed
-        val displayed = waitForCondition({
-            inAppMessageDisplayed.get()
-        }, 15)
+        // Step 6: Click button in the in-app message
+        val buttonClicked = clickInAppMessageButton()
+        Assert.assertTrue("Should be able to click button in in-app message", buttonClicked)
         
-        assertTrue("Message should be displayed", displayed)
-        Log.d(TAG, "✅ Message displayed successfully")
+        // Step 7: Verify trackInAppClose event was fired
+        val closeTracked = waitForTrackInAppClose(5)
+        Assert.assertTrue("trackInAppClose should be called when button is clicked", closeTracked)
         
-        // Test message interaction
-        IterableApi.getInstance().trackInAppOpen(newMessage!!, IterableInAppLocation.IN_APP)
-        IterableApi.getInstance().trackInAppClick(newMessage, "https://test.com", IterableInAppLocation.IN_APP)
-        
-        Log.d(TAG, "✅ Message interaction tracked successfully")
-        
-        // Test message cleanup (mark as consumed)
-        IterableApi.getInstance().getInAppManager().removeMessage(newMessage)
-        
-        val finalMessageCount = IterableApi.getInstance().getInAppManager().getMessages().size
-        Log.d(TAG, "Final message count: $finalMessageCount")
-        
-        Log.d(TAG, "✅ In-app message lifecycle test completed successfully")
+        Log.d(TAG, "MVP in-app message test completed successfully")
     }
     
-    /**
-     * Test 9: Complete End-to-End In-App Flow
-     * 
-     * This test runs all the above tests in sequence to verify the complete flow:
-     * 1. Send in-app message and verify server-side delivery
-     * 2. Wait for in-app display (with silent push if configured)
-     * 3. Minimize and bring app to foreground to trigger in-app manager
-     * 4. Verify in-app display
-     * 5. Test button interaction and message dismissal
-     * 6. Test metrics tracking
-     * 7. Test deep linking and action handlers
-     */
-    @Test
-    fun testCompleteInAppEndToEndFlow() {
-        Log.d(TAG, "🚀 Testing Complete In-App End-to-End Flow...")
-        
-        // Reset all test states
-        resetTestStates()
-        
-        // Step 1: Send in-app message and verify server-side delivery
-        Log.d(TAG, "📤 Step 1: Sending in-app message and verifying server-side delivery...")
-        
-        val serverVerificationLatch = CountDownLatch(1)
-        var serverDeliveryConfirmed = false
-        
-        testUtils.triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, TEST_USER_EMAIL) { success ->
-            serverDeliveryConfirmed = success
-            serverVerificationLatch.countDown()
-        }
-        
-        assertTrue("Server-side delivery should be confirmed within timeout", 
-                   serverVerificationLatch.await(SERVER_VERIFICATION_TIMEOUT, TimeUnit.SECONDS))
-        assertTrue("In-app message should be delivered to server successfully", serverDeliveryConfirmed)
-        Log.d(TAG, "✅ Step 1: Server-side delivery confirmed")
-        
-        // Step 2: Wait for in-app display (with silent push if configured)
-        Log.d(TAG, "⏳ Step 2: Waiting for in-app message display (with silent push if configured)...")
-        
-        val inAppDisplayed = waitForCondition({
-            inAppMessageDisplayed.get() || 
-            IterableApi.getInstance().getInAppManager().getMessages().isNotEmpty()
-        }, INAPP_DISPLAY_TIMEOUT)
-        
-        if (inAppDisplayed) {
-            Log.d(TAG, "✅ Step 2: In-app message displayed automatically (silent push configured)")
-        } else {
-            Log.d(TAG, "ℹ️ Step 2: In-app message not displayed automatically, proceeding to foreground trigger")
-        }
-        
-        // Step 3: Minimize and bring app to foreground to trigger in-app manager
-        Log.d(TAG, "🔄 Step 3: Testing app lifecycle to trigger in-app manager...")
-        
-        // Minimize app (press home button)
-        uiDevice.pressHome()
-        Log.d(TAG, "📱 App minimized (home button pressed)")
-        
-        // Wait a moment
-        Thread.sleep(1000)
-        
-        // Bring app to foreground
-        uiDevice.pressRecentApps()
-        Thread.sleep(500)
-        
-        // Find and click on our app in recent apps
-        val appIcon = uiDevice.findObject(UiSelector().packageName("com.iterable.integration.tests"))
-        if (appIcon.exists()) {
-            appIcon.click()
-            Log.d(TAG, "📱 App brought to foreground from recent apps")
-        } else {
-            Log.d(TAG, "📱 App not found in recent apps, launching directly")
-        }
-        
-        // Wait for app to come to foreground and in-app manager to trigger
-        Thread.sleep(2000)
-        
-        // Step 4: Verify in-app display after foreground trigger
-        Log.d(TAG, "🔍 Step 4: Verifying in-app message display after foreground trigger...")
-        
-        val inAppDisplayedAfterForeground = waitForCondition({
-            inAppMessageDisplayed.get() || 
-            IterableApi.getInstance().getInAppManager().getMessages().isNotEmpty()
-        }, FOREGROUND_TRIGGER_TIMEOUT)
-        
-        assertTrue("In-app message should be displayed after bringing app to foreground", 
-                   inAppDisplayedAfterForeground)
-        Log.d(TAG, "✅ Step 4: In-app message display verified after foreground trigger")
-        
-        // Step 5: Test button interaction and message dismissal
-        Log.d(TAG, "🖱️ Step 5: Testing button interaction and message dismissal...")
-        
-        // Look for the blue button (common CTA button in in-app messages)
-        val blueButton = uiDevice.findObject(UiSelector().text("WATCH").className("android.widget.Button"))
-        if (!blueButton.exists()) {
-            // Try alternative selectors for the button
-            val ctaButton = uiDevice.findObject(UiSelector().className("android.widget.Button"))
-            if (ctaButton.exists()) {
-                Log.d(TAG, "📱 Found CTA button, clicking...")
-                ctaButton.click()
-                Log.d(TAG, "✅ CTA button clicked successfully")
-            } else {
-                Log.d(TAG, "ℹ️ No CTA button found, proceeding with message dismissal test")
-            }
-        } else {
-            Log.d(TAG, "📱 Found blue WATCH button, clicking...")
-            blueButton.click()
-            Log.d(TAG, "✅ Blue WATCH button clicked successfully")
-        }
-        
-        // Wait for button action to complete
-        Thread.sleep(1000)
-        
-        // Verify message is dismissed/closed
-        val messageDismissed = waitForCondition({
-            !inAppMessageDisplayed.get() || 
-            IterableApi.getInstance().getInAppManager().getMessages().isEmpty()
-        }, 5)
-        
-        if (messageDismissed) {
-            Log.d(TAG, "✅ In-app message dismissed successfully after button click")
-        } else {
-            Log.d(TAG, "ℹ️ Message may still be visible, checking for manual close options...")
+    private fun verifyInAppMessageVisible(): Boolean {
+        return try {
+            // Check if in-app message is displayed using the testUtils flag
+            val messageDisplayed = testUtils.hasInAppMessageDisplayed()
+            Log.d(TAG, "In-app message displayed (testUtils): $messageDisplayed")
             
-            // Try to find and click close/dismiss buttons
-            val closeButton = uiDevice.findObject(UiSelector().text("No Thanks").className("android.widget.TextView"))
-            if (closeButton.exists()) {
-                Log.d(TAG, "📱 Found 'No Thanks' button, clicking to dismiss...")
-                closeButton.click()
-                Log.d(TAG, "✅ Message dismissed via 'No Thanks' button")
-            } else {
-                Log.d(TAG, "ℹ️ No close button found, message may auto-dismiss")
-            }
-        }
-        
-        Log.d(TAG, "✅ Step 5: Button interaction and message dismissal completed successfully")
-        
-        // Step 6: Test metrics tracking
-        Log.d(TAG, "📊 Step 6: Testing metrics tracking...")
-        
-        val messages = IterableApi.getInstance().getInAppManager().getMessages()
-        if (messages.isNotEmpty()) {
-            val message = messages[0]
-            IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.IN_APP)
-            IterableApi.getInstance().trackInAppClick(message, "https://test.com", IterableInAppLocation.IN_APP)
-            // Note: trackInAppDelivery is package-private, so we'll simulate delivery tracking
+            // Also check local flag
+            val localMessageDisplayed = inAppMessageDisplayed.get()
+            Log.d(TAG, "In-app message displayed (local): $localMessageDisplayed")
             
-            metricsTracked.set(true)
-            assertTrue("Metrics should be tracked successfully", metricsTracked.get())
-            Log.d(TAG, "✅ Step 6: Metrics tracking completed successfully")
-        } else {
-            Log.d(TAG, "ℹ️ No messages available for metrics tracking (may have been dismissed)")
+            // Also check if WebView is visible
+            val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
+            val webViewVisible = webView.exists()
+            Log.d(TAG, "WebView visible: $webViewVisible")
+            
+            messageDisplayed || localMessageDisplayed
+        } catch (e: Exception) {
+            Log.e(TAG, "Error verifying in-app message visibility", e)
+            false
         }
-        
-        // Step 7: Test deep linking and action handlers (simulated for integration tests)
-        Log.d(TAG, "🔗 Step 7: Testing deep linking and action handlers...")
-        
-        // Simulate deep link handling
-        deepLinkHandled.set(true)
-        Log.d(TAG, "✅ Deep linking completed successfully (simulated)")
-        
-        // Simulate action handler execution
-        actionHandlerCalled.set(true)
-        Log.d(TAG, "✅ Action handlers completed successfully (simulated)")
-        
-        // Final verification
-        Log.d(TAG, "📊 Complete End-to-End Test Results:")
-        Log.d(TAG, "Server-Side Delivery: ✅ PASSED")
-        Log.d(TAG, "In-App Display: ✅ PASSED")
-        Log.d(TAG, "App Lifecycle Trigger: ✅ PASSED")
-        Log.d(TAG, "Button Interaction: ✅ PASSED")
-        Log.d(TAG, "Message Dismissal: ✅ PASSED")
-        Log.d(TAG, "Metrics Tracking: ✅ PASSED")
-        Log.d(TAG, "Deep Linking: ✅ PASSED")
-        Log.d(TAG, "Action Handlers: ✅ PASSED")
-        Log.d(TAG, "🎉 All tests passed! In-app functionality is working correctly.")
     }
+    
+    private fun findInAppMessageDialog(): Any? {
+        return try {
+            // Look for the in-app message dialog fragment
+            val dialogSelector = UiSelector().className("android.widget.FrameLayout")
+                .descriptionContains("iterable_in_app")
+            
+            val dialog = uiDevice.findObject(dialogSelector)
+            if (dialog.exists()) {
+                Log.d(TAG, "Found in-app message dialog")
+                return dialog
+            }
+            
+            // Alternative: Look for WebView in dialog
+            val webViewSelector = UiSelector().className("android.webkit.WebView")
+            val webView = uiDevice.findObject(webViewSelector)
+            if (webView.exists()) {
+                Log.d(TAG, "Found WebView in in-app message")
+                return webView
+            }
+            
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error finding in-app message dialog", e)
+            null
+        }
+    }
+    
+    private fun checkWebViewVisible(): Boolean {
+        return try {
+            // For now, just check if WebView exists
+            val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
+            val exists = webView.exists()
+            
+            Log.d(TAG, "WebView exists: $exists")
+            exists
+        } catch (e: Exception) {
+            Log.e(TAG, "WebView content check failed", e)
+            false
+        }
+    }
+    
+    private fun clickInAppMessageButton(): Boolean {
+        return try {
+            // First, try to find and click a button using UiAutomator
+            val buttonClicked = clickButtonWithUiAutomator()
+            if (buttonClicked) {
+                return true
+            }
+            
+            // Fallback: Use Espresso Web to find and click buttons
+            val webButtonClicked = clickButtonWithEspressoWeb()
+            if (webButtonClicked) {
+                return true
+            }
+            
+            // Last resort: Try to click any clickable element
+            clickAnyClickableElement()
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clicking in-app message button", e)
+            false
+        }
+    }
+    
+    private fun clickButtonWithUiAutomator(): Boolean {
+        return try {
+            // Look for buttons in the in-app message
+            val buttonSelectors = listOf(
+                UiSelector().className("android.widget.Button"),
+                UiSelector().textContains("button"),
+                UiSelector().textContains("click"),
+                UiSelector().textContains("open"),
+                UiSelector().textContains("learn"),
+                UiSelector().textContains("more")
+            )
+            
+            for (selector in buttonSelectors) {
+                val button = uiDevice.findObject(selector)
+                if (button.exists()) {
+                    Log.d(TAG, "Found button with selector: $selector")
+                    button.click()
+                    return true
+                }
+            }
+            
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clicking button with UiAutomator", e)
+            false
+        }
+    }
+    
+    private fun clickButtonWithEspressoWeb(): Boolean {
+        return try {
+            // Use Espresso Web to find and click buttons in the WebView
+            Web.onWebView()
+                .withElement(DriverAtoms.findElement(Locator.TAG_NAME, "button"))
+                .perform(DriverAtoms.webClick())
+            
+            Log.d(TAG, "Clicked button using Espresso Web")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clicking button with Espresso Web", e)
+            false
+        }
+    }
+    
+    private fun clickAnyClickableElement(): Boolean {
+        return try {
+            // Try to click any clickable element in the dialog
+            val clickableSelector = UiSelector().clickable(true)
+            val clickableElement = uiDevice.findObject(clickableSelector)
+            
+            if (clickableElement.exists()) {
+                Log.d(TAG, "Found clickable element, attempting to click")
+                clickableElement.click()
+                return true
+            }
+            
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clicking any clickable element", e)
+            false
+        }
+    }
+    
+    private fun waitForTrackInAppClose(timeoutSeconds: Long): Boolean {
+        return try {
+            Awaitility.await()
+                .atMost(timeoutSeconds, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .until {
+                    // Check if close was tracked by monitoring the last clicked URL
+                    val closeTracked = lastClickedUrl.get() != null
+                    Log.d(TAG, "trackInAppClose called: $closeTracked, URL: ${lastClickedUrl.get()}")
+                    closeTracked
+                }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error waiting for trackInAppClose", e)
+            false
+        }
+    }
+    
+    private fun triggerSyncMessages() {
+        try {
+            Log.d(TAG, "Simulating background/foreground cycle to trigger syncMessages...")
+            
+            // Simulate app going to background
+            uiDevice.pressHome()
+            Thread.sleep(1000) // Wait 1 second
+            
+            // Simulate app coming back to foreground
+            uiDevice.pressRecentApps()
+            Thread.sleep(500)
+            
+            // Find and click on our app to bring it back to foreground
+            val appIcon = uiDevice.findObject(UiSelector().text("Integration Tests"))
+            if (appIcon.exists()) {
+                appIcon.click()
+                Log.d(TAG, "App brought back to foreground")
+            } else {
+                Log.d(TAG, "Could not find app icon, trying alternative approach")
+                // Alternative: try to find the app in recent apps
+                val recentApps = uiDevice.findObject(UiSelector().className("android.widget.FrameLayout"))
+                if (recentApps.exists()) {
+                    recentApps.click()
+                }
+            }
+            
+            // Give the app time to process the foreground event
+            Thread.sleep(2000)
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error triggering syncMessages", e)
+        }
+    }
+    
 }

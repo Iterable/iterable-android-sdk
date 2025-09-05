@@ -199,10 +199,9 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         var success = false
         val latch = CountDownLatch(1)
         
-        testUtils.sendSilentPushNotification(campaignId) { result ->
-            success = result
-            latch.countDown()
-        }
+        val result = testUtils.sendSilentPushNotification(campaignId)
+        success = result
+        latch.countDown()
         
         // Wait for callback
         try {

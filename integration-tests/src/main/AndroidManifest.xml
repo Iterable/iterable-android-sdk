@@ -65,6 +65,11 @@
             android:label="In-App Message Tests" />
 
         <activity
+            android:name=".activities.InAppTestActivity"
+            android:exported="false"
+            android:label="In-App Test Activity" />
+
+        <activity
             android:name=".activities.EmbeddedMessageTestActivity"
             android:exported="false"
             android:label="Embedded Message Tests" />

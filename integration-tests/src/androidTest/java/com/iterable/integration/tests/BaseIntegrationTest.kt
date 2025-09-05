@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 abstract class BaseIntegrationTest {
     
     companion object {
-        const val TIMEOUT_SECONDS = 30L
+        const val TIMEOUT_SECONDS = 5L  // Fast iterations for MVP
         const val POLL_INTERVAL_SECONDS = 1L
     }
     
@@ -51,14 +51,18 @@ abstract class BaseIntegrationTest {
             .setEnableEmbeddedMessaging(true)
             .setInAppHandler { message ->
                 // Handle in-app messages during tests
+                Log.d("BaseIntegrationTest", "In-app message received: ${message.messageId}")
+                testUtils.setInAppMessageDisplayed(true)
                 com.iterable.iterableapi.IterableInAppHandler.InAppResponse.SHOW
             }
             .setCustomActionHandler { action, context ->
                 // Handle custom actions during tests
+                Log.d("BaseIntegrationTest", "Custom action triggered: $action")
                 true
             }
             .setUrlHandler { url, context ->
                 // Handle URLs during tests
+                Log.d("BaseIntegrationTest", "URL handler triggered: $url")
                 true
             }
             .build()
@@ -119,15 +123,6 @@ abstract class BaseIntegrationTest {
     }
     
     /**
-     * Wait for a push notification to be received
-     */
-    protected fun waitForPushNotification(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
-        return waitForCondition({
-            testUtils.hasReceivedPushNotification()
-        }, timeoutSeconds)
-    }
-    
-    /**
      * Wait for an in-app message to be displayed
      */
     protected fun waitForInAppMessage(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
@@ -137,11 +132,25 @@ abstract class BaseIntegrationTest {
     }
     
     /**
-     * Wait for an embedded message to be displayed
+     * Trigger a campaign via Iterable API
      */
-    protected fun waitForEmbeddedMessage(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
+    protected fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+        testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+    }
+    
+    /**
+     * Trigger a push campaign via Iterable API
+     */
+    protected fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+        testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+    }
+    
+    /**
+     * Wait for a push notification to be received
+     */
+    protected fun waitForPushNotification(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
         return waitForCondition({
-            testUtils.hasEmbeddedMessageDisplayed()
+            testUtils.hasReceivedPushNotification()
         }, timeoutSeconds)
     }
     
@@ -157,34 +166,6 @@ abstract class BaseIntegrationTest {
      */
     protected fun triggerInAppMessage(eventName: String = "test_event"): Boolean {
         return testUtils.triggerInAppMessage(eventName)
-    }
-    
-    /**
-     * Trigger an embedded message
-     */
-    protected fun triggerEmbeddedMessage(placementId: Int = 0): Boolean {
-        return testUtils.triggerEmbeddedMessage(placementId)
-    }
-    
-    /**
-     * Simulate a deep link
-     */
-    protected fun simulateDeepLink(url: String): Boolean {
-        return testUtils.simulateDeepLink(url)
-    }
-    
-    /**
-     * Trigger a campaign via Iterable API
-     */
-    protected fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
-        testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
-    }
-    
-    /**
-     * Trigger a push campaign via Iterable API
-     */
-    protected fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
-        testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
     }
     
     /**

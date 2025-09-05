@@ -143,31 +143,11 @@ integration-tests/
 - ✅ Track in-app open metrics
 - ✅ In-app message deep linking
 - ✅ Custom action handlers
-- ✅ Complete end-to-end flow validation
-- ✅ Message lifecycle management
-
-**JIRA Requirements Validated:**
-1. **Silent push works** - Verified silent push notifications trigger in-app messages
-2. **Confirm In App is displayed** - Validated in-app message rendering and display
-3. **Track In App Open metric are validated** - Confirmed metrics tracking functionality
-4. **Confirm In App is able to Deep link** - Tested deep linking capabilities
-5. **Handlers are called and app navigated to certain module** - Verified action handler invocation
 
 **Manual Testing:**
 1. Navigate to "In-App Message Tests"
-2. Use individual test buttons for specific scenarios
-3. Run complete end-to-end test for full validation
-4. Monitor test status and logs in real-time
-5. Verify message display and interaction
-
-**Automated Testing:**
-```bash
-# Run all in-app tests
-./gradlew :integration-tests:connectedCheck -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest
-
-# Run specific test
-./gradlew :integration-tests:connectedCheck -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testSilentPushFunctionality
-```
+2. Trigger test events
+3. Verify message display and interaction
 
 ### 3. Embedded Messages
 
@@ -234,28 +214,6 @@ The tests are designed to run in CI environments with:
    - Verify functionality manually
    - Check logs for detailed information
 
-### In-App Message Testing
-
-The `InAppMessageTestActivity` provides a comprehensive UI for testing in-app functionality:
-
-1. **Individual Test Scenarios**
-   - **Test Silent Push** - Verifies silent push triggers in-app messages
-   - **Test In-App Display** - Confirms in-app message rendering
-   - **Test Metrics Tracking** - Validates metrics collection
-   - **Test Deep Linking** - Tests deep link handling
-   - **Test Action Handlers** - Verifies custom action execution
-
-2. **Complete End-to-End Test**
-   - Runs all scenarios in sequence
-   - Provides comprehensive test report
-   - Shows pass/fail status for each requirement
-
-3. **Real-time Monitoring**
-   - Live test status updates
-   - Detailed logging with timestamps
-   - Test state management
-   - Error reporting and debugging
-
 ## Configuration
 
 ### Iterable Backend Configuration
@@ -290,16 +248,12 @@ The `InAppMessageTestActivity` provides a comprehensive UI for testing in-app fu
 ## Test Data Management
 
 ### Test Users
-- Email: `akshay.ayyanchira@iterable.com` (Primary test user)
-- Email: `integration.test@iterable.com` (Secondary test user)
+- Email: `integration.test@iterable.com`
 - User ID: `integration_test_user`
 
 ### Test Campaigns
 - Push notifications: `test_push_campaign`
-- In-app messages: `14332357` (TEST_INAPP_CAMPAIGN_ID)
-- Silent push campaigns: `14332360` (TEST_SILENT_PUSH_CAMPAIGN_ID)
-- Deep link campaigns: `14332361` (TEST_DEEP_LINK_CAMPAIGN_ID)
-- Action handler campaigns: `14332362` (TEST_ACTION_HANDLER_CAMPAIGN_ID)
+- In-app messages: `test_inapp_campaign`
 - Embedded messages: `test_embedded_campaign`
 
 ### Test Events
@@ -355,61 +309,6 @@ When adding new integration tests:
 3. **State Management** - Reset test state between runs
 4. **Error Handling** - Graceful handling of test failures
 5. **Logging** - Comprehensive logging for debugging
-
-## New In-App Integration Tests
-
-The `InAppMessageIntegrationTest` class provides comprehensive automated testing for in-app functionality:
-
-### Test Coverage
-
-1. **Silent Push Functionality** (`testSilentPushFunctionality`)
-   - Validates silent push notification delivery
-   - Verifies in-app message triggering
-   - Tests end-to-end silent push flow
-
-2. **In-App Message Display** (`testInAppMessageDisplay`)
-   - Confirms campaign triggering via API
-   - Validates message rendering and display
-   - Verifies message content and metadata
-
-3. **Metrics Tracking** (`testInAppMetricsTracking`)
-   - Tests in-app open tracking
-   - Validates click tracking
-   - Confirms delivery tracking
-   - Verifies read status management
-
-4. **Deep Linking** (`testInAppDeepLinking`)
-   - Tests URL handling capabilities
-   - Validates deep link processing
-   - Confirms handler invocation
-
-5. **Action Handlers** (`testInAppActionHandlers`)
-   - Tests custom action execution
-   - Validates handler invocation
-   - Confirms action processing
-
-6. **Complete End-to-End Flow** (`testCompleteInAppEndToEndFlow`)
-   - Runs all scenarios in sequence
-   - Validates complete user journey
-   - Provides comprehensive validation
-
-7. **Message Lifecycle** (`testInAppMessageLifecycle`)
-   - Tests message creation and storage
-   - Validates display and interaction
-   - Confirms cleanup and removal
-
-### Running the Tests
-
-```bash
-# Run all in-app tests
-./gradlew :integration-tests:connectedCheck -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest
-
-# Run specific test
-./gradlew :integration-tests:connectedCheck -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testSilentPushFunctionality
-
-# Run with coverage
-./gradlew :integration-tests:jacocoIntegrationTestReport
-```
 
 ## Future Enhancements
 

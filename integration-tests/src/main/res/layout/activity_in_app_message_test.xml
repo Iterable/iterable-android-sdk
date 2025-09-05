@@ -1,216 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:text="In-App Message Tests"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="32dp"
+        android:gravity="center" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="In-App Message Integration Tests"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="24dp"
-            android:gravity="center" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="In-app message tests will be implemented here"
+        android:textSize="16sp"
+        android:gravity="center" />
 
-        <!-- Test Configuration Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Test Configuration"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <EditText
-                android:id="@+id/campaignIdEditText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Campaign ID"
-                android:inputType="number"
-                android:layout_marginEnd="8dp" />
-
-            <EditText
-                android:id="@+id/userEmailEditText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="User Email"
-                android:inputType="textEmailAddress"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
-
-        <!-- Test Buttons Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Test Scenarios"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <Button
-            android:id="@+id/testSilentPushButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="1. Test Silent Push"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/purple_500" />
-
-        <Button
-            android:id="@+id/testInAppDisplayButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="2. Test In-App Display"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/teal_700" />
-
-        <Button
-            android:id="@+id/testMetricsButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="3. Test Metrics Tracking"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/purple_700" />
-
-        <Button
-            android:id="@+id/testDeepLinkButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="4. Test Deep Linking"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/teal_200" />
-
-        <Button
-            android:id="@+id/testHandlersButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="5. Test Action Handlers"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/purple_500" />
-
-        <Button
-            android:id="@+id/testEndToEndButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🚀 Run Complete End-to-End Test"
-            android:layout_marginBottom="16dp"
-            android:backgroundTint="@color/teal_700"
-            android:textStyle="bold" />
-
-        <!-- Utility Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <Button
-                android:id="@+id/clearLogButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Clear Log"
-                android:layout_marginEnd="4dp"
-                android:backgroundTint="@android:color/holo_red_light" />
-
-            <Button
-                android:id="@+id/resetTestStatesButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Reset States"
-                android:layout_marginStart="4dp"
-                android:backgroundTint="@android:color/holo_red_light" />
-        </LinearLayout>
-
-        <!-- Test Status Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Test Status"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@color/teal_200"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp">
-
-            <TextView
-                android:id="@+id/silentPushStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Silent Push: ❌ Not Tested"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/inAppDisplayStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="In-App Display: ❌ Not Tested"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/metricsStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Metrics Tracking: ❌ Not Tested"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/deepLinkStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Deep Linking: ❌ Not Tested"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/handlersStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Action Handlers: ❌ Not Tested" />
-        </LinearLayout>
-
-        <!-- Test Log Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Test Log"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:background="@android:color/black"
-            android:padding="8dp">
-
-            <TextView
-                android:id="@+id/logTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/white"
-                android:fontFamily="monospace"
-                android:textSize="12sp" />
-        </ScrollView>
-
-    </LinearLayout>
-</ScrollView> 
+</LinearLayout> 
