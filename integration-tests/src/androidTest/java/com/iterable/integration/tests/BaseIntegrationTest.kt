@@ -49,6 +49,7 @@ abstract class BaseIntegrationTest {
         val config = IterableConfig.Builder()
             .setAutoPushRegistration(true)
             .setEnableEmbeddedMessaging(true)
+            .setInAppDisplayInterval(3.0)
             .setInAppHandler { message ->
                 // Handle in-app messages during tests
                 Log.d("BaseIntegrationTest", "In-app message received: ${message.messageId}")

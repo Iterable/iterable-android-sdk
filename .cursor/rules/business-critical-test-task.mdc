@@ -1,0 +1,72 @@
+---
+description: 
+Business Critical Integration Testing setup for SDKs in general.
+
+
+The idea of this project is to have the SDK fort intact. This project will introduce Integration Test to Iterable SDK.
+
+The project will have end to end integration test established with Iterable Backend. It means there will be a project created in production with API key which the test suite will use. Below we can discuss the feature and its test case and what all is needed for it. 
+
+1. Integration Test Setup
+Have the setup ready for integration tests
+Iterable Project Setup
+Run the app/test project locally
+- Android Integration Test app setup should be complete
+- It should have essential pages.
+- Ability to test setup is done by triggering a campaign and making sure it works. 
+- A page for each module - In App, Push Notification, Embedded Messages and Deep linking which can be navigated from home screen. 
+
+Move to next task only if this task is done done.
+
+2.  InApp messages test
+
+Implement integration test to verify:
+Silent push works
+Confirm In App is displayed
+Track In App Open metric are validated
+Confirm In App is able to Deep link
+Handlers are called and app navigated to certain module
+
+Move to next tasks only if this task is done done.
+
+3. Push Notification
+Implement Integration Test to verify:
+Push notification configuration on iOS and Android platform
+Device receives push notification
+Device has permission granted to show notification
+CI uses backend server keys to send notification.
+Push notification is displayed
+Push delivery metrics are captured
+Tapping on Push notification leads to trackPush opens
+Tapping on buttons with deep link invokes SDK handlers.
+
+
+
+4.  Embedded messages
+Implement Integration test to verify:
+Project to have eligibility and user list ready
+Receive eligible message for signed in user
+Embedded messages are displayed
+Embedded metrics are verified
+Deep linking works
+
+Things to consider -
+Silent push flow check
+User becomes ineligible to eligible > backend triggers push > and flow continues
+User profile details. On a button click / toggle between values > which should match the criteria> And after affirmation of embedded messages toggle it back to default value.
+
+5. Deep linking
+Implement Integration to verify:
+SMS/Email Flow. Launch the app with the url.
+Project setting to have tracking and destination domain
+Associated domains setup > iOS
+Launch the app with certain link.
+Intent filters set on Android | Assetlinks configuration on iOS | Android App Links | iOS Universal Links
+Deep linking handler is invoked.
+
+
+We will start from top to bottom. 
+
+globs:
+alwaysApply: true
+---

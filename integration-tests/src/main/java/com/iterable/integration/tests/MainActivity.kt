@@ -34,9 +34,21 @@ class MainActivity : AppCompatActivity() {
     
     private fun initializeIterableSDK() {
         try {
+            // Check if we're in test mode - if so, skip initialization
+            // The test will handle SDK initialization with custom handlers
+            val isTestMode = System.getProperty("iterable.test.mode") == "true"
+            if (isTestMode) {
+                Log.d(TAG, "🔧 Test mode detected - skipping MainActivity SDK initialization")
+                Log.d(TAG, "🔧 Test will handle SDK initialization with custom handlers")
+                return
+            }
+            
+            Log.d(TAG, "Normal mode - initializing SDK with default handlers")
+            
             val config = IterableConfig.Builder()
                 .setAutoPushRegistration(true)
                 .setEnableEmbeddedMessaging(true)
+                .setInAppDisplayInterval(2.0)
                 .setUrlHandler(object : IterableUrlHandler {
                     override fun handleIterableURL(url: android.net.Uri, context: com.iterable.iterableapi.IterableActionContext): Boolean {
                         Log.d(TAG, "Deep link handled: $url")
