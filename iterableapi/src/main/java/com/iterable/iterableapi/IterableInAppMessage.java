@@ -17,7 +17,7 @@ public class IterableInAppMessage {
 
     private final @NonNull String messageId;
     private final @NonNull Content content;
-    private final @NonNull JSONObject customPayload;
+    private final @Nullable JSONObject customPayload;
     private final @NonNull Date createdAt;
     private final @NonNull Date expiresAt;
     private final @NonNull Trigger trigger;
