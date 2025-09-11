@@ -9,7 +9,7 @@ on:
 jobs:
   analyze:
     name: Analyze Java
-    runs-on: [codeql]
+    runs-on: ubuntu-latest
     permissions:
       # required for all workflows
       security-events: write
