@@ -58,7 +58,7 @@ public class IterableApi {
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
-    
+
     /**
      * Helper method to queue operations if initialization is in progress
      */
@@ -749,13 +749,13 @@ public class IterableApi {
      * Initialize the Iterable SDK in the background to avoid ANRs.
      * This method returns immediately and performs all initialization work on a background thread.
      * Any API calls made before initialization completes will be queued and executed after initialization.
-     * 
+     *
      * @param context Application context
      * @param apiKey Iterable API key
      * @param callback Optional callback for initialization completion (can be null)
      */
-    public static void initializeInBackground(@NonNull Context context, 
-                                            @NonNull String apiKey, 
+    public static void initializeInBackground(@NonNull Context context,
+                                            @NonNull String apiKey,
                                             @Nullable AsyncInitializationCallback callback) {
         IterableBackgroundInitializer.initializeInBackground(context, apiKey, null, callback);
     }
@@ -764,14 +764,14 @@ public class IterableApi {
      * Initialize the Iterable SDK in the background to avoid ANRs.
      * This method returns immediately and performs all initialization work on a background thread.
      * Any API calls made before initialization completes will be queued and executed after initialization.
-     * 
+     *
      * @param context Application context
      * @param apiKey Iterable API key
      * @param config Optional configuration (can be null)
      * @param callback Optional callback for initialization completion (can be null)
      */
-    public static void initializeInBackground(@NonNull Context context, 
-                                            @NonNull String apiKey, 
+    public static void initializeInBackground(@NonNull Context context,
+                                            @NonNull String apiKey,
                                             @Nullable IterableConfig config,
                                             @Nullable AsyncInitializationCallback callback) {
         IterableBackgroundInitializer.initializeInBackground(context, apiKey, config, callback);
@@ -801,7 +801,7 @@ public class IterableApi {
     static int getQueuedOperationCount() {
         return IterableBackgroundInitializer.getQueuedOperationCount();
     }
-    
+
     /**
      * Shutdown the background executor for proper cleanup
      * Should be called during application shutdown or for testing
@@ -810,7 +810,7 @@ public class IterableApi {
     static void shutdownBackgroundExecutor() {
         IterableBackgroundInitializer.shutdownBackgroundExecutor();
     }
-    
+
     /**
      * Reset background initialization state - for testing only
      */

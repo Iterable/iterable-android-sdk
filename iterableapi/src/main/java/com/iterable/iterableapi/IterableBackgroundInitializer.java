@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 class IterableBackgroundInitializer {
     private static final String TAG = "IterableBackgroundInit";
-    
+
     /**
      * Represents a queued operation that should be executed after initialization
      */
@@ -28,7 +28,7 @@ class IterableBackgroundInitializer {
          * Execute the operation
          */
         void execute();
-        
+
         /**
          * Get description for debugging
          */
@@ -41,16 +41,16 @@ class IterableBackgroundInitializer {
     private static class OperationQueue {
         private final ConcurrentLinkedQueue<QueuedOperation> operations = new ConcurrentLinkedQueue<>();
         private volatile boolean isProcessing = false;
-        
+
         void enqueue(QueuedOperation operation) {
             operations.offer(operation);
             IterableLogger.d(TAG, "Queued operation: " + operation.getDescription());
         }
-        
+
         void processAll(ExecutorService executor) {
             if (isProcessing) return;
             isProcessing = true;
-            
+
             executor.execute(() -> {
                 QueuedOperation operation;
                 while ((operation = operations.poll()) != null) {
@@ -64,11 +64,11 @@ class IterableBackgroundInitializer {
                 isProcessing = false;
             });
         }
-        
+
         int size() {
             return operations.size();
         }
-        
+
         void clear() {
             operations.clear();
             isProcessing = false;
@@ -78,11 +78,11 @@ class IterableBackgroundInitializer {
     // Background initialization infrastructure
     private static volatile ExecutorService backgroundExecutor;
     private static final Object initLock = new Object();
-    
+
     static {
         backgroundExecutor = createExecutor();
     }
-    
+
     private static ExecutorService createExecutor() {
         return Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "IterableBackgroundInit");
@@ -101,14 +101,14 @@ class IterableBackgroundInitializer {
      * Initialize the Iterable SDK in the background to avoid ANRs.
      * This method returns immediately and performs all initialization work on a background thread.
      * Any API calls made before initialization completes will be queued and executed after initialization.
-     * 
+     *
      * @param context Application context
      * @param apiKey Iterable API key
      * @param config Optional configuration (can be null)
      * @param callback Optional callback for initialization completion (can be null)
      */
-    static void initializeInBackground(@NonNull Context context, 
-                                     @NonNull String apiKey, 
+    static void initializeInBackground(@NonNull Context context,
+                                     @NonNull String apiKey,
                                      @Nullable IterableConfig config,
                                      @Nullable AsyncInitializationCallback callback) {
         // Handle null context early
@@ -120,7 +120,7 @@ class IterableBackgroundInitializer {
             }
             return;
         }
-        
+
         synchronized (initLock) {
             if (isInitializing || isBackgroundInitialized) {
                 IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
@@ -135,35 +135,35 @@ class IterableBackgroundInitializer {
                 }
                 return;
             }
-            
+
             // Set initializing flag inside synchronized block
             isInitializing = true;
         }
-        
+
         // Set essential properties immediately to avoid NullPointerExceptions during queuing
         IterableApi.sharedInstance._applicationContext = context.getApplicationContext();
         IterableApi.sharedInstance._apiKey = apiKey;
         IterableApi.sharedInstance.config = (config != null) ? config : new IterableConfig.Builder().build();
-        
+
         IterableLogger.d(TAG, "Starting background initialization");
-        
+
         Runnable initTask = () -> {
             try {
                 // Perform initialization on background thread
                 IterableLogger.d(TAG, "Executing initialization on background thread");
                 IterableApi.initialize(context, apiKey, config);
-                
+
                 // Mark as completed inside synchronized block
                 synchronized (initLock) {
                     isBackgroundInitialized = true;
                     isInitializing = false;
                 }
-                
+
                 IterableLogger.d(TAG, "Background initialization completed successfully");
-                
+
                 // Process any queued operations
                 operationQueue.processAll(backgroundExecutor);
-                
+
                 // Notify completion on main thread
                 new Handler(Looper.getMainLooper()).post(() -> {
                     try {
@@ -171,7 +171,7 @@ class IterableBackgroundInitializer {
                         if (callback != null) {
                             callback.onInitializationComplete();
                         }
-                        
+
                         // Call all pending callbacks from concurrent initialization attempts
                         AsyncInitializationCallback pendingCallback;
                         while ((pendingCallback = pendingCallbacks.poll()) != null) {
@@ -185,16 +185,16 @@ class IterableBackgroundInitializer {
                         IterableLogger.e(TAG, "Exception in initialization completion callback", e);
                     }
                 });
-                
+
             } catch (Exception e) {
                 synchronized (initLock) {
                     isInitializing = false;
                 }
                 IterableLogger.e(TAG, "Background initialization failed", e);
-                
+
                 // Clear any queued operations on failure
                 operationQueue.clear();
-                
+
                 // Notify failure on main thread
                 new Handler(Looper.getMainLooper()).post(() -> {
                     try {
@@ -202,7 +202,7 @@ class IterableBackgroundInitializer {
                         if (callback != null) {
                             callback.onInitializationFailed(e);
                         }
-                        
+
                         // Call all pending callbacks from concurrent initialization attempts
                         AsyncInitializationCallback pendingCallback;
                         while ((pendingCallback = pendingCallbacks.poll()) != null) {
@@ -218,7 +218,7 @@ class IterableBackgroundInitializer {
                 });
             }
         };
-        
+
         backgroundExecutor.execute(initTask);
     }
 
@@ -254,7 +254,7 @@ class IterableBackgroundInitializer {
         operation.execute();
         return false;
     }
-    
+
     /**
      * Convenient method for one-liner operation queuing
      * @param runnable The operation to execute
@@ -266,7 +266,7 @@ class IterableBackgroundInitializer {
             public void execute() {
                 runnable.run();
             }
-            
+
             @Override
             public String getDescription() {
                 return description;
@@ -282,7 +282,7 @@ class IterableBackgroundInitializer {
     static int getQueuedOperationCount() {
         return operationQueue.size();
     }
-    
+
     /**
      * Shutdown the background executor for proper cleanup
      * Should be called during application shutdown or for testing
@@ -303,7 +303,7 @@ class IterableBackgroundInitializer {
             }
         }
     }
-    
+
     /**
      * Reset background initialization state - for testing only
      */
@@ -314,7 +314,7 @@ class IterableBackgroundInitializer {
             isBackgroundInitialized = false;
             operationQueue.clear();
             pendingCallbacks.clear();
-            
+
             // Recreate executor if it was shut down
             if (backgroundExecutor == null || backgroundExecutor.isShutdown()) {
                 backgroundExecutor = createExecutor();

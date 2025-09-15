@@ -55,7 +55,7 @@ public class IterableTestUtils {
 
     public static void resetIterableApi() {
         IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class));
-        
+
         // Use the new dedicated method for resetting background initialization state
         IterableApi.resetBackgroundInitializationState();
     }
