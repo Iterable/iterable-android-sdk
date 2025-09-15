@@ -62,6 +62,10 @@ class IterableBackgroundInitializer {
                     }
                 }
                 isProcessing = false;
+
+                // After processing all operations, shut down the executor
+                IterableLogger.d(TAG, "All queued operations processed, shutting down background executor");
+                shutdownBackgroundExecutorAsync();
             });
         }
 
@@ -195,6 +199,10 @@ class IterableBackgroundInitializer {
                 // Clear any queued operations on failure
                 operationQueue.clear();
 
+                // Shut down executor on failure as well
+                IterableLogger.d(TAG, "Initialization failed, shutting down background executor");
+                shutdownBackgroundExecutorAsync();
+
                 // Notify failure on main thread
                 new Handler(Looper.getMainLooper()).post(() -> {
                     try {
@@ -302,6 +310,32 @@ class IterableBackgroundInitializer {
                 }
             }
         }
+    }
+
+    /**
+     * Shutdown the background executor asynchronously to avoid blocking the executor thread itself
+     * Used internally after initialization completes
+     */
+    private static void shutdownBackgroundExecutorAsync() {
+        // Schedule shutdown on a separate thread to avoid blocking the executor thread
+        new Thread(() -> {
+            synchronized (initLock) {
+                if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
+                    backgroundExecutor.shutdown();
+                    try {
+                        if (!backgroundExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                            IterableLogger.w(TAG, "Background executor did not terminate gracefully, forcing shutdown");
+                            backgroundExecutor.shutdownNow();
+                        }
+                    } catch (InterruptedException e) {
+                        IterableLogger.w(TAG, "Interrupted while waiting for executor termination");
+                        backgroundExecutor.shutdownNow();
+                        Thread.currentThread().interrupt();
+                    }
+                    IterableLogger.d(TAG, "Background executor shutdown completed");
+                }
+            }
+        }, "IterableExecutorShutdown").start();
     }
 
     /**
