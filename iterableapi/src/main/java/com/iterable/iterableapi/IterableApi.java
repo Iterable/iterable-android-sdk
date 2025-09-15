@@ -119,13 +119,17 @@ public class IterableApi {
     }
 
     // Background initialization infrastructure
-    private static final ExecutorService backgroundExecutor = 
-        Executors.newSingleThreadExecutor(r -> {
+    private static volatile ExecutorService backgroundExecutor;
+    private static final Object initLock = new Object();
+    
+    static {
+        backgroundExecutor = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "IterableBackgroundInit");
             t.setDaemon(true);
             t.setPriority(Thread.NORM_PRIORITY);
             return t;
         });
+    }
 
     private static final OperationQueue operationQueue = new OperationQueue();
     private static volatile boolean isInitializing = false;
@@ -851,18 +855,23 @@ public class IterableApi {
             return;
         }
         
-        if (isInitializing || isBackgroundInitialized) {
-            IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
-            if (callback != null) {
-                if (isBackgroundInitialized) {
-                    // Initialization already complete, call callback immediately
-                    new Handler(Looper.getMainLooper()).post(callback::onInitializationComplete);
-                } else {
-                    // Initialization in progress, queue callback for later
-                    pendingCallbacks.offer(callback);
+        synchronized (initLock) {
+            if (isInitializing || isBackgroundInitialized) {
+                IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
+                if (callback != null) {
+                    if (isBackgroundInitialized) {
+                        // Initialization already complete, call callback immediately
+                        new Handler(Looper.getMainLooper()).post(callback::onInitializationComplete);
+                    } else {
+                        // Initialization in progress, queue callback for later
+                        pendingCallbacks.offer(callback);
+                    }
                 }
+                return;
             }
-            return;
+            
+            // Set initializing flag inside synchronized block
+            isInitializing = true;
         }
         
         // Set essential properties immediately to avoid NullPointerExceptions during queuing
@@ -870,7 +879,6 @@ public class IterableApi {
         sharedInstance._apiKey = apiKey;
         sharedInstance.config = (config != null) ? config : new IterableConfig.Builder().build();
         
-        isInitializing = true;
         IterableLogger.d(TAG, "Starting background initialization");
         
         Runnable initTask = () -> {
@@ -879,9 +887,11 @@ public class IterableApi {
                 IterableLogger.d(TAG, "Executing initialization on background thread");
                 initialize(context, apiKey, config);
                 
-                // Mark as completed
-                isBackgroundInitialized = true;
-                isInitializing = false;
+                // Mark as completed inside synchronized block
+                synchronized (initLock) {
+                    isBackgroundInitialized = true;
+                    isInitializing = false;
+                }
                 
                 IterableLogger.d(TAG, "Background initialization completed successfully");
                 
@@ -911,7 +921,9 @@ public class IterableApi {
                 });
                 
             } catch (Exception e) {
-                isInitializing = false;
+                synchronized (initLock) {
+                    isInitializing = false;
+                }
                 IterableLogger.e(TAG, "Background initialization failed", e);
                 
                 // Clear any queued operations on failure
@@ -969,16 +981,63 @@ public class IterableApi {
         return operationQueue.size();
     }
     
+    /**
+     * Shutdown the background executor for proper cleanup
+     * Should be called during application shutdown or for testing
+     */
+    @VisibleForTesting
+    static void shutdownBackgroundExecutor() {
+        synchronized (initLock) {
+            if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
+                backgroundExecutor.shutdown();
+                try {
+                    if (!backgroundExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                        backgroundExecutor.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    backgroundExecutor.shutdownNow();
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Reset background initialization state - for testing only
+     */
+    @VisibleForTesting
+    static void resetBackgroundInitializationState() {
+        synchronized (initLock) {
+            isInitializing = false;
+            isBackgroundInitialized = false;
+            operationQueue.clear();
+            pendingCallbacks.clear();
+            
+            // Recreate executor if it was shut down
+            if (backgroundExecutor == null || backgroundExecutor.isShutdown()) {
+                backgroundExecutor = Executors.newSingleThreadExecutor(r -> {
+                    Thread t = new Thread(r, "IterableBackgroundInit");
+                    t.setDaemon(true);
+                    t.setPriority(Thread.NORM_PRIORITY);
+                    return t;
+                });
+            }
+        }
+    }
+    
 
     /**
      * Helper method to queue operations if initialization is in progress
+     * Uses synchronized block to prevent race conditions
      */
     private static boolean queueOperationIfInitializing(QueuedOperation operation) {
-        if (isInitializing && !isBackgroundInitialized) {
-            operationQueue.enqueue(operation);
-            return true;
+        synchronized (initLock) {
+            if (isInitializing && !isBackgroundInitialized) {
+                operationQueue.enqueue(operation);
+                return true;
+            }
+            return false;
         }
-        return false;
     }
 
     public static void setContext(Context context) {
