@@ -21,11 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import android.os.Handler;
-import android.os.Looper;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -36,9 +31,9 @@ public class IterableApi {
     static volatile IterableApi sharedInstance = new IterableApi();
 
     private static final String TAG = "IterableApi";
-    private Context _applicationContext;
+    Context _applicationContext; // Package-private for background initializer access
     IterableConfig config;
-    private String _apiKey;
+    String _apiKey; // Package-private for background initializer access
     private String _email;
     private String _userId;
     String _userIdUnknown;
@@ -61,81 +56,8 @@ public class IterableApi {
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
 
-    //region Background Initialization
+    //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
-    /**
-     * Represents a queued operation that should be executed after initialization
-     */
-    private interface QueuedOperation {
-        /**
-         * Execute the operation
-         */
-        void execute();
-        
-        /**
-         * Get description for debugging
-         */
-        String getDescription();
-    }
-
-    /**
-     * Queue for operations called before initialization completes
-     */
-    private static class OperationQueue {
-        private final java.util.concurrent.ConcurrentLinkedQueue<QueuedOperation> operations = new ConcurrentLinkedQueue<>();
-        private volatile boolean isProcessing = false;
-        
-        void enqueue(QueuedOperation operation) {
-            operations.offer(operation);
-            IterableLogger.d(TAG, "Queued operation: " + operation.getDescription());
-        }
-        
-        void processAll() {
-            if (isProcessing) return;
-            isProcessing = true;
-            
-            backgroundExecutor.execute(() -> {
-                QueuedOperation operation;
-                while ((operation = operations.poll()) != null) {
-                    try {
-                        IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
-                        operation.execute();
-                    } catch (Exception e) {
-                        IterableLogger.e(TAG, "Failed to execute queued operation", e);
-                    }
-                }
-                isProcessing = false;
-            });
-        }
-        
-        int size() {
-            return operations.size();
-        }
-        
-        void clear() {
-            operations.clear();
-            isProcessing = false;
-        }
-    }
-
-    // Background initialization infrastructure
-    private static volatile ExecutorService backgroundExecutor;
-    private static final Object initLock = new Object();
-    
-    static {
-        backgroundExecutor = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "IterableBackgroundInit");
-            t.setDaemon(true);
-            t.setPriority(Thread.NORM_PRIORITY);
-            return t;
-        });
-    }
-
-    private static final OperationQueue operationQueue = new OperationQueue();
-    private static volatile boolean isInitializing = false;
-    private static volatile boolean isBackgroundInitialized = false;
-    private static final java.util.concurrent.ConcurrentLinkedQueue<AsyncInitializationCallback> pendingCallbacks = new java.util.concurrent.ConcurrentLinkedQueue<>();
-    //endregion
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -828,7 +750,7 @@ public class IterableApi {
     public static void initializeInBackground(@NonNull Context context, 
                                             @NonNull String apiKey, 
                                             @Nullable AsyncInitializationCallback callback) {
-        initializeInBackground(context, apiKey, null, callback);
+        IterableBackgroundInitializer.initializeInBackground(context, apiKey, null, callback);
     }
 
     /**
@@ -845,115 +767,7 @@ public class IterableApi {
                                             @NonNull String apiKey, 
                                             @Nullable IterableConfig config,
                                             @Nullable AsyncInitializationCallback callback) {
-        // Handle null context early
-        if (context == null) {
-            if (callback != null) {
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    callback.onInitializationFailed(new IllegalArgumentException("Context cannot be null"));
-                });
-            }
-            return;
-        }
-        
-        synchronized (initLock) {
-            if (isInitializing || isBackgroundInitialized) {
-                IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
-                if (callback != null) {
-                    if (isBackgroundInitialized) {
-                        // Initialization already complete, call callback immediately
-                        new Handler(Looper.getMainLooper()).post(callback::onInitializationComplete);
-                    } else {
-                        // Initialization in progress, queue callback for later
-                        pendingCallbacks.offer(callback);
-                    }
-                }
-                return;
-            }
-            
-            // Set initializing flag inside synchronized block
-            isInitializing = true;
-        }
-        
-        // Set essential properties immediately to avoid NullPointerExceptions during queuing
-        sharedInstance._applicationContext = context.getApplicationContext();
-        sharedInstance._apiKey = apiKey;
-        sharedInstance.config = (config != null) ? config : new IterableConfig.Builder().build();
-        
-        IterableLogger.d(TAG, "Starting background initialization");
-        
-        Runnable initTask = () -> {
-            try {
-                // Perform initialization on background thread
-                IterableLogger.d(TAG, "Executing initialization on background thread");
-                initialize(context, apiKey, config);
-                
-                // Mark as completed inside synchronized block
-                synchronized (initLock) {
-                    isBackgroundInitialized = true;
-                    isInitializing = false;
-                }
-                
-                IterableLogger.d(TAG, "Background initialization completed successfully");
-                
-                // Process any queued operations
-                operationQueue.processAll();
-                
-                // Notify completion on main thread
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    try {
-                        // Call the original callback
-                        if (callback != null) {
-                            callback.onInitializationComplete();
-                        }
-                        
-                        // Call all pending callbacks from concurrent initialization attempts
-                        AsyncInitializationCallback pendingCallback;
-                        while ((pendingCallback = pendingCallbacks.poll()) != null) {
-                            try {
-                                pendingCallback.onInitializationComplete();
-                            } catch (Exception e) {
-                                IterableLogger.e(TAG, "Exception in pending initialization completion callback", e);
-                            }
-                        }
-                    } catch (Exception e) {
-                        IterableLogger.e(TAG, "Exception in initialization completion callback", e);
-                    }
-                });
-                
-            } catch (Exception e) {
-                synchronized (initLock) {
-                    isInitializing = false;
-                }
-                IterableLogger.e(TAG, "Background initialization failed", e);
-                
-                // Clear any queued operations on failure
-                operationQueue.clear();
-                
-                // Notify failure on main thread
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    try {
-                        // Call the original callback
-                        if (callback != null) {
-                            callback.onInitializationFailed(e);
-                        }
-                        
-                        // Call all pending callbacks from concurrent initialization attempts
-                        AsyncInitializationCallback pendingCallback;
-                        while ((pendingCallback = pendingCallbacks.poll()) != null) {
-                            try {
-                                pendingCallback.onInitializationFailed(e);
-                            } catch (Exception callbackException) {
-                                IterableLogger.e(TAG, "Exception in pending initialization failure callback", callbackException);
-                            }
-                        }
-                    } catch (Exception callbackException) {
-                        IterableLogger.e(TAG, "Exception in initialization failure callback", callbackException);
-                    }
-                });
-            }
-        };
-        
-        backgroundExecutor.execute(initTask);
+        IterableBackgroundInitializer.initializeInBackground(context, apiKey, config, callback);
     }
 
     /**
@@ -961,7 +775,7 @@ public class IterableApi {
      * @return true if initialization is currently running in background
      */
     public static boolean isInitializingInBackground() {
-        return isInitializing;
+        return IterableBackgroundInitializer.isInitializingInBackground();
     }
 
     /**
@@ -969,7 +783,7 @@ public class IterableApi {
      * @return true if background initialization completed successfully
      */
     public static boolean isBackgroundInitializationComplete() {
-        return isBackgroundInitialized;
+        return IterableBackgroundInitializer.isBackgroundInitializationComplete();
     }
 
     /**
@@ -978,7 +792,7 @@ public class IterableApi {
      */
     @VisibleForTesting
     static int getQueuedOperationCount() {
-        return operationQueue.size();
+        return IterableBackgroundInitializer.getQueuedOperationCount();
     }
     
     /**
@@ -987,19 +801,7 @@ public class IterableApi {
      */
     @VisibleForTesting
     static void shutdownBackgroundExecutor() {
-        synchronized (initLock) {
-            if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
-                backgroundExecutor.shutdown();
-                try {
-                    if (!backgroundExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
-                        backgroundExecutor.shutdownNow();
-                    }
-                } catch (InterruptedException e) {
-                    backgroundExecutor.shutdownNow();
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
+        IterableBackgroundInitializer.shutdownBackgroundExecutor();
     }
     
     /**
@@ -1007,37 +809,7 @@ public class IterableApi {
      */
     @VisibleForTesting
     static void resetBackgroundInitializationState() {
-        synchronized (initLock) {
-            isInitializing = false;
-            isBackgroundInitialized = false;
-            operationQueue.clear();
-            pendingCallbacks.clear();
-            
-            // Recreate executor if it was shut down
-            if (backgroundExecutor == null || backgroundExecutor.isShutdown()) {
-                backgroundExecutor = Executors.newSingleThreadExecutor(r -> {
-                    Thread t = new Thread(r, "IterableBackgroundInit");
-                    t.setDaemon(true);
-                    t.setPriority(Thread.NORM_PRIORITY);
-                    return t;
-                });
-            }
-        }
-    }
-    
-
-    /**
-     * Helper method to queue operations if initialization is in progress
-     * Uses synchronized block to prevent race conditions
-     */
-    private static boolean queueOperationIfInitializing(QueuedOperation operation) {
-        synchronized (initLock) {
-            if (isInitializing && !isBackgroundInitialized) {
-                operationQueue.enqueue(operation);
-                return true;
-            }
-            return false;
-        }
+        IterableBackgroundInitializer.resetBackgroundInitializationState();
     }
 
     public static void setContext(Context context) {
@@ -1121,20 +893,7 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        if (queueOperationIfInitializing(new QueuedOperation() {
-            @Override
-            public void execute() {
-                setEmail(email);
-            }
-            
-            @Override
-            public String getDescription() {
-                return "setEmail(" + email + ")";
-            }
-        })) {
-            return;
-        }
-        setEmail(email, null, null, null, null);
+        IterableBackgroundInitializer.queueOrExecute(() -> setEmail(email, null, null, null, null), "setEmail(" + email + ")");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution) {
@@ -1203,20 +962,7 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId) {
-        if (queueOperationIfInitializing(new QueuedOperation() {
-            @Override
-            public void execute() {
-                setUserId(userId);
-            }
-            
-            @Override
-            public String getDescription() {
-                return "setUserId(" + userId + ")";
-            }
-        })) {
-            return;
-        }
-        setUserId(userId, null, null, null, null, false);
+        IterableBackgroundInitializer.queueOrExecute(() -> setUserId(userId, null, null, null, null, false), "setUserId(" + userId + ")");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution) {
@@ -1542,20 +1288,7 @@ public class IterableApi {
      * @param eventName
      */
     public void track(@NonNull String eventName) {
-        if (queueOperationIfInitializing(new QueuedOperation() {
-            @Override
-            public void execute() {
-                track(eventName);
-            }
-            
-            @Override
-            public String getDescription() {
-                return "track(" + eventName + ")";
-            }
-        })) {
-            return;
-        }
-        track(eventName, 0, 0, null);
+        IterableBackgroundInitializer.queueOrExecute(() -> track(eventName, 0, 0, null), "track(" + eventName + ")");
     }
 
     /**
