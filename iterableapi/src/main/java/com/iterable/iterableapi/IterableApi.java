@@ -21,6 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import android.os.Handler;
+import android.os.Looper;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -55,6 +60,78 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
+
+    //region Background Initialization
+    //---------------------------------------------------------------------------------------
+    /**
+     * Represents a queued operation that should be executed after initialization
+     */
+    private interface QueuedOperation {
+        /**
+         * Execute the operation
+         */
+        void execute();
+        
+        /**
+         * Get description for debugging
+         */
+        String getDescription();
+    }
+
+    /**
+     * Queue for operations called before initialization completes
+     */
+    private static class OperationQueue {
+        private final java.util.concurrent.ConcurrentLinkedQueue<QueuedOperation> operations = new ConcurrentLinkedQueue<>();
+        private volatile boolean isProcessing = false;
+        
+        void enqueue(QueuedOperation operation) {
+            operations.offer(operation);
+            IterableLogger.d(TAG, "Queued operation: " + operation.getDescription());
+        }
+        
+        void processAll() {
+            if (isProcessing) return;
+            isProcessing = true;
+            
+            backgroundExecutor.execute(() -> {
+                QueuedOperation operation;
+                while ((operation = operations.poll()) != null) {
+                    try {
+                        IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
+                        operation.execute();
+                    } catch (Exception e) {
+                        IterableLogger.e(TAG, "Failed to execute queued operation", e);
+                    }
+                }
+                isProcessing = false;
+            });
+        }
+        
+        int size() {
+            return operations.size();
+        }
+        
+        void clear() {
+            operations.clear();
+            isProcessing = false;
+        }
+    }
+
+    // Background initialization infrastructure
+    private static final ExecutorService backgroundExecutor = 
+        Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "IterableBackgroundInit");
+            t.setDaemon(true);
+            t.setPriority(Thread.NORM_PRIORITY);
+            return t;
+        });
+
+    private static final OperationQueue operationQueue = new OperationQueue();
+    private static volatile boolean isInitializing = false;
+    private static volatile boolean isBackgroundInitialized = false;
+    private static final java.util.concurrent.ConcurrentLinkedQueue<AsyncInitializationCallback> pendingCallbacks = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    //endregion
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -347,11 +424,20 @@ public class IterableApi {
             disablePush();
         }
 
-        getInAppManager().reset();
-        getEmbeddedManager().reset();
-        getAuthManager().reset();
+        // Only reset managers if they're initialized
+        if (inAppManager != null) {
+            inAppManager.reset();
+        }
+        if (embeddedManager != null) {
+            embeddedManager.reset();
+        }
+        if (authManager != null) {
+            authManager.reset();
+        }
 
-        apiClient.onLogout();
+        if (apiClient != null) {
+            apiClient.onLogout();
+        }
     }
 
     private void onLogin(
@@ -726,6 +812,175 @@ public class IterableApi {
         }
     }
 
+    /**
+     * Initialize the Iterable SDK in the background to avoid ANRs.
+     * This method returns immediately and performs all initialization work on a background thread.
+     * Any API calls made before initialization completes will be queued and executed after initialization.
+     * 
+     * @param context Application context
+     * @param apiKey Iterable API key
+     * @param callback Optional callback for initialization completion (can be null)
+     */
+    public static void initializeInBackground(@NonNull Context context, 
+                                            @NonNull String apiKey, 
+                                            @Nullable AsyncInitializationCallback callback) {
+        initializeInBackground(context, apiKey, null, callback);
+    }
+
+    /**
+     * Initialize the Iterable SDK in the background to avoid ANRs.
+     * This method returns immediately and performs all initialization work on a background thread.
+     * Any API calls made before initialization completes will be queued and executed after initialization.
+     * 
+     * @param context Application context
+     * @param apiKey Iterable API key
+     * @param config Optional configuration (can be null)
+     * @param callback Optional callback for initialization completion (can be null)
+     */
+    public static void initializeInBackground(@NonNull Context context, 
+                                            @NonNull String apiKey, 
+                                            @Nullable IterableConfig config,
+                                            @Nullable AsyncInitializationCallback callback) {
+        // Handle null context early
+        if (context == null) {
+            if (callback != null) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    callback.onInitializationFailed(new IllegalArgumentException("Context cannot be null"));
+                });
+            }
+            return;
+        }
+        
+        if (isInitializing || isBackgroundInitialized) {
+            IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
+            if (callback != null) {
+                if (isBackgroundInitialized) {
+                    // Initialization already complete, call callback immediately
+                    new Handler(Looper.getMainLooper()).post(callback::onInitializationComplete);
+                } else {
+                    // Initialization in progress, queue callback for later
+                    pendingCallbacks.offer(callback);
+                }
+            }
+            return;
+        }
+        
+        // Set essential properties immediately to avoid NullPointerExceptions during queuing
+        sharedInstance._applicationContext = context.getApplicationContext();
+        sharedInstance._apiKey = apiKey;
+        sharedInstance.config = (config != null) ? config : new IterableConfig.Builder().build();
+        
+        isInitializing = true;
+        IterableLogger.d(TAG, "Starting background initialization");
+        
+        Runnable initTask = () -> {
+            try {
+                // Perform initialization on background thread
+                IterableLogger.d(TAG, "Executing initialization on background thread");
+                initialize(context, apiKey, config);
+                
+                // Mark as completed
+                isBackgroundInitialized = true;
+                isInitializing = false;
+                
+                IterableLogger.d(TAG, "Background initialization completed successfully");
+                
+                // Process any queued operations
+                operationQueue.processAll();
+                
+                // Notify completion on main thread
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    try {
+                        // Call the original callback
+                        if (callback != null) {
+                            callback.onInitializationComplete();
+                        }
+                        
+                        // Call all pending callbacks from concurrent initialization attempts
+                        AsyncInitializationCallback pendingCallback;
+                        while ((pendingCallback = pendingCallbacks.poll()) != null) {
+                            try {
+                                pendingCallback.onInitializationComplete();
+                            } catch (Exception e) {
+                                IterableLogger.e(TAG, "Exception in pending initialization completion callback", e);
+                            }
+                        }
+                    } catch (Exception e) {
+                        IterableLogger.e(TAG, "Exception in initialization completion callback", e);
+                    }
+                });
+                
+            } catch (Exception e) {
+                isInitializing = false;
+                IterableLogger.e(TAG, "Background initialization failed", e);
+                
+                // Clear any queued operations on failure
+                operationQueue.clear();
+                
+                // Notify failure on main thread
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    try {
+                        // Call the original callback
+                        if (callback != null) {
+                            callback.onInitializationFailed(e);
+                        }
+                        
+                        // Call all pending callbacks from concurrent initialization attempts
+                        AsyncInitializationCallback pendingCallback;
+                        while ((pendingCallback = pendingCallbacks.poll()) != null) {
+                            try {
+                                pendingCallback.onInitializationFailed(e);
+                            } catch (Exception callbackException) {
+                                IterableLogger.e(TAG, "Exception in pending initialization failure callback", callbackException);
+                            }
+                        }
+                    } catch (Exception callbackException) {
+                        IterableLogger.e(TAG, "Exception in initialization failure callback", callbackException);
+                    }
+                });
+            }
+        };
+        
+        backgroundExecutor.execute(initTask);
+    }
+
+    /**
+     * Check if background initialization is in progress
+     * @return true if initialization is currently running in background
+     */
+    public static boolean isInitializingInBackground() {
+        return isInitializing;
+    }
+
+    /**
+     * Check if background initialization has completed
+     * @return true if background initialization completed successfully
+     */
+    public static boolean isBackgroundInitializationComplete() {
+        return isBackgroundInitialized;
+    }
+
+    /**
+     * Get the number of operations currently queued
+     * @return number of queued operations
+     */
+    @VisibleForTesting
+    static int getQueuedOperationCount() {
+        return operationQueue.size();
+    }
+    
+
+    /**
+     * Helper method to queue operations if initialization is in progress
+     */
+    private static boolean queueOperationIfInitializing(QueuedOperation operation) {
+        if (isInitializing && !isBackgroundInitialized) {
+            operationQueue.enqueue(operation);
+            return true;
+        }
+        return false;
+    }
+
     public static void setContext(Context context) {
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
     }
@@ -807,6 +1062,19 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
+        if (queueOperationIfInitializing(new QueuedOperation() {
+            @Override
+            public void execute() {
+                setEmail(email);
+            }
+            
+            @Override
+            public String getDescription() {
+                return "setEmail(" + email + ")";
+            }
+        })) {
+            return;
+        }
         setEmail(email, null, null, null, null);
     }
 
@@ -876,6 +1144,19 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId) {
+        if (queueOperationIfInitializing(new QueuedOperation() {
+            @Override
+            public void execute() {
+                setUserId(userId);
+            }
+            
+            @Override
+            public String getDescription() {
+                return "setUserId(" + userId + ")";
+            }
+        })) {
+            return;
+        }
         setUserId(userId, null, null, null, null, false);
     }
 
@@ -1202,6 +1483,19 @@ public class IterableApi {
      * @param eventName
      */
     public void track(@NonNull String eventName) {
+        if (queueOperationIfInitializing(new QueuedOperation() {
+            @Override
+            public void execute() {
+                track(eventName);
+            }
+            
+            @Override
+            public String getDescription() {
+                return "track(" + eventName + ")";
+            }
+        })) {
+            return;
+        }
         track(eventName, 0, 0, null);
     }
 

@@ -55,6 +55,30 @@ public class IterableTestUtils {
 
     public static void resetIterableApi() {
         IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class));
+        
+        // Reset static async initialization state using reflection
+        try {
+            java.lang.reflect.Field isInitializingField = IterableApi.class.getDeclaredField("isInitializing");
+            isInitializingField.setAccessible(true);
+            isInitializingField.set(null, false);
+            
+            java.lang.reflect.Field isBackgroundInitializedField = IterableApi.class.getDeclaredField("isBackgroundInitialized");
+            isBackgroundInitializedField.setAccessible(true);
+            isBackgroundInitializedField.set(null, false);
+            
+            
+            java.lang.reflect.Field operationQueueField = IterableApi.class.getDeclaredField("operationQueue");
+            operationQueueField.setAccessible(true);
+            Object operationQueue = operationQueueField.get(null);
+            operationQueue.getClass().getMethod("clear").invoke(operationQueue);
+            
+            java.lang.reflect.Field pendingCallbacksField = IterableApi.class.getDeclaredField("pendingCallbacks");
+            pendingCallbacksField.setAccessible(true);
+            Object pendingCallbacks = pendingCallbacksField.get(null);
+            pendingCallbacks.getClass().getMethod("clear").invoke(pendingCallbacks);
+        } catch (Exception e) {
+            // Ignore reflection errors in tests - this is for cleanup
+        }
     }
 
     public static String getResourceString(String fileName) throws IOException {
