@@ -37,6 +37,27 @@ To learn more about various SDK features, read:
 - [Embedded Messages with Iterable's Android SDK](https://support.iterable.com/hc/articles/23061877893652)
 - [Unknown User Activation: Developer Docs](https://support.iterable.com/hc/sections/40078809116180)
 
+## Background Initialization (Recommended)
+
+To prevent ANRs during app startup, use background initialization instead of the standard `initialize()` method:
+
+```java
+// In Application.onCreate()
+IterableApi.initializeInBackground(this, "your-api-key", config, new AsyncInitializationCallback() {
+    @Override
+    public void onInitializationComplete() {
+        // SDK is ready
+    }
+    
+    @Override
+    public void onInitializationFailed(Exception e) {
+        // Handle initialization failure
+    }
+});
+```
+
+This initializes the SDK on a background thread and automatically queues API calls until initialization completes, preventing ANRs and ensuring no data is lost.
+
 ## Sample projects
 
 For sample code, take a look at:
