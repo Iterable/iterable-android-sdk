@@ -58,6 +58,13 @@ public class IterableApi {
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
+    
+    /**
+     * Helper method to queue operations if initialization is in progress
+     */
+    private void queueOrExecute(Runnable operation, String description) {
+        IterableBackgroundInitializer.queueOrExecute(operation, description);
+    }
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -893,7 +900,7 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        IterableBackgroundInitializer.queueOrExecute(() -> setEmail(email, null, null, null, null), "setEmail(" + email + ")");
+        queueOrExecute(() -> setEmail(email, null, null, null, null), "setEmail(" + email + ")");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution) {
@@ -962,7 +969,7 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId) {
-        IterableBackgroundInitializer.queueOrExecute(() -> setUserId(userId, null, null, null, null, false), "setUserId(" + userId + ")");
+        queueOrExecute(() -> setUserId(userId, null, null, null, null, false), "setUserId(" + userId + ")");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution) {
@@ -1112,11 +1119,11 @@ public class IterableApi {
      * @param deviceToken Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(@NonNull String deviceToken) {
-        registerDeviceToken(_email, _userId, _authToken, getPushIntegrationName(), deviceToken, deviceAttributes);
+        queueOrExecute(() -> registerDeviceToken(_email, _userId, _authToken, getPushIntegrationName(), deviceToken, deviceAttributes), "registerDeviceToken");
     }
 
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
-        trackPushOpen(campaignId, templateId, messageId, null);
+        queueOrExecute(() -> trackPushOpen(campaignId, templateId, messageId, null), "trackPushOpen(" + campaignId + ", " + templateId + ", " + messageId + ")");
     }
 
     /**
@@ -1288,7 +1295,7 @@ public class IterableApi {
      * @param eventName
      */
     public void track(@NonNull String eventName) {
-        IterableBackgroundInitializer.queueOrExecute(() -> track(eventName, 0, 0, null), "track(" + eventName + ")");
+        queueOrExecute(() -> track(eventName, 0, 0, null), "track(" + eventName + ")");
     }
 
     /**
@@ -1297,7 +1304,7 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(@NonNull String eventName, @Nullable JSONObject dataFields) {
-        track(eventName, 0, 0, dataFields);
+        queueOrExecute(() -> track(eventName, 0, 0, dataFields), "track(" + eventName + ", dataFields)");
     }
 
     /**
@@ -1307,7 +1314,7 @@ public class IterableApi {
      * @param templateId
      */
     public void track(@NonNull String eventName, int campaignId, int templateId) {
-        track(eventName, campaignId, templateId, null);
+        queueOrExecute(() -> track(eventName, campaignId, templateId, null), "track(" + eventName + ", " + campaignId + ", " + templateId + ")");
     }
 
     /**
@@ -1334,14 +1341,16 @@ public class IterableApi {
      * @param items
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableUnknownUserActivation) {
-                unknownUserManager.trackUnknownUpdateCart(items);
+        queueOrExecute(() -> {
+            if (!checkSDKInitialization() && _userIdUnknown == null) {
+                if (sharedInstance.config.enableUnknownUserActivation) {
+                    unknownUserManager.trackUnknownUpdateCart(items);
+                }
+                return;
             }
-            return;
-        }
 
-        apiClient.updateCart(items);
+            apiClient.updateCart(items);
+        }, "updateCart(" + items.size() + " items)");
     }
 
     /**
@@ -1350,7 +1359,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        trackPurchase(total, items, null, null);
+        queueOrExecute(() -> trackPurchase(total, items, null, null), "trackPurchase(" + total + ", " + items.size() + " items)");
     }
 
     /**
@@ -1360,7 +1369,7 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        trackPurchase(total, items, dataFields, null);
+        queueOrExecute(() -> trackPurchase(total, items, dataFields, null), "trackPurchase(" + total + ", " + items.size() + " items, dataFields)");
     }
 
 
@@ -1388,7 +1397,7 @@ public class IterableApi {
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        updateEmail(newEmail, null, null, null);
+        queueOrExecute(() -> updateEmail(newEmail, null, null, null), "updateEmail(" + newEmail + ")");
     }
 
     public void updateEmail(final @NonNull String newEmail, final @NonNull String authToken) {
