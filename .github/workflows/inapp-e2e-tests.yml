@@ -34,6 +34,20 @@ jobs:
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
           
+      - name: Accept Android SDK Licenses
+        run: |
+          echo "Accepting Android SDK licenses..."
+          yes | sdkmanager --licenses || true
+          echo "SDK licenses accepted"
+          
+      - name: Install Android System Images
+        run: |
+          echo "Installing Android system images for API level ${{ matrix.api-level }}..."
+          sdkmanager --list | grep "system-images;android-${{ matrix.api-level }}"
+          sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86_64"
+          sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86"
+          echo "System images installed successfully"
+          
       - name: Setup Google Services Configuration
         run: |
           echo "Setting up Google Services configuration for CI..."
@@ -57,11 +71,33 @@ jobs:
       - name: Create Android Virtual Device
         run: |
           echo "Creating AVD for API level ${{ matrix.api-level }}..."
-          echo "no" | avdmanager create avd \
-            -n "inapp_e2e_device_api_${{ matrix.api-level }}" \
-            -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
-            -c 2048M \
-            -f
+          
+          # List available system images for debugging
+          echo "Available system images:"
+          sdkmanager --list | grep "system-images;android-${{ matrix.api-level }}" || echo "No system images found for API ${{ matrix.api-level }}"
+          
+          # Try to create AVD with x86_64 first, fallback to x86
+          if sdkmanager --list | grep -q "system-images;android-${{ matrix.api-level }};google_apis;x86_64"; then
+            echo "Creating AVD with x86_64 system image..."
+            echo "no" | avdmanager create avd \
+              -n "inapp_e2e_device_api_${{ matrix.api-level }}" \
+              -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
+              -c 2048M \
+              -f
+          elif sdkmanager --list | grep -q "system-images;android-${{ matrix.api-level }};google_apis;x86"; then
+            echo "Creating AVD with x86 system image..."
+            echo "no" | avdmanager create avd \
+              -n "inapp_e2e_device_api_${{ matrix.api-level }}" \
+              -k "system-images;android-${{ matrix.api-level }};google_apis;x86" \
+              -c 2048M \
+              -f
+          else
+            echo "Error: No suitable system images found for API level ${{ matrix.api-level }}"
+            echo "Available system images:"
+            sdkmanager --list | grep "system-images" | head -20
+            exit 1
+          fi
+          
           echo "AVD created successfully"
             
       - name: Start Android Emulator
