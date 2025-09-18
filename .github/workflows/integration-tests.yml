@@ -56,16 +56,17 @@ jobs:
             
       - name: Create Android Virtual Device
         run: |
-          echo "Creating AVD..."
+          echo "Creating AVD for API level ${{ matrix.api-level }}..."
           echo "no" | avdmanager create avd \
             -n "test_device_api_${{ matrix.api-level }}" \
             -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
             -c 2048M \
             -f
+          echo "AVD created successfully"
             
       - name: Start Android Emulator
         run: |
-          echo "Starting emulator..."
+          echo "Starting emulator for API level ${{ matrix.api-level }}..."
           $ANDROID_SDK_ROOT/emulator/emulator \
             -avd test_device_api_${{ matrix.api-level }} \
             -no-audio \
@@ -73,27 +74,55 @@ jobs:
             -no-snapshot \
             -camera-back none \
             -camera-front none \
-            -gpu swiftshader_indirect &
+            -gpu swiftshader_indirect \
+            -memory 2048 \
+            -cores 2 &
+          echo "Emulator started in background"
             
       - name: Wait for emulator
         run: |
-          echo "Waiting for emulator..."
+          echo "Waiting for emulator to be ready..."
           adb wait-for-device
+          echo "Emulator device detected, waiting for boot completion..."
+          
+          # Wait for boot completion
+          while [ "`adb shell getprop sys.boot_completed`" != "1" ]; do
+            echo "Waiting for boot completion..."
+            sleep 5
+          done
+          
+          echo "Emulator boot completed, unlocking screen..."
           adb shell input keyevent 82
           adb shell input keyevent 82
+          
+          # Additional setup for integration tests
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          
+          echo "Emulator setup complete"
           
       - name: Grant notification permissions
         run: |
           echo "Granting notification permissions..."
           adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
           
-      - name: Run Integration Tests
+      - name: Run In-App Message Integration Tests
         env:
           ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
-          ITERABLE_PROJECT_ID: ${{ secrets.ITERABLE_PROJECT_ID }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
         run: |
-          echo "Running integration tests..."
+          echo "Running In-App Message integration tests..."
+          ./gradlew :integration-tests:connectedCheck \
+            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest \
+            --info
+            
+      - name: Run Push Notification Integration Tests
+        env:
+          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
+          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
+        run: |
+          echo "Running Push Notification integration tests..."
           ./gradlew :integration-tests:connectedCheck \
             -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.PushNotificationIntegrationTest \
             --info
@@ -104,21 +133,35 @@ jobs:
           echo "Generating test report..."
           ./gradlew :integration-tests:jacocoIntegrationTestReport
           
+      - name: Collect Test Logs
+        if: always()
+        run: |
+          echo "Collecting test logs..."
+          adb logcat -d > integration-tests/build/test-logs.txt
+          
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: integration-test-results-api-${{ matrix.api-level }}
           path: |
             integration-tests/build/reports/
             integration-tests/build/outputs/
+            integration-tests/build/test-logs.txt
             
       - name: Upload Coverage Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: integration-test-coverage-api-${{ matrix.api-level }}
           path: integration-tests/build/reports/jacoco/
+          
+      - name: Upload Screenshots (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-screenshots-api-${{ matrix.api-level }}
+          path: integration-tests/screenshots/
           
       - name: Stop emulator
         if: always()
@@ -195,7 +238,6 @@ jobs:
       - name: Run All Integration Tests
         env:
           ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
-          ITERABLE_PROJECT_ID: ${{ secrets.ITERABLE_PROJECT_ID }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
         run: |
           echo "Running all integration tests..."
@@ -209,7 +251,7 @@ jobs:
           
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nightly-integration-test-results
           path: |
@@ -218,7 +260,7 @@ jobs:
             
       - name: Upload Coverage Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nightly-integration-test-coverage
           path: integration-tests/build/reports/jacoco/

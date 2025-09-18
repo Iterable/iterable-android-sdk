@@ -8,6 +8,7 @@ import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.integration.tests.BuildConfig
+import com.iterable.integration.tests.TestConstants
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -57,7 +58,7 @@ class IntegrationTestUtils(private val context: Context) {
     }
     
     // User management methods
-    fun ensureUserSignedIn(email: String = "akshay.ayyanchira@iterable.com"): Boolean {
+    fun ensureUserSignedIn(email: String = TestConstants.TEST_USER_EMAIL): Boolean {
         return try {
             val currentEmail = com.iterable.iterableapi.IterableApi.getInstance().getEmail()
             if (currentEmail != email) {
@@ -353,7 +354,7 @@ class IntegrationTestUtils(private val context: Context) {
     }
     
     // Campaign Triggering Methods - Using Server-Side API
-    fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+    fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
         // Execute on background thread to avoid NetworkOnMainThreadException
         Thread {
             try {
@@ -386,7 +387,7 @@ class IntegrationTestUtils(private val context: Context) {
         }.start()
     }
     
-    fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+    fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
         // Execute on background thread to avoid NetworkOnMainThreadException
         Thread {
             try {

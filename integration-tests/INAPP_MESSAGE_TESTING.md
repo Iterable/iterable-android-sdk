@@ -122,20 +122,44 @@ Set the following environment variables for API access:
 
 ## Running Tests
 
-### Run All In-App Message Tests
+### Local Testing
+
+#### Run All In-App Message Tests
 ```bash
 ./gradlew :integration-tests:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest
 ```
 
-### Run Specific Test
+#### Run Specific Test
 ```bash
-./gradlew :integration-tests:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageDeliveryAndDisplay
+./gradlew :integration-tests:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP
 ```
 
-### Run Activity-Based Tests
+#### Run Activity-Based Tests
 ```bash
 ./gradlew :integration-tests:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageActivityIntegrationTest
 ```
+
+### CI/CD Testing
+
+#### GitHub Actions Integration
+The integration tests run automatically on:
+- **Push** to `master` and `develop` branches
+- **Pull Requests** targeting `master` and `develop` branches
+- **Scheduled runs** daily at 2 AM UTC
+- **Manual triggers** via GitHub Actions UI
+
+#### E2E Branch Testing
+For the `InApp-Display-E2E` branch, a dedicated workflow runs:
+- In-App Message E2E tests on API levels 29 and 34
+- Comprehensive test reporting and artifact collection
+- Debug screenshots and detailed logs
+
+#### Required CI Secrets
+Configure these secrets in GitHub repository settings:
+- `ITERABLE_API_KEY` - Client-side API key (already tied to project)
+- `ITERABLE_SERVER_API_KEY` - Server-side API key for campaign triggering
+
+See [CI_SETUP.md](./CI_SETUP.md) for detailed CI configuration instructions.
 
 ## Test Data Requirements
 
@@ -146,7 +170,7 @@ Set the following environment variables for API access:
 4. Configure the campaign for the test user email
 
 ### Test User
-- Email: `akshay.ayyanchira@iterable.com`
+- Email: `test@abc.com`
 - Ensure the user is properly configured in Iterable
 - User should have appropriate permissions for in-app messages
 

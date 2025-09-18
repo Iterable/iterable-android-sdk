@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.TestConstants
 import org.awaitility.Awaitility
 import org.awaitility.core.ConditionTimeoutException
 import org.junit.After
@@ -20,8 +21,8 @@ import java.util.concurrent.TimeUnit
 abstract class BaseIntegrationTest {
     
     companion object {
-        const val TIMEOUT_SECONDS = 5L  // Fast iterations for MVP
-        const val POLL_INTERVAL_SECONDS = 1L
+        const val TIMEOUT_SECONDS = TestConstants.TIMEOUT_SECONDS
+        const val POLL_INTERVAL_SECONDS = TestConstants.POLL_INTERVAL_SECONDS
     }
     
     protected lateinit var context: Context
@@ -49,6 +50,7 @@ abstract class BaseIntegrationTest {
         val config = IterableConfig.Builder()
             .setAutoPushRegistration(true)
             .setEnableEmbeddedMessaging(true)
+            .setLogLevel(Log.VERBOSE)
             .setInAppDisplayInterval(3.0)
             .setInAppHandler { message ->
                 // Handle in-app messages during tests
@@ -71,9 +73,9 @@ abstract class BaseIntegrationTest {
         IterableApi.initialize(context, BuildConfig.ITERABLE_API_KEY, config)
         
         // Set the user email for integration testing
-        val userEmail = "akshay.ayyanchira@iterable.com"
+        val userEmail = TestConstants.TEST_USER_EMAIL
         IterableApi.getInstance().setEmail(userEmail)
-        
+        Log.d("BaseIntegrationTest", "User email set to: $userEmail")
         Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: $userEmail")
     }
     
@@ -135,14 +137,14 @@ abstract class BaseIntegrationTest {
     /**
      * Trigger a campaign via Iterable API
      */
-    protected fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+    protected fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
         testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
     }
     
     /**
      * Trigger a push campaign via Iterable API
      */
-    protected fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = "akshay.ayyanchira@iterable.com", dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+    protected fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
         testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
     }
     
@@ -177,7 +179,7 @@ abstract class BaseIntegrationTest {
         var triggered = false
         val latch = CountDownLatch(1)
         
-        triggerCampaignViaAPI(campaignId, "akshay.ayyanchira@iterable.com", null) { success ->
+        triggerCampaignViaAPI(campaignId, TestConstants.TEST_USER_EMAIL, null) { success ->
             triggered = success
             latch.countDown()
         }

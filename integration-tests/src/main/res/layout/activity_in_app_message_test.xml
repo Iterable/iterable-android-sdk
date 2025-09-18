@@ -11,9 +11,21 @@
         android:text="In-App Message Tests"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="8dp"
         android:gravity="center"
         android:layout_gravity="center" />
+
+    <TextView
+        android:id="@+id/user_info_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Loading user info..."
+        android:textSize="12sp"
+        android:layout_marginBottom="8dp"
+        android:background="#e8f4fd"
+        android:padding="8dp"
+        android:gravity="center"
+        android:textColor="#0066cc" />
 
     <TextView
         android:id="@+id/status_text"

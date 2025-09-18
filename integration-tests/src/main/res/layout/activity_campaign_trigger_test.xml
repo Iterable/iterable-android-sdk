@@ -63,7 +63,7 @@
             android:layout_weight="1"
             android:hint="Enter user email"
             android:inputType="textEmailAddress"
-            android:text="akshay.ayyanchira@iterable.com" />
+            android:text="test@abc.com" />
 
     </LinearLayout>
 

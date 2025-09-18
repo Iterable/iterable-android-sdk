@@ -11,6 +11,7 @@ import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableInAppLocation
 import com.iterable.integration.tests.R
+import com.iterable.integration.tests.BuildConfig
 
 class InAppMessageTestActivity : AppCompatActivity() {
     
@@ -18,6 +19,7 @@ class InAppMessageTestActivity : AppCompatActivity() {
         private const val TAG = "InAppMessageTest"
     }
     
+    private lateinit var userInfoTextView: TextView
     private lateinit var statusTextView: TextView
     private lateinit var triggerButton: Button
     private lateinit var clearButton: Button
@@ -34,11 +36,13 @@ class InAppMessageTestActivity : AppCompatActivity() {
         initializeViews()
         setupClickListeners()
         setupWebView()
+        updateUserInfo()
         
         updateStatus("Activity initialized - InApp messages will display automatically over this screen")
     }
     
     private fun initializeViews() {
+        userInfoTextView = findViewById(R.id.user_info_text)
         statusTextView = findViewById(R.id.status_text)
         triggerButton = findViewById(R.id.trigger_button)
         clearButton = findViewById(R.id.clear_button)
@@ -144,6 +148,7 @@ class InAppMessageTestActivity : AppCompatActivity() {
     private fun refreshInAppMessages() {
         try {
             updateStatus("Refreshing in-app messages...")
+            updateUserInfo() // Also refresh user info
             
             // Check current message count
             val messages = IterableApi.getInstance().getInAppManager().getMessages()
@@ -161,5 +166,35 @@ class InAppMessageTestActivity : AppCompatActivity() {
     private fun updateStatus(status: String) {
         statusTextView.text = status
         Log.d(TAG, "Status: $status")
+    }
+    
+    private fun updateUserInfo() {
+        try {
+            val userEmail = IterableApi.getInstance().getEmail() ?: "Not signed in"
+            val testUserEmail = BuildConfig.ITERABLE_TEST_USER_EMAIL
+            val apiKey = BuildConfig.ITERABLE_API_KEY
+            val serverApiKey = BuildConfig.ITERABLE_SERVER_API_KEY
+            
+            // Truncate API keys for display (show first 8 and last 4 characters)
+            val displayApiKey = if (apiKey.length > 12) {
+                "${apiKey.take(8)}...${apiKey.takeLast(4)}"
+            } else {
+                apiKey
+            }
+            
+            val displayServerApiKey = if (serverApiKey.length > 12) {
+                "${serverApiKey.take(8)}...${serverApiKey.takeLast(4)}"
+            } else {
+                serverApiKey
+            }
+            
+            val userInfo = "User: $userEmail | Test User: $testUserEmail | API Key: $displayApiKey | Server Key: $displayServerApiKey"
+            userInfoTextView.text = userInfo
+            
+            Log.d(TAG, "User Info: $userInfo")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating user info", e)
+            userInfoTextView.text = "Error loading user info: ${e.message}"
+        }
     }
 } 

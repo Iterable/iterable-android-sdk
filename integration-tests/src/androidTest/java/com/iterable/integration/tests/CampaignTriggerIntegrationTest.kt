@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.iterable.integration.tests.TestConstants
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -15,12 +16,12 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         private const val TAG = "CampaignTriggerIntegrationTest"
         
         // Test campaign IDs - these should be configured in your Iterable project
-        private const val TEST_INAPP_CAMPAIGN_ID = 14332357 // Example campaign ID from your curl command
-        private const val TEST_PUSH_CAMPAIGN_ID = 14332358 // Example push campaign ID
-        private const val TEST_EMBEDDED_CAMPAIGN_ID = 14332359 // Example embedded campaign ID
+        private const val TEST_INAPP_CAMPAIGN_ID = TestConstants.TEST_INAPP_CAMPAIGN_ID
+        private const val TEST_PUSH_CAMPAIGN_ID = TestConstants.TEST_PUSH_CAMPAIGN_ID
+        private const val TEST_EMBEDDED_CAMPAIGN_ID = TestConstants.TEST_EMBEDDED_CAMPAIGN_ID
         
         // Test user email
-        private const val TEST_USER_EMAIL = "akshay.ayyanchira@iterable.com"
+        private val TEST_USER_EMAIL = TestConstants.TEST_USER_EMAIL
     }
     
     @Test
@@ -120,7 +121,7 @@ class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
         testUtils.resetTestStates()
         
         // Use a different test user
-        val customUserEmail = "integration.test@iterable.com"
+        val customUserEmail = TestConstants.ALTERNATIVE_TEST_USER_EMAIL
         
         // Trigger the campaign via API for custom user
         var success = false

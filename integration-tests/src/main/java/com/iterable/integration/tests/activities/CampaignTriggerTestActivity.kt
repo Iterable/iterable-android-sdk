@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.iterable.integration.tests.R
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.TestConstants
 
 class CampaignTriggerTestActivity : AppCompatActivity() {
     
@@ -16,9 +17,9 @@ class CampaignTriggerTestActivity : AppCompatActivity() {
         private const val TAG = "CampaignTriggerTestActivity"
         
         // Test campaign IDs - these should be configured in your Iterable project
-        private const val TEST_INAPP_CAMPAIGN_ID = 14332357
-        private const val TEST_PUSH_CAMPAIGN_ID = 14332358
-        private const val TEST_USER_EMAIL = "akshay.ayyanchira@iterable.com"
+        private const val TEST_INAPP_CAMPAIGN_ID = TestConstants.TEST_INAPP_CAMPAIGN_ID
+        private const val TEST_PUSH_CAMPAIGN_ID = TestConstants.TEST_PUSH_CAMPAIGN_ID
+        private val TEST_USER_EMAIL = TestConstants.TEST_USER_EMAIL
     }
     
     private lateinit var testUtils: IntegrationTestUtils

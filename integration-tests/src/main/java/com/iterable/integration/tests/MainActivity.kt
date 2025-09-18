@@ -10,6 +10,7 @@ import com.iterable.iterableapi.IterableConfig
 import com.iterable.iterableapi.IterableUrlHandler
 import com.iterable.integration.tests.activities.*
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.TestConstants
 
 class MainActivity : AppCompatActivity() {
     
@@ -64,7 +65,7 @@ class MainActivity : AppCompatActivity() {
             IterableApi.initialize(this, BuildConfig.ITERABLE_API_KEY, config)
             
             // Set the user email for integration testing
-            val userEmail = "akshay.ayyanchira@iterable.com"
+            val userEmail = TestConstants.TEST_USER_EMAIL
             IterableApi.getInstance().setEmail(userEmail)
             
             Log.d(TAG, "Iterable SDK initialized successfully with email: $userEmail")

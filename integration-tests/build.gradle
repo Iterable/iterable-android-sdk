@@ -19,9 +19,20 @@ android {
         multiDexEnabled true
         
         // Integration test specific configurations
-        buildConfigField "String", "ITERABLE_API_KEY", "\"${System.getenv('ITERABLE_API_KEY') ?: 'test_api_key'}\""
-        buildConfigField "String", "ITERABLE_PROJECT_ID", "\"${System.getenv('ITERABLE_PROJECT_ID') ?: 'test_project_id'}\""
-        buildConfigField "String", "ITERABLE_SERVER_API_KEY", "\"${System.getenv('ITERABLE_SERVER_API_KEY') ?: 'test_server_api_key'}\""
+        // Read from local.properties first, then fall back to environment variables, then to defaults
+        def localProperties = new Properties()
+        def localPropertiesFile = rootProject.file('local.properties')
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.withInputStream { localProperties.load(it) }
+        }
+        
+        def iterableApiKey = localProperties.getProperty('ITERABLE_API_KEY') ?: System.getenv('ITERABLE_API_KEY') ?: 'test_api_key'
+        def iterableServerApiKey = localProperties.getProperty('ITERABLE_SERVER_API_KEY') ?: System.getenv('ITERABLE_SERVER_API_KEY') ?: 'test_server_api_key'
+        def iterableTestUserEmail = localProperties.getProperty('ITERABLE_TEST_USER_EMAIL') ?: System.getenv('ITERABLE_TEST_USER_EMAIL') ?: 'test@abc.com'
+        
+        buildConfigField "String", "ITERABLE_API_KEY", "\"$iterableApiKey\""
+        buildConfigField "String", "ITERABLE_SERVER_API_KEY", "\"$iterableServerApiKey\""
+        buildConfigField "String", "ITERABLE_TEST_USER_EMAIL", "\"$iterableTestUserEmail\""
     }
 
     buildTypes {
