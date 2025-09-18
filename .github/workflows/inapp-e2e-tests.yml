@@ -34,6 +34,16 @@ jobs:
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
           
+      - name: Setup Google Services Configuration
+        run: |
+          echo "Setting up Google Services configuration for CI..."
+          # Ensure the google-services.json file exists for the build
+          if [ ! -f "integration-tests/google-services.json" ]; then
+            echo "Creating google-services.json from template..."
+            cp integration-tests/google-services.json.template integration-tests/google-services.json
+          fi
+          echo "Google Services configuration ready"
+          
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
