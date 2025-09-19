@@ -81,94 +81,94 @@ jobs:
           ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
             
-      - name: Generate Test Report
-        if: always()
-        run: |
-          echo "Generating E2E test report..."
-          ./gradlew :integration-tests:jacocoIntegrationTestReport
+      # - name: Generate Test Report
+      #   if: always()
+      #   run: |
+      #     echo "Generating E2E test report..."
+      #     ./gradlew :integration-tests:jacocoIntegrationTestReport
           
-      - name: Collect Test Logs
-        if: always()
-        run: |
-          echo "Collecting E2E test logs..."
-          adb logcat -d > integration-tests/build/e2e-test-logs.txt
+      # - name: Collect Test Logs
+      #   if: always()
+      #   run: |
+      #     echo "Collecting E2E test logs..."
+      #     adb logcat -d > integration-tests/build/e2e-test-logs.txt
           
-          # Also collect specific test logs
-          adb logcat -d | grep -E "(InAppMessageIntegrationTest|BaseIntegrationTest|IterableApi)" > integration-tests/build/inapp-specific-logs.txt
+      #     # Also collect specific test logs
+      #     adb logcat -d | grep -E "(InAppMessageIntegrationTest|BaseIntegrationTest|IterableApi)" > integration-tests/build/inapp-specific-logs.txt
           
-      - name: Take Screenshots for Debugging
-        if: always()
-        run: |
-          echo "Taking screenshots for debugging..."
-          mkdir -p integration-tests/screenshots
-          adb shell screencap -p /sdcard/screenshot.png
-          adb pull /sdcard/screenshot.png integration-tests/screenshots/final-state-api-${{ matrix.api-level }}.png
+      # - name: Take Screenshots for Debugging
+      #   if: always()
+      #   run: |
+      #     echo "Taking screenshots for debugging..."
+      #     mkdir -p integration-tests/screenshots
+      #     adb shell screencap -p /sdcard/screenshot.png
+      #     adb pull /sdcard/screenshot.png integration-tests/screenshots/final-state-api-${{ matrix.api-level }}.png
           
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: inapp-e2e-test-results-api-${{ matrix.api-level }}
-          path: |
-            integration-tests/build/reports/
-            integration-tests/build/outputs/
-            integration-tests/build/e2e-test-logs.txt
-            integration-tests/build/inapp-specific-logs.txt
+      # - name: Upload Test Results
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: inapp-e2e-test-results-api-${{ matrix.api-level }}
+      #     path: |
+      #       integration-tests/build/reports/
+      #       integration-tests/build/outputs/
+      #       integration-tests/build/e2e-test-logs.txt
+      #       integration-tests/build/inapp-specific-logs.txt
             
-      - name: Upload Coverage Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: inapp-e2e-coverage-api-${{ matrix.api-level }}
-          path: integration-tests/build/reports/jacoco/
+      # - name: Upload Coverage Report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: inapp-e2e-coverage-api-${{ matrix.api-level }}
+      #     path: integration-tests/build/reports/jacoco/
           
-      - name: Upload Screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: inapp-e2e-screenshots-api-${{ matrix.api-level }}
-          path: integration-tests/screenshots/
+      # - name: Upload Screenshots
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: inapp-e2e-screenshots-api-${{ matrix.api-level }}
+      #     path: integration-tests/screenshots/
           
-      - name: Cleanup
-        if: always()
-        run: |
-          echo "Test cleanup completed"
+      # - name: Cleanup
+      #   if: always()
+      #   run: |
+      #     echo "Test cleanup completed"
           
-  test-summary:
-    name: Test Summary
-    runs-on: ubuntu-latest
-    needs: inapp-e2e-tests
-    if: always()
+  # test-summary:
+  #   name: Test Summary
+  #   runs-on: ubuntu-latest
+  #   needs: inapp-e2e-tests
+  #   if: always()
     
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
         
-      - name: Download Test Results
-        uses: actions/download-artifact@v4
-        with:
-          name: inapp-e2e-test-results-api-34
-          path: test-results/
+  #     - name: Download Test Results
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: inapp-e2e-test-results-api-34
+  #         path: test-results/
           
-      - name: Generate Test Summary
-        run: |
-          echo "## In-App Message E2E Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: InApp-Display-E2E" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Level Tested**: 34" >> $GITHUB_STEP_SUMMARY
-          echo "- **Test Method**: testInAppMessageMVP" >> $GITHUB_STEP_SUMMARY
-          echo "- **Test Type**: E2E Integration Test" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### E2E Test Scenarios" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ User Sign-in Verification" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ In-App Message Trigger" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Message Display Verification" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Button Click Interaction" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Message Dismissal" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Artifacts Available" >> $GITHUB_STEP_SUMMARY
-          echo "- Test execution reports" >> $GITHUB_STEP_SUMMARY
-          echo "- Code coverage reports" >> $GITHUB_STEP_SUMMARY
-          echo "- Debug screenshots" >> $GITHUB_STEP_SUMMARY
-          echo "- Detailed test logs" >> $GITHUB_STEP_SUMMARY
+  #     - name: Generate Test Summary
+  #       run: |
+  #         echo "## In-App Message E2E Test Results" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Branch**: InApp-Display-E2E" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **API Level Tested**: 34" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Test Method**: testInAppMessageMVP" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Test Type**: E2E Integration Test" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### E2E Test Scenarios" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ User Sign-in Verification" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ In-App Message Trigger" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ Message Display Verification" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ Button Click Interaction" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ Message Dismissal" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Artifacts Available" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Test execution reports" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Code coverage reports" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Debug screenshots" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Detailed test logs" >> $GITHUB_STEP_SUMMARY
