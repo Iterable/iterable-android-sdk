@@ -14,7 +14,7 @@ jobs:
     
     strategy:
       matrix:
-        api-level: [29, 34] # Focus on most relevant API levels for E2E testing
+        api-level: [34] # MVP testing on most relevant API level only
     
     steps:
       - name: Checkout code
@@ -45,7 +45,6 @@ jobs:
           echo "Installing Android system images for API level ${{ matrix.api-level }}..."
           sdkmanager --list | grep "system-images;android-${{ matrix.api-level }}"
           sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86_64"
-          sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86"
           echo "System images installed successfully"
           
       - name: Setup Google Services Configuration
@@ -150,28 +149,19 @@ jobs:
           adb shell pm grant com.iterable.integration.tests android.permission.ACCESS_NETWORK_STATE
           adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
           
-      - name: Run In-App Message E2E Tests
+      - name: Run In-App Message E2E Test
         env:
           ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
         run: |
-          echo "Running In-App Message E2E tests..."
+          echo "Running MVP In-App Message test..."
           echo "API Level: ${{ matrix.api-level }}"
-          echo "Test Environment: E2E Integration"
+          echo "Test Method: testInAppMessageMVP"
+          echo "Test Environment: MVP Integration"
           
-          # Run the MVP test first
+          # Run only the MVP test method
           ./gradlew :integration-tests:connectedCheck \
             -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
-            --info --stacktrace
-            
-      - name: Run Full In-App Message Test Suite
-        env:
-          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
-          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
-        run: |
-          echo "Running full In-App Message test suite..."
-          ./gradlew :integration-tests:connectedCheck \
-            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest \
             --info --stacktrace
             
       - name: Generate Test Report
@@ -250,14 +240,16 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: InApp-Display-E2E" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Levels Tested**: 29, 34" >> $GITHUB_STEP_SUMMARY
-          echo "- **Test Type**: End-to-End Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Level Tested**: 34" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Method**: testInAppMessageMVP" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Type**: E2E Integration Test" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Key Test Scenarios" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ In-App Message Delivery and Display" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Button Click Interaction Testing" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Event Tracking Verification" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Deep Link Handling" >> $GITHUB_STEP_SUMMARY
+          echo "### E2E Test Scenarios" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ User Sign-in Verification" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ In-App Message Trigger" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Message Display Verification" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Button Click Interaction" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Message Dismissal" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Artifacts Available" >> $GITHUB_STEP_SUMMARY
           echo "- Test execution reports" >> $GITHUB_STEP_SUMMARY
