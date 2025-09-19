@@ -10,7 +10,7 @@ on:
 jobs:
   inapp-e2e-tests:
     name: In-App Message E2E Tests
-    runs-on: macos-latest
+    runs-on: macos-13   # Intel host → HVF works, emulator boots
     
     strategy:
       matrix:
@@ -60,13 +60,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
             
-      - name: Run UI Tests with Emulator
+      - name: Run UI Tests with Emulator (Intel / x86_64)
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: google_apis
-          arch: arm64-v8a
+          arch: x86_64
+          profile: pixel_6
+          cores: 2
+          force-avd-creation: true
+          disable-animations: true
+          emulator-boot-timeout: 1200
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          pre-emulator-launch-script: |
+            # Clean + start adb after platform-tools exist (avoids tcp:5037 noise)
+            adb kill-server >/dev/null 2>&1 || true
+            adb start-server
           script: |
+            echo "Emulator is ready! Running tests..."
             echo "Setting up permissions..."
             adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
             adb shell pm grant com.iterable.integration.tests android.permission.INTERNET
