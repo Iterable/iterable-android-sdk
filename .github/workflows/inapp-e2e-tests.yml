@@ -40,13 +40,6 @@ jobs:
           yes | sdkmanager --licenses || true
           echo "SDK licenses accepted"
           
-      - name: Install Android System Images
-        run: |
-          echo "Installing Android system images for API level ${{ matrix.api-level }}..."
-          sdkmanager --list | grep "system-images;android-${{ matrix.api-level }}"
-          sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86_64"
-          echo "System images installed successfully"
-          
       - name: Setup Google Services Configuration
         run: |
           echo "Setting up Google Services configuration for CI..."
@@ -67,112 +60,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
             
-      - name: Create Android Virtual Device
-        run: |
-          echo "Creating AVD for API level ${{ matrix.api-level }}..."
-          
-          # List available system images for debugging
-          echo "Available system images:"
-          sdkmanager --list | grep "system-images;android-${{ matrix.api-level }}" || echo "No system images found for API ${{ matrix.api-level }}"
-          
-          # Try to create AVD with x86_64 first, fallback to x86
-          if sdkmanager --list | grep -q "system-images;android-${{ matrix.api-level }};google_apis;x86_64"; then
-            echo "Creating AVD with x86_64 system image..."
-            echo "no" | avdmanager create avd \
-              -n "inapp_e2e_device_api_${{ matrix.api-level }}" \
-              -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
-              -c 2048M \
-              -f
-          elif sdkmanager --list | grep -q "system-images;android-${{ matrix.api-level }};google_apis;x86"; then
-            echo "Creating AVD with x86 system image..."
-            echo "no" | avdmanager create avd \
-              -n "inapp_e2e_device_api_${{ matrix.api-level }}" \
-              -k "system-images;android-${{ matrix.api-level }};google_apis;x86" \
-              -c 2048M \
-              -f
-          else
-            echo "Error: No suitable system images found for API level ${{ matrix.api-level }}"
-            echo "Available system images:"
-            sdkmanager --list | grep "system-images" | head -20
-            exit 1
-          fi
-          
-          echo "AVD created successfully"
+      - name: Run UI Tests with Emulator
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: arm64-v8a
+          script: |
+            echo "Setting up permissions..."
+            adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
+            adb shell pm grant com.iterable.integration.tests android.permission.INTERNET
+            adb shell pm grant com.iterable.integration.tests android.permission.ACCESS_NETWORK_STATE
+            adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
             
-      - name: Start Android Emulator
-        run: |
-          echo "Starting emulator for In-App E2E tests..."
-          $ANDROID_SDK_ROOT/emulator/emulator \
-            -avd inapp_e2e_device_api_${{ matrix.api-level }} \
-            -no-audio \
-            -no-window \
-            -no-snapshot \
-            -camera-back none \
-            -camera-front none \
-            -gpu swiftshader_indirect \
-            -memory 2048 \
-            -cores 2 &
-          echo "Emulator started in background"
-            
-      - name: Wait for emulator
-        run: |
-          echo "Waiting for emulator to be ready..."
-          adb wait-for-device
-          echo "Emulator device detected, waiting for boot completion..."
-          
-          # Wait for boot completion with timeout (5 minutes max)
-          timeout=300  # 5 minutes in seconds
-          elapsed=0
-          while [ "`adb shell getprop sys.boot_completed`" != "1" ]; do
-            if [ $elapsed -ge $timeout ]; then
-              echo "ERROR: Emulator failed to boot within 5 minutes"
-              echo "Current boot status: `adb shell getprop sys.boot_completed`"
-              echo "Emulator logs:"
-              adb logcat -d | tail -20
-              exit 1
-            fi
-            echo "Waiting for boot completion... (${elapsed}s elapsed)"
-            sleep 5
-            elapsed=$((elapsed + 5))
-          done
-          
-          echo "Emulator boot completed, unlocking screen..."
-          adb shell input keyevent 82
-          adb shell input keyevent 82
-          
-          # Additional setup for E2E tests
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
-          
-          # Enable developer options for better debugging
-          adb shell settings put global development_settings_enabled 1
-          adb shell settings put global stay_on_while_plugged_in 3
-          
-          echo "Emulator setup complete for E2E testing"
-          
-      - name: Grant permissions
-        run: |
-          echo "Granting permissions for E2E tests..."
-          adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
-          adb shell pm grant com.iterable.integration.tests android.permission.INTERNET
-          adb shell pm grant com.iterable.integration.tests android.permission.ACCESS_NETWORK_STATE
-          adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
-          
-      - name: Run In-App Message E2E Test
+            echo "Running In-App Message MVP test..."
+            ./gradlew :integration-tests:connectedCheck \
+              -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
+              --info --stacktrace
         env:
           ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
-        run: |
-          echo "Running MVP In-App Message test..."
-          echo "API Level: ${{ matrix.api-level }}"
-          echo "Test Method: testInAppMessageMVP"
-          echo "Test Environment: MVP Integration"
-          
-          # Run only the MVP test method
-          ./gradlew :integration-tests:connectedCheck \
-            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
-            --info --stacktrace
             
       - name: Generate Test Report
         if: always()
@@ -222,11 +129,10 @@ jobs:
           name: inapp-e2e-screenshots-api-${{ matrix.api-level }}
           path: integration-tests/screenshots/
           
-      - name: Stop emulator
+      - name: Cleanup
         if: always()
         run: |
-          echo "Stopping emulator..."
-          adb emu kill
+          echo "Test cleanup completed"
           
   test-summary:
     name: Test Summary
