@@ -120,10 +120,20 @@ jobs:
           adb wait-for-device
           echo "Emulator device detected, waiting for boot completion..."
           
-          # Wait for boot completion
+          # Wait for boot completion with timeout (5 minutes max)
+          timeout=300  # 5 minutes in seconds
+          elapsed=0
           while [ "`adb shell getprop sys.boot_completed`" != "1" ]; do
-            echo "Waiting for boot completion..."
+            if [ $elapsed -ge $timeout ]; then
+              echo "ERROR: Emulator failed to boot within 5 minutes"
+              echo "Current boot status: `adb shell getprop sys.boot_completed`"
+              echo "Emulator logs:"
+              adb logcat -d | tail -20
+              exit 1
+            fi
+            echo "Waiting for boot completion... (${elapsed}s elapsed)"
             sleep 5
+            elapsed=$((elapsed + 5))
           done
           
           echo "Emulator boot completed, unlocking screen..."
