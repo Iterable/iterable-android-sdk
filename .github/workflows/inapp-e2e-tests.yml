@@ -99,14 +99,18 @@ jobs:
             echo "Debug: Checking if APKs are ready..."
             ls -la integration-tests/build/outputs/apk/ || echo "APK directory not found"
             
+            echo "Debug: Verifying API keys are set..."
+            echo "ITERABLE_API_KEY length: ${#ITERABLE_API_KEY}"
+            echo "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
+            echo "ITERABLE_TEST_USER_EMAIL: $ITERABLE_TEST_USER_EMAIL"
+            
             # Start logcat in background for crash debugging
             adb logcat > /tmp/test-logcat.log &
             LOGCAT_PID=$!
             
             # Run the specific test with better error handling
             ./gradlew :integration-tests:connectedDebugAndroidTest \
-              -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest \
-              -Pandroid.testInstrumentationRunnerArguments.method=testInAppMessageMVP \
+              -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
               --stacktrace --no-daemon || {
                 echo "Test failed! Collecting crash logs..."
                 kill $LOGCAT_PID 2>/dev/null || true
