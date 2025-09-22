@@ -85,12 +85,14 @@ jobs:
             adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
             
             echo "Running In-App Message MVP test..."
-            ./gradlew :integration-tests:connectedCheck \
-              -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
+            ./gradlew :integration-tests:connectedAndroidTest \
+              -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest \
+              -Pandroid.testInstrumentationRunnerArguments.method=testInAppMessageMVP \
               --info --stacktrace
         env:
-          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
-          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
+          ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
+          ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
+          ITERABLE_TEST_USER_EMAIL: ${{ secrets.BCIT_ITERABLE_TEST_USER_EMAIL }}
             
       # - name: Generate Test Report
       #   if: always()
