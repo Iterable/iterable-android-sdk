@@ -85,7 +85,7 @@ jobs:
             adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
             
             echo "Running In-App Message MVP test..."
-            ./gradlew :integration-tests:connectedAndroidTest \
+            ./gradlew :integration-tests:connectedDebugAndroidTest \
               -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest \
               -Pandroid.testInstrumentationRunnerArguments.method=testInAppMessageMVP \
               --info --stacktrace
