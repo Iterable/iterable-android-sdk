@@ -60,6 +60,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
             
+      - name: Pre-download Gradle and Build (Parallel with Emulator)
+        run: |
+          echo "Pre-downloading Gradle and building while emulator boots..."
+          # Download Gradle wrapper in background
+          ./gradlew --version &
+          # Start building APKs in background  
+          ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon &
+          echo "Build started in background..."
+            
       - name: Run UI Tests with Emulator (Intel / x86_64)
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
@@ -68,10 +77,12 @@ jobs:
           arch: x86_64
           profile: pixel_6
           cores: 2
+          ram-size: 3072M
+          heap-size: 576M
           force-avd-creation: true
           disable-animations: true
-          emulator-boot-timeout: 1200
-          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -no-boot-anim -camera-back none
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -no-boot-anim -camera-back none -partition-size 6000
           pre-emulator-launch-script: |
             # Clean + start adb after platform-tools exist (avoids tcp:5037 noise)
             adb kill-server >/dev/null 2>&1 || true
@@ -85,10 +96,28 @@ jobs:
             adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
             
             echo "Running In-App Message MVP test..."
+            echo "Debug: Checking if APKs are ready..."
+            ls -la integration-tests/build/outputs/apk/ || echo "APK directory not found"
+            
+            # Start logcat in background for crash debugging
+            adb logcat > /tmp/test-logcat.log &
+            LOGCAT_PID=$!
+            
+            # Run the specific test with better error handling
             ./gradlew :integration-tests:connectedDebugAndroidTest \
               -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest \
               -Pandroid.testInstrumentationRunnerArguments.method=testInAppMessageMVP \
-              --info --stacktrace
+              --stacktrace --no-daemon || {
+                echo "Test failed! Collecting crash logs..."
+                kill $LOGCAT_PID 2>/dev/null || true
+                echo "=== CRASH LOGS ==="
+                tail -100 /tmp/test-logcat.log
+                echo "=== END CRASH LOGS ==="
+                exit 1
+              }
+            
+            # Stop logcat
+            kill $LOGCAT_PID 2>/dev/null || true
         env:
           ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
