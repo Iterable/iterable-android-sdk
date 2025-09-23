@@ -31,6 +31,12 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
@@ -123,6 +129,17 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
 
         notification = this;
+
+        // Predictive back compatible callback: track and dismiss on back gesture
+        if (getActivity() != null) {
+            requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    IterableInAppFragmentHTMLNotification.this.onBackPressed();
+                    hideWebView();
+                }
+            });
+        }
     }
 
     @NonNull
@@ -144,12 +161,17 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
-            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
-            // For TOP layout in-app, status bar will be opaque so that the in-app content does not overlap with translucent status bar.
-            // For other non-fullscreen in-apps layouts (BOTTOM and CENTER), status bar will be translucent
-            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        Window window = dialog.getWindow();
+        if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+            WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
+            if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
+                controller.hide(WindowInsetsCompat.Type.systemBars());
+            } else {
+                controller.show(WindowInsetsCompat.Type.systemBars());
+            }
         }
         return dialog;
     }
@@ -157,10 +179,18 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
-            getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        Window window = getDialog().getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+            WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
+            if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
+                controller.hide(WindowInsetsCompat.Type.systemBars());
+            } else {
+                controller.show(WindowInsetsCompat.Type.systemBars());
+            }
         }
 
         webView = new IterableWebView(getContext());
@@ -190,6 +220,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         relativeLayout.setVerticalGravity(getVerticalLocation(insetPadding));
         relativeLayout.addView(webView, layoutParams);
+
+        // Handle edge-to-edge insets similar to Inbox
+        ViewCompat.setOnApplyWindowInsetsListener(relativeLayout, (v, insets) -> {
+            Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, sysBars.top, 0, sysBars.bottom);
+            return insets;
+        });
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
@@ -460,7 +497,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     if (insetPadding.bottom == 0 && insetPadding.top == 0) {
                         //Handle full screen
                         window.setLayout(webViewWidth, webViewHeight);
-                        getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
+                        controller.hide(WindowInsetsCompat.Type.systemBars());
                     } else {
                         float relativeHeight = height * getResources().getDisplayMetrics().density;
                         RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) relativeHeight);
