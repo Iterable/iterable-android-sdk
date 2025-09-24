@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
@@ -31,6 +32,7 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
@@ -197,6 +199,33 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         prepareToShowWebView();
         return relativeLayout;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        // Use ViewCompat to handle insets dynamically
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // For API 30 and above: Use WindowInsetsCompat to handle insets
+                Insets systemBarsInsets = insets.getSystemGestureInsets().toPlatformInsets();
+                v.setPadding(
+                        0,
+                        systemBarsInsets.top,  // Padding for status bar and cutout
+                        0,
+                        systemBarsInsets.bottom // Padding for navigation bar
+                );
+            } else {
+                // For older Android versions: Use legacy methods
+                v.setPadding(
+                        0,
+                        insets.getSystemWindowInsetTop(),  // Padding for status bar and cutout
+                        0,
+                        insets.getSystemWindowInsetBottom() // Padding for navigation bar
+                );
+            }
+            return insets;
+        });
     }
 
     public void setLoaded(boolean loaded) {
