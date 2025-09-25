@@ -222,7 +222,7 @@ class IterableApiClient {
         }
     }
 
-    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable Boolean merge, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -231,7 +231,12 @@ class IterableApiClient {
             } else {
                 requestJSON.put(IterableConstants.KEY_CURRENT_USERID, authProvider.getUserId());
             }
+
             requestJSON.put(IterableConstants.KEY_NEW_EMAIL, newEmail);
+
+            if (merge != null) {
+                requestJSON.put(IterableConstants.KEY_MERGE, merge);
+            }
 
             sendPostRequest(IterableConstants.ENDPOINT_UPDATE_EMAIL, requestJSON, successHandler, failureHandler);
         } catch (JSONException e) {

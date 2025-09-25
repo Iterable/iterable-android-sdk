@@ -161,7 +161,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.getInstance().updateEmail(newEmail);
         shadowOf(getMainLooper()).idle();
-        verify(mockApiClient).updateEmail(eq(newEmail), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
+        verify(mockApiClient).updateEmail(eq(newEmail), nullable(Boolean.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
         server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
 
@@ -219,6 +219,23 @@ public class IterableApiTest extends BaseTest {
         JSONObject requestJson = new JSONObject(updateEmailRequest.getBody().readUtf8());
         assertEquals("test@email.com", requestJson.getString(IterableConstants.KEY_CURRENT_EMAIL));
         assertEquals("new@email.com", requestJson.getString(IterableConstants.KEY_NEW_EMAIL));
+        assertFalse(requestJson.has(IterableConstants.KEY_MERGE));
+    }
+
+    @Test
+    public void testUpdateEmailWithMergeUserProfiles() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableApi.initialize(getContext(), "apiKey");
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().updateEmail("new@email.com", true);
+
+        RecordedRequest updateEmailRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(updateEmailRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL, updateEmailRequest.getPath());
+        JSONObject requestJson = new JSONObject(updateEmailRequest.getBody().readUtf8());
+        assertEquals("test@email.com", requestJson.getString(IterableConstants.KEY_CURRENT_EMAIL));
+        assertEquals("new@email.com", requestJson.getString(IterableConstants.KEY_NEW_EMAIL));
+        assertTrue(requestJson.getBoolean(IterableConstants.KEY_MERGE));
     }
 
     @Test
@@ -236,6 +253,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals("new@email.com", requestJson.getString(IterableConstants.KEY_NEW_EMAIL));
         assertNull(IterableApi.getInstance().getEmail());
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
+        assertFalse(requestJson.has(IterableConstants.KEY_MERGE));
     }
 
     @Ignore
