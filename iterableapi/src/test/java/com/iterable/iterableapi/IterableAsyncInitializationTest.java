@@ -122,11 +122,6 @@ public class IterableAsyncInitializationTest {
                 callbackExecutedOnMainThread.set(Looper.myLooper() == Looper.getMainLooper());
                 initLatch.countDown();
             }
-
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization should not fail: " + e.getMessage());
-            }
         });
 
         // Verify main thread is not blocked
@@ -152,11 +147,6 @@ public class IterableAsyncInitializationTest {
             public void onInitializationComplete() {
                 initLatch.countDown();
             }
-
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization should not fail: " + e.getMessage());
-            }
         });
 
         assertTrue("Initialization with config should complete",
@@ -177,11 +167,6 @@ public class IterableAsyncInitializationTest {
             @Override
             public void onInitializationComplete() {
                 initLatch.countDown();
-            }
-
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization failed: " + e.getMessage());
             }
         });
 
@@ -225,11 +210,6 @@ public class IterableAsyncInitializationTest {
             public void onInitializationComplete() {
                 initLatch.countDown();
             }
-
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization failed: " + e.getMessage());
-            }
         });
 
         // Make more API calls during initialization
@@ -252,10 +232,6 @@ public class IterableAsyncInitializationTest {
                 initLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization failed: " + e.getMessage());
-            }
         });
 
         // Queue many operations
@@ -287,10 +263,6 @@ public class IterableAsyncInitializationTest {
                 initLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization failed: " + e.getMessage());
-            }
         });
 
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
@@ -320,10 +292,6 @@ public class IterableAsyncInitializationTest {
                 successLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Should not fail: " + e.getMessage());
-            }
         });
 
         assertTrue("Success callback should be called", waitForAsyncInitialization(successLatch, 3));
@@ -358,10 +326,6 @@ public class IterableAsyncInitializationTest {
                 throw new RuntimeException("Test exception in callback");
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Should not fail");
-            }
         });
 
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
@@ -396,10 +360,6 @@ public class IterableAsyncInitializationTest {
                             completeLatch.countDown();
                         }
 
-                        @Override
-                        public void onInitializationFailed(Exception e) {
-                            completeLatch.countDown();
-                        }
                     });
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -434,10 +394,6 @@ public class IterableAsyncInitializationTest {
                 initLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization failed: " + e.getMessage());
-            }
         });
 
         // Wait to ensure initialization has started
@@ -491,10 +447,6 @@ public class IterableAsyncInitializationTest {
                 initLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Initialization failed: " + e.getMessage());
-            }
         });
 
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
@@ -515,10 +467,6 @@ public class IterableAsyncInitializationTest {
                 firstInitLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("First initialization failed: " + e.getMessage());
-            }
         });
 
         // Second initialization call while first is in progress
@@ -528,10 +476,6 @@ public class IterableAsyncInitializationTest {
                 secondInitLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                fail("Second initialization failed: " + e.getMessage());
-            }
         });
 
         // First should complete
@@ -602,10 +546,6 @@ public class IterableAsyncInitializationTest {
                 latch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                latch.countDown();
-            }
         });
 
         assertTrue("Should complete without hanging", waitForAsyncInitialization(latch, 5));
@@ -617,25 +557,17 @@ public class IterableAsyncInitializationTest {
 
     @Test
     public void testEdgeCase_NullContext() throws InterruptedException {
-        CountDownLatch failureLatch = new CountDownLatch(1);
-        AtomicReference<Exception> capturedException = new AtomicReference<>();
+        CountDownLatch completionLatch = new CountDownLatch(1);
 
         IterableApi.initializeInBackground(null, TEST_API_KEY, new AsyncInitializationCallback() {
             @Override
             public void onInitializationComplete() {
-                fail("Should not succeed with null context");
-            }
-
-            @Override
-            public void onInitializationFailed(Exception e) {
-                capturedException.set(e);
-                failureLatch.countDown();
+                completionLatch.countDown();
             }
         });
 
-        assertTrue("Failure callback should be called", waitForAsyncInitialization(failureLatch, 3));
-        assertNotNull("Exception should be captured", capturedException.get());
-        assertEquals("Queue should be cleared on failure", 0, IterableApi.getQueuedOperationCount());
+        assertTrue("Success callback should be called even with null context", waitForAsyncInitialization(completionLatch, 3));
+        assertEquals("Queue should remain empty", 0, IterableApi.getQueuedOperationCount());
     }
 
     @Test
@@ -648,10 +580,6 @@ public class IterableAsyncInitializationTest {
                 completionLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                completionLatch.countDown();
-            }
         });
 
         assertTrue("Should handle empty API key", waitForAsyncInitialization(completionLatch, 3));
@@ -668,10 +596,6 @@ public class IterableAsyncInitializationTest {
                 completionLatch.countDown();
             }
 
-            @Override
-            public void onInitializationFailed(Exception e) {
-                completionLatch.countDown();
-            }
         });
 
         assertTrue("Should handle very long API key", waitForAsyncInitialization(completionLatch, 3));

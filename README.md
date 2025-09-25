@@ -48,11 +48,6 @@ IterableApi.initializeInBackground(this, "your-api-key", config, new AsyncInitia
     public void onInitializationComplete() {
         // SDK is ready
     }
-    
-    @Override
-    public void onInitializationFailed(Exception e) {
-        // Handle initialization failure
-    }
 });
 ```
 
