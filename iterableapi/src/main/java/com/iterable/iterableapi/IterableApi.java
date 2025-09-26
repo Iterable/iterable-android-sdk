@@ -55,7 +55,7 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
-    
+
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
@@ -822,11 +822,11 @@ public class IterableApi {
     static void resetBackgroundInitializationState() {
         IterableBackgroundInitializer.resetBackgroundInitializationState();
     }
-    
+
     /**
      * Register a callback to be notified when SDK initialization completes.
      * If the SDK is already initialized, the callback is invoked immediately.
-     * 
+     *
      * @param callback The callback to be notified when initialization completes
      */
     public static void onSDKInitialized(@NonNull IterableInitializationCallback callback) {

@@ -21,13 +21,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Comprehensive test suite for async initialization functionality.
@@ -508,24 +506,24 @@ public class IterableAsyncInitializationTest {
         // The background initializer has a 5-second timeout, so it should timeout and still call the callback
         // The test validates that:
         // 1. initializeInBackground() returns immediately (no main thread blocking)
-        // 2. Operations are queued during initialization 
+        // 2. Operations are queued during initialization
         // 3. System remains responsive even when init hangs
         // 4. Timeout mechanism kicks in after 5 seconds and callback is called
-        
+
         CountDownLatch initCompleteLatch = new CountDownLatch(1);
         AtomicBoolean callbackCalled = new AtomicBoolean(false);
         AtomicBoolean mainThreadBlocked = new AtomicBoolean(false);
-        
+
         // Mock IterableApi.initialize() to hang for 5 seconds to simulate ANR conditions
         try (MockedStatic<IterableApi> mockedIterableApi = Mockito.mockStatic(IterableApi.class, Mockito.CALLS_REAL_METHODS)) {
-            
+
             mockedIterableApi.when(() -> IterableApi.initialize(
-                Mockito.any(Context.class), 
-                Mockito.anyString(), 
+                Mockito.any(Context.class),
+                Mockito.anyString(),
                 Mockito.any(IterableConfig.class)
             )).thenAnswer(invocation -> {
                 IterableLogger.d("ANR_TEST", "Mocked initialize() called - starting 5000 second delay to simulate extreme ANR");
-                
+
                 // Simulate a hanging initialization by adding an extremely long delay (5000 seconds)
                 // This is much longer than the 5-second timeout in IterableBackgroundInitializer
                 // The timeout mechanism should kick in and call the callback anyway
@@ -535,13 +533,13 @@ public class IterableAsyncInitializationTest {
                     IterableLogger.d("ANR_TEST", "Mocked initialize() was interrupted (expected due to timeout)");
                     Thread.currentThread().interrupt();
                 }
-                
+
                 IterableLogger.d("ANR_TEST", "Mocked initialize() completed after delay (should not reach here due to timeout)");
                 return null;
             });
-            
+
             long startTime = System.currentTimeMillis();
-            
+
             // Start background initialization - this should return immediately despite the hanging initialize()
             IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
                 @Override
@@ -551,46 +549,46 @@ public class IterableAsyncInitializationTest {
                     initCompleteLatch.countDown();
                 }
             });
-            
+
             // Critical test: initializeInBackground() should return immediately (< 100ms) - NO ANR!
             long callReturnTime = System.currentTimeMillis() - startTime;
-            assertTrue("initializeInBackground should return immediately (no ANR), took " + callReturnTime + "ms", 
+            assertTrue("initializeInBackground should return immediately (no ANR), took " + callReturnTime + "ms",
                        callReturnTime < 100);
-            
+
             IterableLogger.d("ANR_TEST", "initializeInBackground returned in " + callReturnTime + "ms");
-            
+
             // Verify initialization state immediately
             assertTrue("Should be marked as initializing", IterableApi.isInitializingInBackground());
             assertFalse("Should not be marked as completed yet", IterableApi.isBackgroundInitializationComplete());
-            
+
             // Queue operations immediately while initialization is definitely in progress
             // Do this right away before timeout can kick in
             IterableApi.getInstance().track("testEventDuringHangingInit1");
-            IterableApi.getInstance().track("testEventDuringHangingInit2"); 
+            IterableApi.getInstance().track("testEventDuringHangingInit2");
             IterableApi.getInstance().setEmail("test@hanging.com");
-            
+
             // Check queued operations immediately - should be queued since init just started
             int queuedOps = IterableApi.getQueuedOperationCount();
-            
-            IterableLogger.d("ANR_TEST", "Initial state check - IsInitializing: " + IterableApi.isInitializingInBackground() + 
-                           ", IsComplete: " + IterableApi.isBackgroundInitializationComplete() + 
+
+            IterableLogger.d("ANR_TEST", "Initial state check - IsInitializing: " + IterableApi.isInitializingInBackground() +
+                           ", IsComplete: " + IterableApi.isBackgroundInitializationComplete() +
                            ", QueuedOps: " + queuedOps);
-            
+
             // If operations aren't queued immediately, wait a bit for the background thread to start the mocked method
             if (queuedOps == 0) {
                 IterableLogger.d("ANR_TEST", "No operations queued initially, waiting for background thread to start...");
                 Thread.sleep(50); // Give initialization thread a moment to start and hit the mocked method
-                
+
                 // Add more operations after waiting
                 IterableApi.getInstance().track("testEventDuringHangingInit3");
                 IterableApi.getInstance().track("testEventDuringHangingInit4");
                 queuedOps = IterableApi.getQueuedOperationCount();
-                
-                IterableLogger.d("ANR_TEST", "After wait - IsInitializing: " + IterableApi.isInitializingInBackground() + 
-                               ", IsComplete: " + IterableApi.isBackgroundInitializationComplete() + 
+
+                IterableLogger.d("ANR_TEST", "After wait - IsInitializing: " + IterableApi.isInitializingInBackground() +
+                               ", IsComplete: " + IterableApi.isBackgroundInitializationComplete() +
                                ", QueuedOps: " + queuedOps);
             }
-            
+
             // If still no operations queued, the timeout might have already kicked in
             if (queuedOps == 0) {
                 IterableLogger.w("ANR_TEST", "Operations not being queued - timeout may have completed already. " +
@@ -600,15 +598,15 @@ public class IterableAsyncInitializationTest {
             } else {
                 IterableLogger.d("ANR_TEST", "Successfully queued " + queuedOps + " operations while init hanging");
             }
-            
+
             // Store the final queued operation count for later verification
             int finalQueuedOpsCount = queuedOps;
-            
+
             // Critical test: Verify main thread remains responsive while background init hangs
             // The background thread is hanging for 5000 seconds, but should timeout after 5 seconds
             long workStartTime = System.currentTimeMillis();
-            
-            // Do intensive work on main thread - this should complete quickly 
+
+            // Do intensive work on main thread - this should complete quickly
             // even though initialization is hanging in the background thread
             for (int i = 0; i < 100000; i++) {
                 Math.sqrt(i * Math.PI); // CPU intensive work
@@ -621,46 +619,46 @@ public class IterableAsyncInitializationTest {
                     }
                 }
             }
-            
+
             long workTime = System.currentTimeMillis() - workStartTime;
             IterableLogger.d("ANR_TEST", "Main thread work completed in " + workTime + "ms");
-            
+
             // Main thread should remain responsive (< 1000ms for this work)
-            assertFalse("Main thread should not be blocked by hanging background initialization", 
+            assertFalse("Main thread should not be blocked by hanging background initialization",
                        mainThreadBlocked.get());
-            assertTrue("Main thread should remain responsive while init hangs, work took " + workTime + "ms", 
+            assertTrue("Main thread should remain responsive while init hangs, work took " + workTime + "ms",
                        workTime < 1000);
-            
+
             // Add more operations to test continued queuing
             IterableApi.getInstance().track("additionalEvent1");
             IterableApi.getInstance().track("additionalEvent2");
-            
+
             // Now wait for the timeout mechanism to kick in
             // The background initializer has a 5-second timeout, so callback should be called within ~7 seconds
             // We need to periodically process main thread tasks since the callback is posted to main thread
             boolean initCompleted = waitForAsyncInitialization(initCompleteLatch, 8);
-            
-            assertTrue("Initialization should complete even after hanging, callback called: " + callbackCalled.get(), 
+
+            assertTrue("Initialization should complete even after hanging, callback called: " + callbackCalled.get(),
                        initCompleted);
             assertTrue("Callback should be called", callbackCalled.get());
-            
+
             // After completion, verify state
-            assertTrue("Should be marked as completed after callback", 
+            assertTrue("Should be marked as completed after callback",
                        IterableApi.isBackgroundInitializationComplete());
-            assertFalse("Should not be marked as initializing after completion", 
+            assertFalse("Should not be marked as initializing after completion",
                         IterableApi.isInitializingInBackground());
-            
+
             // Process any remaining main thread tasks
             ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
-            
+
             // Queue should eventually be processed (operations executed)
             Thread.sleep(200); // Give time for queue processing
             int finalQueuedOps = IterableApi.getQueuedOperationCount();
-            
+
             IterableLogger.d("ANR_TEST", "Final queued operations: " + finalQueuedOps);
-            
+
             long totalTime = System.currentTimeMillis() - startTime;
-            
+
             // Log final results
             IterableLogger.d("ANR_TEST", "=== ANR Timeout Test Results ===");
             IterableLogger.d("ANR_TEST", "Init call return time: " + callReturnTime + "ms");
@@ -671,7 +669,7 @@ public class IterableAsyncInitializationTest {
             IterableLogger.d("ANR_TEST", "Callback called: " + callbackCalled.get() + " (should be true due to timeout mechanism)");
             IterableLogger.d("ANR_TEST", "Main thread blocked: " + mainThreadBlocked.get() + " (should be false)");
             IterableLogger.d("ANR_TEST", "================================");
-            
+
             // Final assertions - the most important ANR prevention tests
             assertTrue("NO ANR: initializeInBackground should return immediately", callReturnTime < 100);
             assertTrue("NO ANR: main thread should remain responsive during hanging init", workTime < 1000);
@@ -731,6 +729,7 @@ public class IterableAsyncInitializationTest {
 
         assertTrue("Should complete without hanging", waitForAsyncInitialization(latch, 5));
     }
+
 
     // ========================================
     // Edge Case Tests
@@ -807,7 +806,7 @@ public class IterableAsyncInitializationTest {
     public void testOnSDKInitialized_CallbackCalledImmediatelyIfAlreadyInitialized() throws InterruptedException {
         // Initialize SDK first
         IterableApi.initialize(context, TEST_API_KEY);
-        
+
         CountDownLatch callbackLatch = new CountDownLatch(1);
         AtomicBoolean callbackExecutedOnMainThread = new AtomicBoolean(false);
 
