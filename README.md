@@ -43,15 +43,27 @@ To prevent ANRs during app startup, use background initialization instead of the
 
 ```java
 // In Application.onCreate()
-IterableApi.initializeInBackground(this, "your-api-key", config, new AsyncInitializationCallback() {
-    @Override
-    public void onInitializationComplete() {
-        // SDK is ready
-    }
+IterableApi.initializeInBackground(this, "your-api-key", config, () -> {
+    // SDK is ready - this callback is optional
 });
 ```
 
-This initializes the SDK on a background thread and automatically queues API calls until initialization completes, preventing ANRs and ensuring no data is lost.
+**For subscribing to initialization completion from multiple places:**
+
+```java
+IterableApi.onSDKInitialized(() -> {
+    // This callback will be invoked when initialization completes
+    // If already initialized, it's called immediately
+});
+```
+
+Background initialization prevents ANRs by:
+- Running all initialization work on a background thread
+- Automatically queuing API calls until initialization completes
+- Ensuring no data is lost during startup
+- Providing callbacks on the main thread when ready
+
+**⚠️ Important:** Always wait for initialization completion before accessing SDK internals or making API calls. Accessing the SDK before initialization completes can cause crashes. Use the callback methods above to ensure the SDK is ready before use.
 
 ## Sample projects
 
