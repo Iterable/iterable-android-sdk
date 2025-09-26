@@ -781,4 +781,157 @@ public class IterableAsyncInitializationTest {
 
         assertTrue("Should handle very long API key", waitForAsyncInitialization(completionLatch, 3));
     }
+
+    @Test
+    public void testOnSDKInitialized_CallbackExecutedOnMainThread() throws InterruptedException {
+        CountDownLatch callbackLatch = new CountDownLatch(1);
+        AtomicBoolean callbackExecutedOnMainThread = new AtomicBoolean(false);
+
+        // Register callback before initialization
+        IterableApi.onSDKInitialized(() -> {
+            callbackExecutedOnMainThread.set(Looper.myLooper() == Looper.getMainLooper());
+            callbackLatch.countDown();
+        });
+
+        // Initialize SDK
+        IterableApi.initialize(context, TEST_API_KEY);
+
+        // Wait for callback
+        boolean callbackCalled = waitForAsyncInitialization(callbackLatch, 3);
+
+        assertTrue("onSDKInitialized callback should be called", callbackCalled);
+        assertTrue("onSDKInitialized callback should be executed on main thread", callbackExecutedOnMainThread.get());
+    }
+
+    @Test
+    public void testOnSDKInitialized_CallbackCalledImmediatelyIfAlreadyInitialized() throws InterruptedException {
+        // Initialize SDK first
+        IterableApi.initialize(context, TEST_API_KEY);
+        
+        CountDownLatch callbackLatch = new CountDownLatch(1);
+        AtomicBoolean callbackExecutedOnMainThread = new AtomicBoolean(false);
+
+        // Register callback after initialization - should be called immediately
+        IterableApi.onSDKInitialized(() -> {
+            callbackExecutedOnMainThread.set(Looper.myLooper() == Looper.getMainLooper());
+            callbackLatch.countDown();
+        });
+
+        // Should be called immediately since SDK is already initialized
+        boolean callbackCalled = waitForAsyncInitialization(callbackLatch, 1);
+
+        assertTrue("onSDKInitialized callback should be called immediately when SDK already initialized", callbackCalled);
+        assertTrue("onSDKInitialized callback should be executed on main thread", callbackExecutedOnMainThread.get());
+    }
+
+    @Test
+    public void testOnSDKInitialized_MultipleCallbacks() throws InterruptedException {
+        CountDownLatch callbackLatch = new CountDownLatch(3);
+        AtomicInteger mainThreadCallbackCount = new AtomicInteger(0);
+
+        // Register multiple callbacks
+        for (int i = 0; i < 3; i++) {
+            final int callbackId = i;
+            IterableApi.onSDKInitialized(() -> {
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    mainThreadCallbackCount.incrementAndGet();
+                }
+                IterableLogger.d("TEST", "Callback " + callbackId + " called");
+                callbackLatch.countDown();
+            });
+        }
+
+        // Initialize SDK
+        IterableApi.initialize(context, TEST_API_KEY);
+
+        // Wait for all callbacks
+        boolean allCallbacksCalled = waitForAsyncInitialization(callbackLatch, 3);
+
+        assertTrue("All onSDKInitialized callbacks should be called", allCallbacksCalled);
+        assertEquals("All callbacks should be executed on main thread", 3, mainThreadCallbackCount.get());
+    }
+
+    @Test
+    public void testOnSDKInitialized_WithBackgroundInitialization() throws InterruptedException {
+        CountDownLatch subscriberCallbackLatch = new CountDownLatch(1);
+        CountDownLatch backgroundCallbackLatch = new CountDownLatch(1);
+        AtomicBoolean subscriberOnMainThread = new AtomicBoolean(false);
+        AtomicBoolean backgroundCallbackOnMainThread = new AtomicBoolean(false);
+
+        // Register subscriber callback
+        IterableApi.onSDKInitialized(() -> {
+            subscriberOnMainThread.set(Looper.myLooper() == Looper.getMainLooper());
+            subscriberCallbackLatch.countDown();
+        });
+
+        // Initialize in background with its own callback
+        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
+            @Override
+            public void onSDKInitialized() {
+                backgroundCallbackOnMainThread.set(Looper.myLooper() == Looper.getMainLooper());
+                backgroundCallbackLatch.countDown();
+            }
+        });
+
+        // Wait for both callbacks
+        boolean subscriberCalled = waitForAsyncInitialization(subscriberCallbackLatch, 5);
+        boolean backgroundCallbackCalled = waitForAsyncInitialization(backgroundCallbackLatch, 5);
+
+        assertTrue("Subscriber callback should be called", subscriberCalled);
+        assertTrue("Background initialization callback should be called", backgroundCallbackCalled);
+        assertTrue("Subscriber callback should be on main thread", subscriberOnMainThread.get());
+        assertTrue("Background initialization callback should be on main thread", backgroundCallbackOnMainThread.get());
+    }
+
+    @Test
+    public void testOnSDKInitialized_ExceptionInCallback() throws InterruptedException {
+        CountDownLatch callback1Latch = new CountDownLatch(1);
+        CountDownLatch callback2Latch = new CountDownLatch(1);
+        AtomicBoolean callback1Called = new AtomicBoolean(false);
+        AtomicBoolean callback2Called = new AtomicBoolean(false);
+
+        // First callback throws exception
+        IterableApi.onSDKInitialized(() -> {
+            callback1Called.set(true);
+            callback1Latch.countDown();
+            throw new RuntimeException("Test exception in callback");
+        });
+
+        // Second callback should still be called despite first one throwing
+        IterableApi.onSDKInitialized(() -> {
+            callback2Called.set(true);
+            callback2Latch.countDown();
+        });
+
+        // Initialize SDK
+        IterableApi.initialize(context, TEST_API_KEY);
+
+        // Wait for both callbacks
+        boolean callback1CalledResult = waitForAsyncInitialization(callback1Latch, 3);
+        boolean callback2CalledResult = waitForAsyncInitialization(callback2Latch, 3);
+
+        assertTrue("First callback should be called even though it throws", callback1CalledResult);
+        assertTrue("Second callback should be called despite first callback throwing", callback2CalledResult);
+        assertTrue("First callback should have been executed", callback1Called.get());
+        assertTrue("Second callback should have been executed", callback2Called.get());
+    }
+
+    @Test
+    public void testBackgroundInitializationCallback_MainThreadExecution() throws InterruptedException {
+        CountDownLatch initLatch = new CountDownLatch(1);
+        AtomicBoolean callbackExecutedOnMainThread = new AtomicBoolean(false);
+
+        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
+            @Override
+            public void onSDKInitialized() {
+                callbackExecutedOnMainThread.set(Looper.myLooper() == Looper.getMainLooper());
+                initLatch.countDown();
+            }
+        });
+
+        boolean callbackCalled = waitForAsyncInitialization(initLatch, 5);
+
+        assertTrue("Background initialization callback should be called", callbackCalled);
+        assertTrue("Background initialization callback must be executed on main thread", callbackExecutedOnMainThread.get());
+    }
 }
