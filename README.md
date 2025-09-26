@@ -41,7 +41,7 @@ To learn more about various SDK features, read:
 
 To prevent ANRs during app startup, use background initialization instead of the standard `initialize()` method:
 
-```java
+```kotlin
 // In Application.onCreate()
 IterableApi.initializeInBackground(this,  "your-api-key", config) {
    // SDK is ready - this callback is optional
@@ -50,7 +50,7 @@ IterableApi.initializeInBackground(this,  "your-api-key", config) {
 
 **For subscribing to initialization completion from multiple places:**
 
-```java
+```kotlin
 IterableApi.onSDKInitialized {
     // This callback will be invoked when initialization completes
     // If already initialized, it's called immediately
