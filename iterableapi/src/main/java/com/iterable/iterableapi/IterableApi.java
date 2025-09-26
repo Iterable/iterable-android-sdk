@@ -55,6 +55,7 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
+    
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
@@ -743,6 +744,9 @@ public class IterableApi {
                 IterableLogger.e(TAG, "initialize: exception", e);
             }
         }
+
+        // Notify initialization completion
+        IterableBackgroundInitializer.notifyInitializationComplete();
     }
 
     /**
@@ -756,7 +760,7 @@ public class IterableApi {
      */
     public static void initializeInBackground(@NonNull Context context,
                                             @NonNull String apiKey,
-                                            @Nullable AsyncInitializationCallback callback) {
+                                            @Nullable IterableInitializationCallback callback) {
         IterableBackgroundInitializer.initializeInBackground(context, apiKey, null, callback);
     }
 
@@ -773,7 +777,7 @@ public class IterableApi {
     public static void initializeInBackground(@NonNull Context context,
                                             @NonNull String apiKey,
                                             @Nullable IterableConfig config,
-                                            @Nullable AsyncInitializationCallback callback) {
+                                            @Nullable IterableInitializationCallback callback) {
         IterableBackgroundInitializer.initializeInBackground(context, apiKey, config, callback);
     }
 
@@ -817,6 +821,16 @@ public class IterableApi {
     @VisibleForTesting
     static void resetBackgroundInitializationState() {
         IterableBackgroundInitializer.resetBackgroundInitializationState();
+    }
+    
+    /**
+     * Register a callback to be notified when SDK initialization completes.
+     * If the SDK is already initialized, the callback is invoked immediately.
+     * 
+     * @param callback The callback to be notified when initialization completes
+     */
+    public static void onSDKInitialized(@NonNull IterableInitializationCallback callback) {
+        IterableBackgroundInitializer.onSDKInitialized(callback);
     }
 
     public static void setContext(Context context) {
@@ -1799,4 +1813,5 @@ public class IterableApi {
         apiClient.trackEmbeddedSession(session);
     }
 //endregion
+
 }

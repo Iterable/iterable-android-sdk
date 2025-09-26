@@ -9,9 +9,12 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Handles background initialization of the Iterable SDK to prevent ANRs.
@@ -19,6 +22,12 @@ import java.util.concurrent.TimeUnit;
  */
 class IterableBackgroundInitializer {
     private static final String TAG = "IterableBackgroundInit";
+    
+    // Timeout for initialization to prevent indefinite hangs (5 seconds)
+    private static final int INITIALIZATION_TIMEOUT_SECONDS = 5;
+    
+    // Callback manager for initialization completion
+    private static final IterableInitializationCallbackManager callbackManager = new IterableInitializationCallbackManager();
 
     /**
      * Represents a queued operation that should be executed after initialization
@@ -99,7 +108,7 @@ class IterableBackgroundInitializer {
     private static final OperationQueue operationQueue = new OperationQueue();
     private static volatile boolean isInitializing = false;
     private static volatile boolean isBackgroundInitialized = false;
-    private static final ConcurrentLinkedQueue<AsyncInitializationCallback> pendingCallbacks = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<IterableInitializationCallback> pendingCallbacks = new ConcurrentLinkedQueue<>();
 
     /**
      * Initialize the Iterable SDK in the background to avoid ANRs.
@@ -114,12 +123,12 @@ class IterableBackgroundInitializer {
     static void initializeInBackground(@NonNull Context context,
                                      @NonNull String apiKey,
                                      @Nullable IterableConfig config,
-                                     @Nullable AsyncInitializationCallback callback) {
+                                     @Nullable IterableInitializationCallback callback) {
         // Handle null context early - still report success but log error
         if (context == null) {
             IterableLogger.e(TAG, "Context cannot be null, but reporting success");
             if (callback != null) {
-                new Handler(Looper.getMainLooper()).post(callback::onInitializationComplete);
+                new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
             }
             return;
         }
@@ -130,7 +139,7 @@ class IterableBackgroundInitializer {
                 if (callback != null) {
                     if (isBackgroundInitialized) {
                         // Initialization already complete, call callback immediately
-                        new Handler(Looper.getMainLooper()).post(callback::onInitializationComplete);
+                        new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
                     } else {
                         // Initialization in progress, queue callback for later
                         pendingCallbacks.offer(callback);
@@ -148,81 +157,101 @@ class IterableBackgroundInitializer {
 
         IterableLogger.d(TAG, "Starting background initialization");
 
+        // Create a separate executor for the actual initialization to enable timeout
+        ExecutorService initExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "IterableInit");
+            t.setDaemon(true);
+            t.setPriority(Thread.NORM_PRIORITY);
+            return t;
+        });
+
         Runnable initTask = () -> {
             long startTime = System.currentTimeMillis();
+            boolean initSucceeded = false;
+            
             try {
-                // Perform initialization on background thread
-                IterableLogger.d(TAG, "Executing initialization on background thread");
-                IterableApi.initialize(context, apiKey, config);
-
-                // Mark as completed inside synchronized block
-                synchronized (initLock) {
-                    isBackgroundInitialized = true;
-                    isInitializing = false;
-                }
-
+                IterableLogger.d(TAG, "Starting initialization with " + INITIALIZATION_TIMEOUT_SECONDS + " second timeout");
+                
+                // Submit the actual initialization task
+                Future<?> initFuture = initExecutor.submit(() -> {
+                    IterableLogger.d(TAG, "Executing initialization on background thread");
+                    IterableApi.initialize(context, apiKey, config);
+                });
+                
+                // Wait for initialization with timeout
+                initFuture.get(INITIALIZATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                initSucceeded = true;
+                
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 IterableLogger.d(TAG, "Background initialization completed successfully in " + elapsedTime + "ms");
-
-                // Process any queued operations
-                operationQueue.processAll(backgroundExecutor);
-
-                // Notify completion on main thread
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    try {
-                        // Call the original callback
-                        if (callback != null) {
-                            callback.onInitializationComplete();
-                        }
-
-                        // Call all pending callbacks from concurrent initialization attempts
-                        AsyncInitializationCallback pendingCallback;
-                        while ((pendingCallback = pendingCallbacks.poll()) != null) {
-                            try {
-                                pendingCallback.onInitializationComplete();
-                            } catch (Exception e) {
-                                IterableLogger.e(TAG, "Exception in pending initialization completion callback", e);
-                            }
-                        }
-                    } catch (Exception e) {
-                        IterableLogger.e(TAG, "Exception in initialization completion callback", e);
-                    }
-                });
-
+                
+            } catch (TimeoutException e) {
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                IterableLogger.w(TAG, "Background initialization timed out after " + elapsedTime + "ms, continuing anyway");
+                // Cancel the hanging initialization task
+                initExecutor.shutdownNow();
+                
             } catch (Exception e) {
                 long elapsedTime = System.currentTimeMillis() - startTime;
-                synchronized (initLock) {
-                    isInitializing = false;
-                    // Mark as completed even on failure since SDK should always report success
-                    isBackgroundInitialized = true;
-                }
                 IterableLogger.e(TAG, "Background initialization encountered error after " + elapsedTime + "ms, but continuing", e);
-
-                // Process any queued operations even after error
-                operationQueue.processAll(backgroundExecutor);
-
-                // Notify completion on main thread (always success)
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    try {
-                        // Call the original callback
-                        if (callback != null) {
-                            callback.onInitializationComplete();
-                        }
-
-                        // Call all pending callbacks from concurrent initialization attempts
-                        AsyncInitializationCallback pendingCallback;
-                        while ((pendingCallback = pendingCallbacks.poll()) != null) {
-                            try {
-                                pendingCallback.onInitializationComplete();
-                            } catch (Exception callbackException) {
-                                IterableLogger.e(TAG, "Exception in pending initialization completion callback", callbackException);
-                            }
-                        }
-                    } catch (Exception callbackException) {
-                        IterableLogger.e(TAG, "Exception in initialization completion callback", callbackException);
-                    }
-                });
             }
+            
+            // Always mark as completed and call callbacks regardless of success/timeout/failure
+            synchronized (initLock) {
+                isBackgroundInitialized = true;
+                isInitializing = false;
+            }
+            
+            // Process any queued operations
+            operationQueue.processAll(backgroundExecutor);
+            
+            // Notify completion on main thread (always success)
+            final boolean finalInitSucceeded = initSucceeded;
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    long totalTime = System.currentTimeMillis() - startTime;
+                    if (finalInitSucceeded) {
+                        IterableLogger.d(TAG, "Initialization completed successfully, notifying callbacks after " + totalTime + "ms");
+                    } else {
+                        IterableLogger.w(TAG, "Initialization timed out or failed, but notifying callbacks anyway after " + totalTime + "ms");
+                    }
+                    
+                    // Call the original callback directly
+                    if (callback != null) {
+                        try {
+                            callback.onSDKInitialized();
+                        } catch (Exception e) {
+                            IterableLogger.e(TAG, "Exception in initialization callback", e);
+                        }
+                    }
+                    
+                    // Call all pending callbacks from concurrent initialization attempts
+                    IterableInitializationCallback pendingCallback;
+                    while ((pendingCallback = pendingCallbacks.poll()) != null) {
+                        try {
+                            pendingCallback.onSDKInitialized();
+                        } catch (Exception e) {
+                            IterableLogger.e(TAG, "Exception in pending initialization callback", e);
+                        }
+                    }
+                    
+                } catch (Exception e) {
+                    IterableLogger.e(TAG, "Exception in initialization completion notification", e);
+                }
+            });
+            
+             // Clean up the init executor
+             try {
+                 if (!initExecutor.isShutdown()) {
+                     initExecutor.shutdown();
+                     if (!initExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
+                         initExecutor.shutdownNow();
+                     }
+                 }
+             } catch (InterruptedException e) {
+                 initExecutor.shutdownNow();
+                 Thread.currentThread().interrupt();
+             }
         };
 
         backgroundExecutor.execute(initTask);
@@ -337,6 +366,23 @@ class IterableBackgroundInitializer {
     }
 
     /**
+     * Register a callback to be notified when SDK initialization completes.
+     * If the SDK is already initialized, the callback is invoked immediately.
+     * 
+     * @param callback The callback to be notified when initialization completes
+     */
+    static void onSDKInitialized(@NonNull IterableInitializationCallback callback) {
+        callbackManager.addSubscriber(callback);
+    }
+    
+    /**
+     * Notify that initialization has completed - called by IterableApi.initialize()
+     */
+    static void notifyInitializationComplete() {
+        callbackManager.notifyInitializationComplete();
+    }
+    
+    /**
      * Reset background initialization state - for testing only
      */
     @VisibleForTesting
@@ -346,11 +392,137 @@ class IterableBackgroundInitializer {
             isBackgroundInitialized = false;
             operationQueue.clear();
             pendingCallbacks.clear();
+            callbackManager.reset();
 
             // Recreate executor if it was shut down
             if (backgroundExecutor == null || backgroundExecutor.isShutdown()) {
                 backgroundExecutor = createExecutor();
             }
+        }
+    }
+}
+
+/**
+ * Manages initialization callbacks for the Iterable SDK.
+ * Supports multiple subscribers and ensures callbacks are called on the main thread.
+ */
+class IterableInitializationCallbackManager {
+    private static final String TAG = "IterableInitCallbackMgr";
+    
+    // Thread-safe collections for callback management
+    private final CopyOnWriteArraySet<IterableInitializationCallback> subscribers = new CopyOnWriteArraySet<>();
+    private final ConcurrentLinkedQueue<IterableInitializationCallback> oneTimeCallbacks = new ConcurrentLinkedQueue<>();
+    
+    private volatile boolean isInitialized = false;
+    private final Object initLock = new Object();
+    
+    /**
+     * Add a callback that will be called every time initialization completes.
+     * If initialization has already completed, the callback is called immediately.
+     * 
+     * @param callback The callback to add (must not be null)
+     */
+    void addSubscriber(@NonNull IterableInitializationCallback callback) {
+        if (callback == null) {
+            IterableLogger.w(TAG, "Cannot add null callback subscriber");
+            return;
+        }
+        
+        subscribers.add(callback);
+        
+        // If already initialized, call immediately on main thread
+        synchronized (initLock) {
+            if (isInitialized) {
+                callCallbackOnMainThread(callback, "subscriber (immediate)");
+            }
+        }
+    }
+    
+    /**
+     * Add a one-time callback that will be called once when initialization completes.
+     * If initialization has already completed, the callback is called immediately.
+     * This is used for the callback parameter in initialize() methods.
+     * 
+     * @param callback The one-time callback to add (can be null)
+     */
+    void addOneTimeCallback(@Nullable IterableInitializationCallback callback) {
+        if (callback == null) {
+            return;
+        }
+        
+        synchronized (initLock) {
+            if (isInitialized) {
+                // Call immediately if already initialized
+                callCallbackOnMainThread(callback, "one-time (immediate)");
+            } else {
+                // Queue for later
+                oneTimeCallbacks.offer(callback);
+            }
+        }
+    }
+    
+    /**
+     * Notify all callbacks that initialization has completed.
+     * This should be called once when initialization finishes.
+     */
+    void notifyInitializationComplete() {
+        synchronized (initLock) {
+            if (isInitialized) {
+                IterableLogger.d(TAG, "notifyInitializationComplete called but already initialized");
+                return;
+            }
+            isInitialized = true;
+        }
+        
+        IterableLogger.d(TAG, "Notifying initialization completion to " + 
+                         subscribers.size() + " subscribers and " + 
+                         oneTimeCallbacks.size() + " one-time callbacks");
+        
+        // Notify all subscribers
+        for (IterableInitializationCallback callback : subscribers) {
+            callCallbackOnMainThread(callback, "subscriber");
+        }
+        
+        // Notify and clear one-time callbacks
+        IterableInitializationCallback oneTimeCallback;
+        while ((oneTimeCallback = oneTimeCallbacks.poll()) != null) {
+            callCallbackOnMainThread(oneTimeCallback, "one-time");
+        }
+    }
+    
+    /**
+     * Reset the initialization state - for testing only
+     */
+    void reset() {
+        synchronized (initLock) {
+            isInitialized = false;
+            subscribers.clear();
+            oneTimeCallbacks.clear();
+        }
+    }
+    
+    /**
+     * Helper method to ensure callbacks are called on the main thread
+     */
+    private void callCallbackOnMainThread(@NonNull IterableInitializationCallback callback, String type) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // Already on main thread
+            try {
+                callback.onSDKInitialized();
+                IterableLogger.d(TAG, "Called " + type + " callback on main thread");
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Exception in " + type + " initialization callback", e);
+            }
+        } else {
+            // Post to main thread
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    callback.onSDKInitialized();
+                    IterableLogger.d(TAG, "Called " + type + " callback via main thread handler");
+                } catch (Exception e) {
+                    IterableLogger.e(TAG, "Exception in " + type + " initialization callback", e);
+                }
+            });
         }
     }
 }
