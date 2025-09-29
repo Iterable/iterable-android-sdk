@@ -59,12 +59,12 @@ public class IterableAsyncInitializationTest {
     @org.junit.AfterClass
     public static void tearDownClass() {
         // Shutdown executor service after all tests complete
-        IterableApi.shutdownBackgroundExecutor();
+        IterableBackgroundInitializer.shutdownBackgroundExecutor();
     }
 
     private void resetBackgroundInitializationState() {
         // Use the dedicated method for resetting background initialization state
-        IterableApi.resetBackgroundInitializationState();
+        IterableBackgroundInitializer.resetBackgroundInitializationState();
     }
 
     /**
@@ -107,8 +107,7 @@ public class IterableAsyncInitializationTest {
         long elapsedTime = System.currentTimeMillis() - startTime;
         assertTrue("initializeInBackground should return in <50ms, took " + elapsedTime + "ms",
                    elapsedTime < 50);
-        assertTrue("Should be marked as initializing", IterableApi.isInitializingInBackground());
-        assertFalse("Should not be marked as completed yet", IterableApi.isBackgroundInitializationComplete());
+        assertTrue("Should be marked as initializing", IterableApi.isInitializing());
     }
 
     @Test
@@ -131,8 +130,7 @@ public class IterableAsyncInitializationTest {
         assertTrue("Initialization should complete within 5 seconds",
                    waitForAsyncInitialization(initLatch, 5));
         assertTrue("Callback should execute on main thread", callbackExecutedOnMainThread.get());
-        assertTrue("Should be marked as completed", IterableApi.isBackgroundInitializationComplete());
-        assertFalse("Should not be marked as initializing", IterableApi.isInitializingInBackground());
+        assertFalse("Should not be marked as initializing after completion", IterableApi.isInitializing());
     }
 
     @Test
@@ -171,14 +169,14 @@ public class IterableAsyncInitializationTest {
         });
 
         // Make API calls while initialization is in progress
-        assertTrue("Should be initializing", IterableApi.isInitializingInBackground());
+        assertTrue("Should be initializing", IterableApi.isInitializing());
 
         IterableApi.getInstance().setEmail(TEST_EMAIL);
         IterableApi.getInstance().track("testEvent");
         IterableApi.getInstance().setUserId(TEST_USER_ID);
 
         // Verify operations are queued
-        assertTrue("Operations should be queued", IterableApi.getQueuedOperationCount() > 0);
+        assertTrue("Operations should be queued", IterableBackgroundInitializer.getQueuedOperationCount() > 0);
 
         // Wait for initialization to complete
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
@@ -187,8 +185,7 @@ public class IterableAsyncInitializationTest {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
 
         // Verify queue is processed
-        assertEquals("Queue should be empty after processing", 0, IterableApi.getQueuedOperationCount());
-        assertTrue("Should be completed", IterableApi.isBackgroundInitializationComplete());
+        assertEquals("Queue should be empty after processing", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 
     @Test
@@ -200,7 +197,7 @@ public class IterableAsyncInitializationTest {
 
         // These should NOT be queued since initialization hasn't started
         assertEquals("Operations should not be queued before initialization starts",
-                     0, IterableApi.getQueuedOperationCount());
+                     0, IterableBackgroundInitializer.getQueuedOperationCount());
 
         CountDownLatch initLatch = new CountDownLatch(1);
 
@@ -217,7 +214,7 @@ public class IterableAsyncInitializationTest {
         IterableApi.getInstance().track("duringInitEvent");
 
         // These SHOULD be queued
-        assertTrue("Operations during init should be queued", IterableApi.getQueuedOperationCount() > 0);
+        assertTrue("Operations during init should be queued", IterableBackgroundInitializer.getQueuedOperationCount() > 0);
 
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
     }
@@ -241,7 +238,7 @@ public class IterableAsyncInitializationTest {
         }
 
         assertEquals("Should have " + numOperations + " queued operations",
-                     numOperations, IterableApi.getQueuedOperationCount());
+                     numOperations, IterableBackgroundInitializer.getQueuedOperationCount());
 
         // Wait for completion and processing
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
@@ -249,7 +246,7 @@ public class IterableAsyncInitializationTest {
         // Process queue
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
 
-        assertEquals("All operations should be processed", 0, IterableApi.getQueuedOperationCount());
+        assertEquals("All operations should be processed", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 
     @Test
@@ -273,7 +270,7 @@ public class IterableAsyncInitializationTest {
         IterableApi.getInstance().setUserId(TEST_USER_ID);
 
         assertEquals("Operations after init should not be queued",
-                     0, IterableApi.getQueuedOperationCount());
+                     0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 
     // ========================================
@@ -397,7 +394,7 @@ public class IterableAsyncInitializationTest {
         });
 
         // Wait to ensure initialization has started
-        while (!IterableApi.isInitializingInBackground()) {
+        while (!IterableApi.isInitializing()) {
             Thread.sleep(10);
         }
         initStarted.set(true);
@@ -409,9 +406,9 @@ public class IterableAsyncInitializationTest {
         }
 
         // Verify operations were queued
-        int queuedCount = IterableApi.getQueuedOperationCount();
+        int queuedCount = IterableBackgroundInitializer.getQueuedOperationCount();
         assertTrue("Should have queued operations while initializing, got: " + queuedCount +
-                   ", isInitializing: " + IterableApi.isInitializingInBackground(),
+                   ", isInitializing: " + IterableApi.isInitializing(),
                    queuedCount > 0);
 
         // Wait for initialization to complete
@@ -419,7 +416,7 @@ public class IterableAsyncInitializationTest {
 
         // After processing, queue should be empty
         Thread.sleep(200); // Give time for queue processing
-        assertEquals("Queue should be empty after processing", 0, IterableApi.getQueuedOperationCount());
+        assertEquals("Queue should be empty after processing", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 
     // ========================================
@@ -428,13 +425,11 @@ public class IterableAsyncInitializationTest {
 
     @Test
     public void testStateManagement_InitializingState() {
-        assertFalse("Should not be initializing initially", IterableApi.isInitializingInBackground());
-        assertFalse("Should not be completed initially", IterableApi.isBackgroundInitializationComplete());
+        assertFalse("Should not be initializing initially", IterableApi.isInitializing());
 
         IterableApi.initializeInBackground(context, TEST_API_KEY, null);
 
-        assertTrue("Should be initializing after call", IterableApi.isInitializingInBackground());
-        assertFalse("Should not be completed yet", IterableApi.isBackgroundInitializationComplete());
+        assertTrue("Should be initializing after call", IterableApi.isInitializing());
     }
 
     @Test
@@ -451,8 +446,7 @@ public class IterableAsyncInitializationTest {
 
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
 
-        assertFalse("Should not be initializing after completion", IterableApi.isInitializingInBackground());
-        assertTrue("Should be completed", IterableApi.isBackgroundInitializationComplete());
+        assertFalse("Should not be initializing after completion", IterableApi.isInitializing());
     }
 
     @Test
@@ -705,10 +699,8 @@ public class IterableAsyncInitializationTest {
 
         // SDK should be initialized through normal path
         assertNotNull("SDK instance should exist", IterableApi.getInstance());
-        assertFalse("Should not be marked as background initializing",
-                    IterableApi.isInitializingInBackground());
-        assertFalse("Should not be marked as background completed",
-                    IterableApi.isBackgroundInitializationComplete());
+        assertFalse("Should not be marked as initializing via background method",
+                    IterableApi.isInitializing());
     }
 
     @Test

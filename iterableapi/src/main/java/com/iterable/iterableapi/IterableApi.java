@@ -782,46 +782,13 @@ public class IterableApi {
     }
 
     /**
-     * Check if background initialization is in progress
-     * @return true if initialization is currently running in background
+     * Check if SDK initialization is in progress (covers both normal and background initialization)
+     * @return true if initialization is currently running
      */
-    public static boolean isInitializingInBackground() {
+    public static boolean isInitializing() {
         return IterableBackgroundInitializer.isInitializingInBackground();
     }
 
-    /**
-     * Check if background initialization has completed
-     * @return true if background initialization completed successfully
-     */
-    public static boolean isBackgroundInitializationComplete() {
-        return IterableBackgroundInitializer.isBackgroundInitializationComplete();
-    }
-
-    /**
-     * Get the number of operations currently queued
-     * @return number of queued operations
-     */
-    @VisibleForTesting
-    static int getQueuedOperationCount() {
-        return IterableBackgroundInitializer.getQueuedOperationCount();
-    }
-
-    /**
-     * Shutdown the background executor for proper cleanup
-     * Should be called during application shutdown or for testing
-     */
-    @VisibleForTesting
-    static void shutdownBackgroundExecutor() {
-        IterableBackgroundInitializer.shutdownBackgroundExecutor();
-    }
-
-    /**
-     * Reset background initialization state - for testing only
-     */
-    @VisibleForTesting
-    static void resetBackgroundInitializationState() {
-        IterableBackgroundInitializer.resetBackgroundInitializationState();
-    }
 
     /**
      * Register a callback to be notified when SDK initialization completes.
