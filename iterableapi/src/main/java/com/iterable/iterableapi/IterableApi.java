@@ -798,13 +798,13 @@ public class IterableApi {
     public static boolean isSDKInitialized() {
         // Check if initialization has been run (either sync or background)
         boolean initializationRun = sharedInstance._apiKey != null && sharedInstance._applicationContext != null;
-        
+
         // Check if background initialization has completed (if it was used)
         boolean backgroundInitComplete = !IterableBackgroundInitializer.isInitializingInBackground();
-        
+
         // Check if SDK is properly configured (private method logic)
         boolean sdkConfigured = sharedInstance.isInitialized();
-        
+
         return initializationRun && backgroundInitComplete && sdkConfigured;
     }
 

@@ -467,7 +467,7 @@ public class IterableAsyncInitializationTest {
 
         IterableApi.initialize(context, TEST_API_KEY);
 
-        // After sync init but before setting user - still not fully initialized  
+        // After sync init but before setting user - still not fully initialized
         assertFalse("Should not be fully initialized without user identification", IterableApi.isSDKInitialized());
 
         // Set user ID to complete the setup
@@ -678,7 +678,7 @@ public class IterableAsyncInitializationTest {
                        initCompleted);
             assertTrue("Callback should be called", callbackCalled.get());
 
-            // After completion, verify state  
+            // After completion, verify state
             assertFalse("Should not be marked as initializing after completion",
                         IterableApi.isSDKInitializing());
 
