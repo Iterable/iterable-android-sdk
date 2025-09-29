@@ -309,14 +309,6 @@ class IterableBackgroundInitializer {
         });
     }
 
-    /**
-     * Get the number of operations currently queued
-     * @return number of queued operations
-     */
-    @VisibleForTesting
-    static int getQueuedOperationCount() {
-        return operationQueue.size();
-    }
 
     /**
      * Shutdown the background executor for proper cleanup
@@ -399,6 +391,26 @@ class IterableBackgroundInitializer {
                 backgroundExecutor = createExecutor();
             }
         }
+    }
+
+    // ========================================
+    // Test Support Methods
+    // ========================================
+
+    /**
+     * Get the number of queued operations (for testing)
+     */
+    @VisibleForTesting
+    static int getQueuedOperationCount() {
+        return operationQueue.size();
+    }
+
+    /**
+     * Clear all queued operations (for testing)
+     */
+    @VisibleForTesting
+    static void clearQueuedOperations() {
+        operationQueue.clear();
     }
 }
 

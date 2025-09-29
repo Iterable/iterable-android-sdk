@@ -762,6 +762,70 @@ public class IterableAsyncInitializationTest {
         assertTrue("Should complete without hanging", waitForAsyncInitialization(latch, 5));
     }
 
+    @Test
+    public void testBackwardCompatibility_ImmediateExecutionWithTraditionalInit() {
+        // Use traditional initialize method
+        IterableApi.initialize(context, TEST_API_KEY, null);
+        IterableApi.getInstance().setEmail(TEST_EMAIL);
+
+        // Verify SDK is initialized and NOT using background initialization
+        assertFalse("Should not be marked as background initializing", IterableApi.isSDKInitializing());
+        assertTrue("Should be fully initialized", IterableApi.isSDKInitialized());
+
+        // Clear any existing queued operations from setup
+        IterableBackgroundInitializer.clearQueuedOperations();
+        assertEquals("Queue should be empty before test", 0, IterableBackgroundInitializer.getQueuedOperationCount());
+
+        // Make API calls - these should execute immediately, NOT be queued
+        IterableApi.getInstance().track("immediateEvent1");
+        IterableApi.getInstance().track("immediateEvent2");
+        IterableApi.getInstance().setUserId(TEST_USER_ID);
+
+        // Verify operations were NOT queued (executed immediately)
+        assertEquals("Operations should execute immediately with traditional init, not be queued",
+                     0, IterableBackgroundInitializer.getQueuedOperationCount());
+    }
+
+    @Test
+    public void testBackwardCompatibility_QueuingWithBackgroundInit() throws InterruptedException {
+        CountDownLatch initLatch = new CountDownLatch(1);
+
+        // Use background initialization
+        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
+            @Override
+            public void onSDKInitialized() {
+                initLatch.countDown();
+            }
+        });
+
+        // Verify background initialization is active
+        assertTrue("Should be marked as background initializing", IterableApi.isSDKInitializing());
+
+        // Clear any existing queued operations
+        IterableBackgroundInitializer.clearQueuedOperations();
+        assertEquals("Queue should be empty before test", 0, IterableBackgroundInitializer.getQueuedOperationCount());
+
+        // Make API calls while background initialization is in progress - these should be queued
+        IterableApi.getInstance().track("queuedEvent1");
+        IterableApi.getInstance().track("queuedEvent2");
+        IterableApi.getInstance().setEmail(TEST_EMAIL);
+
+        // Verify operations were queued (not executed immediately)
+        assertTrue("Operations should be queued during background initialization",
+                   IterableBackgroundInitializer.getQueuedOperationCount() > 0);
+
+        // Wait for initialization to complete
+        assertTrue("Background initialization should complete", waitForAsyncInitialization(initLatch, 5));
+
+        // After initialization, new operations should execute immediately
+        int queuedAfterInit = IterableBackgroundInitializer.getQueuedOperationCount();
+        IterableApi.getInstance().track("postInitEvent");
+        
+        // Queue count should not increase (operation executed immediately)
+        assertEquals("Operations after background init completion should execute immediately",
+                     queuedAfterInit, IterableBackgroundInitializer.getQueuedOperationCount());
+    }
+
 
     // ========================================
     // Edge Case Tests
