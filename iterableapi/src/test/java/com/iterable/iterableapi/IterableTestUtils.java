@@ -57,7 +57,7 @@ public class IterableTestUtils {
         IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class));
 
         // Use the new dedicated method for resetting background initialization state
-        IterableApi.resetBackgroundInitializationState();
+        IterableBackgroundInitializer.resetBackgroundInitializationState();
     }
 
     public static String getResourceString(String fileName) throws IOException {

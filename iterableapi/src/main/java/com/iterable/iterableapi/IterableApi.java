@@ -785,8 +785,27 @@ public class IterableApi {
      * Check if SDK initialization is in progress (covers both normal and background initialization)
      * @return true if initialization is currently running
      */
-    public static boolean isInitializing() {
+    public static boolean isSDKInitializing() {
         return IterableBackgroundInitializer.isInitializingInBackground();
+    }
+
+    /**
+     * Check if SDK is fully initialized and ready to use.
+     * This checks both that initialization has been run (sync or background) and that
+     * the SDK is properly configured with API key and user identification.
+     * @return true if SDK is fully initialized and ready for use
+     */
+    public static boolean isSDKInitialized() {
+        // Check if initialization has been run (either sync or background)
+        boolean initializationRun = sharedInstance._apiKey != null && sharedInstance._applicationContext != null;
+        
+        // Check if background initialization has completed (if it was used)
+        boolean backgroundInitComplete = !IterableBackgroundInitializer.isInitializingInBackground();
+        
+        // Check if SDK is properly configured (private method logic)
+        boolean sdkConfigured = sharedInstance.isInitialized();
+        
+        return initializationRun && backgroundInitComplete && sdkConfigured;
     }
 
 
