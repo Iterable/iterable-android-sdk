@@ -820,7 +820,7 @@ public class IterableAsyncInitializationTest {
         // After initialization, new operations should execute immediately
         int queuedAfterInit = IterableBackgroundInitializer.getQueuedOperationCount();
         IterableApi.getInstance().track("postInitEvent");
-        
+
         // Queue count should not increase (operation executed immediately)
         assertEquals("Operations after background init completion should execute immediately",
                      queuedAfterInit, IterableBackgroundInitializer.getQueuedOperationCount());
