@@ -432,6 +432,52 @@ public class IterableAsyncInitializationTest {
     }
 
     @Test
+    public void testStateManagement_SDKInitializedMethod() throws InterruptedException {
+        // Initially should not be initialized
+        assertFalse("Should not be initialized initially", IterableApi.isSDKInitialized());
+
+        CountDownLatch initLatch = new CountDownLatch(1);
+
+        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
+            @Override
+            public void onSDKInitialized() {
+                initLatch.countDown();
+            }
+        });
+
+        // During initialization - should not be considered fully initialized yet
+        assertFalse("Should not be fully initialized during background init", IterableApi.isSDKInitialized());
+
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+
+        // After initialization completes but before setting user - still not fully initialized
+        assertFalse("Should not be fully initialized without user identification", IterableApi.isSDKInitialized());
+
+        // Set user email to complete the setup
+        IterableApi.getInstance().setEmail(TEST_EMAIL);
+
+        // Now should be fully initialized
+        assertTrue("Should be fully initialized after setting email", IterableApi.isSDKInitialized());
+    }
+
+    @Test
+    public void testStateManagement_SDKInitializedWithSyncInit() {
+        // Test with regular synchronous initialization
+        assertFalse("Should not be initialized initially", IterableApi.isSDKInitialized());
+
+        IterableApi.initialize(context, TEST_API_KEY);
+
+        // After sync init but before setting user - still not fully initialized  
+        assertFalse("Should not be fully initialized without user identification", IterableApi.isSDKInitialized());
+
+        // Set user ID to complete the setup
+        IterableApi.getInstance().setUserId(TEST_USER_ID);
+
+        // Now should be fully initialized
+        assertTrue("Should be fully initialized after setting user ID", IterableApi.isSDKInitialized());
+    }
+
+    @Test
     public void testStateManagement_CompletedState() throws InterruptedException {
         CountDownLatch initLatch = new CountDownLatch(1);
 
