@@ -61,10 +61,17 @@ public class IterableApi {
     //---------------------------------------------------------------------------------------
 
     /**
-     * Helper method to queue operations if initialization is in progress
+     * Helper method to queue operations if background initialization is in progress,
+     * otherwise execute immediately for backward compatibility
      */
     private void queueOrExecute(Runnable operation, String description) {
-        IterableBackgroundInitializer.queueOrExecute(operation, description);
+        // Only queue if background initialization is actively running
+        if (IterableBackgroundInitializer.isInitializingInBackground()) {
+            IterableBackgroundInitializer.queueOrExecute(operation, description);
+        } else {
+            // Execute immediately for backward compatibility when not using background init
+            operation.run();
+        }
     }
 
     void fetchRemoteConfiguration() {
