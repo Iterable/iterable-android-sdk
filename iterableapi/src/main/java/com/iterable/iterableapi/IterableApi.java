@@ -61,6 +61,21 @@ public class IterableApi {
     //---------------------------------------------------------------------------------------
 
     /**
+     * Masks PII data for logging - shows only first character followed by asterisks
+     * @param value The value to mask (email, userId, authToken, etc.)
+     * @return Masked string (e.g., "u***") or "null" if input is null
+     */
+    private static String maskPII(@Nullable String value) {
+        if (value == null || value.isEmpty()) {
+            return "null";
+        }
+        if (value.length() == 1) {
+            return "*";
+        }
+        return value.charAt(0) + "***";
+    }
+
+    /**
      * Helper method to queue operations if background initialization is in progress,
      * otherwise execute immediately for backward compatibility
      */
@@ -907,31 +922,31 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        queueOrExecute(() -> setEmail(email, null, null, null, null), "setEmail(" + email + ")");
+        queueOrExecute(() -> setEmail(email, null, null, null, null), "setEmail(" + maskPII(email) + ")");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution) {
-        setEmail(email, null, identityResolution, null, null);
+        queueOrExecute(() -> setEmail(email, null, identityResolution, null, null), "setEmail(" + maskPII(email) + ", identityResolution)");
     }
 
     public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, null, null, successHandler, failureHandler);
+        queueOrExecute(() -> setEmail(email, null, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", callbacks)");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, null, identityResolution, successHandler, failureHandler);
+        queueOrExecute(() -> setEmail(email, null, identityResolution, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", identityResolution, callbacks)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
-        setEmail(email, authToken, null, null, null);
+        queueOrExecute(() -> setEmail(email, authToken, null, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ")");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, IterableIdentityResolution identityResolution) {
-        setEmail(email, authToken, identityResolution, null, null);
+        queueOrExecute(() -> setEmail(email, authToken, identityResolution, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", identityResolution)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, authToken, null, successHandler, failureHandler);
+        queueOrExecute(() -> setEmail(email, authToken, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
@@ -976,32 +991,32 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId) {
-        queueOrExecute(() -> setUserId(userId, null, null, null, null, false), "setUserId(" + userId + ")");
+        queueOrExecute(() -> setUserId(userId, null, null, null, null, false), "setUserId(" + maskPII(userId) + ")");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution) {
-        setUserId(userId, null, identityResolution, null, null, false);
+        queueOrExecute(() -> setUserId(userId, null, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", identityResolution)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, null, successHandler, failureHandler, false);
+        queueOrExecute(() -> setUserId(userId, null, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", callbacks)");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, identityResolution, successHandler, failureHandler, false);
+        queueOrExecute(() -> setUserId(userId, null, identityResolution, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", identityResolution, callbacks)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        setUserId(userId, authToken, null, null, null, false);
+        queueOrExecute(() -> setUserId(userId, authToken, null, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ")");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, IterableIdentityResolution identityResolution) {
-        setUserId(userId, authToken, identityResolution, null, null, false);
+        queueOrExecute(() -> setUserId(userId, authToken, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", identityResolution)");
 
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-       setUserId(userId, authToken, null, successHandler, failureHandler, false);
+        queueOrExecute(() -> setUserId(userId, authToken, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
@@ -1139,12 +1154,14 @@ public class IterableApi {
      * @param templateId
      */
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
-        if (messageId == null) {
-            IterableLogger.e(TAG, "messageId is null");
-            return;
-        }
+        queueOrExecute(() -> {
+            if (messageId == null) {
+                IterableLogger.e(TAG, "messageId is null");
+                return;
+            }
 
-        apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
+            apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
+        }, "trackPushOpen(" + campaignId + ", " + templateId + ", " + messageId + ", dataFields)");
     }
 
     /**
@@ -1388,14 +1405,16 @@ public class IterableApi {
      * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
-        if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableUnknownUserActivation) {
-                unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
+        queueOrExecute(() -> {
+            if (!checkSDKInitialization() && _userIdUnknown == null) {
+                if (sharedInstance.config.enableUnknownUserActivation) {
+                    unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
+                }
+                return;
             }
-            return;
-        }
 
-        apiClient.trackPurchase(total, items, dataFields, attributionInfo);
+            apiClient.trackPurchase(total, items, dataFields, attributionInfo);
+        }, "trackPurchase(" + total + ", " + items.size() + " items, dataFields, attributionInfo)");
     }
 
     /**
@@ -1404,15 +1423,15 @@ public class IterableApi {
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        queueOrExecute(() -> updateEmail(newEmail, null, null, null), "updateEmail(" + newEmail + ")");
+        queueOrExecute(() -> updateEmail(newEmail, null, null, null), "updateEmail(" + maskPII(newEmail) + ")");
     }
 
     public void updateEmail(final @NonNull String newEmail, final @NonNull String authToken) {
-        updateEmail(newEmail, authToken, null, null);
+        queueOrExecute(() -> updateEmail(newEmail, authToken, null, null), "updateEmail(" + maskPII(newEmail) + ", " + maskPII(authToken) + ")");
     }
 
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        updateEmail(newEmail, null, successHandler, failureHandler);
+        queueOrExecute(() -> updateEmail(newEmail, null, successHandler, failureHandler), "updateEmail(" + maskPII(newEmail) + ", callbacks)");
     }
 
     /**
