@@ -1145,7 +1145,7 @@ public class IterableApi {
     }
 
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
-        queueOrExecute(() -> trackPushOpen(campaignId, templateId, messageId, null), "trackPushOpen(" + campaignId + ", " + templateId + ", " + messageId + ")");
+        queueOrExecute(() -> trackPushOpen(campaignId, templateId, messageId, null), "trackPushOpen(" + campaignId + ", " + templateId + ", " + maskPII(messageId) + ")");
     }
 
     /**
@@ -1161,7 +1161,7 @@ public class IterableApi {
             }
 
             apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
-        }, "trackPushOpen(" + campaignId + ", " + templateId + ", " + messageId + ", dataFields)");
+        }, "trackPushOpen(" + campaignId + ", " + templateId + ", " + maskPII(messageId) + ", dataFields)");
     }
 
     /**

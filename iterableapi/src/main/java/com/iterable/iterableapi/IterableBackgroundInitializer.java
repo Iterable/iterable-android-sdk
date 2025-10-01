@@ -8,6 +8,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
@@ -411,6 +413,18 @@ class IterableBackgroundInitializer {
     @VisibleForTesting
     static void clearQueuedOperations() {
         operationQueue.clear();
+    }
+
+    /**
+     * Get descriptions of all queued operations (for testing PII masking)
+     */
+    @VisibleForTesting
+    static List<String> getQueuedOperationDescriptions() {
+        List<String> descriptions = new ArrayList<>();
+        for (QueuedOperation op : operationQueue.operations) {
+            descriptions.add(op.getDescription());
+        }
+        return descriptions;
     }
 }
 
