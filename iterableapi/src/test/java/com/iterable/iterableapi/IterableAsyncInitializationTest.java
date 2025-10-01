@@ -1058,29 +1058,29 @@ public class IterableAsyncInitializationTest {
 
         // Get the queued operation descriptions
         List<String> descriptions = IterableBackgroundInitializer.getQueuedOperationDescriptions();
-        
+
         // Verify we have operations queued
         assertTrue("Should have queued operations", descriptions.size() >= 3);
 
         // Verify each description masks PII properly
         for (String description : descriptions) {
             // Should NOT contain the full sensitive values
-            assertFalse("Description should not contain full email: " + description, 
+            assertFalse("Description should not contain full email: " + description,
                        description.contains(sensitiveEmail));
-            assertFalse("Description should not contain full userId: " + description, 
+            assertFalse("Description should not contain full userId: " + description,
                        description.contains(sensitiveUserId));
-            assertFalse("Description should not contain full authToken: " + description, 
+            assertFalse("Description should not contain full authToken: " + description,
                        description.contains(sensitiveAuthToken));
-            
+
             // Should contain masked format: first char + "***"
             // Email: "sensitive.user@company.com" → "s***"
             // UserId: "user_12345_secret" → "u***"
             if (description.contains("setEmail") || description.contains("updateEmail")) {
-                assertTrue("Email should be masked to 's***': " + description, 
+                assertTrue("Email should be masked to 's***': " + description,
                           description.contains("s***"));
             }
             if (description.contains("setUserId")) {
-                assertTrue("UserId should be masked to 'u***': " + description, 
+                assertTrue("UserId should be masked to 'u***': " + description,
                           description.contains("u***"));
             }
         }
@@ -1150,14 +1150,14 @@ public class IterableAsyncInitializationTest {
 
         // Get queued operation descriptions
         List<String> descriptions = IterableBackgroundInitializer.getQueuedOperationDescriptions();
-        
+
         assertTrue("Should have queued operations with auth tokens", descriptions.size() >= 2);
 
         // Verify auth tokens are masked
         for (String description : descriptions) {
             assertFalse("Description should not contain full auth token: " + description,
                        description.contains(sensitiveAuthToken));
-            
+
             // Should contain masked auth token: "S***"
             if (description.contains("authToken") || description.contains("S***")) {
                 assertTrue("Auth token should be masked to 'S***': " + description,
@@ -1185,14 +1185,14 @@ public class IterableAsyncInitializationTest {
         String email1 = "john.doe@example.com";      // Should mask to "j***"
         String userId1 = "user_123_abc";             // Should mask to "u***"
         String email2 = "a@b.com";                   // Should mask to "a***"
-        
+
         IterableApi.getInstance().setEmail(email1);
         IterableApi.getInstance().setUserId(userId1);
         IterableApi.getInstance().updateEmail(email2);
 
         // Get queued descriptions
         List<String> descriptions = IterableBackgroundInitializer.getQueuedOperationDescriptions();
-        
+
         assertTrue("Should have queued 3 operations", descriptions.size() >= 3);
 
         // Verify exact masking format: first_char + "***"
@@ -1204,7 +1204,7 @@ public class IterableAsyncInitializationTest {
             if (description.contains("setEmail") && description.contains("j***")) {
                 foundEmail1Masked = true;
                 // Verify full email is NOT present
-                assertFalse("Full email should not be in description", 
+                assertFalse("Full email should not be in description",
                            description.contains("john.doe@example.com"));
             }
             if (description.contains("setUserId") && description.contains("u***")) {
@@ -1265,7 +1265,7 @@ public class IterableAsyncInitializationTest {
 
         // After init, queue should be processed and inner method should have been called
         Thread.sleep(200);
-        
+
         // Verify the full overload was called (with all parameters)
         Mockito.verify(spyInstance, Mockito.atLeastOnce()).setEmail(
             Mockito.eq(testEmail),
@@ -1274,7 +1274,7 @@ public class IterableAsyncInitializationTest {
             Mockito.isNull(),
             Mockito.isNull()
         );
-        
+
         assertEquals("Queue should be empty after processing", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 
@@ -1357,16 +1357,16 @@ public class IterableAsyncInitializationTest {
         spyInstance.setEmail(testEmail);
 
         int queuedOps = IterableBackgroundInitializer.getQueuedOperationCount();
-        
+
         // Should only have ONE operation queued, not multiple for the nested calls
         assertEquals("Should only queue outer operation, not nested calls", 1, queuedOps);
 
         // Wait for initialization
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
-        
+
         // Wait for queue processing
         Thread.sleep(200);
-        
+
         // Verify that the full overload method was called exactly once
         // This proves the inner method was invoked WITHOUT queuing again
         Mockito.verify(spyInstance, Mockito.times(1)).setEmail(
@@ -1376,10 +1376,10 @@ public class IterableAsyncInitializationTest {
             Mockito.isNull(),
             Mockito.isNull()
         );
-        
+
         // Verify the simple overload wrapper was called once
         Mockito.verify(spyInstance, Mockito.times(1)).setEmail(Mockito.eq(testEmail));
-        
+
         assertEquals("Queue should be empty after processing", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 
@@ -1387,11 +1387,11 @@ public class IterableAsyncInitializationTest {
     public void testNestedQueueOrExecute_InnerMethodExecutedNotQueued() throws InterruptedException {
         CountDownLatch initLatch = new CountDownLatch(1);
         AtomicInteger fullOverloadCallCount = new AtomicInteger(0);
-        
+
         // Create a custom spy that counts calls to the full overload
         IterableApi spyInstance = Mockito.spy(IterableApi.getInstance());
         IterableApi.sharedInstance = spyInstance;
-        
+
         // Mock the full overload to track invocations
         Mockito.doAnswer(invocation -> {
             fullOverloadCallCount.incrementAndGet();
@@ -1420,22 +1420,22 @@ public class IterableAsyncInitializationTest {
 
         // Only 1 operation should be queued (the outer wrapper)
         assertEquals("Only outer operation should be queued", 1, IterableBackgroundInitializer.getQueuedOperationCount());
-        
+
         // Full overload should NOT have been called yet (operation is queued, not executed)
         assertEquals("Full overload should not be called during queuing", 0, fullOverloadCallCount.get());
 
         // Wait for initialization
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
-        
+
         // Wait for queue to process
         Thread.sleep(300);
 
         // Now the full overload SHOULD have been called (as part of queue processing)
         assertEquals("Full overload should be called once during queue processing", 1, fullOverloadCallCount.get());
-        
+
         // And queue should be empty
         assertEquals("Queue should be empty", 0, IterableBackgroundInitializer.getQueuedOperationCount());
-        
+
         // Verify the call pattern: simple overload → queued → executed → calls full overload directly
         Mockito.verify(spyInstance, Mockito.times(1)).setEmail(
             Mockito.eq("test@example.com"),
@@ -1482,7 +1482,7 @@ public class IterableAsyncInitializationTest {
         // After init completes, new operations should execute immediately
         Thread.sleep(200);
         IterableApi.getInstance().setEmail("postinit@test.com");
-        
+
         // The queued operation should have been processed, and the new one should not queue
         Thread.sleep(100);
         assertEquals("Post-init operations should not queue", 0, IterableBackgroundInitializer.getQueuedOperationCount());
