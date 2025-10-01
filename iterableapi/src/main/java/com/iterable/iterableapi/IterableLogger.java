@@ -66,7 +66,10 @@ public class IterableLogger {
             if (IterableApi.sharedInstance.getDebugMode()) {
                 return Log.VERBOSE;
             } else {
-                return IterableApi.sharedInstance.config.logLevel;
+                IterableConfig config = IterableApi.sharedInstance.config;
+                if (config != null) {
+                    return config.logLevel;
+                }
             }
         }
         return Log.ERROR;
