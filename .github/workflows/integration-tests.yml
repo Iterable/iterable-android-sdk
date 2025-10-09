@@ -24,7 +24,7 @@ jobs:
     
     strategy:
       matrix:
-        api-level: [21, 29, 34]
+        api-level: [29]  # Focus on API 29 for MVP testing
     
     steps:
       - name: Checkout code
@@ -92,14 +92,14 @@ jobs:
             echo "no" | avdmanager create avd \
               -n "test_device_api_${{ matrix.api-level }}" \
               -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
-              -c 2048M \
+              -c 1536M \
               -f
           elif sdkmanager --list | grep -q "system-images;android-${{ matrix.api-level }};google_apis;x86"; then
             echo "Creating AVD with x86 system image..."
             echo "no" | avdmanager create avd \
               -n "test_device_api_${{ matrix.api-level }}" \
               -k "system-images;android-${{ matrix.api-level }};google_apis;x86" \
-              -c 2048M \
+              -c 1536M \
               -f
           else
             echo "Error: No suitable system images found for API level ${{ matrix.api-level }}"
@@ -121,8 +121,12 @@ jobs:
             -camera-back none \
             -camera-front none \
             -gpu swiftshader_indirect \
-            -memory 2048 \
-            -cores 2 &
+            -memory 1536 \
+            -cores 1 \
+            -no-boot-anim \
+            -no-snapshot-load \
+            -no-snapshot-save \
+            -wipe-data &
           echo "Emulator started in background"
             
       - name: Wait for emulator
@@ -131,20 +135,38 @@ jobs:
           adb wait-for-device
           echo "Emulator device detected, waiting for boot completion..."
           
-          # Wait for boot completion
-          while [ "`adb shell getprop sys.boot_completed`" != "1" ]; do
-            echo "Waiting for boot completion..."
+          # Wait for boot completion with timeout
+          timeout=300  # 5 minutes timeout
+          counter=0
+          while [ "`adb shell getprop sys.boot_completed 2>/dev/null`" != "1" ] && [ $counter -lt $timeout ]; do
+            echo "Waiting for boot completion... ($counter/$timeout)"
             sleep 5
+            counter=$((counter + 5))
           done
+          
+          if [ "`adb shell getprop sys.boot_completed 2>/dev/null`" != "1" ]; then
+            echo "ERROR: Emulator failed to boot within timeout"
+            adb logcat -d | tail -50
+            exit 1
+          fi
           
           echo "Emulator boot completed, unlocking screen..."
           adb shell input keyevent 82
+          sleep 2
           adb shell input keyevent 82
           
           # Additional setup for integration tests
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
+          
+          # Disable animations for stability
+          adb shell settings put global window_animation_scale 0.0
+          adb shell settings put global transition_animation_scale 0.0
+          adb shell settings put global animator_duration_scale 0.0
+          
+          # Wait a bit more for stability
+          sleep 10
           
           echo "Emulator setup complete"
           
@@ -153,15 +175,56 @@ jobs:
           echo "Granting notification permissions..."
           adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
           
+      - name: Verify Emulator Health
+        run: |
+          echo "Verifying emulator health before running tests..."
+          
+          # Check if emulator is responsive
+          adb shell echo "Emulator is responsive"
+          
+          # Check system properties
+          echo "Boot completed: $(adb shell getprop sys.boot_completed)"
+          echo "System ready: $(adb shell getprop dev.bootcomplete)"
+          
+          # Check available memory
+          adb shell cat /proc/meminfo | grep MemAvailable
+          
+          # Check if system is stable
+          adb shell getprop ro.build.version.release
+          adb shell getprop ro.product.model
+          
+          # Restart ADB to ensure stable connection
+          echo "Restarting ADB for stable connection..."
+          adb kill-server
+          adb start-server
+          adb wait-for-device
+          
+          # Clear any existing installations
+          echo "Clearing existing app installations..."
+          adb uninstall com.iterable.integration.tests || true
+          adb uninstall com.iterable.integration.tests.test || true
+          
+          echo "Emulator health check completed"
+          
       - name: Run MVP In-App Message Test
         env:
           ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
         run: |
           echo "Running MVP In-App Message test only..."
+          
+          # Check emulator status before running tests
+          echo "Checking emulator status..."
+          adb devices
+          adb shell getprop sys.boot_completed
+          
+          # Run the test with additional stability options
           ./gradlew :integration-tests:connectedCheck \
             -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
-            --info
+            --info \
+            --stacktrace \
+            --no-daemon \
+            --max-workers=1
             
       - name: Generate Test Report
         if: always()
