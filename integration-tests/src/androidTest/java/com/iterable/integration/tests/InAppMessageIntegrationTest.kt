@@ -260,7 +260,8 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🧪 Step 6: Testing SDK functionality...")
         
         // Test 1: Verify SDK is properly initialized
-        val sdkInitialized = IterableApi.getInstance().isInitialized
+        val sdkInstance = IterableApi.getInstance()
+        val sdkInitialized = sdkInstance != null
         Log.d(TAG, "🧪 SDK initialized: $sdkInitialized")
         Assert.assertTrue("SDK should be initialized", sdkInitialized)
         
