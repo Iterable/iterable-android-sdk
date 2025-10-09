@@ -63,7 +63,7 @@ Background initialization prevents ANRs by:
 - Ensuring no data is lost during startup
 - Providing callbacks on the main thread when ready
 
-**⚠️ Important:** Always wait for initialization completion before accessing SDK internals or making API calls. Accessing the SDK before initialization completes can cause crashes. Use the callback methods above to ensure the SDK is ready before use.
+**⚠️ Important:** Always wait for initialization completion before accessing SDK internals. Accessing the SDK internals before initialization completes can cause crashes. Use the callback methods above to ensure the SDK is ready before use.
 
 ## Sample projects
 
