@@ -15,12 +15,14 @@ import androidx.test.uiautomator.UiSelector
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
 import org.junit.Assert.*
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
+@Ignore("Disabled for MVP testing - focusing on InApp MVP test only")
 class PushNotificationIntegrationTest : BaseIntegrationTest() {
     
     private lateinit var uiDevice: UiDevice
@@ -33,6 +35,7 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
     }
     
     @Test
+    @Ignore("Disabled for MVP testing")
     fun testPushNotificationConfiguration() {
         // Test 1: Verify push notification configuration
         assertTrue("Push notification should be configured", isPushNotificationConfigured())

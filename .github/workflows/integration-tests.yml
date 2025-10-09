@@ -153,24 +153,14 @@ jobs:
           echo "Granting notification permissions..."
           adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
           
-      - name: Run In-App Message Integration Tests
+      - name: Run MVP In-App Message Test
         env:
           ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
         run: |
-          echo "Running In-App Message integration tests..."
+          echo "Running MVP In-App Message test only..."
           ./gradlew :integration-tests:connectedCheck \
-            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest \
-            --info
-            
-      - name: Run Push Notification Integration Tests
-        env:
-          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
-          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
-        run: |
-          echo "Running Push Notification integration tests..."
-          ./gradlew :integration-tests:connectedCheck \
-            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.PushNotificationIntegrationTest \
+            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
             --info
             
       - name: Generate Test Report

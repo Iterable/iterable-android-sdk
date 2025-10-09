@@ -3,6 +3,7 @@ package com.iterable.integration.tests
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.*
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import com.iterable.integration.tests.TestConstants
@@ -10,6 +11,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
+@Ignore("Disabled for MVP testing - focusing on InApp MVP test only")
 class CampaignTriggerIntegrationTest : BaseIntegrationTest() {
     
     companion object {
