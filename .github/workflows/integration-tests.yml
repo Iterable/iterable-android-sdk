@@ -251,7 +251,7 @@ jobs:
           # Run the test with simplified command
           cd integration-tests
           ./gradlew connectedCheck \
-            -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
+            -Pandroid.testInstrumentationRunnerArguments.class="com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP" \
             --info \
             --stacktrace \
             --no-daemon \
