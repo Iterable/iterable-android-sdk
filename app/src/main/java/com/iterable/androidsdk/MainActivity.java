@@ -1,10 +1,7 @@
 package com.iterable.androidsdk;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -28,18 +25,14 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "MainActivity";
-    private static final String API_KEY = "289895aa038648ee9e4ce60bd0a46e9c";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        
-        // Show initialization method selection dialog
-        showInitializationDialog();
+        //Below api key is used to display merge user feature
+        IterableApi.initialize(this, "289895aa038648ee9e4ce60bd0a46e9c");
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -89,53 +82,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_logout).setOnClickListener(view -> IterableApi.getInstance().setUserId(null));
-    }
-
-    /**
-     * Shows a dialog allowing the user to choose between traditional synchronous
-     * initialization and background initialization (recommended).
-     */
-    private void showInitializationDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Iterable SDK Initialization")
-                .setMessage("Choose initialization method:\n\n" +
-                        "• Background Init (Recommended): Prevents ANRs, returns immediately\n\n" +
-                        "• Synchronous Init: Traditional method, may block UI on slower devices")
-                .setPositiveButton("Background Init", (dialog, which) -> {
-                    long startTime = System.currentTimeMillis();
-                    
-                    IterableApi.initializeInBackground(this, API_KEY, () -> {
-                        long elapsedTime = System.currentTimeMillis() - startTime;
-                        Log.d(TAG, "Background initialization completed in " + elapsedTime + "ms");
-                        
-                        runOnUiThread(() -> {
-                            Toast.makeText(this, 
-                                    "SDK initialized in background (" + elapsedTime + "ms)", 
-                                    Toast.LENGTH_LONG).show();
-                        });
-                    });
-                    
-                    long returnTime = System.currentTimeMillis() - startTime;
-                    Log.d(TAG, "initializeInBackground() returned in " + returnTime + "ms (non-blocking)");
-                    
-                    Toast.makeText(this, 
-                            "Background init started (returned in " + returnTime + "ms)", 
-                            Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Synchronous Init", (dialog, which) -> {
-                    long startTime = System.currentTimeMillis();
-                    
-                    IterableApi.initialize(this, API_KEY);
-                    
-                    long elapsedTime = System.currentTimeMillis() - startTime;
-                    Log.d(TAG, "Synchronous initialization completed in " + elapsedTime + "ms (blocked UI)");
-                    
-                    Toast.makeText(this, 
-                            "Synchronous init completed (" + elapsedTime + "ms UI blocked)", 
-                            Toast.LENGTH_LONG).show();
-                })
-                .setCancelable(false)
-                .show();
     }
 
     @Override
