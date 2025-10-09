@@ -132,41 +132,71 @@ jobs:
       - name: Wait for emulator
         run: |
           echo "Waiting for emulator to be ready..."
-          adb wait-for-device
-          echo "Emulator device detected, waiting for boot completion..."
           
-          # Wait for boot completion with timeout
-          timeout=300  # 5 minutes timeout
+          # Wait for device to be detected
+          timeout=60
+          counter=0
+          while ! adb devices | grep -q "emulator.*device" && [ $counter -lt $timeout ]; do
+            echo "Waiting for emulator to be detected... ($counter/$timeout)"
+            sleep 2
+            counter=$((counter + 2))
+          done
+          
+          if ! adb devices | grep -q "emulator.*device"; then
+            echo "ERROR: Emulator not detected within timeout"
+            adb devices
+            exit 1
+          fi
+          
+          echo "Emulator detected, waiting for boot completion..."
+          
+          # Wait for boot completion with shorter intervals
+          timeout=180  # 3 minutes timeout
           counter=0
           while [ "`adb shell getprop sys.boot_completed 2>/dev/null`" != "1" ] && [ $counter -lt $timeout ]; do
             echo "Waiting for boot completion... ($counter/$timeout)"
-            sleep 5
-            counter=$((counter + 5))
+            sleep 3
+            counter=$((counter + 3))
+            
+            # Check if device is still online
+            if ! adb devices | grep -q "emulator.*device"; then
+              echo "ERROR: Emulator went offline during boot"
+              adb devices
+              exit 1
+            fi
           done
           
           if [ "`adb shell getprop sys.boot_completed 2>/dev/null`" != "1" ]; then
             echo "ERROR: Emulator failed to boot within timeout"
-            adb logcat -d | tail -50
+            echo "Device status:"
+            adb devices
+            echo "Last 20 logcat entries:"
+            adb logcat -d | tail -20
             exit 1
           fi
           
-          echo "Emulator boot completed, unlocking screen..."
+          echo "Emulator boot completed, setting up..."
+          
+          # Wait a bit for system to stabilize
+          sleep 5
+          
+          # Unlock screen
           adb shell input keyevent 82
           sleep 2
           adb shell input keyevent 82
-          
-          # Additional setup for integration tests
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
           
           # Disable animations for stability
           adb shell settings put global window_animation_scale 0.0
           adb shell settings put global transition_animation_scale 0.0
           adb shell settings put global animator_duration_scale 0.0
           
-          # Wait a bit more for stability
-          sleep 10
+          # Additional stability settings
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          
+          # Final stability wait
+          sleep 5
           
           echo "Emulator setup complete"
           
@@ -218,8 +248,9 @@ jobs:
           adb devices
           adb shell getprop sys.boot_completed
           
-          # Run the test with additional stability options
-          ./gradlew :integration-tests:connectedCheck \
+          # Run the test with simplified command
+          cd integration-tests
+          ./gradlew connectedCheck \
             -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
             --info \
             --stacktrace \
