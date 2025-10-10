@@ -1,0 +1,11 @@
+name: "my config file"
+
+query-filters:
+  - include:
+      precision:
+        - high
+        - very-high
+  - exclude:
+      problem.severity:
+        - warning
+        - recommendation
