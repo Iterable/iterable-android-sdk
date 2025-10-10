@@ -10,9 +10,8 @@ name: "CodeQL config for iterable-android-sdk"
 #        - warning
 #        - recommendation
 
-paths:
-  - src
-paths-ignore:
-  - src/node_modules
-  - '**/*.test.js'
-  - '**/*.md'
+#paths:
+#  - src
+#paths-ignore:
+#  - '**/src/androidTest'
+#  - '**/src/test'
