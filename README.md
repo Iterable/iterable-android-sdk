@@ -37,6 +37,34 @@ To learn more about various SDK features, read:
 - [Embedded Messages with Iterable's Android SDK](https://support.iterable.com/hc/articles/23061877893652)
 - [Unknown User Activation: Developer Docs](https://support.iterable.com/hc/sections/40078809116180)
 
+## Background Initialization (Recommended)
+
+To prevent ANRs during app startup, use background initialization instead of the standard `initialize()` method:
+
+```kotlin
+// In Application.onCreate()
+IterableApi.initializeInBackground(this,  "your-api-key", config) {
+   // SDK is ready - this callback is optional
+}
+```
+
+**For subscribing to initialization completion from multiple places:**
+
+```kotlin
+IterableApi.onSDKInitialized {
+    // This callback will be invoked when initialization completes
+    // If already initialized, it's called immediately
+}
+```
+
+Background initialization prevents ANRs by:
+- Running all initialization work on a background thread
+- Automatically queuing API calls until initialization completes
+- Ensuring no data is lost during startup
+- Providing callbacks on the main thread when ready
+
+**⚠️ Important:** Always wait for initialization completion before accessing SDK internals. Accessing the SDK internals before initialization completes can cause crashes. Use the callback methods above to ensure the SDK is ready before use.
+
 ## Sample projects
 
 For sample code, take a look at:

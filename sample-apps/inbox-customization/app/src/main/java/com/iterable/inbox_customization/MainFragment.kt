@@ -26,6 +26,7 @@ class MainFragment : Fragment() {
         view.findViewById<Button>(R.id.filterMessageTitleButton).setOnClickListener { onFilterByMessageTitleClicked() }
         view.findViewById<Button>(R.id.cellTypesButton).setOnClickListener { onInboxWithMultipleCellTypesClicked() }
         view.findViewById<Button>(R.id.additionalFieldsButton).setOnClickListener { onInboxWithAdditionalFieldsClicked() }
+        view.findViewById<Button>(R.id.backgroundInitButton).setOnClickListener { onBackgroundInitializationClicked() }
 
 
         return view

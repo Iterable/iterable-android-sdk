@@ -62,11 +62,14 @@ public class IterableLogger {
     }
 
     private static int getLogLevel() {
-        if (IterableApi.sharedInstance != null) {
+        if (IterableApi.sharedInstance != null && IterableApi.sharedInstance.config != null) {
             if (IterableApi.sharedInstance.getDebugMode()) {
                 return Log.VERBOSE;
             } else {
-                return IterableApi.sharedInstance.config.logLevel;
+                IterableConfig config = IterableApi.sharedInstance.config;
+                if (config != null) {
+                    return config.logLevel;
+                }
             }
         }
         return Log.ERROR;
