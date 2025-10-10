@@ -71,7 +71,9 @@ jobs:
         with:
           patterns: |
             +**/*.java
+            +**/*.kt
             -**/*Test*.java
+            -**/*Test*.kt
           input: sarif-results/java.sarif
           output: sarif-results/java.sarif
 
