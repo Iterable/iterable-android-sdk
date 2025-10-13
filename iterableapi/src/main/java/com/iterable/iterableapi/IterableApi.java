@@ -31,9 +31,9 @@ public class IterableApi {
     static volatile IterableApi sharedInstance = new IterableApi();
 
     private static final String TAG = "IterableApi";
-    private Context _applicationContext;
+    Context _applicationContext; // Package-private for background initializer access
     IterableConfig config;
-    private String _apiKey;
+    String _apiKey; // Package-private for background initializer access
     private String _email;
     private String _userId;
     String _userIdUnknown;
@@ -55,6 +55,39 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private HashMap<String, String> deviceAttributes = new HashMap<>();
     private IterableKeychain keychain;
+
+
+    //region Background Initialization - Delegated to IterableBackgroundInitializer
+    //---------------------------------------------------------------------------------------
+
+    /**
+     * Masks PII data for logging - shows only first character followed by asterisks
+     * @param value The value to mask (email, userId, authToken, etc.)
+     * @return Masked string (e.g., "u***") or "null" if input is null
+     */
+    private static String maskPII(@Nullable String value) {
+        if (value == null || value.isEmpty()) {
+            return "null";
+        }
+        if (value.length() == 1) {
+            return "*";
+        }
+        return value.charAt(0) + "***";
+    }
+
+    /**
+     * Helper method to queue operations if background initialization is in progress,
+     * otherwise execute immediately for backward compatibility
+     */
+    private void queueOrExecute(Runnable operation, String description) {
+        // Only queue if background initialization is actively running
+        if (IterableBackgroundInitializer.isInitializingInBackground()) {
+            IterableBackgroundInitializer.queueOrExecute(operation, description);
+        } else {
+            // Execute immediately for backward compatibility when not using background init
+            operation.run();
+        }
+    }
 
     void fetchRemoteConfiguration() {
         apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
@@ -347,11 +380,20 @@ public class IterableApi {
             disablePush();
         }
 
-        getInAppManager().reset();
-        getEmbeddedManager().reset();
-        getAuthManager().reset();
+        // Only reset managers if they're initialized
+        if (inAppManager != null) {
+            inAppManager.reset();
+        }
+        if (embeddedManager != null) {
+            embeddedManager.reset();
+        }
+        if (authManager != null) {
+            authManager.reset();
+        }
 
-        apiClient.onLogout();
+        if (apiClient != null) {
+            apiClient.onLogout();
+        }
     }
 
     private void onLogin(
@@ -724,6 +766,79 @@ public class IterableApi {
                 IterableLogger.e(TAG, "initialize: exception", e);
             }
         }
+
+        // Notify initialization completion
+        IterableBackgroundInitializer.notifyInitializationComplete();
+    }
+
+    /**
+     * Initialize the Iterable SDK in the background to avoid ANRs.
+     * This method returns immediately and performs all initialization work on a background thread.
+     * Any API calls made before initialization completes will be queued and executed after initialization.
+     *
+     * @param context Application context
+     * @param apiKey Iterable API key
+     * @param callback Optional callback for initialization completion (can be null)
+     */
+    public static void initializeInBackground(@NonNull Context context,
+                                            @NonNull String apiKey,
+                                            @Nullable IterableInitializationCallback callback) {
+        IterableBackgroundInitializer.initializeInBackground(context, apiKey, null, callback);
+    }
+
+    /**
+     * Initialize the Iterable SDK in the background to avoid ANRs.
+     * This method returns immediately and performs all initialization work on a background thread.
+     * Any API calls made before initialization completes will be queued and executed after initialization.
+     *
+     * @param context Application context
+     * @param apiKey Iterable API key
+     * @param config Optional configuration (can be null)
+     * @param callback Optional callback for initialization completion (can be null)
+     */
+    public static void initializeInBackground(@NonNull Context context,
+                                            @NonNull String apiKey,
+                                            @Nullable IterableConfig config,
+                                            @Nullable IterableInitializationCallback callback) {
+        IterableBackgroundInitializer.initializeInBackground(context, apiKey, config, callback);
+    }
+
+    /**
+     * Check if SDK initialization is in progress (covers both normal and background initialization)
+     * @return true if initialization is currently running
+     */
+    public static boolean isSDKInitializing() {
+        return IterableBackgroundInitializer.isInitializingInBackground();
+    }
+
+    /**
+     * Check if SDK is fully initialized and ready to use.
+     * This checks both that initialization has been run (sync or background) and that
+     * the SDK is properly configured with API key and user identification.
+     * @return true if SDK is fully initialized and ready for use
+     */
+    public static boolean isSDKInitialized() {
+        // Check if initialization has been run (either sync or background)
+        boolean initializationRun = sharedInstance._apiKey != null && sharedInstance._applicationContext != null;
+
+        // Check if background initialization has completed (if it was used)
+        boolean backgroundInitComplete = !IterableBackgroundInitializer.isInitializingInBackground();
+
+        // Check if SDK is properly configured (private method logic)
+        boolean sdkConfigured = sharedInstance.isInitialized();
+
+        return initializationRun && backgroundInitComplete && sdkConfigured;
+    }
+
+
+    /**
+     * Register a callback to be notified when SDK initialization completes.
+     * If the SDK is already initialized, the callback is invoked immediately.
+     *
+     * @param callback The callback to be notified when initialization completes
+     */
+    public static void onSDKInitialized(@NonNull IterableInitializationCallback callback) {
+        IterableBackgroundInitializer.onSDKInitialized(callback);
     }
 
     public static void setContext(Context context) {
@@ -807,31 +922,31 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        setEmail(email, null, null, null, null);
+        queueOrExecute(() -> setEmail(email, null, null, null, null), "setEmail(" + maskPII(email) + ")");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution) {
-        setEmail(email, null, identityResolution, null, null);
+        queueOrExecute(() -> setEmail(email, null, identityResolution, null, null), "setEmail(" + maskPII(email) + ", identityResolution)");
     }
 
     public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, null, null, successHandler, failureHandler);
+        queueOrExecute(() -> setEmail(email, null, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", callbacks)");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, null, identityResolution, successHandler, failureHandler);
+        queueOrExecute(() -> setEmail(email, null, identityResolution, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", identityResolution, callbacks)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
-        setEmail(email, authToken, null, null, null);
+        queueOrExecute(() -> setEmail(email, authToken, null, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ")");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, IterableIdentityResolution identityResolution) {
-        setEmail(email, authToken, identityResolution, null, null);
+        queueOrExecute(() -> setEmail(email, authToken, identityResolution, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", identityResolution)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setEmail(email, authToken, null, successHandler, failureHandler);
+        queueOrExecute(() -> setEmail(email, authToken, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
@@ -876,32 +991,32 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId) {
-        setUserId(userId, null, null, null, null, false);
+        queueOrExecute(() -> setUserId(userId, null, null, null, null, false), "setUserId(" + maskPII(userId) + ")");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution) {
-        setUserId(userId, null, identityResolution, null, null, false);
+        queueOrExecute(() -> setUserId(userId, null, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", identityResolution)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, null, successHandler, failureHandler, false);
+        queueOrExecute(() -> setUserId(userId, null, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", callbacks)");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        setUserId(userId, null, identityResolution, successHandler, failureHandler, false);
+        queueOrExecute(() -> setUserId(userId, null, identityResolution, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", identityResolution, callbacks)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        setUserId(userId, authToken, null, null, null, false);
+        queueOrExecute(() -> setUserId(userId, authToken, null, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ")");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, IterableIdentityResolution identityResolution) {
-        setUserId(userId, authToken, identityResolution, null, null, false);
+        queueOrExecute(() -> setUserId(userId, authToken, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", identityResolution)");
 
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-       setUserId(userId, authToken, null, successHandler, failureHandler, false);
+        queueOrExecute(() -> setUserId(userId, authToken, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
@@ -1026,11 +1141,11 @@ public class IterableApi {
      * @param deviceToken Push token obtained from GCM or FCM
      */
     public void registerDeviceToken(@NonNull String deviceToken) {
-        registerDeviceToken(_email, _userId, _authToken, getPushIntegrationName(), deviceToken, deviceAttributes);
+        queueOrExecute(() -> registerDeviceToken(_email, _userId, _authToken, getPushIntegrationName(), deviceToken, deviceAttributes), "registerDeviceToken");
     }
 
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
-        trackPushOpen(campaignId, templateId, messageId, null);
+        queueOrExecute(() -> trackPushOpen(campaignId, templateId, messageId, null), "trackPushOpen(" + campaignId + ", " + templateId + ", " + maskPII(messageId) + ")");
     }
 
     /**
@@ -1039,12 +1154,14 @@ public class IterableApi {
      * @param templateId
      */
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
-        if (messageId == null) {
-            IterableLogger.e(TAG, "messageId is null");
-            return;
-        }
+        queueOrExecute(() -> {
+            if (messageId == null) {
+                IterableLogger.e(TAG, "messageId is null");
+                return;
+            }
 
-        apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
+            apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
+        }, "trackPushOpen(" + campaignId + ", " + templateId + ", " + maskPII(messageId) + ", dataFields)");
     }
 
     /**
@@ -1202,7 +1319,7 @@ public class IterableApi {
      * @param eventName
      */
     public void track(@NonNull String eventName) {
-        track(eventName, 0, 0, null);
+        queueOrExecute(() -> track(eventName, 0, 0, null), "track(" + eventName + ")");
     }
 
     /**
@@ -1211,7 +1328,7 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(@NonNull String eventName, @Nullable JSONObject dataFields) {
-        track(eventName, 0, 0, dataFields);
+        queueOrExecute(() -> track(eventName, 0, 0, dataFields), "track(" + eventName + ", dataFields)");
     }
 
     /**
@@ -1221,7 +1338,7 @@ public class IterableApi {
      * @param templateId
      */
     public void track(@NonNull String eventName, int campaignId, int templateId) {
-        track(eventName, campaignId, templateId, null);
+        queueOrExecute(() -> track(eventName, campaignId, templateId, null), "track(" + eventName + ", " + campaignId + ", " + templateId + ")");
     }
 
     /**
@@ -1248,14 +1365,16 @@ public class IterableApi {
      * @param items
      */
     public void updateCart(@NonNull List<CommerceItem> items) {
-        if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableUnknownUserActivation) {
-                unknownUserManager.trackUnknownUpdateCart(items);
+        queueOrExecute(() -> {
+            if (!checkSDKInitialization() && _userIdUnknown == null) {
+                if (sharedInstance.config.enableUnknownUserActivation) {
+                    unknownUserManager.trackUnknownUpdateCart(items);
+                }
+                return;
             }
-            return;
-        }
 
-        apiClient.updateCart(items);
+            apiClient.updateCart(items);
+        }, "updateCart(" + items.size() + " items)");
     }
 
     /**
@@ -1264,7 +1383,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        trackPurchase(total, items, null, null);
+        queueOrExecute(() -> trackPurchase(total, items, null, null), "trackPurchase(" + total + ", " + items.size() + " items)");
     }
 
     /**
@@ -1274,7 +1393,7 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        trackPurchase(total, items, dataFields, null);
+        queueOrExecute(() -> trackPurchase(total, items, dataFields, null), "trackPurchase(" + total + ", " + items.size() + " items, dataFields)");
     }
 
 
@@ -1286,14 +1405,16 @@ public class IterableApi {
      * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
-        if (!checkSDKInitialization() && _userIdUnknown == null) {
-            if (sharedInstance.config.enableUnknownUserActivation) {
-                unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
+        queueOrExecute(() -> {
+            if (!checkSDKInitialization() && _userIdUnknown == null) {
+                if (sharedInstance.config.enableUnknownUserActivation) {
+                    unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
+                }
+                return;
             }
-            return;
-        }
 
-        apiClient.trackPurchase(total, items, dataFields, attributionInfo);
+            apiClient.trackPurchase(total, items, dataFields, attributionInfo);
+        }, "trackPurchase(" + total + ", " + items.size() + " items, dataFields, attributionInfo)");
     }
 
     /**
@@ -1302,15 +1423,15 @@ public class IterableApi {
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        updateEmail(newEmail, null, null, null);
+        queueOrExecute(() -> updateEmail(newEmail, null, null, null), "updateEmail(" + maskPII(newEmail) + ")");
     }
 
     public void updateEmail(final @NonNull String newEmail, final @NonNull String authToken) {
-        updateEmail(newEmail, authToken, null, null);
+        queueOrExecute(() -> updateEmail(newEmail, authToken, null, null), "updateEmail(" + maskPII(newEmail) + ", " + maskPII(authToken) + ")");
     }
 
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        updateEmail(newEmail, null, successHandler, failureHandler);
+        queueOrExecute(() -> updateEmail(newEmail, null, successHandler, failureHandler), "updateEmail(" + maskPII(newEmail) + ", callbacks)");
     }
 
     /**
@@ -1704,4 +1825,5 @@ public class IterableApi {
         apiClient.trackEmbeddedSession(session);
     }
 //endregion
+
 }

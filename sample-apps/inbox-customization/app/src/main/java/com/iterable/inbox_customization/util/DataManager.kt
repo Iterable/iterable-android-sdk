@@ -3,6 +3,7 @@ package com.iterable.inbox_customization.util
 import android.content.Context
 import android.os.StrictMode
 import com.iterable.iterableapi.IterableApi
+import com.iterable.iterableapi.IterableInitializationCallback
 import com.iterable.iterableapi.IterableInternal
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -48,11 +49,27 @@ class DataManager {
         dispatcher.setResponse("/$imageName", MockResponse().setBody(buffer))
     }
 
+    fun initializeIterableApiInBackground(context: Context, callback: IterableInitializationCallback? = null) {
+        this.context = context
+        initHttpMocks()
+        IterableApi.overrideURLEndpointPath(serverUrl)
+        IterableApi.initializeInBackground(context, "apiKey") {
+            // Set email after initialization completes
+            IterableApi.getInstance().setEmail("user@example.com")
+            loadData("simple-inbox-messages.json")
+            callback?.onSDKInitialized()
+        }
+    }
+
     companion object {
         val instance = DataManager()
 
         fun initializeIterableApi(context: Context) {
             instance.initializeIterableApi(context)
+        }
+
+        fun initializeIterableApiInBackground(context: Context, callback: IterableInitializationCallback? = null) {
+            instance.initializeIterableApiInBackground(context, callback)
         }
 
         fun loadData(resourceName: String) {
