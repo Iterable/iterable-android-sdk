@@ -1831,7 +1831,7 @@ public class IterableApi {
      * @return Base URL string (e.g., "https://app.iterable.com" or "https://app.eu.iterable.com")
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    static String getWebViewBaseUrl() {
+    public static String getWebViewBaseUrl() {
         try {
             IterableConfig config = getInstance().config;
             if (config != null && config.dataRegion != null) {
