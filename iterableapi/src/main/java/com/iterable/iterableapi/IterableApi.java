@@ -1824,6 +1824,20 @@ public class IterableApi {
 
         apiClient.trackEmbeddedSession(session);
     }
+
+    /**
+     * Returns the web app base URL for the configured data region.
+     * This is used for WebView baseURL to enable CORS for external resources.
+     * @return Base URL string (e.g., "https://app.iterable.com" or "https://app.eu.iterable.com")
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    static String getWebViewBaseUrl() {
+        IterableConfig config = getInstance().config;
+        if (config != null && config.dataRegion != null) {
+            return config.dataRegion.getWebAppBaseUrl();
+        }
+        return IterableDataRegion.US.getWebAppBaseUrl();
+    }
 //endregion
 
 }

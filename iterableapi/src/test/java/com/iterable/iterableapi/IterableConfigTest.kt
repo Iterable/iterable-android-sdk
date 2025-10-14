@@ -22,6 +22,16 @@ class IterableConfigTest {
     }
     
     @Test
+    fun dataRegionWebAppBaseUrlUS() {
+        assertThat(IterableDataRegion.US.webAppBaseUrl, `is`("https://app.iterable.com"))
+    }
+    
+    @Test
+    fun dataRegionWebAppBaseUrlEU() {
+        assertThat(IterableDataRegion.EU.webAppBaseUrl, `is`("https://app.eu.iterable.com"))
+    }
+    
+    @Test
     fun defaultDisableKeychainEncryption() {
         val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
         val config: IterableConfig = configBuilder.build()
