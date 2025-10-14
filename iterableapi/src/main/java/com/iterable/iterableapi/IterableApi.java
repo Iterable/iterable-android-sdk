@@ -1832,9 +1832,13 @@ public class IterableApi {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     static String getWebViewBaseUrl() {
-        IterableConfig config = getInstance().config;
-        if (config != null && config.dataRegion != null) {
-            return config.dataRegion.getWebAppBaseUrl();
+        try {
+            IterableConfig config = getInstance().config;
+            if (config != null && config.dataRegion != null) {
+                return config.dataRegion.getWebAppBaseUrl();
+            }
+        } catch (Exception e) {
+            IterableLogger.w(TAG, "Failed to get configured data region for WebView baseURL, using US default", e);
         }
         return IterableDataRegion.US.getWebAppBaseUrl();
     }
