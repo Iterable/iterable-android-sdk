@@ -447,7 +447,7 @@ public class IterableConfig {
         /**
          * Set the base URL for WebView content loading. Used to enable CORS for external resources.
          * If not set or null, defaults to empty string (original behavior with about:blank origin).
-         * Set this to your domain (e.g., "https://app.iterable.com") to allow external resource loading.
+         * Set this according to your CORS settings (e.g., "https://app.iterable.com") to allow external resource loading.
          * @param webViewBaseUrl Base URL for WebView content
          */
         @NonNull
