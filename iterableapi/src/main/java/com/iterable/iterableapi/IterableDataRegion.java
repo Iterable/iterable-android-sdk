@@ -16,7 +16,7 @@ public enum IterableDataRegion {
         return this.endpoint;
     }
 
-    String getWebAppBaseUrl() {
+    public String getWebAppBaseUrl() {
         return this.webAppBaseUrl;
     }
 }
