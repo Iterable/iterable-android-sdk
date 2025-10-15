@@ -14,6 +14,7 @@ import android.webkit.WebViewClient;
 import com.iterable.iterableapi.IterableApi;
 import com.iterable.iterableapi.IterableInAppLocation;
 import com.iterable.iterableapi.IterableInAppMessage;
+import com.iterable.iterableapi.IterableUtil;
 import com.iterable.iterableapi.ui.R;
 
 import java.util.List;
@@ -77,7 +78,7 @@ public class IterableInboxMessageFragment extends Fragment {
         message = getMessageById(messageId);
         if (message != null) {
             // Use configured base URL to enable CORS for external resources (e.g., custom fonts)
-            webView.loadDataWithBaseURL(com.iterable.iterableapi.IterableUtil.getWebViewBaseUrl(), message.getContent().html, "text/html", "UTF-8", "");
+            webView.loadDataWithBaseURL(IterableUtil.getWebViewBaseUrl(), message.getContent().html, "text/html", "UTF-8", "");
             webView.setWebViewClient(webViewClient);
             if (!loaded) {
                 IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.INBOX);
