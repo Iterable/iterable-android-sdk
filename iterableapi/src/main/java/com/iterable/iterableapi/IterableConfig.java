@@ -141,9 +141,9 @@ public class IterableConfig {
     final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     /**
-     * Base URL for WebView content loading. Used to enable CORS for external resources.
+     * Base URL for Webview content loading. Specifically used to enable CORS for external resources.
      * If null or empty, defaults to empty string (original behavior with about:blank origin).
-     * Set this to your domain (e.g., "https://app.iterable.com") to allow external resource loading.
+     * Set this to according to your CORS settings for example (e.g., "https://app.iterable.com") to allow external resource loading.
      */
     @Nullable
     final String webViewBaseUrl;
