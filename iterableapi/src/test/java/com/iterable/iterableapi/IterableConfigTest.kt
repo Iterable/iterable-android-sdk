@@ -1,6 +1,7 @@
 package com.iterable.iterableapi
 
 import org.hamcrest.Matchers.`is`
+import org.hamcrest.Matchers.nullValue
 import org.junit.Assert.*
 import org.junit.Test
 
