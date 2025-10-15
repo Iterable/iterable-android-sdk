@@ -22,13 +22,18 @@ class IterableConfigTest {
     }
     
     @Test
-    fun dataRegionWebAppBaseUrlUS() {
-        assertThat(IterableDataRegion.US.webAppBaseUrl, `is`("https://app.iterable.com"))
+    fun defaultWebViewBaseUrl() {
+        val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
+        val config: IterableConfig = configBuilder.build()
+        assertThat(config.webViewBaseUrl, `is`(nullValue()))
     }
     
     @Test
-    fun dataRegionWebAppBaseUrlEU() {
-        assertThat(IterableDataRegion.EU.webAppBaseUrl, `is`("https://app.eu.iterable.com"))
+    fun setWebViewBaseUrl() {
+        val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
+            .setWebViewBaseUrl("https://app.iterable.com")
+        val config: IterableConfig = configBuilder.build()
+        assertThat(config.webViewBaseUrl, `is`("https://app.iterable.com"))
     }
     
     @Test

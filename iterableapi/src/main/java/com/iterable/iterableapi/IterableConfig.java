@@ -140,6 +140,14 @@ public class IterableConfig {
     @Nullable
     final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
+    /**
+     * Base URL for WebView content loading. Used to enable CORS for external resources.
+     * If null or empty, defaults to empty string (original behavior with about:blank origin).
+     * Set this to your domain (e.g., "https://app.iterable.com") to allow external resource loading.
+     */
+    @Nullable
+    final String webViewBaseUrl;
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -165,6 +173,7 @@ public class IterableConfig {
         iterableUnknownUserHandler = builder.iterableUnknownUserHandler;
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
+        webViewBaseUrl = builder.webViewBaseUrl;
     }
 
     public static class Builder {
@@ -192,6 +201,7 @@ public class IterableConfig {
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableUnknownUserHandler iterableUnknownUserHandler;
+        private String webViewBaseUrl;
 
         public Builder() {}
 
@@ -431,6 +441,18 @@ public class IterableConfig {
         @NonNull
         public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
             this.mobileFrameworkInfo = mobileFrameworkInfo;
+            return this;
+        }
+
+        /**
+         * Set the base URL for WebView content loading. Used to enable CORS for external resources.
+         * If not set or null, defaults to empty string (original behavior with about:blank origin).
+         * Set this to your domain (e.g., "https://app.iterable.com") to allow external resource loading.
+         * @param webViewBaseUrl Base URL for WebView content
+         */
+        @NonNull
+        public Builder setWebViewBaseUrl(@Nullable String webViewBaseUrl) {
+            this.webViewBaseUrl = webViewBaseUrl;
             return this;
         }
 

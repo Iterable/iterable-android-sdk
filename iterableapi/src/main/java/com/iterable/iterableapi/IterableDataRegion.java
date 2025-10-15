@@ -1,22 +1,16 @@
 package com.iterable.iterableapi;
 
 public enum IterableDataRegion {
-    US("https://api.iterable.com/api/", "https://app.iterable.com"),
-    EU("https://api.eu.iterable.com/api/", "https://app.eu.iterable.com");
+    US("https://api.iterable.com/api/"),
+    EU("https://api.eu.iterable.com/api/");
 
     private final String endpoint;
-    private final String webAppBaseUrl;
 
-    IterableDataRegion(String endpoint, String webAppBaseUrl) {
+    IterableDataRegion(String endpoint) {
         this.endpoint = endpoint;
-        this.webAppBaseUrl = webAppBaseUrl;
     }
 
     public String getEndpoint() {
         return this.endpoint;
-    }
-
-    public String getWebAppBaseUrl() {
-        return this.webAppBaseUrl;
     }
 }

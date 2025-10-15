@@ -1826,21 +1826,21 @@ public class IterableApi {
     }
 
     /**
-     * Returns the web app base URL for the configured data region.
-     * This is used for WebView baseURL to enable CORS for external resources.
-     * @return Base URL string (e.g., "https://app.iterable.com" or "https://app.eu.iterable.com")
+     * Returns the configured WebView base URL for enabling CORS for external resources.
+     * If not configured, defaults to empty string (original behavior with about:blank origin).
+     * @return Base URL string or empty string if not configured
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static String getWebViewBaseUrl() {
         try {
             IterableConfig config = getInstance().config;
-            if (config != null && config.dataRegion != null) {
-                return config.dataRegion.getWebAppBaseUrl();
+            if (config != null && config.webViewBaseUrl != null) {
+                return config.webViewBaseUrl;
             }
         } catch (Exception e) {
-            IterableLogger.w(TAG, "Failed to get configured data region for WebView baseURL, using US default", e);
+            IterableLogger.w(TAG, "Failed to get configured WebView baseURL, using empty default", e);
         }
-        return IterableDataRegion.US.getWebAppBaseUrl();
+        return "";
     }
 //endregion
 
