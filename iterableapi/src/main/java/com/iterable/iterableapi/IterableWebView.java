@@ -43,8 +43,8 @@ class IterableWebView extends WebView {
 
         // start loading the in-app
         // specifically use loadDataWithBaseURL and not loadData, as mentioned in https://stackoverflow.com/a/58181704/13111386
-        // Use Iterable web app base URL to enable CORS for external resources (e.g., custom fonts)
-        loadDataWithBaseURL(IterableApi.getWebViewBaseUrl(), html, MIME_TYPE, ENCODING, "");
+        // Use configured base URL to enable CORS for external resources (e.g., custom fonts)
+        loadDataWithBaseURL(IterableUtil.getWebViewBaseUrl(), html, MIME_TYPE, ENCODING, "");
     }
 
     interface HTMLNotificationCallbacks {

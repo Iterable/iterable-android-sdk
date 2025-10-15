@@ -76,8 +76,8 @@ public class IterableInboxMessageFragment extends Fragment {
     private void loadMessage() {
         message = getMessageById(messageId);
         if (message != null) {
-            // Use Iterable web app base URL to enable CORS for external resources (e.g., custom fonts)
-            webView.loadDataWithBaseURL(IterableApi.getWebViewBaseUrl(), message.getContent().html, "text/html", "UTF-8", "");
+            // Use configured base URL to enable CORS for external resources (e.g., custom fonts)
+            webView.loadDataWithBaseURL(com.iterable.iterableapi.IterableUtil.getWebViewBaseUrl(), message.getContent().html, "text/html", "UTF-8", "");
             webView.setWebViewClient(webViewClient);
             if (!loaded) {
                 IterableApi.getInstance().trackInAppOpen(message, IterableInAppLocation.INBOX);

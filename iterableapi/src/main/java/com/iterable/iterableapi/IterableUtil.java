@@ -88,4 +88,8 @@ public class IterableUtil {
     static boolean isUrlOpenAllowed(@NonNull String url) {
         return instance.isUrlOpenAllowed(url);
     }
+
+    static String getWebViewBaseUrl() {
+        return instance.getWebViewBaseUrl();
+    }
 }

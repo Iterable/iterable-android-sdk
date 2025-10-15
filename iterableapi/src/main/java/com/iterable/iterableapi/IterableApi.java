@@ -1825,23 +1825,6 @@ public class IterableApi {
         apiClient.trackEmbeddedSession(session);
     }
 
-    /**
-     * Returns the configured WebView base URL for enabling CORS for external resources.
-     * If not configured, defaults to empty string (original behavior with about:blank origin).
-     * @return Base URL string or empty string if not configured
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public static String getWebViewBaseUrl() {
-        try {
-            IterableConfig config = getInstance().config;
-            if (config != null && config.webViewBaseUrl != null) {
-                return config.webViewBaseUrl;
-            }
-        } catch (Exception e) {
-            IterableLogger.w(TAG, "Failed to get configured WebView baseURL, using empty default", e);
-        }
-        return "";
-    }
 //endregion
 
 }
