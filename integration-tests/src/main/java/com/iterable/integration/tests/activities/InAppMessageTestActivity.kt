@@ -12,6 +12,7 @@ import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableInAppLocation
 import com.iterable.integration.tests.R
 import com.iterable.integration.tests.BuildConfig
+import com.iterable.iterableapi.IterableApiHelper
 
 class InAppMessageTestActivity : AppCompatActivity() {
     
@@ -147,6 +148,7 @@ class InAppMessageTestActivity : AppCompatActivity() {
     
     private fun refreshInAppMessages() {
         try {
+            IterableApiHelper().syncInAppMessages()
             updateStatus("Refreshing in-app messages...")
             updateUserInfo() // Also refresh user info
             
