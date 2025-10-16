@@ -64,10 +64,10 @@ jobs:
             -c 2048M \
             -f
       
-      # - name: Build Test APKs
-      #   run: |
-      #     echo "Building test APKs..."
-      #     ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
+      - name: Build Test APKs
+        run: |
+          echo "Building test APKs..."
+          ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
             
       - name: Run In-App Message E2E Test
         run: |
