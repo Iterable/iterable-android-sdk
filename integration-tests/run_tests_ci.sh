@@ -119,13 +119,18 @@ start_emulator() {
         exit 1
     fi
     
-    # Build emulator command with full path
-    local emulator_cmd="$emulator_path -avd $avd_to_start -no-audio -no-snapshot -camera-back none -camera-front none -memory 2048 -cores 2 -no-boot-anim"
+    # Build emulator command with full path and optimized flags
+    local emulator_cmd="$emulator_path -avd $avd_to_start"
+    emulator_cmd="$emulator_cmd -no-audio -no-snapshot -no-boot-anim"
+    emulator_cmd="$emulator_cmd -camera-back none -camera-front none"
+    emulator_cmd="$emulator_cmd -memory 2048 -cores 2"
+    emulator_cmd="$emulator_cmd -no-metrics -skip-adb-auth"
+    emulator_cmd="$emulator_cmd -partition-size 2048"
     
     # Only run headless in CI environments
     if [ -n "$CI" ]; then
-        print_info "CI environment detected, running headless..."
-        emulator_cmd="$emulator_cmd -no-window -gpu swiftshader_indirect"
+        print_info "CI environment detected, running headless with optimizations..."
+        emulator_cmd="$emulator_cmd -no-window -no-skin -gpu swiftshader_indirect"
     else
         print_info "Local environment detected, showing emulator window..."
         emulator_cmd="$emulator_cmd -gpu auto"
