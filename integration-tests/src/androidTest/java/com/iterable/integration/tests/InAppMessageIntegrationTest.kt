@@ -188,9 +188,9 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
         
         // Scroll to make sure button is visible (in case it's off-screen)
-        val scrollView = uiDevice.findObject(UiSelector().className("android.widget.ScrollView"))
+        val scrollView = uiDevice.findObject(UiSelector().scrollable(true))
         if (scrollView.exists()) {
-            scrollView.scrollForward()
+            scrollView.scrollForward(50)
             Log.d(TAG, "🔧 Scrolled to make buttons visible")
         }
         
