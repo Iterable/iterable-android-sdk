@@ -1,36 +1,26 @@
 package com.iterable.integration.tests
 
-import android.content.Context
 import android.content.Intent
 import android.util.Log
-import android.webkit.WebView
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso
-import androidx.test.espresso.action.ViewActions
-import androidx.test.espresso.assertion.ViewAssertions
-import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.web.assertion.WebViewAssertions
-import androidx.test.espresso.web.matcher.DomMatchers
 import androidx.test.espresso.web.sugar.Web
 import androidx.test.espresso.web.webdriver.DriverAtoms
 import androidx.test.espresso.web.webdriver.Locator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.UiObject2
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableInAppLocation
 import com.iterable.iterableapi.IterableInAppCloseAction
 import com.iterable.iterableapi.IterableConfig
-import com.iterable.integration.tests.MainActivity
 import com.iterable.integration.tests.activities.InAppMessageTestActivity
-import com.iterable.integration.tests.utils.IntegrationTestUtils
-import com.iterable.integration.tests.TestConstants
+import com.iterable.iterableapi.IterableApiHelper
 import org.awaitility.Awaitility
 import org.junit.After
 import org.junit.Assert
@@ -78,7 +68,7 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         // CRITICAL: Setup custom handlers FIRST, before any activities
         Log.d(TAG, "🔧 Setting up custom handlers BEFORE any activity launches...")
-        setupCustomInAppHandler()
+        setupConfigAndInitialize()
         
         // Call super.setUp() but DON'T launch activities yet
         super.setUp()
@@ -108,24 +98,13 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         super.tearDown()
     }
     
-    private fun setupCustomInAppHandler() {
+    private fun setupConfigAndInitialize() {
         Log.d(TAG, "🔧 setupCustomInAppHandler() called")
         
         val config = IterableConfig.Builder()
             .setAutoPushRegistration(true)
             .setEnableEmbeddedMessaging(true)
             .setInAppDisplayInterval(2.0) // Same as MainActivity for consistency
-            .setInAppHandler { message ->
-                Log.d(TAG, "🎯 IN-APP HANDLER TRIGGERED! Message: ${message.messageId}")
-                Log.d(TAG, "🎯 Message content: ${message.content}")
-                inAppMessageDisplayed.set(true)
-                currentInAppMessage.set(message) // Store the message for later use
-                
-                // CRITICAL: Also set the testUtils flag so waitForInAppMessage works
-                testUtils.setInAppMessageDisplayed(true)
-                Log.d(TAG, "🎯 Message stored and testUtils flag set, returning SHOW")
-                com.iterable.iterableapi.IterableInAppHandler.InAppResponse.SHOW
-            }
             .setCustomActionHandler { action, context ->
                 Log.d(TAG, "🎯 Custom action triggered: $action")
                 true
@@ -155,6 +134,8 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         System.setProperty("iterable.test.mode", "true")
         
         IterableApi.initialize(appContext, BuildConfig.ITERABLE_API_KEY, config)
+        //Pausing auto-display to prevent interference with message queue during tests
+        IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
         IterableApi.getInstance().setEmail(TestConstants.TEST_USER_EMAIL)
         
         Log.d(TAG, "🔧 IterableApi initialized with custom handlers")
@@ -162,119 +143,73 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
     }
     
     private fun launchAppAndNavigateToInAppTesting() {
-        Log.d(TAG, "🔧 Starting app flow: Direct launch of InAppMessageTestActivity for CI...")
         
-        // In CI, we'll launch the InAppMessageTestActivity directly
-        // This avoids UI navigation issues in headless mode
-        if (System.getenv("CI") == "true" || !findAndClickInAppButton()) {
-            Log.d(TAG, "🔧 CI detected or button not found - launching InAppMessageTestActivity directly")
-            val inAppIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, InAppMessageTestActivity::class.java)
-            inAppActivityScenario = ActivityScenario.launch(inAppIntent)
-            
-            // Wait for activity to be ready
-            Awaitility.await()
-                .atMost(5, TimeUnit.SECONDS)
-                .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until {
-                    val state = inAppActivityScenario.state
-                    Log.d(TAG, "🔧 InAppMessageTestActivity state: $state")
-                    state == Lifecycle.State.RESUMED
-                }
-                
-            Log.d(TAG, "🔧 InAppMessageTestActivity launched directly and ready!")
-        }
-    }
-    
-    private fun findAndClickInAppButton(): Boolean {
-        try {
-            // Step 1: Launch MainActivity (the home page)
-            Log.d(TAG, "🔧 Step 1: Launching MainActivity...")
-            val mainIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, MainActivity::class.java)
-            mainActivityScenario = ActivityScenario.launch(mainIntent)
-            
-            // Wait for MainActivity to be ready
-            Awaitility.await()
-                .atMost(5, TimeUnit.SECONDS)
-                .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until {
-                    val state = mainActivityScenario.state
-                    Log.d(TAG, "🔧 MainActivity state: $state")
-                    state == Lifecycle.State.RESUMED
-                }
-            
-            Log.d(TAG, "🔧 MainActivity is ready!")
-            
-            // Give extra time for UI to fully inflate on slow CI emulators
-            Thread.sleep(2000)
-            
-            // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
-            Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
-            
-            // Scroll to make sure button is visible (in case it's off-screen)
-            val scrollView = uiDevice.findObject(UiSelector().scrollable(true))
-            if (scrollView.exists()) {
-                scrollView.swipeUp(50)
-                Log.d(TAG, "🔧 Scrolled to make buttons visible")
+        // Step 1: Launch MainActivity (the home page)
+        Log.d(TAG, "🔧 Step 1: Launching MainActivity...")
+        val mainIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, MainActivity::class.java)
+        mainActivityScenario = ActivityScenario.launch(mainIntent)
+        
+        // Wait for MainActivity to be ready
+        Awaitility.await()
+            .atMost(5, TimeUnit.SECONDS)
+            .pollInterval(500, TimeUnit.MILLISECONDS)
+            .until {
+                val state = mainActivityScenario.state
+                Log.d(TAG, "🔧 MainActivity state: $state")
+                state == Lifecycle.State.RESUMED
             }
-            
-            val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
-            if (inAppButton.exists()) {
-                inAppButton.click()
-                Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
-                
-                // Step 3: Wait for InAppMessageTestActivity to load
-                Log.d(TAG, "🔧 Step 3: Waiting for InAppMessageTestActivity to load...")
-                Thread.sleep(2000) // Give time for navigation
-                
-                Log.d(TAG, "🔧 App navigation complete: Now on InAppMessageTestActivity!")
-                return true
-            } else {
-                // Fallback: try to find by text
-                val inAppButtonByText = uiDevice.findObject(UiSelector().textContains("In-App"))
-                if (inAppButtonByText.exists()) {
-                    inAppButtonByText.click()
-                    Log.d(TAG, "🔧 Clicked In-App Messages button by text")
-                    
-                    // Step 3: Wait for InAppMessageTestActivity to load
-                    Log.d(TAG, "🔧 Step 3: Waiting for InAppMessageTestActivity to load...")
-                    Thread.sleep(2000) // Give time for navigation
-                    
-                    Log.d(TAG, "🔧 App navigation complete: Now on InAppMessageTestActivity!")
-                    return true
-                }
-            }
-            
-            Log.w(TAG, "🔧 Could not find In-App Messages button")
-            return false
-        } catch (e: Exception) {
-            Log.e(TAG, "Error finding/clicking In-App button", e)
-            return false
+        
+        Log.d(TAG, "🔧 MainActivity is ready!")
+        
+        // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
+        Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
+        val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
+        if (inAppButton.exists()) {
+            inAppButton.click()
+            Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
+        } else {
+            Log.e(TAG, "❌ In-App Messages button not found!")
+            Assert.fail("In-App Messages button not found in MainActivity")
         }
+        
+        // Step 3: Wait for InAppMessageTestActivity to load
+        Log.d(TAG, "🔧 Step 3: Waiting for InAppMessageTestActivity to load...")
+        Thread.sleep(2000) // Give time for navigation
+        
+        Log.d(TAG, "🔧 App navigation complete: Now on InAppMessageTestActivity (same as manual flow)!")
     }
     
     @Test
     fun testInAppMessageMVP() {
         Log.d(TAG, "🚀 Starting MVP in-app message test - GitHub Actions optimized")
-        
+
         // Step 1: Ensure user is signed in
         Log.d(TAG, "📧 Step 1: Ensuring user is signed in...")
         val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
         Assert.assertTrue("User should be signed in", userSignedIn)
         Log.d(TAG, "✅ User signed in successfully: ${TestConstants.TEST_USER_EMAIL}")
-        
+
         // Step 2: Debug API key configuration
         Log.d(TAG, "🔍 Debug: ITERABLE_API_KEY = ${BuildConfig.ITERABLE_API_KEY}")
         Log.d(TAG, "🔍 Debug: ITERABLE_SERVER_API_KEY = ${BuildConfig.ITERABLE_SERVER_API_KEY}")
         Log.d(TAG, "🔍 Debug: ITERABLE_TEST_USER_EMAIL = ${BuildConfig.ITERABLE_TEST_USER_EMAIL}")
-        
+
         // Step 3: Try to trigger campaign via API (but don't fail if it doesn't work)
         Log.d(TAG, "🎯 Step 3: Attempting to trigger campaign via API...")
         Log.d(TAG, "Campaign ID: $TEST_CAMPAIGN_ID")
         Log.d(TAG, "User Email: ${TestConstants.TEST_USER_EMAIL}")
-        
+
+        //TODO: Check if any inapp is being displayed right now and close it if so
+
+        //TODO: Make sure InApp messages are cleared before triggering new one
+        IterableApi.getInstance().inAppManager.messages.forEach {
+            Log.d(TAG, "Clearing existing message: ${it.messageId}")
+            IterableApi.getInstance().inAppManager.removeMessage(it)
+        }
+
         var campaignTriggered = false
         val latch = java.util.concurrent.CountDownLatch(1)
-        
+
         triggerCampaignViaAPI(TEST_CAMPAIGN_ID, TestConstants.TEST_USER_EMAIL, null) { success ->
             campaignTriggered = success
             Log.d(TAG, "🎯 Campaign trigger result: $success")
@@ -285,83 +220,66 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             }
             latch.countDown()
         }
-        
+
         // Wait for API call to complete (up to 10 seconds for CI)
         val apiCallCompleted = latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
         Log.d(TAG, "🎯 API call completed: $apiCallCompleted, success: $campaignTriggered")
-        
+        if (!apiCallCompleted) {
+            Log.w(TAG, "⚠️ API call did not complete in time - proceeding anyway")
+            // Fail the test here
+            Assert.fail("Campaign trigger API call did not complete in time")
+            return
+        }
         // Step 4: Wait for message sync
         Log.d(TAG, "🔄 Step 4: Waiting for message sync...")
         Thread.sleep(3000) // Give time for any messages to sync
-        
-        // Step 5: Check for messages in SDK
-        Log.d(TAG, "📱 Step 5: Checking for messages in SDK...")
-        val messages = IterableApi.getInstance().getInAppManager().getMessages()
-        Log.d(TAG, "📱 Found ${messages.size} messages in SDK")
-        
-        // Step 6: Test SDK functionality even without messages
-        Log.d(TAG, "🧪 Step 6: Testing SDK functionality...")
-        
-        // Test 1: Verify SDK is properly initialized
-        val sdkInstance = IterableApi.getInstance()
-        val sdkInitialized = sdkInstance != null
-        Log.d(TAG, "🧪 SDK initialized: $sdkInitialized")
-        Assert.assertTrue("SDK should be initialized", sdkInitialized)
-        
-        // Test 2: Verify user is set
-        val currentUser = IterableApi.getInstance().getEmail()
-        Log.d(TAG, "🧪 Current user: $currentUser")
-        Assert.assertEquals("User email should be set", TestConstants.TEST_USER_EMAIL, currentUser)
-        
-        // Test 3: Verify in-app manager is available
-        val inAppManager = IterableApi.getInstance().getInAppManager()
-        Log.d(TAG, "🧪 InApp manager available: ${inAppManager != null}")
-        Assert.assertNotNull("InApp manager should be available", inAppManager)
-        
-        // Test 4: If we have messages, test displaying them
-        if (messages.isNotEmpty()) {
-            Log.d(TAG, "🎨 Testing message display functionality...")
-            val firstMessage = messages.first()
-            Log.d(TAG, "📱 First message ID: ${firstMessage.messageId}")
-            currentInAppMessage.set(firstMessage)
-            
-            // Try to display the message
-            Log.d(TAG, "🎨 Attempting to display message...")
-            IterableApi.getInstance().getInAppManager().showMessage(firstMessage)
-            inAppMessageDisplayed.set(true)
-            
-            // Wait for message to be displayed
-            val messageDisplayed = waitForInAppMessage(10)
-            Log.d(TAG, "🎨 Message displayed: $messageDisplayed")
-            
-            Assert.assertTrue("Message should be displayable", messageDisplayed || inAppMessageDisplayed.get())
-        } else {
-            Log.d(TAG, "ℹ️ No messages available in SDK - this is normal if API keys are not configured")
-            Log.d(TAG, "ℹ️ Testing SDK core functionality instead...")
+
+        //Manually sync
+        IterableApiHelper().syncInAppMessages()
+
+        //Make sure message count is updated
+        Assert.assertTrue(
+            "Message count should be greater than 0",
+            IterableApi.getInstance().inAppManager.messages.count() == 1
+        )
+
+        IterableApi.getInstance().inAppManager.showMessage(
+            IterableApi.getInstance().inAppManager.messages.first()
+        )
+
+        //wait for 3 seconds to let the inapp show
+        Thread.sleep(3000)
+
+        // Get the top activity using ActivityLifecycleMonitorRegistry
+        var topActivity: android.app.Activity? = null
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            topActivity = ActivityLifecycleMonitorRegistry.getInstance()
+                .getActivitiesInStage(Stage.RESUMED)
+                .firstOrNull()
         }
-        
-        // Step 7: Test SDK event tracking (this should work regardless of messages)
-        Log.d(TAG, "📊 Step 7: Testing SDK event tracking...")
-        try {
-            IterableApi.getInstance().track("test_event")
-            Log.d(TAG, "✅ Event tracking successful")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Event tracking failed", e)
-            Assert.fail("Event tracking should work: ${e.message}")
+
+        // Check if topActivity contains IterableInAppFragmentHTMLNotification
+        var isIterableInAppFragmentView = false
+        topActivity?.let { activity ->
+            val fragmentManager = try {
+                (activity as? androidx.fragment.app.FragmentActivity)?.supportFragmentManager
+            } catch (e: Exception) {
+                null
+            }
+            fragmentManager?.fragments?.forEach { fragment ->
+                if (fragment != null &&
+                    (fragment.javaClass.simpleName == "IterableInAppFragmentHTMLNotification" ||
+                        fragment.javaClass.canonicalName?.endsWith("IterableInAppFragmentHTMLNotification") == true)
+                ) {
+                    isIterableInAppFragmentView = true
+                }
+            }
         }
-        
-        // Step 8: Final verification - MVP test passes if SDK is working
-        Log.d(TAG, "✅ Final verification - SDK functionality test")
-        Log.d(TAG, "✅ SDK initialized: $sdkInitialized")
-        Log.d(TAG, "✅ User set: $currentUser")
-        Log.d(TAG, "✅ InApp manager available: ${inAppManager != null}")
-        Log.d(TAG, "✅ Event tracking: Working")
-        Log.d(TAG, "✅ Messages in SDK: ${messages.size}")
-        Log.d(TAG, "✅ API triggered: $campaignTriggered")
-        
-        // The MVP test passes if the SDK is properly initialized and functional
-        // We don't require messages to be present for the MVP test
-        Log.d(TAG, "✅ MVP in-app message test completed successfully - SDK is functional!")
+
+        Assert.assertTrue(
+            "Top activity should be IterableInAppFragmentHTMLNotification or contain IterableWebView",
+            isIterableInAppFragmentView
+        )
     }
     
     // @Test - Disabled for MVP testing
