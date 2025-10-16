@@ -74,7 +74,7 @@ jobs:
           echo "Running In-App Message MVP test..."
           
           # Start logcat in background for crash debugging
-          adb logcat > /tmp/test-logcat.log &
+          adb logcat > /tmp/test-logcat.log 2>&1 &
           LOGCAT_PID=$!
           
           # Run test using the CI runner script
@@ -82,11 +82,17 @@ jobs:
             com.iterable.integration.tests.InAppMessageIntegrationTest \
             testInAppMessageMVP \
             --avd test_api_${{ matrix.api-level }} || {
-              echo "Test failed! Collecting crash logs..."
+              echo "Test failed! Collecting logs..."
               kill $LOGCAT_PID 2>/dev/null || true
-              echo "=== CRASH LOGS ==="
-              tail -100 /tmp/test-logcat.log
+              
+              echo "=== EMULATOR BOOT LOGS ==="
+              cat /tmp/emulator.log 2>/dev/null || echo "No emulator logs found"
+              echo "=== END EMULATOR LOGS ==="
+              
+              echo "=== TEST CRASH LOGS ==="
+              tail -100 /tmp/test-logcat.log 2>/dev/null || echo "No test logs found"
               echo "=== END CRASH LOGS ==="
+              
               exit 1
             }
           

@@ -159,12 +159,22 @@ wait_for_device() {
     while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
         if [ $elapsed -ge $timeout ]; then
             print_error "Timeout waiting for device to boot"
+            print_error "Last boot status:"
+            adb shell getprop | grep boot || true
             exit 1
         fi
         
         sleep 5
         elapsed=$((elapsed + 5))
-        print_info "Still waiting... (${elapsed}s)"
+        
+        # Show more detailed status every 30 seconds
+        if [ $((elapsed % 30)) -eq 0 ]; then
+            local boot_progress=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+            local boot_reason=$(adb shell getprop sys.boot.reason 2>/dev/null | tr -d '\r')
+            print_info "Still waiting... (${elapsed}s) [boot_completed=${boot_progress:-'?'}, reason=${boot_reason:-'?'}]"
+        else
+            print_info "Still waiting... (${elapsed}s)"
+        fi
     done
     
     print_success "Device is ready"
