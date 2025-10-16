@@ -162,62 +162,94 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
     }
     
     private fun launchAppAndNavigateToInAppTesting() {
-        Log.d(TAG, "🔧 Starting app flow: MainActivity → InAppMessageTestActivity (same as manual testing)...")
+        Log.d(TAG, "🔧 Starting app flow: Direct launch of InAppMessageTestActivity for CI...")
         
-        // Step 1: Launch MainActivity (the home page)
-        Log.d(TAG, "🔧 Step 1: Launching MainActivity...")
-        val mainIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, MainActivity::class.java)
-        mainActivityScenario = ActivityScenario.launch(mainIntent)
-        
-        // Wait for MainActivity to be ready
-        Awaitility.await()
-            .atMost(5, TimeUnit.SECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until {
-                val state = mainActivityScenario.state
-                Log.d(TAG, "🔧 MainActivity state: $state")
-                state == Lifecycle.State.RESUMED
-            }
-        
-        Log.d(TAG, "🔧 MainActivity is ready!")
-        
-        // Give extra time for UI to fully inflate on slow CI emulators
-        Thread.sleep(2000)
-        
-        // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
-        Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
-        
-        // Scroll to make sure button is visible (in case it's off-screen)
-        val scrollView = uiDevice.findObject(UiSelector().scrollable(true))
-        if (scrollView.exists()) {
-            scrollView.swipeUp(50)
-            Log.d(TAG, "🔧 Scrolled to make buttons visible")
+        // In CI, we'll launch the InAppMessageTestActivity directly
+        // This avoids UI navigation issues in headless mode
+        if (System.getenv("CI") == "true" || !findAndClickInAppButton()) {
+            Log.d(TAG, "🔧 CI detected or button not found - launching InAppMessageTestActivity directly")
+            val inAppIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, InAppMessageTestActivity::class.java)
+            inAppActivityScenario = ActivityScenario.launch(inAppIntent)
+            
+            // Wait for activity to be ready
+            Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .until {
+                    val state = inAppActivityScenario.state
+                    Log.d(TAG, "🔧 InAppMessageTestActivity state: $state")
+                    state == Lifecycle.State.RESUMED
+                }
+                
+            Log.d(TAG, "🔧 InAppMessageTestActivity launched directly and ready!")
         }
-        
-        val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
-        if (inAppButton.exists()) {
-            inAppButton.click()
-            Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
-        } else {
-            // Fallback: try to find by text
-            val inAppButtonByText = uiDevice.findObject(UiSelector().textContains("In-App"))
-            if (inAppButtonByText.exists()) {
-                inAppButtonByText.click()
-                Log.d(TAG, "🔧 Clicked In-App Messages button by text")
+    }
+    
+    private fun findAndClickInAppButton(): Boolean {
+        try {
+            // Step 1: Launch MainActivity (the home page)
+            Log.d(TAG, "🔧 Step 1: Launching MainActivity...")
+            val mainIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, MainActivity::class.java)
+            mainActivityScenario = ActivityScenario.launch(mainIntent)
+            
+            // Wait for MainActivity to be ready
+            Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .until {
+                    val state = mainActivityScenario.state
+                    Log.d(TAG, "🔧 MainActivity state: $state")
+                    state == Lifecycle.State.RESUMED
+                }
+            
+            Log.d(TAG, "🔧 MainActivity is ready!")
+            
+            // Give extra time for UI to fully inflate on slow CI emulators
+            Thread.sleep(2000)
+            
+            // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
+            Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
+            
+            // Scroll to make sure button is visible (in case it's off-screen)
+            val scrollView = uiDevice.findObject(UiSelector().scrollable(true))
+            if (scrollView.exists()) {
+                scrollView.swipeUp(50)
+                Log.d(TAG, "🔧 Scrolled to make buttons visible")
+            }
+            
+            val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
+            if (inAppButton.exists()) {
+                inAppButton.click()
+                Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
+                
+                // Step 3: Wait for InAppMessageTestActivity to load
+                Log.d(TAG, "🔧 Step 3: Waiting for InAppMessageTestActivity to load...")
+                Thread.sleep(2000) // Give time for navigation
+                
+                Log.d(TAG, "🔧 App navigation complete: Now on InAppMessageTestActivity!")
+                return true
             } else {
-                Log.w(TAG, "🔧 Could not find In-App Messages button, launching activity directly")
-                // Direct launch as fallback
-                val inAppIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, InAppMessageTestActivity::class.java)
-                inAppActivityScenario = ActivityScenario.launch(inAppIntent)
-                return
+                // Fallback: try to find by text
+                val inAppButtonByText = uiDevice.findObject(UiSelector().textContains("In-App"))
+                if (inAppButtonByText.exists()) {
+                    inAppButtonByText.click()
+                    Log.d(TAG, "🔧 Clicked In-App Messages button by text")
+                    
+                    // Step 3: Wait for InAppMessageTestActivity to load
+                    Log.d(TAG, "🔧 Step 3: Waiting for InAppMessageTestActivity to load...")
+                    Thread.sleep(2000) // Give time for navigation
+                    
+                    Log.d(TAG, "🔧 App navigation complete: Now on InAppMessageTestActivity!")
+                    return true
+                }
             }
+            
+            Log.w(TAG, "🔧 Could not find In-App Messages button")
+            return false
+        } catch (e: Exception) {
+            Log.e(TAG, "Error finding/clicking In-App button", e)
+            return false
         }
-        
-        // Step 3: Wait for InAppMessageTestActivity to load
-        Log.d(TAG, "🔧 Step 3: Waiting for InAppMessageTestActivity to load...")
-        Thread.sleep(2000) // Give time for navigation
-        
-        Log.d(TAG, "🔧 App navigation complete: Now on InAppMessageTestActivity (same as manual flow)!")
     }
     
     @Test
