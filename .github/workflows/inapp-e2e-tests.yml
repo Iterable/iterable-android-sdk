@@ -66,11 +66,15 @@ jobs:
             ~/.android/adb*
           key: avd-${{ matrix.api-level }}-${{ runner.os }}
       
-      - name: Install AVD for API ${{ matrix.api-level }}
-        if: steps.avd-cache.outputs.cache-hit != 'true'
+      - name: Install System Image for API ${{ matrix.api-level }}
         run: |
           echo "Installing system image for API level ${{ matrix.api-level }}..."
           sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86_64"
+      
+      - name: Create AVD and Snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss - creating AVD and snapshot..."
           echo "Creating AVD..."
           echo "no" | avdmanager create avd \
             -n test_api_${{ matrix.api-level }} \
@@ -106,6 +110,12 @@ jobs:
           sleep 5
           
           echo "Snapshot created successfully"
+      
+      - name: Verify AVD
+        if: steps.avd-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "Cache hit - AVD already exists with snapshot"
+          avdmanager list avd
       
       # - name: Build Test APKs
       #   run: |
