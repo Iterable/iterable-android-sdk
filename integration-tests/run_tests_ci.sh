@@ -59,8 +59,22 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
+ensure_adb_server() {
+    print_info "Ensuring ADB server is ready..."
+    
+    # Kill any existing adb servers to avoid conflicts
+    adb kill-server 2>/dev/null || true
+    sleep 1
+    
+    # Start adb server
+    adb start-server
+    sleep 2
+    
+    print_success "ADB server ready"
+}
+
 check_device_connected() {
-    DEVICES=$(adb devices | grep -v "List of devices" | grep "device$" | wc -l)
+    DEVICES=$(adb devices 2>/dev/null | grep -v "List of devices" | grep "device$" | wc -l)
     if [ "$DEVICES" -gt 0 ]; then
         print_success "Device already connected"
         return 0
@@ -87,8 +101,26 @@ start_emulator() {
     
     print_info "Starting emulator: $avd_to_start"
     
-    # Build emulator command
-    local emulator_cmd="emulator -avd $avd_to_start -no-audio -no-snapshot -camera-back none -camera-front none -memory 2048 -cores 2"
+    # Find the correct emulator path
+    local emulator_path=""
+    
+    if [ -n "$ANDROID_SDK_ROOT" ] && [ -f "$ANDROID_SDK_ROOT/emulator/emulator" ]; then
+        emulator_path="$ANDROID_SDK_ROOT/emulator/emulator"
+        print_info "Using emulator from ANDROID_SDK_ROOT: $emulator_path"
+    elif [ -n "$ANDROID_HOME" ] && [ -f "$ANDROID_HOME/emulator/emulator" ]; then
+        emulator_path="$ANDROID_HOME/emulator/emulator"
+        print_info "Using emulator from ANDROID_HOME: $emulator_path"
+    elif command -v emulator &> /dev/null; then
+        emulator_path=$(command -v emulator)
+        print_info "Using emulator from PATH: $emulator_path"
+    else
+        print_error "emulator command not found!"
+        print_error "Checked: ANDROID_SDK_ROOT/emulator/emulator, ANDROID_HOME/emulator/emulator, PATH"
+        exit 1
+    fi
+    
+    # Build emulator command with full path
+    local emulator_cmd="$emulator_path -avd $avd_to_start -no-audio -no-snapshot -camera-back none -camera-front none -memory 2048 -cores 2 -no-boot-anim"
     
     # Only run headless in CI environments
     if [ -n "$CI" ]; then
@@ -99,13 +131,16 @@ start_emulator() {
         emulator_cmd="$emulator_cmd -gpu auto"
     fi
     
+    print_info "Emulator command: $emulator_cmd"
+    
     # Start emulator in background
-    eval $emulator_cmd &
+    $emulator_cmd > /tmp/emulator.log 2>&1 &
     
     EMULATOR_PID=$!
     STARTED_EMULATOR=true
     
     print_info "Emulator started with PID: $EMULATOR_PID"
+    print_info "Emulator logs: /tmp/emulator.log"
 }
 
 wait_for_device() {
@@ -189,6 +224,9 @@ else
     TEST_TARGET="${TEST_CLASS}"
     print_info "Running all tests in: ${TEST_CLASS}"
 fi
+
+# Ensure ADB server is ready before checking devices
+ensure_adb_server
 
 # Check if device is already connected
 if ! check_device_connected; then
