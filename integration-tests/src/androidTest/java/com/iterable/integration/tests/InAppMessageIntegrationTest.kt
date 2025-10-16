@@ -190,7 +190,7 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         // Scroll to make sure button is visible (in case it's off-screen)
         val scrollView = uiDevice.findObject(UiSelector().scrollable(true))
         if (scrollView.exists()) {
-            scrollView.scrollForward(50)
+            scrollView.swipeUp(50)
             Log.d(TAG, "🔧 Scrolled to make buttons visible")
         }
         
