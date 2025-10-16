@@ -91,7 +91,7 @@ jobs:
           
           # Wait for boot
           adb wait-for-device
-          timeout=900
+          timeout=600
           elapsed=0
           while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
             if [ $elapsed -ge $timeout ]; then
