@@ -160,7 +160,7 @@ wait_for_device() {
     adb wait-for-device
     
     print_info "Waiting for boot to complete..."
-    local timeout=600
+    local timeout=900
     local elapsed=0
     
     while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
