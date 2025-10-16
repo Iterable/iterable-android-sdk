@@ -108,10 +108,23 @@ jobs:
           sleep 10
           adb emu avd snapshot save default_boot
           sleep 5
+          
+          echo "Verifying snapshot was saved..."
+          $ANDROID_SDK_ROOT/emulator/emulator -avd test_api_${{ matrix.api-level }} -snapshot-list || true
+          
           adb emu kill
           sleep 5
           
           echo "Snapshot created successfully"
+      
+      - name: Save AVD Cache After Snapshot Creation
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-${{ runner.os }}
       
       - name: Verify AVD
         if: steps.avd-cache.outputs.cache-hit == 'true'
