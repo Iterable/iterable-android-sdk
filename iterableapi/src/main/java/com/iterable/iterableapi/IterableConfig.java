@@ -148,6 +148,15 @@ public class IterableConfig {
     @Nullable
     final String webViewBaseUrl;
 
+    /**
+     * Get the configured WebView base URL
+     * @return Base URL for WebView content, or null if not configured
+     */
+    @Nullable
+    public String getWebViewBaseUrl() {
+        return webViewBaseUrl;
+    }
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -461,4 +470,5 @@ public class IterableConfig {
             return new IterableConfig(this);
         }
     }
+
 }
