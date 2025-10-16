@@ -247,8 +247,88 @@ else
     print_info "Running all tests in: ${TEST_CLASS}"
 fi
 
+# Print local properties with obfuscated values
+print_local_properties() {
+    # Check multiple possible locations for local.properties
+    local properties_files=("../local.properties" "./local.properties" "$(pwd)/local.properties" "$(pwd)/../local.properties")
+    local found=false
+    local properties_file=""
+    
+    # Find the first existing properties file
+    for file in "${properties_files[@]}"; do
+        if [ -f "$file" ]; then
+            properties_file="$file"
+            found=true
+            break
+        fi
+    done
+    
+    print_info "Local properties file check:"
+    
+    if [ "$found" = true ]; then
+        print_info "Found local.properties at: $properties_file"
+        print_info "Contents (obfuscated):"
+        echo "----------------------------------------"
+        while IFS= read -r line || [ -n "$line" ]; do
+            # Skip empty lines
+            if [ -z "$line" ]; then
+                echo "$line"
+            # Handle commented lines that contain key=value
+            elif [[ "$line" =~ ^[[:space:]]*#.*= ]]; then
+                # Obfuscate values in commented lines too
+                if [[ "$line" =~ ^([[:space:]]*#[^=]+)=(.+) ]]; then
+                    prefix="${BASH_REMATCH[1]}"
+                    echo "$prefix=********"
+                else
+                    echo "$line"
+                fi
+            # Handle regular comments without key=value
+            elif [[ "$line" =~ ^[[:space:]]*# ]]; then
+                echo "$line"
+            # Handle active key=value lines
+            elif [[ "$line" =~ ^([^=]+)=(.*)$ ]]; then
+                key="${BASH_REMATCH[1]}"
+                echo "$key=********"
+            else
+                # Any other line format, print as is
+                echo "$line"
+            fi
+        done < "$properties_file"
+        echo "----------------------------------------"
+        
+        # Check if sdk.dir exists in the file and verify the directory
+        if grep -q "sdk.dir" "$properties_file"; then
+            sdk_dir=$(grep "sdk.dir" "$properties_file" | cut -d'=' -f2)
+            if [ ! -d "$sdk_dir" ]; then
+                print_warning "WARNING: sdk.dir in local.properties points to non-existent directory: $sdk_dir"
+            else
+                print_info "sdk.dir directory exists: $sdk_dir"
+            fi
+        else
+            print_warning "No sdk.dir property found in local.properties"
+        fi
+    else
+        print_warning "No local.properties file found. Checked:"
+        for file in "${properties_files[@]}"; do
+            print_warning "  - $file"
+        done
+        
+        # Check environment variables as fallback
+        if [ -n "$ANDROID_SDK_ROOT" ]; then
+            print_info "Using ANDROID_SDK_ROOT environment variable: $ANDROID_SDK_ROOT"
+        elif [ -n "$ANDROID_HOME" ]; then
+            print_info "Using ANDROID_HOME environment variable: $ANDROID_HOME"
+        else
+            print_warning "No Android SDK location found in environment variables"
+        fi
+    fi
+}
+
 # Ensure ADB server is ready before checking devices
 ensure_adb_server
+
+# Print local properties with obfuscated values
+print_local_properties
 
 # Check if device is already connected
 if ! check_device_connected; then
