@@ -57,7 +57,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       
+      - name: AVD Cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-${{ runner.os }}
+      
       - name: Install AVD for API ${{ matrix.api-level }}
+        if: steps.avd-cache.outputs.cache-hit != 'true'
         run: |
           echo "Installing system image for API level ${{ matrix.api-level }}..."
           sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86_64"
@@ -67,6 +77,35 @@ jobs:
             -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
             -c 2048M \
             -f
+          
+          echo "Creating initial snapshot..."
+          # Boot emulator once to create snapshot
+          $ANDROID_SDK_ROOT/emulator/emulator -avd test_api_${{ matrix.api-level }} -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim &
+          EMULATOR_PID=$!
+          
+          # Wait for boot
+          adb wait-for-device
+          timeout=600
+          elapsed=0
+          while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+            if [ $elapsed -ge $timeout ]; then
+              echo "Timeout creating snapshot"
+              kill $EMULATOR_PID || true
+              exit 1
+            fi
+            sleep 5
+            elapsed=$((elapsed + 5))
+            echo "Waiting for initial boot... (${elapsed}s)"
+          done
+          
+          echo "Boot complete, creating snapshot..."
+          sleep 10
+          adb emu avd snapshot save default_boot
+          sleep 5
+          adb emu kill
+          sleep 5
+          
+          echo "Snapshot created successfully"
       
       - name: Build Test APKs
         run: |

@@ -121,11 +121,18 @@ start_emulator() {
     
     # Build emulator command with full path and optimized flags
     local emulator_cmd="$emulator_path -avd $avd_to_start"
-    emulator_cmd="$emulator_cmd -no-audio -no-snapshot -no-boot-anim"
+    emulator_cmd="$emulator_cmd -no-audio -no-boot-anim"
     emulator_cmd="$emulator_cmd -camera-back none -camera-front none"
     emulator_cmd="$emulator_cmd -memory 2048 -cores 2"
     emulator_cmd="$emulator_cmd -no-metrics -skip-adb-auth"
     emulator_cmd="$emulator_cmd -partition-size 2048"
+    
+    # Use snapshot if available (way faster boot)
+    if [ -n "$CI" ]; then
+        emulator_cmd="$emulator_cmd -snapshot default_boot"
+    else
+        emulator_cmd="$emulator_cmd -no-snapshot"
+    fi
     
     # Only run headless in CI environments
     if [ -n "$CI" ]; then
@@ -153,7 +160,7 @@ wait_for_device() {
     adb wait-for-device
     
     print_info "Waiting for boot to complete..."
-    local timeout=300
+    local timeout=600
     local elapsed=0
     
     while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
