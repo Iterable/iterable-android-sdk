@@ -181,8 +181,19 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         Log.d(TAG, "🔧 MainActivity is ready!")
         
+        // Give extra time for UI to fully inflate on slow CI emulators
+        Thread.sleep(2000)
+        
         // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
         Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
+        
+        // Scroll to make sure button is visible (in case it's off-screen)
+        val scrollView = uiDevice.findObject(UiSelector().className("android.widget.ScrollView"))
+        if (scrollView.exists()) {
+            scrollView.scrollForward()
+            Log.d(TAG, "🔧 Scrolled to make buttons visible")
+        }
+        
         val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
         if (inAppButton.exists()) {
             inAppButton.click()
