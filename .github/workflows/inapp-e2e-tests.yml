@@ -83,8 +83,10 @@ jobs:
             -f
           
           echo "Creating initial snapshot..."
-          # Boot emulator once to create snapshot
-          $ANDROID_SDK_ROOT/emulator/emulator -avd test_api_${{ matrix.api-level }} -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim &
+          # Boot emulator once to create snapshot (must NOT use -no-snapshot)
+          $ANDROID_SDK_ROOT/emulator/emulator -avd test_api_${{ matrix.api-level }} \
+            -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim \
+            -no-metrics -skip-adb-auth &
           EMULATOR_PID=$!
           
           # Wait for boot
