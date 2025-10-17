@@ -89,7 +89,7 @@ public class IterableUtil {
         return instance.isUrlOpenAllowed(url);
     }
 
-    static String getWebViewBaseUrl() {
+    public static String getWebViewBaseUrl() {
         return instance.getWebViewBaseUrl();
     }
 }
