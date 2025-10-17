@@ -1,6 +1,7 @@
 package com.iterable.iterableapi
 
 import org.hamcrest.Matchers.`is`
+import org.hamcrest.Matchers.nullValue
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -19,6 +20,21 @@ class IterableConfigTest {
             .setDataRegion(IterableDataRegion.EU)
         val config: IterableConfig = configBuilder.build()
         assertThat(config.dataRegion, `is`(IterableDataRegion.EU))
+    }
+    
+    @Test
+    fun defaultWebViewBaseUrl() {
+        val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
+        val config: IterableConfig = configBuilder.build()
+        assertThat(config.webViewBaseUrl, `is`(nullValue()))
+    }
+    
+    @Test
+    fun setWebViewBaseUrl() {
+        val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
+            .setWebViewBaseUrl("https://app.iterable.com")
+        val config: IterableConfig = configBuilder.build()
+        assertThat(config.webViewBaseUrl, `is`("https://app.iterable.com"))
     }
     
     @Test
