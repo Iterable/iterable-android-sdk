@@ -201,6 +201,69 @@ else
     print_info "Local environment detected - will show emulator window"
 fi
 
+# Setup local.properties with credentials (for CI)
+setup_local_properties() {
+    print_info "Setting up local.properties for CI environment..."
+    
+    # Determine project root (this script is in integration-tests/)
+    local project_root="$(cd "$(dirname "$0")/.." && pwd)"
+    local local_props="${project_root}/local.properties"
+    
+    # Read from BCIT_ prefixed secrets (GitHub Actions) or fallback to non-prefixed
+    local api_key="${BCIT_ITERABLE_API_KEY:-$ITERABLE_API_KEY}"
+    local server_api_key="${BCIT_ITERABLE_SERVER_API_KEY:-$ITERABLE_SERVER_API_KEY}"
+    local test_user_email="${BCIT_ITERABLE_TEST_USER_EMAIL:-$ITERABLE_TEST_USER_EMAIL}"
+    
+    # Check if we need to add Iterable API keys
+    if [ -n "$api_key" ] || [ -n "$server_api_key" ] || [ -n "$test_user_email" ]; then
+        print_info "Updating local.properties with Iterable API credentials from environment..."
+        
+        # Create or update local.properties
+        if [ ! -f "$local_props" ]; then
+            print_info "Creating new local.properties file..."
+            touch "$local_props"
+        fi
+        
+        # Remove existing Iterable keys if present
+        grep -v "ITERABLE_API_KEY" "$local_props" > "${local_props}.tmp" 2>/dev/null || touch "${local_props}.tmp"
+        grep -v "ITERABLE_SERVER_API_KEY" "${local_props}.tmp" > "${local_props}.tmp2" 2>/dev/null || touch "${local_props}.tmp2"
+        grep -v "ITERABLE_TEST_USER_EMAIL" "${local_props}.tmp2" > "${local_props}.tmp3" 2>/dev/null || touch "${local_props}.tmp3"
+        mv "${local_props}.tmp3" "$local_props"
+        rm -f "${local_props}.tmp" "${local_props}.tmp2"
+        
+        # Add Iterable API credentials section if not present
+        if ! grep -q "# Iterable API Keys" "$local_props"; then
+            echo "" >> "$local_props"
+            echo "# Iterable API Keys for Integration Tests" >> "$local_props"
+        fi
+        
+        # Add the credentials (write to local.properties without BCIT_ prefix)
+        if [ -n "$api_key" ]; then
+            echo "ITERABLE_API_KEY=$api_key" >> "$local_props"
+            print_success "Added ITERABLE_API_KEY to local.properties (from BCIT_ITERABLE_API_KEY)"
+        fi
+        
+        if [ -n "$server_api_key" ]; then
+            echo "ITERABLE_SERVER_API_KEY=$server_api_key" >> "$local_props"
+            print_success "Added ITERABLE_SERVER_API_KEY to local.properties (from BCIT_ITERABLE_SERVER_API_KEY)"
+        fi
+        
+        if [ -n "$test_user_email" ]; then
+            echo "ITERABLE_TEST_USER_EMAIL=$test_user_email" >> "$local_props"
+            print_success "Added ITERABLE_TEST_USER_EMAIL to local.properties (from BCIT_ITERABLE_TEST_USER_EMAIL)"
+        fi
+        
+        print_success "local.properties updated successfully"
+    else
+        print_info "No Iterable credentials in environment variables, will use defaults from build.gradle"
+    fi
+}
+
+# Setup local.properties if in CI
+if [ -n "$CI" ]; then
+    setup_local_properties
+fi
+
 # Parse arguments
 TEST_CLASS=""
 TEST_METHOD=""

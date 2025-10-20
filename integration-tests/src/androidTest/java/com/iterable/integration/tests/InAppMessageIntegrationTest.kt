@@ -151,7 +151,7 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         // Wait for MainActivity to be ready
         Awaitility.await()
-            .atMost(5, TimeUnit.SECONDS)
+            .atMost(10, TimeUnit.SECONDS)
             .pollInterval(500, TimeUnit.MILLISECONDS)
             .until {
                 val state = mainActivityScenario.state
@@ -161,14 +161,35 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         Log.d(TAG, "🔧 MainActivity is ready!")
         
+        // Extra wait for UI to stabilize in CI (emulator can be slow)
+        Log.d(TAG, "🔧 Waiting extra 3s for UI to fully render...")
+        Thread.sleep(3000)
+        
+        // Dump all visible elements for debugging
+        Log.d(TAG, "🔧 Dumping UI elements...")
+        uiDevice.dumpWindowHierarchy(System.out)
+        
         // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
         Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
-        val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
+        
+        // Try multiple selectors to find the button
+        var inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
+        if (!inAppButton.exists()) {
+            Log.d(TAG, "🔧 Button not found by resourceId, trying by text...")
+            inAppButton = uiDevice.findObject(UiSelector().text("In-App Message Test"))
+        }
+        if (!inAppButton.exists()) {
+            Log.d(TAG, "🔧 Button not found by text, trying partial text match...")
+            inAppButton = uiDevice.findObject(UiSelector().textContains("In-App"))
+        }
+        
         if (inAppButton.exists()) {
-            inAppButton.click()
+            Log.d(TAG, "🔧 Found button! Clicking...")
+            inAppButton.clickAndWaitForNewWindow(5000)
             Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
         } else {
-            Log.e(TAG, "❌ In-App Messages button not found!")
+            Log.e(TAG, "❌ In-App Messages button not found after trying multiple selectors!")
+            uiDevice.dumpWindowHierarchy(System.out)
             Assert.fail("In-App Messages button not found in MainActivity")
         }
         
