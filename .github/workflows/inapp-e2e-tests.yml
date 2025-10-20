@@ -132,6 +132,11 @@ jobs:
           echo "Cache hit - AVD already exists with snapshot"
           avdmanager list avd
       
+      - name: Clean Build
+        run: |
+          echo "Cleaning build artifacts to avoid stale cache..."
+          ./gradlew clean --no-daemon
+      
       - name: Build Test APKs
         run: |
           echo "Building test APKs..."
