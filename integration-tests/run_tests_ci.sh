@@ -237,20 +237,33 @@ setup_local_properties() {
             echo "# Iterable API Keys for Integration Tests" >> "$local_props"
         fi
         
+        # Helper function to obfuscate value (show first 2 and last 2 chars)
+        obfuscate_value() {
+            local val="$1"
+            local len=${#val}
+            if [ $len -le 4 ]; then
+                echo "****"
+            else
+                local first="${val:0:2}"
+                local last="${val: -2}"
+                echo "${first}****${last}"
+            fi
+        }
+        
         # Add the credentials (write to local.properties without BCIT_ prefix)
         if [ -n "$api_key" ]; then
             echo "ITERABLE_API_KEY=$api_key" >> "$local_props"
-            print_success "Added ITERABLE_API_KEY to local.properties (from BCIT_ITERABLE_API_KEY)"
+            print_success "Added ITERABLE_API_KEY=$(obfuscate_value "$api_key") to local.properties (from BCIT_ITERABLE_API_KEY)"
         fi
         
         if [ -n "$server_api_key" ]; then
             echo "ITERABLE_SERVER_API_KEY=$server_api_key" >> "$local_props"
-            print_success "Added ITERABLE_SERVER_API_KEY to local.properties (from BCIT_ITERABLE_SERVER_API_KEY)"
+            print_success "Added ITERABLE_SERVER_API_KEY=$(obfuscate_value "$server_api_key") to local.properties (from BCIT_ITERABLE_SERVER_API_KEY)"
         fi
         
         if [ -n "$test_user_email" ]; then
             echo "ITERABLE_TEST_USER_EMAIL=$test_user_email" >> "$local_props"
-            print_success "Added ITERABLE_TEST_USER_EMAIL to local.properties (from BCIT_ITERABLE_TEST_USER_EMAIL)"
+            print_success "Added ITERABLE_TEST_USER_EMAIL=$(obfuscate_value "$test_user_email") to local.properties (from BCIT_ITERABLE_TEST_USER_EMAIL)"
         fi
         
         print_success "local.properties updated successfully"
@@ -312,6 +325,19 @@ fi
 
 # Print local properties with obfuscated values
 print_local_properties() {
+    # Helper function to obfuscate value (show first 2 and last 2 chars)
+    obfuscate_display() {
+        local val="$1"
+        local len=${#val}
+        if [ $len -le 4 ]; then
+            echo "****"
+        else
+            local first="${val:0:2}"
+            local last="${val: -2}"
+            echo "${first}****${last}"
+        fi
+    }
+    
     # Check multiple possible locations for local.properties
     local properties_files=("../local.properties" "./local.properties" "$(pwd)/local.properties" "$(pwd)/../local.properties")
     local found=false
@@ -341,7 +367,8 @@ print_local_properties() {
                 # Obfuscate values in commented lines too
                 if [[ "$line" =~ ^([[:space:]]*#[^=]+)=(.+) ]]; then
                     prefix="${BASH_REMATCH[1]}"
-                    echo "$prefix=********"
+                    value="${BASH_REMATCH[2]}"
+                    echo "$prefix=$(obfuscate_display "$value")"
                 else
                     echo "$line"
                 fi
@@ -351,7 +378,8 @@ print_local_properties() {
             # Handle active key=value lines
             elif [[ "$line" =~ ^([^=]+)=(.*)$ ]]; then
                 key="${BASH_REMATCH[1]}"
-                echo "$key=********"
+                value="${BASH_REMATCH[2]}"
+                echo "$key=$(obfuscate_display "$value")"
             else
                 # Any other line format, print as is
                 echo "$line"
