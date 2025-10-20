@@ -186,6 +186,27 @@ wait_for_device() {
     
     print_success "Device is ready"
     
+    # Extra wait for system services to fully start (package manager, etc.)
+    print_info "Waiting for system services to fully start..."
+    sleep 30
+    
+    # Verify package manager is ready
+    local pm_ready=0
+    for i in {1..30}; do
+        if adb shell pm list packages >/dev/null 2>&1; then
+            pm_ready=1
+            break
+        fi
+        sleep 2
+    done
+    
+    if [ $pm_ready -eq 0 ]; then
+        print_error "Package manager not ready after waiting"
+        exit 1
+    fi
+    
+    print_success "System services ready"
+    
     # Unlock screen and disable animations
     print_info "Configuring device..."
     adb shell input keyevent 82 || true
