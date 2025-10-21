@@ -178,6 +178,7 @@ start_emulator() {
     local emulator_cmd="$emulator_path -avd $avd_to_start"
     emulator_cmd="$emulator_cmd -no-audio -no-boot-anim"
     emulator_cmd="$emulator_cmd -camera-back none -camera-front none"
+    emulator_cmd="$emulator_cmd -feature -Bluetooth"  # Disable Bluetooth entirely
     
     # Increase resources to prevent ANRs (especially important for API 34)
     if [ -n "$CI" ]; then
@@ -277,6 +278,14 @@ wait_for_device() {
     adb shell settings put global window_animation_scale 0 || true
     adb shell settings put global transition_animation_scale 0 || true
     adb shell settings put global animator_duration_scale 0 || true
+    
+    # Disable Bluetooth to prevent crashes (not needed for tests)
+    print_info "Disabling Bluetooth..."
+    adb shell svc bluetooth disable 2>/dev/null || true
+    adb shell cmd bluetooth_manager disable 2>/dev/null || true
+    
+    # Stop Bluetooth service if it's causing issues
+    adb shell "am force-stop com.android.bluetooth" 2>/dev/null || true
     
     # Increase ANR timeout to prevent "Process system isn't responding" dialogs
     print_info "Configuring ANR timeouts..."
