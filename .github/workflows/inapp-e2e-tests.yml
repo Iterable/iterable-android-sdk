@@ -164,12 +164,13 @@ jobs:
           ./gradlew clean --no-daemon
       
       - name: Build Test APKs
+        if: steps.apk-cache.outputs.cache-matched-key == ''
         run: |
           echo "Building test APKs..."
           ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
       
       - name: Save APK Cache
-        if: (steps.apk-cache.outputs.cache-hit != 'true' && github.event.inputs.use-cached-apks != 'false')
+        if: steps.apk-cache.outputs.cache-matched-key == ''
         uses: actions/cache/save@v3
         with:
           path: |
