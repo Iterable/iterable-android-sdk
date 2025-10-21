@@ -178,9 +178,18 @@ start_emulator() {
     local emulator_cmd="$emulator_path -avd $avd_to_start"
     emulator_cmd="$emulator_cmd -no-audio -no-boot-anim"
     emulator_cmd="$emulator_cmd -camera-back none -camera-front none"
-    emulator_cmd="$emulator_cmd -memory 2048 -cores 2"
+    
+    # Increase resources to prevent ANRs (especially important for API 34)
+    if [ -n "$CI" ]; then
+        # CI has more resources available
+        emulator_cmd="$emulator_cmd -memory 4096 -cores 4"
+    else
+        # Local - use moderate resources
+        emulator_cmd="$emulator_cmd -memory 3072 -cores 3"
+    fi
+    
     emulator_cmd="$emulator_cmd -no-metrics -skip-adb-auth"
-    emulator_cmd="$emulator_cmd -partition-size 2048"
+    emulator_cmd="$emulator_cmd -partition-size 4096"
     
     # Use snapshot if available (way faster boot)
     if [ -n "$CI" ]; then
@@ -268,6 +277,12 @@ wait_for_device() {
     adb shell settings put global window_animation_scale 0 || true
     adb shell settings put global transition_animation_scale 0 || true
     adb shell settings put global animator_duration_scale 0 || true
+    
+    # Increase ANR timeout to prevent "Process system isn't responding" dialogs
+    print_info "Configuring ANR timeouts..."
+    adb shell settings put global anr_show_background false || true
+    adb shell settings put secure anr_show_background false || true
+    adb shell settings put global activity_manager_constants max_phantom_processes=2147483647 || true
     
     # Create screenshots directory
     mkdir -p /tmp/test-screenshots
@@ -534,8 +549,15 @@ fi
 
 # Run the test
 print_info "Executing Gradle command..."
+TEST_EXIT_CODE=0
 ./gradlew :integration-tests:connectedDebugAndroidTest \
     -Pandroid.testInstrumentationRunnerArguments.class="${TEST_TARGET}" \
-    --stacktrace
+    --stacktrace || TEST_EXIT_CODE=$?
 
-print_success "Tests completed successfully!"
+if [ $TEST_EXIT_CODE -eq 0 ]; then
+    print_success "Tests completed successfully!"
+else
+    print_error "Tests failed with exit code: $TEST_EXIT_CODE"
+    print_info "Cleanup will still run to capture artifacts..."
+    exit $TEST_EXIT_CODE
+fi
