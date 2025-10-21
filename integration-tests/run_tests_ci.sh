@@ -192,6 +192,9 @@ start_emulator() {
     emulator_cmd="$emulator_cmd -no-metrics -skip-adb-auth"
     emulator_cmd="$emulator_cmd -partition-size 4096"
     
+    # Configure DNS to use Google's public DNS (fixes "Unable to resolve host" errors)
+    emulator_cmd="$emulator_cmd -dns-server 8.8.8.8,8.8.4.4"
+    
     # Use snapshot if available (way faster boot)
     if [ -n "$CI" ]; then
         emulator_cmd="$emulator_cmd -snapshot default_boot"
@@ -305,6 +308,33 @@ wait_for_device() {
     adb shell "setprop dalvik.vm.execution-mode int:fast" 2>/dev/null || true
     adb shell "setprop debug.choreographer.skipwarning 1" 2>/dev/null || true
     adb shell settings put global activity_manager_constants max_phantom_processes=2147483647
+    
+    # Test network connectivity and DNS resolution
+    print_info "Testing network connectivity..."
+    local network_ok=false
+    for i in {1..5}; do
+        if adb shell "ping -c 1 -W 2 8.8.8.8" &>/dev/null; then
+            print_success "Network connectivity OK (attempt $i)"
+            network_ok=true
+            break
+        fi
+        print_warning "Network test attempt $i failed, retrying..."
+        sleep 2
+    done
+    
+    if [ "$network_ok" = false ]; then
+        print_error "Network connectivity test failed after 5 attempts"
+        print_error "The emulator may not have proper network access"
+    fi
+    
+    # Test DNS resolution
+    print_info "Testing DNS resolution for api.iterable.com..."
+    if adb shell "ping -c 1 -W 5 api.iterable.com" &>/dev/null; then
+        print_success "DNS resolution OK - api.iterable.com is reachable"
+    else
+        print_warning "DNS resolution test failed - API calls may fail"
+        print_warning "This could cause test failures"
+    fi
     
     # Create screenshots directory
     mkdir -p /tmp/test-screenshots
