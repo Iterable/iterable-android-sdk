@@ -188,8 +188,9 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             inAppButton.clickAndWaitForNewWindow(5000)
             Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
         } else {
-            Log.e(TAG, "❌ In-App Messages button not found after trying multiple selectors!")
-            uiDevice.dumpWindowHierarchy(System.out)
+            //Take screenshot for debugging
+//            uiDevice.takeScreenshot(File("/sdcard/Download/InAppButtonNotFound.png"))
+            Log.e(TAG, "❌ In-App Messages button not found!")
             Assert.fail("In-App Messages button not found in MainActivity")
         }
         
@@ -236,6 +237,7 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             Log.d(TAG, "🎯 Campaign trigger result: $success")
             if (!success) {
                 val errorMessage = testUtils.getLastErrorMessage()
+                Assert.fail("Server call failed. Retry after some time")
                 Log.w(TAG, "⚠️ Campaign trigger failed: $errorMessage")
                 Log.w(TAG, "⚠️ This is expected in CI if API keys are not configured")
             }
@@ -245,23 +247,63 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         // Wait for API call to complete (up to 10 seconds for CI)
         val apiCallCompleted = latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
         Log.d(TAG, "🎯 API call completed: $apiCallCompleted, success: $campaignTriggered")
+
         if (!apiCallCompleted) {
-            Log.w(TAG, "⚠️ API call did not complete in time - proceeding anyway")
-            // Fail the test here
+            Log.e(TAG, "❌ API call did not complete in time")
             Assert.fail("Campaign trigger API call did not complete in time")
             return
         }
-        // Step 4: Wait for message sync
+
+        if (!campaignTriggered) {
+            val errorMessage = testUtils.getLastErrorMessage()
+            Log.e(TAG, "❌ Campaign trigger FAILED: $errorMessage")
+            Log.e(TAG, "❌ Cannot proceed with test - no in-app message will be available")
+            Assert.fail("Campaign trigger failed: $errorMessage. Check API key and campaign configuration.")
+            return
+        }
+
+        Log.d(TAG, "✅ Campaign triggered successfully, proceeding with message sync...")
+        // Step 4: Wait for message sync with retry logic
         Log.d(TAG, "🔄 Step 4: Waiting for message sync...")
         Thread.sleep(3000) // Give time for any messages to sync
 
-        //Manually sync
-        IterableApiHelper().syncInAppMessages()
+        // Retry sync multiple times if needed (handles transient API failures)
+        var syncAttempts = 0
+        val maxSyncAttempts = 3
+        var messageCount = 0
+
+        while (syncAttempts < maxSyncAttempts && messageCount == 0) {
+            syncAttempts++
+            Log.d(TAG, "🔄 Sync attempt $syncAttempts of $maxSyncAttempts")
+
+            //Manually sync
+            IterableApiHelper().syncInAppMessages()
+
+            // Wait for sync to complete
+            Thread.sleep(2000)
+
+            messageCount = IterableApi.getInstance().inAppManager.messages.count()
+            Log.d(TAG, "🔄 Message count after sync attempt $syncAttempts: $messageCount")
+
+            if (messageCount == 0 && syncAttempts < maxSyncAttempts) {
+                Log.w(TAG, "⚠️ No messages received, retrying in 2 seconds...")
+                Thread.sleep(2000)
+            }
+        }
 
         //Make sure message count is updated
+        if (messageCount == 0) {
+            Log.e(TAG, "❌ Failed to retrieve messages after $maxSyncAttempts attempts")
+            Log.e(TAG, "❌ This could be due to:")
+            Log.e(TAG, "   1. Iterable API server issues (BadGateway errors)")
+            Log.e(TAG, "   2. Campaign not triggered successfully")
+            Log.e(TAG, "   3. Network connectivity issues")
+            Assert.fail("Message count should be greater than 0 after $maxSyncAttempts sync attempts. Check logs for API errors.")
+        }
+
         Assert.assertTrue(
-            "Message count should be greater than 0",
-            IterableApi.getInstance().inAppManager.messages.count() == 1
+            "Message count should be 1, but was $messageCount",
+            messageCount == 1
         )
 
         IterableApi.getInstance().inAppManager.showMessage(
@@ -302,735 +344,4 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             isIterableInAppFragmentView
         )
     }
-    
-    // @Test - Disabled for MVP testing
-    fun testInAppMessageDisplay() {
-        Log.d(TAG, "Starting simple in-app message display test")
-        
-        // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
-        Assert.assertTrue("User should be signed in", userSignedIn)
-        
-        // Step 2: Check for existing in-app messages
-        Log.d(TAG, "Checking for existing in-app messages...")
-        val existingMessages = IterableApi.getInstance().inAppManager.getMessages()
-        Log.d(TAG, "Found ${existingMessages.size} existing in-app messages")
-        
-        if (existingMessages.isNotEmpty()) {
-            Log.d(TAG, "Using existing in-app message: ${existingMessages.first().messageId}")
-            // Manually trigger the in-app message display
-            IterableApi.getInstance().inAppManager.showMessage(existingMessages.first())
-            
-            // Wait for the message to be displayed
-            val messageDisplayed = waitForInAppMessage(5)
-            Assert.assertTrue("In-app message should be displayed", messageDisplayed)
-        } else {
-            Log.d(TAG, "No existing messages found - this is expected if no campaigns are configured")
-            // For now, just pass the test since we don't have campaigns configured
-            Assert.assertTrue("No in-app messages available (expected)", true)
-        }
-        
-        Log.d(TAG, "Simple in-app message display test completed")
-    }
-    
-    // @Test - Disabled for MVP testing  
-    fun testInAppMessageWithActivity() {
-        Log.d(TAG, "Starting in-app message test with activity")
-        
-        // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
-        Assert.assertTrue("User should be signed in", userSignedIn)
-        
-        // Step 2: Trigger in-app message via SDK track method
-        Log.d(TAG, "Triggering in-app message via SDK track method...")
-        val campaignTriggered = testUtils.triggerInAppMessage(TEST_EVENT_NAME)
-        Assert.assertTrue("In-app message should be triggered successfully", campaignTriggered)
-        
-        // Step 3: Wait for in-app message to be displayed (5 seconds for fast iterations)
-        val messageDisplayed = waitForInAppMessage(5)
-        Assert.assertTrue("In-app message should be displayed within 5 seconds", messageDisplayed)
-        
-        // Step 4: Verify in-app message is visible on screen in InAppMessageTestActivity
-        val messageVisible = verifyInAppMessageVisibleInTestActivity()
-        Assert.assertTrue("In-app message should be visible on screen", messageVisible)
-        
-        // Step 5: Click button in the in-app message
-        Log.d(TAG, "About to attempt button clicking...")
-        val buttonClicked = clickInAppMessageButton()
-        Log.d(TAG, "Button click attempt result: $buttonClicked")
-        
-        // Don't assert here - let's see what the tracking shows
-        if (!buttonClicked) {
-            Log.w(TAG, "Button click failed, but continuing to check tracking...")
-        }
-        
-        // Step 6: Verify trackInAppClose event was fired
-        Log.d(TAG, "About to wait for trackInAppClose...")
-        val closeTracked = waitForTrackInAppClose(5)
-        Log.d(TAG, "waitForTrackInAppClose result: $closeTracked")
-        
-        // If tracking failed, let's try manual trigger as last resort
-        if (!closeTracked) {
-            Log.w(TAG, "trackInAppClose was not detected, attempting manual trigger as last resort")
-            val manualSuccess = manuallyTriggerInAppClose()
-            Log.d(TAG, "Manual trigger success: $manualSuccess")
-            if (manualSuccess) {
-                // Give it a moment and check again
-                Thread.sleep(1000)
-                val finalCheck = trackInAppCloseCalled.get() || lastClickedUrl.get() != null
-                Log.d(TAG, "Final check after manual trigger: $finalCheck")
-                Assert.assertTrue("trackInAppClose should be called (via manual trigger)", finalCheck)
-            } else {
-                Assert.fail("trackInAppClose was not called and manual trigger failed")
-            }
-        } else {
-            Log.d(TAG, "trackInAppClose was successfully detected")
-        }
-        
-        Log.d(TAG, "In-app message test with activity completed successfully")
-    }
-    
-    private fun verifyInAppMessageVisible(): Boolean {
-        return try {
-            // Check if in-app message is displayed using the testUtils flag
-            val messageDisplayed = testUtils.hasInAppMessageDisplayed()
-            Log.d(TAG, "In-app message displayed (testUtils): $messageDisplayed")
-            
-            // Also check local flag
-            val localMessageDisplayed = inAppMessageDisplayed.get()
-            Log.d(TAG, "In-app message displayed (local): $localMessageDisplayed")
-            
-            // Also check if WebView is visible
-            val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
-            val webViewVisible = webView.exists()
-            Log.d(TAG, "WebView visible: $webViewVisible")
-            
-            messageDisplayed || localMessageDisplayed
-        } catch (e: Exception) {
-            Log.e(TAG, "Error verifying in-app message visibility", e)
-            false
-        }
-    }
-    
-    private fun verifyInAppMessageVisibleInTestActivity(): Boolean {
-        return try {
-            // Check if in-app message is displayed
-            val messageDisplayed = inAppMessageDisplayed.get()
-            Log.d(TAG, "In-app message displayed in InAppMessageTestActivity: $messageDisplayed")
-            
-            // Also check if WebView is visible
-            val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
-            val webViewVisible = webView.exists()
-            Log.d(TAG, "WebView visible in InAppMessageTestActivity: $webViewVisible")
-            
-            messageDisplayed && webViewVisible
-        } catch (e: Exception) {
-            Log.e(TAG, "Error verifying in-app message visibility in InAppMessageTestActivity", e)
-            false
-        }
-    }
-    
-    private fun findInAppMessageDialog(): Any? {
-        return try {
-            // Look for the in-app message dialog fragment
-            val dialogSelector = UiSelector().className("android.widget.FrameLayout")
-                .descriptionContains("iterable_in_app")
-            
-            val dialog = uiDevice.findObject(dialogSelector)
-            if (dialog.exists()) {
-                Log.d(TAG, "Found in-app message dialog")
-                return dialog
-            }
-            
-            // Alternative: Look for WebView in dialog
-            val webViewSelector = UiSelector().className("android.webkit.WebView")
-            val webView = uiDevice.findObject(webViewSelector)
-            if (webView.exists()) {
-                Log.d(TAG, "Found WebView in in-app message")
-                return webView
-            }
-            
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error finding in-app message dialog", e)
-            null
-        }
-    }
-    
-    private fun checkWebViewVisible(): Boolean {
-        return try {
-            // For now, just check if WebView exists
-            val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
-            val exists = webView.exists()
-            
-            Log.d(TAG, "WebView exists: $exists")
-            exists
-        } catch (e: Exception) {
-            Log.e(TAG, "WebView content check failed", e)
-            false
-        }
-    }
-    
-    private fun clickInAppMessageButton(): Boolean {
-        return try {
-            Log.d(TAG, "=== Starting button click attempts ===")
-            
-            // First, let's see what's actually on screen
-            dumpScreenElements()
-            
-            // First, try to find and click a button using UiAutomator 1.0
-            Log.d(TAG, "Attempting UiAutomator 1.0 button click...")
-            val buttonClicked = clickButtonWithUiAutomator()
-            if (buttonClicked) {
-                Log.d(TAG, "UiAutomator 1.0 button click succeeded")
-                Thread.sleep(1000) // Give time for handlers to be called
-                return true
-            }
-            
-            // Try UiAutomator 2.0 API
-            Log.d(TAG, "Attempting UiAutomator 2.0 button click...")
-            val buttonClickedV2 = clickButtonWithUiAutomatorV2()
-            if (buttonClickedV2) {
-                Log.d(TAG, "UiAutomator 2.0 button click succeeded")
-                Thread.sleep(1000) // Give time for handlers to be called
-                return true
-            }
-            
-            // Fallback: Use Espresso Web to find and click buttons
-            Log.d(TAG, "Attempting Espresso Web button click...")
-            val webButtonClicked = clickButtonWithEspressoWeb()
-            if (webButtonClicked) {
-                Log.d(TAG, "Espresso Web button click succeeded")
-                Thread.sleep(1000) // Give time for handlers to be called
-                return true
-            }
-            
-            // Last resort: Try to click any clickable element
-            Log.d(TAG, "Attempting to click any clickable element...")
-            val anyClicked = clickAnyClickableElement()
-            if (anyClicked) {
-                Log.d(TAG, "Clickable element click succeeded")
-                Thread.sleep(1000) // Give time for handlers to be called
-                return true
-            }
-            
-            // If all UI clicking fails, manually trigger close tracking
-            Log.d(TAG, "All UI click attempts failed, manually triggering close tracking")
-            val manualResult = manuallyTriggerInAppClose()
-            Log.d(TAG, "Manual trigger result: $manualResult")
-            return manualResult
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clicking in-app message button", e)
-            // Fallback to manual close tracking
-            return manuallyTriggerInAppClose()
-        }
-    }
-    
-    private fun manuallyTriggerInAppClose(): Boolean {
-        return try {
-            Log.d(TAG, "🔧 manuallyTriggerInAppClose() called")
-            val message = currentInAppMessage.get()
-            Log.d(TAG, "🔧 Current message: ${message?.messageId ?: "NULL"}")
-            
-            if (message != null) {
-                Log.d(TAG, "🔧 Manually triggering trackInAppClose for message: ${message.messageId}")
-                
-                // Simulate what happens when the "No Thanks" button is clicked
-                val testUrl = "https://www.nbc.com/" // The actual URL from the button
-                Log.d(TAG, "🔧 Using test URL: $testUrl")
-                
-                // Call the SDK's trackInAppClose method directly
-                IterableApi.getInstance().trackInAppClose(
-                    message, 
-                    testUrl, 
-                    IterableInAppCloseAction.LINK, 
-                    IterableInAppLocation.IN_APP
-                )
-                Log.d(TAG, "🔧 SDK trackInAppClose called")
-                
-                // Also trigger our tracking flags manually
-                lastClickedUrl.set(testUrl)
-                trackInAppCloseCalled.set(true)
-                Log.d(TAG, "🔧 Flags set manually - lastClickedUrl: ${lastClickedUrl.get()}, trackInAppCloseCalled: ${trackInAppCloseCalled.get()}")
-                
-                Log.d(TAG, "🔧 Manual trackInAppClose completed successfully")
-                true
-            } else {
-                Log.e(TAG, "🔧 Cannot manually trigger close - no current message available")
-                false
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "🔧 Error manually triggering InApp close", e)
-            false
-        }
-    }
-    
-    private fun dumpScreenElements() {
-        try {
-            Log.d(TAG, "=== Screen Elements Dump ===")
-            
-            // Look for WebViews using UiSelector (UiAutomator 1.0 API)
-            val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
-            Log.d(TAG, "WebView exists: ${webView.exists()}")
-            
-            // Look for buttons using UiSelector
-            val button = uiDevice.findObject(UiSelector().className("android.widget.Button"))
-            Log.d(TAG, "Button exists: ${button.exists()}")
-            
-            // Look for clickable elements using UiSelector
-            val clickableElement = uiDevice.findObject(UiSelector().clickable(true))
-            Log.d(TAG, "Clickable element exists: ${clickableElement.exists()}")
-            
-            // Try to find elements with common button text using UiAutomator 1.0
-            val commonTexts = listOf("button", "click", "open", "learn", "more", "close", "ok", "yes", "no")
-            for (text in commonTexts) {
-                val element = uiDevice.findObject(UiSelector().textContains(text))
-                if (element.exists()) {
-                    Log.d(TAG, "Found element containing text '$text': '${element.text}'")
-                }
-            }
-            
-            // Also try UiAutomator 2.0 API for better element discovery
-            dumpScreenElementsV2()
-            
-            // Try to inspect WebView HTML content
-            inspectWebViewContent()
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error dumping screen elements", e)
-        }
-    }
-    
-    private fun dumpScreenElementsV2() {
-        try {
-            Log.d(TAG, "=== Screen Elements Dump V2 (UiAutomator 2.0) ===")
-            
-            // Look for WebViews using By selectors
-            val webViews = uiDevice.findObjects(By.clazz("android.webkit.WebView"))
-            Log.d(TAG, "Found ${webViews.size} WebView(s) with UiAutomator 2.0")
-            
-            // Look for buttons
-            val buttons = uiDevice.findObjects(By.clazz("android.widget.Button"))
-            Log.d(TAG, "Found ${buttons.size} Button(s) with UiAutomator 2.0")
-            
-            // Look for clickable elements
-            val clickableElements = uiDevice.findObjects(By.clickable(true))
-            Log.d(TAG, "Found ${clickableElements.size} clickable element(s) with UiAutomator 2.0")
-            
-            // Log details of clickable elements
-            for ((index, element) in clickableElements.withIndex()) {
-                Log.d(TAG, "Clickable element $index: class='${element.className}', text='${element.text}', desc='${element.contentDescription}'")
-            }
-            
-            // Try to find elements with common button text
-            val commonTexts = listOf("button", "click", "open", "learn", "more", "close", "ok", "yes", "no")
-            for (text in commonTexts) {
-                val elements = uiDevice.findObjects(By.textContains(text))
-                if (elements.isNotEmpty()) {
-                    Log.d(TAG, "Found ${elements.size} element(s) containing text '$text' with UiAutomator 2.0")
-                    for ((index, element) in elements.withIndex()) {
-                        Log.d(TAG, "  Element $index: '${element.text}' (${element.className})")
-                    }
-                }
-            }
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error dumping screen elements V2", e)
-        }
-    }
-    
-    private fun inspectWebViewContent() {
-        try {
-            Log.d(TAG, "=== WebView Content Inspection ===")
-            
-            // Try to get the HTML content of the WebView
-            try {
-                Web.onWebView()
-                    .withElement(DriverAtoms.findElement(Locator.TAG_NAME, "html"))
-                    .perform(DriverAtoms.webScrollIntoView()) // Just verify HTML exists
-                
-                Log.d(TAG, "WebView HTML element found")
-            } catch (e: Exception) {
-                Log.d(TAG, "Could not find HTML content: ${e.message}")
-            }
-            
-            // Try to find all anchor elements and their attributes
-            try {
-                Log.d(TAG, "Looking for anchor elements in WebView...")
-                
-                // Check if our specific button exists
-                try {
-                    Web.onWebView()
-                        .withElement(DriverAtoms.findElement(Locator.XPATH, "//div[@class='btn2']//a"))
-                        .perform(DriverAtoms.webScrollIntoView())
-                    
-                    Log.d(TAG, "Found btn2 anchor element!")
-                } catch (e: Exception) {
-                    Log.d(TAG, "btn2 anchor element not found: ${e.message}")
-                }
-                
-                // Try to verify anchor with href exists
-                try {
-                    Web.onWebView()
-                        .withElement(DriverAtoms.findElement(Locator.XPATH, "//a[@href]"))
-                        .perform(DriverAtoms.webScrollIntoView())
-                    
-                    Log.d(TAG, "Found anchor with href attribute")
-                } catch (e: Exception) {
-                    Log.d(TAG, "Could not find anchor with href: ${e.message}")
-                }
-                
-                // Try to verify anchor element exists
-                try {
-                    Web.onWebView()
-                        .withElement(DriverAtoms.findElement(Locator.TAG_NAME, "a"))
-                        .perform(DriverAtoms.webScrollIntoView())
-                    
-                    Log.d(TAG, "Found anchor element")
-                } catch (e: Exception) {
-                    Log.d(TAG, "Could not find anchor element: ${e.message}")
-                }
-                
-                // Try to verify "No Thanks" text exists
-                try {
-                    Web.onWebView()
-                        .withElement(DriverAtoms.findElement(Locator.XPATH, "//*[contains(text(), 'No Thanks')]"))
-                        .perform(DriverAtoms.webScrollIntoView())
-                    
-                    Log.d(TAG, "Found 'No Thanks' text element")
-                } catch (e: Exception) {
-                    Log.d(TAG, "Could not find 'No Thanks' text: ${e.message}")
-                }
-                
-            } catch (e: Exception) {
-                Log.d(TAG, "Error inspecting anchor elements: ${e.message}")
-            }
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error inspecting WebView content", e)
-        }
-    }
-    
-    private fun clickButtonWithUiAutomator(): Boolean {
-        return try {
-            // Look for buttons in the in-app message with more comprehensive selectors
-            val buttonSelectors = listOf(
-                UiSelector().className("android.widget.Button"),
-                UiSelector().textContains("button"),
-                UiSelector().textContains("click"),
-                UiSelector().textContains("open"),
-                UiSelector().textContains("learn"),
-                UiSelector().textContains("more"),
-                UiSelector().textContains("close"),
-                UiSelector().textContains("ok"),
-                UiSelector().textContains("yes"),
-                UiSelector().textContains("dismiss"),
-                // Try to find elements within WebView that might be clickable
-                UiSelector().className("android.view.View").clickable(true),
-                UiSelector().descriptionContains("button"),
-                UiSelector().descriptionContains("click")
-            )
-            
-            for (selector in buttonSelectors) {
-                val element = uiDevice.findObject(selector)
-                Log.d(TAG, "Checking selector: $selector")
-                
-                if (element.exists()) {
-                    Log.d(TAG, "Found clickable element with selector: $selector")
-                    Log.d(TAG, "Element text: '${element.text}', description: '${element.contentDescription}'")
-                    element.click()
-                    Log.d(TAG, "Clicked element successfully")
-                    return true
-                }
-            }
-            
-            // Try clicking on the WebView itself if it's clickable
-            val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
-            if (webView.exists() && webView.isClickable) {
-                Log.d(TAG, "Trying to click on WebView directly")
-                webView.click()
-                return true
-            }
-            
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clicking button with UiAutomator", e)
-            false
-        }
-    }
-    
-    private fun clickButtonWithUiAutomatorV2(): Boolean {
-        return try {
-            Log.d(TAG, "Using UiAutomator 2.0 API for button clicking")
-            
-            // Try to find clickable elements using UiAutomator 2.0
-            val clickableElements = uiDevice.findObjects(By.clickable(true))
-            Log.d(TAG, "Found ${clickableElements.size} clickable elements with UiAutomator 2.0")
-            
-            for ((index, element) in clickableElements.withIndex()) {
-                try {
-                    Log.d(TAG, "Trying to click element $index: class='${element.className}', text='${element.text}', desc='${element.contentDescription}'")
-                    element.click()
-                    Log.d(TAG, "Successfully clicked element $index")
-                    return true
-                } catch (e: Exception) {
-                    Log.d(TAG, "Failed to click element $index: ${e.message}")
-                    // Continue to next element
-                }
-            }
-            
-            // Try to find elements by common button text
-            val commonTexts = listOf("button", "click", "open", "learn", "more", "close", "ok", "yes", "dismiss")
-            for (text in commonTexts) {
-                val elements = uiDevice.findObjects(By.textContains(text))
-                for ((index, element) in elements.withIndex()) {
-                    try {
-                        Log.d(TAG, "Trying to click text element '$text' #$index")
-                        element.click()
-                        Log.d(TAG, "Successfully clicked text element '$text' #$index")
-                        return true
-                    } catch (e: Exception) {
-                        Log.d(TAG, "Failed to click text element '$text' #$index: ${e.message}")
-                        // Continue to next element
-                    }
-                }
-            }
-            
-            // Try to find and click WebView elements
-            val webViews = uiDevice.findObjects(By.clazz("android.webkit.WebView"))
-            for ((index, webView) in webViews.withIndex()) {
-                try {
-                    Log.d(TAG, "Trying to click WebView #$index")
-                    webView.click()
-                    Log.d(TAG, "Successfully clicked WebView #$index")
-                    return true
-                } catch (e: Exception) {
-                    Log.d(TAG, "Failed to click WebView #$index: ${e.message}")
-                    // Continue to next webview
-                }
-            }
-            
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clicking button with UiAutomator V2", e)
-            false
-        }
-    }
-    
-    private fun clickButtonWithEspressoWeb(): Boolean {
-        return try {
-            Log.d(TAG, "Targeting specific InApp button structure: <div class=\"btn2\"><a href=\"...\">...")
-            
-            // First, try to click the "No Thanks" button that's clearly visible in the video
-            try {
-                Log.d(TAG, "🎥 VIDEO TARGET: Trying to click 'No Thanks' text (visible at bottom of NBC InApp)")
-                Web.onWebView()
-                    .withElement(DriverAtoms.findElement(Locator.XPATH, "//a[contains(text(), 'No Thanks')]"))
-                    .perform(DriverAtoms.webClick())
-                
-                Log.d(TAG, "🎥 SUCCESS: Clicked 'No Thanks' link!")
-                return true
-            } catch (e: Exception) {
-                Log.d(TAG, "🎥 FAILED: Could not click 'No Thanks' link: ${e.message}")
-            }
-            
-            // Also try clicking by the exact text we see in the video
-            try {
-                Log.d(TAG, "🎥 VIDEO TARGET: Trying exact 'No Thanks' text match")
-                Web.onWebView()
-                    .withElement(DriverAtoms.findElement(Locator.XPATH, "//*[text()='No Thanks']"))
-                    .perform(DriverAtoms.webClick())
-                
-                Log.d(TAG, "🎥 SUCCESS: Clicked exact 'No Thanks' text!")
-                return true
-            } catch (e: Exception) {
-                Log.d(TAG, "🎥 FAILED: Could not click exact 'No Thanks' text: ${e.message}")
-            }
-            
-            // Try to click any anchor element within div.btn2
-            try {
-                Log.d(TAG, "Trying to click anchor within btn2 div")
-                Web.onWebView()
-                    .withElement(DriverAtoms.findElement(Locator.XPATH, "//div[@class='btn2']//a"))
-                    .perform(DriverAtoms.webClick())
-                
-                Log.d(TAG, "Successfully clicked anchor in btn2 div")
-                return true
-            } catch (e: Exception) {
-                Log.d(TAG, "Failed to click anchor in btn2 div: ${e.message}")
-            }
-            
-            // Try to click any anchor element with href
-            try {
-                Log.d(TAG, "Trying to click any anchor with href")
-                Web.onWebView()
-                    .withElement(DriverAtoms.findElement(Locator.XPATH, "//a[@href]"))
-                    .perform(DriverAtoms.webClick())
-                
-                Log.d(TAG, "Successfully clicked anchor with href")
-                return true
-            } catch (e: Exception) {
-                Log.d(TAG, "Failed to click anchor with href: ${e.message}")
-            }
-            
-            // Fallback to general anchor elements
-            try {
-                Log.d(TAG, "Trying to click any anchor element")
-                Web.onWebView()
-                    .withElement(DriverAtoms.findElement(Locator.TAG_NAME, "a"))
-                    .perform(DriverAtoms.webClick())
-                
-                Log.d(TAG, "Successfully clicked anchor element")
-                return true
-            } catch (e: Exception) {
-                Log.d(TAG, "Failed to click anchor element: ${e.message}")
-            }
-            
-            // Try clicking the div with class btn2
-            try {
-                Log.d(TAG, "Trying to click div with class btn2")
-                Web.onWebView()
-                    .withElement(DriverAtoms.findElement(Locator.XPATH, "//div[@class='btn2']"))
-                    .perform(DriverAtoms.webClick())
-                
-                Log.d(TAG, "Successfully clicked btn2 div")
-                return true
-            } catch (e: Exception) {
-                Log.d(TAG, "Failed to click btn2 div: ${e.message}")
-            }
-            
-            // Try other element types as fallback
-            val elementTypes = listOf("button", "input", "div", "span")
-            for (elementType in elementTypes) {
-                try {
-                    Log.d(TAG, "Trying to click $elementType elements in WebView")
-                    Web.onWebView()
-                        .withElement(DriverAtoms.findElement(Locator.TAG_NAME, elementType))
-                        .perform(DriverAtoms.webClick())
-                    
-                    Log.d(TAG, "Successfully clicked $elementType using Espresso Web")
-                    return true
-                } catch (e: Exception) {
-                    Log.d(TAG, "Failed to click $elementType: ${e.message}")
-                }
-            }
-            
-            // Try clicking by common button text patterns
-            val buttonTexts = listOf("No Thanks", "thanks", "click", "open", "learn", "more", "close", "ok", "yes", "dismiss")
-            for (text in buttonTexts) {
-                try {
-                    Log.d(TAG, "Trying to click element containing text '$text'")
-                    Web.onWebView()
-                        .withElement(DriverAtoms.findElement(Locator.XPATH, "//*[contains(text(), '$text')]"))
-                        .perform(DriverAtoms.webClick())
-                    
-                    Log.d(TAG, "Successfully clicked element with text '$text' using Espresso Web")
-                    return true
-                } catch (e: Exception) {
-                    Log.d(TAG, "Failed to click element with text '$text': ${e.message}")
-                }
-            }
-            
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clicking button with Espresso Web", e)
-            false
-        }
-    }
-    
-    private fun clickAnyClickableElement(): Boolean {
-        return try {
-            // Try to click any clickable element in the dialog
-            val clickableSelector = UiSelector().clickable(true)
-            val clickableElement = uiDevice.findObject(clickableSelector)
-            
-            if (clickableElement.exists()) {
-                Log.d(TAG, "Found clickable element, attempting to click")
-                clickableElement.click()
-                return true
-            }
-            
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clicking any clickable element", e)
-            false
-        }
-    }
-    
-    private fun waitForTrackInAppClose(timeoutSeconds: Long): Boolean {
-        return try {
-            Awaitility.await()
-                .atMost(timeoutSeconds, TimeUnit.SECONDS)
-                .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until {
-                    // Check if close was tracked by monitoring both flags
-                    val closeTrackedByUrl = lastClickedUrl.get() != null
-                    val closeTrackedByFlag = trackInAppCloseCalled.get()
-                    val closeTracked = closeTrackedByUrl || closeTrackedByFlag
-                    Log.d(TAG, "trackInAppClose called: $closeTracked, URL: ${lastClickedUrl.get()}, Flag: $closeTrackedByFlag")
-                    closeTracked
-                }
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Error waiting for trackInAppClose", e)
-            false
-        }
-    }
-    
-    private fun waitForInAppToDisappear(timeoutSeconds: Long): Boolean {
-        return try {
-            Log.d(TAG, "🎥 Waiting for InApp overlay to disappear...")
-            
-            Awaitility.await()
-                .atMost(timeoutSeconds, TimeUnit.SECONDS)
-                .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until {
-                    // Check if WebView (InApp overlay) is no longer visible
-                    val webView = uiDevice.findObject(UiSelector().className("android.webkit.WebView"))
-                    val webViewGone = !webView.exists()
-                    Log.d(TAG, "🎥 WebView gone (InApp disappeared): $webViewGone")
-                    webViewGone
-                }
-            true
-        } catch (e: Exception) {
-            Log.d(TAG, "🎥 InApp did not disappear within timeout or error occurred: ${e.message}")
-            false
-        }
-    }
-    
-    private fun triggerSyncMessages() {
-        try {
-            Log.d(TAG, "Simulating background/foreground cycle to trigger syncMessages...")
-            
-            // Simulate app going to background
-            uiDevice.pressHome()
-            Thread.sleep(1000) // Wait 1 second
-            
-            // Simulate app coming back to foreground
-            uiDevice.pressRecentApps()
-            Thread.sleep(500)
-            
-            // Find and click on our app to bring it back to foreground
-            val appIcon = uiDevice.findObject(UiSelector().text("Integration Tests"))
-            if (appIcon.exists()) {
-                appIcon.click()
-                Log.d(TAG, "App brought back to foreground")
-            } else {
-                Log.d(TAG, "Could not find app icon, trying alternative approach")
-                // Alternative: try to find the app in recent apps
-                val recentApps = uiDevice.findObject(UiSelector().className("android.widget.FrameLayout"))
-                if (recentApps.exists()) {
-                    recentApps.click()
-                }
-            }
-            
-            // Give the app time to process the foreground event
-            Thread.sleep(2000)
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error triggering syncMessages", e)
-        }
-    }
-    
 }
