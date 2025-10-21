@@ -35,6 +35,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
           
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -148,8 +149,6 @@ jobs:
             app/build/outputs/apk/
             iterableapi/build/outputs/aar/
           key: test-apks-${{ hashFiles('integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
-          restore-keys: |
-            test-apks-
       
       - name: Check Cache Result
         run: |
