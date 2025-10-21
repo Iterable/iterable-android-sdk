@@ -151,6 +151,16 @@ jobs:
           restore-keys: |
             test-apks-
       
+      - name: Verify Cache Status
+        run: |
+          echo "Cache hit status: ${{ steps.apk-cache.outputs.cache-hit }}"
+          echo "Use cached APKs setting: ${{ github.event.inputs.use-cached-apks }}"
+          if [ "${{ steps.apk-cache.outputs.cache-hit }}" == "true" ] && [ "${{ github.event.inputs.use-cached-apks }}" != "false" ]; then
+            echo "✅ Using cached APKs - skipping build"
+          else
+            echo "🔨 Will rebuild APKs"
+          fi
+      
       - name: Clean Build
         if: steps.apk-cache.outputs.cache-hit != 'true' || github.event.inputs.use-cached-apks == 'false'
         run: |
@@ -158,7 +168,6 @@ jobs:
           ./gradlew clean --no-daemon
       
       - name: Build Test APKs
-        if: steps.apk-cache.outputs.cache-hit != 'true' || github.event.inputs.use-cached-apks == 'false'
         run: |
           echo "Building test APKs..."
           ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
