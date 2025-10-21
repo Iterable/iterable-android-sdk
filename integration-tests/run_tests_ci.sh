@@ -50,20 +50,59 @@ show_usage() {
 }
 
 cleanup() {
-    # Take final screenshot before shutdown
+    # Take final screenshot before shutdown (use output redirection)
     print_info "Taking final screenshot..."
-    adb shell screencap -p /sdcard/screenshot_final.png 2>/dev/null || true
-    adb pull /sdcard/screenshot_final.png /tmp/test-screenshots/ 2>/dev/null || true
+    if adb shell screencap -p > /tmp/test-screenshots/screenshot_final.png 2>/dev/null; then
+        print_success "Final screenshot captured"
+    else
+        print_warning "Could not capture final screenshot"
+    fi
     
     # Stop screen recording and pull video
-    if [ -n "$CI" ]; then
-        print_info "Stopping screen recording..."
-        sleep 2
-        adb pull /sdcard/test-recording.mp4 /tmp/test-screenshots/ 2>/dev/null || true
+    if [ -n "$SCREENRECORD_PID" ]; then
+        print_info "Stopping screen recording (PID: $SCREENRECORD_PID)..."
         
-        # List captured artifacts
-        print_info "Captured artifacts:"
-        ls -lh /tmp/test-screenshots/ 2>/dev/null || true
+        # Kill screenrecord on device to properly finalize the video
+        # Background adb shell processes need to be killed on device, not just the local PID
+        adb shell "pkill -INT screenrecord" 2>/dev/null || true
+        
+        # Also try killing the local process
+        kill -INT $SCREENRECORD_PID 2>/dev/null || true
+        
+        # Wait longer for file finalization
+        print_info "Waiting for video finalization..."
+        sleep 8
+        
+        # Pull the recording from /data/local/tmp (no permission issues)
+        if adb pull /data/local/tmp/test-recording.mp4 /tmp/test-screenshots/ 2>/dev/null; then
+            # Verify the file is playable
+            local filesize=$(stat -f%z /tmp/test-screenshots/test-recording.mp4 2>/dev/null || echo "0")
+            if [ "$filesize" -gt 1000 ]; then
+                print_success "Screen recording saved to /tmp/test-screenshots/test-recording.mp4 (${filesize} bytes)"
+            else
+                print_warning "Screen recording file seems too small (${filesize} bytes)"
+            fi
+        else
+            print_warning "Could not retrieve screen recording"
+            # Debug: check if file exists on device
+            adb shell ls -lh /data/local/tmp/test-recording.mp4 2>/dev/null || true
+        fi
+    fi
+    
+    # Capture logcat for debugging
+    if [ -n "$CI" ]; then
+        print_info "Capturing final logcat..."
+        adb logcat -d > /tmp/test-screenshots/test-logcat.txt 2>/dev/null || true
+    fi
+    
+    # List captured artifacts with better formatting
+    print_info "Captured artifacts:"
+    if [ -d "/tmp/test-screenshots" ] && [ "$(ls -A /tmp/test-screenshots 2>/dev/null)" ]; then
+        ls -lh /tmp/test-screenshots/
+        echo ""
+        print_success "Artifacts ready for upload"
+    else
+        echo "  (no artifacts captured)"
     fi
     
     if [ "$STARTED_EMULATOR" = true ] && [ -n "$EMULATOR_PID" ]; then
@@ -230,19 +269,24 @@ wait_for_device() {
     adb shell settings put global transition_animation_scale 0 || true
     adb shell settings put global animator_duration_scale 0 || true
     
-    # Take initial screenshot
-    print_info "Taking initial screenshot..."
+    # Create screenshots directory
     mkdir -p /tmp/test-screenshots
-    adb shell screencap -p /sdcard/screenshot_initial.png
-    adb pull /sdcard/screenshot_initial.png /tmp/test-screenshots/ 2>/dev/null || true
     
-    # Start screen recording for debugging (if in CI)
-    if [ -n "$CI" ]; then
-        print_info "Starting screen recording..."
-        adb shell screenrecord --time-limit 180 /sdcard/test-recording.mp4 &
-        SCREENRECORD_PID=$!
-        sleep 2
+    # Take initial screenshot (use output redirection to avoid permission issues)
+    print_info "Taking initial screenshot..."
+    if adb shell screencap -p > /tmp/test-screenshots/screenshot_initial.png 2>/dev/null; then
+        print_success "Initial screenshot captured"
+    else
+        print_warning "Could not capture initial screenshot (non-critical)"
     fi
+    
+    # Start screen recording for debugging (local and CI)
+    print_info "Starting screen recording..."
+    # Use /data/local/tmp instead of /sdcard to avoid permission issues on API 34+
+    adb shell screenrecord --verbose --time-limit 180 /data/local/tmp/test-recording.mp4 &
+    SCREENRECORD_PID=$!
+    sleep 3  # Let recording initialize properly
+    print_success "Screen recording started (PID: $SCREENRECORD_PID)"
 }
 
 # Detect environment
