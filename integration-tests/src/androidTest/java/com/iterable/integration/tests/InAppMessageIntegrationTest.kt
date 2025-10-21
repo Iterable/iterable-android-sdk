@@ -57,6 +57,9 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         
+        // Register watcher to auto-dismiss ANR dialogs
+        setupAnrDialogWatcher()
+        
         // Reset test states
         inAppMessageDisplayed.set(false)
         inAppClickTracked.set(false)
@@ -96,6 +99,36 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             mainActivityScenario.close()
         }
         super.tearDown()
+    }
+    
+    private fun setupAnrDialogWatcher() {
+        Log.d(TAG, "🔧 Setting up ANR dialog watcher...")
+        
+        // Register a watcher that automatically handles ANR dialogs
+        uiDevice.registerWatcher("ANRWatcher") {
+            // Check for "Process system isn't responding" dialog
+            val closeButton = uiDevice.findObject(UiSelector().text("Close app"))
+            val waitButton = uiDevice.findObject(UiSelector().text("Wait"))
+            
+            when {
+                waitButton.exists() -> {
+                    Log.w(TAG, "⚠️ ANR dialog detected! Clicking 'Wait' to continue...")
+                    waitButton.click()
+                    Thread.sleep(2000) // Give system time to recover
+                    true
+                }
+                closeButton.exists() -> {
+                    Log.w(TAG, "⚠️ ANR dialog detected but only 'Close app' available - dismissing...")
+                    closeButton.click()
+                    false // Indicate we had to close
+                }
+                else -> false
+            }
+        }
+        
+        // Run watchers immediately and enable auto-run
+        uiDevice.runWatchers()
+        Log.d(TAG, "✅ ANR dialog watcher registered and active")
     }
     
     private fun setupConfigAndInitialize() {
@@ -164,6 +197,9 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         // Extra wait for UI to stabilize in CI (emulator can be slow)
         Log.d(TAG, "🔧 Waiting extra 3s for UI to fully render...")
         Thread.sleep(3000)
+        
+        // Run watchers to catch any ANR dialogs that appeared
+        uiDevice.runWatchers()
         
         // Dump all visible elements for debugging
         Log.d(TAG, "🔧 Dumping UI elements...")

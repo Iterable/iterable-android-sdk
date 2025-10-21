@@ -293,15 +293,18 @@ wait_for_device() {
     adb shell "pm disable-user --user 0 com.google.android.gsf" 2>/dev/null || true
     adb shell "am force-stop com.google.android.gms" 2>/dev/null || true
     
-    # Increase ANR timeout to prevent "Process system isn't responding" dialogs
-    print_info "Configuring ANR timeouts and performance..."
-    adb shell settings put global anr_show_background false || true
-    adb shell settings put secure anr_show_background false || true
-    adb shell settings put global activity_manager_constants max_phantom_processes=2147483647 || true
+    # CRITICAL: Disable system ANR dialogs completely
+    print_info "Disabling system ANR dialogs..."
+    adb shell settings put global anr_show_background false
+    adb shell settings put secure anr_show_background false
+    adb shell settings put global show_first_crash_dialog 0
+    adb shell settings put global show_restart_in_crash_dialog 0
+    adb shell settings put system show_error_dialogs 0
     
-    # Increase ANR timeout values (default is 5000ms)
+    # Increase ANR thresholds (default is 5000ms for input, 10000ms for broadcast)
     adb shell "setprop dalvik.vm.execution-mode int:fast" 2>/dev/null || true
     adb shell "setprop debug.choreographer.skipwarning 1" 2>/dev/null || true
+    adb shell settings put global activity_manager_constants max_phantom_processes=2147483647
     
     # Create screenshots directory
     mkdir -p /tmp/test-screenshots
