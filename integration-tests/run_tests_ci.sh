@@ -50,6 +50,22 @@ show_usage() {
 }
 
 cleanup() {
+    # Take final screenshot before shutdown
+    print_info "Taking final screenshot..."
+    adb shell screencap -p /sdcard/screenshot_final.png 2>/dev/null || true
+    adb pull /sdcard/screenshot_final.png /tmp/test-screenshots/ 2>/dev/null || true
+    
+    # Stop screen recording and pull video
+    if [ -n "$CI" ]; then
+        print_info "Stopping screen recording..."
+        sleep 2
+        adb pull /sdcard/test-recording.mp4 /tmp/test-screenshots/ 2>/dev/null || true
+        
+        # List captured artifacts
+        print_info "Captured artifacts:"
+        ls -lh /tmp/test-screenshots/ 2>/dev/null || true
+    fi
+    
     if [ "$STARTED_EMULATOR" = true ] && [ -n "$EMULATOR_PID" ]; then
         print_info "Shutting down emulator (PID: $EMULATOR_PID)..."
         kill $EMULATOR_PID 2>/dev/null || true
@@ -213,6 +229,20 @@ wait_for_device() {
     adb shell settings put global window_animation_scale 0 || true
     adb shell settings put global transition_animation_scale 0 || true
     adb shell settings put global animator_duration_scale 0 || true
+    
+    # Take initial screenshot
+    print_info "Taking initial screenshot..."
+    mkdir -p /tmp/test-screenshots
+    adb shell screencap -p /sdcard/screenshot_initial.png
+    adb pull /sdcard/screenshot_initial.png /tmp/test-screenshots/ 2>/dev/null || true
+    
+    # Start screen recording for debugging (if in CI)
+    if [ -n "$CI" ]; then
+        print_info "Starting screen recording..."
+        adb shell screenrecord --time-limit 180 /sdcard/test-recording.mp4 &
+        SCREENRECORD_PID=$!
+        sleep 2
+    fi
 }
 
 # Detect environment

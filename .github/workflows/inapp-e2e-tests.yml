@@ -175,6 +175,14 @@ jobs:
           ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
           ITERABLE_TEST_USER_EMAIL: ${{ secrets.BCIT_ITERABLE_TEST_USER_EMAIL }}
+      
+      - name: Upload Test Screenshots and Recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots-api-${{ matrix.api-level }}
+          path: /tmp/test-screenshots/
+          retention-days: 7
             
       # - name: Generate Test Report
       #   if: always()
