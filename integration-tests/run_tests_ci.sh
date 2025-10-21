@@ -287,11 +287,21 @@ wait_for_device() {
     # Stop Bluetooth service if it's causing issues
     adb shell "am force-stop com.android.bluetooth" 2>/dev/null || true
     
+    # Disable unnecessary services to free up resources
+    print_info "Disabling unnecessary services..."
+    adb shell "pm disable-user --user 0 com.google.android.gms" 2>/dev/null || true
+    adb shell "pm disable-user --user 0 com.google.android.gsf" 2>/dev/null || true
+    adb shell "am force-stop com.google.android.gms" 2>/dev/null || true
+    
     # Increase ANR timeout to prevent "Process system isn't responding" dialogs
-    print_info "Configuring ANR timeouts..."
+    print_info "Configuring ANR timeouts and performance..."
     adb shell settings put global anr_show_background false || true
     adb shell settings put secure anr_show_background false || true
     adb shell settings put global activity_manager_constants max_phantom_processes=2147483647 || true
+    
+    # Increase ANR timeout values (default is 5000ms)
+    adb shell "setprop dalvik.vm.execution-mode int:fast" 2>/dev/null || true
+    adb shell "setprop debug.choreographer.skipwarning 1" 2>/dev/null || true
     
     # Create screenshots directory
     mkdir -p /tmp/test-screenshots
