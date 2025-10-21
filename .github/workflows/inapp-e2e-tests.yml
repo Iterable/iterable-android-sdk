@@ -149,6 +149,8 @@ jobs:
             app/build/outputs/apk/
             iterableapi/build/outputs/aar/
           key: test-apks-${{ hashFiles('integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
+          restore-keys: |
+            test-apks-
       
       - name: Check Cache Result
         run: |
