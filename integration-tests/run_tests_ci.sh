@@ -294,9 +294,13 @@ wait_for_device() {
     else
         print_warning "Could not capture initial screenshot (non-critical)"
     fi
-    
+}
+
+start_screen_recording() {
     # Start screen recording for debugging (local and CI)
     print_info "Starting screen recording..."
+    mkdir -p /tmp/test-screenshots
+    
     # Use /data/local/tmp instead of /sdcard to avoid permission issues on API 34+
     adb shell screenrecord --verbose --time-limit 180 /data/local/tmp/test-recording.mp4 &
     SCREENRECORD_PID=$!
@@ -547,11 +551,19 @@ if ! check_device_connected; then
     wait_for_device
 fi
 
-# Run the test
-print_info "Executing Gradle command..."
+# Build the test APKs first (before recording starts)
+print_info "Building test APKs..."
+./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
+
+# Start screen recording right before test execution
+start_screen_recording
+
+# Run the test (APKs are already built, Gradle will skip build and go straight to install+run)
+print_info "Installing and running test..."
 TEST_EXIT_CODE=0
 ./gradlew :integration-tests:connectedDebugAndroidTest \
     -Pandroid.testInstrumentationRunnerArguments.class="${TEST_TARGET}" \
+    --no-daemon \
     --stacktrace || TEST_EXIT_CODE=$?
 
 if [ $TEST_EXIT_CODE -eq 0 ]; then
