@@ -151,10 +151,16 @@ jobs:
           restore-keys: |
             test-apks-
       
-      - name: Clean Build
-        if: steps.apk-cache.outputs.cache-hit != 'true'
+      - name: Check Cache Result
         run: |
-          echo "No cache hit - cleaning build artifacts..."
+          echo "Cache hit: ${{ steps.apk-cache.outputs.cache-hit }}"
+          echo "Cache matched key: ${{ steps.apk-cache.outputs.cache-matched-key }}"
+          echo "Cache primary key: ${{ steps.apk-cache.outputs.cache-primary-key }}"
+      
+      - name: Clean Build
+        if: steps.apk-cache.outputs.cache-matched-key == ''
+        run: |
+          echo "No cache match - cleaning build artifacts..."
           ./gradlew clean --no-daemon
       
       - name: Build Test APKs
