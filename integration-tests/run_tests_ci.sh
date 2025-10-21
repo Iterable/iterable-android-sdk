@@ -321,7 +321,7 @@ start_screen_recording() {
     mkdir -p /tmp/test-screenshots
     
     # Use /data/local/tmp instead of /sdcard to avoid permission issues on API 34+
-    adb shell screenrecord --verbose --time-limit 180 /data/local/tmp/test-recording.mp4 &
+    adb shell screenrecord --verbose --time-limit 900 /data/local/tmp/test-recording.mp4 &
     SCREENRECORD_PID=$!
     sleep 3  # Let recording initialize properly
     print_success "Screen recording started (PID: $SCREENRECORD_PID)"
