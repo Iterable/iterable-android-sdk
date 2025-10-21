@@ -25,7 +25,12 @@ class IntegrationTestUtils(private val context: Context) {
         private const val ITERABLE_INAPP_TARGET_ENDPOINT = "/api/inApp/target"
     }
     
-    private val httpClient = OkHttpClient()
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)  // Increased for CI
+        .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)     // Increased for CI
+        .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)    // Increased for CI
+        .retryOnConnectionFailure(true)  // Auto-retry on network failures
+        .build()
     private val gson = Gson()
     
     // Test state tracking
