@@ -5,7 +5,13 @@ on:
     branches: [ InApp-Display-E2E ]
   pull_request:
     branches: [ InApp-Display-E2E, master, develop ]
-  workflow_dispatch: # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      use-cached-apks:
+        description: 'Use cached APKs to speed up builds'
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -132,15 +138,40 @@ jobs:
           echo "Cache hit - AVD already exists with snapshot"
           avdmanager list avd
       
+      - name: Restore APK Cache
+        if: github.event.inputs.use-cached-apks != 'false'
+        id: apk-cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            integration-tests/build/outputs/apk/
+            app/build/outputs/apk/
+            iterableapi/build/outputs/aar/
+          key: test-apks-${{ hashFiles('integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
+          restore-keys: |
+            test-apks-
+      
       - name: Clean Build
+        if: steps.apk-cache.outputs.cache-hit != 'true' || github.event.inputs.use-cached-apks == 'false'
         run: |
-          echo "Cleaning build artifacts to avoid stale cache..."
+          echo "Cleaning build artifacts..."
           ./gradlew clean --no-daemon
       
       - name: Build Test APKs
+        if: steps.apk-cache.outputs.cache-hit != 'true' || github.event.inputs.use-cached-apks == 'false'
         run: |
           echo "Building test APKs..."
           ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
+      
+      - name: Save APK Cache
+        if: (steps.apk-cache.outputs.cache-hit != 'true' && github.event.inputs.use-cached-apks != 'false')
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            integration-tests/build/outputs/apk/
+            app/build/outputs/apk/
+            iterableapi/build/outputs/aar/
+          key: test-apks-${{ hashFiles('integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
             
       - name: Run In-App Message E2E Test
         run: |
