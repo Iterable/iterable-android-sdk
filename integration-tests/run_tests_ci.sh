@@ -195,12 +195,13 @@ start_emulator() {
     # Configure DNS to use Google's public DNS (fixes "Unable to resolve host" errors)
     emulator_cmd="$emulator_cmd -dns-server 8.8.8.8,8.8.4.4"
     
-    # Use snapshot if available (way faster boot)
-    if [ -n "$CI" ]; then
-        emulator_cmd="$emulator_cmd -snapshot default_boot"
-    else
-        emulator_cmd="$emulator_cmd -no-snapshot"
-    fi
+    # Force network to use user-mode networking with no delay
+    emulator_cmd="$emulator_cmd -netdelay none -netspeed full"
+    
+    # TEMPORARY: Disable snapshots to debug network issues
+    # Snapshots don't properly restore network state in GitHub Actions
+    print_warning "Snapshots disabled temporarily - doing full boot to ensure network works"
+    emulator_cmd="$emulator_cmd -no-snapshot-load"
     
     # Only run headless in CI environments
     if [ -n "$CI" ]; then
