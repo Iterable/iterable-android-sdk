@@ -331,12 +331,34 @@ wait_for_device() {
     adb shell "ip addr show" 2>/dev/null || true
     adb shell "getprop | grep -E 'net\.|dhcp'" 2>/dev/null || true
     
-    # Check if wlan0 has an IP address, if not try to get one
+    # Check if wlan0 has an IPv4 address, if not try to get one
     if ! adb shell "ip addr show wlan0" 2>/dev/null | grep -q "inet "; then
-        print_warning "wlan0 is UP but has no IP address, requesting DHCP lease..."
+        print_warning "wlan0 is UP but has no IPv4 address, requesting DHCP lease..."
+        
+        # Try multiple DHCP approaches
         adb shell "dhcptool wlan0" 2>/dev/null || true
-        sleep 3
+        sleep 2
+        
+        # If still no IP, try stopping and restarting dhcp client
+        if ! adb shell "ip addr show wlan0" 2>/dev/null | grep -q "inet "; then
+            print_warning "Still no IPv4, restarting DHCP client..."
+            adb shell "stop dhcpclient_wifi" 2>/dev/null || true
+            sleep 1
+            adb shell "start dhcpclient_wifi" 2>/dev/null || true
+            sleep 3
+        fi
+        
+        # Last resort: manually configure static IP for emulator
+        if ! adb shell "ip addr show wlan0" 2>/dev/null | grep -q "inet "; then
+            print_warning "DHCP failed, configuring static IP..."
+            adb shell "ifconfig wlan0 10.0.2.16 netmask 255.255.255.0" 2>/dev/null || true
+            adb shell "ip route add default via 10.0.2.2 dev wlan0" 2>/dev/null || true
+            sleep 1
+        fi
+        
+        print_info "Final wlan0 configuration:"
         adb shell "ip addr show wlan0" 2>/dev/null || true
+        adb shell "ip route show" 2>/dev/null || true
     fi
     
     # Manually set DNS servers if not set
