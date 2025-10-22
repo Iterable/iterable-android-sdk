@@ -224,5 +224,42 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             "Top activity should be IterableInAppFragmentHTMLNotification or contain IterableWebView",
             isIterableInAppFragmentView
         )
+        
+        Log.d(TAG, "✅ In-app message is displayed, now interacting with button...")
+        
+        // Step 5: Click the "No Thanks" button in the WebView
+        Log.d(TAG, "🎯 Step 5: Clicking 'No Thanks' button in the in-app message...")
+        
+        // Wait for WebView to fully render
+        Thread.sleep(2000)
+        
+        // Find and click the "No Thanks" button using By.textContains selector
+        val noThanksButton = uiDevice.findObject(By.textContains("No Thanks"))
+        
+        if (noThanksButton != null) {
+            noThanksButton.click()
+            Log.d(TAG, "✅ Clicked 'No Thanks' button")
+        } else {
+            Log.e(TAG, "❌ 'No Thanks' button not found in the in-app message WebView")
+            Assert.fail("'No Thanks' button not found in the in-app message WebView")
+        }
+        
+        // Step 6: Verify URL handler was called
+        Log.d(TAG, "🎯 Step 6: Verifying URL handler was called after button click...")
+        
+        val urlHandlerCalled = waitForUrlHandler(timeoutSeconds = 5)
+        Assert.assertTrue(
+            "URL handler should have been called after clicking the button",
+            urlHandlerCalled
+        )
+        
+        // Step 7: Verify the correct URL was handled
+        val handledUrl = getLastHandledUrl()
+        Log.d(TAG, "🎯 URL handler received: $handledUrl")
+        
+        Assert.assertNotNull("Handled URL should not be null", handledUrl)
+        Log.d(TAG, "✅ URL handler was called with URL: $handledUrl")
+        
+        Log.d(TAG, "✅✅✅ Test completed successfully! All steps passed.")
     }
 }
