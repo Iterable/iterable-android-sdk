@@ -139,33 +139,7 @@ class IntegrationTestUtils(private val context: Context) {
         }
     }
     
-    fun sendSilentPushNotification(campaignId: String): Boolean {
-        return try {
-            val payload = createIterableSilentPushNotificationPayload(campaignId)
-            
-            val request = Request.Builder()
-                .url("$ITERABLE_API_BASE_URL$ITERABLE_SEND_PUSH_ENDPOINT")
-                .addHeader("Api-Key", BuildConfig.ITERABLE_API_KEY)
-                .addHeader("Content-Type", "application/json")
-                .post(payload.toRequestBody("application/json".toMediaType()))
-                .build()
-            
-            val response = httpClient.newCall(request).execute()
-            val success = response.isSuccessful
-            
-            if (success) {
-                silentPushProcessed.set(true)
-                Log.d(TAG, "Silent push notification sent via Iterable backend successfully")
-            } else {
-                Log.e(TAG, "Failed to send silent push notification: ${response.code} - ${response.body?.string()}")
-            }
-            
-            success
-        } catch (e: Exception) {
-            Log.e(TAG, "Error sending silent push notification via Iterable backend", e)
-            false
-        }
-    }
+
     
     fun hasReceivedPushNotification(): Boolean {
         return pushNotificationReceived.get()
