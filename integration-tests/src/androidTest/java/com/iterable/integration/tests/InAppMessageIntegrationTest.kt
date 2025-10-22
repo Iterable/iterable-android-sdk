@@ -43,13 +43,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
     private lateinit var uiDevice: UiDevice
     private lateinit var mainActivityScenario: ActivityScenario<MainActivity>
     private lateinit var inAppActivityScenario: ActivityScenario<InAppMessageTestActivity>
-    private val inAppMessageDisplayed = AtomicBoolean(false)
-    private val inAppClickTracked = AtomicBoolean(false)
-    private val inAppCloseTracked = AtomicBoolean(false)
-    private val trackInAppCloseCalled = AtomicBoolean(false)
-    private val lastClickedUrl = AtomicReference<String?>(null)
-    private val lastCloseAction = AtomicReference<IterableInAppCloseAction?>(null)
-    private val currentInAppMessage = AtomicReference<IterableInAppMessage?>(null)
     
     @Before
     override fun setUp() {
@@ -57,25 +50,14 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         
-        // Reset test states
-        inAppMessageDisplayed.set(false)
-        inAppClickTracked.set(false)
-        inAppCloseTracked.set(false)
-        trackInAppCloseCalled.set(false)
-        lastClickedUrl.set(null)
-        lastCloseAction.set(null)
-        currentInAppMessage.set(null)
-        
-        // CRITICAL: Setup custom handlers FIRST, before any activities
-        Log.d(TAG, "🔧 Setting up custom handlers BEFORE any activity launches...")
-        setupConfigAndInitialize()
-        
-        // Call super.setUp() but DON'T launch activities yet
+        // Call super.setUp() to initialize SDK with BaseIntegrationTest's config
+        // This sets test mode flag and initializes SDK with test handlers (including urlHandler)
         super.setUp()
         
-        Log.d(TAG, "🔧 Base setup complete, now launching app with custom handlers in place...")
+        Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
+        Log.d(TAG, "🔧 MainActivity will skip initialization due to test mode flag")
         
-        // Now launch the app flow with our custom handlers already configured
+        // Now launch the app flow with custom handlers already configured
         launchAppAndNavigateToInAppTesting()
     }
     
@@ -83,50 +65,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
     override fun tearDown() {
 
         super.tearDown()
-    }
-    
-    private fun setupConfigAndInitialize() {
-        Log.d(TAG, "🔧 setupCustomInAppHandler() called")
-        
-        val config = IterableConfig.Builder()
-            .setAutoPushRegistration(true)
-            .setEnableEmbeddedMessaging(true)
-            .setInAppDisplayInterval(2.0) // Same as MainActivity for consistency
-            .setCustomActionHandler { action, context ->
-                Log.d(TAG, "🎯 Custom action triggered: $action")
-                true
-            }
-            .setUrlHandler { url, context ->
-                Log.d(TAG, "🎯 URL HANDLER TRIGGERED! URL: $url")
-                Log.d(TAG, "🎯 Expected URL: https://www.nbc.com/")
-                Log.d(TAG, "🎯 URL matches expected: ${url.toString().contains("nbc.com")}")
-                
-                lastClickedUrl.set(url.toString())
-                trackInAppCloseCalled.set(true)
-                
-                Log.d(TAG, "🎯 Flags set - lastClickedUrl: ${lastClickedUrl.get()}, trackInAppCloseCalled: ${trackInAppCloseCalled.get()}")
-                true
-            }
-            .build()
-        
-        Log.d(TAG, "🔧 Config built, initializing IterableApi...")
-        
-        // Get context from instrumentation since BaseIntegrationTest.context isn't initialized yet
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        
-        // Initialize with custom handlers BEFORE MainActivity can initialize
-        Log.d(TAG, "🔧 Initializing IterableApi with test handlers BEFORE MainActivity...")
-        
-        // Set a system property to indicate we're in test mode
-        System.setProperty("iterable.test.mode", "true")
-        
-        IterableApi.initialize(appContext, BuildConfig.ITERABLE_API_KEY, config)
-        //Pausing auto-display to prevent interference with message queue during tests
-        IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
-        IterableApi.getInstance().setEmail(TestConstants.TEST_USER_EMAIL)
-        
-        Log.d(TAG, "🔧 IterableApi initialized with custom handlers")
-        Log.d(TAG, "🔧 Note: Will pause auto-display after first InApp shows to prevent queue interference")
     }
     
     private fun launchAppAndNavigateToInAppTesting() {

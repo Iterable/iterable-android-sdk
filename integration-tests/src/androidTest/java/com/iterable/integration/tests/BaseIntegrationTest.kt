@@ -16,6 +16,8 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 abstract class BaseIntegrationTest {
@@ -28,10 +30,21 @@ abstract class BaseIntegrationTest {
     protected lateinit var context: Context
     protected lateinit var testUtils: IntegrationTestUtils
     
+    // URL handler tracking for tests
+    private val urlHandlerCalled = AtomicBoolean(false)
+    private val lastHandledUrl = AtomicReference<String?>(null)
+    
     @Before
     open fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         testUtils = IntegrationTestUtils(context)
+        
+        // Reset tracking flags
+        resetUrlHandlerTracking()
+        
+        // Set test mode flag to prevent MainActivity from initializing SDK
+        // This ensures our test config (with test handlers) is the one used
+        System.setProperty("iterable.test.mode", "true")
         
         // Initialize Iterable SDK for testing
         initializeIterableSDK()
@@ -44,6 +57,9 @@ abstract class BaseIntegrationTest {
     open fun tearDown() {
         // Cleanup test environment
         cleanupTestEnvironment()
+        
+        // Clear test mode flag
+        System.clearProperty("iterable.test.mode")
     }
     
     private fun initializeIterableSDK() {
@@ -66,6 +82,8 @@ abstract class BaseIntegrationTest {
             .setUrlHandler { url, context ->
                 // Handle URLs during tests
                 Log.d("BaseIntegrationTest", "URL handler triggered: $url")
+                urlHandlerCalled.set(true)
+                lastHandledUrl.set(url.toString())
                 true
             }
             .build()
@@ -198,6 +216,37 @@ abstract class BaseIntegrationTest {
         // Wait for the campaign to be processed (in-app message or push notification)
         return waitForCondition({
             testUtils.hasInAppMessageDisplayed() || testUtils.hasReceivedPushNotification()
+        }, timeoutSeconds)
+    }
+    
+    /**
+     * Reset URL handler tracking
+     */
+    protected fun resetUrlHandlerTracking() {
+        urlHandlerCalled.set(false)
+        lastHandledUrl.set(null)
+    }
+    
+    /**
+     * Check if URL handler was called
+     */
+    protected fun wasUrlHandlerCalled(): Boolean {
+        return urlHandlerCalled.get()
+    }
+    
+    /**
+     * Get the last URL handled by the URL handler
+     */
+    protected fun getLastHandledUrl(): String? {
+        return lastHandledUrl.get()
+    }
+    
+    /**
+     * Wait for URL handler to be called
+     */
+    protected fun waitForUrlHandler(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
+        return waitForCondition({
+            urlHandlerCalled.get()
         }, timeoutSeconds)
     }
 } 
