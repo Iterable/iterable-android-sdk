@@ -4,6 +4,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -61,6 +64,28 @@ public class IterableInboxMessageFragment extends Fragment {
         webView = view.findViewById(R.id.webView);
         loadMessage();
         return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout());
+
+            int topInset = Math.max(sysBars.top, displayCutout.top);
+            int bottomInset = Math.max(sysBars.bottom, displayCutout.bottom);
+
+            // Apply padding to keep content out of system bars / cutouts
+            v.setPadding(0, topInset, 0, bottomInset);
+
+            // Return the same insets so children can handle them too
+            return insets;
+        });
+
+        // Trigger the first inset pass
+        ViewCompat.requestApplyInsets(view);
     }
 
     private IterableInAppMessage getMessageById(String messageId) {
