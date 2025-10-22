@@ -290,11 +290,8 @@ wait_for_device() {
     # Stop Bluetooth service if it's causing issues
     adb shell "am force-stop com.android.bluetooth" 2>/dev/null || true
     
-    # Disable unnecessary services to free up resources
-    print_info "Disabling unnecessary services..."
-    adb shell "pm disable-user --user 0 com.google.android.gms" 2>/dev/null || true
-    adb shell "pm disable-user --user 0 com.google.android.gsf" 2>/dev/null || true
-    adb shell "am force-stop com.google.android.gms" 2>/dev/null || true
+    # NOTE: We're NOT disabling Google Play Services as it might manage network connectivity
+    # Even though it uses resources, networking is critical for API calls
     
     # CRITICAL: Disable system ANR dialogs completely
     print_info "Disabling system ANR dialogs..."
@@ -309,31 +306,68 @@ wait_for_device() {
     adb shell "setprop debug.choreographer.skipwarning 1" 2>/dev/null || true
     adb shell settings put global activity_manager_constants max_phantom_processes=2147483647
     
+    # Wait for network to initialize (critical for API calls)
+    print_info "Waiting for network stack to initialize..."
+    sleep 10  # Give network services time to start
+    
+    # Check and log network interfaces
+    print_info "Checking network interfaces..."
+    adb shell "ip addr show" 2>/dev/null || true
+    adb shell "getprop | grep net." 2>/dev/null || true
+    
     # Test network connectivity and DNS resolution
     print_info "Testing network connectivity..."
     local network_ok=false
-    for i in {1..5}; do
-        if adb shell "ping -c 1 -W 2 8.8.8.8" &>/dev/null; then
+    for i in {1..15}; do
+        if adb shell "ping -c 1 -W 3 8.8.8.8" &>/dev/null; then
             print_success "Network connectivity OK (attempt $i)"
             network_ok=true
             break
         fi
         print_warning "Network test attempt $i failed, retrying..."
-        sleep 2
+        sleep 3
     done
     
     if [ "$network_ok" = false ]; then
-        print_error "Network connectivity test failed after 5 attempts"
-        print_error "The emulator may not have proper network access"
+        print_error "Network connectivity test failed after 15 attempts"
+        print_error "Trying to restart network services..."
+        adb shell "svc wifi enable" 2>/dev/null || true
+        adb shell "svc data enable" 2>/dev/null || true
+        sleep 5
+        
+        # One more retry after restart
+        if adb shell "ping -c 1 -W 3 8.8.8.8" &>/dev/null; then
+            print_success "Network OK after service restart"
+            network_ok=true
+        fi
     fi
     
     # Test DNS resolution
-    print_info "Testing DNS resolution for api.iterable.com..."
-    if adb shell "ping -c 1 -W 5 api.iterable.com" &>/dev/null; then
-        print_success "DNS resolution OK - api.iterable.com is reachable"
+    if [ "$network_ok" = true ]; then
+        print_info "Testing DNS resolution for api.iterable.com..."
+        local dns_ok=false
+        for i in {1..10}; do
+            if adb shell "ping -c 1 -W 5 api.iterable.com" &>/dev/null; then
+                print_success "DNS resolution OK - api.iterable.com is reachable (attempt $i)"
+                dns_ok=true
+                break
+            fi
+            print_warning "DNS test attempt $i failed, retrying..."
+            sleep 2
+        done
+        
+        if [ "$dns_ok" = false ]; then
+            print_warning "DNS resolution test failed - trying alternative check..."
+            # Try using nslookup as fallback
+            if adb shell "nslookup api.iterable.com 8.8.8.8" 2>/dev/null | grep -q "Address"; then
+                print_success "DNS resolution OK via nslookup"
+            else
+                print_error "DNS resolution FAILED - API calls will likely fail"
+                print_error "This is a critical issue that will cause test failures"
+            fi
+        fi
     else
-        print_warning "DNS resolution test failed - API calls may fail"
-        print_warning "This could cause test failures"
+        print_error "Skipping DNS test - no basic network connectivity"
     fi
     
     # Create screenshots directory
