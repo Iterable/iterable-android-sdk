@@ -315,50 +315,38 @@ wait_for_device() {
     adb shell "start ranchu-net" 2>/dev/null || true
     sleep 5
     
-    # Bring up eth0 interface
-    print_info "Bringing up network interface..."
-    adb shell "ifconfig eth0 up" 2>/dev/null || true
+    # Bring up eth0 interface (emulator's primary network interface)
+    print_info "Bringing up eth0 network interface..."
     adb shell "ip link set eth0 up" 2>/dev/null || true
-    sleep 5
+    adb shell "ifconfig eth0 up" 2>/dev/null || true
+    sleep 3
     
-    # Try to get DHCP lease
-    print_info "Requesting DHCP..."
-    adb shell "dhcpclient eth0" 2>/dev/null || adb shell "dhcpcd eth0" 2>/dev/null || true
-    sleep 5
+    # Configure static IP for eth0 (emulator standard network)
+    print_info "Configuring static IP on eth0..."
+    adb shell "ifconfig eth0 10.0.2.16 netmask 255.255.255.0 up" 2>/dev/null || true
+    adb shell "ip addr add 10.0.2.16/24 dev eth0" 2>/dev/null || true
+    sleep 2
+    
+    # Set default route via emulator gateway
+    print_info "Setting default route..."
+    adb shell "ip route add default via 10.0.2.2 dev eth0" 2>/dev/null || true
+    sleep 2
     
     # Check and log network interfaces
     print_info "Checking network interfaces..."
     adb shell "ip addr show" 2>/dev/null || true
     adb shell "getprop | grep -E 'net\.|dhcp'" 2>/dev/null || true
     
-    # Check if wlan0 has an IPv4 address, if not try to get one
-    if ! adb shell "ip addr show wlan0" 2>/dev/null | grep -q "inet "; then
-        print_warning "wlan0 is UP but has no IPv4 address, requesting DHCP lease..."
-        
-        # Try multiple DHCP approaches
-        adb shell "dhcptool wlan0" 2>/dev/null || true
-        sleep 2
-        
-        # If still no IP, try stopping and restarting dhcp client
-        if ! adb shell "ip addr show wlan0" 2>/dev/null | grep -q "inet "; then
-            print_warning "Still no IPv4, restarting DHCP client..."
-            adb shell "stop dhcpclient_wifi" 2>/dev/null || true
-            sleep 1
-            adb shell "start dhcpclient_wifi" 2>/dev/null || true
-            sleep 3
-        fi
-        
-        # Last resort: manually configure static IP for emulator
-        if ! adb shell "ip addr show wlan0" 2>/dev/null | grep -q "inet "; then
-            print_warning "DHCP failed, configuring static IP..."
-            adb shell "ifconfig wlan0 10.0.2.16 netmask 255.255.255.0" 2>/dev/null || true
-            adb shell "ip route add default via 10.0.2.2 dev wlan0" 2>/dev/null || true
-            sleep 1
-        fi
-        
-        print_info "Final wlan0 configuration:"
-        adb shell "ip addr show wlan0" 2>/dev/null || true
-        adb shell "ip route show" 2>/dev/null || true
+    # Verify eth0 has IPv4 configured
+    print_info "Verifying eth0 network configuration:"
+    adb shell "ip addr show eth0" 2>/dev/null || true
+    adb shell "ip route show" 2>/dev/null || true
+    
+    # Verify connectivity to gateway
+    if adb shell "ping -c 1 -W 2 10.0.2.2" &>/dev/null; then
+        print_success "Gateway (10.0.2.2) is reachable"
+    else
+        print_warning "Cannot reach gateway - network may not work"
     fi
     
     # Manually set DNS servers if not set
