@@ -308,12 +308,27 @@ wait_for_device() {
     
     # Wait for network to initialize (critical for API calls)
     print_info "Waiting for network stack to initialize..."
-    sleep 10  # Give network services time to start
+    
+    # Explicitly start the emulator's network service
+    print_info "Starting ranchu-net service..."
+    adb shell "start ranchu-net" 2>/dev/null || true
+    sleep 5
+    
+    # Bring up eth0 interface
+    print_info "Bringing up network interface..."
+    adb shell "ifconfig eth0 up" 2>/dev/null || true
+    adb shell "ip link set eth0 up" 2>/dev/null || true
+    sleep 5
+    
+    # Try to get DHCP lease
+    print_info "Requesting DHCP..."
+    adb shell "dhcpclient eth0" 2>/dev/null || adb shell "dhcpcd eth0" 2>/dev/null || true
+    sleep 5
     
     # Check and log network interfaces
     print_info "Checking network interfaces..."
     adb shell "ip addr show" 2>/dev/null || true
-    adb shell "getprop | grep net." 2>/dev/null || true
+    adb shell "getprop | grep -E 'net\.|dhcp'" 2>/dev/null || true
     
     # Test network connectivity and DNS resolution
     print_info "Testing network connectivity..."
