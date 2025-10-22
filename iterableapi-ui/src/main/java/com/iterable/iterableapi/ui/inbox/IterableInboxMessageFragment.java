@@ -72,22 +72,14 @@ public class IterableInboxMessageFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
-            Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            Insets displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout());
-
-            int topInset = Math.max(sysBars.top, displayCutout.top);
-            int bottomInset = Math.max(sysBars.bottom, displayCutout.bottom);
-
-            // Apply padding to keep content out of system bars / cutouts
-            v.setPadding(0, topInset, 0, bottomInset);
-
-            // Return the same insets so children can handle them too
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(0, bars.top, 0, bars.bottom);
             return insets;
         });
 
-        // Trigger the first inset pass
         ViewCompat.requestApplyInsets(view);
     }
+
 
     private IterableInAppMessage getMessageById(String messageId) {
         List<IterableInAppMessage> messages = IterableApi.getInstance().getInAppManager().getMessages();
