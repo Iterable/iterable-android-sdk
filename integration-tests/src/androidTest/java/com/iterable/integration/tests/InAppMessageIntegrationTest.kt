@@ -229,19 +229,33 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         // Step 5: Click the "No Thanks" button in the WebView
         Log.d(TAG, "🎯 Step 5: Clicking 'No Thanks' button in the in-app message...")
+
+        // Try to find and click the "No Thanks" button with retry logic
+        var noThanksButton: androidx.test.uiautomator.UiObject2? = null
+        var attempts = 0
+        val maxAttempts = 5
         
-        // Wait for WebView to fully render
-        Thread.sleep(2000)
-        
-        // Find and click the "No Thanks" button using By.textContains selector
-        val noThanksButton = uiDevice.findObject(By.textContains("No Thanks"))
+        while (noThanksButton == null && attempts < maxAttempts) {
+            attempts++
+            Log.d(TAG, "Attempt $attempts: Looking for 'No Thanks' button...")
+            
+            // Try different text variations
+            noThanksButton = uiDevice.findObject(By.textContains("No Thanks"))
+                ?: uiDevice.findObject(By.text("No Thanks"))
+                ?: uiDevice.findObject(By.textContains("no thanks"))
+                ?: uiDevice.findObject(By.textContains("NO THANKS"))
+            
+            if (noThanksButton == null) {
+                Log.d(TAG, "Button not found, waiting 1 second before retry...")
+                Thread.sleep(1000)
+            }
+        }
         
         if (noThanksButton != null) {
             noThanksButton.click()
             Log.d(TAG, "✅ Clicked 'No Thanks' button")
         } else {
-            Log.e(TAG, "❌ 'No Thanks' button not found in the in-app message WebView")
-            Assert.fail("'No Thanks' button not found in the in-app message WebView")
+            Assert.fail("'No Thanks' button not found in the in-app message WebView after $maxAttempts attempts")
         }
         
         // Step 6: Verify URL handler was called
