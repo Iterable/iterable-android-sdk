@@ -168,44 +168,20 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         }
 
         Log.d(TAG, "✅ Campaign triggered successfully, proceeding with message sync...")
-        // Step 4: Wait for message sync with retry logic
-        Log.d(TAG, "🔄 Step 4: Waiting for message sync...")
+        
+        // Step 4: Sync messages
+        Log.d(TAG, "🔄 Step 4: Syncing in-app messages...")
         Thread.sleep(3000) // Give time for any messages to sync
-
-        // Retry sync multiple times if needed (handles transient API failures)
-        var syncAttempts = 0
-        val maxSyncAttempts = 3
-        var messageCount = 0
-
-        while (syncAttempts < maxSyncAttempts && messageCount == 0) {
-            syncAttempts++
-            Log.d(TAG, "🔄 Sync attempt $syncAttempts of $maxSyncAttempts")
-
-            //Manually sync
-            IterableApiHelper().syncInAppMessages()
-
-            // Wait for sync to complete
-            Thread.sleep(2000)
-
-            messageCount = IterableApi.getInstance().inAppManager.messages.count()
-            Log.d(TAG, "🔄 Message count after sync attempt $syncAttempts: $messageCount")
-
-            if (messageCount == 0 && syncAttempts < maxSyncAttempts) {
-                Log.w(TAG, "⚠️ No messages received, retrying in 2 seconds...")
-                Thread.sleep(2000)
-            }
-        }
-
-        //Make sure message count is updated
-        if (messageCount == 0) {
-            Log.e(TAG, "❌ Failed to retrieve messages after $maxSyncAttempts attempts")
-            Log.e(TAG, "❌ This could be due to:")
-            Log.e(TAG, "   1. Iterable API server issues (BadGateway errors)")
-            Log.e(TAG, "   2. Campaign not triggered successfully")
-            Log.e(TAG, "   3. Network connectivity issues")
-            Assert.fail("Message count should be greater than 0 after $maxSyncAttempts sync attempts. Check logs for API errors.")
-        }
-
+        
+        // Manually sync
+        IterableApiHelper().syncInAppMessages()
+        
+        // Wait for sync to complete
+        Thread.sleep(2000)
+        
+        val messageCount = IterableApi.getInstance().inAppManager.messages.count()
+        Log.d(TAG, "🔄 Message count after sync: $messageCount")
+        
         Assert.assertTrue(
             "Message count should be 1, but was $messageCount",
             messageCount == 1
