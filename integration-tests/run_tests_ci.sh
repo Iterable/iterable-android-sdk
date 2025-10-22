@@ -331,6 +331,21 @@ wait_for_device() {
     adb shell "ip addr show" 2>/dev/null || true
     adb shell "getprop | grep -E 'net\.|dhcp'" 2>/dev/null || true
     
+    # Check if wlan0 has an IP address, if not try to get one
+    if ! adb shell "ip addr show wlan0" 2>/dev/null | grep -q "inet "; then
+        print_warning "wlan0 is UP but has no IP address, requesting DHCP lease..."
+        adb shell "dhcptool wlan0" 2>/dev/null || true
+        sleep 3
+        adb shell "ip addr show wlan0" 2>/dev/null || true
+    fi
+    
+    # Manually set DNS servers if not set
+    print_info "Configuring DNS servers..."
+    adb shell "ndc resolver setnetdns 1 localdomain 8.8.8.8 8.8.4.4" 2>/dev/null || true
+    adb shell "setprop net.dns1 8.8.8.8" 2>/dev/null || true
+    adb shell "setprop net.dns2 8.8.4.4" 2>/dev/null || true
+    sleep 2
+    
     # Test network connectivity and DNS resolution
     print_info "Testing network connectivity..."
     local network_ok=false
