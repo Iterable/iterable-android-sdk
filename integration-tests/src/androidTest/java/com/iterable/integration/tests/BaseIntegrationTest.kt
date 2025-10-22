@@ -55,9 +55,6 @@ abstract class BaseIntegrationTest {
 
     @After
     open fun tearDown() {
-        // Cleanup test environment
-        cleanupTestEnvironment()
-
         // Clear test mode flag
         System.clearProperty("iterable.test.mode")
     }
@@ -100,15 +97,8 @@ abstract class BaseIntegrationTest {
     private fun setupTestEnvironment() {
         // Grant notification permissions
         grantNotificationPermissions()
-
-        // Setup test data
-        setupTestData()
     }
 
-    private fun cleanupTestEnvironment() {
-        // Clear any test data
-        clearTestData()
-    }
 
     private fun grantNotificationPermissions() {
         // Grant notification permissions for Android 13+
@@ -118,14 +108,6 @@ abstract class BaseIntegrationTest {
                 "pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS"
             )
         }
-    }
-
-    private fun setupTestData() {
-        // Setup any test-specific data
-    }
-
-    private fun clearTestData() {
-        // Clear any test-specific data
     }
 
     /**
