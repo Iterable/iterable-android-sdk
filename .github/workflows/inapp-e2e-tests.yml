@@ -83,6 +83,39 @@ jobs:
             app/build/outputs/apk/
             iterableapi/build/outputs/aar/
           key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.kt', '**/*.java', '**/build.gradle', 'gradle.properties') }}
+      
+      - name: Restore AVD Cache
+        uses: actions/cache/restore@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
+      
+      - name: Create AVD Snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          cores: 4
+          ram-size: 4096M
+          heap-size: 512M
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-metrics
+          disable-animations: false
+          script: echo "AVD snapshot created for caching"
+      
+      - name: Save AVD Cache
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
             
       - name: Run In-App Message E2E Test
         uses: reactivecircus/android-emulator-runner@v2
@@ -91,7 +124,10 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          cores: 4
+          ram-size: 4096M
+          heap-size: 512M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-metrics
           disable-animations: true
           script: ./integration-tests/run_tests_ci.sh com.iterable.integration.tests.InAppMessageIntegrationTest testInAppMessageMVP
         env:
