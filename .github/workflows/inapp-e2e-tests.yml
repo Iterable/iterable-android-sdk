@@ -68,12 +68,6 @@ jobs:
           restore-keys: |
             build-cache-${{ runner.os }}-
       
-      - name: Clean Build
-        if: steps.build-cache.outputs.cache-matched-key == '' || github.event.inputs.use-cached-apks == 'false'
-        run: |
-          echo "No cache match - cleaning build artifacts..."
-          ./gradlew clean --no-daemon
-      
       - name: Build Test APKs
         run: |
           echo "Building test APKs..."
