@@ -101,7 +101,7 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -dns-server 8.8.8.8
           disable-animations: false
           script: echo "AVD snapshot created for caching"
       
@@ -121,11 +121,10 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -dns-server 8.8.8.8
           disable-animations: true
           script: ./integration-tests/run_tests_ci.sh com.iterable.integration.tests.InAppMessageIntegrationTest testInAppMessageMVP
         env:
-          ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL: 5
           ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
           ITERABLE_TEST_USER_EMAIL: ${{ secrets.BCIT_ITERABLE_TEST_USER_EMAIL }}
