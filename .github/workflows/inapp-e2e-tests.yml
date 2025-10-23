@@ -91,7 +91,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.api-level }}
+          key: avd-reactivecircus-${{ matrix.api-level }}
       
       - name: Create AVD Snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -115,7 +115,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.api-level }}
+          key: avd-reactivecircus-${{ matrix.api-level }}
             
       - name: Run In-App Message E2E Test
         uses: reactivecircus/android-emulator-runner@v2
