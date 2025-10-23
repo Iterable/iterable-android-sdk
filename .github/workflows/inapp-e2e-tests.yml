@@ -64,7 +64,7 @@ jobs:
             integration-tests/build/outputs/apk/
             app/build/outputs/apk/
             iterableapi/build/outputs/aar/
-          key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', 'integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
+          key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.kt', '**/*.java', '**/build.gradle', 'gradle.properties') }}
           restore-keys: |
             build-cache-${{ runner.os }}-
       
@@ -88,7 +88,7 @@ jobs:
             integration-tests/build/outputs/apk/
             app/build/outputs/apk/
             iterableapi/build/outputs/aar/
-          key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', 'integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
+          key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.kt', '**/*.java', '**/build.gradle', 'gradle.properties') }}
             
       - name: Run In-App Message E2E Test
         uses: reactivecircus/android-emulator-runner@v2
