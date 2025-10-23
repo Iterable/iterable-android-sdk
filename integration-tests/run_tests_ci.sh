@@ -606,10 +606,6 @@ else
     fi
 fi
 
-# Build the test APKs first (before recording starts)
-print_info "Building test APKs..."
-./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
-
 # Start screen recording right before test execution
 start_screen_recording
 
