@@ -72,5 +72,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Additional Fields" />
+
+        <Button
+            android:id="@+id/backgroundInitButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Background Initialization" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

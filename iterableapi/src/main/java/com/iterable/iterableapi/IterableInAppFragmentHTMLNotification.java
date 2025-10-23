@@ -31,6 +31,9 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
@@ -197,6 +200,17 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         prepareToShowWebView();
         return relativeLayout;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        // Handle edge-to-edge insets with modern approach
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, sysBars.top, 0, sysBars.bottom);
+            return insets;
+        });
     }
 
     public void setLoaded(boolean loaded) {

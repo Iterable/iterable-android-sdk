@@ -13,13 +13,17 @@ import com.iterable.iterableapi.IterableInAppLocation
 import com.iterable.integration.tests.R
 import com.iterable.integration.tests.BuildConfig
 import com.iterable.iterableapi.IterableApiHelper
+import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.TestConstants
 
 class InAppMessageTestActivity : AppCompatActivity() {
     
     companion object {
         private const val TAG = "InAppMessageTest"
+        private const val TEST_INAPP_CAMPAIGN_ID = TestConstants.TEST_INAPP_CAMPAIGN_ID
     }
     
+    private lateinit var testUtils: IntegrationTestUtils
     private lateinit var userInfoTextView: TextView
     private lateinit var statusTextView: TextView
     private lateinit var triggerButton: Button
@@ -33,6 +37,8 @@ class InAppMessageTestActivity : AppCompatActivity() {
         setContentView(R.layout.activity_in_app_message_test)
         
         Log.d(TAG, "In-App Message Test Activity started")
+        
+        testUtils = IntegrationTestUtils(this)
         
         initializeViews()
         setupClickListeners()
@@ -84,20 +90,35 @@ class InAppMessageTestActivity : AppCompatActivity() {
     }
     
     private fun triggerInAppMessage() {
-        updateStatus("Triggering in-app message...")
+        updateStatus("Triggering in-app campaign via server API...")
         
         try {
-            // Track an event that should trigger an in-app message
-            IterableApi.getInstance().track("test_inapp_event")
+            val userEmail = IterableApi.getInstance().getEmail() ?: TestConstants.TEST_USER_EMAIL
             
-            // Also try to get existing messages and display them
-            val messages = IterableApi.getInstance().getInAppManager().getMessages()
-            if (messages.isNotEmpty()) {
-                Log.d(TAG, "Found ${messages.size} in-app messages")
-                updateStatus("Found ${messages.size} in-app messages - displaying first one")
-                displayInAppMessage(messages.first())
-            } else {
-                updateStatus("No in-app messages available - tracked event to potentially trigger new ones")
+            Log.d(TAG, "Triggering campaign $TEST_INAPP_CAMPAIGN_ID for user $userEmail")
+            
+            // Trigger campaign via server API (like CampaignTriggerTestActivity does)
+            testUtils.triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, userEmail) { success ->
+                runOnUiThread {
+                    if (success) {
+                        Log.d(TAG, "✅ Campaign triggered successfully")
+                        updateStatus("✅ Campaign triggered! Syncing messages...")
+                        
+                        // Wait a bit for the campaign to be processed on the server
+                        Thread {
+                            Thread.sleep(2000)
+                            
+                            runOnUiThread {
+                                // Refresh messages to get the newly triggered campaign
+                                refreshInAppMessages()
+                            }
+                        }.start()
+                    } else {
+                        val errorMessage = testUtils.getLastErrorMessage()
+                        Log.e(TAG, "❌ Failed to trigger campaign: $errorMessage")
+                        updateStatus("❌ Failed to trigger campaign: $errorMessage")
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error triggering in-app message", e)
@@ -148,16 +169,24 @@ class InAppMessageTestActivity : AppCompatActivity() {
     
     private fun refreshInAppMessages() {
         try {
-            IterableApiHelper().syncInAppMessages()
             updateStatus("Refreshing in-app messages...")
+            IterableApiHelper().syncInAppMessages()
             updateUserInfo() // Also refresh user info
             
-            // Check current message count
-            val messages = IterableApi.getInstance().getInAppManager().getMessages()
-            val inboxMessages = IterableApi.getInstance().getInAppManager().getInboxMessages()
-            
-            updateStatus("Found ${messages.size} in-app messages, ${inboxMessages.size} inbox messages")
-            Log.d(TAG, "Message refresh: ${messages.size} in-app, ${inboxMessages.size} inbox")
+            // Wait a bit for sync to complete
+            Thread {
+                Thread.sleep(2000)
+                
+                runOnUiThread {
+                    // Check current message count
+                    val messages = IterableApi.getInstance().getInAppManager().getMessages()
+                    val inboxMessages = IterableApi.getInstance().getInAppManager().getInboxMessages()
+                    
+                    updateStatus("Found ${messages.size} in-app messages, ${inboxMessages.size} inbox messages")
+                    Log.d(TAG, "Message refresh: ${messages.size} in-app, ${inboxMessages.size} inbox")
+                    
+                }
+            }.start()
             
         } catch (e: Exception) {
             Log.e(TAG, "Error refreshing in-app messages", e)

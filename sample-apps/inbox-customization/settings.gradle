@@ -1,2 +1,7 @@
 include ':app'
+include ':iterableapi'
+include ':iterableapi-ui'
 rootProject.name='Inbox Customization'
+
+project(':iterableapi').projectDir = new File('../../iterableapi')
+project(':iterableapi-ui').projectDir = new File('../../iterableapi-ui')

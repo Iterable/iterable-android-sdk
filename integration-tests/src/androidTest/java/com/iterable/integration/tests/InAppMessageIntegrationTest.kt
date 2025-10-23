@@ -43,13 +43,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
     private lateinit var uiDevice: UiDevice
     private lateinit var mainActivityScenario: ActivityScenario<MainActivity>
     private lateinit var inAppActivityScenario: ActivityScenario<InAppMessageTestActivity>
-    private val inAppMessageDisplayed = AtomicBoolean(false)
-    private val inAppClickTracked = AtomicBoolean(false)
-    private val inAppCloseTracked = AtomicBoolean(false)
-    private val trackInAppCloseCalled = AtomicBoolean(false)
-    private val lastClickedUrl = AtomicReference<String?>(null)
-    private val lastCloseAction = AtomicReference<IterableInAppCloseAction?>(null)
-    private val currentInAppMessage = AtomicReference<IterableInAppMessage?>(null)
     
     @Before
     override fun setUp() {
@@ -73,12 +66,14 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🔧 Setting up custom handlers BEFORE any activity launches...")
         setupConfigAndInitialize()
         
-        // Call super.setUp() but DON'T launch activities yet
+        // Call super.setUp() to initialize SDK with BaseIntegrationTest's config
+        // This sets test mode flag and initializes SDK with test handlers (including urlHandler)
         super.setUp()
         
-        Log.d(TAG, "🔧 Base setup complete, now launching app with custom handlers in place...")
+        Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
+        Log.d(TAG, "🔧 MainActivity will skip initialization due to test mode flag")
         
-        // Now launch the app flow with our custom handlers already configured
+        // Now launch the app flow with custom handlers already configured
         launchAppAndNavigateToInAppTesting()
     }
     
@@ -299,44 +294,20 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         }
 
         Log.d(TAG, "✅ Campaign triggered successfully, proceeding with message sync...")
-        // Step 4: Wait for message sync with retry logic
-        Log.d(TAG, "🔄 Step 4: Waiting for message sync...")
+        
+        // Step 4: Sync messages
+        Log.d(TAG, "🔄 Step 4: Syncing in-app messages...")
         Thread.sleep(3000) // Give time for any messages to sync
-
-        // Retry sync multiple times if needed (handles transient API failures)
-        var syncAttempts = 0
-        val maxSyncAttempts = 3
-        var messageCount = 0
-
-        while (syncAttempts < maxSyncAttempts && messageCount == 0) {
-            syncAttempts++
-            Log.d(TAG, "🔄 Sync attempt $syncAttempts of $maxSyncAttempts")
-
-            //Manually sync
-            IterableApiHelper().syncInAppMessages()
-
-            // Wait for sync to complete
-            Thread.sleep(2000)
-
-            messageCount = IterableApi.getInstance().inAppManager.messages.count()
-            Log.d(TAG, "🔄 Message count after sync attempt $syncAttempts: $messageCount")
-
-            if (messageCount == 0 && syncAttempts < maxSyncAttempts) {
-                Log.w(TAG, "⚠️ No messages received, retrying in 2 seconds...")
-                Thread.sleep(2000)
-            }
-        }
-
-        //Make sure message count is updated
-        if (messageCount == 0) {
-            Log.e(TAG, "❌ Failed to retrieve messages after $maxSyncAttempts attempts")
-            Log.e(TAG, "❌ This could be due to:")
-            Log.e(TAG, "   1. Iterable API server issues (BadGateway errors)")
-            Log.e(TAG, "   2. Campaign not triggered successfully")
-            Log.e(TAG, "   3. Network connectivity issues")
-            Assert.fail("Message count should be greater than 0 after $maxSyncAttempts sync attempts. Check logs for API errors.")
-        }
-
+        
+        // Manually sync
+        IterableApiHelper().syncInAppMessages()
+        
+        // Wait for sync to complete
+        Thread.sleep(2000)
+        
+        val messageCount = IterableApi.getInstance().inAppManager.messages.count()
+        Log.d(TAG, "🔄 Message count after sync: $messageCount")
+        
         Assert.assertTrue(
             "Message count should be 1, but was $messageCount",
             messageCount == 1
@@ -379,5 +350,56 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             "Top activity should be IterableInAppFragmentHTMLNotification or contain IterableWebView",
             isIterableInAppFragmentView
         )
+        
+        Log.d(TAG, "✅ In-app message is displayed, now interacting with button...")
+        
+        // Step 5: Click the "No Thanks" button in the WebView
+        Log.d(TAG, "🎯 Step 5: Clicking 'No Thanks' button in the in-app message...")
+
+        // Try to find and click the "No Thanks" button with retry logic
+        var noThanksButton: androidx.test.uiautomator.UiObject2? = null
+        var attempts = 0
+        val maxAttempts = 5
+        
+        while (noThanksButton == null && attempts < maxAttempts) {
+            attempts++
+            Log.d(TAG, "Attempt $attempts: Looking for 'No Thanks' button...")
+            
+            // Try different text variations
+            noThanksButton = uiDevice.findObject(By.textContains("No Thanks"))
+                ?: uiDevice.findObject(By.text("No Thanks"))
+                ?: uiDevice.findObject(By.textContains("no thanks"))
+                ?: uiDevice.findObject(By.textContains("NO THANKS"))
+            
+            if (noThanksButton == null) {
+                Log.d(TAG, "Button not found, waiting 1 second before retry...")
+                Thread.sleep(1000)
+            }
+        }
+        
+        if (noThanksButton != null) {
+            noThanksButton.click()
+            Log.d(TAG, "✅ Clicked 'No Thanks' button")
+        } else {
+            Assert.fail("'No Thanks' button not found in the in-app message WebView after $maxAttempts attempts")
+        }
+        
+        // Step 6: Verify URL handler was called
+        Log.d(TAG, "🎯 Step 6: Verifying URL handler was called after button click...")
+        
+        val urlHandlerCalled = waitForUrlHandler(timeoutSeconds = 5)
+        Assert.assertTrue(
+            "URL handler should have been called after clicking the button",
+            urlHandlerCalled
+        )
+        
+        // Step 7: Verify the correct URL was handled
+        val handledUrl = getLastHandledUrl()
+        Log.d(TAG, "🎯 URL handler received: $handledUrl")
+        
+        Assert.assertNotNull("Handled URL should not be null", handledUrl)
+        Log.d(TAG, "✅ URL handler was called with URL: $handledUrl")
+        
+        Log.d(TAG, "✅✅✅ Test completed successfully! All steps passed.")
     }
 }
