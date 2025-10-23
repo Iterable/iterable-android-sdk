@@ -16,6 +16,7 @@ NC='\033[0m'
 AVD_NAME=""
 EMULATOR_PID=""
 STARTED_EMULATOR=false
+SCREENRECORD_PID=""
 
 print_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -41,12 +42,16 @@ show_usage() {
     echo "  test_method   Optional: Specific test method name (e.g., testInAppMessageMVP)"
     echo ""
     echo "Options:"
-    echo "  --avd <name>  Specific AVD to use (if not already running)"
+    echo "  --avd <name>  (Local only) Specific AVD to use if not already running"
     echo ""
     echo "Examples:"
     echo "  $0 com.iterable.integration.tests.InAppMessageIntegrationTest"
     echo "  $0 com.iterable.integration.tests.InAppMessageIntegrationTest testInAppMessageMVP"
     echo "  $0 com.iterable.integration.tests.InAppMessageIntegrationTest testInAppMessageMVP --avd Pixel_5_API_34"
+    echo ""
+    echo "Modes:"
+    echo "  CI:    Uses pre-started emulator from reactivecircus/android-emulator-runner"
+    echo "  Local: Starts/stops emulator automatically or uses existing device"
 }
 
 cleanup() {
@@ -105,7 +110,8 @@ cleanup() {
         echo "  (no artifacts captured)"
     fi
     
-    if [ "$STARTED_EMULATOR" = true ] && [ -n "$EMULATOR_PID" ]; then
+    # Only shut down emulator if running locally AND we started it
+    if [ -z "$CI" ] && [ "$STARTED_EMULATOR" = true ] && [ -n "$EMULATOR_PID" ]; then
         print_info "Shutting down emulator (PID: $EMULATOR_PID)..."
         kill $EMULATOR_PID 2>/dev/null || true
         adb emu kill 2>/dev/null || true
@@ -192,17 +198,6 @@ start_emulator() {
     emulator_cmd="$emulator_cmd -no-metrics -skip-adb-auth"
     emulator_cmd="$emulator_cmd -partition-size 4096"
     
-    # Configure DNS to use Google's public DNS (fixes "Unable to resolve host" errors)
-    emulator_cmd="$emulator_cmd -dns-server 8.8.8.8,8.8.4.4"
-    
-    # Force network to use user-mode networking with no delay
-    emulator_cmd="$emulator_cmd -netdelay none -netspeed full"
-    
-    # TEMPORARY: Disable snapshots to debug network issues
-    # Snapshots don't properly restore network state in GitHub Actions
-    print_warning "Snapshots disabled temporarily - doing full boot to ensure network works"
-    emulator_cmd="$emulator_cmd -no-snapshot-load"
-    
     # Only run headless in CI environments
     if [ -n "$CI" ]; then
         print_info "CI environment detected, running headless with optimizations..."
@@ -257,7 +252,7 @@ wait_for_device() {
     
     # Extra wait for system services to fully start (package manager, etc.)
     print_info "Waiting for system services to fully start..."
-    sleep 30
+    sleep 5
     
     # Verify package manager is ready
     local pm_ready=0
@@ -287,14 +282,9 @@ wait_for_device() {
     print_info "Disabling Bluetooth..."
     adb shell svc bluetooth disable 2>/dev/null || true
     adb shell cmd bluetooth_manager disable 2>/dev/null || true
-    
-    # Stop Bluetooth service if it's causing issues
     adb shell "am force-stop com.android.bluetooth" 2>/dev/null || true
     
-    # NOTE: We're NOT disabling Google Play Services as it might manage network connectivity
-    # Even though it uses resources, networking is critical for API calls
-    
-    # CRITICAL: Disable system ANR dialogs completely
+    # Disable system ANR dialogs
     print_info "Disabling system ANR dialogs..."
     adb shell settings put global anr_show_background false
     adb shell settings put secure anr_show_background false
@@ -306,56 +296,10 @@ wait_for_device() {
     adb shell "setprop dalvik.vm.execution-mode int:fast" 2>/dev/null || true
     adb shell "setprop debug.choreographer.skipwarning 1" 2>/dev/null || true
     adb shell settings put global activity_manager_constants max_phantom_processes=2147483647
-    
+
     # Wait for network to initialize (critical for API calls)
     print_info "Waiting for network stack to initialize..."
-    
-    # Explicitly start the emulator's network service
-    print_info "Starting ranchu-net service..."
-    adb shell "start ranchu-net" 2>/dev/null || true
-    sleep 5
-    
-    # Bring up eth0 interface (emulator's primary network interface)
-    print_info "Bringing up eth0 network interface..."
-    adb shell "ip link set eth0 up" 2>/dev/null || true
-    adb shell "ifconfig eth0 up" 2>/dev/null || true
-    sleep 3
-    
-    # Configure static IP for eth0 (emulator standard network)
-    print_info "Configuring static IP on eth0..."
-    adb shell "ifconfig eth0 10.0.2.16 netmask 255.255.255.0 up" 2>/dev/null || true
-    adb shell "ip addr add 10.0.2.16/24 dev eth0" 2>/dev/null || true
-    sleep 2
-    
-    # Set default route via emulator gateway
-    print_info "Setting default route..."
-    adb shell "ip route add default via 10.0.2.2 dev eth0" 2>/dev/null || true
-    sleep 2
-    
-    # Check and log network interfaces
-    print_info "Checking network interfaces..."
-    adb shell "ip addr show" 2>/dev/null || true
-    adb shell "getprop | grep -E 'net\.|dhcp'" 2>/dev/null || true
-    
-    # Verify eth0 has IPv4 configured
-    print_info "Verifying eth0 network configuration:"
-    adb shell "ip addr show eth0" 2>/dev/null || true
-    adb shell "ip route show" 2>/dev/null || true
-    
-    # Verify connectivity to gateway
-    if adb shell "ping -c 1 -W 2 10.0.2.2" &>/dev/null; then
-        print_success "Gateway (10.0.2.2) is reachable"
-    else
-        print_warning "Cannot reach gateway - network may not work"
-    fi
-    
-    # Manually set DNS servers if not set
-    print_info "Configuring DNS servers..."
-    adb shell "ndc resolver setnetdns 1 localdomain 8.8.8.8 8.8.4.4" 2>/dev/null || true
-    adb shell "setprop net.dns1 8.8.8.8" 2>/dev/null || true
-    adb shell "setprop net.dns2 8.8.4.4" 2>/dev/null || true
-    sleep 2
-    
+
     # Test network connectivity and DNS resolution
     print_info "Testing network connectivity..."
     local network_ok=false
@@ -368,49 +312,19 @@ wait_for_device() {
         print_warning "Network test attempt $i failed, retrying..."
         sleep 3
     done
-    
     if [ "$network_ok" = false ]; then
         print_error "Network connectivity test failed after 15 attempts"
         print_error "Trying to restart network services..."
         adb shell "svc wifi enable" 2>/dev/null || true
         adb shell "svc data enable" 2>/dev/null || true
         sleep 5
-        
+
         # One more retry after restart
         if adb shell "ping -c 1 -W 3 8.8.8.8" &>/dev/null; then
             print_success "Network OK after service restart"
             network_ok=true
         fi
     fi
-    
-    # Test DNS resolution
-    if [ "$network_ok" = true ]; then
-        print_info "Testing DNS resolution for api.iterable.com..."
-        local dns_ok=false
-        for i in {1..10}; do
-            if adb shell "ping -c 1 -W 5 api.iterable.com" &>/dev/null; then
-                print_success "DNS resolution OK - api.iterable.com is reachable (attempt $i)"
-                dns_ok=true
-                break
-            fi
-            print_warning "DNS test attempt $i failed, retrying..."
-            sleep 2
-        done
-        
-        if [ "$dns_ok" = false ]; then
-            print_warning "DNS resolution test failed - trying alternative check..."
-            # Try using nslookup as fallback
-            if adb shell "nslookup api.iterable.com 8.8.8.8" 2>/dev/null | grep -q "Address"; then
-                print_success "DNS resolution OK via nslookup"
-            else
-                print_error "DNS resolution FAILED - API calls will likely fail"
-                print_error "This is a critical issue that will cause test failures"
-            fi
-        fi
-    else
-        print_error "Skipping DNS test - no basic network connectivity"
-    fi
-    
     # Create screenshots directory
     mkdir -p /tmp/test-screenshots
     
@@ -662,20 +576,34 @@ ensure_adb_server
 # Print local properties with obfuscated values
 print_local_properties
 
-# Check if device is already connected
-if ! check_device_connected; then
-    print_warning "No device connected, starting emulator..."
+# CI mode: emulator is already running via reactivecircus/android-emulator-runner
+# Local mode: manage emulator ourselves
+if [ -n "$CI" ]; then
+    print_info "CI mode: Using emulator from reactivecircus/android-emulator-runner"
+    print_info "Waiting for device to be ready..."
+    adb wait-for-device
+    print_success "Device detected"
     
-    # Determine which AVD to use
-    if [ -z "$AVD_NAME" ]; then
-        AVD_NAME=$(get_available_avd)
+    # Create screenshots directory for CI
+    mkdir -p /tmp/test-screenshots
+else
+    print_info "Local mode: Managing emulator lifecycle"
+    
+    # Check if device is already connected
+    if ! check_device_connected; then
+        print_warning "No device connected, starting emulator..."
+        
+        # Determine which AVD to use
+        if [ -z "$AVD_NAME" ]; then
+            AVD_NAME=$(get_available_avd)
+        fi
+        
+        # Start the emulator
+        start_emulator "$AVD_NAME"
+        
+        # Wait for it to be ready
+        wait_for_device
     fi
-    
-    # Start the emulator
-    start_emulator "$AVD_NAME"
-    
-    # Wait for it to be ready
-    wait_for_device
 fi
 
 # Build the test APKs first (before recording starts)

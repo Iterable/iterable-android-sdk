@@ -66,81 +66,6 @@ jobs:
             ${{ runner.os }}-gradle-wrapper-
             ${{ runner.os }}-gradle-
       
-      - name: AVD Cache
-        uses: actions/cache@v3
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-${{ runner.os }}
-      
-      - name: Install System Image for API ${{ matrix.api-level }}
-        run: |
-          echo "Installing system image for API level ${{ matrix.api-level }}..."
-          sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86_64"
-      
-      - name: Create AVD and Snapshot
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        run: |
-          echo "Cache miss - creating AVD and snapshot..."
-          echo "Creating AVD..."
-          echo "no" | avdmanager create avd \
-            -n test_api_${{ matrix.api-level }} \
-            -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
-            -c 2048M \
-            -f
-          
-          echo "Creating initial snapshot..."
-          # Boot emulator once to create snapshot (must NOT use -no-snapshot)
-          $ANDROID_SDK_ROOT/emulator/emulator -avd test_api_${{ matrix.api-level }} \
-            -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim \
-            -no-metrics -skip-adb-auth &
-          EMULATOR_PID=$!
-          
-          # Wait for boot
-          adb wait-for-device
-          timeout=600
-          elapsed=0
-          while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
-            if [ $elapsed -ge $timeout ]; then
-              echo "Timeout creating snapshot"
-              kill $EMULATOR_PID || true
-              exit 1
-            fi
-            sleep 5
-            elapsed=$((elapsed + 5))
-            echo "Waiting for initial boot... (${elapsed}s)"
-          done
-          
-          echo "Boot complete, creating snapshot..."
-          sleep 10
-          adb emu avd snapshot save default_boot
-          sleep 5
-          
-          echo "Verifying snapshot was saved..."
-          $ANDROID_SDK_ROOT/emulator/emulator -avd test_api_${{ matrix.api-level }} -snapshot-list || true
-          
-          adb emu kill
-          sleep 5
-          
-          echo "Snapshot created successfully"
-      
-      - name: Save AVD Cache After Snapshot Creation
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-${{ runner.os }}
-      
-      - name: Verify AVD
-        if: steps.avd-cache.outputs.cache-hit == 'true'
-        run: |
-          echo "Cache hit - AVD already exists with snapshot"
-          avdmanager list avd
-      
       - name: Restore APK Cache
         if: github.event.inputs.use-cached-apks != 'false'
         id: apk-cache
@@ -189,34 +114,15 @@ jobs:
           key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradle-wrapper.properties') }}
             
       - name: Run In-App Message E2E Test
-        run: |
-          echo "Running In-App Message MVP test..."
-          
-          # Start logcat in background for crash debugging
-          adb logcat > /tmp/test-logcat.log 2>&1 &
-          LOGCAT_PID=$!
-          
-          # Run test using the CI runner script
-          ./integration-tests/run_tests_ci.sh \
-            com.iterable.integration.tests.InAppMessageIntegrationTest \
-            testInAppMessageMVP \
-            --avd test_api_${{ matrix.api-level }} || {
-              echo "Test failed! Collecting logs..."
-              kill $LOGCAT_PID 2>/dev/null || true
-              
-              echo "=== EMULATOR BOOT LOGS ==="
-              cat /tmp/emulator.log 2>/dev/null || echo "No emulator logs found"
-              echo "=== END EMULATOR LOGS ==="
-              
-              echo "=== TEST CRASH LOGS ==="
-              tail -100 /tmp/test-logcat.log 2>/dev/null || echo "No test logs found"
-              echo "=== END CRASH LOGS ==="
-              
-              exit 1
-            }
-          
-          # Stop logcat
-          kill $LOGCAT_PID 2>/dev/null || true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: ./integration-tests/run_tests_ci.sh com.iterable.integration.tests.InAppMessageIntegrationTest testInAppMessageMVP
         env:
           ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}

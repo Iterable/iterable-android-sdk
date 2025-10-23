@@ -53,19 +53,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         // Register watcher to auto-dismiss ANR dialogs
         setupAnrDialogWatcher()
         
-        // Reset test states
-        inAppMessageDisplayed.set(false)
-        inAppClickTracked.set(false)
-        inAppCloseTracked.set(false)
-        trackInAppCloseCalled.set(false)
-        lastClickedUrl.set(null)
-        lastCloseAction.set(null)
-        currentInAppMessage.set(null)
-        
-        // CRITICAL: Setup custom handlers FIRST, before any activities
-        Log.d(TAG, "🔧 Setting up custom handlers BEFORE any activity launches...")
-        setupConfigAndInitialize()
-        
         // Call super.setUp() to initialize SDK with BaseIntegrationTest's config
         // This sets test mode flag and initializes SDK with test handlers (including urlHandler)
         super.setUp()
@@ -124,50 +111,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         // Run watchers immediately and enable auto-run
         uiDevice.runWatchers()
         Log.d(TAG, "✅ ANR dialog watcher registered and active")
-    }
-    
-    private fun setupConfigAndInitialize() {
-        Log.d(TAG, "🔧 setupCustomInAppHandler() called")
-        
-        val config = IterableConfig.Builder()
-            .setAutoPushRegistration(true)
-            .setEnableEmbeddedMessaging(true)
-            .setInAppDisplayInterval(2.0) // Same as MainActivity for consistency
-            .setCustomActionHandler { action, context ->
-                Log.d(TAG, "🎯 Custom action triggered: $action")
-                true
-            }
-            .setUrlHandler { url, context ->
-                Log.d(TAG, "🎯 URL HANDLER TRIGGERED! URL: $url")
-                Log.d(TAG, "🎯 Expected URL: https://www.nbc.com/")
-                Log.d(TAG, "🎯 URL matches expected: ${url.toString().contains("nbc.com")}")
-                
-                lastClickedUrl.set(url.toString())
-                trackInAppCloseCalled.set(true)
-                
-                Log.d(TAG, "🎯 Flags set - lastClickedUrl: ${lastClickedUrl.get()}, trackInAppCloseCalled: ${trackInAppCloseCalled.get()}")
-                true
-            }
-            .build()
-        
-        Log.d(TAG, "🔧 Config built, initializing IterableApi...")
-        
-        // Get context from instrumentation since BaseIntegrationTest.context isn't initialized yet
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        
-        // Initialize with custom handlers BEFORE MainActivity can initialize
-        Log.d(TAG, "🔧 Initializing IterableApi with test handlers BEFORE MainActivity...")
-        
-        // Set a system property to indicate we're in test mode
-        System.setProperty("iterable.test.mode", "true")
-        
-        IterableApi.initialize(appContext, BuildConfig.ITERABLE_API_KEY, config)
-        //Pausing auto-display to prevent interference with message queue during tests
-        IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
-        IterableApi.getInstance().setEmail(TestConstants.TEST_USER_EMAIL)
-        
-        Log.d(TAG, "🔧 IterableApi initialized with custom handlers")
-        Log.d(TAG, "🔧 Note: Will pause auto-display after first InApp shows to prevent queue interference")
     }
     
     private fun launchAppAndNavigateToInAppTesting() {
