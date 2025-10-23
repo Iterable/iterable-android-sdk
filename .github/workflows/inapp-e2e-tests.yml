@@ -54,39 +54,22 @@ jobs:
           fi
           echo "Google Services configuration ready"
           
-      - name: Restore Gradle Cache
-        id: gradle-cache
+      - name: Restore Build Cache
+        id: build-cache
         uses: actions/cache/restore@v3
         with:
           path: |
             ~/.gradle/wrapper
             ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-wrapper-
-            ${{ runner.os }}-gradle-
-      
-      - name: Restore APK Cache
-        if: github.event.inputs.use-cached-apks != 'false'
-        id: apk-cache
-        uses: actions/cache/restore@v3
-        with:
-          path: |
             integration-tests/build/outputs/apk/
             app/build/outputs/apk/
             iterableapi/build/outputs/aar/
-          key: test-apks-${{ hashFiles('integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
+          key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', 'integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
           restore-keys: |
-            test-apks-
-      
-      - name: Check Cache Result
-        run: |
-          echo "Cache hit: ${{ steps.apk-cache.outputs.cache-hit }}"
-          echo "Cache matched key: ${{ steps.apk-cache.outputs.cache-matched-key }}"
-          echo "Cache primary key: ${{ steps.apk-cache.outputs.cache-primary-key }}"
+            build-cache-${{ runner.os }}-
       
       - name: Clean Build
-        if: steps.apk-cache.outputs.cache-matched-key == '' || github.event.inputs.use-cached-apks == 'false'
+        if: steps.build-cache.outputs.cache-matched-key == '' || github.event.inputs.use-cached-apks == 'false'
         run: |
           echo "No cache match - cleaning build artifacts..."
           ./gradlew clean --no-daemon
@@ -96,22 +79,16 @@ jobs:
           echo "Building test APKs..."
           ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon
       
-      - name: Save APK Cache
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            integration-tests/build/outputs/apk/
-            app/build/outputs/apk/
-            iterableapi/build/outputs/aar/
-          key: test-apks-${{ hashFiles('integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
-      
-      - name: Save Gradle Cache
+      - name: Save Build Cache
         uses: actions/cache/save@v3
         with:
           path: |
             ~/.gradle/wrapper
             ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradle-wrapper.properties') }}
+            integration-tests/build/outputs/apk/
+            app/build/outputs/apk/
+            iterableapi/build/outputs/aar/
+          key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', 'integration-tests/**/*.kt', 'integration-tests/**/*.java', 'iterableapi/**/*.java', 'iterableapi/**/*.kt', 'app/**/*.kt', 'app/**/*.java', '**/build.gradle', 'gradle.properties') }}
             
       - name: Run In-App Message E2E Test
         uses: reactivecircus/android-emulator-runner@v2
