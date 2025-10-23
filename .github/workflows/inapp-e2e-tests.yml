@@ -100,11 +100,8 @@ jobs:
           api-level: ${{ matrix.api-level }}
           target: google_apis
           arch: x86_64
-          cores: 4
-          ram-size: 4096M
-          heap-size: 512M
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-metrics
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           disable-animations: false
           script: echo "AVD snapshot created for caching"
       
@@ -124,10 +121,7 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          cores: 4
-          ram-size: 4096M
-          heap-size: 512M
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-metrics
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           disable-animations: true
           script: ./integration-tests/run_tests_ci.sh com.iterable.integration.tests.InAppMessageIntegrationTest testInAppMessageMVP
         env:
