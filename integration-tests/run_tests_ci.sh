@@ -197,6 +197,7 @@ start_emulator() {
     
     emulator_cmd="$emulator_cmd -no-metrics -skip-adb-auth"
     emulator_cmd="$emulator_cmd -partition-size 4096"
+    emulator_cmd="$emulator_cmd -dns-server 8.8.8.8"
     
     # Only run headless in CI environments
     if [ -n "$CI" ]; then

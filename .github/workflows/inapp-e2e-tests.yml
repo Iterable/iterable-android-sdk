@@ -67,7 +67,7 @@ jobs:
           key: build-cache-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.kt', '**/*.java', '**/build.gradle', 'gradle.properties') }}
           restore-keys: |
             build-cache-${{ runner.os }}-
-      
+
       - name: Build Test APKs
         run: |
           echo "Building test APKs..."
@@ -101,7 +101,7 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -dns-server 8.8.8.8
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -dns-server 8.8.8.8 -netdelay none -netspeed full
           disable-animations: false
           script: echo "AVD snapshot created for caching"
       
@@ -121,7 +121,7 @@ jobs:
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -dns-server 8.8.8.8
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -dns-server 8.8.8.8 -netdelay none -netspeed full
           disable-animations: true
           script: ./integration-tests/run_tests_ci.sh com.iterable.integration.tests.InAppMessageIntegrationTest testInAppMessageMVP
         env:
