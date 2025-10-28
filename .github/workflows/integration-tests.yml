@@ -1,0 +1,449 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ master, develop ]
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+  schedule:
+    # Run integration tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: macos-latest
+    
+    strategy:
+      matrix:
+        api-level: [29]  # Focus on API 29 for MVP testing
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
+          
+      - name: Accept Android SDK Licenses
+        run: |
+          echo "Accepting Android SDK licenses..."
+          yes | sdkmanager --licenses || true
+          echo "SDK licenses accepted"
+          
+      - name: Install Android System Images
+        run: |
+          echo "Installing Android system images for API level ${{ matrix.api-level }}..."
+          sdkmanager --list | grep "system-images;android-${{ matrix.api-level }}"
+          sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86_64"
+          sdkmanager "system-images;android-${{ matrix.api-level }};google_apis;x86"
+          echo "System images installed successfully"
+          
+      - name: Setup Google Services Configuration
+        run: |
+          echo "Setting up Google Services configuration for CI..."
+          # Ensure the google-services.json file exists for the build
+          if [ ! -f "integration-tests/google-services.json" ]; then
+            echo "Creating google-services.json from template..."
+            cp integration-tests/google-services.json.template integration-tests/google-services.json
+          fi
+          echo "Google Services configuration ready"
+          
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Create Android Virtual Device
+        run: |
+          echo "Creating AVD for API level ${{ matrix.api-level }}..."
+          
+          # List available system images for debugging
+          echo "Available system images:"
+          sdkmanager --list | grep "system-images;android-${{ matrix.api-level }}" || echo "No system images found for API ${{ matrix.api-level }}"
+          
+          # Try to create AVD with x86_64 first, fallback to x86
+          if sdkmanager --list | grep -q "system-images;android-${{ matrix.api-level }};google_apis;x86_64"; then
+            echo "Creating AVD with x86_64 system image..."
+            echo "no" | avdmanager create avd \
+              -n "test_device_api_${{ matrix.api-level }}" \
+              -k "system-images;android-${{ matrix.api-level }};google_apis;x86_64" \
+              -c 1536M \
+              -f
+          elif sdkmanager --list | grep -q "system-images;android-${{ matrix.api-level }};google_apis;x86"; then
+            echo "Creating AVD with x86 system image..."
+            echo "no" | avdmanager create avd \
+              -n "test_device_api_${{ matrix.api-level }}" \
+              -k "system-images;android-${{ matrix.api-level }};google_apis;x86" \
+              -c 1536M \
+              -f
+          else
+            echo "Error: No suitable system images found for API level ${{ matrix.api-level }}"
+            echo "Available system images:"
+            sdkmanager --list | grep "system-images" | head -20
+            exit 1
+          fi
+          
+          echo "AVD created successfully"
+            
+      - name: Start Android Emulator
+        run: |
+          echo "Starting emulator for API level ${{ matrix.api-level }}..."
+          $ANDROID_SDK_ROOT/emulator/emulator \
+            -avd test_device_api_${{ matrix.api-level }} \
+            -no-audio \
+            -no-window \
+            -no-snapshot \
+            -camera-back none \
+            -camera-front none \
+            -gpu swiftshader_indirect \
+            -memory 1536 \
+            -cores 1 \
+            -no-boot-anim \
+            -no-snapshot-load \
+            -no-snapshot-save \
+            -wipe-data &
+          echo "Emulator started in background"
+            
+      - name: Wait for emulator
+        run: |
+          echo "Waiting for emulator to be ready..."
+          
+          # Wait for device to be detected
+          timeout=60
+          counter=0
+          while ! adb devices | grep -q "emulator.*device" && [ $counter -lt $timeout ]; do
+            echo "Waiting for emulator to be detected... ($counter/$timeout)"
+            sleep 2
+            counter=$((counter + 2))
+          done
+          
+          if ! adb devices | grep -q "emulator.*device"; then
+            echo "ERROR: Emulator not detected within timeout"
+            adb devices
+            exit 1
+          fi
+          
+          echo "Emulator detected, waiting for boot completion..."
+          
+          # Wait for boot completion with shorter intervals
+          timeout=180  # 3 minutes timeout
+          counter=0
+          while [ "`adb shell getprop sys.boot_completed 2>/dev/null`" != "1" ] && [ $counter -lt $timeout ]; do
+            echo "Waiting for boot completion... ($counter/$timeout)"
+            sleep 3
+            counter=$((counter + 3))
+            
+            # Check if device is still online
+            if ! adb devices | grep -q "emulator.*device"; then
+              echo "ERROR: Emulator went offline during boot"
+              adb devices
+              exit 1
+            fi
+          done
+          
+          if [ "`adb shell getprop sys.boot_completed 2>/dev/null`" != "1" ]; then
+            echo "ERROR: Emulator failed to boot within timeout"
+            echo "Device status:"
+            adb devices
+            echo "Last 20 logcat entries:"
+            adb logcat -d | tail -20
+            exit 1
+          fi
+          
+          echo "Emulator boot completed, setting up..."
+          
+          # Wait a bit for system to stabilize
+          sleep 5
+          
+          # Unlock screen
+          adb shell input keyevent 82
+          sleep 2
+          adb shell input keyevent 82
+          
+          # Disable animations for stability
+          adb shell settings put global window_animation_scale 0.0
+          adb shell settings put global transition_animation_scale 0.0
+          adb shell settings put global animator_duration_scale 0.0
+          
+          # Additional stability settings
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          
+          # Final stability wait
+          sleep 5
+          
+          echo "Emulator setup complete"
+          
+      - name: Grant notification permissions
+        run: |
+          echo "Granting notification permissions..."
+          adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
+          
+      - name: Verify Emulator Health
+        run: |
+          echo "Verifying emulator health before running tests..."
+          
+          # Check if emulator is responsive
+          adb shell echo "Emulator is responsive"
+          
+          # Check system properties
+          echo "Boot completed: $(adb shell getprop sys.boot_completed)"
+          echo "System ready: $(adb shell getprop dev.bootcomplete)"
+          
+          # Check available memory
+          adb shell cat /proc/meminfo | grep MemAvailable
+          
+          # Check if system is stable
+          adb shell getprop ro.build.version.release
+          adb shell getprop ro.product.model
+          
+          # Restart ADB to ensure stable connection
+          echo "Restarting ADB for stable connection..."
+          adb kill-server
+          adb start-server
+          adb wait-for-device
+          
+          # Clear any existing installations
+          echo "Clearing existing app installations..."
+          adb uninstall com.iterable.integration.tests || true
+          adb uninstall com.iterable.integration.tests.test || true
+          
+          echo "Emulator health check completed"
+          
+      - name: Run MVP In-App Message Test
+        env:
+          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
+          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
+        run: |
+          echo "Running MVP In-App Message test only..."
+          
+          # Check emulator status before running tests
+          echo "Checking emulator status..."
+          adb devices
+          adb shell getprop sys.boot_completed
+          
+          # Run the test with simplified command
+          cd integration-tests
+          ./gradlew connectedCheck \
+            -Pandroid.testInstrumentationRunnerArguments.class="com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP" \
+            --info \
+            --stacktrace \
+            --no-daemon \
+            --max-workers=1
+            
+      - name: Generate Test Report
+        if: always()
+        run: |
+          echo "Generating test report..."
+          ./gradlew :integration-tests:jacocoIntegrationTestReport
+          
+      - name: Collect Test Logs
+        if: always()
+        run: |
+          echo "Collecting test logs..."
+          adb logcat -d > integration-tests/build/test-logs.txt
+          
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-api-${{ matrix.api-level }}
+          path: |
+            integration-tests/build/reports/
+            integration-tests/build/outputs/
+            integration-tests/build/test-logs.txt
+            
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-coverage-api-${{ matrix.api-level }}
+          path: integration-tests/build/reports/jacoco/
+          
+      - name: Upload Screenshots (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-screenshots-api-${{ matrix.api-level }}
+          path: integration-tests/screenshots/
+          
+      - name: Stop emulator
+        if: always()
+        run: |
+          echo "Stopping emulator..."
+          adb emu kill
+          
+  integration-tests-nightly:
+    name: Nightly Integration Tests
+    runs-on: macos-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
+          
+      - name: Accept Android SDK Licenses
+        run: |
+          echo "Accepting Android SDK licenses..."
+          yes | sdkmanager --licenses || true
+          echo "SDK licenses accepted"
+          
+      - name: Install Android System Images
+        run: |
+          echo "Installing Android system images for API level 34..."
+          sdkmanager --list | grep "system-images;android-34"
+          sdkmanager "system-images;android-34;google_apis;x86_64"
+          sdkmanager "system-images;android-34;google_apis;x86"
+          echo "System images installed successfully"
+          
+      - name: Setup Google Services Configuration
+        run: |
+          echo "Setting up Google Services configuration for CI..."
+          # Ensure the google-services.json file exists for the build
+          if [ ! -f "integration-tests/google-services.json" ]; then
+            echo "Creating google-services.json from template..."
+            cp integration-tests/google-services.json.template integration-tests/google-services.json
+          fi
+          echo "Google Services configuration ready"
+          
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Create Android Virtual Device
+        run: |
+          echo "Creating AVD for nightly tests..."
+          
+          # List available system images for debugging
+          echo "Available system images:"
+          sdkmanager --list | grep "system-images;android-34" || echo "No system images found for API 34"
+          
+          # Try to create AVD with x86_64 first, fallback to x86
+          if sdkmanager --list | grep -q "system-images;android-34;google_apis;x86_64"; then
+            echo "Creating AVD with x86_64 system image..."
+            echo "no" | avdmanager create avd \
+              -n "nightly_test_device" \
+              -k "system-images;android-34;google_apis;x86_64" \
+              -c 2048M \
+              -f
+          elif sdkmanager --list | grep -q "system-images;android-34;google_apis;x86"; then
+            echo "Creating AVD with x86 system image..."
+            echo "no" | avdmanager create avd \
+              -n "nightly_test_device" \
+              -k "system-images;android-34;google_apis;x86" \
+              -c 2048M \
+              -f
+          else
+            echo "Error: No suitable system images found for API level 34"
+            echo "Available system images:"
+            sdkmanager --list | grep "system-images" | head -20
+            exit 1
+          fi
+          
+          echo "AVD created successfully"
+            
+      - name: Start Android Emulator
+        run: |
+          echo "Starting emulator..."
+          $ANDROID_SDK_ROOT/emulator/emulator \
+            -avd nightly_test_device \
+            -no-audio \
+            -no-window \
+            -no-snapshot \
+            -camera-back none \
+            -camera-front none \
+            -gpu swiftshader_indirect &
+            
+      - name: Wait for emulator
+        run: |
+          echo "Waiting for emulator..."
+          adb wait-for-device
+          adb shell input keyevent 82
+          adb shell input keyevent 82
+          
+      - name: Grant notification permissions
+        run: |
+          echo "Granting notification permissions..."
+          adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
+          
+      - name: Run All Integration Tests
+        env:
+          ITERABLE_API_KEY: ${{ secrets.ITERABLE_API_KEY }}
+          ITERABLE_SERVER_API_KEY: ${{ secrets.ITERABLE_SERVER_API_KEY }}
+        run: |
+          echo "Running all integration tests..."
+          ./gradlew :integration-tests:connectedCheck --info
+          
+      - name: Generate Test Report
+        if: always()
+        run: |
+          echo "Generating test report..."
+          ./gradlew :integration-tests:jacocoIntegrationTestReport
+          
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-integration-test-results
+          path: |
+            integration-tests/build/reports/
+            integration-tests/build/outputs/
+            
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-integration-test-coverage
+          path: integration-tests/build/reports/jacoco/
+          
+      - name: Stop emulator
+        if: always()
+        run: |
+          echo "Stopping emulator..."
+          adb emu kill 

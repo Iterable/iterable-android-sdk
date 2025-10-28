@@ -1,0 +1,158 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'jacoco'
+apply plugin: 'com.google.gms.google-services'  // Add Google Services plugin
+
+android {
+    compileSdk 34
+
+    namespace 'com.iterable.integration.tests'
+    testNamespace 'com.iterable.integration.tests.test'
+
+    defaultConfig {
+        applicationId "com.iterable.integration.tests"
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+        
+        // Integration test specific configurations
+        // Read from local.properties first, then fall back to environment variables, then to defaults
+        def localProperties = new Properties()
+        def localPropertiesFile = rootProject.file('local.properties')
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.withInputStream { localProperties.load(it) }
+        }
+        
+        def iterableApiKey = localProperties.getProperty('ITERABLE_API_KEY') ?: System.getenv('ITERABLE_API_KEY') ?: 'test_api_key'
+        def iterableServerApiKey = localProperties.getProperty('ITERABLE_SERVER_API_KEY') ?: System.getenv('ITERABLE_SERVER_API_KEY') ?: 'test_server_api_key'
+        def iterableTestUserEmail = localProperties.getProperty('ITERABLE_TEST_USER_EMAIL') ?: System.getenv('ITERABLE_TEST_USER_EMAIL') ?: 'test@abc.com'
+        
+        buildConfigField "String", "ITERABLE_API_KEY", "\"$iterableApiKey\""
+        buildConfigField "String", "ITERABLE_SERVER_API_KEY", "\"$iterableServerApiKey\""
+        buildConfigField "String", "ITERABLE_TEST_USER_EMAIL", "\"$iterableTestUserEmail\""
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            enableAndroidTestCoverage true
+        }
+    }
+
+    testOptions {
+        unitTests.includeAndroidResources = true
+        animationsDisabled = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    kotlin {
+        jvmToolchain(17)
+    }
+}
+
+dependencies {
+    // Core Android dependencies
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.annotation:annotation:1.7.0'
+    implementation 'androidx.fragment:fragment:1.6.2'
+    
+    // Iterable SDK modules
+    implementation project(':iterableapi')
+    implementation project(':iterableapi-ui')
+    
+    // Firebase for push notifications (app side only)
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-analytics'
+    
+    // Network and HTTP
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    
+    // Testing dependencies
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'androidx.test:runner:1.5.2'
+    testImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    testImplementation 'androidx.test.ext:junit:1.1.5'
+    testImplementation 'androidx.test:rules:1.5.0'
+    testImplementation 'org.mockito:mockito-core:5.3.1'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+    
+    // Android instrumentation testing
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+    androidTestImplementation 'org.mockito:mockito-android:5.3.1'
+    androidTestImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-web:3.5.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-intents:3.5.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-contrib:3.5.1'
+    androidTestImplementation 'androidx.fragment:fragment-testing:1.6.2'
+    
+    // Additional testing utilities
+    androidTestImplementation 'com.squareup.retrofit2:retrofit-mock:2.9.0'
+    androidTestImplementation 'org.awaitility:awaitility:4.2.0'
+    androidTestImplementation 'com.google.code.gson:gson:2.8.9'
+}
+
+// Jacoco coverage for integration tests
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
+}
+
+task jacocoIntegrationTestReport(type: JacocoReport, dependsOn: ['connectedCheck']) {
+    group = "reporting"
+    description = "Generate Jacoco code coverage report for integration tests"
+    
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+    
+    def fileFilter = [
+        '**/*Test*.*',
+        '**/AutoValue_*.*',
+        '**/*JavascriptBridge.class',
+        '**/R.class',
+        '**/R$*.class',
+        '**/Manifest*.*',
+        'android/**/*.*',
+        '**/BuildConfig.*',
+        '**/*$ViewBinder*.*',
+        '**/*$ViewInjector*.*',
+        '**/Lambda$*.class',
+        '**/Lambda.class',
+        '**/*Lambda.class',
+        '**/*Lambda*.class',
+        '**/*$InjectAdapter.class',
+        '**/*$ModuleAdapter.class',
+        '**/*$ViewInjector*.class',
+    ]
+    
+    def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
+    def mainSrc = "${project.projectDir}/src/main/java"
+    
+    sourceDirectories.from = files([mainSrc])
+    classDirectories.from = files([debugTree])
+    executionData.from = fileTree(dir: "$buildDir", include: "outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
+} 
