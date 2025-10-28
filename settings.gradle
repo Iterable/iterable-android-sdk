@@ -1,1 +1,1 @@
-include ':app', ':iterableapi', ':iterableapi-ui'
+include ':iterableapi', ':iterableapi-ui', ':app', ':integration-tests'

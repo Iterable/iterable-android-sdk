@@ -70,3 +70,6 @@ release.properties
 jacoco.exec
 # VSCode settings
 .vscode/
+
+IDE
+integration-tests/.idea/
