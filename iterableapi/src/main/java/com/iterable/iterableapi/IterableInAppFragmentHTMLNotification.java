@@ -52,9 +52,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private static final int DELAY_THRESHOLD_MS = 500;
 
-    @Nullable static IterableInAppFragmentHTMLNotification notification;
-    @Nullable static IterableHelper.IterableUrlCallback clickCallback;
-    @Nullable static IterableInAppLocation location;
+    @Nullable
+    static IterableInAppFragmentHTMLNotification notification;
+    @Nullable
+    static IterableHelper.IterableUrlCallback clickCallback;
+    @Nullable
+    static IterableInAppLocation location;
 
     private IterableWebView webView;
     private boolean loaded;
@@ -62,7 +65,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private boolean callbackOnCancel = false;
     private String htmlString;
     private String messageId;
-    
+
     // Resize debouncing fields
     private Handler resizeHandler = new Handler();
     private Runnable pendingResizeRunnable;
@@ -99,6 +102,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     /**
      * Returns the notification instance currently being shown
+     *
      * @return notification instance
      */
     public static IterableInAppFragmentHTMLNotification getInstance() {
@@ -115,33 +119,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         insetPadding = new Rect();
         this.setStyle(DialogFragment.STYLE_NO_FRAME, androidx.appcompat.R.style.Theme_AppCompat_NoActionBar);
     }
-    
+
     @Override
     public void onStart() {
         super.onStart();
-        
+
         // Set dialog positioning after the dialog is created and shown
         Dialog dialog = getDialog();
         if (dialog != null) {
-            Window window = dialog.getWindow();
-            if (window != null) {
-                WindowManager.LayoutParams windowParams = window.getAttributes();
-                int startGravity = getVerticalLocation(insetPadding);
-                
-                if (startGravity == Gravity.CENTER_VERTICAL) {
-                    windowParams.gravity = Gravity.CENTER;
-                    IterableLogger.d(TAG, "Set dialog gravity to CENTER in onStart");
-                } else if (startGravity == Gravity.TOP) {
-                    windowParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-                    IterableLogger.d(TAG, "Set dialog gravity to TOP in onStart");
-                } else if (startGravity == Gravity.BOTTOM) {
-                    windowParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-                    IterableLogger.d(TAG, "Set dialog gravity to BOTTOM in onStart");
-                }
-                
-                window.setAttributes(windowParams);
-                IterableLogger.d(TAG, "Applied window gravity in onStart: " + windowParams.gravity);
-            }
+            applyWindowGravity(dialog.getWindow(), "onStart");
         }
     }
 
@@ -183,25 +169,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        
+
         // Set window gravity for the dialog
-        Window window = dialog.getWindow();
-        WindowManager.LayoutParams windowParams = window.getAttributes();
-        int dialogGravity = getVerticalLocation(insetPadding);
-        
-        if (dialogGravity == Gravity.CENTER_VERTICAL) {
-            windowParams.gravity = Gravity.CENTER;
-            IterableLogger.d(TAG, "Set dialog gravity to CENTER in onCreateDialog");
-        } else if (dialogGravity == Gravity.TOP) {
-            windowParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-            IterableLogger.d(TAG, "Set dialog gravity to TOP in onCreateDialog");
-        } else if (dialogGravity == Gravity.BOTTOM) {
-            windowParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-            IterableLogger.d(TAG, "Set dialog gravity to BOTTOM in onCreateDialog");
-        }
-        
-        window.setAttributes(windowParams);
-        
+        applyWindowGravity(dialog.getWindow(), "onCreateDialog");
+
         if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
@@ -220,37 +191,22 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
-        
+
         // Set initial window gravity based on inset padding
-        Window window = getDialog().getWindow();
-        WindowManager.LayoutParams windowParams = window.getAttributes();
-        int windowGravity = getVerticalLocation(insetPadding);
-        
-        if (windowGravity == Gravity.CENTER_VERTICAL) {
-            windowParams.gravity = Gravity.CENTER;
-            IterableLogger.d(TAG, "Set initial CENTER window gravity in onCreateView");
-        } else if (windowGravity == Gravity.TOP) {
-            windowParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-            IterableLogger.d(TAG, "Set initial TOP window gravity in onCreateView");
-        } else if (windowGravity == Gravity.BOTTOM) {
-            windowParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-            IterableLogger.d(TAG, "Set initial BOTTOM window gravity in onCreateView");
-        }
-        
-        window.setAttributes(windowParams);
+        applyWindowGravity(getDialog().getWindow(), "onCreateView");
 
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
-        
+
         // Debug the HTML content
         IterableLogger.d(TAG, "HTML content preview: " + (htmlString.length() > 200 ? htmlString.substring(0, 200) + "..." : htmlString));
-        
+
         webView.createWithHtml(this, htmlString);
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
                 private int lastOrientation = -1;
-                
+
                 // Resize the webView on device rotation
                 public void onOrientationChanged(int orientation) {
                     if (loaded && webView != null) {
@@ -258,7 +214,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         int currentOrientation = ((orientation + 45) / 90) * 90;
                         if (currentOrientation != lastOrientation && lastOrientation != -1) {
                             lastOrientation = currentOrientation;
-                            
+
                             // Use longer delay for orientation changes to allow layout to stabilize
                             final Handler handler = new Handler();
                             handler.postDelayed(new Runnable() {
@@ -280,19 +236,19 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         // Create a FrameLayout as the main container for better positioning control
         FrameLayout frameLayout = new FrameLayout(this.getContext());
-        
+
         // Create a RelativeLayout as a wrapper for the WebView
         RelativeLayout webViewContainer = new RelativeLayout(this.getContext());
-        
+
         int gravity = getVerticalLocation(insetPadding);
         IterableLogger.d(TAG, "Initial setup - gravity: " + gravity + " for inset padding: " + insetPadding);
-        
+
         // Set FrameLayout gravity based on positioning
         FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT, 
+            FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
         );
-        
+
         if (gravity == Gravity.CENTER_VERTICAL) {
             containerParams.gravity = Gravity.CENTER;
             IterableLogger.d(TAG, "Applied CENTER gravity to container");
@@ -303,20 +259,20 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             containerParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
             IterableLogger.d(TAG, "Applied BOTTOM gravity to container");
         }
-        
+
         // Add WebView to the RelativeLayout container with WRAP_CONTENT for proper sizing
         RelativeLayout.LayoutParams webViewParams = new RelativeLayout.LayoutParams(
-            RelativeLayout.LayoutParams.WRAP_CONTENT, 
+            RelativeLayout.LayoutParams.WRAP_CONTENT,
             RelativeLayout.LayoutParams.WRAP_CONTENT
         );
         webViewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
         webViewContainer.addView(webView, webViewParams);
-        
+
         IterableLogger.d(TAG, "Added WebView with WRAP_CONTENT and CENTER_IN_PARENT rule");
-        
+
         // Add the container to the FrameLayout
         frameLayout.addView(webViewContainer, containerParams);
-        
+
         IterableLogger.d(TAG, "Created FrameLayout with positioned RelativeLayout container");
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
@@ -519,7 +475,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
             try {
                 Animation anim = AnimationUtils.loadAnimation(getContext(),
-                        animationResource);
+                    animationResource);
                 anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
                 webView.startAnimation(anim);
             } catch (Exception e) {
@@ -563,7 +519,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         if (pendingResizeRunnable != null) {
             resizeHandler.removeCallbacks(pendingResizeRunnable);
         }
-        
+
         // Schedule a debounced resize operation
         pendingResizeRunnable = new Runnable() {
             @Override
@@ -571,42 +527,43 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 performResizeWithValidation();
             }
         };
-        
+
         resizeHandler.postDelayed(pendingResizeRunnable, RESIZE_DEBOUNCE_DELAY_MS);
     }
-    
+
     private void performResizeWithValidation() {
         if (webView == null) {
             IterableLogger.w(TAG, "WebView is null, skipping resize");
             return;
         }
-        
+
         float currentHeight = webView.getContentHeight();
-        
+
         // Validate content height
         if (currentHeight <= 0) {
             IterableLogger.w(TAG, "Invalid content height: " + currentHeight + "dp, skipping resize");
             return;
         }
-        
+
         // Check if height has stabilized (avoid unnecessary resizes for same height)
         if (Math.abs(currentHeight - lastContentHeight) < 1.0f) {
             IterableLogger.d(TAG, "Content height unchanged (" + currentHeight + "dp), skipping resize");
             return;
         }
-        
+
         lastContentHeight = currentHeight;
-        
+
         IterableLogger.d(
-                TAG,
-                "💚 Resizing in-app to height: " + currentHeight + "dp"
+            TAG,
+            "💚 Resizing in-app to height: " + currentHeight + "dp"
         );
-        
+
         resize(currentHeight);
     }
 
     /**
      * Resizes the dialog window based upon the size of its webView HTML content
+     *
      * @param height
      */
     public void resize(final float height) {
@@ -621,7 +578,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 try {
                     // Since this is run asynchronously, notification might've been dismissed already
                     if (getContext() == null || notification == null || notification.getDialog() == null ||
-                            notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
+                        notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
                         return;
                     }
 
@@ -654,14 +611,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         float relativeHeight = height * getResources().getDisplayMetrics().density;
                         int newWebViewWidth = getResources().getDisplayMetrics().widthPixels;
                         int newWebViewHeight = (int) relativeHeight;
-                        
+
                         // Set WebView to explicit size
                         RelativeLayout.LayoutParams webViewParams = new RelativeLayout.LayoutParams(newWebViewWidth, newWebViewHeight);
-                        
+
                         // Apply positioning based on gravity
                         int resizeGravity = getVerticalLocation(insetPadding);
                         IterableLogger.d(TAG, "Resizing WebView directly - gravity: " + resizeGravity + " size: " + newWebViewWidth + "x" + newWebViewHeight + "px for inset padding: " + insetPadding);
-                        
+
                         if (resizeGravity == Gravity.CENTER_VERTICAL) {
                             webViewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
                             IterableLogger.d(TAG, "Applied CENTER_IN_PARENT to WebView");
@@ -674,19 +631,19 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                             webViewParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
                             IterableLogger.d(TAG, "Applied BOTTOM alignment to WebView");
                         }
-                        
+
                         // Make dialog full screen to allow proper positioning
                         window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
-                        
+
                         // Apply the new layout params to WebView
                         webView.setLayoutParams(webViewParams);
-                        
+
                         // Force layout updates
                         webView.requestLayout();
                         if (webView.getParent() instanceof ViewGroup) {
                             ((ViewGroup) webView.getParent()).requestLayout();
                         }
-                        
+
                         IterableLogger.d(TAG, "Applied explicit size and positioning to WebView: " + newWebViewWidth + "x" + newWebViewHeight);
                     }
                 } catch (IllegalArgumentException e) {
@@ -698,6 +655,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     /**
      * Returns the vertical position of the dialog for the given padding
+     *
      * @param padding
      * @return
      */
@@ -709,6 +667,32 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             gravity = Gravity.BOTTOM;
         }
         return gravity;
+    }
+
+    /**
+     * Sets the window gravity based on inset padding
+     *
+     * @param window  The dialog window to configure
+     * @param context Debug context string for logging
+     */
+    private void applyWindowGravity(Window window, String context) {
+        if (window == null) {
+            return;
+        }
+
+        WindowManager.LayoutParams windowParams = window.getAttributes();
+        int gravity = getVerticalLocation(insetPadding);
+
+        if (gravity == Gravity.CENTER_VERTICAL) {
+            windowParams.gravity = Gravity.CENTER;
+        } else if (gravity == Gravity.TOP) {
+            windowParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        } else if (gravity == Gravity.BOTTOM) {
+            windowParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        }
+
+        window.setAttributes(windowParams);
+        IterableLogger.d(TAG, "Set window gravity in " + context + ": " + windowParams.gravity);
     }
 
     InAppLayout getInAppLayout(Rect padding) {
