@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".activities.CampaignTriggerTestActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Campaign Trigger Test"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Campaign ID Input -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Campaign ID:"
+            android:layout_marginEnd="8dp"
+            android:layout_gravity="center_vertical" />
+
+        <EditText
+            android:id="@+id/campaignIdEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Enter campaign ID"
+            android:inputType="number"
+            android:text="14332357" />
+
+    </LinearLayout>
+
+    <!-- User Email Input -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Email:"
+            android:layout_marginEnd="8dp"
+            android:layout_gravity="center_vertical" />
+
+        <EditText
+            android:id="@+id/userEmailEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Enter user email"
+            android:inputType="textEmailAddress"
+            android:text="test@abc.com" />
+
+    </LinearLayout>
+
+    <!-- Test Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/testInAppCampaignButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test In-App Campaign Trigger"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/purple_500" />
+
+        <Button
+            android:id="@+id/testPushCampaignButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test Push Campaign Trigger"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/teal_700" />
+
+        <Button
+            android:id="@+id/testCampaignWithDataFieldsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test Campaign with Data Fields"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/purple_700" />
+
+        <Button
+            android:id="@+id/testCustomCampaignButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test Custom Campaign"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/teal_200" />
+
+    </LinearLayout>
+
+    <!-- Log Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Test Log:"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/clearLogButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear Log"
+                android:textSize="12sp"
+                android:minHeight="32dp"
+                android:backgroundTint="@android:color/holo_red_light" />
+
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/black"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/logTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:text="Campaign Trigger Test Log\n" />
+
+        </ScrollView>
+
+    </LinearLayout>
+
+</LinearLayout> 

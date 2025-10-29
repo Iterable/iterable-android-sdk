@@ -1,0 +1,220 @@
+name: In-App Message E2E Tests
+
+on:
+  push:
+    branches: [ InApp-Display-E2E ]
+  pull_request:
+    branches: [ InApp-Display-E2E, master, develop ]
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  inapp-e2e-tests:
+    name: In-App Message E2E Tests
+    runs-on: macos-13   # Intel host → HVF works, emulator boots
+    
+    strategy:
+      matrix:
+        api-level: [34] # MVP testing on most relevant API level only
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
+          
+      - name: Accept Android SDK Licenses
+        run: |
+          echo "Accepting Android SDK licenses..."
+          yes | sdkmanager --licenses || true
+          echo "SDK licenses accepted"
+          
+      - name: Setup Google Services Configuration
+        run: |
+          echo "Setting up Google Services configuration for CI..."
+          # Ensure the google-services.json file exists for the build
+          if [ ! -f "integration-tests/google-services.json" ]; then
+            echo "Creating google-services.json from template..."
+            cp integration-tests/google-services.json.template integration-tests/google-services.json
+          fi
+          echo "Google Services configuration ready"
+          
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Pre-download Gradle and Build (Parallel with Emulator)
+        run: |
+          echo "Pre-downloading Gradle and building while emulator boots..."
+          # Download Gradle wrapper in background
+          ./gradlew --version &
+          # Start building APKs in background  
+          ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon &
+          echo "Build started in background..."
+            
+      - name: Run UI Tests with Emulator (Intel / x86_64)
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          cores: 2
+          ram-size: 3072M
+          heap-size: 576M
+          force-avd-creation: true
+          disable-animations: true
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -no-boot-anim -camera-back none -partition-size 6000
+          pre-emulator-launch-script: |
+            # Clean + start adb after platform-tools exist (avoids tcp:5037 noise)
+            adb kill-server >/dev/null 2>&1 || true
+            adb start-server
+          script: |
+            echo "Emulator is ready! Running tests..."
+            echo "Setting up permissions..."
+            adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
+            adb shell pm grant com.iterable.integration.tests android.permission.INTERNET
+            adb shell pm grant com.iterable.integration.tests android.permission.ACCESS_NETWORK_STATE
+            adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
+            
+            echo "Running In-App Message MVP test..."
+            echo "Debug: Checking if APKs are ready..."
+            ls -la integration-tests/build/outputs/apk/ || echo "APK directory not found"
+            
+            echo "Debug: Verifying API keys are set..."
+            echo "ITERABLE_API_KEY length: ${#ITERABLE_API_KEY}"
+            echo "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
+            echo "ITERABLE_TEST_USER_EMAIL: $ITERABLE_TEST_USER_EMAIL"
+            
+            # Start logcat in background for crash debugging
+            adb logcat > /tmp/test-logcat.log &
+            LOGCAT_PID=$!
+            
+            # Run the specific test with better error handling
+            ./gradlew :integration-tests:connectedDebugAndroidTest \
+              -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
+              --stacktrace --no-daemon || {
+                echo "Test failed! Collecting crash logs..."
+                kill $LOGCAT_PID 2>/dev/null || true
+                echo "=== CRASH LOGS ==="
+                tail -100 /tmp/test-logcat.log
+                echo "=== END CRASH LOGS ==="
+                exit 1
+              }
+            
+            # Stop logcat
+            kill $LOGCAT_PID 2>/dev/null || true
+        env:
+          ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
+          ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
+          ITERABLE_TEST_USER_EMAIL: ${{ secrets.BCIT_ITERABLE_TEST_USER_EMAIL }}
+            
+      # - name: Generate Test Report
+      #   if: always()
+      #   run: |
+      #     echo "Generating E2E test report..."
+      #     ./gradlew :integration-tests:jacocoIntegrationTestReport
+          
+      # - name: Collect Test Logs
+      #   if: always()
+      #   run: |
+      #     echo "Collecting E2E test logs..."
+      #     adb logcat -d > integration-tests/build/e2e-test-logs.txt
+          
+      #     # Also collect specific test logs
+      #     adb logcat -d | grep -E "(InAppMessageIntegrationTest|BaseIntegrationTest|IterableApi)" > integration-tests/build/inapp-specific-logs.txt
+          
+      # - name: Take Screenshots for Debugging
+      #   if: always()
+      #   run: |
+      #     echo "Taking screenshots for debugging..."
+      #     mkdir -p integration-tests/screenshots
+      #     adb shell screencap -p /sdcard/screenshot.png
+      #     adb pull /sdcard/screenshot.png integration-tests/screenshots/final-state-api-${{ matrix.api-level }}.png
+          
+      # - name: Upload Test Results
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: inapp-e2e-test-results-api-${{ matrix.api-level }}
+      #     path: |
+      #       integration-tests/build/reports/
+      #       integration-tests/build/outputs/
+      #       integration-tests/build/e2e-test-logs.txt
+      #       integration-tests/build/inapp-specific-logs.txt
+            
+      # - name: Upload Coverage Report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: inapp-e2e-coverage-api-${{ matrix.api-level }}
+      #     path: integration-tests/build/reports/jacoco/
+          
+      # - name: Upload Screenshots
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: inapp-e2e-screenshots-api-${{ matrix.api-level }}
+      #     path: integration-tests/screenshots/
+          
+      # - name: Cleanup
+      #   if: always()
+      #   run: |
+      #     echo "Test cleanup completed"
+          
+  # test-summary:
+  #   name: Test Summary
+  #   runs-on: ubuntu-latest
+  #   needs: inapp-e2e-tests
+  #   if: always()
+    
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+        
+  #     - name: Download Test Results
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: inapp-e2e-test-results-api-34
+  #         path: test-results/
+          
+  #     - name: Generate Test Summary
+  #       run: |
+  #         echo "## In-App Message E2E Test Results" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Branch**: InApp-Display-E2E" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **API Level Tested**: 34" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Test Method**: testInAppMessageMVP" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Test Type**: E2E Integration Test" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### E2E Test Scenarios" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ User Sign-in Verification" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ In-App Message Trigger" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ Message Display Verification" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ Button Click Interaction" >> $GITHUB_STEP_SUMMARY
+  #         echo "- ✅ Message Dismissal" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Artifacts Available" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Test execution reports" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Code coverage reports" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Debug screenshots" >> $GITHUB_STEP_SUMMARY
+  #         echo "- Detailed test logs" >> $GITHUB_STEP_SUMMARY

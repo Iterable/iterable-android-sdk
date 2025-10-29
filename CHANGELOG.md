@@ -2,7 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [3.6.1]
+### Added
+- Added edge-to-edge support for in-app messages to ensure proper display on devices with notches, cutouts, and system bars. Test your in-app messages on various devices to ensure optimal display.
+
+### Note
+> **⚠️ Important**: The system applies white insets by default, which may contrast with dark-themed apps. Marketers can control the visual appearance using the background overlay option in the Iterable UI to choose appropriate background colors that work well with their app's theme.
 
 ## [3.6.0]
 #### Added
