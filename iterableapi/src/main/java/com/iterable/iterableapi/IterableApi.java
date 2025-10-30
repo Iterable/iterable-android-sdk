@@ -448,12 +448,6 @@ public class IterableApi {
             return;
         }
 
-        // Set validated credentials before sensitive operations
-        // This ensures registerForPush, syncInApp, and syncMessages use only server-validated data
-        _email = email;
-        _userId = userId;
-        _authToken = authToken;
-
         if (config.autoPushRegistration) {
             registerForPush();
         } else if (_setUserSuccessCallbackHandler != null) {
