@@ -558,22 +558,23 @@ public class IterableApi {
             return;
         }
 
-        // Capture credentials BEFORE storing to keychain
+        // Capture credentials BEFORE storing to keychain for completion handler
+        // This ensures completion handler receives the exact values we're storing
         final String storedEmail = _email;
         final String storedUserId = _userId;
         final String storedAuthToken = _authToken;
 
         IterableKeychain iterableKeychain = getKeychain();
         if (iterableKeychain != null) {
-            iterableKeychain.saveEmail(storedEmail);
-            iterableKeychain.saveUserId(storedUserId);
+            iterableKeychain.saveEmail(_email);
+            iterableKeychain.saveUserId(_userId);
             iterableKeychain.saveUserIdUnknown(_userIdUnknown);
-            iterableKeychain.saveAuthToken(storedAuthToken);
+            iterableKeychain.saveAuthToken(_authToken);
         } else {
             IterableLogger.e(TAG, "Shared preference creation failed. ");
         }
 
-        // Invoke completion handler with the exact credentials that were stored
+        // Invoke completion handler with the captured credentials
         if (completionHandler != null) {
             completionHandler.onAuthDataStored(storedEmail, storedUserId, storedAuthToken);
         }
