@@ -427,25 +427,25 @@ public class IterableApi {
      * Completes user login with validated credentials.
      * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
      * with server-validated user data, preventing user-controlled bypass attacks.
-     *
+     * 
      * Security: This method temporarily sets instance fields to validated values, executes sensitive
      * operations, then restores previous values. This prevents timing attacks where keychain data
      * could be modified between validation and usage.
-     *
+     * 
      * @param email Server-validated email (can be null)
-     * @param userId Server-validated userId (can be null)
-     * @param authToken Server-validated authToken (must not be null for sensitive operations)
+     * @param userId Server-validated userId (can be null)  
+     * @param authToken Server-validated authToken (must not be null for sensitive operations when JWT auth is enabled)
      */
     private void completeUserLogin(@Nullable String email, @Nullable String userId, @Nullable String authToken) {
         if (!isInitialized()) {
             return;
         }
 
-        // Only proceed with sensitive operations if we have server-validated authToken
+        // Only enforce authToken requirement when JWT auth is enabled
         // This prevents user-controlled bypass where unvalidated userId/email from keychain
-        // could be used to access another user's data
-        if (authToken == null) {
-            IterableLogger.d(TAG, "Skipping sensitive operations - no validated authToken present");
+        // could be used to access another user's data in JWT auth scenarios
+        if (config.authHandler != null && authToken == null) {
+            IterableLogger.d(TAG, "Skipping sensitive operations - JWT auth enabled but no validated authToken present");
             if (_setUserSuccessCallbackHandler != null) {
                 _setUserSuccessCallbackHandler.onSuccess(new JSONObject());
             }
