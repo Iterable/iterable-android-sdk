@@ -428,10 +428,6 @@ public class IterableApi {
      * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
      * with server-validated user data, preventing user-controlled bypass attacks.
      * 
-     * Security: This method temporarily sets instance fields to validated values, executes sensitive
-     * operations, then restores previous values. This prevents timing attacks where keychain data
-     * could be modified between validation and usage.
-     * 
      * @param email Server-validated email (can be null)
      * @param userId Server-validated userId (can be null)  
      * @param authToken Server-validated authToken (must not be null for sensitive operations when JWT auth is enabled)
@@ -452,32 +448,20 @@ public class IterableApi {
             return;
         }
 
-        // Capture current instance field values to restore after sensitive operations
-        final String previousEmail = _email;
-        final String previousUserId = _userId;
-        final String previousAuthToken = _authToken;
+        // Set validated credentials before sensitive operations
+        // This ensures registerForPush, syncInApp, and syncMessages use only server-validated data
+        _email = email;
+        _userId = userId;
+        _authToken = authToken;
 
-        try {
-            // Atomically set validated credentials before sensitive operations
-            // This ensures registerForPush, syncInApp, and syncMessages use only server-validated data
-            _email = email;
-            _userId = userId;
-            _authToken = authToken;
-
-            if (config.autoPushRegistration) {
-                registerForPush();
-            } else if (_setUserSuccessCallbackHandler != null) {
-                _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
-            }
-
-            getInAppManager().syncInApp();
-            getEmbeddedManager().syncMessages();
-        } finally {
-            // Restore previous values if they were different (shouldn't happen in normal flow, but defensive)
-            _email = previousEmail;
-            _userId = previousUserId;
-            _authToken = previousAuthToken;
+        if (config.autoPushRegistration) {
+            registerForPush();
+        } else if (_setUserSuccessCallbackHandler != null) {
+            _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
+
+        getInAppManager().syncInApp();
+        getEmbeddedManager().syncMessages();
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
