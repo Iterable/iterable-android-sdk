@@ -522,11 +522,6 @@ public class IterableApi {
         completeUserLogin();
     }
 
-    private void storeAuthDataAndCompleteLogin() {
-        storeAuthData();
-        completeUserLogin();
-    }
-
     private void retrieveEmailAndUserId() {
         if (_applicationContext == null) {
             return;
