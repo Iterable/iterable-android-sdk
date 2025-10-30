@@ -427,9 +427,9 @@ public class IterableApi {
      * Completes user login with validated credentials.
      * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
      * with server-validated user data, preventing user-controlled bypass attacks.
-     * 
+     *
      * @param email Server-validated email (can be null)
-     * @param userId Server-validated userId (can be null)  
+     * @param userId Server-validated userId (can be null)
      * @param authToken Server-validated authToken (must not be null for sensitive operations when JWT auth is enabled)
      */
     private void completeUserLogin(@Nullable String email, @Nullable String userId, @Nullable String authToken) {
@@ -540,11 +540,11 @@ public class IterableApi {
 
     /**
      * Stores auth data and optionally invokes completion handler with the stored credentials.
-     * 
+     *
      * Security: When a completion handler is provided, it receives the exact credentials that
      * were stored to keychain, preventing TOCTOU (Time-Of-Check-Time-Of-Use) attacks where
      * keychain data could be modified between storage and usage.
-     * 
+     *
      * @param completionHandler Optional handler invoked after storage with the stored credentials
      */
     private void storeAuthData(AuthDataStorageHandler completionHandler) {
