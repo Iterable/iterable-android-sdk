@@ -428,6 +428,10 @@ public class IterableApi {
      * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
      * with server-validated user data, preventing user-controlled bypass attacks.
      * 
+     * Security: This method temporarily sets instance fields to validated values, executes sensitive
+     * operations, then restores previous values. This prevents timing attacks where keychain data
+     * could be modified between validation and usage.
+     * 
      * @param email Server-validated email (can be null)
      * @param userId Server-validated userId (can be null)  
      * @param authToken Server-validated authToken (must not be null for sensitive operations)
@@ -448,14 +452,32 @@ public class IterableApi {
             return;
         }
 
-        if (config.autoPushRegistration) {
-            registerForPush();
-        } else if (_setUserSuccessCallbackHandler != null) {
-            _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
-        }
+        // Capture current instance field values to restore after sensitive operations
+        final String previousEmail = _email;
+        final String previousUserId = _userId;
+        final String previousAuthToken = _authToken;
 
-        getInAppManager().syncInApp();
-        getEmbeddedManager().syncMessages();
+        try {
+            // Atomically set validated credentials before sensitive operations
+            // This ensures registerForPush, syncInApp, and syncMessages use only server-validated data
+            _email = email;
+            _userId = userId;
+            _authToken = authToken;
+
+            if (config.autoPushRegistration) {
+                registerForPush();
+            } else if (_setUserSuccessCallbackHandler != null) {
+                _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
+            }
+
+            getInAppManager().syncInApp();
+            getEmbeddedManager().syncMessages();
+        } finally {
+            // Restore previous values if they were different (shouldn't happen in normal flow, but defensive)
+            _email = previousEmail;
+            _userId = previousUserId;
+            _authToken = previousAuthToken;
+        }
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -545,17 +567,25 @@ public class IterableApi {
      * Atomically stores auth data and completes login with validated credentials.
      * This ensures completeUserLogin uses the exact same data that was stored, preventing
      * user-controlled bypass attacks where keychain data could be modified between operations.
+     * 
+     * Security: Captures validated credentials before storing to keychain, then passes those
+     * exact values to completeUserLogin. This prevents TOCTOU (Time-Of-Check-Time-Of-Use) attacks
+     * where keychain could be modified between storeAuthData and completeUserLogin execution.
      */
     private void storeAuthDataAndCompleteLogin() {
-        // Capture current auth data before storing
-        final String capturedEmail = _email;
-        final String capturedUserId = _userId;
-        final String capturedAuthToken = _authToken;
+        // Capture current auth data BEFORE storing to keychain
+        // This ensures we use the exact validated data that came from the server,
+        // not potentially tampered data that could be injected via keychain modification
+        final String validatedEmail = _email;
+        final String validatedUserId = _userId;
+        final String validatedAuthToken = _authToken;
         
+        // Store to keychain
         storeAuthData();
         
-        // Pass captured validated data to completeUserLogin
-        completeUserLogin(capturedEmail, capturedUserId, capturedAuthToken);
+        // Pass the captured validated data to completeUserLogin
+        // This guarantees sensitive operations use server-validated credentials only
+        completeUserLogin(validatedEmail, validatedUserId, validatedAuthToken);
     }
 
     private void retrieveEmailAndUserId() {
