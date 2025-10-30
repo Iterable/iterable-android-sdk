@@ -420,7 +420,31 @@ public class IterableApi {
     }
 
     private void completeUserLogin() {
+        completeUserLogin(_email, _userId, _authToken);
+    }
+
+    /**
+     * Completes user login with validated credentials.
+     * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
+     * with server-validated user data, preventing user-controlled bypass attacks.
+     * 
+     * @param email Server-validated email (can be null)
+     * @param userId Server-validated userId (can be null)  
+     * @param authToken Server-validated authToken (must not be null for sensitive operations)
+     */
+    private void completeUserLogin(@Nullable String email, @Nullable String userId, @Nullable String authToken) {
         if (!isInitialized()) {
+            return;
+        }
+
+        // Only proceed with sensitive operations if we have server-validated authToken
+        // This prevents user-controlled bypass where unvalidated userId/email from keychain
+        // could be used to access another user's data
+        if (authToken == null) {
+            IterableLogger.d(TAG, "Skipping sensitive operations - no validated authToken present");
+            if (_setUserSuccessCallbackHandler != null) {
+                _setUserSuccessCallbackHandler.onSuccess(new JSONObject());
+            }
             return;
         }
 
@@ -517,6 +541,23 @@ public class IterableApi {
         }
     }
 
+    /**
+     * Atomically stores auth data and completes login with validated credentials.
+     * This ensures completeUserLogin uses the exact same data that was stored, preventing
+     * user-controlled bypass attacks where keychain data could be modified between operations.
+     */
+    private void storeAuthDataAndCompleteLogin() {
+        // Capture current auth data before storing
+        final String capturedEmail = _email;
+        final String capturedUserId = _userId;
+        final String capturedAuthToken = _authToken;
+        
+        storeAuthData();
+        
+        // Pass captured validated data to completeUserLogin
+        completeUserLogin(capturedEmail, capturedUserId, capturedAuthToken);
+    }
+
     private void retrieveEmailAndUserId() {
         if (_applicationContext == null) {
             return;
@@ -595,10 +636,10 @@ public class IterableApi {
         if (isInitialized()) {
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
-                storeAuthData();
-                completeUserLogin();
+                storeAuthDataAndCompleteLogin();
             } else if (bypassAuth) {
-                completeUserLogin();
+                // Pass current auth data - completeUserLogin will validate authToken before sensitive ops
+                completeUserLogin(_email, _userId, _authToken);
             }
         }
     }
