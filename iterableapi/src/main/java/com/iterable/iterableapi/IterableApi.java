@@ -454,6 +454,10 @@ public class IterableApi {
             _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
 
+        _email = email;
+        _userId = userId;
+        _authToken = authToken;
+
         getInAppManager().syncInApp();
         getEmbeddedManager().syncMessages();
     }
