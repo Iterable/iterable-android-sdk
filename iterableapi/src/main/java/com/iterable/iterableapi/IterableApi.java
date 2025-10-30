@@ -448,15 +448,15 @@ public class IterableApi {
             return;
         }
 
+        _email = email;
+        _userId = userId;
+        _authToken = authToken;
+
         if (config.autoPushRegistration) {
             registerForPush();
         } else if (_setUserSuccessCallbackHandler != null) {
             _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
-
-        _email = email;
-        _userId = userId;
-        _authToken = authToken;
 
         getInAppManager().syncInApp();
         getEmbeddedManager().syncMessages();
