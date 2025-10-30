@@ -517,11 +517,6 @@ public class IterableApi {
         }
     }
 
-    private void storeAuthDataAndCompleteLogin() {
-        storeAuthData();
-        completeUserLogin();
-    }
-
     private void retrieveEmailAndUserId() {
         if (_applicationContext == null) {
             return;
@@ -600,7 +595,8 @@ public class IterableApi {
         if (isInitialized()) {
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
-                storeAuthDataAndCompleteLogin();
+                storeAuthData();
+                completeUserLogin();
             } else if (bypassAuth) {
                 completeUserLogin();
             }
