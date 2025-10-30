@@ -198,9 +198,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
 
-        // Debug the HTML content
-        IterableLogger.d(TAG, "HTML content preview: " + (htmlString.length() > 200 ? htmlString.substring(0, 200) + "..." : htmlString));
-
         webView.createWithHtml(this, htmlString);
 
         if (orientationListener == null) {
@@ -241,7 +238,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         RelativeLayout webViewContainer = new RelativeLayout(this.getContext());
 
         int gravity = getVerticalLocation(insetPadding);
-        IterableLogger.d(TAG, "Initial setup - gravity: " + gravity + " for inset padding: " + insetPadding);
 
         // Set FrameLayout gravity based on positioning
         FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
@@ -251,13 +247,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         if (gravity == Gravity.CENTER_VERTICAL) {
             containerParams.gravity = Gravity.CENTER;
-            IterableLogger.d(TAG, "Applied CENTER gravity to container");
         } else if (gravity == Gravity.TOP) {
             containerParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-            IterableLogger.d(TAG, "Applied TOP gravity to container");
         } else if (gravity == Gravity.BOTTOM) {
             containerParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-            IterableLogger.d(TAG, "Applied BOTTOM gravity to container");
         }
 
         // Add WebView to the RelativeLayout container with WRAP_CONTENT for proper sizing
@@ -268,12 +261,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         webViewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
         webViewContainer.addView(webView, webViewParams);
 
-        IterableLogger.d(TAG, "Added WebView with WRAP_CONTENT and CENTER_IN_PARENT rule");
-
         // Add the container to the FrameLayout
         frameLayout.addView(webViewContainer, containerParams);
-
-        IterableLogger.d(TAG, "Created FrameLayout with positioned RelativeLayout container");
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
