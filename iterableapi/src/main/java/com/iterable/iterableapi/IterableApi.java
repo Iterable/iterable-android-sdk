@@ -427,13 +427,13 @@ public class IterableApi {
      * Completes user login with validated credentials.
      * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
      * with server-validated user data, preventing user-controlled bypass attacks.
-     * 
+     *
      * Security: This method temporarily sets instance fields to validated values, executes sensitive
      * operations, then restores previous values. This prevents timing attacks where keychain data
      * could be modified between validation and usage.
-     * 
+     *
      * @param email Server-validated email (can be null)
-     * @param userId Server-validated userId (can be null)  
+     * @param userId Server-validated userId (can be null)
      * @param authToken Server-validated authToken (must not be null for sensitive operations)
      */
     private void completeUserLogin(@Nullable String email, @Nullable String userId, @Nullable String authToken) {
@@ -567,7 +567,7 @@ public class IterableApi {
      * Atomically stores auth data and completes login with validated credentials.
      * This ensures completeUserLogin uses the exact same data that was stored, preventing
      * user-controlled bypass attacks where keychain data could be modified between operations.
-     * 
+     *
      * Security: Captures validated credentials before storing to keychain, then passes those
      * exact values to completeUserLogin. This prevents TOCTOU (Time-Of-Check-Time-Of-Use) attacks
      * where keychain could be modified between storeAuthData and completeUserLogin execution.
@@ -579,10 +579,10 @@ public class IterableApi {
         final String validatedEmail = _email;
         final String validatedUserId = _userId;
         final String validatedAuthToken = _authToken;
-        
+
         // Store to keychain
         storeAuthData();
-        
+
         // Pass the captured validated data to completeUserLogin
         // This guarantees sensitive operations use server-validated credentials only
         completeUserLogin(validatedEmail, validatedUserId, validatedAuthToken);
