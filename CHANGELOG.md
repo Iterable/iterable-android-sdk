@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.6.2]
+### Added
+- Added background initialization support to prevent ANRs during app startup. Use `IterableApi.initializeInBackground()` instead of `initialize()` to run initialization on a background thread while automatically queuing API calls until ready. See README for implementation details.
+- Added `IterableApi.onSDKInitialized()` callback method to subscribe to initialization completion from multiple places in your app.
+- Added `setWebViewBaseUrl()` configuration option to `IterableConfig` to support CORS for self-hosted custom fonts and external resources in WebView-based messages (in-app, inbox, embedded messages).
+
 ## [3.6.1]
 ### Added
 - Added edge-to-edge support for in-app messages to ensure proper display on devices with notches, cutouts, and system bars. Test your in-app messages on various devices to ensure optimal display.
