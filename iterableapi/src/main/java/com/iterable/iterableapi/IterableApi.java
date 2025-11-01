@@ -420,9 +420,37 @@ public class IterableApi {
     }
 
     private void completeUserLogin() {
+        completeUserLogin(_email, _userId, _authToken);
+    }
+
+    /**
+     * Completes user login with validated credentials.
+     * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
+     * with server-validated user data, preventing user-controlled bypass attacks.
+     *
+     * @param email Server-validated email (can be null)
+     * @param userId Server-validated userId (can be null)
+     * @param authToken Server-validated authToken (must not be null for sensitive operations when JWT auth is enabled)
+     */
+    private void completeUserLogin(@Nullable String email, @Nullable String userId, @Nullable String authToken) {
         if (!isInitialized()) {
             return;
         }
+
+        // Only enforce authToken requirement when JWT auth is enabled
+        // This prevents user-controlled bypass where unvalidated userId/email from keychain
+        // could be used to access another user's data in JWT auth scenarios
+        if (config.authHandler != null && authToken == null) {
+            IterableLogger.d(TAG, "Skipping sensitive operations - JWT auth enabled but no validated authToken present");
+            if (_setUserSuccessCallbackHandler != null) {
+                _setUserSuccessCallbackHandler.onSuccess(new JSONObject());
+            }
+            return;
+        }
+
+        _email = email;
+        _userId = userId;
+        _authToken = authToken;
 
         if (config.autoPushRegistration) {
             registerForPush();
@@ -502,10 +530,38 @@ public class IterableApi {
         return _deviceId;
     }
 
+    /**
+     * Completion handler interface for storeAuthData operations.
+     * Receives the exact credentials that were stored to keychain.
+     */
+    private interface AuthDataStorageHandler {
+        void onAuthDataStored(String email, String userId, String authToken);
+    }
+
     private void storeAuthData() {
+        storeAuthData(null);
+    }
+
+    /**
+     * Stores auth data and optionally invokes completion handler with the stored credentials.
+     *
+     * Security: When a completion handler is provided, it receives the exact credentials that
+     * were stored to keychain, preventing TOCTOU (Time-Of-Check-Time-Of-Use) attacks where
+     * keychain data could be modified between storage and usage.
+     *
+     * @param completionHandler Optional handler invoked after storage with the stored credentials
+     */
+    private void storeAuthData(AuthDataStorageHandler completionHandler) {
         if (_applicationContext == null) {
             return;
         }
+
+        // Capture credentials BEFORE storing to keychain for completion handler
+        // This ensures completion handler receives the exact values we're storing
+        final String storedEmail = _email;
+        final String storedUserId = _userId;
+        final String storedAuthToken = _authToken;
+
         IterableKeychain iterableKeychain = getKeychain();
         if (iterableKeychain != null) {
             iterableKeychain.saveEmail(_email);
@@ -514,6 +570,11 @@ public class IterableApi {
             iterableKeychain.saveAuthToken(_authToken);
         } else {
             IterableLogger.e(TAG, "Shared preference creation failed. ");
+        }
+
+        // Invoke completion handler with the captured credentials
+        if (completionHandler != null) {
+            completionHandler.onAuthDataStored(storedEmail, storedUserId, storedAuthToken);
         }
     }
 
@@ -595,10 +656,11 @@ public class IterableApi {
         if (isInitialized()) {
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
-                storeAuthData();
-                completeUserLogin();
+                // Store auth data and use completion handler to pass validated credentials
+                storeAuthData((email, userId, token) -> completeUserLogin(email, userId, token));
             } else if (bypassAuth) {
-                completeUserLogin();
+                // Pass current auth data - completeUserLogin will validate authToken before sensitive ops
+                completeUserLogin(_email, _userId, _authToken);
             }
         }
     }
