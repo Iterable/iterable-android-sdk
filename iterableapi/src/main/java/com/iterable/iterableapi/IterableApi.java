@@ -448,6 +448,10 @@ public class IterableApi {
             return;
         }
 
+        // SECURITY: Update instance fields with validated credentials passed via completion handler.
+        // These parameters come from storeAuthData's completion handler which captured them at
+        // storage time, ensuring we use exactly what was stored and preventing TOCTOU attacks where
+        // keychain data could be tampered between storage and usage.
         _email = email;
         _userId = userId;
         _authToken = authToken;
@@ -545,19 +549,26 @@ public class IterableApi {
     /**
      * Stores auth data and optionally invokes completion handler with the stored credentials.
      *
-     * Security: When a completion handler is provided, it receives the exact credentials that
-     * were stored to keychain, preventing TOCTOU (Time-Of-Check-Time-Of-Use) attacks where
-     * keychain data could be modified between storage and usage.
+     * SECURITY - TOCTOU Protection:
+     * When a completion handler is provided, it receives the exact credentials that were stored
+     * to keychain. This prevents TOCTOU (Time-Of-Check-Time-Of-Use) attacks where:
+     * 1. Credentials are stored to keychain
+     * 2. Attacker modifies keychain (between store and read)
+     * 3. Sensitive operations use tampered credentials
      *
-     * @param completionHandler Optional handler invoked after storage with the stored credentials
+     * By capturing credentials BEFORE storage and passing them directly via completion handler,
+     * we ensure completeUserLogin uses exactly what was stored, not what's currently in keychain.
+     *
+     * @param completionHandler Optional handler invoked synchronously after storage with the stored credentials
      */
     private void storeAuthData(AuthDataStorageHandler completionHandler) {
         if (_applicationContext == null) {
             return;
         }
 
-        // Capture credentials BEFORE storing to keychain for completion handler
-        // This ensures completion handler receives the exact values we're storing
+        // SECURITY: Capture current instance field values BEFORE storing to keychain.
+        // These captured values will be passed to completion handler, ensuring the caller
+        // receives exactly what was stored, not potentially modified keychain data.
         final String storedEmail = _email;
         final String storedUserId = _userId;
         final String storedAuthToken = _authToken;
@@ -656,10 +667,13 @@ public class IterableApi {
         if (isInitialized()) {
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
-                // Store auth data and use completion handler to pass validated credentials
+                // SECURITY: Use completion handler to atomically store and pass validated credentials.
+                // The completion handler receives exact values stored to keychain, preventing TOCTOU
+                // attacks where keychain could be modified between storage and completeUserLogin execution.
                 storeAuthData((email, userId, token) -> completeUserLogin(email, userId, token));
             } else if (bypassAuth) {
-                // Pass current auth data - completeUserLogin will validate authToken before sensitive ops
+                // SECURITY: Pass current credentials directly to completeUserLogin.
+                // completeUserLogin will validate authToken presence when JWT auth is enabled.
                 completeUserLogin(_email, _userId, _authToken);
             }
         }
