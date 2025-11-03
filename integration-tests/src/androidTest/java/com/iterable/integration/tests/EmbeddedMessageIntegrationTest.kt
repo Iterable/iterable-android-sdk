@@ -35,7 +35,6 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
     
     private lateinit var uiDevice: UiDevice
     private lateinit var mainActivityScenario: ActivityScenario<MainActivity>
-    private lateinit var embeddedActivityScenario: ActivityScenario<EmbeddedMessageTestActivity>
     
     @Before
     override fun setUp() {
@@ -111,8 +110,6 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
     
     @Test
     fun testEmbeddedMessageMVP() {
-        Log.d(TAG, "🚀 Starting MVP embedded message test")
-        
         // Step 1: Ensure user is signed in
         Log.d(TAG, "📧 Step 1: Ensuring user is signed in...")
         val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
@@ -147,14 +144,14 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         
         // Step 4: Wait 5 seconds for backend to process and make user eligible
         Log.d(TAG, "⏳ Step 4: Waiting 5 seconds for backend to process user update...")
-        Thread.sleep(5000)
+        Thread.sleep(3000)
         
         // Step 5: Manually sync embedded messages
         Log.d(TAG, "🔄 Step 5: Syncing embedded messages...")
         IterableApi.getInstance().embeddedManager.syncMessages()
         
         // Wait for sync to complete
-        Thread.sleep(3000)
+        Thread.sleep(2000)
         
         // Step 6: Get placement IDs and verify expected placement ID exists
         Log.d(TAG, "🔍 Step 6: Getting placement IDs...")
@@ -170,7 +167,6 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         // Step 7: Get messages for the placement ID
         Log.d(TAG, "📨 Step 7: Getting messages for placement ID $TEST_PLACEMENT_ID...")
         val messages = IterableApi.getInstance().embeddedManager.getMessages(TEST_PLACEMENT_ID)
-        Assert.assertNotNull("Messages should not be null", messages)
         Assert.assertTrue("Should have at least 1 message for placement $TEST_PLACEMENT_ID", messages!!.isNotEmpty())
         
         val message = messages.first()
@@ -196,7 +192,7 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         }
         
         // Wait for fragment to be displayed
-        Thread.sleep(2000)
+        Thread.sleep(1000)
         
         // Step 9: Verify display - check fragment exists
         Log.d(TAG, "✅ Step 9: Verifying embedded message is displayed...")
@@ -228,49 +224,32 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         // Step 10: Interact with button - find and click first button
         Log.d(TAG, "🎯 Step 10: Clicking button in the embedded message...")
         
-        // Try to find button by resource ID or text
-        var buttonClicked = false
-        var attempts = 0
-        val maxAttempts = 5
+        // Try to find button by resource ID first
+        val button = uiDevice.findObject(UiSelector().resourceId("com.iterable.iterableapi.ui:id/embedded_message_first_button"))
         
-        while (!buttonClicked && attempts < maxAttempts) {
-            attempts++
-            Log.d(TAG, "Attempt $attempts: Looking for button...")
-            
-            // Try to find button by resource ID
-            val button = uiDevice.findObject(UiSelector().resourceId("com.iterable.iterableapi.ui:id/embedded_message_first_button"))
-            
-            if (button.exists()) {
-                button.click()
-                buttonClicked = true
-                Log.d(TAG, "✅ Clicked embedded message button")
-            } else {
-                // Try to find by button text if available
-                val buttonText = message.elements?.buttons?.firstOrNull()?.title
-                if (buttonText != null) {
-                    val buttonByText = uiDevice.findObject(By.text(buttonText))
-                    if (buttonByText != null) {
-                        buttonByText.click()
-                        buttonClicked = true
-                        Log.d(TAG, "✅ Clicked embedded message button by text: $buttonText")
-                    }
+        if (button.exists()) {
+            button.click()
+            Log.d(TAG, "✅ Clicked embedded message button")
+        } else {
+            // Try to find by button text if available
+            val buttonText = message.elements?.buttons?.firstOrNull()?.title
+            if (buttonText != null) {
+                val buttonByText = uiDevice.findObject(By.text(buttonText))
+                if (buttonByText != null) {
+                    buttonByText.click()
+                    Log.d(TAG, "✅ Clicked embedded message button by text: $buttonText")
+                } else {
+                    Assert.fail("Button not found in the embedded message (tried resource ID and text: $buttonText)")
                 }
+            } else {
+                Assert.fail("Button not found in the embedded message (tried resource ID, but no button text available)")
             }
-            
-            if (!buttonClicked) {
-                Log.d(TAG, "Button not found, waiting 1 second before retry...")
-                Thread.sleep(1000)
-            }
-        }
-        
-        if (!buttonClicked) {
-            Assert.fail("Button not found in the embedded message after $maxAttempts attempts")
         }
         
         // Step 11: Verify URL handler was called
         Log.d(TAG, "🎯 Step 11: Verifying URL handler was called after button click...")
         
-        val urlHandlerCalled = waitForUrlHandler(timeoutSeconds = 5)
+        val urlHandlerCalled = waitForUrlHandler(timeoutSeconds = 3)
         Assert.assertTrue(
             "URL handler should have been called after clicking the button",
             urlHandlerCalled
