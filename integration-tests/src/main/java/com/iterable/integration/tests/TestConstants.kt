@@ -15,6 +15,9 @@ object TestConstants {
     const val TEST_PUSH_CAMPAIGN_ID = 14332358
     const val TEST_EMBEDDED_CAMPAIGN_ID = 14332359
     
+    // Test placement IDs
+    const val TEST_EMBEDDED_PLACEMENT_ID = 2157L
+    
     // Test timeouts
     const val TIMEOUT_SECONDS = 5L
     const val POLL_INTERVAL_SECONDS = 1L
