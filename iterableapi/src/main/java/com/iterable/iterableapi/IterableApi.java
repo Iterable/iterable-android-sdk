@@ -441,9 +441,9 @@ public class IterableApi {
         // This prevents user-controlled bypass where unvalidated userId/email from keychain
         // could be used to access another user's data in JWT auth scenarios
         if (config.authHandler != null && authToken == null) {
-            IterableLogger.d(TAG, "Skipping sensitive operations - JWT auth enabled but no validated authToken present");
-            if (_setUserSuccessCallbackHandler != null) {
-                _setUserSuccessCallbackHandler.onSuccess(new JSONObject());
+            IterableLogger.w(TAG, "Cannot complete user login - JWT auth enabled but no validated authToken present");
+            if (_setUserFailureCallbackHandler != null) {
+                _setUserFailureCallbackHandler.onFailure("JWT authentication is enabled but no valid authToken is available", null);
             }
             return;
         }
