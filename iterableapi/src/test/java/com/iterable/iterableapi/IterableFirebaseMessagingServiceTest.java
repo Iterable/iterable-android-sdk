@@ -23,7 +23,6 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -137,7 +136,6 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_embedded_update.json"));
         controller.get().onMessageReceived(builder.build());
-        // syncMessages() may be called multiple times (from handleMessageReceived and from completeUserLogin)
-        verify(embeddedManagerSpy, atLeastOnce()).syncMessages();
+        verify(embeddedManagerSpy).syncMessages();
     }
 }
