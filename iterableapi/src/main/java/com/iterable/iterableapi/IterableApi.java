@@ -448,14 +448,6 @@ public class IterableApi {
             return;
         }
 
-        // SECURITY: Update instance fields with validated credentials passed via completion handler.
-        // These parameters come from storeAuthData's completion handler which captured them at
-        // storage time, ensuring we use exactly what was stored and preventing TOCTOU attacks where
-        // keychain data could be tampered between storage and usage.
-        _email = email;
-        _userId = userId;
-        _authToken = authToken;
-
         if (config.autoPushRegistration) {
             registerForPush();
         } else if (_setUserSuccessCallbackHandler != null) {
