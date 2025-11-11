@@ -447,8 +447,6 @@ public class IterableInAppManagerTest extends BaseTest {
                                 .put("trigger", new JSONObject().put("type", "never"))
                                 .put("messageId", "message1")));
 
-        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
-
         // Create InAppManager with mock displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
@@ -459,6 +457,8 @@ public class IterableInAppManagerTest extends BaseTest {
                 IterableActivityMonitor.getInstance(),
                 mockDisplayer));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
+
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
 
         // Process messages
         inAppManager.syncInApp();
