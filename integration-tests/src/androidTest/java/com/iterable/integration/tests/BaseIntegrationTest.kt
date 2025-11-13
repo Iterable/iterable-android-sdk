@@ -141,6 +141,18 @@ abstract class BaseIntegrationTest {
         testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
     }
 
+    /**
+     * Trigger a push campaign via Iterable API
+     */
+    protected fun triggerPushCampaignViaAPI(
+        campaignId: Int,
+        recipientEmail: String = TestConstants.TEST_USER_EMAIL,
+        dataFields: Map<String, Any>? = null,
+        callback: ((Boolean) -> Unit)? = null
+    ) {
+        testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+    }
+
 
     /**
      * Reset URL handler tracking
