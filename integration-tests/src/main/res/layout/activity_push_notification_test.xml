@@ -21,6 +21,26 @@
             android:layout_gravity="center" />
 
         <TextView
+            android:id="@+id/permission_status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notification Permission: Checking..."
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:background="#E3F2FD"
+            android:layout_marginBottom="8dp" />
+
+        <android.widget.Button
+            android:id="@+id/btnRequestPermission"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Request Notification Permission"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/status_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,6 +48,15 @@
             android:textSize="14sp"
             android:padding="8dp"
             android:background="#F0F0F0"
+            android:layout_marginBottom="16dp" />
+
+        <android.widget.Button
+            android:id="@+id/btnTriggerPushCampaign"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Trigger Push Campaign"
+            android:textSize="16sp"
+            android:padding="16dp"
             android:layout_marginBottom="16dp" />
 
     </LinearLayout>
