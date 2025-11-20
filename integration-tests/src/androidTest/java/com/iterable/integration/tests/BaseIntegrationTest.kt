@@ -278,4 +278,53 @@ abstract class BaseIntegrationTest {
         
         return syncHappened
     }
+
+    /**
+     * Wait for UpdateEmbedded push notification to be processed and embedded messages to sync.
+     * Returns true if messages were synced (either via push or manually), false if timeout.
+     * 
+     * @param initialPlacementIds Initial set of placement IDs before sync
+     * @param expectedPlacementId Optional placement ID to check for (if provided, waits for it to appear)
+     * @param pushTimeoutSeconds Timeout in seconds for waiting for push
+     */
+    protected fun waitForEmbeddedSyncViaPush(
+        initialPlacementIds: Set<Long>,
+        expectedPlacementId: Long? = null,
+        pushTimeoutSeconds: Long = 10
+    ): Boolean {
+        Log.d("BaseIntegrationTest", "Waiting for UpdateEmbedded push to trigger sync (timeout: ${pushTimeoutSeconds}s)...")
+        
+        // Wait for either:
+        // 1. Embedded push was processed (indicates UpdateEmbedded push arrived)
+        // 2. Placement IDs changed (indicates sync happened)
+        // 3. Expected placement ID appeared (if provided)
+        val pushProcessed = waitForCondition({
+            val currentPlacementIds = IterableApi.getInstance().embeddedManager.getPlacementIds().toSet()
+            val placementIdsChanged = currentPlacementIds != initialPlacementIds
+            val expectedPlacementFound = expectedPlacementId?.let { currentPlacementIds.contains(it) } ?: false
+            
+            testUtils.isEmbeddedPushProcessed() || placementIdsChanged || expectedPlacementFound
+        }, pushTimeoutSeconds)
+        
+        if (pushProcessed) {
+            Log.d("BaseIntegrationTest", "UpdateEmbedded push processed or sync detected")
+            // Give a bit more time for sync to complete if push was just processed
+            Thread.sleep(2000)
+        } else {
+            Log.d("BaseIntegrationTest", "UpdateEmbedded push not received within timeout")
+        }
+        
+        // Check if messages were synced
+        val currentPlacementIds = IterableApi.getInstance().embeddedManager.getPlacementIds().toSet()
+        val syncHappened = currentPlacementIds != initialPlacementIds || 
+                          (expectedPlacementId != null && currentPlacementIds.contains(expectedPlacementId))
+        
+        if (syncHappened) {
+            Log.d("BaseIntegrationTest", "✅ Embedded messages synced via push (placement IDs: $currentPlacementIds)")
+        } else {
+            Log.d("BaseIntegrationTest", "⚠️ Embedded messages not synced yet (placement IDs: $currentPlacementIds)")
+        }
+        
+        return syncHappened
+    }
 } 
