@@ -80,6 +80,10 @@ class IntegrationTestUtils(private val context: Context) {
     fun setSilentPushProcessed(processed: Boolean) {
         silentPushProcessed.set(processed)
     }
+    
+    fun isSilentPushProcessed(): Boolean {
+        return silentPushProcessed.get()
+    }
 
     fun setInAppMessageDisplayed(displayed: Boolean) {
         inAppMessageDisplayed.set(displayed)
