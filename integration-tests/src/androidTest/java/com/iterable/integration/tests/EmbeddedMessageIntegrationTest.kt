@@ -134,46 +134,79 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         }
         Assert.assertTrue("FragmentContainerView should exist in EmbeddedMessageTestActivity", viewReady)
         
-        // Step 3: Update user properties to make user eligible
-        Log.d(TAG, "📝 Step 3: Updating user properties (isPremium = true)...")
+        // Step 3: Get initial placement IDs before updating user properties
+        val initialPlacementIds = IterableApi.getInstance().embeddedManager.getPlacementIds().toSet()
+        Log.d(TAG, "📊 Initial placement IDs: $initialPlacementIds")
+        
+        // Reset embedded push tracking to detect UpdateEmbedded push
+        testUtils.setEmbeddedPushProcessed(false)
+        
+        // Step 4: Update user properties to make user eligible
+        Log.d(TAG, "📝 Step 4: Updating user properties (isPremium = true)...")
         val dataFields = JSONObject().apply {
             put("isPremium", true)
         }
         IterableApi.getInstance().updateUser(dataFields)
         Log.d(TAG, "✅ User properties updated")
         
-        // Step 4: Wait 5 seconds for backend to process and make user eligible
-        Log.d(TAG, "⏳ Step 4: Waiting 5 seconds for backend to process user update...")
+        // Step 5: Wait for backend to process and make user eligible
+        Log.d(TAG, "⏳ Step 5: Waiting for backend to process user update...")
         Thread.sleep(3000)
         
-        // Step 5: Manually sync embedded messages
-        Log.d(TAG, "🔄 Step 5: Syncing embedded messages...")
-        IterableApi.getInstance().embeddedManager.syncMessages()
+        // Step 6: Wait for push-triggered sync (primary path)
+        Log.d(TAG, "🔄 Step 6: Waiting for UpdateEmbedded push to trigger automatic sync...")
+        val syncViaPush = waitForEmbeddedSyncViaPush(
+            initialPlacementIds = initialPlacementIds,
+            expectedPlacementId = TEST_PLACEMENT_ID,
+            pushTimeoutSeconds = 10
+        )
         
-        // Wait for sync to complete
-        Thread.sleep(2000)
+        var placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+        var hasExpectedPlacement = placementIds.contains(TEST_PLACEMENT_ID)
         
-        // Step 6: Get placement IDs and verify expected placement ID exists
-        Log.d(TAG, "🔍 Step 6: Getting placement IDs...")
-        val placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+        // Step 6b: Fallback to manual sync if push didn't work
+        if (!syncViaPush || !hasExpectedPlacement) {
+            Log.d(TAG, "⚠️ Push-triggered sync did not complete, falling back to manual sync...")
+            Log.d(TAG, "🔄 Step 6b: Manually syncing embedded messages...")
+            Thread.sleep(2000) // Give a bit more time in case push is still arriving
+            
+            // Check again before manual sync
+            placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+            hasExpectedPlacement = placementIds.contains(TEST_PLACEMENT_ID)
+            
+            if (!hasExpectedPlacement) {
+                IterableApi.getInstance().embeddedManager.syncMessages()
+                Thread.sleep(2000) // Wait for sync to complete
+                placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+                hasExpectedPlacement = placementIds.contains(TEST_PLACEMENT_ID)
+                Log.d(TAG, "🔄 Placement IDs after manual sync: $placementIds")
+            } else {
+                Log.d(TAG, "✅ Messages synced via push (delayed), placement IDs: $placementIds")
+            }
+        } else {
+            Log.d(TAG, "✅ Messages synced via push-triggered automatic sync, placement IDs: $placementIds")
+        }
+        
+        // Step 7: Verify expected placement ID exists
+        Log.d(TAG, "🔍 Step 7: Verifying placement ID exists...")
         Log.d(TAG, "📋 Found placement IDs: $placementIds")
         
         Assert.assertTrue(
             "Placement ID $TEST_PLACEMENT_ID should exist, but found: $placementIds",
-            placementIds.contains(TEST_PLACEMENT_ID)
+            hasExpectedPlacement
         )
         Log.d(TAG, "✅ Placement ID $TEST_PLACEMENT_ID found")
         
-        // Step 7: Get messages for the placement ID
-        Log.d(TAG, "📨 Step 7: Getting messages for placement ID $TEST_PLACEMENT_ID...")
+        // Step 8: Get messages for the placement ID
+        Log.d(TAG, "📨 Step 8: Getting messages for placement ID $TEST_PLACEMENT_ID...")
         val messages = IterableApi.getInstance().embeddedManager.getMessages(TEST_PLACEMENT_ID)
         Assert.assertTrue("Should have at least 1 message for placement $TEST_PLACEMENT_ID", messages!!.isNotEmpty())
         
         val message = messages.first()
         Log.d(TAG, "✅ Found message: ${message.metadata.messageId}")
         
-        // Step 8: Display message using IterableEmbeddedView
-        Log.d(TAG, "🎨 Step 8: Displaying message using IterableEmbeddedView...")
+        // Step 9: Display message using IterableEmbeddedView
+        Log.d(TAG, "🎨 Step 9: Displaying message using IterableEmbeddedView...")
         
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             val activity = ActivityLifecycleMonitorRegistry.getInstance()
@@ -194,8 +227,8 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         // Wait for fragment to be displayed
         Thread.sleep(1000)
         
-        // Step 9: Verify display - check fragment exists
-        Log.d(TAG, "✅ Step 9: Verifying embedded message is displayed...")
+        // Step 10: Verify display - check fragment exists
+        Log.d(TAG, "✅ Step 10: Verifying embedded message is displayed...")
         var isEmbeddedFragmentDisplayed = false
         
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
@@ -221,8 +254,8 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         
         Log.d(TAG, "✅ Embedded message is displayed, now interacting with button...")
         
-        // Step 10: Interact with button - find and click first button
-        Log.d(TAG, "🎯 Step 10: Clicking button in the embedded message...")
+        // Step 11: Interact with button - find and click first button
+        Log.d(TAG, "🎯 Step 11: Clicking button in the embedded message...")
         
         // Try to find button by resource ID first
         val button = uiDevice.findObject(UiSelector().resourceId("com.iterable.iterableapi.ui:id/embedded_message_first_button"))
@@ -246,8 +279,8 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
             }
         }
         
-        // Step 11: Verify URL handler was called
-        Log.d(TAG, "🎯 Step 11: Verifying URL handler was called after button click...")
+        // Step 12: Verify URL handler was called
+        Log.d(TAG, "🎯 Step 12: Verifying URL handler was called after button click...")
         
         val urlHandlerCalled = waitForUrlHandler(timeoutSeconds = 3)
         Assert.assertTrue(
@@ -255,7 +288,7 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
             urlHandlerCalled
         )
         
-        // Step 12: Verify the correct URL was handled
+        // Step 13: Verify the correct URL was handled
         val handledUrl = getLastHandledUrl()
         Log.d(TAG, "🎯 URL handler received: $handledUrl")
         

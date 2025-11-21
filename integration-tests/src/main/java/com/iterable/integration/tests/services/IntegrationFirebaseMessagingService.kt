@@ -37,14 +37,19 @@ class IntegrationFirebaseMessagingService : FirebaseMessagingService() {
         val isIterableMessage = IterableFirebaseMessagingService.handleMessageReceived(this, remoteMessage)
         
         if (isIterableMessage) {
-            // Check if this is an InAppUpdate push notification
+            // Check the notification type
             val notificationType = remoteMessage.data["notificationType"]
             val isInAppUpdate = notificationType == "InAppUpdate"
+            val isUpdateEmbedded = notificationType == "UpdateEmbedded"
             
             if (isInAppUpdate) {
                 Log.d(TAG, "Received InAppUpdate push notification - SDK automatically synced in-app messages")
                 // Track that InAppUpdate push was received and processed
                 IntegrationTestUtils(this).setSilentPushProcessed(true)
+            } else if (isUpdateEmbedded) {
+                Log.d(TAG, "Received UpdateEmbedded push notification - SDK automatically synced embedded messages")
+                // Track that UpdateEmbedded push was received and processed
+                IntegrationTestUtils(this).setEmbeddedPushProcessed(true)
             } else {
                 // Check if this is a silent push for in-app messages (legacy check)
                 val isSilent = remoteMessage.data["silent"] == "true"
