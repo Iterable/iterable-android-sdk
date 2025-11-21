@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.iterableapi.IterableFirebaseMessagingService
 
 class IntegrationFirebaseMessagingService : FirebaseMessagingService() {
     
@@ -44,10 +45,8 @@ class IntegrationFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Received regular push notification")
             // Regular push notification - Iterable SDK will handle display
             IntegrationTestUtils(this).setPushNotificationReceived(true)
+            IterableFirebaseMessagingService.handleMessageReceived(this, remoteMessage)
         }
-        
-        // Let the Iterable SDK handle the message
-        // The SDK will automatically process the message and display notifications
     }
     
     override fun onMessageSent(msgId: String) {

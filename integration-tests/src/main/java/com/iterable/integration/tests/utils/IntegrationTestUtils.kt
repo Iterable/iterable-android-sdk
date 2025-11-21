@@ -143,7 +143,7 @@ class IntegrationTestUtils(private val context: Context) {
                 // Store error message for UI display
                 lastErrorMessage = "HTTP ${response.code}: $errorBody"
             }
-                
+                //TODO: Move callback success inside if(success)
                 callback?.invoke(success)
             } catch (e: Exception) {
                 Log.e(TAG, "Error triggering push campaign via API", e)

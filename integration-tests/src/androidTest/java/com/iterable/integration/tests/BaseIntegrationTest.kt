@@ -33,6 +33,11 @@ abstract class BaseIntegrationTest {
     // URL handler tracking for tests
     private val urlHandlerCalled = AtomicBoolean(false)
     private val lastHandledUrl = AtomicReference<String?>(null)
+    
+    // Custom action handler tracking for tests
+    private val customActionHandlerCalled = AtomicBoolean(false)
+    private val lastHandledAction = AtomicReference<com.iterable.iterableapi.IterableAction?>(null)
+    private val lastHandledActionType = AtomicReference<String?>(null)
 
     @Before
     open fun setUp() {
@@ -41,6 +46,7 @@ abstract class BaseIntegrationTest {
 
         // Reset tracking flags
         resetUrlHandlerTracking()
+        resetCustomActionHandlerTracking()
 
         // Set test mode flag to prevent MainActivity from initializing SDK
         // This ensures our test config (with test handlers) is the one used
@@ -71,17 +77,26 @@ abstract class BaseIntegrationTest {
                 testUtils.setInAppMessageDisplayed(true)
                 com.iterable.iterableapi.IterableInAppHandler.InAppResponse.SHOW
             }
-            .setCustomActionHandler { action, context ->
-                // Handle custom actions during tests
-                Log.d("BaseIntegrationTest", "Custom action triggered: $action")
-                true
-            }
+            .setCustomActionHandler(object : com.iterable.iterableapi.IterableCustomActionHandler {
+                override fun handleIterableCustomAction(
+                    action: com.iterable.iterableapi.IterableAction,
+                    actionContext: com.iterable.iterableapi.IterableActionContext
+                ): Boolean {
+                    // Handle custom actions during tests
+                    val actionType = action.getType()
+                    Log.d("BaseIntegrationTest", "Custom action triggered: type=$actionType, action=$action, source=${actionContext.source}")
+                    customActionHandlerCalled.set(true)
+                    lastHandledAction.set(action)
+                    lastHandledActionType.set(actionType)
+                    return false
+                }
+            })
             .setUrlHandler { url, context ->
                 // Handle URLs during tests
                 Log.d("BaseIntegrationTest", "URL handler triggered: $url")
                 urlHandlerCalled.set(true)
                 lastHandledUrl.set(url.toString())
-                true
+                false
             }
             .build()
 
@@ -107,6 +122,21 @@ abstract class BaseIntegrationTest {
             instrumentation.uiAutomation.executeShellCommand(
                 "pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS"
             )
+        }
+    }
+
+    /**
+     * Check if notification permission is granted
+     */
+    protected fun hasNotificationPermission(): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            // For Android 12 and below, notifications are enabled by default
+            androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
         }
     }
 
@@ -141,6 +171,18 @@ abstract class BaseIntegrationTest {
         testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
     }
 
+    /**
+     * Trigger a push campaign via Iterable API
+     */
+    protected fun triggerPushCampaignViaAPI(
+        campaignId: Int,
+        recipientEmail: String = TestConstants.TEST_USER_EMAIL,
+        dataFields: Map<String, Any>? = null,
+        callback: ((Boolean) -> Unit)? = null
+    ) {
+        testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+    }
+
 
     /**
      * Reset URL handler tracking
@@ -163,6 +205,38 @@ abstract class BaseIntegrationTest {
     protected fun waitForUrlHandler(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
         return waitForCondition({
             urlHandlerCalled.get()
+        }, timeoutSeconds)
+    }
+
+    /**
+     * Reset custom action handler tracking
+     */
+    protected fun resetCustomActionHandlerTracking() {
+        customActionHandlerCalled.set(false)
+        lastHandledAction.set(null)
+        lastHandledActionType.set(null)
+    }
+
+    /**
+     * Get the last action handled by the custom action handler
+     */
+    protected fun getLastHandledAction(): com.iterable.iterableapi.IterableAction? {
+        return lastHandledAction.get()
+    }
+
+    /**
+     * Get the last action type handled by the custom action handler
+     */
+    protected fun getLastHandledActionType(): String? {
+        return lastHandledActionType.get()
+    }
+
+    /**
+     * Wait for custom action handler to be called
+     */
+    protected fun waitForCustomActionHandler(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
+        return waitForCondition({
+            customActionHandlerCalled.get()
         }, timeoutSeconds)
     }
 } 
