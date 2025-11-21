@@ -239,4 +239,43 @@ abstract class BaseIntegrationTest {
             customActionHandlerCalled.get()
         }, timeoutSeconds)
     }
+
+    /**
+     * Wait for InAppUpdate push notification to be processed and in-app messages to sync.
+     * Returns true if messages were synced (either via push or manually), false if timeout.
+     */
+    protected fun waitForInAppSyncViaPush(
+        initialMessageCount: Int,
+        pushTimeoutSeconds: Long = 10
+    ): Boolean {
+        Log.d("BaseIntegrationTest", "Waiting for InAppUpdate push to trigger sync (timeout: ${pushTimeoutSeconds}s)...")
+        
+        // Wait for either:
+        // 1. Silent push was processed (indicates InAppUpdate push arrived)
+        // 2. Message count increased (indicates sync happened)
+        val pushProcessed = waitForCondition({
+            testUtils.isSilentPushProcessed() || 
+            IterableApi.getInstance().inAppManager.messages.count() > initialMessageCount
+        }, pushTimeoutSeconds)
+        
+        if (pushProcessed) {
+            Log.d("BaseIntegrationTest", "InAppUpdate push processed or sync detected")
+            // Give a bit more time for sync to complete if push was just processed
+            Thread.sleep(2000)
+        } else {
+            Log.d("BaseIntegrationTest", "InAppUpdate push not received within timeout")
+        }
+        
+        // Check if messages were synced
+        val currentMessageCount = IterableApi.getInstance().inAppManager.messages.count()
+        val syncHappened = currentMessageCount > initialMessageCount
+        
+        if (syncHappened) {
+            Log.d("BaseIntegrationTest", "✅ In-app messages synced via push (message count: $currentMessageCount)")
+        } else {
+            Log.d("BaseIntegrationTest", "⚠️ In-app messages not synced yet (message count: $currentMessageCount)")
+        }
+        
+        return syncHappened
+    }
 } 
