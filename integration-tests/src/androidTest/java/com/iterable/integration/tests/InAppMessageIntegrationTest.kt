@@ -134,6 +134,13 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             IterableApi.getInstance().inAppManager.removeMessage(it)
         }
 
+        // Get initial message count before triggering campaign
+        val initialMessageCount = IterableApi.getInstance().inAppManager.messages.count()
+        Log.d(TAG, "📊 Initial message count: $initialMessageCount")
+        
+        // Reset silent push tracking to detect InAppUpdate push
+        testUtils.setSilentPushProcessed(false)
+
         var campaignTriggered = false
         val latch = java.util.concurrent.CountDownLatch(1)
 
@@ -167,20 +174,33 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
             return
         }
 
-        Log.d(TAG, "✅ Campaign triggered successfully, proceeding with message sync...")
+        Log.d(TAG, "✅ Campaign triggered successfully, waiting for push-triggered sync...")
         
-        // Step 4: Sync messages
-        Log.d(TAG, "🔄 Step 4: Syncing in-app messages...")
-        Thread.sleep(3000) // Give time for any messages to sync
+        // Step 4: Wait for push-triggered sync (primary path)
+        Log.d(TAG, "🔄 Step 4: Waiting for InAppUpdate push to trigger automatic sync...")
+        val syncViaPush = waitForInAppSyncViaPush(initialMessageCount, pushTimeoutSeconds = 10)
         
-        // Manually sync
-        IterableApiHelper().syncInAppMessages()
+        var messageCount = IterableApi.getInstance().inAppManager.messages.count()
         
-        // Wait for sync to complete
-        Thread.sleep(2000)
-        
-        val messageCount = IterableApi.getInstance().inAppManager.messages.count()
-        Log.d(TAG, "🔄 Message count after sync: $messageCount")
+        // Step 4b: Fallback to manual sync if push didn't work
+        if (!syncViaPush || messageCount == 0) {
+            Log.d(TAG, "⚠️ Push-triggered sync did not complete, falling back to manual sync...")
+            Log.d(TAG, "🔄 Step 4b: Manually syncing in-app messages...")
+            Thread.sleep(2000) // Give a bit more time in case push is still arriving
+            
+            // Check again before manual sync
+            messageCount = IterableApi.getInstance().inAppManager.messages.count()
+            if (messageCount == 0) {
+                IterableApiHelper().syncInAppMessages()
+                Thread.sleep(2000) // Wait for sync to complete
+                messageCount = IterableApi.getInstance().inAppManager.messages.count()
+                Log.d(TAG, "🔄 Message count after manual sync: $messageCount")
+            } else {
+                Log.d(TAG, "✅ Messages synced via push (delayed), message count: $messageCount")
+            }
+        } else {
+            Log.d(TAG, "✅ Messages synced via push-triggered automatic sync, message count: $messageCount")
+        }
         
         Assert.assertTrue(
             "Message count should be 1, but was $messageCount",

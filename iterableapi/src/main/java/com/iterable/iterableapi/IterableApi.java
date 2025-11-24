@@ -420,7 +420,31 @@ public class IterableApi {
     }
 
     private void completeUserLogin() {
+        completeUserLogin(_email, _userId, _authToken);
+    }
+
+    /**
+     * Completes user login with validated credentials.
+     * This method ensures sensitive operations (syncInApp, syncMessages, registerForPush) only execute
+     * with server-validated user data, preventing user-controlled bypass attacks.
+     *
+     * @param email Server-validated email (can be null)
+     * @param userId Server-validated userId (can be null)
+     * @param authToken Server-validated authToken (must not be null for sensitive operations when JWT auth is enabled)
+     */
+    private void completeUserLogin(@Nullable String email, @Nullable String userId, @Nullable String authToken) {
         if (!isInitialized()) {
+            return;
+        }
+
+        // Only enforce authToken requirement when JWT auth is enabled
+        // This prevents user-controlled bypass where unvalidated userId/email from keychain
+        // could be used to access another user's data in JWT auth scenarios
+        if (config.authHandler != null && authToken == null) {
+            IterableLogger.w(TAG, "Cannot complete user login - JWT auth enabled but no validated authToken present");
+            if (_setUserFailureCallbackHandler != null) {
+                _setUserFailureCallbackHandler.onFailure("JWT authentication is enabled but no valid authToken is available", null);
+            }
             return;
         }
 
@@ -502,10 +526,45 @@ public class IterableApi {
         return _deviceId;
     }
 
+    /**
+     * Completion handler interface for storeAuthData operations.
+     * Receives the exact credentials that were stored to keychain.
+     */
+    private interface AuthDataStorageHandler {
+        void onAuthDataStored(String email, String userId, String authToken);
+    }
+
     private void storeAuthData() {
+        storeAuthData(null);
+    }
+
+    /**
+     * Stores auth data and optionally invokes completion handler with the stored credentials.
+     *
+     * SECURITY - TOCTOU Protection:
+     * When a completion handler is provided, it receives the exact credentials that were stored
+     * to keychain. This prevents TOCTOU (Time-Of-Check-Time-Of-Use) attacks where:
+     * 1. Credentials are stored to keychain
+     * 2. Attacker modifies keychain (between store and read)
+     * 3. Sensitive operations use tampered credentials
+     *
+     * By capturing credentials BEFORE storage and passing them directly via completion handler,
+     * we ensure completeUserLogin uses exactly what was stored, not what's currently in keychain.
+     *
+     * @param completionHandler Optional handler invoked synchronously after storage with the stored credentials
+     */
+    private void storeAuthData(AuthDataStorageHandler completionHandler) {
         if (_applicationContext == null) {
             return;
         }
+
+        // SECURITY: Capture current instance field values BEFORE storing to keychain.
+        // These captured values will be passed to completion handler, ensuring the caller
+        // receives exactly what was stored, not potentially modified keychain data.
+        final String storedEmail = _email;
+        final String storedUserId = _userId;
+        final String storedAuthToken = _authToken;
+
         IterableKeychain iterableKeychain = getKeychain();
         if (iterableKeychain != null) {
             iterableKeychain.saveEmail(_email);
@@ -514,6 +573,11 @@ public class IterableApi {
             iterableKeychain.saveAuthToken(_authToken);
         } else {
             IterableLogger.e(TAG, "Shared preference creation failed. ");
+        }
+
+        // Invoke completion handler with the captured credentials
+        if (completionHandler != null) {
+            completionHandler.onAuthDataStored(storedEmail, storedUserId, storedAuthToken);
         }
     }
 
@@ -595,10 +659,14 @@ public class IterableApi {
         if (isInitialized()) {
             if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
                 _authToken = authToken;
-                storeAuthData();
-                completeUserLogin();
+                // SECURITY: Use completion handler to atomically store and pass validated credentials.
+                // The completion handler receives exact values stored to keychain, preventing TOCTOU
+                // attacks where keychain could be modified between storage and completeUserLogin execution.
+                storeAuthData((email, userId, token) -> completeUserLogin(email, userId, token));
             } else if (bypassAuth) {
-                completeUserLogin();
+                // SECURITY: Pass current credentials directly to completeUserLogin.
+                // completeUserLogin will validate authToken presence when JWT auth is enabled.
+                completeUserLogin(_email, _userId, _authToken);
             }
         }
     }

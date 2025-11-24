@@ -57,7 +57,21 @@ class MainActivity : AppCompatActivity() {
                         val intent = Intent(this@MainActivity, DeepLinkTestActivity::class.java)
                         intent.putExtra(EXTRA_DEEP_LINK_URL, url.toString())
                         startActivity(intent)
-                        return true
+                        return false
+                    }
+                })
+                .setCustomActionHandler(object : com.iterable.iterableapi.IterableCustomActionHandler {
+                    override fun handleIterableCustomAction(
+                        action: com.iterable.iterableapi.IterableAction,
+                        actionContext: com.iterable.iterableapi.IterableActionContext
+                    ): Boolean {
+                        val actionType = action.getType()
+                        // Log action.data()
+                        val actionData = action.getData()
+                        Log.d(TAG, "Custom action received: type=$actionType, data=$actionData")
+                        // You can add custom logic here to handle different action types
+                        // For now, just log and return true to indicate the action was handled
+                        return false
                     }
                 })
                 .build()
