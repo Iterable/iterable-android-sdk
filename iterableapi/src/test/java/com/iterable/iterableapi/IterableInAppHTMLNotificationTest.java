@@ -200,7 +200,10 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
 
     @Test
     public void testLayoutStructure_RelativeLayoutWrapper() {
-        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "<html><body>Test</body></html>", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
+        // Use non-fullscreen padding (top padding) to test RelativeLayout wrapper
+        // Full screen in-apps don't use RelativeLayout wrapper, only non-fullscreen ones do
+        Rect topPadding = new Rect(0, 0, 0, -1);
+        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "<html><body>Test</body></html>", "", null, 0.0, topPadding, true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
         shadowOf(getMainLooper()).idle();
 
         IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.getInstance();
@@ -209,11 +212,31 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         ViewGroup rootView = (ViewGroup) notification.getView();
         assertNotNull(rootView);
 
-        // FrameLayout should contain a RelativeLayout
-        if (rootView.getChildCount() > 0) {
-            ViewGroup child = (ViewGroup) rootView.getChildAt(0);
-            assertTrue(child instanceof RelativeLayout);
-        }
+        // For non-fullscreen in-apps, FrameLayout should contain a RelativeLayout wrapper
+        assertTrue("Root view should have children", rootView.getChildCount() > 0);
+        ViewGroup child = (ViewGroup) rootView.getChildAt(0);
+        assertTrue("First child should be RelativeLayout for non-fullscreen in-apps", child instanceof RelativeLayout);
+    }
+
+    @Test
+    public void testLayoutStructure_FullScreenNoRelativeLayoutWrapper() {
+        // Test that full screen in-apps don't use RelativeLayout wrapper
+        Rect fullScreenPadding = new Rect(0, 0, 0, 0); // Full screen
+        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "<html><body>Test</body></html>", "", null, 0.0, fullScreenPadding, true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
+        shadowOf(getMainLooper()).idle();
+
+        IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.getInstance();
+        assertNotNull(notification);
+
+        ViewGroup rootView = (ViewGroup) notification.getView();
+        assertNotNull(rootView);
+
+        // For full screen in-apps, FrameLayout should contain WebView directly (no RelativeLayout wrapper)
+        assertTrue("Root view should have children", rootView.getChildCount() > 0);
+        ViewGroup child = (ViewGroup) rootView.getChildAt(0);
+        // WebView is not a ViewGroup, so we check it's not a RelativeLayout
+        assertTrue("First child should be WebView (not RelativeLayout) for full screen in-apps", 
+            !(child instanceof RelativeLayout));
     }
 
     @Test

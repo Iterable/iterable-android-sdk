@@ -124,9 +124,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public void onStart() {
         super.onStart();
 
-        // Set dialog positioning after the dialog is created and shown
+        // Set dialog positioning after the dialog is created and shown (only for non-fullscreen)
         Dialog dialog = getDialog();
-        if (dialog != null) {
+        if (dialog != null && getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
             applyWindowGravity(dialog.getWindow(), "onStart");
         }
     }
@@ -170,8 +170,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        // Set window gravity for the dialog
-        applyWindowGravity(dialog.getWindow(), "onCreateDialog");
+        // Set window gravity for the dialog (only for non-fullscreen)
+        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+            applyWindowGravity(dialog.getWindow(), "onCreateDialog");
+        }
 
         if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -192,8 +194,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
 
-        // Set initial window gravity based on inset padding
-        applyWindowGravity(getDialog().getWindow(), "onCreateView");
+        // Set initial window gravity based on inset padding (only for non-fullscreen)
+        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+            applyWindowGravity(getDialog().getWindow(), "onCreateView");
+        }
 
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
@@ -234,35 +238,50 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         // Create a FrameLayout as the main container for better positioning control
         FrameLayout frameLayout = new FrameLayout(this.getContext());
 
-        // Create a RelativeLayout as a wrapper for the WebView
-        RelativeLayout webViewContainer = new RelativeLayout(this.getContext());
+        // Check if this is a full screen in-app
+        InAppLayout inAppLayout = getInAppLayout(insetPadding);
+        boolean isFullScreen = (inAppLayout == InAppLayout.FULLSCREEN);
 
-        int gravity = getVerticalLocation(insetPadding);
+        if (isFullScreen) {
+            // For full screen in-apps, use MATCH_PARENT for both container and WebView
+            // Use FrameLayout.LayoutParams for direct child of FrameLayout
+            FrameLayout.LayoutParams webViewParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            );
+            frameLayout.addView(webView, webViewParams);
+        } else {
+            // For non-fullscreen in-apps, use the new layout structure with positioning
+            // Create a RelativeLayout as a wrapper for the WebView
+            RelativeLayout webViewContainer = new RelativeLayout(this.getContext());
 
-        // Set FrameLayout gravity based on positioning
-        FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
-        );
+            int gravity = getVerticalLocation(insetPadding);
 
-        if (gravity == Gravity.CENTER_VERTICAL) {
-            containerParams.gravity = Gravity.CENTER;
-        } else if (gravity == Gravity.TOP) {
-            containerParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        } else if (gravity == Gravity.BOTTOM) {
-            containerParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+            // Set FrameLayout gravity based on positioning
+            FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            );
+
+            if (gravity == Gravity.CENTER_VERTICAL) {
+                containerParams.gravity = Gravity.CENTER;
+            } else if (gravity == Gravity.TOP) {
+                containerParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+            } else if (gravity == Gravity.BOTTOM) {
+                containerParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+            }
+
+            // Add WebView to the RelativeLayout container with WRAP_CONTENT for proper sizing
+            RelativeLayout.LayoutParams webViewParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            );
+            webViewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            webViewContainer.addView(webView, webViewParams);
+
+            // Add the container to the FrameLayout
+            frameLayout.addView(webViewContainer, containerParams);
         }
-
-        // Add WebView to the RelativeLayout container with WRAP_CONTENT for proper sizing
-        RelativeLayout.LayoutParams webViewParams = new RelativeLayout.LayoutParams(
-            RelativeLayout.LayoutParams.WRAP_CONTENT,
-            RelativeLayout.LayoutParams.WRAP_CONTENT
-        );
-        webViewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
-        webViewContainer.addView(webView, webViewParams);
-
-        // Add the container to the FrameLayout
-        frameLayout.addView(webViewContainer, containerParams);
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
@@ -275,12 +294,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // Handle edge-to-edge insets with modern approach
-        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
-            Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(0, sysBars.top, 0, sysBars.bottom);
-            return insets;
-        });
+        // Handle edge-to-edge insets with modern approach (only for non-fullscreen)
+        // Full screen in-apps should not have padding from system bars
+        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+            ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+                Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(0, sysBars.top, 0, sysBars.bottom);
+                return insets;
+            });
+        }
     }
 
     public void setLoaded(boolean loaded) {
