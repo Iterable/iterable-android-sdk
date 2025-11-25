@@ -305,4 +305,82 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         // If runResizeScript wasn't called, we would have seen validation errors or exceptions
         // The fact that we get here without exceptions means the orientation change handling worked
     }
+
+    // ===== Orientation Rounding Tests =====
+
+    @Test
+    public void testRoundToNearest90Degrees_Zero() {
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(0));
+    }
+
+    @Test
+    public void testRoundToNearest90Degrees_StandardOrientations() {
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(0));
+        assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(90));
+        assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(180));
+        assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(270));
+        assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(360));
+    }
+
+    @Test
+    public void testRoundToNearest90Degrees_BoundaryValues() {
+        // Values that round down to 0 (0-44)
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(44));
+        
+        // Values that round up to 90 (45-134)
+        assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(45));
+        assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(89));
+        assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(90));
+        assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(134));
+        
+        // Values that round up to 180 (135-224)
+        assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(135));
+        assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(180));
+        assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(224));
+        
+        // Values that round up to 270 (225-314)
+        assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(225));
+        assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(270));
+        assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(314));
+        
+        // Values that round up to 360 (315-359)
+        assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(315));
+        assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(359));
+    }
+
+    @Test
+    public void testRoundToNearest90Degrees_NearZero() {
+        // Test values very close to 0
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(1));
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-1));
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-44));
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-45));
+    }
+
+    @Test
+    public void testRoundToNearest90Degrees_NegativeValues() {
+        // Test negative values (though OrientationEventListener typically returns 0-359)
+        // These test the integer division behavior with negative numbers
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-1));
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-45));
+        assertEquals(-90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-46));
+        assertEquals(-90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-90));
+        assertEquals(-90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-134));
+        assertEquals(-180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-135));
+    }
+
+    @Test
+    public void testRoundToNearest90Degrees_EdgeCases() {
+        // Test edge cases around boundaries
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(0));
+        assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(44));
+        assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(45));
+        assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(134));
+        assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(135));
+        assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(224));
+        assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(225));
+        assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(314));
+        assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(315));
+        assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(359));
+    }
 }
