@@ -692,13 +692,22 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      * This is used to detect significant orientation changes (portrait/landscape).
      *
      * The calculation rounds to the nearest multiple of 90 by adding 45 before dividing.
-     * Uses floating point division to correctly handle negative numbers.
+     * For positive numbers, uses integer division (which truncates toward zero).
+     * For negative numbers, uses floor division to correctly round toward negative infinity.
      *
      * @param orientation The orientation value in degrees (typically 0-359 from OrientationEventListener)
      * @return The orientation rounded to the nearest 90-degree increment (0, 90, 180, 270, or 360)
      */
     static int roundToNearest90Degrees(int orientation) {
-        return (int) (Math.round((orientation + 45.0) / 90.0) * 90);
+        if (orientation >= 0) {
+            // For positive numbers, integer division truncates toward zero
+            // (0 + 45) / 90 = 0, (44 + 45) / 90 = 0, (45 + 45) / 90 = 1
+            return ((orientation + 45) / 90) * 90;
+        } else {
+            // For negative numbers, use floor division to round toward negative infinity
+            // Math.floor((-46 + 45) / 90.0) = Math.floor(-1/90.0) = -1, so -1 * 90 = -90
+            return (int) (Math.floor((orientation + 45.0) / 90.0) * 90);
+        }
     }
 
     /**

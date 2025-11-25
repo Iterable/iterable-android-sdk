@@ -363,8 +363,8 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-45));
         assertEquals(-90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-46));
         assertEquals(-90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-90));
-        assertEquals(-90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-134));
-        assertEquals(-180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-135));
+        assertEquals(-90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-135));
+        assertEquals(-180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(-136));
     }
 
     @Test
