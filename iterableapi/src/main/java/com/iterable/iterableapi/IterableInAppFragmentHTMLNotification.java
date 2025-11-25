@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -67,7 +68,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private String messageId;
 
     // Resize debouncing fields
-    private Handler resizeHandler = new Handler();
+    private Handler resizeHandler;
     private Runnable pendingResizeRunnable;
     private float lastContentHeight = -1;
     private static final int RESIZE_DEBOUNCE_DELAY_MS = 200;
@@ -217,7 +218,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                             lastOrientation = currentOrientation;
 
                             // Use longer delay for orientation changes to allow layout to stabilize
-                            final Handler handler = new Handler();
+                            final Handler handler = new Handler(Looper.getMainLooper());
                             handler.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -335,8 +336,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         // Clean up pending resize operations
         if (resizeHandler != null && pendingResizeRunnable != null) {
             resizeHandler.removeCallbacks(pendingResizeRunnable);
-            pendingResizeRunnable = null;
         }
+        pendingResizeRunnable = null;
+        resizeHandler = null;
 
         if (this.getActivity() != null && this.getActivity().isChangingConfigurations()) {
             return;
@@ -526,6 +528,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     @Override
     public void runResizeScript() {
+        // Initialize handler lazily with main looper to avoid Looper issues in tests
+        if (resizeHandler == null) {
+            resizeHandler = new Handler(Looper.getMainLooper());
+        }
+
         // Cancel any pending resize operation
         if (pendingResizeRunnable != null) {
             resizeHandler.removeCallbacks(pendingResizeRunnable);
