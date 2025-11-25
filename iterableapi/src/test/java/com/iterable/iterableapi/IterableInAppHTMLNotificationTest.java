@@ -20,12 +20,6 @@ import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
 public class IterableInAppHTMLNotificationTest extends BaseTest {
@@ -146,7 +140,8 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
     public void testApplyWindowGravity_Center() {
         Rect padding = new Rect(0, -1, 0, -1); // Center padding
         IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(
-            "<html><body>Test</body></html>", false, uri -> {}, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
+            "<html><body>Test</body></html>", false, uri -> {
+            }, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
 
         // Verify gravity calculation for center padding
         assertEquals(Gravity.CENTER_VERTICAL, notification.getVerticalLocation(padding));
@@ -156,7 +151,8 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
     public void testApplyWindowGravity_Top() {
         Rect padding = new Rect(0, 0, 0, -1); // Top padding
         IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(
-            "<html><body>Test</body></html>", false, uri -> {}, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
+            "<html><body>Test</body></html>", false, uri -> {
+            }, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
 
         assertEquals(Gravity.TOP, notification.getVerticalLocation(padding));
     }
@@ -165,7 +161,8 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
     public void testApplyWindowGravity_Bottom() {
         Rect padding = new Rect(0, -1, 0, 0); // Bottom padding
         IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(
-            "<html><body>Test</body></html>", false, uri -> {}, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
+            "<html><body>Test</body></html>", false, uri -> {
+            }, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
 
         assertEquals(Gravity.BOTTOM, notification.getVerticalLocation(padding));
     }
@@ -174,8 +171,9 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
     public void testApplyWindowGravity_HandlesNullWindow() {
         Rect padding = new Rect(0, 0, 0, -1);
         IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(
-            "<html><body>Test</body></html>", false, uri -> {}, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
-        
+            "<html><body>Test</body></html>", false, uri -> {
+            }, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
+
         // Test that getVerticalLocation works correctly
         assertEquals(Gravity.TOP, notification.getVerticalLocation(padding));
         // applyWindowGravity is private but is called in onStart/onCreateDialog/onCreateView
@@ -235,7 +233,7 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         assertTrue("Root view should have children", rootView.getChildCount() > 0);
         ViewGroup child = (ViewGroup) rootView.getChildAt(0);
         // WebView is not a ViewGroup, so we check it's not a RelativeLayout
-        assertTrue("First child should be WebView (not RelativeLayout) for full screen in-apps", 
+        assertTrue("First child should be WebView (not RelativeLayout) for full screen in-apps",
             !(child instanceof RelativeLayout));
     }
 
@@ -300,7 +298,7 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         // The test passes if no exceptions are thrown and the resize was triggered
         // We verify indirectly by ensuring the notification still exists and is in a valid state
         assertNotNull("Notification should still exist after orientation change", notification);
-        
+
         // The resize should have been triggered (1500ms delay + 200ms debounce)
         // If runResizeScript wasn't called, we would have seen validation errors or exceptions
         // The fact that we get here without exceptions means the orientation change handling worked
@@ -326,23 +324,23 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
     public void testRoundToNearest90Degrees_BoundaryValues() {
         // Values that round down to 0 (0-44)
         assertEquals(0, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(44));
-        
+
         // Values that round up to 90 (45-134)
         assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(45));
         assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(89));
         assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(90));
         assertEquals(90, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(134));
-        
+
         // Values that round up to 180 (135-224)
         assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(135));
         assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(180));
         assertEquals(180, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(224));
-        
+
         // Values that round up to 270 (225-314)
         assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(225));
         assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(270));
         assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(314));
-        
+
         // Values that round up to 360 (315-359)
         assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(315));
         assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(359));
