@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.6.3]
+### Fixed
+- Improved in-app message sizing and positioning calculations for better stability and performance, especially during device orientation changes
+
 ## [3.6.2]
 ### Added
 - Added background initialization support to prevent ANRs during app startup. Use `IterableApi.initializeInBackground()` instead of `initialize()` to run initialization on a background thread while automatically queuing API calls until ready. See README for implementation details.
