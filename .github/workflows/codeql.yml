@@ -26,8 +26,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Fetch all history to ensure accurate CodeQL analysis
           fetch-depth: '0'
+
+      - name: DEBUG - List Files 💡
+        run: |
+          # The current working directory is already the root of the checked-out repo
+          pwd
+          ls -R
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
