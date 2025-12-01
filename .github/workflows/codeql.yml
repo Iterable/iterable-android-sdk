@@ -29,27 +29,28 @@ jobs:
         with:
           fetch-depth: '0'
 
-      - name: DEBUG - List Files 💡
-        run: |
-          # The current working directory is already the root of the checked-out repo
-          pwd
-          ls -R
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: java
           queries: security-extended,security-and-quality
 
-      - name: Set up JDK (with fixed cache path) 💡
+      - name: Set up JDK (configured for Gradle)
         uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'temurin'
+          cache: gradle
+          cache-dependency-path: |
+            **/build.gradle
+            **/settings.gradle
+            **/gradle-wrapper.properties
 
-      - name: CodeQL Manual Build and Install (Traced)
-        run: mvn -B clean install -DskipTests
+      - name: Configure Gradle Wrapper Permissions
+        run: chmod +x gradlew
 
+      - name: CodeQL Manual Build with Gradle (Traced)
+        run: ./gradlew assembleRelease -x test -x lint
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
