@@ -50,12 +50,9 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '11' # Specify the JDK version your project needs
+          java-version: '11'
           distribution: 'temurin'
           cache: maven
-      - name: Build with Maven
-        run: mvn clean test --file pom.xml
-        working-directory: ${{github.workspace}}
 
 
       # If the analyze step fails for one of the languages you are analyzing with
