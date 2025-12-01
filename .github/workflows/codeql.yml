@@ -38,7 +38,8 @@ jobs:
       - name: Set up JDK (configured for Gradle)
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          # CHANGE: Update the version from '11' to '17'
+          java-version: '17'
           distribution: 'temurin'
           cache: gradle
           cache-dependency-path: |
