@@ -11,13 +11,8 @@ jobs:
     name: Analyze Java
     runs-on: 'ubuntu-latest'
     permissions:
-      # required for all workflows
       security-events: write
-
-      # required to fetch internal or private CodeQL packs
       packages: read
-
-      # only required for workflows in private repositories
       actions: read
       contents: read
 
@@ -26,45 +21,28 @@ jobs:
       matrix:
         include:
           - language: java
-            build-mode: manual
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          # Fetch all history to ensure accurate CodeQL analysis
           fetch-depth: '0'
-
-
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: java
-          # If you wish to specify custom queries, you can do so here or in a config file.
-          # By default, queries listed here will override any specified in a config file.
-          # Prefix the list here with "+" to use these queries and those in the config file.
-
-          # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
           queries: security-extended,security-and-quality
 
-      - name: Set up JDK
+      - name: Set up JDK (with fixed cache path) 💡
         uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+          cache-dependency-path: '**/pom.xml'
 
-
-      # If the analyze step fails for one of the languages you are analyzing with
-      # "We were unable to automatically build your code", modify the matrix above
-      # to set the build mode to "manual" for that language. Then modify this step
-      # to build your code.
-      # ℹ️ Command-line programs to run using the OS shell.
-      # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-      - if: matrix.build-mode == 'manual'
-        shell: bash
-        run: |
-          mvn -B clean install -DskipTests
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
