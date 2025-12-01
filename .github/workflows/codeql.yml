@@ -46,6 +46,9 @@ jobs:
             **/settings.gradle
             **/gradle-wrapper.properties
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Configure Gradle Wrapper Permissions
         run: chmod +x gradlew
 
