@@ -21,6 +21,7 @@ jobs:
       matrix:
         include:
           - language: java
+            build-mode: manual
 
     steps:
       - name: Checkout repository
@@ -45,8 +46,9 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-          cache: maven
-          cache-dependency-path: '**/pom.xml'
+
+      - name: CodeQL Manual Build and Install (Traced)
+        run: mvn -B clean install -DskipTests
 
 
       - name: Perform CodeQL Analysis
