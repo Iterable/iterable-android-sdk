@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - language: java-kotlin
+          - language: java
             build-mode: autobuild
 
     steps:
@@ -37,12 +37,13 @@ jobs:
           queries: security-extended,security-and-quality
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
+        uses: gradle/wrapper-validation-action@f9c9c575b8b21b6485636a91ffecd10e558c62f6 # v3.5.0
 
       - name: Configure JDK
-        uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
         with:
           java-version: 17
+          distribution: 'gradle'
 
       - run: touch local.properties
 
