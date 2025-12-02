@@ -47,6 +47,18 @@ jobs:
 
       - run: touch local.properties
 
+      - name: CodeQL Manual Build (Disable Daemon & Trace)
+        run: |
+          CODEQL_BIN="/opt/hostedtoolcache/CodeQL/2.23.6/x64/codeql/codeql"
+          DB_PATH="/home/runner/work/_temp/codeql_databases/java"
+          
+          # Execute the trace-command with the crucial --no-daemon flag
+          $CODEQL_BIN database trace-command \
+            --database $DB_PATH \
+            --lang java \
+            -- \
+            ./gradlew assembleRelease --no-daemon -x test -x lint
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
