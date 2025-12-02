@@ -42,6 +42,16 @@ jobs:
           java-version: 17
           distribution: 'temurin'
 
+      - name: Setup Google Services Configuration
+        run: |
+          echo "Setting up Google Services configuration for CI..."
+          # Ensure the google-services.json file exists for the build
+          if [ ! -f "integration-tests/google-services.json" ]; then
+            echo "Creating google-services.json from template..."
+            cp integration-tests/google-services.json.template integration-tests/google-services.json
+          fi
+          echo "Google Services configuration ready"
+
       - run: touch local.properties
 
       - name: CodeQL Manual Build (Disable Daemon & Trace)
