@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - language: java
-            build-mode: manual
+            build-mode: autobuild
 
     steps:
       - name: Checkout repository
