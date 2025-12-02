@@ -30,6 +30,12 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: java
+          queries: security-extended,security-and-quality
+
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
 
@@ -39,12 +45,6 @@ jobs:
           java-version: 17
 
       - run: touch local.properties
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: java
-          queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
