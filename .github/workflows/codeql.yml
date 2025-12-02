@@ -16,6 +16,7 @@ jobs:
       actions: read
       contents: read
 
+
     strategy:
       fail-fast: false
       matrix:
@@ -29,32 +30,21 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@216d1ad2b3710bf005dc39237337b9673fd8fcd5 # v3.3.2
+
+      - name: Configure JDK
+        uses: actions/setup-java@d202f5dbf7256730fb690ec59f6381650114feb2 # v1.4.3
+        with:
+          java-version: 17
+
+      - run: touch local.properties
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: java
           queries: security-extended,security-and-quality
-
-      - name: Set up JDK (configured for Gradle)
-        uses: actions/setup-java@v4
-        with:
-          # CHANGE: Update the version from '11' to '17'
-          java-version: '17'
-          distribution: 'temurin'
-          cache: gradle
-          cache-dependency-path: |
-            **/build.gradle
-            **/settings.gradle
-            **/gradle-wrapper.properties
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Configure Gradle Wrapper Permissions
-        run: chmod +x gradlew
-
-      - name: CodeQL Manual Build with Gradle (Traced)
-        run: ./gradlew assembleRelease -x test -x lint
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
