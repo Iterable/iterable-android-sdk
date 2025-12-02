@@ -35,6 +35,7 @@ class IntegrationTestUtils(private val context: Context) {
     private val trackPushOpenCalled = AtomicBoolean(false)
     private val deepLinkHandlerInvoked = AtomicBoolean(false)
     private val silentPushProcessed = AtomicBoolean(false)
+    private val embeddedPushProcessed = AtomicBoolean(false)
     
     // Error tracking
     private var lastErrorMessage: String? = null
@@ -48,6 +49,7 @@ class IntegrationTestUtils(private val context: Context) {
         trackPushOpenCalled.set(false)
         deepLinkHandlerInvoked.set(false)
         silentPushProcessed.set(false)
+        embeddedPushProcessed.set(false)
         lastErrorMessage = null
     }
     
@@ -79,6 +81,18 @@ class IntegrationTestUtils(private val context: Context) {
     
     fun setSilentPushProcessed(processed: Boolean) {
         silentPushProcessed.set(processed)
+    }
+    
+    fun isSilentPushProcessed(): Boolean {
+        return silentPushProcessed.get()
+    }
+    
+    fun setEmbeddedPushProcessed(processed: Boolean) {
+        embeddedPushProcessed.set(processed)
+    }
+    
+    fun isEmbeddedPushProcessed(): Boolean {
+        return embeddedPushProcessed.get()
     }
 
     fun setInAppMessageDisplayed(displayed: Boolean) {
@@ -143,7 +157,7 @@ class IntegrationTestUtils(private val context: Context) {
                 // Store error message for UI display
                 lastErrorMessage = "HTTP ${response.code}: $errorBody"
             }
-                
+                //TODO: Move callback success inside if(success)
                 callback?.invoke(success)
             } catch (e: Exception) {
                 Log.e(TAG, "Error triggering push campaign via API", e)
