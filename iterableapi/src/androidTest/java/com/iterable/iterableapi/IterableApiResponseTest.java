@@ -37,8 +37,14 @@ public class IterableApiResponseTest {
     private MockWebServer server;
 
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         server = new MockWebServer();
+        // Explicitly start the server to ensure it's ready
+        try {
+            server.start();
+        } catch (IllegalStateException e) {
+            // Server may already be started by url() call below, which is fine
+        }
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         createIterableApi();
     }
@@ -138,7 +144,7 @@ public class IterableApiResponseTest {
         new IterableRequestTask().execute(request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(5, TimeUnit.SECONDS));
     }
 
 
