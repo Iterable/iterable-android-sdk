@@ -25,45 +25,30 @@ class MainActivity : AppCompatActivity(), IterableInAppManager.Listener {
         val navController = Navigation.findNavController(this, R.id.mainNavigationFragment)
         setupActionBarWithNavController(navController)
         binding.bottomNavigationView.setupWithNavController(navController)
-        
-        // Hide bottom navigation when on ConfigurationFragment
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            if (destination.id == R.id.configurationFragment) {
-                binding.bottomNavigationView.visibility = View.GONE
-            } else {
-                binding.bottomNavigationView.visibility = View.VISIBLE
-            }
+            binding.bottomNavigationView.visibility = if (destination.id == R.id.configurationFragment) View.GONE else View.VISIBLE
         }
     }
 
     override fun onResume() {
         super.onResume()
-        //Add listener to inbox updates only if SDK is initialized
         try {
-            val iterableApi = IterableApi.getInstance()
-            iterableApi.inAppManager.addListener(this)
+            IterableApi.getInstance().inAppManager.addListener(this)
             onInboxUpdated()
-        } catch (e: Exception) {
-            // SDK not initialized yet, skip listener setup
-        }
+        } catch (e: Exception) {}
     }
 
     override fun onPause() {
         super.onPause()
         try {
             IterableApi.getInstance().inAppManager.removeListener(this)
-        } catch (e: Exception) {
-            // SDK not initialized, skip listener removal
-        }
+        } catch (e: Exception) {}
     }
 
     override fun onInboxUpdated() {
         try {
-            val unreadCount = IterableApi.getInstance().inAppManager.unreadInboxMessagesCount
-            updateNotificationBadge(unreadCount)
-        } catch (e: Exception) {
-            // SDK not initialized, skip badge update
-        }
+            updateNotificationBadge(IterableApi.getInstance().inAppManager.unreadInboxMessagesCount)
+        } catch (e: Exception) {}
     }
 
     private fun updateNotificationBadge(value: Int) {

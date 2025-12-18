@@ -12,29 +12,16 @@ class PathBasedStaticDispatcher : Dispatcher() {
 
     fun setResponse(pathPrefix: String, mockResponse: MockResponse) {
         synchronized(responseList) {
-            for (response in responseList) {
-                if (response.pathPrefix == pathPrefix) {
-                    responseList.remove(response)
-                    break
-                }
-            }
+            responseList.removeAll { it.pathPrefix == pathPrefix }
             responseList.add(PathBasedResponse(pathPrefix, mockResponse))
         }
     }
 
     @Throws(InterruptedException::class)
     override fun dispatch(request: RecordedRequest): MockResponse {
-        val path = request.path
-        var selectedResponse: PathBasedResponse? = null
         synchronized(responseList) {
-            for (response in responseList) {
-                if (path!!.startsWith(response.pathPrefix)) {
-                    selectedResponse = response
-                    break
-                }
-            }
-            if (selectedResponse != null) {
-                return selectedResponse!!.response
+            responseList.firstOrNull { request.path?.startsWith(it.pathPrefix) == true }?.let {
+                return it.response
             }
         }
         return MockResponse().setResponseCode(404).setBody("{}")

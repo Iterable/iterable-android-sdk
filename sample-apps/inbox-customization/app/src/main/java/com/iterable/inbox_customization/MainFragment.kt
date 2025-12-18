@@ -31,7 +31,6 @@ class MainFragment : Fragment() {
             findNavController().navigate(R.id.configurationFragment)
         }
 
-
         return view
     }
 }

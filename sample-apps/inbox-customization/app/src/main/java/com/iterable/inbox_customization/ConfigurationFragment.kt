@@ -34,92 +34,43 @@ class ConfigurationFragment : Fragment() {
         val emailInput = view.findViewById<TextInputEditText>(R.id.emailInput)
         val signInButton = view.findViewById<android.widget.Button>(R.id.signInButton)
 
-        // Get stored API key (from SDK, DataManager, or persisted preferences)
         val storedApiKey = DataManager.getStoredApiKey(requireContext())
-        
-        // If persisted API key exists but SDK is not initialized, initialize it automatically
         var isSDKInitialized = IterableApi.isSDKInitialized()
         if (!isSDKInitialized && !TextUtils.isEmpty(storedApiKey)) {
-            // Auto-initialize SDK with persisted API key
             DataManager.initializeIterableApi(requireContext(), storedApiKey!!)
             isSDKInitialized = IterableApi.isSDKInitialized()
         }
         
-        // Get email from SDK if initialized
-        var storedEmail: String? = null
-        if (isSDKInitialized) {
+        val storedEmail = if (isSDKInitialized) {
             try {
-                val iterableApi = IterableApi.getInstance()
-                storedEmail = iterableApi.getEmail()
-                isSignedIn = !TextUtils.isEmpty(storedEmail)
+                IterableApi.getInstance().getEmail().also { email ->
+                    isSignedIn = !TextUtils.isEmpty(email)
+                }
             } catch (e: Exception) {
-                // Should not happen if SDK is initialized, but handle gracefully
                 isSignedIn = false
-                storedEmail = null
+                null
             }
         } else {
             isSignedIn = false
-            storedEmail = null
+            null
         }
 
-        // If SDK is initialized, show all fields immediately and prepopulate
-        if (isSDKInitialized) {
-            // Prepopulate API key if available
-            if (!TextUtils.isEmpty(storedApiKey)) {
-                apiKeyInput?.setText(storedApiKey)
-                apiKeyInput?.isEnabled = false
-            }
+        storedApiKey?.let {
+            apiKeyInput?.setText(it)
+            apiKeyInput?.isEnabled = false
+        }
+        if (isSDKInitialized || !storedApiKey.isNullOrEmpty()) {
             initializeSDKButton?.visibility = View.GONE
-            
-            // Show email field and sign in button immediately (no need to enter API key first)
             emailInputLayout?.visibility = View.VISIBLE
             signInButton?.visibility = View.VISIBLE
-            
-            // Prepopulate email if available
-            if (!TextUtils.isEmpty(storedEmail)) {
-                emailInput?.setText(storedEmail)
-                signInButton?.text = "Sign out"
-                isSignedIn = true
-                // Show continue button if email is set
-                continueButton?.visibility = View.VISIBLE
-            } else {
-                signInButton?.text = "Sign in"
-                continueButton?.visibility = View.GONE
-            }
-        } else {
-            // SDK not initialized - use existing flow (enter API key to reveal email field)
-            // Populate fields if available
-            if (!TextUtils.isEmpty(storedApiKey)) {
-                apiKeyInput?.setText(storedApiKey)
-                apiKeyInput?.isEnabled = false
-                initializeSDKButton?.visibility = View.GONE
-                emailInputLayout?.visibility = View.VISIBLE
-                signInButton?.visibility = View.VISIBLE
-            }
-
-            // Always prepopulate email field if IterableApi has an email
-            if (!TextUtils.isEmpty(storedEmail)) {
-                emailInput?.setText(storedEmail)
-                signInButton?.text = "Sign out"
-                isSignedIn = true
-                // Show continue button if both API key and email are set
-                continueButton?.visibility = View.VISIBLE
-            } else {
-                signInButton?.text = "Sign in"
-                continueButton?.visibility = View.GONE
-            }
         }
+        updateEmailUI(storedEmail, emailInput, signInButton, continueButton)
 
-        // Auto-navigate to mainFragment if both API key and email are already set
-        // Only do this on initial app launch (start destination), not when navigating from other fragments
         val navController = findNavController()
-        val isStartDestination = navController.graph.startDestinationId == R.id.configurationFragment
-        val hasBackStack = navController.previousBackStackEntry != null
         if (savedInstanceState == null && !TextUtils.isEmpty(storedApiKey) && !TextUtils.isEmpty(storedEmail) 
-            && isStartDestination && !hasBackStack) {
-            // Both are set - navigate to main fragment automatically
+            && navController.graph.startDestinationId == R.id.configurationFragment 
+            && navController.previousBackStackEntry == null) {
             view.post {
-                // Double-check we're still on configuration fragment before navigating
                 if (navController.currentDestination?.id == R.id.configurationFragment) {
                     navController.navigate(R.id.mainFragment)
                 }
@@ -131,28 +82,21 @@ class ConfigurationFragment : Fragment() {
             if (TextUtils.isEmpty(apiKey)) {
                 Toast.makeText(context, "Please enter an API key", Toast.LENGTH_SHORT).show()
             } else {
-                // Dismiss keyboard
                 dismissKeyboard(apiKeyInput)
-                // Initialize SDK with the provided API key
                 DataManager.initializeIterableApi(requireContext(), apiKey!!)
-                // Show success toast
                 Toast.makeText(context, "Initialization successful. Sign in with an email-id or userID to continue...", Toast.LENGTH_LONG).show()
-                // Disable API key input and hide InitializeSDK button
                 apiKeyInput?.isEnabled = false
                 initializeSDKButton?.visibility = View.GONE
-                // Show email/userId input and sign in button
                 emailInputLayout?.visibility = View.VISIBLE
                 signInButton?.visibility = View.VISIBLE
             }
         }
 
         continueButton.setOnClickListener {
-            // Navigate to main fragment
             findNavController().navigate(R.id.mainFragment)
         }
 
         resetButton.setOnClickListener {
-            // First, call setEmail(null) if SDK is initialized
             if (IterableApi.isSDKInitialized()) {
                 try {
                     IterableApi.getInstance().setEmail(null)
@@ -160,61 +104,43 @@ class ConfigurationFragment : Fragment() {
                     Log.w("ConfigurationFragment", "Error clearing email: ${e.message}")
                 }
             }
-            // Clear persisted API key
             DataManager.clearApiKeyFromPreferences(requireContext())
-            // Clear all fields
             apiKeyInput?.text?.clear()
             emailInput?.text?.clear()
-            // Show InitializeSDK button again
             initializeSDKButton?.visibility = View.VISIBLE
-            // Re-enable API key input
             apiKeyInput?.isEnabled = true
-            // Hide email/userId input, sign in button, and continue button
             emailInputLayout?.visibility = View.GONE
             signInButton?.visibility = View.GONE
             continueButton?.visibility = View.GONE
-            // Reset sign in state
             isSignedIn = false
             signInButton?.text = "Sign in"
-            // Dismiss keyboard
             dismissKeyboard(view)
         }
 
         signInButton.setOnClickListener {
-            // Check email value to determine sign in state
-            val currentEmail = try {
-                IterableApi.getInstance().getEmail()
-            } catch (e: Exception) {
-                null
-            }
+            val currentEmail = try { IterableApi.getInstance().getEmail() } catch (e: Exception) { null }
             val hasEmail = !TextUtils.isEmpty(currentEmail)
             
             if (hasEmail || isSignedIn) {
-                // Sign out
                 try {
                     IterableApi.getInstance().setEmail(null)
                     emailInput?.text?.clear()
                     isSignedIn = false
                     signInButton.text = "Sign in"
-                    // Hide continue button when signed out
                     continueButton?.visibility = View.GONE
                     Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
                     Toast.makeText(context, "Error signing out: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             } else {
-                // Sign in
                 val emailOrUserId = emailInput?.text?.toString()?.trim()
                 if (TextUtils.isEmpty(emailOrUserId)) {
                     Toast.makeText(context, "Please enter an email or user ID", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Dismiss keyboard
                     dismissKeyboard(emailInput)
-                    // Show continue button immediately when setEmail is clicked
                     continueButton?.visibility = View.VISIBLE
                     continueButton?.isEnabled = true
                     continueButton?.alpha = 1.0f
-                    // Set email/userId with success and failure handlers
                     try {
                         IterableApi.getInstance().setEmail(
                             emailOrUserId,
@@ -224,7 +150,6 @@ class ConfigurationFragment : Fragment() {
                                         isSignedIn = true
                                         signInButton.text = "Sign out"
                                         Toast.makeText(context, "Signed in successfully", Toast.LENGTH_SHORT).show()
-                                        // Load data after successful sign in
                                         DataManager.loadData("simple-inbox-messages.json")
                                     }
                                 }
@@ -244,33 +169,36 @@ class ConfigurationFragment : Fragment() {
             }
         }
 
-
         return view
     }
 
     override fun onResume() {
         super.onResume()
-        // Update sign in button text based on current email value
         updateSignInButtonText()
     }
 
     private fun updateSignInButtonText() {
-        val signInButton = view?.findViewById<android.widget.Button>(R.id.signInButton)
-        if (signInButton != null) {
+        view?.findViewById<android.widget.Button>(R.id.signInButton)?.let { signInButton ->
             try {
                 val email = IterableApi.getInstance().getEmail()
-                if (!TextUtils.isEmpty(email)) {
-                    signInButton.text = "Sign out"
-                    isSignedIn = true
-                } else {
-                    signInButton.text = "Sign in"
-                    isSignedIn = false
-                }
+                isSignedIn = !TextUtils.isEmpty(email)
+                signInButton.text = if (isSignedIn) "Sign out" else "Sign in"
             } catch (e: Exception) {
-                // SDK not initialized or error getting email
                 signInButton.text = "Sign in"
                 isSignedIn = false
             }
+        }
+    }
+
+    private fun updateEmailUI(email: String?, emailInput: TextInputEditText?, signInButton: android.widget.Button?, continueButton: android.widget.Button?) {
+        if (!TextUtils.isEmpty(email)) {
+            emailInput?.setText(email)
+            signInButton?.text = "Sign out"
+            isSignedIn = true
+            continueButton?.visibility = View.VISIBLE
+        } else {
+            signInButton?.text = "Sign in"
+            continueButton?.visibility = View.GONE
         }
     }
 

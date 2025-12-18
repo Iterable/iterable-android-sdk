@@ -22,10 +22,7 @@ class DataManager {
     val dispatcher = PathBasedStaticDispatcher()
 
     init {
-        // Required for `server.url("")` to work on main thread without throwing an exception
-        // DO NOT USE THIS in production. This is for demo purposes only.
         StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitAll().build())
-
         server.dispatcher = dispatcher
         serverUrl = server.url("").toString()
     }
@@ -33,14 +30,10 @@ class DataManager {
     fun initializeIterableApi(context: Context, apiKey: String) {
         this.context = context
         this.storedApiKey = apiKey
-        // Persist API key
         saveApiKeyToPreferences(context, apiKey)
         initHttpMocks()
         mockFirebaseToken()
-        // IterableApi.overrideURLEndpointPath(serverUrl) // Commented out to use real API endpoint
-        var config = IterableConfig.Builder().setLogLevel(Log.VERBOSE).build()
-        IterableApi.initialize(context, apiKey, config)
-        // Note: setEmail should be called separately after initialization
+        IterableApi.initialize(context, apiKey, IterableConfig.Builder().setLogLevel(Log.VERBOSE).build())
     }
 
     fun initHttpMocks() {
@@ -61,40 +54,25 @@ class DataManager {
     fun initializeIterableApiInBackground(context: Context, apiKey: String, callback: IterableInitializationCallback? = null) {
         this.context = context
         this.storedApiKey = apiKey
-        // Persist API key
         saveApiKeyToPreferences(context, apiKey)
         initHttpMocks()
         mockFirebaseToken()
-        // IterableApi.overrideURLEndpointPath(serverUrl) // Commented out to use real API endpoint
         IterableApi.initializeInBackground(context, apiKey) {
-            // Set email after initialization completes
             IterableApi.getInstance().setEmail("user@example.com")
             loadData("simple-inbox-messages.json")
             callback?.onSDKInitialized()
         }
     }
 
-    /**
-     * Mocks Firebase token retrieval for sample app purposes.
-     * Since this is a sample app without Firebase configuration, we inject a mock token provider
-     * so that setEmail can succeed without requiring actual Firebase setup.
-     * 
-     * This uses reflection to replace the UtilImpl instance with MockUtilImpl.
-     */
     private fun mockFirebaseToken() {
         try {
             val utilClass = Class.forName("com.iterable.iterableapi.IterablePushRegistrationTask\$Util")
             val mockUtilImplClass = Class.forName("com.iterable.iterableapi.MockUtilImpl")
             val instanceField: Field = utilClass.getDeclaredField("instance")
             instanceField.isAccessible = true
-            
-            // Create an instance of MockUtilImpl which extends UtilImpl
             val constructor = mockUtilImplClass.getDeclaredConstructor()
             constructor.isAccessible = true
-            val mockInstance = constructor.newInstance()
-            
-            // Replace the UtilImpl instance with our mock
-            instanceField.set(null, mockInstance)
+            instanceField.set(null, constructor.newInstance())
             Log.d("DataManager", "Successfully mocked Firebase token provider")
         } catch (e: Exception) {
             Log.w("DataManager", "Failed to mock Firebase token: ${e.message}. " +
@@ -117,30 +95,22 @@ class DataManager {
         }
 
         fun getStoredApiKey(context: Context? = null): String? {
-            // First check if SDK is initialized and get API key from SDK
             if (IterableApi.isSDKInitialized()) {
                 try {
-                    val iterableApi = IterableApi.getInstance()
-                    val apiKeyField: Field = iterableApi.javaClass.getDeclaredField("_apiKey")
+                    val apiKeyField: Field = IterableApi.getInstance().javaClass.getDeclaredField("_apiKey")
                     apiKeyField.isAccessible = true
-                    val apiKey = apiKeyField.get(iterableApi) as? String
-                    if (!apiKey.isNullOrEmpty()) {
-                        instance.storedApiKey = apiKey
-                        return apiKey
+                    (apiKeyField.get(IterableApi.getInstance()) as? String)?.let {
+                        if (it.isNotEmpty()) {
+                            instance.storedApiKey = it
+                            return it
+                        }
                     }
                 } catch (e: Exception) {
                     Log.w("DataManager", "Failed to retrieve API key from SDK: ${e.message}")
                 }
             }
-            // Fallback to in-memory stored API key
-            if (!instance.storedApiKey.isNullOrEmpty()) {
-                return instance.storedApiKey
-            }
-            // Finally, check persisted API key from SharedPreferences
-            if (context != null) {
-                return loadApiKeyFromPreferences(context)
-            }
-            return null
+            if (!instance.storedApiKey.isNullOrEmpty()) return instance.storedApiKey
+            return context?.let { loadApiKeyFromPreferences(it) }
         }
         
         fun saveApiKeyToPreferences(context: Context, apiKey: String) {
@@ -164,11 +134,8 @@ class DataManager {
             IterableInternal.syncInApp()
         }
 
-        private fun getAssetString(fileName: String): String {
-            return instance.context!!.resources.assets.open(fileName).bufferedReader().use {
-                it.readText()
-            }
-        }
+        private fun getAssetString(fileName: String): String =
+            instance.context!!.resources.assets.open(fileName).bufferedReader().use { it.readText() }
     }
 
 }
