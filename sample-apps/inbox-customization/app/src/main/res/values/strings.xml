@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Inbox Customization</string>
+    <!-- Mock Firebase sender ID for sample app (not needed for actual Firebase setup) -->
+    <string name="gcm_defaultSenderId">123456789</string>
 </resources>

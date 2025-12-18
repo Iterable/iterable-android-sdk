@@ -74,10 +74,10 @@
             android:text="Additional Fields" />
 
         <Button
-            android:id="@+id/backgroundInitButton"
+            android:id="@+id/configurationButton"
             style="?attr/materialButtonOutlinedStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Background Initialization" />
+            android:text="Configuration" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

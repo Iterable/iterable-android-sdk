@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.iterable.inbox_customization.customizations.*
 import com.iterable.inbox_customization.tabs.onSimpleInboxClicked
 
@@ -26,7 +27,9 @@ class MainFragment : Fragment() {
         view.findViewById<Button>(R.id.filterMessageTitleButton).setOnClickListener { onFilterByMessageTitleClicked() }
         view.findViewById<Button>(R.id.cellTypesButton).setOnClickListener { onInboxWithMultipleCellTypesClicked() }
         view.findViewById<Button>(R.id.additionalFieldsButton).setOnClickListener { onInboxWithAdditionalFieldsClicked() }
-        view.findViewById<Button>(R.id.backgroundInitButton).setOnClickListener { onBackgroundInitializationClicked() }
+        view.findViewById<Button>(R.id.configurationButton).setOnClickListener {
+            findNavController().navigate(R.id.configurationFragment)
+        }
 
 
         return view

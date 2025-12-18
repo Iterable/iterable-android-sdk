@@ -2,6 +2,7 @@ package com.iterable.inbox_customization
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import androidx.navigation.Navigation
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
@@ -24,6 +25,15 @@ class MainActivity : AppCompatActivity(), IterableInAppManager.Listener {
         val navController = Navigation.findNavController(this, R.id.mainNavigationFragment)
         setupActionBarWithNavController(navController)
         binding.bottomNavigationView.setupWithNavController(navController)
+        
+        // Hide bottom navigation when on ConfigurationFragment
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.configurationFragment) {
+                binding.bottomNavigationView.visibility = View.GONE
+            } else {
+                binding.bottomNavigationView.visibility = View.VISIBLE
+            }
+        }
     }
 
     override fun onResume() {

@@ -3,12 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/navigation_graph"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/configurationFragment">
 
     <fragment
-        android:id="@+id/homeFragment"
-        android:name="com.iterable.inbox_customization.HomeFragment"
-        android:label="Home"
+        android:id="@+id/configurationFragment"
+        android:name="com.iterable.inbox_customization.ConfigurationFragment"
+        android:label="Configuration"
         tools:layout="@layout/fragment_home" />
 
     <fragment
