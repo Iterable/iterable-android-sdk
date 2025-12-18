@@ -1,6 +1,8 @@
 package com.iterable.inbox_customization
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -33,6 +35,7 @@ class ConfigurationFragment : Fragment() {
         val emailInputLayout = view.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.emailInputLayout)
         val emailInput = view.findViewById<TextInputEditText>(R.id.emailInput)
         val signInButton = view.findViewById<android.widget.Button>(R.id.signInButton)
+        val helpText = view.findViewById<android.widget.TextView>(R.id.helpText)
 
         val storedApiKey = DataManager.getStoredApiKey(requireContext())
         var isSDKInitialized = IterableApi.isSDKInitialized()
@@ -166,6 +169,16 @@ class ConfigurationFragment : Fragment() {
                         Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
+            }
+        }
+
+        helpText?.setOnClickListener {
+            val url = "https://support.iterable.com/hc/en-us/articles/360035019712-Iterable-s-Android-SDK"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Unable to open link", Toast.LENGTH_SHORT).show()
             }
         }
 

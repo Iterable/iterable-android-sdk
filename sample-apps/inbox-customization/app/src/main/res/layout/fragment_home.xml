@@ -118,6 +118,8 @@
             android:text="Need help? Visit https://support.iterable.com/hc/en-us/articles/360035019712-Iterable-s-Android-SDK"
             android:textSize="12sp"
             android:gravity="center"
+            android:autoLink="web"
+            android:linksClickable="true"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/continueButton"
