@@ -1,6 +1,7 @@
 package com.iterable.inbox_customization.util
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.StrictMode
 import android.util.Log
 import com.iterable.iterableapi.IterableApi
@@ -32,6 +33,8 @@ class DataManager {
     fun initializeIterableApi(context: Context, apiKey: String) {
         this.context = context
         this.storedApiKey = apiKey
+        // Persist API key
+        saveApiKeyToPreferences(context, apiKey)
         initHttpMocks()
         mockFirebaseToken()
         // IterableApi.overrideURLEndpointPath(serverUrl) // Commented out to use real API endpoint
@@ -58,6 +61,8 @@ class DataManager {
     fun initializeIterableApiInBackground(context: Context, apiKey: String, callback: IterableInitializationCallback? = null) {
         this.context = context
         this.storedApiKey = apiKey
+        // Persist API key
+        saveApiKeyToPreferences(context, apiKey)
         initHttpMocks()
         mockFirebaseToken()
         // IterableApi.overrideURLEndpointPath(serverUrl) // Commented out to use real API endpoint
@@ -99,6 +104,9 @@ class DataManager {
 
     companion object {
         val instance = DataManager()
+        
+        private const val PREFS_NAME = "iterable_prefs"
+        private const val KEY_API_KEY = "api_key"
 
         fun initializeIterableApi(context: Context, apiKey: String) {
             instance.initializeIterableApi(context, apiKey)
@@ -108,8 +116,46 @@ class DataManager {
             instance.initializeIterableApiInBackground(context, apiKey, callback)
         }
 
-        fun getStoredApiKey(): String? {
-            return instance.storedApiKey
+        fun getStoredApiKey(context: Context? = null): String? {
+            // First check if SDK is initialized and get API key from SDK
+            if (IterableApi.isSDKInitialized()) {
+                try {
+                    val iterableApi = IterableApi.getInstance()
+                    val apiKeyField: Field = iterableApi.javaClass.getDeclaredField("_apiKey")
+                    apiKeyField.isAccessible = true
+                    val apiKey = apiKeyField.get(iterableApi) as? String
+                    if (!apiKey.isNullOrEmpty()) {
+                        instance.storedApiKey = apiKey
+                        return apiKey
+                    }
+                } catch (e: Exception) {
+                    Log.w("DataManager", "Failed to retrieve API key from SDK: ${e.message}")
+                }
+            }
+            // Fallback to in-memory stored API key
+            if (!instance.storedApiKey.isNullOrEmpty()) {
+                return instance.storedApiKey
+            }
+            // Finally, check persisted API key from SharedPreferences
+            if (context != null) {
+                return loadApiKeyFromPreferences(context)
+            }
+            return null
+        }
+        
+        fun saveApiKeyToPreferences(context: Context, apiKey: String) {
+            val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putString(KEY_API_KEY, apiKey).apply()
+        }
+        
+        fun loadApiKeyFromPreferences(context: Context): String? {
+            val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            return prefs.getString(KEY_API_KEY, null)
+        }
+        
+        fun clearApiKeyFromPreferences(context: Context) {
+            val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().remove(KEY_API_KEY).apply()
         }
 
         fun loadData(resourceName: String) {
