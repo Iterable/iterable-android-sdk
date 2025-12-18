@@ -12,6 +12,7 @@ import okio.source
 
 class DataManager {
     var context: Context? = null
+    var storedApiKey: String? = null
     val server = MockWebServer()
     val serverUrl: String
     val dispatcher = PathBasedStaticDispatcher()
@@ -25,13 +26,13 @@ class DataManager {
         serverUrl = server.url("").toString()
     }
 
-    fun initializeIterableApi(context: Context) {
+    fun initializeIterableApi(context: Context, apiKey: String) {
         this.context = context
+        this.storedApiKey = apiKey
         initHttpMocks()
         IterableApi.overrideURLEndpointPath(serverUrl)
-        IterableApi.initialize(context, "apiKey")
-        IterableApi.getInstance().setEmail("user@example.com")
-        loadData("simple-inbox-messages.json")
+        IterableApi.initialize(context, apiKey)
+        // Note: setEmail should be called separately after initialization
     }
 
     fun initHttpMocks() {
@@ -49,11 +50,12 @@ class DataManager {
         dispatcher.setResponse("/$imageName", MockResponse().setBody(buffer))
     }
 
-    fun initializeIterableApiInBackground(context: Context, callback: IterableInitializationCallback? = null) {
+    fun initializeIterableApiInBackground(context: Context, apiKey: String, callback: IterableInitializationCallback? = null) {
         this.context = context
+        this.storedApiKey = apiKey
         initHttpMocks()
         IterableApi.overrideURLEndpointPath(serverUrl)
-        IterableApi.initializeInBackground(context, "apiKey") {
+        IterableApi.initializeInBackground(context, apiKey) {
             // Set email after initialization completes
             IterableApi.getInstance().setEmail("user@example.com")
             loadData("simple-inbox-messages.json")
@@ -64,12 +66,16 @@ class DataManager {
     companion object {
         val instance = DataManager()
 
-        fun initializeIterableApi(context: Context) {
-            instance.initializeIterableApi(context)
+        fun initializeIterableApi(context: Context, apiKey: String) {
+            instance.initializeIterableApi(context, apiKey)
         }
 
-        fun initializeIterableApiInBackground(context: Context, callback: IterableInitializationCallback? = null) {
-            instance.initializeIterableApiInBackground(context, callback)
+        fun initializeIterableApiInBackground(context: Context, apiKey: String, callback: IterableInitializationCallback? = null) {
+            instance.initializeIterableApiInBackground(context, apiKey, callback)
+        }
+
+        fun getStoredApiKey(): String? {
+            return instance.storedApiKey
         }
 
         fun loadData(resourceName: String) {

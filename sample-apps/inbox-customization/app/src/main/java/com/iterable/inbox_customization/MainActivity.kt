@@ -28,18 +28,32 @@ class MainActivity : AppCompatActivity(), IterableInAppManager.Listener {
 
     override fun onResume() {
         super.onResume()
-        //Add listener to inbox updates
-        IterableApi.getInstance().inAppManager.addListener(this)
-        onInboxUpdated()
+        //Add listener to inbox updates only if SDK is initialized
+        try {
+            val iterableApi = IterableApi.getInstance()
+            iterableApi.inAppManager.addListener(this)
+            onInboxUpdated()
+        } catch (e: Exception) {
+            // SDK not initialized yet, skip listener setup
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        IterableApi.getInstance().inAppManager.removeListener(this)
+        try {
+            IterableApi.getInstance().inAppManager.removeListener(this)
+        } catch (e: Exception) {
+            // SDK not initialized, skip listener removal
+        }
     }
 
     override fun onInboxUpdated() {
-        updateNotificationBadge(IterableApi.getInstance().inAppManager.unreadInboxMessagesCount)
+        try {
+            val unreadCount = IterableApi.getInstance().inAppManager.unreadInboxMessagesCount
+            updateNotificationBadge(unreadCount)
+        } catch (e: Exception) {
+            // SDK not initialized, skip badge update
+        }
     }
 
     private fun updateNotificationBadge(value: Int) {

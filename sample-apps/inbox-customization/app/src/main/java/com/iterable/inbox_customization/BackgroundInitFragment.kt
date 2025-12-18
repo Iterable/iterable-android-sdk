@@ -62,7 +62,8 @@ class BackgroundInitFragment : Fragment() {
         }
 
         // This returns immediately and doesn't block the UI
-        DataManager.initializeIterableApiInBackground(requireContext(), callback)
+        val apiKey = DataManager.getStoredApiKey() ?: "demoApiKey"
+        DataManager.initializeIterableApiInBackground(requireContext(), apiKey, callback)
         
         // Show that we can continue doing other work immediately
         statusText.append("\nInitialization started - UI remains responsive!")
