@@ -12,6 +12,9 @@ public class IterableWebChromeClient extends WebChromeClient {
 
     @Override
     public void onProgressChanged(WebView view, int newProgress) {
-        inAppHTMLNotification.runResizeScript();
+        // Only trigger resize when page is fully loaded (100%) to avoid multiple rapid calls
+        if (newProgress == 100) {
+            inAppHTMLNotification.runResizeScript();
+        }
     }
 }

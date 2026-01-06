@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -26,6 +27,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
@@ -51,9 +53,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     private static final int DELAY_THRESHOLD_MS = 500;
 
-    @Nullable static IterableInAppFragmentHTMLNotification notification;
-    @Nullable static IterableHelper.IterableUrlCallback clickCallback;
-    @Nullable static IterableInAppLocation location;
+    @Nullable
+    static IterableInAppFragmentHTMLNotification notification;
+    @Nullable
+    static IterableHelper.IterableUrlCallback clickCallback;
+    @Nullable
+    static IterableInAppLocation location;
 
     private IterableWebView webView;
     private boolean loaded;
@@ -61,6 +66,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private boolean callbackOnCancel = false;
     private String htmlString;
     private String messageId;
+
+    // Resize debouncing fields
+    private Handler resizeHandler;
+    private Runnable pendingResizeRunnable;
+    private float lastContentHeight = -1;
+    private static final int RESIZE_DEBOUNCE_DELAY_MS = 200;
 
     private double backgroundAlpha; //TODO: remove in a future version
     private Rect insetPadding;
@@ -92,6 +103,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     /**
      * Returns the notification instance currently being shown
+     *
      * @return notification instance
      */
     public static IterableInAppFragmentHTMLNotification getInstance() {
@@ -107,6 +119,17 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         this.messageId = "";
         insetPadding = new Rect();
         this.setStyle(DialogFragment.STYLE_NO_FRAME, androidx.appcompat.R.style.Theme_AppCompat_NoActionBar);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Set dialog positioning after the dialog is created and shown (only for non-fullscreen)
+        Dialog dialog = getDialog();
+        if (dialog != null && getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+            applyWindowGravity(dialog.getWindow(), "onStart");
+        }
     }
 
     @Override
@@ -147,6 +170,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        // Set window gravity for the dialog (only for non-fullscreen)
+        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+            applyWindowGravity(dialog.getWindow(), "onCreateDialog");
+        }
+
         if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
@@ -166,22 +195,40 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
 
+        // Set initial window gravity based on inset padding (only for non-fullscreen)
+        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+            applyWindowGravity(getDialog().getWindow(), "onCreateView");
+        }
+
         webView = new IterableWebView(getContext());
         webView.setId(R.id.webView);
+
         webView.createWithHtml(this, htmlString);
 
         if (orientationListener == null) {
             orientationListener = new OrientationEventListener(getContext(), SensorManager.SENSOR_DELAY_NORMAL) {
+                private int lastOrientation = -1;
+
                 // Resize the webView on device rotation
                 public void onOrientationChanged(int orientation) {
-                    if (loaded) {
-                        final Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                runResizeScript();
-                            }
-                        }, 1000);
+                    if (loaded && webView != null) {
+                        // Only trigger on significant orientation changes (90 degree increments)
+                        int currentOrientation = roundToNearest90Degrees(orientation);
+                        if (currentOrientation != lastOrientation && lastOrientation != -1) {
+                            lastOrientation = currentOrientation;
+
+                            // Use longer delay for orientation changes to allow layout to stabilize
+                            final Handler handler = new Handler(Looper.getMainLooper());
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    IterableLogger.d(TAG, "Orientation changed, triggering resize");
+                                    runResizeScript();
+                                }
+                            }, 1500); // Increased delay for better stability
+                        } else if (lastOrientation == -1) {
+                            lastOrientation = currentOrientation;
+                        }
                     }
                 }
             };
@@ -189,28 +236,74 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         orientationListener.enable();
 
-        RelativeLayout relativeLayout = new RelativeLayout(this.getContext());
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-        relativeLayout.setVerticalGravity(getVerticalLocation(insetPadding));
-        relativeLayout.addView(webView, layoutParams);
+        // Create a FrameLayout as the main container for better positioning control
+        FrameLayout frameLayout = new FrameLayout(this.getContext());
+
+        // Check if this is a full screen in-app
+        InAppLayout inAppLayout = getInAppLayout(insetPadding);
+        boolean isFullScreen = (inAppLayout == InAppLayout.FULLSCREEN);
+
+        if (isFullScreen) {
+            // For full screen in-apps, use MATCH_PARENT for both container and WebView
+            // Use FrameLayout.LayoutParams for direct child of FrameLayout
+            FrameLayout.LayoutParams webViewParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            );
+            frameLayout.addView(webView, webViewParams);
+        } else {
+            // For non-fullscreen in-apps, use the new layout structure with positioning
+            // Create a RelativeLayout as a wrapper for the WebView
+            RelativeLayout webViewContainer = new RelativeLayout(this.getContext());
+
+            int gravity = getVerticalLocation(insetPadding);
+
+            // Set FrameLayout gravity based on positioning
+            FrameLayout.LayoutParams containerParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            );
+
+            if (gravity == Gravity.CENTER_VERTICAL) {
+                containerParams.gravity = Gravity.CENTER;
+            } else if (gravity == Gravity.TOP) {
+                containerParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+            } else if (gravity == Gravity.BOTTOM) {
+                containerParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+            }
+
+            // Add WebView to the RelativeLayout container with WRAP_CONTENT for proper sizing
+            RelativeLayout.LayoutParams webViewParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            );
+            webViewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            webViewContainer.addView(webView, webViewParams);
+
+            // Add the container to the FrameLayout
+            frameLayout.addView(webViewContainer, containerParams);
+        }
 
         if (savedInstanceState == null || !savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)) {
             IterableApi.sharedInstance.trackInAppOpen(messageId, location);
         }
 
         prepareToShowWebView();
-        return relativeLayout;
+        return frameLayout;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // Handle edge-to-edge insets with modern approach
-        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
-            Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(0, sysBars.top, 0, sysBars.bottom);
-            return insets;
-        });
+        // Handle edge-to-edge insets with modern approach (only for non-fullscreen)
+        // Full screen in-apps should not have padding from system bars
+        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+            ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+                Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(0, sysBars.top, 0, sysBars.bottom);
+                return insets;
+            });
+        }
     }
 
     public void setLoaded(boolean loaded) {
@@ -239,6 +332,13 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onDestroy() {
         super.onDestroy();
+
+        // Clean up pending resize operations
+        if (resizeHandler != null && pendingResizeRunnable != null) {
+            resizeHandler.removeCallbacks(pendingResizeRunnable);
+        }
+        pendingResizeRunnable = null;
+        resizeHandler = null;
 
         if (this.getActivity() != null && this.getActivity().isChangingConfigurations()) {
             return;
@@ -388,7 +488,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
             try {
                 Animation anim = AnimationUtils.loadAnimation(getContext(),
-                        animationResource);
+                    animationResource);
                 anim.setDuration(IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION);
                 webView.startAnimation(anim);
             } catch (Exception e) {
@@ -428,11 +528,60 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     @Override
     public void runResizeScript() {
-        resize(webView.getContentHeight());
+        // Initialize handler lazily with main looper to avoid Looper issues in tests
+        if (resizeHandler == null) {
+            resizeHandler = new Handler(Looper.getMainLooper());
+        }
+
+        // Cancel any pending resize operation
+        if (pendingResizeRunnable != null) {
+            resizeHandler.removeCallbacks(pendingResizeRunnable);
+        }
+
+        // Schedule a debounced resize operation
+        pendingResizeRunnable = new Runnable() {
+            @Override
+            public void run() {
+                performResizeWithValidation();
+            }
+        };
+
+        resizeHandler.postDelayed(pendingResizeRunnable, RESIZE_DEBOUNCE_DELAY_MS);
+    }
+
+    private void performResizeWithValidation() {
+        if (webView == null) {
+            IterableLogger.w(TAG, "WebView is null, skipping resize");
+            return;
+        }
+
+        float currentHeight = webView.getContentHeight();
+
+        // Validate content height
+        if (currentHeight <= 0) {
+            IterableLogger.w(TAG, "Invalid content height: " + currentHeight + "dp, skipping resize");
+            return;
+        }
+
+        // Check if height has stabilized (avoid unnecessary resizes for same height)
+        if (Math.abs(currentHeight - lastContentHeight) < 1.0f) {
+            IterableLogger.d(TAG, "Content height unchanged (" + currentHeight + "dp), skipping resize");
+            return;
+        }
+
+        lastContentHeight = currentHeight;
+
+        IterableLogger.d(
+            TAG,
+            "💚 Resizing in-app to height: " + currentHeight + "dp"
+        );
+
+        resize(currentHeight);
     }
 
     /**
      * Resizes the dialog window based upon the size of its webView HTML content
+     *
      * @param height
      */
     public void resize(final float height) {
@@ -447,7 +596,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                 try {
                     // Since this is run asynchronously, notification might've been dismissed already
                     if (getContext() == null || notification == null || notification.getDialog() == null ||
-                            notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
+                        notification.getDialog().getWindow() == null || !notification.getDialog().isShowing()) {
                         return;
                     }
 
@@ -476,9 +625,44 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         window.setLayout(webViewWidth, webViewHeight);
                         getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
+                        // Resize the WebView directly with explicit size
                         float relativeHeight = height * getResources().getDisplayMetrics().density;
-                        RelativeLayout.LayoutParams webViewLayout = new RelativeLayout.LayoutParams(getResources().getDisplayMetrics().widthPixels, (int) relativeHeight);
-                        webView.setLayoutParams(webViewLayout);
+                        int newWebViewWidth = getResources().getDisplayMetrics().widthPixels;
+                        int newWebViewHeight = (int) relativeHeight;
+
+                        // Set WebView to explicit size
+                        RelativeLayout.LayoutParams webViewParams = new RelativeLayout.LayoutParams(newWebViewWidth, newWebViewHeight);
+
+                        // Apply positioning based on gravity
+                        int resizeGravity = getVerticalLocation(insetPadding);
+                        IterableLogger.d(TAG, "Resizing WebView directly - gravity: " + resizeGravity + " size: " + newWebViewWidth + "x" + newWebViewHeight + "px for inset padding: " + insetPadding);
+
+                        if (resizeGravity == Gravity.CENTER_VERTICAL) {
+                            webViewParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+                            IterableLogger.d(TAG, "Applied CENTER_IN_PARENT to WebView");
+                        } else if (resizeGravity == Gravity.TOP) {
+                            webViewParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                            webViewParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                            IterableLogger.d(TAG, "Applied TOP alignment to WebView");
+                        } else if (resizeGravity == Gravity.BOTTOM) {
+                            webViewParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                            webViewParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                            IterableLogger.d(TAG, "Applied BOTTOM alignment to WebView");
+                        }
+
+                        // Make dialog full screen to allow proper positioning
+                        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+
+                        // Apply the new layout params to WebView
+                        webView.setLayoutParams(webViewParams);
+
+                        // Force layout updates
+                        webView.requestLayout();
+                        if (webView.getParent() instanceof ViewGroup) {
+                            ((ViewGroup) webView.getParent()).requestLayout();
+                        }
+
+                        IterableLogger.d(TAG, "Applied explicit size and positioning to WebView: " + newWebViewWidth + "x" + newWebViewHeight);
                     }
                 } catch (IllegalArgumentException e) {
                     IterableLogger.e(TAG, "Exception while trying to resize an in-app message", e);
@@ -489,6 +673,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     /**
      * Returns the vertical position of the dialog for the given padding
+     *
      * @param padding
      * @return
      */
@@ -500,6 +685,55 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             gravity = Gravity.BOTTOM;
         }
         return gravity;
+    }
+
+    /**
+     * Rounds an orientation value to the nearest 90-degree increment.
+     * This is used to detect significant orientation changes (portrait/landscape).
+     *
+     * The calculation rounds to the nearest multiple of 90 by adding 45 before dividing.
+     * For positive numbers, uses integer division (which truncates toward zero).
+     * For negative numbers, uses floor division to correctly round toward negative infinity.
+     *
+     * @param orientation The orientation value in degrees (typically 0-359 from OrientationEventListener)
+     * @return The orientation rounded to the nearest 90-degree increment (0, 90, 180, 270, or 360)
+     */
+    static int roundToNearest90Degrees(int orientation) {
+        if (orientation >= 0) {
+            // For positive numbers, integer division truncates toward zero
+            // (0 + 45) / 90 = 0, (44 + 45) / 90 = 0, (45 + 45) / 90 = 1
+            return ((orientation + 45) / 90) * 90;
+        } else {
+            // For negative numbers, use floor division to round toward negative infinity
+            // Math.floor((-46 + 45) / 90.0) = Math.floor(-1/90.0) = -1, so -1 * 90 = -90
+            return (int) (Math.floor((orientation + 45.0) / 90.0) * 90);
+        }
+    }
+
+    /**
+     * Sets the window gravity based on inset padding
+     *
+     * @param window  The dialog window to configure
+     * @param context Debug context string for logging
+     */
+    private void applyWindowGravity(Window window, String context) {
+        if (window == null) {
+            return;
+        }
+
+        WindowManager.LayoutParams windowParams = window.getAttributes();
+        int gravity = getVerticalLocation(insetPadding);
+
+        if (gravity == Gravity.CENTER_VERTICAL) {
+            windowParams.gravity = Gravity.CENTER;
+        } else if (gravity == Gravity.TOP) {
+            windowParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        } else if (gravity == Gravity.BOTTOM) {
+            windowParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        }
+
+        window.setAttributes(windowParams);
+        IterableLogger.d(TAG, "Set window gravity in " + context + ": " + windowParams.gravity);
     }
 
     InAppLayout getInAppLayout(Rect padding) {
