@@ -5,12 +5,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 
 class SingleFragmentActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Enable edge-to-edge display
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         val fragmentName = intent.getStringExtra(FRAGMENT_NAME)
         val fragment: Fragment? = fragmentName?.let { Fragment.instantiate(this, it) }
         val fragmentArguments = intent.getBundleExtra(FRAGMENT_ARGUMENTS)

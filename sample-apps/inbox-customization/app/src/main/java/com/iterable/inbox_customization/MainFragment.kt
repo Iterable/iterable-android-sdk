@@ -5,6 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.iterable.inbox_customization.customizations.*
@@ -29,6 +32,18 @@ class MainFragment : Fragment() {
         view.findViewById<Button>(R.id.additionalFieldsButton).setOnClickListener { onInboxWithAdditionalFieldsClicked() }
         view.findViewById<Button>(R.id.configurationButton).setOnClickListener {
             findNavController().navigate(R.id.configurationFragment)
+        }
+
+        // Handle window insets for safe areas (camera cutouts, status bar, etc.)
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(
+                top = insets.top,
+                bottom = insets.bottom,
+                left = insets.left,
+                right = insets.right
+            )
+            windowInsets
         }
 
         return view

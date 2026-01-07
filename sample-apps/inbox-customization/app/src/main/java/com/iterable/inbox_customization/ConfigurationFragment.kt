@@ -11,6 +11,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.textfield.TextInputEditText
@@ -180,6 +183,18 @@ class ConfigurationFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(context, "Unable to open link", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        // Handle window insets for safe areas (camera cutouts, status bar, etc.)
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(
+                top = insets.top,
+                bottom = insets.bottom,
+                left = insets.left,
+                right = insets.right
+            )
+            windowInsets
         }
 
         return view
