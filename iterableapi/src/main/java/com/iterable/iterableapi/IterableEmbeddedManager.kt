@@ -261,7 +261,18 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 // region interfaces
 
 public interface IterableEmbeddedUpdateHandler {
+    /**
+     * Callback method called when the embedded messages for a placement have been updated.
+     * This is triggered when new messages are received, messages are removed, or a sync
+     * results in a change to the local cache.
+     */
     fun onMessagesUpdated()
+
+    /**
+     * Callback indicating embedded messaging has been disabled.
+     * This occurs when a embedded message sync is performed while `enableEmbeddedMessaging` flag is enabled in the configuration.
+     * It is recommended to disable the `enableEmbeddedMessaging` flag if this callback is invoked to avoid unnecessary api calls.
+     */
     fun onEmbeddedMessagingDisabled()
 }
 

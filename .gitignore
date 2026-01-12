@@ -73,3 +73,4 @@ jacoco.exec
 
 IDE
 integration-tests/.idea/
+.metals/metals.lock.db
