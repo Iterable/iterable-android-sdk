@@ -86,6 +86,11 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     //Network call to get the embedded messages
     fun syncMessages(placementIds: Array<Long>) {
+        syncMessages(placementIds, null)
+    }
+
+    //Network call to get the embedded messages with completion handler
+    fun syncMessages(placementIds: Array<Long>, completionHandler: (() -> Unit)?) {
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
@@ -143,6 +148,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
                 } catch (e: JSONException) {
                     IterableLogger.e(TAG, e.toString())
+                } finally {
+                    // Call completion handler after all processing is done
+                    completionHandler?.invoke()
                 }
             }, object : IterableHelper.FailureHandler {
                 override fun onFailure(reason: String, data: JSONObject?) {
@@ -153,13 +161,17 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                     ) {
                         IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
                         broadcastSubscriptionInactive()
-                        return
                     } else {
                         //TODO: Instead of generic condition, have the retry only in certain situation
                         IterableLogger.e(TAG, "Error while fetching embedded messages: $reason")
                     }
+                    // Call completion handler after all error handling is done
+                    completionHandler?.invoke()
                 }
             })
+        } else {
+            // If embedded messaging is disabled, still call completion handler
+            completionHandler?.invoke()
         }
     }
 
