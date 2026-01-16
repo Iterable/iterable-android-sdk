@@ -159,5 +159,59 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertEquals("https://example.com", capturedAction.getValue().getData());
     }
 
+    @Test
+    public void testBackgroundCustomActionWithNonInitializedSDK() throws Exception {
+        // Reset to simulate SDK not being initialized
+        IterableTestUtils.resetIterableApi();
+
+        // Verify context is initially null
+        assertNull(IterableApi.sharedInstance._applicationContext);
+
+        IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "remindMeButton");
+        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_custom_action.json"));
+
+        // Receive push action when SDK is not initialized
+        iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
+
+        // Verify that context was stored even without SDK initialization
+        assertNotNull(IterableApi.sharedInstance._applicationContext);
+
+        // Verify that the main app activity was NOT launched (openApp=false)
+        Application application = ApplicationProvider.getApplicationContext();
+        Intent activityIntent = shadowOf(application).peekNextStartedActivity();
+        assertNull(activityIntent);
+    }
+
+    @Test
+    public void testBackgroundCustomActionProcessedAfterSDKInit() throws Exception {
+        // Reset to simulate SDK not being initialized
+        IterableTestUtils.resetIterableApi();
+
+        IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "remindMeButton");
+        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_custom_action.json"));
+
+        // Receive push action when SDK is not initialized (action won't be handled)
+        iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
+
+        // Now initialize SDK with a custom action handler
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        final boolean[] handlerCalled = {false};
+        IterableTestUtils.createIterableApiNew(builder ->
+            builder.setCustomActionHandler((action, actionContext) -> {
+                handlerCalled[0] = true;
+                assertEquals("snoozeReminder", action.getType());
+                return true;
+            })
+        );
+
+        // Verify that the custom action handler was called during initialization
+        // (processPendingAction is called in initialize())
+        assertEquals(true, handlerCalled[0]);
+    }
+
 
 }
