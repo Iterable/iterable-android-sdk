@@ -24,7 +24,7 @@ import androidx.core.view.WindowInsetsCompat
  * This class provides the same functionality as [IterableInAppFragmentHTMLNotification]
  * but works with [androidx.activity.ComponentActivity] instead of requiring [androidx.fragment.app.FragmentActivity].
  */
-class IterableInAppDialogNotification private constructor(
+class IterableInAppDialogNotification internal constructor(
     activity: Activity,
     private val htmlString: String?,
     private val callbackOnCancel: Boolean,
@@ -60,9 +60,6 @@ class IterableInAppDialogNotification private constructor(
         @JvmStatic
         private var location: IterableInAppLocation? = null
 
-        /**
-         * Factory method to create a new dialog instance
-         */
         @JvmStatic
         @JvmOverloads
         fun createInstance(
@@ -76,7 +73,7 @@ class IterableInAppDialogNotification private constructor(
             padding: Rect,
             animate: Boolean = false,
             inAppBgColor: IterableInAppMessage.InAppBgColor =
-                IterableInAppMessage.InAppBgColor(null, 0.0)
+                IterableInAppMessage.InAppBgColor(null, 0.0),
         ): IterableInAppDialogNotification {
             clickCallback = urlCallback
             location = inAppLocation
@@ -90,7 +87,12 @@ class IterableInAppDialogNotification private constructor(
                 padding,
                 animate,
                 inAppBgColor.bgAlpha,
-                inAppBgColor.bgHexColor
+                inAppBgColor.bgHexColor,
+                InAppServices.layout,
+                InAppServices.animation,
+                InAppServices.tracking,
+                InAppServices.webView,
+                InAppServices.orientation
             )
             
             return notification!!
@@ -105,14 +107,11 @@ class IterableInAppDialogNotification private constructor(
         fun getInstance(): IterableInAppDialogNotification? = notification
     }
 
-    // Lifecycle and Setup
     override fun onStart() {
         super.onStart()
 
-        // Set window to fullscreen using service
         window?.let { layoutService.setWindowToFullScreen(it) }
         
-        // Apply gravity for non-fullscreen layouts
         val layout = layoutService.getInAppLayout(insetPadding)
         if (layout != InAppLayoutService.InAppLayout.FULLSCREEN) {
             window?.let { layoutService.applyWindowGravity(it, insetPadding, "onStart") }
@@ -122,57 +121,44 @@ class IterableInAppDialogNotification private constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Configure dialog window
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
         
-        // Configure based on layout type using service
         val layout = layoutService.getInAppLayout(insetPadding)
         window?.let { layoutService.configureWindowFlags(it, layout) }
         
-        // Apply gravity for non-fullscreen layouts
         if (layout != InAppLayoutService.InAppLayout.FULLSCREEN) {
             window?.let { layoutService.applyWindowGravity(it, insetPadding, "onCreate") }
         }
         
-        // Setup cancel listener
         setOnCancelListener {
             if (callbackOnCancel && clickCallback != null) {
                 clickCallback?.execute(null)
             }
         }
         
-        // Setup back press handling
         setupBackPressHandling()
         
-        // Create the view hierarchy
         val contentView = createContentView()
         setContentView(contentView)
         
-        // Setup orientation listener
         setupOrientationListener()
         
-        // Track open event using service
         trackingService.trackInAppOpen(messageId, location)
         
-        // Prepare to show with animation
         prepareToShowWebView()
     }
 
     override fun dismiss() {
-        // Clean up back press callback
         backPressedCallback?.remove()
         backPressedCallback = null
         
-        // Clean up orientation listener using service
         orientationService.disableListener(orientationListener)
         orientationListener = null
         
-        // Clean up webview using service
         webViewService.cleanupWebView(webView)
         webView = null
         
-        // Clear singleton
         notification = null
         
         super.dismiss()
@@ -192,10 +178,8 @@ class IterableInAppDialogNotification private constructor(
                         location
                     )
                     
-                    // Process message removal
                     processMessageRemoval()
                     
-                    // Dismiss the dialog
                     dismiss()
                 }
             }
@@ -203,11 +187,9 @@ class IterableInAppDialogNotification private constructor(
             activity.onBackPressedDispatcher.addCallback(activity, backPressedCallback!!)
             IterableLogger.d(TAG, "dialog notification back press handler registered")
         } else {
-            // Fallback to legacy key listener for non-ComponentActivity
             IterableLogger.w(TAG, "Activity is not ComponentActivity, using legacy back press handling")
             setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-                    // Track back button using service
                     trackingService.trackInAppClick(messageId, BACK_BUTTON, location)
                     trackingService.trackInAppClose(
                         messageId,
@@ -216,10 +198,8 @@ class IterableInAppDialogNotification private constructor(
                         location
                     )
                     
-                    // Process message removal
                     processMessageRemoval()
                     
-                    // Dismiss the dialog
                     dismiss()
                     true
                 } else {
@@ -229,41 +209,32 @@ class IterableInAppDialogNotification private constructor(
         }
     }
 
-    // View Creation
-
     private fun createContentView(): View {
         val context = context
         
-        // Create WebView using service
         webView = webViewService.createConfiguredWebView(
             context,
             this@IterableInAppDialogNotification,
             htmlString ?: ""
         )
         
-        // Create container based on layout type using service
         val frameLayout = FrameLayout(context)
         val layout = layoutService.getInAppLayout(insetPadding)
         val isFullScreen = layout == InAppLayoutService.InAppLayout.FULLSCREEN
         
         if (isFullScreen) {
-            // Fullscreen: WebView fills entire dialog
             val params = webViewService.createWebViewLayoutParams(true)
             frameLayout.addView(webView, params)
         } else {
-            // Non-fullscreen: WebView in positioned container
             val webViewContainer = RelativeLayout(context)
             
-            // Container positioning using service
             val containerParams = webViewService.createContainerLayoutParams(layout)
             
-            // WebView centering using service
             val webViewParams = webViewService.createCenteredWebViewParams()
             
             webViewContainer.addView(webView, webViewParams)
             frameLayout.addView(webViewContainer, containerParams)
             
-            // Apply window insets for system bars
             ViewCompat.setOnApplyWindowInsetsListener(frameLayout) { v, insets ->
                 val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 v.setPadding(0, sysBars.top, 0, sysBars.bottom)
@@ -275,7 +246,6 @@ class IterableInAppDialogNotification private constructor(
     }
 
     private fun setupOrientationListener() {
-        // Create orientation listener using service
         orientationListener = orientationService.createOrientationListener(context) {
             if (loaded && webView != null) {
                 webViewService.runResizeScript(webView)
@@ -315,8 +285,6 @@ class IterableInAppDialogNotification private constructor(
         }
     }
 
-    // WebView Callbacks
-
     override fun setLoaded(loaded: Boolean) {
         this.loaded = loaded
     }
@@ -327,7 +295,6 @@ class IterableInAppDialogNotification private constructor(
 
     override fun onUrlClicked(url: String?) {
         url?.let {
-            // Track click and close using service
             trackingService.trackInAppClick(messageId, it, location)
             trackingService.trackInAppClose(
                 messageId,
@@ -349,7 +316,6 @@ class IterableInAppDialogNotification private constructor(
     }
 
     private fun processMessageRemoval() {
-        // Remove message using service
         trackingService.removeMessage(messageId, location)
     }
 }
