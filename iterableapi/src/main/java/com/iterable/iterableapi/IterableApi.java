@@ -405,7 +405,7 @@ public class IterableApi {
             boolean isUnknown,
             @Nullable IterableHelper.FailureHandler failureHandler
     ) {
-        if (!isInitialized()) {
+        if (!isInitialized()) { //todo: If we get here and it is not initialized, isn't it possible to have leftover data that was already set by setEmail?
             setAuthToken(null);
             return;
         }
@@ -413,7 +413,7 @@ public class IterableApi {
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
-            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
+            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler); //todo: Why do we need to do this again if we did this on setEmail?
         } else {
             getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler));
         }
@@ -449,8 +449,9 @@ public class IterableApi {
         }
 
         if (config.autoPushRegistration) {
-            registerForPush();
-        } else if (_setUserSuccessCallbackHandler != null) {
+            registerForPush(); //TODO: FIX, THE LOGIN NEVER CALLS THE CALLBACK IF THE AUTOPUSH REGISTRATION IS TRUE
+        }
+        if (_setUserSuccessCallbackHandler != null) { // todo: why is there an else if it can be both true
             _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
         }
 
@@ -741,7 +742,7 @@ public class IterableApi {
     private IterableHelper.SuccessHandler getSuccessHandler() {
         IterableHelper.SuccessHandler wrappedSuccessHandler = null;
         if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
-            final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
+            final IterableHelper.SuccessHandler originalSuccessHandler = null; //todo: MAYBE THIS HAS TO DO WITH THE ERROR, IF THE PERSON IS SETTING EMAIL AND REGISTERING DEVICE TOKEN THEY WILL GET THE WRONG CALLBACK CALLED
             wrappedSuccessHandler = data -> {
                 trackConsentOnDeviceRegistration();
 
@@ -1047,6 +1048,9 @@ public class IterableApi {
 
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
+            if (successHandler != null) {
+                successHandler.onSuccess(new JSONObject());
+            }
             return;
         }
 
@@ -1157,7 +1161,7 @@ public class IterableApi {
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
         if (config.enableUnknownUserActivation && getVisitorUsageTracked()) {
 
-            if (emailOrUserId != null && !emailOrUserId.equals(_userIdUnknown)) {
+            if (emailOrUserId != null && !emailOrUserId.equals(_userIdUnknown)) { //todo: when would the userIdUnknown be the same?
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
             }
 
