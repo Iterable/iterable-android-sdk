@@ -44,11 +44,18 @@ class IterablePushNotificationUtil {
             return;
         }
 
-        // Store the application context if not already set, so custom actions can be
-        // processed even when the SDK hasn't been fully initialized (e.g., openApp=false)
-        if (IterableApi.sharedInstance._applicationContext == null && context != null) {
-            IterableApi.sharedInstance._applicationContext = context.getApplicationContext();
+        // Clear any previous pending action that was never processed.
+        // This prevents residual actions from accumulating if they were never handled
+        // (e.g., if the SDK was never initialized or the action handler wasn't available).
+        if (pendingAction != null) {
+            IterableLogger.d(TAG, "Clearing previous unhandled pending action");
+            pendingAction = null;
         }
+
+        // Initialize minimal context for push handling if SDK hasn't been fully initialized.
+        // This ensures custom actions can be processed even when the app is in the background
+        // and the SDK hasn't been initialized yet (e.g., openApp=false scenarios).
+        IterableApi.initializeForPush(context);
 
         IterableNotificationData notificationData = new IterableNotificationData(intent.getExtras());
         String actionIdentifier = intent.getStringExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER);

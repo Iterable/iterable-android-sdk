@@ -213,5 +213,72 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertEquals(true, handlerCalled[0]);
     }
 
+    @Test
+    public void testInitializeForPushSetsContext() throws Exception {
+        // Reset to simulate SDK not being initialized
+        IterableTestUtils.resetIterableApi();
 
+        // Verify context is initially null
+        assertNull(IterableApi.sharedInstance._applicationContext);
+
+        // Call initializeForPush
+        IterableApi.initializeForPush(ApplicationProvider.getApplicationContext());
+
+        // Verify context was set
+        assertNotNull(IterableApi.sharedInstance._applicationContext);
+    }
+
+    @Test
+    public void testInitializeForPushDoesNotOverwriteExistingContext() throws Exception {
+        // Initialize the SDK normally first
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        IterableTestUtils.createIterableApi();
+
+        // Store reference to the original context
+        Context originalContext = IterableApi.sharedInstance._applicationContext;
+        assertNotNull(originalContext);
+
+        // Call initializeForPush - should not overwrite existing context
+        IterableApi.initializeForPush(ApplicationProvider.getApplicationContext());
+
+        // Verify context was not changed
+        assertEquals(originalContext, IterableApi.sharedInstance._applicationContext);
+    }
+
+    @Test
+    public void testPreviousPendingActionClearedOnNewPush() throws Exception {
+        // Reset to simulate SDK not being initialized
+        IterableTestUtils.resetIterableApi();
+
+        IterablePushActionReceiver iterablePushActionReceiver = new IterablePushActionReceiver();
+
+        // Send first push action (won't be handled since SDK not initialized)
+        Intent firstIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        firstIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "remindMeButton");
+        firstIntent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_custom_action.json"));
+        iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), firstIntent);
+
+        // Send second push action with a different action
+        Intent secondIntent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        secondIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+        secondIntent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+        iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), secondIntent);
+
+        // Now initialize SDK with a custom action handler
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        final String[] lastActionType = {null};
+        final int[] callCount = {0};
+        IterableTestUtils.createIterableApiNew(builder ->
+            builder.setCustomActionHandler((action, actionContext) -> {
+                callCount[0]++;
+                lastActionType[0] = action.getType();
+                return true;
+            })
+        );
+
+        // Verify that only the second action (customAction) was processed, not the first (snoozeReminder)
+        // The first action should have been cleared when the second push came in
+        assertEquals(1, callCount[0]);
+        assertEquals("customAction", lastActionType[0]);
+    }
 }
