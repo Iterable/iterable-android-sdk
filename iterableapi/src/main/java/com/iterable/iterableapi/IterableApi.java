@@ -1331,6 +1331,16 @@ public class IterableApi {
     }
 
     /**
+     * Checks if a URL is an Iterable deep link (rewritten by Iterable)
+     *
+     * @param url The URL string to check
+     * @return true if the URL matches the Iterable deep link pattern
+     */
+    public static boolean isIterableDeeplink(@Nullable String url) {
+        return IterableDeeplinkManager.isIterableDeeplink(url);
+    }
+
+    /**
      * Handles an App Link
      * For Iterable links, it will track the click and retrieve the original URL, pass it to
      * {@link IterableUrlHandler} for handling
