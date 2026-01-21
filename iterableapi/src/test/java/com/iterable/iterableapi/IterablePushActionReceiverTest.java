@@ -197,6 +197,9 @@ public class IterablePushActionReceiverTest extends BaseTest {
         // Receive push action when SDK is not initialized (action won't be handled)
         iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
 
+        // Reset to real implementation so custom action handler gets invoked
+        IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
+
         // Now initialize SDK with a custom action handler
         stubAnyRequestReturningStatusCode(server, 200, "{}");
         final boolean[] handlerCalled = {false};
@@ -263,6 +266,9 @@ public class IterablePushActionReceiverTest extends BaseTest {
         secondIntent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
         secondIntent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         iterablePushActionReceiver.onReceive(ApplicationProvider.getApplicationContext(), secondIntent);
+
+        // Reset to real implementation so custom action handler gets invoked
+        IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
 
         // Now initialize SDK with a custom action handler
         stubAnyRequestReturningStatusCode(server, 200, "{}");
