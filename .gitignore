@@ -73,3 +73,5 @@ jacoco.exec
 
 IDE
 integration-tests/.idea/
+.claude/
+.mcp.json
