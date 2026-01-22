@@ -44,10 +44,6 @@ class IterablePushNotificationUtil {
             return;
         }
 
-        if (pendingAction != null) {
-            IterableLogger.w(TAG, "There is a previous unhandled pending action....");
-        }
-
         // Initialize minimal context for push handling if SDK hasn't been fully initialized.
         // This ensures custom actions can be processed even when the app is in the background
         // and the SDK hasn't been initialized yet (e.g., openApp=false scenarios).
