@@ -1,25 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Deep Link Tests"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="32dp"
-        android:gravity="center" />
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Deep link tests will be implemented here"
-        android:textSize="16sp"
-        android:gravity="center" />
+        <!-- Header - changes based on deep link path -->
+        <TextView
+            android:id="@+id/tvDeepLinkHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Deep Link Tests"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp"
+            android:gravity="center" />
 
-</LinearLayout> 
+        <!-- Status indicator -->
+        <TextView
+            android:id="@+id/tvDeepLinkStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status: Waiting for deep link"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:padding="12dp"
+            android:background="#F5F5F5" />
+
+        <!-- Deep Link Details Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="@android:drawable/dialog_holo_light_frame">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Deep Link Details"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- URL -->
+            <TextView
+                android:id="@+id/tvDeepLinkUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="URL: (waiting for deep link...)"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"
+                android:textIsSelectable="true" />
+
+            <!-- Path -->
+            <TextView
+                android:id="@+id/tvDeepLinkPath"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Path: -"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"
+                android:textIsSelectable="true" />
+
+            <!-- Host -->
+            <TextView
+                android:id="@+id/tvDeepLinkHost"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Host: -"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"
+                android:textIsSelectable="true" />
+
+            <!-- Scheme -->
+            <TextView
+                android:id="@+id/tvDeepLinkScheme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Scheme: -"
+                android:textSize="14sp"
+                android:textIsSelectable="true" />
+
+        </LinearLayout>
+
+        <!-- Instructions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="To test deep links:\n\n• Click a deep link from an email\n• Use adb to send a VIEW intent\n• Open a link that matches the app's URL patterns"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="24dp"
+            android:lineSpacingExtra="4dp" />
+
+        <!-- Close Button -->
+        <Button
+            android:id="@+id/btnCloseDeepLink"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Close"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+
+</ScrollView> 
