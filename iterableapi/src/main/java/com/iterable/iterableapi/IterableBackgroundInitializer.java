@@ -46,12 +46,10 @@ class IterableBackgroundInitializer {
         String getDescription();
     }
 
-    /**
-     * Queue for operations called before initialization completes
-     */
     private static class OperationQueue {
         private final ConcurrentLinkedQueue<QueuedOperation> operations = new ConcurrentLinkedQueue<>();
         private volatile boolean isProcessing = false;
+        private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
 
         void enqueue(QueuedOperation operation) {
             operations.offer(operation);
@@ -59,24 +57,54 @@ class IterableBackgroundInitializer {
         }
 
         void processAll(ExecutorService executor) {
-            if (isProcessing) return;
+            if (!canStartProcessing(executor)) {
+                return;
+            }
+            
             isProcessing = true;
+            executor.execute(this::processQueuedOperations);
+        }
 
-            executor.execute(() -> {
+        private boolean canStartProcessing(ExecutorService executor) {
+            if (isProcessing) {
+                IterableLogger.w(TAG, "Already processing operations, skipping");
+                return false;
+            }
+            
+            if (executor == null || executor.isShutdown()) {
+                IterableLogger.e(TAG, "Cannot process operations: executor unavailable");
+                return false;
+            }
+            
+            return true;
+        }
+
+
+        private void processQueuedOperations() {
+            try {
+                IterableLogger.d(TAG, "Starting to process queued operations");
+                
                 QueuedOperation operation;
                 while ((operation = operations.poll()) != null) {
-                    try {
-                        IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
-                        operation.execute();
-                    } catch (Exception e) {
-                        IterableLogger.e(TAG, "Failed to execute queued operation", e);
-                    }
+                    executeOperationOnMainThread(operation);
                 }
+                
+                IterableLogger.d(TAG, "Finished processing queued operations");
+            } finally {
                 isProcessing = false;
-
-                // After processing all operations, shut down the executor
-                IterableLogger.d(TAG, "All queued operations processed, shutting down background executor");
                 shutdownBackgroundExecutorAsync();
+            }
+        }
+
+        private void executeOperationOnMainThread(QueuedOperation operation) {
+            IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
+            
+            mainThreadHandler.post(() -> {
+                try {
+                    operation.execute();
+                } catch (Exception e) {
+                    IterableLogger.e(TAG, "Failed to execute operation: " + operation.getDescription(), e);
+                }
             });
         }
 
@@ -126,137 +154,180 @@ class IterableBackgroundInitializer {
                                      @NonNull String apiKey,
                                      @Nullable IterableConfig config,
                                      @Nullable IterableInitializationCallback callback) {
-        // Handle null context early - still report success but log error
         if (context == null) {
             IterableLogger.e(TAG, "Context cannot be null, but reporting success");
-            if (callback != null) {
-                new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
-            }
+            invokeCallbackOnMainThread(callback);
             return;
         }
 
+        if (!startInitialization(context, apiKey, config, callback)) {
+            return; // Already initialized or in progress
+        }
+
+        IterableLogger.d(TAG, "Starting background initialization");
+        backgroundExecutor.execute(() -> runInitializationTask(context, apiKey, config, callback));
+    }
+
+    private static boolean startInitialization(@NonNull Context context,
+                                             @NonNull String apiKey,
+                                             @Nullable IterableConfig config,
+                                             @Nullable IterableInitializationCallback callback) {
         synchronized (initLock) {
             if (isInitializing || isBackgroundInitialized) {
-                IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
-                if (callback != null) {
-                    if (isBackgroundInitialized) {
-                        // Initialization already complete, call callback immediately
-                        new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
-                    } else {
-                        // Initialization in progress, queue callback for later
-                        pendingCallbacks.offer(callback);
-                    }
-                }
-                return;
+                handleDuplicateInitialization(callback);
+                return false;
             }
 
-            // Set initializing flag and essential properties inside synchronized block
+            // Set initializing flag and configure SDK
             isInitializing = true;
             IterableApi.sharedInstance._applicationContext = context.getApplicationContext();
             IterableApi.sharedInstance._apiKey = apiKey;
             IterableApi.sharedInstance.config = (config != null) ? config : new IterableConfig.Builder().build();
+            return true;
         }
+    }
 
-        IterableLogger.d(TAG, "Starting background initialization");
+    private static void handleDuplicateInitialization(@Nullable IterableInitializationCallback callback) {
+        IterableLogger.w(TAG, "Initialization already in progress or completed");
+        if (callback != null) {
+            if (isBackgroundInitialized) {
+                // Already done, call immediately
+                invokeCallbackOnMainThread(callback);
+            } else {
+                // Still running, queue for later
+                pendingCallbacks.offer(callback);
+            }
+        }
+    }
 
-        // Create a separate executor for the actual initialization to enable timeout
-        ExecutorService initExecutor = Executors.newSingleThreadExecutor(r -> {
+    private static void runInitializationTask(@NonNull Context context,
+                                             @NonNull String apiKey,
+                                             @Nullable IterableConfig config,
+                                             @Nullable IterableInitializationCallback callback) {
+        long startTime = System.currentTimeMillis();
+        ExecutorService initExecutor = createInitExecutor();
+        boolean initSucceeded = false;
+
+        try {
+            initSucceeded = performInitializationWithTimeout(context, apiKey, config, initExecutor, startTime);
+        } finally {
+            completeInitialization(callback, startTime, initSucceeded);
+            shutdownExecutor(initExecutor);
+        }
+    }
+
+    private static ExecutorService createInitExecutor() {
+        return Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "IterableInit");
             t.setDaemon(true);
             t.setPriority(Thread.NORM_PRIORITY);
             return t;
         });
+    }
 
-        Runnable initTask = () -> {
-            long startTime = System.currentTimeMillis();
-            boolean initSucceeded = false;
-
-            try {
-                IterableLogger.d(TAG, "Starting initialization with " + INITIALIZATION_TIMEOUT_SECONDS + " second timeout");
-
-                // Submit the actual initialization task
-                Future<?> initFuture = initExecutor.submit(() -> {
-                    IterableLogger.d(TAG, "Executing initialization on background thread");
-                    IterableApi.initialize(context, apiKey, config);
-                });
-
-                // Wait for initialization with timeout
-                initFuture.get(INITIALIZATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                initSucceeded = true;
-
-                long elapsedTime = System.currentTimeMillis() - startTime;
-                IterableLogger.d(TAG, "Background initialization completed successfully in " + elapsedTime + "ms");
-
-            } catch (TimeoutException e) {
-                long elapsedTime = System.currentTimeMillis() - startTime;
-                IterableLogger.w(TAG, "Background initialization timed out after " + elapsedTime + "ms, continuing anyway");
-                // Cancel the hanging initialization task
-                initExecutor.shutdownNow();
-
-            } catch (Exception e) {
-                long elapsedTime = System.currentTimeMillis() - startTime;
-                IterableLogger.e(TAG, "Background initialization encountered error after " + elapsedTime + "ms, but continuing", e);
-            }
-
-            // Always mark as completed and call callbacks regardless of success/timeout/failure
-            synchronized (initLock) {
-                isBackgroundInitialized = true;
-                isInitializing = false;
-            }
-
-            // Process any queued operations
-            operationQueue.processAll(backgroundExecutor);
-
-            // Notify completion on main thread (always success)
-            final boolean finalInitSucceeded = initSucceeded;
-            new Handler(Looper.getMainLooper()).post(() -> {
-                try {
-                    long totalTime = System.currentTimeMillis() - startTime;
-                    if (finalInitSucceeded) {
-                        IterableLogger.d(TAG, "Initialization completed successfully, notifying callbacks after " + totalTime + "ms");
-                    } else {
-                        IterableLogger.w(TAG, "Initialization timed out or failed, but notifying callbacks anyway after " + totalTime + "ms");
-                    }
-
-                    // Call the original callback directly
-                    if (callback != null) {
-                        try {
-                            callback.onSDKInitialized();
-                        } catch (Exception e) {
-                            IterableLogger.e(TAG, "Exception in initialization callback", e);
-                        }
-                    }
-
-                    // Call all pending callbacks from concurrent initialization attempts
-                    IterableInitializationCallback pendingCallback;
-                    while ((pendingCallback = pendingCallbacks.poll()) != null) {
-                        try {
-                            pendingCallback.onSDKInitialized();
-                        } catch (Exception e) {
-                            IterableLogger.e(TAG, "Exception in pending initialization callback", e);
-                        }
-                    }
-
-                } catch (Exception e) {
-                    IterableLogger.e(TAG, "Exception in initialization completion notification", e);
-                }
+    /**
+     * @return true if initialization succeeded, false if it timed out or failed
+     */
+    private static boolean performInitializationWithTimeout(@NonNull Context context,
+                                                           @NonNull String apiKey,
+                                                           @Nullable IterableConfig config,
+                                                           ExecutorService initExecutor,
+                                                           long startTime) {
+        try {
+            IterableLogger.d(TAG, "Starting initialization with " + INITIALIZATION_TIMEOUT_SECONDS + "s timeout");
+            
+            Future<?> initFuture = initExecutor.submit(() -> {
+                IterableLogger.d(TAG, "Executing initialization on background thread");
+                IterableApi.initialize(context, apiKey, config);
             });
 
-             // Clean up the init executor
-             try {
-                 if (!initExecutor.isShutdown()) {
-                     initExecutor.shutdown();
-                     if (!initExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
-                         initExecutor.shutdownNow();
-                     }
-                 }
-             } catch (InterruptedException e) {
-                 initExecutor.shutdownNow();
-                 Thread.currentThread().interrupt();
-             }
-        };
+            initFuture.get(INITIALIZATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            
+            long elapsed = System.currentTimeMillis() - startTime;
+            IterableLogger.d(TAG, "Initialization completed successfully in " + elapsed + "ms");
+            return true;
 
-        backgroundExecutor.execute(initTask);
+        } catch (TimeoutException e) {
+            long elapsed = System.currentTimeMillis() - startTime;
+            IterableLogger.w(TAG, "Initialization timed out after " + elapsed + "ms, continuing anyway");
+            initExecutor.shutdownNow();
+            return false;
+
+        } catch (Exception e) {
+            long elapsed = System.currentTimeMillis() - startTime;
+            IterableLogger.e(TAG, "Initialization error after " + elapsed + "ms, continuing anyway", e);
+            return false;
+        }
+    }
+
+    private static void completeInitialization(@Nullable IterableInitializationCallback callback,
+                                              long startTime,
+                                              boolean succeeded) {
+        // Update state
+        synchronized (initLock) {
+            isBackgroundInitialized = true;
+            isInitializing = false;
+        }
+
+        // Process queued operations on background thread, each operation runs on main thread
+        operationQueue.processAll(backgroundExecutor);
+
+        // Notify callbacks on main thread
+        notifyInitializationComplete(callback, startTime, succeeded);
+    }
+
+    private static void notifyInitializationComplete(@Nullable IterableInitializationCallback callback,
+                                                     long startTime,
+                                                     boolean succeeded) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            long totalTime = System.currentTimeMillis() - startTime;
+            if (succeeded) {
+                IterableLogger.d(TAG, "Notifying callbacks after " + totalTime + "ms");
+            } else {
+                IterableLogger.w(TAG, "Notifying callbacks after timeout/error (" + totalTime + "ms)");
+            }
+
+            // Call the original callback
+            invokeCallbackSafely(callback);
+
+            // Call all pending callbacks from duplicate initialization attempts
+            IterableInitializationCallback pending;
+            while ((pending = pendingCallbacks.poll()) != null) {
+                invokeCallbackSafely(pending);
+            }
+        });
+    }
+
+
+    private static void invokeCallbackSafely(@Nullable IterableInitializationCallback callback) {
+        if (callback != null) {
+            try {
+                callback.onSDKInitialized();
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Exception in initialization callback", e);
+            }
+        }
+    }
+
+
+    private static void invokeCallbackOnMainThread(@Nullable IterableInitializationCallback callback) {
+        if (callback != null) {
+            new Handler(Looper.getMainLooper()).post(() -> invokeCallbackSafely(callback));
+        }
+    }
+
+    private static void shutdownExecutor(ExecutorService executor) {
+        try {
+            if (!executor.isShutdown()) {
+                executor.shutdown();
+                if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**
