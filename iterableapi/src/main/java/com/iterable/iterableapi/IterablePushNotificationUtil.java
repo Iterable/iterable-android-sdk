@@ -44,12 +44,8 @@ class IterablePushNotificationUtil {
             return;
         }
 
-        // Clear any previous pending action that was never processed.
-        // This prevents residual actions from accumulating if they were never handled
-        // (e.g., if the SDK was never initialized or the action handler wasn't available).
         if (pendingAction != null) {
-            IterableLogger.d(TAG, "Clearing previous unhandled pending action");
-            pendingAction = null;
+            IterableLogger.w(TAG, "There is a previous unhandled pending action....");
         }
 
         // Initialize minimal context for push handling if SDK hasn't been fully initialized.
