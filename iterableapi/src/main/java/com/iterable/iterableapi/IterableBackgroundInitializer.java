@@ -60,7 +60,7 @@ class IterableBackgroundInitializer {
             if (!canStartProcessing(executor)) {
                 return;
             }
-            
+
             isProcessing = true;
             executor.execute(this::processQueuedOperations);
         }
@@ -70,12 +70,12 @@ class IterableBackgroundInitializer {
                 IterableLogger.w(TAG, "Already processing operations, skipping");
                 return false;
             }
-            
+
             if (executor == null || executor.isShutdown()) {
                 IterableLogger.e(TAG, "Cannot process operations: executor unavailable");
                 return false;
             }
-            
+
             return true;
         }
 
@@ -83,12 +83,12 @@ class IterableBackgroundInitializer {
         private void processQueuedOperations() {
             try {
                 IterableLogger.d(TAG, "Starting to process queued operations");
-                
+
                 QueuedOperation operation;
                 while ((operation = operations.poll()) != null) {
                     executeOperationOnMainThread(operation);
                 }
-                
+
                 IterableLogger.d(TAG, "Finished processing queued operations");
             } finally {
                 isProcessing = false;
@@ -98,7 +98,7 @@ class IterableBackgroundInitializer {
 
         private void executeOperationOnMainThread(QueuedOperation operation) {
             IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
-            
+
             mainThreadHandler.post(() -> {
                 try {
                     operation.execute();
@@ -235,14 +235,14 @@ class IterableBackgroundInitializer {
                                                            long startTime) {
         try {
             IterableLogger.d(TAG, "Starting initialization with " + INITIALIZATION_TIMEOUT_SECONDS + "s timeout");
-            
+
             Future<?> initFuture = initExecutor.submit(() -> {
                 IterableLogger.d(TAG, "Executing initialization on background thread");
                 IterableApi.initialize(context, apiKey, config);
             });
 
             initFuture.get(INITIALIZATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            
+
             long elapsed = System.currentTimeMillis() - startTime;
             IterableLogger.d(TAG, "Initialization completed successfully in " + elapsed + "ms");
             return true;

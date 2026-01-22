@@ -1333,13 +1333,13 @@ public class IterableAsyncInitializationTest {
         for (int i = 0; i < 50; i++) { // Try for up to 5 seconds (50 * 100ms)
             Thread.sleep(100);
             ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
-            
+
             if (IterableBackgroundInitializer.getQueuedOperationCount() == 0) {
                 queueEmpty = true;
                 break;
             }
         }
-        
+
         assertTrue("All operations should be processed within timeout", queueEmpty);
         assertEquals("All operations should be processed", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
