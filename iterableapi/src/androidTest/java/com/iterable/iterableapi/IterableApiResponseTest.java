@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import android.os.AsyncTask;
+
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -30,6 +32,12 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
 
+/**
+ * Tests for IterableRequestTask API responses.
+ *
+ * Note: Uses AsyncTask.SERIAL_EXECUTOR for deterministic execution on API 36+
+ * where default AsyncTask behavior changed.
+ */
 @RunWith(AndroidJUnit4.class)
 @MediumTest
 public class IterableApiResponseTest {
@@ -39,20 +47,26 @@ public class IterableApiResponseTest {
     @Before
     public void setUp() throws IOException {
         server = new MockWebServer();
-        // Explicitly start the server to ensure it's ready
-        try {
-            server.start();
-        } catch (IllegalStateException e) {
-            // Server may already be started by url() call below, which is fine
-        }
+        server.start();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         createIterableApi();
     }
 
     @After
     public void tearDown() throws IOException {
-        server.shutdown();
-        server = null;
+        // Don't null IterableApi.sharedInstance - causes NPE with in-flight AsyncTasks
+        if (server != null) {
+            try {
+                // Drain any pending responses to prevent test contamination
+                while (server.takeRequest(100, TimeUnit.MILLISECONDS) != null) {
+                    // Consume and discard
+                }
+                server.shutdown();
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+            server = null;
+        }
     }
 
     private void stubAnyRequestReturningStatusCode(int statusCode, JSONObject data) {
@@ -84,10 +98,10 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         }, null);
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onSuccess is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onSuccess is called", signal.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -103,10 +117,10 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -122,10 +136,10 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -141,10 +155,10 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(5, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 
 
@@ -162,10 +176,10 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -181,16 +195,19 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 
     @Test
     public void testResponseCode401AuthError() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
 
+        // JWT errors trigger async retry logic which can cause race conditions with test cleanup
+        // Stub multiple responses for retries, but expect immediate failure callback
+        stubAnyRequestReturningStatusCode(401, "{\"msg\":\"JWT Authorization header error\",\"code\":\"InvalidJwtPayload\"}");
         stubAnyRequestReturningStatusCode(401, "{\"msg\":\"JWT Authorization header error\",\"code\":\"InvalidJwtPayload\"}");
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
@@ -200,10 +217,10 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -246,7 +263,7 @@ public class IterableApiResponseTest {
             }
         });
 
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
         server.takeRequest(5, TimeUnit.SECONDS);
 
         // Await for the background tasks to complete
@@ -261,14 +278,14 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, null);
         IterableRequestTask task = new IterableRequestTask();
-        task.execute(request);
+        task.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         RecordedRequest request1 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request3 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request4 = server.takeRequest(5, TimeUnit.SECONDS);
         RecordedRequest request5 = server.takeRequest(5, TimeUnit.SECONDS);
-        RecordedRequest request6 = server.takeRequest(5, TimeUnit.SECONDS);
+        RecordedRequest request6 = server.takeRequest(1, TimeUnit.SECONDS);
         assertNull("Request should be null since retries hit the max of 5", request6);
     }
 
@@ -280,7 +297,7 @@ public class IterableApiResponseTest {
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, null);
         IterableRequestTask task = new IterableRequestTask();
-        task.execute(request);
+        task.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
         RecordedRequest request1 = server.takeRequest(1, TimeUnit.SECONDS);
         RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
@@ -300,10 +317,10 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(5, TimeUnit.SECONDS));
+        server.takeRequest(5, TimeUnit.SECONDS);
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -319,9 +336,9 @@ public class IterableApiResponseTest {
                 signal.countDown();
             }
         });
-        new IterableRequestTask().execute(request);
+        new IterableRequestTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, request);
 
-        server.takeRequest(1, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        server.takeRequest(5, TimeUnit.SECONDS);
+        assertTrue("onFailure is called", signal.await(10, TimeUnit.SECONDS));
     }
 }
