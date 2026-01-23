@@ -18,7 +18,6 @@ import android.content.SharedPreferences;
 
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
