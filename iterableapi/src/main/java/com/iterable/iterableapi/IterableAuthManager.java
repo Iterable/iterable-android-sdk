@@ -6,10 +6,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -69,14 +67,10 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         retryCount = 0;
     }
 
-    private void handleSuccessForAuthToken(String authToken, IterableHelper.IterableSuccessCallback successCallback) {
-        try {
-            if(authToken == null) throw new RuntimeException("Auth Token is null");
-            IterableResponseObject.AuthTokenSuccess remoteSuccess = new IterableResponseObject.AuthTokenSuccess(authToken);
-            successCallback.onSuccess(remoteSuccess);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-        }
+    private void handleSuccessForAuthToken(@NonNull String authToken, IterableHelper.IterableSuccessCallback successCallback) {
+        IterableResponseObject.AuthTokenSuccess remoteSuccess = new IterableResponseObject.AuthTokenSuccess(authToken);
+        successCallback.onSuccess(remoteSuccess);
+
     }
 
     public synchronized void requestNewAuthToken(

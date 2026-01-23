@@ -7,13 +7,10 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
-
-import com.google.gson.JsonIOException;
 
 import org.json.JSONException;
 import org.json.JSONObject;

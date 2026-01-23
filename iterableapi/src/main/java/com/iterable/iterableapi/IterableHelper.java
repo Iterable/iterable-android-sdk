@@ -56,7 +56,7 @@ public class IterableHelper {
         default void onSuccess(@NonNull IterableResponseObject.Success data) {
             IterableLogger.w("IterableHelper", "SuccessHandler is deprecated. Please migrate to IterableSuccessCallback or RemoteSuccessCallback. " +
                     "See JavaDoc for migration guide. Current success type: " + data.getClass().getSimpleName());
-            
+
             JSONObject jsonObject = new JSONObject();
             try {
                 if (data instanceof IterableResponseObject.RemoteSuccess) {
@@ -72,7 +72,7 @@ public class IterableHelper {
             } catch (JSONException e) {
                 IterableLogger.e("IterableHelper", "Error creating JSON for deprecated SuccessHandler callback", e);
             }
-            
+
             onSuccess(jsonObject);
         }
     }

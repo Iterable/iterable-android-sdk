@@ -77,10 +77,10 @@ public class IterableApiResponseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         stubAnyRequestReturningStatusCode(200, responseData);
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.IterableSuccessCallback() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.RemoteSuccessCallback() {
             @Override
-            public void onSuccess(@NonNull JSONObject data) {
-                assertEquals(responseData.toString(), data.toString());
+            public void onSuccess(@NonNull IterableResponseObject.RemoteSuccess data) {
+                assertEquals(responseData.toString(), data.getResponseJson().toString());
                 signal.countDown();
             }
         }, null);
@@ -222,11 +222,11 @@ public class IterableApiResponseTest {
                                 "}");
                         stubAnyRequestReturningStatusCode(200, responseData);
 
-                        new IterableRequestTask().execute(new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.IterableSuccessCallback() {
+                        new IterableRequestTask().execute(new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.RemoteSuccessCallback() {
                             @Override
-                            public void onSuccess(@NonNull JSONObject successData) {
+                            public void onSuccess(@NonNull IterableResponseObject.RemoteSuccess successData) {
                                 try {
-                                    assertEquals(responseData.toString(), successData.toString());
+                                    assertEquals(responseData.toString(), successData.getResponseJson().toString());
                                 } catch (AssertionError e) {
                                     e.printStackTrace();
                                 } finally {

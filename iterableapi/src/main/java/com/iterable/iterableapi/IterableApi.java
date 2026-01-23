@@ -405,7 +405,7 @@ public class IterableApi {
             boolean isUnknown,
             @Nullable IterableHelper.FailureHandler failureHandler
     ) {
-        if (!isInitialized()) { //todo: If we get here and it is not initialized, isn't it possible to have leftover data that was already set by setEmail?
+        if (!isInitialized()) {
             setAuthToken(null);
             return;
         }
@@ -413,7 +413,7 @@ public class IterableApi {
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
             setAuthToken(authToken);
-            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler); //todo: Why do we need to do this again if we did this on setEmail?
+            attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
         } else {
             IterableHelper.AuthTokenCallback callback = data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
             getAuthManager().requestNewAuthToken(false, callback);
@@ -452,17 +452,15 @@ public class IterableApi {
         if (config.autoPushRegistration) {
             registerForPush();
         } else if (_setUserSuccessCallbackHandler != null) {
-            invokeSuccessHandlerAndClear();
+            invokeSetUserSuccessHandler();
         }
 
         getInAppManager().syncInApp();
         getEmbeddedManager().syncMessages();
     }
 
-    private void invokeSuccessHandlerAndClear() {
+    private void invokeSetUserSuccessHandler() {
         _setUserSuccessCallbackHandler.onSuccess(IterableResponseObject.LocalSuccessResponse);
-        _setUserSuccessCallbackHandler = null;
-        _setUserFailureCallbackHandler = null;
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -1016,11 +1014,7 @@ public class IterableApi {
     public void pauseAuthRetries(boolean pauseRetry) {
         getAuthManager().pauseAuthRetries(pauseRetry);
         if (!pauseRetry) { // request new auth token as soon as unpause
-            IterableHelper.AuthTokenCallback callback = null;
-            getAuthManager().requestNewAuthToken(
-                false,
-                callback
-            );
+            getAuthManager().requestNewAuthToken(false, null);
         }
     }
 
@@ -1566,17 +1560,20 @@ public class IterableApi {
             return;
         }
 
-        apiClient.updateEmail(newEmail, data -> {
-            if (_email != null) {
-                _email = newEmail;
-                _authToken = authToken;
-            }
+        apiClient.updateEmail(newEmail, new IterableHelper.RemoteSuccessCallback() {
+            @Override
+            public void onSuccess(@NonNull IterableResponseObject.RemoteSuccess data) {
+                if (_email != null) {
+                    _email = newEmail;
+                    _authToken = authToken;
+                }
 
-            storeAuthData();
-            getAuthManager().requestNewAuthToken(false, null);
+                storeAuthData();
+                getAuthManager().requestNewAuthToken(false, null);
 
-            if (successHandler != null) {
-                successHandler.onSuccess(data);
+                if (successHandler != null) {
+                    successHandler.onSuccess(data);
+                }
             }
         }, failureHandler);
     }
