@@ -201,9 +201,9 @@ public class IterableApiAuthSecurityTests extends BaseTest {
         final CountDownLatch latch = new CountDownLatch(1);
 
         // Capture what the completion handler receives
-        spyApi.setEmail(originalEmail, new IterableHelper.SuccessHandler() {
+        spyApi.setEmail(originalEmail, new IterableHelper.IterableSuccessCallback() {
             @Override
-            public void onSuccess(JSONObject data) {
+            public void onSuccess(IterableResponseObject.Success data) {
                 // This callback happens after completeUserLogin
                 latch.countDown();
             }

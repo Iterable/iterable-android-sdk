@@ -222,7 +222,7 @@ class IterableApiClient {
         }
     }
 
-    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -319,7 +319,7 @@ class IterableApiClient {
         }
     }
 
-    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableSuccessCallback onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -488,7 +488,7 @@ class IterableApiClient {
 
     }
 
-    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable String inboxSessionId, @Nullable final IterableHelper.IterableSuccessCallback successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJSON = new JSONObject();
 
         try {
@@ -604,7 +604,7 @@ class IterableApiClient {
         }
     }
 
-    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
@@ -620,7 +620,7 @@ class IterableApiClient {
         }
     }
 
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes, @Nullable final IterableHelper.IterableSuccessCallback successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
         Context context = authProvider.getContext();
         JSONObject requestJSON = new JSONObject();
         try {
@@ -756,11 +756,11 @@ class IterableApiClient {
         sendPostRequest(resourcePath, json, authToken, null, null);
     }
 
-    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         sendPostRequest(resourcePath, json, authProvider.getAuthToken(), onSuccess, onFailure);
     }
 
-    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         getRequestProcessor().processPostRequest(authProvider.getApiKey(), resourcePath, json, authToken, onSuccess, onFailure);
     }
 
@@ -774,7 +774,7 @@ class IterableApiClient {
         getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onCallback);
     }
 
-    void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void sendGetRequest(@NonNull String resourcePath, @NonNull JSONObject json, @NonNull IterableHelper.IterableSuccessCallback onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onSuccess, onFailure);
     }
 
@@ -783,7 +783,7 @@ class IterableApiClient {
         authProvider.resetAuth();
     }
 
-    void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         JSONObject requestJson = new JSONObject();
         try {
             if (sourceEmail != null && !sourceEmail.isEmpty()) {
@@ -808,7 +808,7 @@ class IterableApiClient {
         sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
     }
 
-    void trackUnknownUserSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserTrack, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void trackUnknownUserSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserTrack, @NonNull IterableHelper.IterableSuccessCallback onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         try {
             JSONObject requestObject = new JSONObject();
 

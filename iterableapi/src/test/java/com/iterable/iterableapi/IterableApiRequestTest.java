@@ -59,9 +59,9 @@ public class IterableApiRequestTest {
         String requestType = "api";
         String authToken = "authToken123##";
 
-        IterableHelper.SuccessHandler successHandler = new IterableHelper.SuccessHandler() {
+        IterableHelper.IterableSuccessCallback successHandler = new IterableHelper.IterableSuccessCallback() {
             @Override
-            public void onSuccess(@NonNull JSONObject data) {
+            public void onSuccess(@NonNull IterableResponseObject.Success data) {
                 IterableLogger.v("RequestSerializationTest", "Passed");
             }
         };

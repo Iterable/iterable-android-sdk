@@ -1,7 +1,6 @@
 package com.iterable.iterableapi
 
 import android.content.Context
-import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -92,11 +91,13 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             IterableApi.sharedInstance.getEmbeddedMessages(placementIds, { data ->
                 IterableLogger.v(TAG, "Got response from network call to get embedded messages")
                 try {
+                    val remoteData = data as (IterableResponseObject.RemoteSuccess)
                     val previousPlacementIds = getPlacementIds()
                     val currentPlacementIds: MutableList<Long> = mutableListOf()
 
+
                     val placementsArray =
-                        data.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
+                        remoteData.responseJson.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
                     if (placementsArray != null) {
                         //if there are no placements in the payload
                         //reset the local message storage and trigger a UI update

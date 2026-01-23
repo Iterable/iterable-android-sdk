@@ -43,7 +43,7 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
-    private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
+    private IterableHelper.IterableSuccessCallback _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
@@ -310,7 +310,7 @@ public class IterableApi {
      * @param onFailure
      */
 
-    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    public void getEmbeddedMessages(@Nullable Long[] placementIds, @NonNull IterableHelper.IterableSuccessCallback onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -328,7 +328,7 @@ public class IterableApi {
      * @param onSuccess
      * @param onFailure
      */
-    void getEmbeddedMessages(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+    void getEmbeddedMessages(@NonNull IterableHelper.IterableSuccessCallback onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -415,7 +415,8 @@ public class IterableApi {
             setAuthToken(authToken);
             attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler); //todo: Why do we need to do this again if we did this on setEmail?
         } else {
-            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler));
+            IterableHelper.AuthTokenCallback callback = data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
+            getAuthManager().requestNewAuthToken(false, callback);
         }
     }
 
@@ -449,14 +450,19 @@ public class IterableApi {
         }
 
         if (config.autoPushRegistration) {
-            registerForPush(); //TODO: FIX, THE LOGIN NEVER CALLS THE CALLBACK IF THE AUTOPUSH REGISTRATION IS TRUE
-        }
-        if (_setUserSuccessCallbackHandler != null) { // todo: why is there an else if it can be both true
-            _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
+            registerForPush();
+        } else if (_setUserSuccessCallbackHandler != null) {
+            invokeSuccessHandlerAndClear();
         }
 
         getInAppManager().syncInApp();
         getEmbeddedManager().syncMessages();
+    }
+
+    private void invokeSuccessHandlerAndClear() {
+        _setUserSuccessCallbackHandler.onSuccess(IterableResponseObject.LocalSuccessResponse);
+        _setUserSuccessCallbackHandler = null;
+        _setUserFailureCallbackHandler = null;
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -701,7 +707,7 @@ public class IterableApi {
      * @param authToken
      * @param deviceToken The device token
      */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         if (deviceToken == null) {
             IterableLogger.d(TAG, "device token not available");
             return;
@@ -730,16 +736,16 @@ public class IterableApi {
             IterableLogger.e(TAG, "registerDeviceToken: applicationName is null, check that pushIntegrationName is set in IterableConfig");
         }
 
-        IterableHelper.SuccessHandler wrappedSuccessHandler = getSuccessHandler();
-        IterableHelper.FailureHandler wrappedFailureHandler = getFailureHandler();
+        IterableHelper.IterableSuccessCallback wrappedSuccessHandler = wrapSetUserCallbackForRemoteCall();
+        IterableHelper.FailureHandler wrappedFailureHandler = wrapSetUserFailureHandlerForRemoteCall();
 
         apiClient.registerDeviceToken(email, userId, authToken, applicationName, deviceToken, dataFields, deviceAttributes, wrappedSuccessHandler, wrappedFailureHandler);
     }
 
-    private IterableHelper.SuccessHandler getSuccessHandler() {
-        IterableHelper.SuccessHandler wrappedSuccessHandler = null;
+    private IterableHelper.IterableSuccessCallback wrapSetUserCallbackForRemoteCall() {
+        IterableHelper.RemoteSuccessCallback wrappedSuccessHandler = null;
         if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
-            final IterableHelper.SuccessHandler originalSuccessHandler = null; //todo: MAYBE THIS HAS TO DO WITH THE ERROR, IF THE PERSON IS SETTING EMAIL AND REGISTERING DEVICE TOKEN THEY WILL GET THE WRONG CALLBACK CALLED
+            final IterableHelper.IterableSuccessCallback originalSuccessHandler = _setUserSuccessCallbackHandler;
             wrappedSuccessHandler = data -> {
                 trackConsentOnDeviceRegistration();
 
@@ -751,7 +757,7 @@ public class IterableApi {
         return wrappedSuccessHandler;
     }
 
-    private IterableHelper.FailureHandler getFailureHandler() {
+    private IterableHelper.FailureHandler wrapSetUserFailureHandlerForRemoteCall() {
         IterableHelper.FailureHandler wrappedFailureHandler = null;
         if (_setUserFailureCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
             final IterableHelper.FailureHandler originalFailureHandler = _setUserFailureCallbackHandler;
@@ -986,7 +992,11 @@ public class IterableApi {
     public void pauseAuthRetries(boolean pauseRetry) {
         getAuthManager().pauseAuthRetries(pauseRetry);
         if (!pauseRetry) { // request new auth token as soon as unpause
-            getAuthManager().requestNewAuthToken(false, null);
+            IterableHelper.AuthTokenCallback callback = null;
+            getAuthManager().requestNewAuthToken(
+                false,
+                callback
+            );
         }
     }
 
@@ -998,11 +1008,11 @@ public class IterableApi {
         queueOrExecute(() -> setEmail(email, null, identityResolution, null, null), "setEmail(" + maskPII(email) + ", identityResolution)");
     }
 
-    public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setEmail(@Nullable String email, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         queueOrExecute(() -> setEmail(email, null, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", callbacks)");
     }
 
-    public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         queueOrExecute(() -> setEmail(email, null, identityResolution, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", identityResolution, callbacks)");
     }
 
@@ -1014,19 +1024,16 @@ public class IterableApi {
         queueOrExecute(() -> setEmail(email, authToken, identityResolution, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", identityResolution)");
     }
 
-    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         queueOrExecute(() -> setEmail(email, authToken, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
-    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
-            if (successHandler != null) {
-                successHandler.onSuccess(new JSONObject());
-            }
             return;
         }
 
@@ -1070,11 +1077,11 @@ public class IterableApi {
         queueOrExecute(() -> setUserId(userId, null, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", identityResolution)");
     }
 
-    public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setUserId(@Nullable String userId, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         queueOrExecute(() -> setUserId(userId, null, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", callbacks)");
     }
 
-    public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         queueOrExecute(() -> setUserId(userId, null, identityResolution, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", identityResolution, callbacks)");
     }
 
@@ -1087,11 +1094,11 @@ public class IterableApi {
 
     }
 
-    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         queueOrExecute(() -> setUserId(userId, authToken, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
-    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
+    public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
@@ -1256,7 +1263,7 @@ public class IterableApi {
      * @param successHandler The callback which returns `success`.
      * @param failureHandler The callback which returns `failure`.
      */
-    public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void inAppConsume(@NonNull String messageId, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableInAppMessage message = getInAppManager().getMessageById(messageId);
         if (checkIfMessageIsNull(message, failureHandler)) {
             return;
@@ -1295,7 +1302,7 @@ public class IterableApi {
      * @param successHandler The callback which returns `success`.
      * @param failureHandler The callback which returns `failure`.
      */
-    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void inAppConsume(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1502,7 +1509,7 @@ public class IterableApi {
         queueOrExecute(() -> updateEmail(newEmail, authToken, null, null), "updateEmail(" + maskPII(newEmail) + ", " + maskPII(authToken) + ")");
     }
 
-    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         queueOrExecute(() -> updateEmail(newEmail, null, successHandler, failureHandler), "updateEmail(" + maskPII(newEmail) + ", callbacks)");
     }
 
@@ -1513,7 +1520,7 @@ public class IterableApi {
      * @param successHandler Success handler. Called when the server returns a success code.
      * @param failureHandler Failure handler. Called when the server call failed.
      */
-    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.IterableSuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
@@ -1525,20 +1532,17 @@ public class IterableApi {
             return;
         }
 
-        apiClient.updateEmail(newEmail, new IterableHelper.SuccessHandler() {
-            @Override
-            public void onSuccess(@NonNull JSONObject data) {
-                if (_email != null) {
-                    _email = newEmail;
-                    _authToken = authToken;
-                }
+        apiClient.updateEmail(newEmail, data -> {
+            if (_email != null) {
+                _email = newEmail;
+                _authToken = authToken;
+            }
 
-                storeAuthData();
-                getAuthManager().requestNewAuthToken(false, null);
+            storeAuthData();
+            getAuthManager().requestNewAuthToken(false, null);
 
-                if (successHandler != null) {
-                    successHandler.onSuccess(data);
-                }
+            if (successHandler != null) {
+                successHandler.onSuccess(data);
             }
         }, failureHandler);
     }
