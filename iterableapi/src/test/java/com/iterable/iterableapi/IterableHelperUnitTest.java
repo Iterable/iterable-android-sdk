@@ -12,6 +12,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.iterable.iterableapi.response.IterableAuthResponseObject;
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
+import com.iterable.iterableapi.response.handlers.auth.IterableAuthCallbackHandlers;
+
 /**
  * Tests the functionality of IterableHelper callback interfaces
  */
@@ -38,7 +43,7 @@ public class IterableHelperUnitTest {
 
         AtomicBoolean callbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.IterableSuccessCallback callback = data -> {
+        IterableCallbackHandlers.SuccessCallback callback = data -> {
             callbackInvoked.set(true);
             assertTrue(data instanceof IterableResponseObject.RemoteSuccess);
             try {
@@ -58,7 +63,7 @@ public class IterableHelperUnitTest {
 
         AtomicBoolean callbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.IterableSuccessCallback callback = data -> {
+        IterableCallbackHandlers.SuccessCallback callback = data -> {
             callbackInvoked.set(true);
             assertTrue(data instanceof IterableResponseObject.LocalSuccess);
             assertNotNull(data.getMessage());
@@ -71,14 +76,14 @@ public class IterableHelperUnitTest {
     @Test
     public void testIterableSuccessCallback_WithAuthTokenSuccess() {
         String testToken = "test-jwt-token-123";
-        IterableResponseObject.AuthTokenSuccess authSuccess = new IterableResponseObject.AuthTokenSuccess(testToken);
+        IterableAuthResponseObject.Success authSuccess = new IterableAuthResponseObject.Success(testToken);
 
         AtomicBoolean callbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.IterableSuccessCallback callback = data -> {
+        IterableCallbackHandlers.SuccessCallback callback = data -> {
             callbackInvoked.set(true);
-            assertTrue(data instanceof IterableResponseObject.AuthTokenSuccess);
-            assertEquals(testToken, ((IterableResponseObject.AuthTokenSuccess) data).getAuthToken());
+            assertTrue(data instanceof IterableAuthResponseObject.Success);
+            assertEquals(testToken, ((IterableAuthResponseObject.Success) data).getAuthToken());
         };
 
         callback.onSuccess(authSuccess);
@@ -94,7 +99,7 @@ public class IterableHelperUnitTest {
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.RemoteSuccessCallback callback = new IterableHelper.RemoteSuccessCallback() {
+        IterableCallbackHandlers.RemoteSuccessCallback callback = new IterableCallbackHandlers.RemoteSuccessCallback() {
             @Override
             public void onSuccess(IterableResponseObject.RemoteSuccess data) {
                 typedCallbackInvoked.set(true);
@@ -112,7 +117,7 @@ public class IterableHelperUnitTest {
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.RemoteSuccessCallback callback = new IterableHelper.RemoteSuccessCallback() {
+        IterableCallbackHandlers.RemoteSuccessCallback callback = new IterableCallbackHandlers.RemoteSuccessCallback() {
             @Override
             public void onSuccess(IterableResponseObject.RemoteSuccess data) {
                 typedCallbackInvoked.set(true);
@@ -132,7 +137,7 @@ public class IterableHelperUnitTest {
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.LocalSuccessCallback callback = new IterableHelper.LocalSuccessCallback() {
+        IterableCallbackHandlers.LocalSuccessCallback callback = new IterableCallbackHandlers.LocalSuccessCallback() {
             @Override
             public void onSuccess(IterableResponseObject.LocalSuccess data) {
                 typedCallbackInvoked.set(true);
@@ -151,7 +156,7 @@ public class IterableHelperUnitTest {
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.LocalSuccessCallback callback = new IterableHelper.LocalSuccessCallback() {
+        IterableCallbackHandlers.LocalSuccessCallback callback = new IterableCallbackHandlers.LocalSuccessCallback() {
             @Override
             public void onSuccess(IterableResponseObject.LocalSuccess data) {
                 typedCallbackInvoked.set(true);
@@ -168,13 +173,13 @@ public class IterableHelperUnitTest {
     @Test
     public void testAuthTokenCallback_WithCorrectType() {
         String testToken = "jwt-token-xyz";
-        IterableResponseObject.AuthTokenSuccess authSuccess = new IterableResponseObject.AuthTokenSuccess(testToken);
+        IterableResponseObject.Success authSuccess = new IterableAuthResponseObject.Success(testToken);
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.AuthTokenCallback callback = new IterableHelper.AuthTokenCallback() {
+        IterableAuthCallbackHandlers.AuthTokenCallback callback = new IterableAuthCallbackHandlers.AuthTokenCallback() {
             @Override
-            public void onSuccess(IterableResponseObject.AuthTokenSuccess data) {
+            public void onSuccess(IterableAuthResponseObject.Success data) {
                 typedCallbackInvoked.set(true);
                 assertEquals(testToken, data.getAuthToken());
             }
@@ -190,9 +195,9 @@ public class IterableHelperUnitTest {
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
-        IterableHelper.AuthTokenCallback callback = new IterableHelper.AuthTokenCallback() {
+        IterableAuthCallbackHandlers.AuthTokenCallback callback = new IterableAuthCallbackHandlers.AuthTokenCallback() {
             @Override
-            public void onSuccess(IterableResponseObject.AuthTokenSuccess data) {
+            public void onSuccess(IterableAuthResponseObject.Success data) {
                 typedCallbackInvoked.set(true);
             }
         };
@@ -256,7 +261,7 @@ public class IterableHelperUnitTest {
     @Test
     public void testSuccessHandler_WithAuthTokenSuccess_PassesTokenJSON() throws Exception {
         String testToken = "test-auth-token";
-        IterableResponseObject.AuthTokenSuccess authSuccess = new IterableResponseObject.AuthTokenSuccess(testToken);
+        IterableAuthResponseObject.Success authSuccess = new IterableAuthResponseObject.Success(testToken);
 
         AtomicBoolean callbackInvoked = new AtomicBoolean(false);
         AtomicReference<JSONObject> receivedJson = new AtomicReference<>();

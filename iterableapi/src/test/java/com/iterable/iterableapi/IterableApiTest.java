@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.content.Context;
@@ -161,7 +163,7 @@ public class IterableApiTest extends BaseTest {
 
         IterableApi.getInstance().updateEmail(newEmail);
         shadowOf(getMainLooper()).idle();
-        verify(mockApiClient).updateEmail(eq(newEmail), nullable(IterableHelper.IterableSuccessCallback.class), nullable(IterableHelper.FailureHandler.class));
+        verify(mockApiClient).updateEmail(eq(newEmail), nullable(IterableCallbackHandlers.SuccessCallback.class), nullable(IterableHelper.FailureHandler.class));
         server.takeRequest(1, TimeUnit.SECONDS);
         assertEquals("new@email.com", IterableApi.getInstance().getEmail());
 
@@ -175,7 +177,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "apiKey");
 
         String email = "test@example.com";
-        IterableApi.getInstance().setEmail(email, new IterableHelper.IterableSuccessCallback() {
+        IterableApi.getInstance().setEmail(email, new IterableCallbackHandlers.SuccessCallback() {
             @Override
             public void onSuccess(@NonNull IterableResponseObject.Success data) {
                 assertTrue(true); // callback should be called with success
@@ -193,7 +195,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "apiKey");
 
         String userId = "test_user_id";
-        IterableApi.getInstance().setUserId(userId, new IterableHelper.IterableSuccessCallback() {
+        IterableApi.getInstance().setUserId(userId, new IterableCallbackHandlers.SuccessCallback() {
             @Override
             public void onSuccess(@NonNull IterableResponseObject.Success data) {
                 assertTrue(true); // callback should be called with success
@@ -1015,7 +1017,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setVisitorUsageTracked(true);
 
         // Create a mock success handler
-        IterableHelper.IterableSuccessCallback originalHandler = mock(IterableHelper.IterableSuccessCallback.class);
+        IterableCallbackHandlers.SuccessCallback originalHandler = mock(IterableCallbackHandlers.SuccessCallback.class);
 
         // Set up user with success handler
         IterableApi.getInstance().setEmail("test@example.com", originalHandler, null);
@@ -1032,7 +1034,7 @@ public class IterableApiTest extends BaseTest {
         shadowOf(getMainLooper()).idle();
 
         // Verify: registerDeviceToken was called with a success handler
-        ArgumentCaptor<IterableHelper.IterableSuccessCallback> successCaptor = ArgumentCaptor.forClass(IterableHelper.IterableSuccessCallback.class);
+        ArgumentCaptor<IterableCallbackHandlers.SuccessCallback> successCaptor = ArgumentCaptor.forClass(IterableCallbackHandlers.SuccessCallback.class);
         verify(mockClient, timeout(1000)).registerDeviceToken(
             eq("test@example.com"),
             nullable(String.class),
@@ -1075,7 +1077,7 @@ public class IterableApiTest extends BaseTest {
         shadowOf(getMainLooper()).idle();
 
         // Verify: registerDeviceToken was called with a success handler (the wrapper)
-        ArgumentCaptor<IterableHelper.IterableSuccessCallback> successCaptor = ArgumentCaptor.forClass(IterableHelper.IterableSuccessCallback.class);
+        ArgumentCaptor<IterableCallbackHandlers.SuccessCallback> successCaptor = ArgumentCaptor.forClass(IterableCallbackHandlers.SuccessCallback.class);
         verify(mockClient, timeout(1000)).registerDeviceToken(
             nullable(String.class),
             eq("test_user_123"),
@@ -1112,7 +1114,7 @@ public class IterableApiTest extends BaseTest {
         IterableApi.getInstance().setVisitorUsageTracked(true);
 
         // Create a success handler and set user
-        IterableHelper.IterableSuccessCallback successHandler = mock(IterableHelper.IterableSuccessCallback.class);
+        IterableCallbackHandlers.SuccessCallback successHandler = mock(IterableCallbackHandlers.SuccessCallback.class);
         IterableApi.getInstance().setEmail("test@example.com", successHandler, null);
 
         // Execute: Register device token
@@ -1162,7 +1164,7 @@ public class IterableApiTest extends BaseTest {
 
         // Set up other conditions
         IterableApi.getInstance().setVisitorUsageTracked(true);
-        IterableHelper.IterableSuccessCallback successHandler = mock(IterableHelper.IterableSuccessCallback.class);
+        IterableCallbackHandlers.SuccessCallback successHandler = mock(IterableCallbackHandlers.SuccessCallback.class);
         IterableApi.getInstance().setEmail("test@example.com", successHandler, null);
 
         // Execute: Register device token

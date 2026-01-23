@@ -8,6 +8,8 @@ import static junit.framework.Assert.assertTrue;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.json.JSONObject;
@@ -59,7 +61,7 @@ public class IterableApiRequestTest {
         String requestType = "api";
         String authToken = "authToken123##";
 
-        IterableHelper.IterableSuccessCallback successHandler = new IterableHelper.IterableSuccessCallback() {
+        IterableCallbackHandlers.SuccessCallback successHandler = new IterableCallbackHandlers.SuccessCallback() {
             @Override
             public void onSuccess(@NonNull IterableResponseObject.Success data) {
                 IterableLogger.v("RequestSerializationTest", "Passed");

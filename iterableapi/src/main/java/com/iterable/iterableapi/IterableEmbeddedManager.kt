@@ -1,6 +1,8 @@
 package com.iterable.iterableapi
 
 import android.content.Context
+import com.iterable.iterableapi.response.IterableResponseObject
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -89,63 +91,65 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
             IterableLogger.v(TAG, "Syncing messages...")
 
 
+            IterableApi.sharedInstance.getEmbeddedMessages(placementIds, object : IterableCallbackHandlers.RemoteSuccessCallback {
+                override fun onSuccess(data: IterableResponseObject.RemoteSuccess) {
+                    IterableLogger.v(TAG, "Got response from network call to get embedded messages")
+                    try {
+                        val previousPlacementIds = getPlacementIds()
+                        val currentPlacementIds: MutableList<Long> = mutableListOf()
 
-            IterableApi.sharedInstance.getEmbeddedMessages(placementIds,  IterableHelper.RemoteSuccessCallback { data: IterableResponseObject.RemoteSuccess ->
-                IterableLogger.v(TAG, "Got response from network call to get embedded messages")
-                try {
-                    val previousPlacementIds = getPlacementIds()
-                    val currentPlacementIds: MutableList<Long> = mutableListOf()
 
+                        val placementsArray =
+                            data.responseJson.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
+                        if (placementsArray != null) {
+                            //if there are no placements in the payload
+                            //reset the local message storage and trigger a UI update
+                            if (placementsArray.length() == 0) {
+                                reset()
+                                if (previousPlacementIds.isNotEmpty()) {
+                                    updateHandleListeners.forEach {
+                                        IterableLogger.d(TAG, "Calling updateHandler")
+                                        it.onMessagesUpdated()
+                                    }
+                                }
+                            } else {
+                                for (i in 0 until placementsArray.length()) {
+                                    val placementJson = placementsArray.optJSONObject(i)
+                                    val placement =
+                                        IterableEmbeddedPlacement.fromJSONObject(placementJson)
+                                    val placementId = placement.placementId
+                                    val messages = placement.messages
 
-                    val placementsArray =
-                        data.responseJson.optJSONArray(IterableConstants.ITERABLE_EMBEDDED_MESSAGE_PLACEMENTS)
-                    if (placementsArray != null) {
-                        //if there are no placements in the payload
-                        //reset the local message storage and trigger a UI update
-                        if (placementsArray.length() == 0) {
-                            reset()
-                            if (previousPlacementIds.isNotEmpty()) {
-                                updateHandleListeners.forEach {
-                                    IterableLogger.d(TAG, "Calling updateHandler")
-                                    it.onMessagesUpdated()
+                                    currentPlacementIds.add(placementId)
+                                    updateLocalMessageMap(placementId, messages)
                                 }
                             }
-                        } else {
-                            for (i in 0 until placementsArray.length()) {
-                                val placementJson = placementsArray.optJSONObject(i)
-                                val placement =
-                                    IterableEmbeddedPlacement.fromJSONObject(placementJson)
-                                val placementId = placement.placementId
-                                val messages = placement.messages
+                        }
 
-                                currentPlacementIds.add(placementId)
-                                updateLocalMessageMap(placementId, messages)
+                        // compare previous placements to the current placement payload
+                        val removedPlacementIds =
+                            previousPlacementIds.subtract(currentPlacementIds.toSet())
+
+                        //if there are placements removed, update the local storage and trigger UI update
+                        if (removedPlacementIds.isNotEmpty()) {
+                            removedPlacementIds.forEach {
+                                localPlacementMessagesMap.remove(it)
+                            }
+
+                            updateHandleListeners.forEach {
+                                IterableLogger.d(TAG, "Calling updateHandler")
+                                it.onMessagesUpdated()
                             }
                         }
+
+                        //store placements from payload for next comparison
+                        localPlacementIds = currentPlacementIds
+
+                    } catch (e: JSONException) {
+                        IterableLogger.e(TAG, e.toString())
                     }
-
-                    // compare previous placements to the current placement payload
-                    val removedPlacementIds =
-                        previousPlacementIds.subtract(currentPlacementIds.toSet())
-
-                    //if there are placements removed, update the local storage and trigger UI update
-                    if (removedPlacementIds.isNotEmpty()) {
-                        removedPlacementIds.forEach {
-                            localPlacementMessagesMap.remove(it)
-                        }
-
-                        updateHandleListeners.forEach {
-                            IterableLogger.d(TAG, "Calling updateHandler")
-                            it.onMessagesUpdated()
-                        }
-                    }
-
-                    //store placements from payload for next comparison
-                    localPlacementIds = currentPlacementIds
-
-                } catch (e: JSONException) {
-                    IterableLogger.e(TAG, e.toString())
                 }
+
             }, object : IterableHelper.FailureHandler {
                 override fun onFailure(reason: String, data: JSONObject?) {
                     if (reason.equals(

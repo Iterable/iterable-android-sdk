@@ -1,4 +1,4 @@
-package com.iterable.iterableapi
+package com.iterable.iterableapi.response
 
 import org.json.JSONObject
 
@@ -10,18 +10,8 @@ sealed class IterableResponseObject(
         message: String,
     ): IterableResponseObject(message, IterableResponseCode.SUCCESS)
 
-    class GenericSuccess(
-        message: String,
-    ): Success(message)
-
     class RemoteSuccess(val responseJson: JSONObject): Success(
         message = SuccessMessages.REMOTE_SUCCESS
-    )
-
-    class AuthTokenSuccess(
-        val authToken: String
-    ): Success(
-        message = SuccessMessages.AUTH_TOKEN_SUCCESS,
     )
 
     object LocalSuccess: Success(
@@ -29,9 +19,13 @@ sealed class IterableResponseObject(
     )
 
 
-    class Failure(remoteMessage: String): IterableResponseObject(
-        message = remoteMessage,
+    sealed class Failure(message: String): IterableResponseObject(
+        message = message,
         code = IterableResponseCode.FAILURE
+    )
+
+    class RemoteFailure(remoteMessage: String, val errorCode: Int): Failure(
+        message = remoteMessage
     )
 
     companion object {
@@ -39,7 +33,7 @@ sealed class IterableResponseObject(
         val LocalSuccessResponse = LocalSuccess
     }
 
-    private object SuccessMessages {
+    object SuccessMessages {
         const val REMOTE_SUCCESS = "Successfully received response from remote API"
         const val AUTH_TOKEN_SUCCESS = "Successfully obtained authentication token"
         const val LOCAL_SUCCESS = "Operation completed locally without remote API call"

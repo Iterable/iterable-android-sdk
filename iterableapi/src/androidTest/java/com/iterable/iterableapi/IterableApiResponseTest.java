@@ -30,6 +30,9 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
 
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
+
 @RunWith(AndroidJUnit4.class)
 @MediumTest
 public class IterableApiResponseTest {
@@ -77,7 +80,7 @@ public class IterableApiResponseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         stubAnyRequestReturningStatusCode(200, responseData);
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.RemoteSuccessCallback() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableCallbackHandlers.RemoteSuccessCallback() {
             @Override
             public void onSuccess(@NonNull IterableResponseObject.RemoteSuccess data) {
                 assertEquals(responseData.toString(), data.getResponseJson().toString());
@@ -222,7 +225,7 @@ public class IterableApiResponseTest {
                                 "}");
                         stubAnyRequestReturningStatusCode(200, responseData);
 
-                        new IterableRequestTask().execute(new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.RemoteSuccessCallback() {
+                        new IterableRequestTask().execute(new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableCallbackHandlers.RemoteSuccessCallback() {
                             @Override
                             public void onSuccess(@NonNull IterableResponseObject.RemoteSuccess successData) {
                                 try {
