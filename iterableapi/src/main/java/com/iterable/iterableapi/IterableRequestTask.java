@@ -12,6 +12,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
+import com.iterable.iterableapi.response.IterableAuthResponseObject;
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -396,7 +400,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
         IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, false, data -> {
-            IterableResponseObject.AuthTokenSuccess authTokenResponse = (IterableResponseObject.AuthTokenSuccess) data;
+            IterableAuthResponseObject.Success authTokenResponse = (IterableAuthResponseObject.Success) data;
             String newAuthToken = authTokenResponse.getAuthToken();
             retryRequestWithNewAuthToken(newAuthToken, iterableApiRequest);
         });
@@ -425,7 +429,7 @@ class IterableApiRequest {
 
     private ProcessorType processorType = ProcessorType.ONLINE;
     IterableHelper.IterableActionHandler legacyCallback;
-    IterableHelper.IterableSuccessCallback successCallback;
+    IterableCallbackHandlers.SuccessCallback successCallback;
     IterableHelper.FailureHandler failureCallback;
 
     enum ProcessorType {
@@ -453,7 +457,7 @@ class IterableApiRequest {
         this.processorType = processorType;
     }
 
-    IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.IterableSuccessCallback onSuccess, IterableHelper.FailureHandler onFailure) {
+    IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String authToken, IterableCallbackHandlers.SuccessCallback onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
         this.resourcePath = resourcePath;
@@ -464,7 +468,7 @@ class IterableApiRequest {
         this.failureCallback = onFailure;
     }
 
-    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.IterableSuccessCallback onSuccess, IterableHelper.FailureHandler onFailure) {
+    IterableApiRequest(String apiKey, String resourcePath, JSONObject json, String requestType, String authToken, IterableCallbackHandlers.SuccessCallback onSuccess, IterableHelper.FailureHandler onFailure) {
         this.apiKey = apiKey;
         this.baseUrl = null;
         this.resourcePath = resourcePath;
@@ -495,7 +499,7 @@ class IterableApiRequest {
         return jsonObject;
     }
 
-    static IterableApiRequest fromJSON(JSONObject jsonData, @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    static IterableApiRequest fromJSON(JSONObject jsonData, @Nullable IterableCallbackHandlers.SuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         try {
             String apikey = jsonData.getString("apiKey");
             String resourcePath = jsonData.getString("resourcePath");

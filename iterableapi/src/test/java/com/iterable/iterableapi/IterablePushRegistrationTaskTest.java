@@ -24,6 +24,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
+
 public class IterablePushRegistrationTaskTest extends BaseTest {
 
     private static final String TEST_TOKEN = "testToken";
@@ -75,7 +77,7 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
 
         verify(apiMock, timeout(100)).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), isNull(), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(deviceAttributes));
 
-        verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), nullable(String.class), nullable(String.class), any(String.class), nullable(IterableHelper.IterableSuccessCallback.class), nullable(IterableHelper.FailureHandler.class));
+        verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), nullable(String.class), nullable(String.class), any(String.class), nullable(IterableCallbackHandlers.SuccessCallback.class), nullable(IterableHelper.FailureHandler.class));
     }
 
     @Test
@@ -87,6 +89,6 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         new IterablePushRegistrationTask().execute(data);
         shadowOf(getMainLooper()).idle();
 
-        verify(apiMock, timeout(100)).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), eq(TEST_TOKEN), nullable(IterableHelper.IterableSuccessCallback.class), nullable(IterableHelper.FailureHandler.class));
+        verify(apiMock, timeout(100)).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), eq(TEST_TOKEN), nullable(IterableCallbackHandlers.SuccessCallback.class), nullable(IterableHelper.FailureHandler.class));
     }
 }

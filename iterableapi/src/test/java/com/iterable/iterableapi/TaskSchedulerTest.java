@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.json.JSONObject;
@@ -35,7 +37,7 @@ public class TaskSchedulerTest {
 
     @Test
     public void testSuccessCallbackIsCalledOnCompletion() throws Exception {
-        IterableHelper.IterableSuccessCallback successHandler = mock(IterableHelper.IterableSuccessCallback.class);
+        IterableCallbackHandlers.SuccessCallback successHandler = mock(IterableCallbackHandlers.SuccessCallback.class);
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         when(mockTaskStorage.createTask(any(String.class), any(IterableTaskType.class), any(String.class))).thenReturn("testTaskId");
         taskScheduler.scheduleTask(request, successHandler, null);

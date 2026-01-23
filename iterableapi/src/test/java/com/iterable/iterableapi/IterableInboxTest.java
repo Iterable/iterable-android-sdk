@@ -5,6 +5,8 @@ import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONObject;
@@ -98,7 +100,7 @@ public class IterableInboxTest extends BaseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(200).setBody(responseData.toString()));
 
-        inAppManager.removeMessage(inboxMessages.get(0), null, null, new IterableHelper.IterableSuccessCallback() {
+        inAppManager.removeMessage(inboxMessages.get(0), null, null, new IterableCallbackHandlers.SuccessCallback() {
             @Override
             public void onSuccess(@NonNull IterableResponseObject.Success data) {
                 signal.countDown();
@@ -127,7 +129,7 @@ public class IterableInboxTest extends BaseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         dispatcher.enqueueResponse("/events/inAppConsume", new MockResponse().setResponseCode(500).setBody(responseData.toString()));
 
-        inAppManager.removeMessage(inboxMessages.get(0), null, null, new IterableHelper.IterableSuccessCallback() {
+        inAppManager.removeMessage(inboxMessages.get(0), null, null, new IterableCallbackHandlers.SuccessCallback() {
             @Override
             public void onSuccess(@NonNull IterableResponseObject.Success data) {
                 assertFalse(true);
@@ -163,7 +165,7 @@ public class IterableInboxTest extends BaseTest {
 
         // Set first message as read with a callback
         final boolean[] callbackCalled = { false };
-        inAppManager.setRead(inboxMessages.get(0), true, new IterableHelper.IterableSuccessCallback() {
+        inAppManager.setRead(inboxMessages.get(0), true, new IterableCallbackHandlers.SuccessCallback() {
             @Override
             public void onSuccess(@NonNull IterableResponseObject.Success data) {
                 callbackCalled[0] = true;
