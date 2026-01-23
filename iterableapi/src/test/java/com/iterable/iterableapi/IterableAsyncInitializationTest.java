@@ -1311,9 +1311,9 @@ public class IterableAsyncInitializationTest {
         // Call multiple overloaded method chains during initialization
         // Each overload internally delegates to the full signature
         IterableApi.getInstance().setEmail("user1@test.com");
-        IterableApi.getInstance().setEmail("user2@test.com", (IterableHelper.SuccessHandler) null, null);
+        IterableApi.getInstance().setEmail("user2@test.com", (IterableHelper.IterableSuccessCallback) null, null);
         IterableApi.getInstance().setUserId("user123");
-        IterableApi.getInstance().setUserId("user456", (IterableHelper.SuccessHandler) null, null);
+        IterableApi.getInstance().setUserId("user456", (IterableHelper.IterableSuccessCallback) null, null);
         IterableApi.getInstance().updateEmail("newemail@test.com");
 
         // Verify operations are queued

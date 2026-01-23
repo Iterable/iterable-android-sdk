@@ -22,6 +22,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
+
 public class IterableInAppHTMLNotificationTest extends BaseTest {
 
     private ActivityController<FragmentActivity> controller;

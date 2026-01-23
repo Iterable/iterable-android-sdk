@@ -60,13 +60,13 @@ class OfflineRequestProcessor implements RequestProcessor {
     }
 
     @Override
-    public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken,  @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken,  @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onSuccess, onFailure);
         new IterableRequestTask().execute(request);
     }
 
     @Override
-    public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
         if (isRequestOfflineCompatible(request.resourcePath) && healthMonitor.canSchedule()) {
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
@@ -87,7 +87,7 @@ class OfflineRequestProcessor implements RequestProcessor {
 }
 
 class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
-    static HashMap<String, IterableHelper.SuccessHandler> successCallbackMap = new HashMap<>();
+    static HashMap<String, IterableHelper.IterableSuccessCallback> successCallbackMap = new HashMap<>();
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
     private final IterableTaskStorage taskStorage;
     private final IterableTaskRunner taskRunner;
@@ -98,7 +98,7 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
         taskRunner.addTaskCompletedListener(this);
     }
 
-    void scheduleTask(IterableApiRequest request, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    void scheduleTask(IterableApiRequest request, @Nullable IterableHelper.IterableSuccessCallback onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject serializedRequest = null;
         try {
             serializedRequest = request.toJSONObject();
@@ -120,13 +120,14 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
     @MainThread
     @Override
     public void onTaskCompleted(String taskId, IterableTaskRunner.TaskResult result, IterableApiResponse response) {
-        IterableHelper.SuccessHandler onSuccess = successCallbackMap.get(taskId);
+        IterableHelper.IterableSuccessCallback onSuccess = successCallbackMap.get(taskId);
         IterableHelper.FailureHandler onFailure = failureCallbackMap.get(taskId);
         successCallbackMap.remove(taskId);
         failureCallbackMap.remove(taskId);
         if (response.success) {
             if (onSuccess != null) {
-                onSuccess.onSuccess(response.responseJson);
+                IterableResponseObject.RemoteSuccess successResponse = new IterableResponseObject.RemoteSuccess(response.responseJson);
+                onSuccess.onSuccess(successResponse);
             }
         } else {
             if (onFailure != null) {

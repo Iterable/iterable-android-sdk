@@ -2,12 +2,14 @@ package com.iterable.iterableapi;
 
 import android.util.Base64;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -45,7 +47,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         this.activityMonitor.addCallback(this);
     }
 
-    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, IterableHelper.SuccessHandler successCallback) {
+    public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, IterableHelper.IterableSuccessCallback successCallback) {
         requestNewAuthToken(hasFailedPriorAuth, successCallback, true);
     }
 
@@ -67,19 +69,19 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         retryCount = 0;
     }
 
-    private void handleSuccessForAuthToken(String authToken, IterableHelper.SuccessHandler successCallback) {
+    private void handleSuccessForAuthToken(String authToken, IterableHelper.IterableSuccessCallback successCallback) {
         try {
-            JSONObject object = new JSONObject();
-            object.put("newAuthToken", authToken);
-            successCallback.onSuccess(object);
-        } catch (JSONException e) {
+            if(authToken == null) throw new RuntimeException("Auth Token is null");
+            IterableResponseObject.AuthTokenSuccess remoteSuccess = new IterableResponseObject.AuthTokenSuccess(authToken);
+            successCallback.onSuccess(remoteSuccess);
+        } catch (RuntimeException e) {
             e.printStackTrace();
         }
     }
 
     public synchronized void requestNewAuthToken(
             boolean hasFailedPriorAuth,
-            final IterableHelper.SuccessHandler successCallback,
+            final IterableHelper.IterableSuccessCallback successCallback,
             boolean shouldIgnoreRetryPolicy) {
         if (!shouldIgnoreRetryPolicy && (pauseAuthRetry || (retryCount >= authRetryPolicy.maxRetry))) {
             return;
@@ -130,7 +132,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         }
     }
 
-    private void handleAuthTokenSuccess(String authToken, IterableHelper.SuccessHandler successCallback) {
+    private void handleAuthTokenSuccess(String authToken, IterableHelper.IterableSuccessCallback successCallback) {
         if (authToken != null) {
             IterableApi.getInstance().setAuthToken(authToken);
             queueExpirationRefresh(authToken);
@@ -210,7 +212,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         return nextRetryInterval;
     }
 
-    void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
+    void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.IterableSuccessCallback successCallback) {
         if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
             // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
             return;

@@ -8,7 +8,6 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import java.util.List;
-
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.json.JSONArray;

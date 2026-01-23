@@ -77,7 +77,7 @@ public class IterableApiResponseTest {
         final JSONObject responseData = new JSONObject("{\"key\":\"value\"}");
         stubAnyRequestReturningStatusCode(200, responseData);
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.SuccessHandler() {
+        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.IterableSuccessCallback() {
             @Override
             public void onSuccess(@NonNull JSONObject data) {
                 assertEquals(responseData.toString(), data.toString());
@@ -222,7 +222,7 @@ public class IterableApiResponseTest {
                                 "}");
                         stubAnyRequestReturningStatusCode(200, responseData);
 
-                        new IterableRequestTask().execute(new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.SuccessHandler() {
+                        new IterableRequestTask().execute(new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, new IterableHelper.IterableSuccessCallback() {
                             @Override
                             public void onSuccess(@NonNull JSONObject successData) {
                                 try {
