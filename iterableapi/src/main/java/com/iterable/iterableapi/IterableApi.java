@@ -457,15 +457,20 @@ public class IterableApi {
         if (config.autoPushRegistration) {
             registerForPush();
         } else if (_setUserSuccessCallbackHandler != null) {
-            invokeSetUserSuccessHandler();
+            invokeSetUserSuccessHandler(new IterableResponseObject.LocalSuccess("As autoPushRegistration is false, setEmail is completed locally"));
         }
 
         getInAppManager().syncInApp();
         getEmbeddedManager().syncMessages();
     }
 
-    private void invokeSetUserSuccessHandler() {
-        _setUserSuccessCallbackHandler.onSuccess(IterableResponseObject.LocalSuccessResponse);
+    private void invokeSetUserSuccessHandler(IterableResponseObject.Success responseObject) {
+        if (_setUserSuccessCallbackHandler != null) {
+            _setUserSuccessCallbackHandler.onSuccess(responseObject);
+            // Clear the callback after invoking to prevent double-calls
+            _setUserSuccessCallbackHandler = null;
+            _setUserFailureCallbackHandler = null;
+        }
     }
 
     private final IterableActivityMonitor.AppStateCallback activityMonitorListener = new IterableActivityMonitor.AppStateCallback() {
@@ -751,12 +756,15 @@ public class IterableApi {
     private IterableCallbackHandlers.SuccessCallback wrapSetUserCallbackForRemoteCall() {
         IterableCallbackHandlers.SuccessCallback wrappedSuccessHandler = null;
         if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
-            final IterableCallbackHandlers.SuccessCallback originalSuccessHandler = _setUserSuccessCallbackHandler;
+            final IterableCallbackHandlers.SuccessCallback originalSuccessHandler = _setUserSuccessCallbackHandler; // todo: not sure if we need to store it before instead of just calling the callback on success
             wrappedSuccessHandler = data -> {
                 trackConsentOnDeviceRegistration();
 
                 if (originalSuccessHandler != null) {
                     originalSuccessHandler.onSuccess(data);
+
+                    _setUserSuccessCallbackHandler = null;
+                    _setUserFailureCallbackHandler = null;
                 }
             };
         }
@@ -766,12 +774,15 @@ public class IterableApi {
     private IterableHelper.FailureHandler wrapSetUserFailureHandlerForRemoteCall() {
         IterableHelper.FailureHandler wrappedFailureHandler = null;
         if (_setUserFailureCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
-            final IterableHelper.FailureHandler originalFailureHandler = _setUserFailureCallbackHandler;
+            final IterableHelper.FailureHandler originalFailureHandler = _setUserFailureCallbackHandler; // todo: not sure if we need to store it before instead of just calling the callback on success
             wrappedFailureHandler = (reason, data) -> {
                 trackConsentOnDeviceRegistration();
 
                 if (originalFailureHandler != null) {
                     originalFailureHandler.onFailure(reason, data);
+
+                    _setUserSuccessCallbackHandler = null;
+                    _setUserFailureCallbackHandler = null;
                 }
             };
         }

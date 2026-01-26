@@ -59,7 +59,7 @@ public class IterableHelperUnitTest {
 
     @Test
     public void testIterableSuccessCallback_WithLocalSuccess() {
-        IterableResponseObject.Success localSuccess = IterableResponseObject.LocalSuccessResponse;
+        IterableResponseObject.Success localSuccess = new IterableResponseObject.LocalSuccess();
 
         AtomicBoolean callbackInvoked = new AtomicBoolean(false);
 
@@ -113,7 +113,7 @@ public class IterableHelperUnitTest {
 
     @Test
     public void testRemoteSuccessCallback_WithLocalSuccess_LogsWarning() {
-        IterableResponseObject.Success localSuccess = IterableResponseObject.LocalSuccessResponse;
+        IterableResponseObject.Success localSuccess = new IterableResponseObject.LocalSuccess();
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
@@ -133,7 +133,7 @@ public class IterableHelperUnitTest {
 
     @Test
     public void testLocalSuccessCallback_WithCorrectType() {
-        IterableResponseObject.Success localSuccess = IterableResponseObject.LocalSuccessResponse;
+        IterableResponseObject.Success localSuccess = new IterableResponseObject.LocalSuccess();
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
@@ -191,7 +191,7 @@ public class IterableHelperUnitTest {
 
     @Test
     public void testAuthTokenCallback_WithWrongType_LogsWarning() {
-        IterableResponseObject.Success localSuccess = IterableResponseObject.LocalSuccessResponse;
+        IterableResponseObject.Success localSuccess = new IterableResponseObject.LocalSuccess();
 
         AtomicBoolean typedCallbackInvoked = new AtomicBoolean(false);
 
@@ -237,7 +237,7 @@ public class IterableHelperUnitTest {
 
     @Test
     public void testSuccessHandler_WithLocalSuccess_PassesMessageJSON() throws Exception {
-        IterableResponseObject.Success localSuccess = IterableResponseObject.LocalSuccessResponse;
+        IterableResponseObject.Success localSuccess = new IterableResponseObject.LocalSuccess();
 
         AtomicBoolean callbackInvoked = new AtomicBoolean(false);
         AtomicReference<JSONObject> receivedJson = new AtomicReference<>();
