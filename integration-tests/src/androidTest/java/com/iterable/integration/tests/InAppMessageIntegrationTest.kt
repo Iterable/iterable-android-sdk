@@ -14,6 +14,7 @@ import androidx.test.runner.lifecycle.Stage
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableInAppLocation
@@ -87,15 +88,20 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🔧 MainActivity is ready!")
         
         // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
-        Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
-        val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
-        if (inAppButton.exists()) {
+        Log.d(TAG, "🔧 Step 2: Waiting for and clicking 'In-App Messages' button...")
+        
+        // Use UiDevice.wait() with generous timeout for slow emulators
+        val inAppButton = uiDevice.wait(
+            Until.findObject(By.res("com.iterable.integration.tests", "btnInAppMessages")),
+            10000 // 10 second timeout for slow CI
+        )
+        
+        if (inAppButton != null) {
             inAppButton.click()
             Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
         } else {
-            //Take screenshot for debugging
-//            uiDevice.takeScreenshot(File("/sdcard/Download/InAppButtonNotFound.png"))
-            Log.e(TAG, "❌ In-App Messages button not found!")
+            Log.e(TAG, "❌ In-App Messages button not found after waiting 10 seconds!")
+            Log.e(TAG, "Current activity: " + uiDevice.currentPackageName)
             Assert.fail("In-App Messages button not found in MainActivity")
         }
         

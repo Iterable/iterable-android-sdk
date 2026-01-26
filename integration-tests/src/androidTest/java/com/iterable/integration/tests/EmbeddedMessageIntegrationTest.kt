@@ -80,12 +80,16 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         // Step 2: Click the "Embedded Messages" button to navigate to EmbeddedMessageTestActivity
         Log.d(TAG, "🔧 Step 2: Waiting for and clicking 'Embedded Messages' button...")
         
-        // Use UiDevice.wait() which is the proper way to wait for UI elements in UiAutomator
+        // Use UiDevice.wait() with generous timeout for slow emulators
         val embeddedButton = uiDevice.wait(
             Until.findObject(By.res("com.iterable.integration.tests", "btnEmbeddedMessages")),
-            5000 // 5 second timeout
+            10000 // 10 second timeout for slow CI
         )
         
+        if (embeddedButton == null) {
+            Log.e(TAG, "❌ Embedded Messages button not found after waiting 10 seconds!")
+            Log.e(TAG, "Current activity: " + uiDevice.currentPackageName)
+        }
         Assert.assertNotNull("Embedded Messages button should be found", embeddedButton)
         embeddedButton.click()
         

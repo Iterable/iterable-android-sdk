@@ -10,6 +10,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
 import com.iterable.iterableapi.IterableApi
 import com.iterable.integration.tests.activities.PushNotificationTestActivity
 import org.awaitility.Awaitility
@@ -61,11 +62,20 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
                 mainActivityScenario.state == Lifecycle.State.RESUMED
             }
         
-        val pushButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnPushNotifications"))
-        if (!pushButton.exists()) {
+        Log.d(TAG, "Waiting for Push Notifications button to appear...")
+        val pushButton = uiDevice.wait(
+            Until.findObject(By.res("com.iterable.integration.tests", "btnPushNotifications")),
+            10000 // 10 second timeout for slow CI
+        )
+        
+        if (pushButton == null) {
+            Log.e(TAG, "Push Notifications button not found after waiting 10 seconds!")
+            Log.e(TAG, "Current activity: " + uiDevice.currentPackageName)
             Assert.fail("Push Notifications button not found in MainActivity")
         }
+        
         pushButton.click()
+        Log.d(TAG, "Clicked Push Notifications button successfully")
         Thread.sleep(2000)
     }
     
@@ -184,12 +194,19 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         Thread.sleep(1000)
         
         // Try to find and click the Push Notifications button in MainActivity
-        val pushButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnPushNotifications"))
-        if (pushButton.exists()) {
+        Log.d(TAG, "Navigating back to Push Notification Test Activity...")
+        val pushButton = uiDevice.wait(
+            Until.findObject(By.res("com.iterable.integration.tests", "btnPushNotifications")),
+            5000 // 5 second timeout
+        )
+        
+        if (pushButton != null) {
             pushButton.click()
+            Log.d(TAG, "Clicked Push Notifications button")
             Thread.sleep(2000) // Wait for navigation
         } else {
             // If button not found, try launching the activity directly
+            Log.d(TAG, "Button not found, launching activity directly")
             val intent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, PushNotificationTestActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             InstrumentationRegistry.getInstrumentation().targetContext.startActivity(intent)

@@ -2,8 +2,6 @@ package com.iterable.iterableapi;
 
 import android.os.Build;
 
-import java.lang.reflect.Field;
-
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static org.mockito.Mockito.mock;
 
@@ -18,55 +16,8 @@ import static org.mockito.Mockito.mock;
  */
 public class IterableTestUtils {
 
-    static {
-        // Increase HTTP timeouts for instrumentation tests to accommodate slow emulators
-        // The default 3-second POST timeout is too short for MockWebServer on emulators
-        try {
-            increaseHttpTimeouts();
-            android.util.Log.i("IterableTestUtils", "✅ Successfully increased HTTP timeouts for tests");
-        } catch (Exception e) {
-            // If reflection fails, tests will continue with default timeouts
-            android.util.Log.e("IterableTestUtils", "❌ Could not increase HTTP timeouts for tests", e);
-        }
-    }
-
-    /**
-     * Uses reflection to increase HTTP timeouts in IterableRequestTask for testing.
-     * This prevents flaky test failures due to emulator performance limitations.
-     *
-     * Increases timeouts to 30 seconds to handle even the slowest emulator scenarios.
-     * The timeout fields are intentionally non-final in production code to enable this.
-     */
-    private static void increaseHttpTimeouts() throws Exception {
-        Class<?> taskClass = IterableRequestTask.class;
-
-        android.util.Log.d("IterableTestUtils", "Increasing HTTP timeouts for tests...");
-
-        // Increase POST timeout from 3s to 30s for tests (very generous for slow emulators)
-        Field postTimeoutField = taskClass.getDeclaredField("POST_REQUEST_DEFAULT_TIMEOUT_MS");
-        postTimeoutField.setAccessible(true);
-
-        int oldPostTimeout = postTimeoutField.getInt(null);
-        postTimeoutField.setInt(null, 30000);
-        int newPostTimeout = postTimeoutField.getInt(null);
-
-        android.util.Log.i("IterableTestUtils", "✓ POST timeout: " + oldPostTimeout + "ms → " + newPostTimeout + "ms");
-
-        // Increase GET timeout from 10s to 40s for tests
-        Field getTimeoutField = taskClass.getDeclaredField("GET_REQUEST_DEFAULT_TIMEOUT_MS");
-        getTimeoutField.setAccessible(true);
-
-        int oldGetTimeout = getTimeoutField.getInt(null);
-        getTimeoutField.setInt(null, 40000);
-        int newGetTimeout = getTimeoutField.getInt(null);
-
-        android.util.Log.i("IterableTestUtils", "✓ GET timeout: " + oldGetTimeout + "ms → " + newGetTimeout + "ms");
-
-        // Verify the changes took effect
-        if (newPostTimeout != 30000 || newGetTimeout != 40000) {
-            throw new RuntimeException("Failed to update timeouts via reflection");
-        }
-    }
+    // Timeout configuration moved to individual test setUp() methods
+    // Each test can configure its own timeouts as needed
 
     public static void createIterableApi() {
         IterableInAppManager inAppManager;
@@ -81,9 +32,19 @@ public class IterableTestUtils {
         }
 
         IterableApi.sharedInstance = new IterableApi(inAppManager);
-        IterableConfig config = new IterableConfig.Builder().build();
+
+        // Disable automatic in-app message syncing to prevent background requests during tests
+        IterableConfig config = new IterableConfig.Builder()
+            .setAutoPushRegistration(false)  // Disable auto push registration
+            .build();
+
         initIterableApi(config);
         IterableApi.getInstance().setEmail("test_email");
+
+        // Pause in-app auto display to prevent automatic syncs
+        if (IterableApi.getInstance().getInAppManager() != null) {
+            IterableApi.getInstance().getInAppManager().setAutoDisplayPaused(true);
+        }
     }
 
     public static void initIterableApi(IterableConfig config) {
