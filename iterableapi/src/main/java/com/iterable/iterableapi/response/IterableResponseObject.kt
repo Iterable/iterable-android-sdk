@@ -14,8 +14,8 @@ sealed class IterableResponseObject(
         message = SuccessMessages.REMOTE_SUCCESS
     )
 
-    object LocalSuccess: Success(
-        message = SuccessMessages.LOCAL_SUCCESS,
+    class LocalSuccess(localMessage: String = SuccessMessages.LOCAL_SUCCESS): Success(
+        message = localMessage,
     )
 
 
@@ -27,11 +27,6 @@ sealed class IterableResponseObject(
     class RemoteFailure(remoteMessage: String, val errorCode: Int): Failure(
         message = remoteMessage
     )
-
-    companion object {
-        @JvmField
-        val LocalSuccessResponse = LocalSuccess
-    }
 
     object SuccessMessages {
         const val REMOTE_SUCCESS = "Successfully received response from remote API"
