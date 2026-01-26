@@ -56,6 +56,10 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         super.setUp()
         
         Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
+        
+        // Add small delay to ensure SDK is fully ready after background initialization
+        Thread.sleep(500)
+        
         Log.d(TAG, "🔧 MainActivity will skip initialization due to test mode flag")
         
         // Now launch the app flow with custom handlers already configured

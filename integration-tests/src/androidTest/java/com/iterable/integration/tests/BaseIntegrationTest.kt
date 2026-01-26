@@ -100,13 +100,30 @@ abstract class BaseIntegrationTest {
             }
             .build()
 
-        IterableApi.initialize(context, BuildConfig.ITERABLE_API_KEY, config)
+        // Use background initialization to prevent ANRs on slow CI emulators
+        Log.d("BaseIntegrationTest", "Starting background SDK initialization...")
+        val initLatch = CountDownLatch(1)
+        IterableApi.initializeInBackground(context, BuildConfig.ITERABLE_API_KEY, config) {
+            Log.d("BaseIntegrationTest", "SDK initialization completed in background")
+            initLatch.countDown()
+        }
+
+        // Wait for initialization to complete (with generous timeout for CI)
+        val initialized = initLatch.await(30, TimeUnit.SECONDS)
+        if (!initialized) {
+            Log.e("BaseIntegrationTest", "SDK initialization timed out after 30 seconds!")
+            throw IllegalStateException("SDK initialization timed out")
+        }
 
         // Set the user email for integration testing
         val userEmail = TestConstants.TEST_USER_EMAIL
         IterableApi.getInstance().setEmail(userEmail)
         Log.d("BaseIntegrationTest", "User email set to: $userEmail")
         Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: $userEmail")
+
+        // Add stabilization delay for CI environments
+        Thread.sleep(1000)
+        Log.d("BaseIntegrationTest", "SDK initialization stabilization complete")
     }
 
     private fun setupTestEnvironment() {

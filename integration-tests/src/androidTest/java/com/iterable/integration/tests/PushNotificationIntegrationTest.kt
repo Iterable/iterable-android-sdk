@@ -37,6 +37,9 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         super.setUp()
         
+        // Add small delay to ensure SDK is fully ready after background initialization
+        Thread.sleep(500)
+        
         IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
         IterableApi.getInstance().inAppManager.messages.forEach {
             IterableApi.getInstance().inAppManager.removeMessage(it)

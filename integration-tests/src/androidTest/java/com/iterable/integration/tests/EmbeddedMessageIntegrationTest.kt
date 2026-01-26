@@ -45,6 +45,9 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         
         Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
         
+        // Add small delay to ensure SDK is fully ready after background initialization
+        Thread.sleep(500)
+        
         // Disable in-app auto display and clear existing messages BEFORE launching app
         // This prevents in-app messages from obscuring the embedded message test screen
         Log.d(TAG, "🔧 Disabling in-app auto display and clearing existing messages...")
