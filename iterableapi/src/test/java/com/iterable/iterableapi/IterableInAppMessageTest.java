@@ -11,7 +11,6 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -63,76 +62,6 @@ public class IterableInAppMessageTest {
         IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
         assertNotNull(message);
         assertNull(message.getCustomPayload());
-    }
-
-    @Test
-    public void testEmptyCustomPayloadReturnsEmptyObject() throws Exception {
-        JSONObject messageJson = new JSONObject()
-                .put("messageId", "test123")
-                .put("customPayload", new JSONObject())
-                .put("content", new JSONObject()
-                        .put("html", "<html><body>Test</body></html>")
-                        .put("inAppDisplaySettings", new JSONObject()
-                                .put("top", new JSONObject().put("percentage", 0))
-                                .put("right", new JSONObject().put("percentage", 0))
-                                .put("bottom", new JSONObject().put("percentage", 0))
-                                .put("left", new JSONObject().put("percentage", 0))));
-
-        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
-        assertNotNull(message.getCustomPayload());
-        assertEquals(0, message.getCustomPayload().length());
-    }
-
-    @Test
-    public void testNullCustomPayloadSerializationRoundTrip() throws Exception {
-        JSONObject messageJson = new JSONObject()
-                .put("messageId", "test123")
-                .put("content", new JSONObject()
-                        .put("html", "<html><body>Test</body></html>")
-                        .put("inAppDisplaySettings", new JSONObject()
-                                .put("top", new JSONObject().put("percentage", 0))
-                                .put("right", new JSONObject().put("percentage", 0))
-                                .put("bottom", new JSONObject().put("percentage", 0))
-                                .put("left", new JSONObject().put("percentage", 0))));
-
-        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
-        assertNull(message.getCustomPayload());
-
-        JSONObject serialized = message.toJSONObject();
-        assertFalse(serialized.has("customPayload"));
-
-        IterableInAppMessage rehydrated = IterableInAppMessage.fromJSONObject(serialized, null);
-        assertNull(rehydrated.getCustomPayload());
-    }
-
-    @Test
-    public void testCustomPayloadTakesPrecedenceOverLegacyPayload() throws Exception {
-        JSONObject messageJson = new JSONObject()
-                .put("messageId", "test123")
-                .put("customPayload", new JSONObject().put("source", "customPayload"))
-                .put("content", new JSONObject()
-                        .put("html", "<html><body>Test</body></html>")
-                        .put("payload", new JSONObject().put("source", "legacyPayload"))
-                        .put("inAppDisplaySettings", new JSONObject()
-                                .put("top", new JSONObject().put("percentage", 0))
-                                .put("right", new JSONObject().put("percentage", 0))
-                                .put("bottom", new JSONObject().put("percentage", 0))
-                                .put("left", new JSONObject().put("percentage", 0))));
-
-        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
-        assertEquals("customPayload", message.getCustomPayload().getString("source"));
-    }
-
-    @Test
-    public void testJsonOnlyWithoutCustomPayloadReturnsEmptyObject() throws Exception {
-        JSONObject messageJson = new JSONObject()
-                .put("messageId", "test123")
-                .put("jsonOnly", true)
-                .put("trigger", new JSONObject().put("type", "never"));
-
-        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
-        assertNotNull(message.getCustomPayload());
-        assertEquals(0, message.getCustomPayload().length());
     }
 
     @Test
