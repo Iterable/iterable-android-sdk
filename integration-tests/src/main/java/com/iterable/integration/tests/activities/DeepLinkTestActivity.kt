@@ -140,13 +140,12 @@ class DeepLinkTestActivity : AppCompatActivity() {
         
         // Track custom event for deep link received (for analytics verification)
         try {
-            IterableApi.getInstance().track("deepLinkReceived", 0, 23, mapOf(
-                "url" to (lastReceivedUrl ?: ""),
-                "path" to (lastReceivedPath ?: ""),
-                "host" to (lastReceivedHost ?: ""),
-                "scheme" to (lastReceivedScheme ?: "")
-            ) as JSONObject?
-            )
+            IterableApi.getInstance().track("deepLinkReceived", 0, 23, JSONObject().apply {
+                put("url", lastReceivedUrl ?: "")
+                put("path", lastReceivedPath ?: "")
+                put("host", lastReceivedHost ?: "")
+                put("scheme", lastReceivedScheme ?: "")
+            })
         } catch (e: Exception) {
             Log.w(TAG, "Failed to track deep link event", e)
         }
