@@ -17,7 +17,7 @@ public class IterableInAppMessage {
 
     private final @NonNull String messageId;
     private final @NonNull Content content;
-    private final @NonNull JSONObject customPayload;
+    private final @Nullable JSONObject customPayload;
     private final @NonNull Date createdAt;
     private final @NonNull Date expiresAt;
     private final @NonNull Trigger trigger;
@@ -35,7 +35,7 @@ public class IterableInAppMessage {
 
     IterableInAppMessage(@NonNull String messageId,
                          @NonNull Content content,
-                         @NonNull JSONObject customPayload,
+                         @Nullable JSONObject customPayload,
                          @NonNull Date createdAt,
                          @NonNull Date expiresAt,
                          @NonNull Trigger trigger,
@@ -255,7 +255,7 @@ public class IterableInAppMessage {
         return content;
     }
 
-    @NonNull
+    @Nullable
     public JSONObject getCustomPayload() {
         return customPayload;
     }
