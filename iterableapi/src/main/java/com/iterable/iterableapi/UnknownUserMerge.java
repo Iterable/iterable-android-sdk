@@ -5,7 +5,7 @@ public class UnknownUserMerge {
 
     void tryMergeUser(IterableApiClient apiClient, String unknownUserId, String destinationUser, boolean isEmail, boolean merge, MergeResultCallback callback) {
         IterableLogger.v(TAG, "tryMergeUser");
-        if (unknownUserId != null && merge) {
+        if (unknownUserId != null && merge) { //todo: why can we try to merge and have merge false?
             String destinationEmail = isEmail ? destinationUser : null;
             String destinationUserId = isEmail ? null : destinationUser;
             apiClient.mergeUser(null, unknownUserId, destinationEmail, destinationUserId, data -> {

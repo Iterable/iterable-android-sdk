@@ -16,9 +16,10 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -201,9 +202,9 @@ public class IterableApiAuthSecurityTests extends BaseTest {
         final CountDownLatch latch = new CountDownLatch(1);
 
         // Capture what the completion handler receives
-        spyApi.setEmail(originalEmail, new IterableHelper.SuccessHandler() {
+        spyApi.setEmail(originalEmail, new IterableCallbackHandlers.SuccessCallback() {
             @Override
-            public void onSuccess(JSONObject data) {
+            public void onSuccess(IterableResponseObject.Success data) {
                 // This callback happens after completeUserLogin
                 latch.countDown();
             }

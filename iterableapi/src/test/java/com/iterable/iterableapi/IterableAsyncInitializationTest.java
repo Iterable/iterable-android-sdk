@@ -27,6 +27,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
+
 /**
  * Comprehensive test suite for async initialization functionality.
  * Tests ANR elimination, operation queuing, callback execution, and edge cases.
@@ -1317,9 +1319,9 @@ public class IterableAsyncInitializationTest {
         // Call multiple overloaded method chains during initialization
         // Each overload internally delegates to the full signature
         IterableApi.getInstance().setEmail("user1@test.com");
-        IterableApi.getInstance().setEmail("user2@test.com", (IterableHelper.SuccessHandler) null, null);
+        IterableApi.getInstance().setEmail("user2@test.com", (IterableCallbackHandlers.SuccessCallback) null, null);
         IterableApi.getInstance().setUserId("user123");
-        IterableApi.getInstance().setUserId("user456", (IterableHelper.SuccessHandler) null, null);
+        IterableApi.getInstance().setUserId("user456", (IterableCallbackHandlers.SuccessCallback) null, null);
         IterableApi.getInstance().updateEmail("newemail@test.com");
 
         // Verify operations are queued

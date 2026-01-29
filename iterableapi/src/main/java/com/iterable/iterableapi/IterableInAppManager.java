@@ -12,6 +12,8 @@ import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.IterableInAppHandler.InAppResponse;
 import com.iterable.iterableapi.IterableInAppMessage.Trigger.TriggerType;
+import com.iterable.iterableapi.response.IterableResponseObject;
+import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -137,10 +139,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param read Read state flag. true = read, false = unread
      * @param successHandler The callback which returns `success`.
      */
-    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public synchronized void setRead(@NonNull IterableInAppMessage message, boolean read, @Nullable IterableCallbackHandlers.SuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         message.setRead(read);
         if (successHandler != null) {
-            successHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
+            successHandler.onSuccess(new IterableResponseObject.LocalSuccess());
         }
         notifyOnChange();
     }
@@ -279,7 +281,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * @param successHandler The callback which returns `success`.
      * @param failureHandler The callback which returns `failure`.
      */
-    public synchronized void removeMessage(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+    public synchronized void removeMessage(@NonNull IterableInAppMessage message, @Nullable IterableInAppDeleteActionType source, @Nullable IterableInAppLocation clickLocation, @Nullable IterableCallbackHandlers.SuccessCallback successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         IterableLogger.printInfo();
         if (message != null) {
             message.setConsumed(true);

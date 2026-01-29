@@ -142,14 +142,14 @@ class IntegrationTestUtils(private val context: Context) {
                 val response = httpClient.newCall(request).execute()
                 val success = response.isSuccessful
                 
-                            if (success) {
-                Log.d(TAG, "Campaign triggered successfully via API: campaignId=$campaignId, recipientEmail=$recipientEmail")
-            } else {
-                val errorBody = response.body?.string() ?: "No error body"
-                Log.e(TAG, "Failed to trigger campaign via API: ${response.code} - $errorBody")
-                // Store error message for UI display
-                lastErrorMessage = "HTTP ${response.code}: $errorBody"
-            }
+                if (success) {
+                    Log.d(TAG, "Campaign triggered successfully via API: campaignId=$campaignId, recipientEmail=$recipientEmail")
+                } else {
+                    val errorBody = response.body?.string() ?: "No error body"
+                    Log.e(TAG, "Failed to trigger campaign via API: ${response.code} - $errorBody")
+                    // Store error message for UI display
+                    lastErrorMessage = "HTTP ${response.code}: $errorBody"
+                }
                 
                 callback?.invoke(success)
             } catch (e: Exception) {
@@ -175,14 +175,14 @@ class IntegrationTestUtils(private val context: Context) {
                 val response = httpClient.newCall(request).execute()
                 val success = response.isSuccessful
                 
-                            if (success) {
-                Log.d(TAG, "Push campaign triggered successfully via API: campaignId=$campaignId, recipientEmail=$recipientEmail")
-            } else {
-                val errorBody = response.body?.string() ?: "No error body"
-                Log.e(TAG, "Failed to trigger push campaign via API: ${response.code} - $errorBody")
-                // Store error message for UI display
-                lastErrorMessage = "HTTP ${response.code}: $errorBody"
-            }
+                if (success) {
+                    Log.d(TAG, "Push campaign triggered successfully via API: campaignId=$campaignId, recipientEmail=$recipientEmail")
+                } else {
+                    val errorBody = response.body?.string() ?: "No error body"
+                    Log.e(TAG, "Failed to trigger push campaign via API: ${response.code} - $errorBody")
+                    // Store error message for UI display
+                    lastErrorMessage = "HTTP ${response.code}: $errorBody"
+                }
                 //TODO: Move callback success inside if(success)
                 callback?.invoke(success)
             } catch (e: Exception) {
