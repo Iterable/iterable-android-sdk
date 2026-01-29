@@ -11,6 +11,7 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class IterableFirebaseMessagingService extends FirebaseMessagingService {
@@ -56,12 +57,13 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             return false;
         }
 
-        if (!IterableNotificationHelper.isGhostPush(extras)) {
+        boolean isGhostPush = IterableNotificationHelper.isGhostPush(extras);
+        
+        if (!isGhostPush) {
             if (!IterableNotificationHelper.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
-                IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
-                        context.getApplicationContext(), extras);
-                new IterableNotificationManager().execute(notificationBuilder);
+
+                enqueueNotificationWork(context, extras, false);
             } else {
                 IterableLogger.d(TAG, "Iterable OS notification push received");
             }
@@ -105,9 +107,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         String registrationToken = null;
         try {
             registrationToken = Tasks.await(FirebaseMessaging.getInstance().getToken());
-        } catch (ExecutionException e) {
-            IterableLogger.e(TAG, e.getLocalizedMessage());
-        } catch (InterruptedException e) {
+        } catch (ExecutionException | InterruptedException e) {
             IterableLogger.e(TAG, e.getLocalizedMessage());
         } catch (Exception e) {
             IterableLogger.e(TAG, "Failed to fetch firebase token");
@@ -122,17 +122,65 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
      * @return Boolean indicating whether the message is an Iterable ghost push or silent push
      */
     public static boolean isGhostPush(RemoteMessage remoteMessage) {
-        Map<String, String> messageData = remoteMessage.getData();
+        try {
+            Map<String, String> messageData = remoteMessage.getData();
 
-        if (messageData == null || messageData.isEmpty()) {
+            if (messageData.isEmpty()) {
+                return false;
+            }
+
+            Bundle extras = IterableNotificationHelper.mapToBundle(messageData);
+            return IterableNotificationHelper.isGhostPush(extras);
+        } catch (Exception e) {
+            IterableLogger.e(TAG, e.getMessage());
             return false;
         }
+    }
 
-        Bundle extras = IterableNotificationHelper.mapToBundle(messageData);
-        return IterableNotificationHelper.isGhostPush(extras);
+    private static void enqueueNotificationWork(@NonNull final Context context, @NonNull final Bundle extras, boolean isGhostPush) {
+        IterableNotificationWorkScheduler scheduler = new IterableNotificationWorkScheduler(context);
+        
+        scheduler.scheduleNotificationWork(
+                extras,
+                isGhostPush,
+                new IterableNotificationWorkScheduler.SchedulerCallback() {
+                    @Override
+                    public void onScheduleSuccess(UUID workId) {
+                        IterableLogger.d(TAG, "Notification work scheduled successfully: " + workId);
+                    }
+
+                    @Override
+                    public void onScheduleFailure(Exception exception, Bundle notificationData) {
+                        IterableLogger.e(TAG, "Failed to schedule notification work", exception);
+                        IterableLogger.e(TAG, "Attempting FALLBACK to direct processing...");
+                        handleFallbackNotification(context, notificationData);
+                    }
+                }
+        );
+    }
+
+    private static void handleFallbackNotification(@NonNull Context context, @NonNull Bundle extras) {
+        try {
+            IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
+                    context.getApplicationContext(), extras);
+            if (notificationBuilder != null) {
+                IterableNotificationHelper.postNotificationOnDevice(context, notificationBuilder);
+                IterableLogger.d(TAG, "✓ FALLBACK succeeded - notification posted directly");
+            } else {
+                IterableLogger.w(TAG, "✗ FALLBACK: Notification builder is null");
+            }
+        } catch (Exception fallbackException) {
+            IterableLogger.e(TAG, "✗ CRITICAL: FALLBACK also failed!", fallbackException);
+            IterableLogger.e(TAG, "NOTIFICATION WILL NOT BE DISPLAYED");
+        }
     }
 }
 
+/**
+ * @deprecated This class is no longer used. Notification processing now uses WorkManager
+ * to comply with Firebase best practices. This class is kept for backwards compatibility only.
+ */
+@Deprecated
 class IterableNotificationManager extends AsyncTask<IterableNotificationBuilder, Void, Void> {
 
     @Override

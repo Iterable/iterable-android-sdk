@@ -98,6 +98,11 @@ class IterableNotificationHelper {
     static class IterableNotificationHelperImpl {
 
         public IterableNotificationBuilder createNotification(Context context, Bundle extras) {
+            if (extras == null) {
+                IterableLogger.w(IterableNotificationBuilder.TAG, "Notification extras is null. Skipping.");
+                return null;
+            }
+
             String applicationName = context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
             String title = null;
             String notificationBody = null;
@@ -436,7 +441,7 @@ class IterableNotificationHelper {
 
         boolean isGhostPush(Bundle extras) {
             boolean isGhostPush = false;
-            if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
                 String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
                 IterableNotificationData data = new IterableNotificationData(iterableData);
                 isGhostPush = data.getIsGhostPush();
@@ -447,7 +452,7 @@ class IterableNotificationHelper {
 
         boolean isEmptyBody(Bundle extras) {
             String notificationBody = "";
-            if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
                 notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY, "");
             }
 
