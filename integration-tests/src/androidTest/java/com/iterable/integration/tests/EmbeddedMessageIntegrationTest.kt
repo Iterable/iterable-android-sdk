@@ -2,28 +2,25 @@ package com.iterable.integration.tests
 
 import android.content.Intent
 import android.util.Log
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
+import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
-import androidx.test.uiautomator.By
-import com.iterable.iterableapi.IterableApi
-import com.iterable.iterableapi.IterableEmbeddedMessage
+import androidx.test.uiautomator.Until
 import com.iterable.integration.tests.activities.EmbeddedMessageTestActivity
+import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.ui.embedded.IterableEmbeddedView
 import com.iterable.iterableapi.ui.embedded.IterableEmbeddedViewType
-import org.awaitility.Awaitility
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
@@ -47,6 +44,9 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         super.setUp()
         
         Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
+        
+        // Add small delay to ensure SDK is fully ready after background initialization
+        Thread.sleep(500)
         
         // Disable in-app auto display and clear existing messages BEFORE launching app
         // This prevents in-app messages from obscuring the embedded message test screen
@@ -78,28 +78,25 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         val mainIntent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, MainActivity::class.java)
         mainActivityScenario = ActivityScenario.launch(mainIntent)
         
-        // Wait for MainActivity to be ready
-        Awaitility.await()
-            .atMost(5, TimeUnit.SECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .until {
-                val state = mainActivityScenario.state
-                Log.d(TAG, "🔧 MainActivity state: $state")
-                state == Lifecycle.State.RESUMED
-            }
-        
-        Log.d(TAG, "🔧 MainActivity is ready!")
+        Log.d(TAG, "🔧 MainActivity launched")
         
         // Step 2: Click the "Embedded Messages" button to navigate to EmbeddedMessageTestActivity
-        Log.d(TAG, "🔧 Step 2: Clicking 'Embedded Messages' button...")
-        val embeddedButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnEmbeddedMessages"))
-        if (embeddedButton.exists()) {
-            embeddedButton.click()
-            Log.d(TAG, "🔧 Clicked Embedded Messages button successfully")
-        } else {
-            Log.e(TAG, "❌ Embedded Messages button not found!")
-            Assert.fail("Embedded Messages button not found in MainActivity")
+        Log.d(TAG, "🔧 Step 2: Waiting for and clicking 'Embedded Messages' button...")
+        
+        // Use UiDevice.wait() with generous timeout for slow emulators
+        val embeddedButton = uiDevice.wait(
+            Until.findObject(By.res("com.iterable.integration.tests", "btnEmbeddedMessages")),
+            10000 // 10 second timeout for slow CI
+        )
+        
+        if (embeddedButton == null) {
+            Log.e(TAG, "❌ Embedded Messages button not found after waiting 10 seconds!")
+            Log.e(TAG, "Current activity: " + uiDevice.currentPackageName)
         }
+        Assert.assertNotNull("Embedded Messages button should be found", embeddedButton)
+        embeddedButton.click()
+        
+        Log.d(TAG, "🔧 Clicked Embedded Messages button successfully")
         
         // Step 3: Wait for EmbeddedMessageTestActivity to load
         Log.d(TAG, "🔧 Step 3: Waiting for EmbeddedMessageTestActivity to load...")

@@ -18,8 +18,8 @@ object TestConstants {
     // Test placement IDs
     const val TEST_EMBEDDED_PLACEMENT_ID = 2157L
     
-    // Test timeouts
-    const val TIMEOUT_SECONDS = 5L
-    const val POLL_INTERVAL_SECONDS = 1L
+    // Test timeouts (increased for CI stability)
+    const val TIMEOUT_SECONDS = 15L  // Increased from 5s for slower CI emulators
+    const val POLL_INTERVAL_SECONDS = 2L  // Increased from 1s for better stability
 }
 

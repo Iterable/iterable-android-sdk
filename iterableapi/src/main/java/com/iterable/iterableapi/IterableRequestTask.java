@@ -36,10 +36,39 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     static String overrideUrl;
 
-    static final int POST_REQUEST_DEFAULT_TIMEOUT_MS = 3000;    //3 seconds
-    static final int GET_REQUEST_DEFAULT_TIMEOUT_MS = 10000;    //10 seconds
+    // Note: These are intentionally non-final to allow instrumentation tests to increase timeouts
+    // for slow emulator environments. Tests can call setTimeoutsForTesting() before running.
+    private static int postRequestTimeoutMs = 3000;    //3 seconds
+    private static int getRequestTimeoutMs = 10000;    //10 seconds
     static final long RETRY_DELAY_MS = 2000;      //2 seconds
     static final int MAX_RETRY_COUNT = 5;
+
+    /**
+     * Sets HTTP timeouts for testing. Package-private for test access.
+     * Must be called before any requests are made.
+     *
+     * @param postTimeoutMs POST request timeout in milliseconds
+     * @param getTimeoutMs GET request timeout in milliseconds
+     */
+    static void setTimeoutsForTesting(int postTimeoutMs, int getTimeoutMs) {
+        postRequestTimeoutMs = postTimeoutMs;
+        getRequestTimeoutMs = getTimeoutMs;
+        IterableLogger.d(TAG, "Timeouts set for testing: POST=" + postTimeoutMs + "ms, GET=" + getTimeoutMs + "ms");
+    }
+
+    /**
+     * Gets the current POST timeout. Package-private for test access.
+     */
+    static int getPostTimeout() {
+        return postRequestTimeoutMs;
+    }
+
+    /**
+     * Gets the current GET timeout. Package-private for test access.
+     */
+    static int getGetTimeout() {
+        return getRequestTimeoutMs;
+    }
 
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
     static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
@@ -101,8 +130,12 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     url = new URL(builder.build().toString());
                     urlConnection = (HttpURLConnection) url.openConnection();
 
-                    urlConnection.setReadTimeout(GET_REQUEST_DEFAULT_TIMEOUT_MS);
-                    urlConnection.setConnectTimeout(GET_REQUEST_DEFAULT_TIMEOUT_MS);
+                    // Disable connection caching/reuse for reliability
+                    urlConnection.setUseCaches(false);
+                    urlConnection.setRequestProperty("Connection", "close");
+
+                    urlConnection.setReadTimeout(getRequestTimeoutMs);
+                    urlConnection.setConnectTimeout(getRequestTimeoutMs);
 
                     urlConnection.setRequestProperty(IterableConstants.HEADER_API_KEY, iterableApiRequest.apiKey);
                     urlConnection.setRequestProperty(IterableConstants.HEADER_SDK_PLATFORM, "Android");
@@ -118,11 +151,16 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 } else {
                     url = new URL(baseUrl + iterableApiRequest.resourcePath);
                     urlConnection = (HttpURLConnection) url.openConnection();
+
+                    // Disable connection caching/reuse for reliability
+                    urlConnection.setUseCaches(false);
+                    urlConnection.setRequestProperty("Connection", "close");
+
                     urlConnection.setDoOutput(true);
                     urlConnection.setRequestMethod(iterableApiRequest.requestType);
 
-                    urlConnection.setReadTimeout(POST_REQUEST_DEFAULT_TIMEOUT_MS);
-                    urlConnection.setConnectTimeout(POST_REQUEST_DEFAULT_TIMEOUT_MS);
+                    urlConnection.setReadTimeout(postRequestTimeoutMs);
+                    urlConnection.setConnectTimeout(postRequestTimeoutMs);
 
                     urlConnection.setRequestProperty("Accept", "application/json");
                     urlConnection.setRequestProperty("Content-Type", "application/json");
