@@ -489,6 +489,9 @@ public class IterableApi {
         boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
 
         if (sharedInstance.isInitialized()) {
+            // Process any pending actions that couldn't be handled when they arrived
+            IterablePushNotificationUtil.processPendingAction(_applicationContext);
+
             if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
                 sharedInstance.registerForPush();
             }
