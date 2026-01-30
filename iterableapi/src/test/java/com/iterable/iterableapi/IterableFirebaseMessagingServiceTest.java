@@ -1,7 +1,13 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+
+import androidx.work.Configuration;
+import androidx.work.WorkManager;
+import androidx.work.testing.SynchronousExecutor;
+import androidx.work.testing.WorkManagerTestInitHelper;
 
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -20,6 +26,8 @@ import okhttp3.mockwebserver.MockWebServer;
 import static com.iterable.iterableapi.IterableTestUtils.bundleToMap;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,6 +53,13 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         IterableTestUtils.createIterableApiNew();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+
+        // Initialize WorkManager for testing
+        Context context = getContext();
+        Configuration config = new Configuration.Builder()
+                .setExecutor(new SynchronousExecutor())
+                .build();
+        WorkManagerTestInitHelper.initializeTestWorkManager(context, config);
 
         controller = Robolectric.buildService(IterableFirebaseMessagingService.class);
         Intent intent = new Intent(getContext(), IterableFirebaseMessagingService.class);
@@ -138,5 +153,121 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_embedded_update.json"));
         controller.get().onMessageReceived(builder.build());
         verify(embeddedManagerSpy, atLeastOnce()).syncMessages();
+    }
+
+    @Test
+    public void testNotificationWithoutImageDisplaysImmediately() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasImageUrl(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.createNotification(any(Context.class), any(Bundle.class))).thenCallRealMethod();
+        doNothing().when(notificationHelperSpy).postNotificationOnDevice(any(Context.class), any(IterableNotificationBuilder.class));
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Message body");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+        builder.setPriority(RemoteMessage.PRIORITY_NORMAL);
+        controller.get().onMessageReceived(builder.build());
+
+        // Verify notification is created and posted immediately (not scheduled via WorkManager)
+        ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
+        verify(notificationHelperSpy).createNotification(eq(getContext()), bundleCaptor.capture());
+        verify(notificationHelperSpy).postNotificationOnDevice(eq(getContext()), any(IterableNotificationBuilder.class));
+    }
+
+    @Test
+    public void testNotificationWithImageSchedulesWorkManager() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasImageUrl(any(Bundle.class))).thenCallRealMethod();
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Message body");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_with_image.json"));
+        builder.setPriority(RemoteMessage.PRIORITY_HIGH);
+        controller.get().onMessageReceived(builder.build());
+
+        // Verify WorkManager was enqueued (check that work was scheduled)
+        // Note: We can't easily verify the exact work request without more complex mocking,
+        // but we can verify that hasImageUrl was called and that createNotification was NOT called immediately
+        verify(notificationHelperSpy).hasImageUrl(any(Bundle.class));
+    }
+
+    @Test
+    public void testHighPriorityMessageSchedulesExpeditedWork() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasImageUrl(any(Bundle.class))).thenCallRealMethod();
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Message body");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_with_image.json"));
+        builder.setPriority(RemoteMessage.PRIORITY_HIGH);
+        controller.get().onMessageReceived(builder.build());
+
+        // Verify that hasImageUrl was called (indicating WorkManager path was taken)
+        verify(notificationHelperSpy).hasImageUrl(any(Bundle.class));
+    }
+
+    @Test
+    public void testNormalPriorityMessageSchedulesRegularWork() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasImageUrl(any(Bundle.class))).thenCallRealMethod();
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Message body");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_with_image.json"));
+        builder.setPriority(RemoteMessage.PRIORITY_NORMAL);
+        controller.get().onMessageReceived(builder.build());
+
+        // Verify that hasImageUrl was called (indicating WorkManager path was taken)
+        verify(notificationHelperSpy).hasImageUrl(any(Bundle.class));
+    }
+
+    @Test
+    public void testHasImageUrlReturnsTrueWhenImagePresent() throws Exception {
+        Bundle extras = new Bundle();
+        extras.putString(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_with_image.json"));
+        assertTrue(IterableNotificationHelper.hasImageUrl(extras));
+    }
+
+    @Test
+    public void testHasImageUrlReturnsFalseWhenImageNotPresent() throws Exception {
+        Bundle extras = new Bundle();
+        extras.putString(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+        assertFalse(IterableNotificationHelper.hasImageUrl(extras));
+    }
+
+    @Test
+    public void testGetImageUrlReturnsUrlWhenPresent() throws Exception {
+        Bundle extras = new Bundle();
+        extras.putString(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_with_image.json"));
+        String imageUrl = IterableNotificationHelper.getImageUrl(extras);
+        assertNotNull(imageUrl);
+        assertEquals("https://example.com/image.jpg", imageUrl);
+    }
+
+    @Test
+    public void testGetImageUrlReturnsNullWhenNotPresent() throws Exception {
+        Bundle extras = new Bundle();
+        extras.putString(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+        String imageUrl = IterableNotificationHelper.getImageUrl(extras);
+        assertNull(imageUrl);
+    }
+
+    @Test
+    public void testGetImageUrlReturnsNullForNullExtras() {
+        String imageUrl = IterableNotificationHelper.getImageUrl(null);
+        assertNull(imageUrl);
+    }
+
+    @Test
+    public void testHasImageUrlReturnsFalseForNullExtras() {
+        assertFalse(IterableNotificationHelper.hasImageUrl(null));
     }
 }

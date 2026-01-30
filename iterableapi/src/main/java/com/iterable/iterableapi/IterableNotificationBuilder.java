@@ -25,6 +25,8 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
     private boolean isGhostPush;
     private String imageUrl;
     private String expandedContent;
+    private Bitmap largeIconBitmap;
+    private Bitmap bigPictureBitmap;
     int requestCode;
     IterableNotificationData iterableNotificationData;
 
@@ -54,6 +56,21 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         this.expandedContent = content;
     }
 
+    /**
+     * Sets the large icon bitmap directly (for use when image is already loaded via WorkManager)
+     * @param bitmap Bitmap to use as large icon
+     */
+    public void setLargeIconBitmap(Bitmap bitmap) {
+        this.largeIconBitmap = bitmap;
+    }
+
+    /**
+     * Sets the big picture style bitmap directly (for use when image is already loaded via WorkManager)
+     * @param bitmap Bitmap to use for big picture style
+     */
+    public void setBigPictureStyle(Bitmap bitmap) {
+        this.bigPictureBitmap = bitmap;
+    }
 
     public void setIsGhostPush(boolean ghostPush) {
         isGhostPush = ghostPush;
@@ -66,12 +83,22 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
     /**
      * Combine all of the options that have been set and return a new {@link Notification}
      * object.
-     * Download any optional images
+     * Uses pre-loaded bitmap if available, otherwise attempts to download image from URL.
+     * Note: Image downloading should typically be done via WorkManager for FCM best practices.
      */
     public Notification build() {
         NotificationCompat.Style style = null;
 
-        if (this.imageUrl != null) {
+        // Use pre-loaded bitmap if available (from WorkManager)
+        if (this.bigPictureBitmap != null) {
+            style = new NotificationCompat.BigPictureStyle()
+                    .bigPicture(this.bigPictureBitmap)
+                    .bigLargeIcon(null)
+                    .setSummaryText(expandedContent);
+            this.setLargeIcon(this.largeIconBitmap != null ? this.largeIconBitmap : this.bigPictureBitmap);
+        } else if (this.imageUrl != null) {
+            // Fallback: Load image synchronously (only for immediate display without WorkManager)
+            // This should rarely be used now, but kept for backwards compatibility
             try {
                 URL url = new URL(this.imageUrl);
                 URLConnection connection = url.openConnection();

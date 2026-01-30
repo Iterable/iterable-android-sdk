@@ -1,0 +1,11 @@
+{
+  "campaignId": 1234,
+  "templateId": 4321,
+  "messageId": "123456789abcdef",
+  "isGhostPush": false,
+  "attachment-url": "https://example.com/image.jpg",
+  "title": "Test Notification",
+  "body": "This is a test notification with an image"
+}
+
+

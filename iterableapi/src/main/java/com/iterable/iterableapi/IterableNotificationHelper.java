@@ -87,6 +87,24 @@ class IterableNotificationHelper {
         return instance.isEmptyBody(extras);
     }
 
+    /**
+     * Checks if the notification extras contain an image URL
+     * @param extras Bundle containing notification data
+     * @return true if notification has an image URL, false otherwise
+     */
+    static boolean hasImageUrl(Bundle extras) {
+        return instance.hasImageUrl(extras);
+    }
+
+    /**
+     * Gets the image URL from notification extras
+     * @param extras Bundle containing notification data
+     * @return Image URL string, or null if not present
+     */
+    static String getImageUrl(Bundle extras) {
+        return instance.getImageUrl(extras);
+    }
+
     static Bundle mapToBundle(Map<String, String> map) {
         Bundle bundle = new Bundle();
         for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -452,6 +470,45 @@ class IterableNotificationHelper {
             }
 
             return notificationBody.isEmpty();
+        }
+
+        boolean hasImageUrl(Bundle extras) {
+            if (extras == null) {
+                return false;
+            }
+
+            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+            if (iterableData == null || iterableData.isEmpty()) {
+                return false;
+            }
+
+            try {
+                JSONObject iterableJson = new JSONObject(iterableData);
+                return iterableJson.has(IterableConstants.ITERABLE_DATA_PUSH_IMAGE) &&
+                       !iterableJson.optString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE, "").isEmpty();
+            } catch (JSONException e) {
+                IterableLogger.w(IterableNotificationBuilder.TAG, "Error parsing iterable data for image URL", e);
+                return false;
+            }
+        }
+
+        String getImageUrl(Bundle extras) {
+            if (extras == null) {
+                return null;
+            }
+
+            String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+            if (iterableData == null || iterableData.isEmpty()) {
+                return null;
+            }
+
+            try {
+                JSONObject iterableJson = new JSONObject(iterableData);
+                return iterableJson.optString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE, null);
+            } catch (JSONException e) {
+                IterableLogger.w(IterableNotificationBuilder.TAG, "Error parsing iterable data for image URL", e);
+                return null;
+            }
         }
     }
 
