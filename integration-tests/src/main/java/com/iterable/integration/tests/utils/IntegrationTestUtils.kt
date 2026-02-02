@@ -37,6 +37,11 @@ class IntegrationTestUtils(private val context: Context) {
     private val silentPushProcessed = AtomicBoolean(false)
     private val embeddedPushProcessed = AtomicBoolean(false)
     
+    // Deep link tracking
+    private var lastDeepLinkUrl: String? = null
+    private var lastDeepLinkPath: String? = null
+    private val deepLinkReceived = AtomicBoolean(false)
+    
     // Error tracking
     private var lastErrorMessage: String? = null
     
@@ -51,7 +56,28 @@ class IntegrationTestUtils(private val context: Context) {
         silentPushProcessed.set(false)
         embeddedPushProcessed.set(false)
         lastErrorMessage = null
+        resetDeepLinkTracking()
     }
+    
+    // Deep link tracking methods
+    fun resetDeepLinkTracking() {
+        deepLinkReceived.set(false)
+        lastDeepLinkUrl = null
+        lastDeepLinkPath = null
+    }
+    
+    fun setDeepLinkReceived(url: String?, path: String?) {
+        deepLinkReceived.set(true)
+        lastDeepLinkUrl = url
+        lastDeepLinkPath = path
+        Log.d(TAG, "Deep link received - URL: $url, Path: $path")
+    }
+    
+    fun isDeepLinkReceived(): Boolean = deepLinkReceived.get()
+    
+    fun getLastDeepLinkUrl(): String? = lastDeepLinkUrl
+    
+    fun getLastDeepLinkPath(): String? = lastDeepLinkPath
     
     // Get last error message
     fun getLastErrorMessage(): String? {
