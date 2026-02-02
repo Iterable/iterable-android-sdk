@@ -7,7 +7,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.iterable.iterableapi.response.IterableAuthResponseObject;
-import com.iterable.iterableapi.response.IterableResponseObject;
 import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 
 import org.json.JSONObject;

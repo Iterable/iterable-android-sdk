@@ -12,13 +12,11 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.iterable.iterableapi.response.IterableAuthResponseObject;
 import com.iterable.iterableapi.response.IterableResponseObject;
 import com.iterable.iterableapi.response.handlers.IterableCallbackHandlers;
 import com.iterable.iterableapi.response.handlers.auth.IterableAuthCallbackHandlers;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 

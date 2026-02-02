@@ -9,7 +9,7 @@ import com.iterable.iterableapi.response.IterableResponseObject;
  * Callback handlers for Iterable SDK operations.
  */
 public class IterableCallbackHandlers {
-    
+
     /**
      * Generic callback interface for successful SDK operations.
      *
@@ -31,7 +31,7 @@ public class IterableCallbackHandlers {
      * <ul>
      *   <li>Use {@link RemoteSuccessCallback} if you need to access JSON response data from the API</li>
      *   <li>Use {@link LocalSuccessCallback} if you only want to proceed when no remote call was made</li>
-     *   <li>Use {@link com.iterable.iterableapi.response.handlers.auth.IterableAuthCallbackHandlers.AuthTokenCallback} 
+     *   <li>Use {@link com.iterable.iterableapi.response.handlers.auth.IterableAuthCallbackHandlers.AuthTokenCallback}
      *       if you need to access the authentication token</li>
      * </ul>
      *
