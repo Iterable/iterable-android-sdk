@@ -489,6 +489,9 @@ public class IterableApi {
         boolean isNotificationEnabled = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_DEVICE_NOTIFICATIONS_ENABLED, false);
 
         if (sharedInstance.isInitialized()) {
+            // Process any pending actions that couldn't be handled when they arrived
+            IterablePushNotificationUtil.processPendingAction(_applicationContext);
+
             if (sharedInstance.config.autoPushRegistration && hasStoredPermission && (isNotificationEnabled != systemNotificationEnabled)) {
                 sharedInstance.registerForPush();
             }
@@ -911,6 +914,27 @@ public class IterableApi {
 
     public static void setContext(Context context) {
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
+    }
+
+    /**
+     * Initialize minimal context for push notification handling when the SDK hasn't been fully initialized.
+     * This is used internally when processing push actions in the background (e.g., openApp=false scenarios)
+     * to ensure custom actions can be executed even before IterableApi.initialize() is called.
+     *
+     * This method only sets the application context if it hasn't already been set, and does not
+     * perform full SDK initialization. For full initialization, use {@link #initialize(Context, String, IterableConfig)}.
+     *
+     * @param context The context to use for initialization (will use application context)
+     */
+    static void initializeForPush(@Nullable Context context) {
+        if (context == null) {
+            IterableLogger.w(TAG, "initializeForPush: context is null");
+            return;
+        }
+        if (sharedInstance._applicationContext == null) {
+            sharedInstance._applicationContext = context.getApplicationContext();
+            IterableLogger.d(TAG, "initializeForPush: Application context set for background push handling");
+        }
     }
 
     IterableApi() {

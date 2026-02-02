@@ -1,0 +1,20 @@
+{
+  "campaignId": 5678,
+  "templateId": 8765,
+  "messageId": "background123456",
+  "isGhostPush": false,
+  "actionButtons": [
+    {
+      "identifier": "remindMeButton",
+      "title": "Remind me in 15 minutes",
+      "openApp": false,
+      "action": {
+        "type": "snoozeReminder",
+        "data": "{\"delay\":15}"
+      }
+    }
+  ],
+  "defaultAction": {
+    "type": null
+  }
+}
