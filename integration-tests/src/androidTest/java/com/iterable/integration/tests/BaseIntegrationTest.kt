@@ -38,6 +38,11 @@ abstract class BaseIntegrationTest {
     private val customActionHandlerCalled = AtomicBoolean(false)
     private val lastHandledAction = AtomicReference<com.iterable.iterableapi.IterableAction?>(null)
     private val lastHandledActionType = AtomicReference<String?>(null)
+    
+    // Deep link tracking for tests
+    private val deepLinkReceived = AtomicBoolean(false)
+    private val lastDeepLinkUrl = AtomicReference<String?>(null)
+    private val lastDeepLinkPath = AtomicReference<String?>(null)
 
     @Before
     open fun setUp() {
@@ -326,5 +331,158 @@ abstract class BaseIntegrationTest {
         }
         
         return syncHappened
+    }
+
+    // ==================== Deep Link Testing Utilities ====================
+    
+    /**
+     * Reset deep link tracking
+     */
+    protected fun resetDeepLinkTracking() {
+        deepLinkReceived.set(false)
+        lastDeepLinkUrl.set(null)
+        lastDeepLinkPath.set(null)
+    }
+    
+    /**
+     * Record that a deep link was received
+     */
+    protected fun setDeepLinkReceived(url: String?, path: String?) {
+        deepLinkReceived.set(true)
+        lastDeepLinkUrl.set(url)
+        lastDeepLinkPath.set(path)
+        Log.d("BaseIntegrationTest", "Deep link received - URL: $url, Path: $path")
+    }
+    
+    /**
+     * Check if a deep link was received
+     */
+    protected fun isDeepLinkReceived(): Boolean = deepLinkReceived.get()
+    
+    /**
+     * Get the last received deep link URL
+     */
+    protected fun getLastDeepLinkUrl(): String? = lastDeepLinkUrl.get()
+    
+    /**
+     * Get the last received deep link path
+     */
+    protected fun getLastDeepLinkPath(): String? = lastDeepLinkPath.get()
+    
+    /**
+     * Wait for deep link to be received
+     */
+    protected fun waitForDeepLink(timeoutSeconds: Long = TIMEOUT_SECONDS): Boolean {
+        return waitForCondition({
+            deepLinkReceived.get()
+        }, timeoutSeconds)
+    }
+    
+    /**
+     * Open a deep link URL using adb shell command.
+     * This is the Android equivalent of iOS's `xcrun simctl openurl booted <url>`.
+     * 
+     * The adb command `am start -a android.intent.action.VIEW -d <url>` simulates
+     * opening a URL from an external source (like a browser or email), which triggers
+     * the app's intent filters for deep links/app links.
+     * 
+     * @param url The URL to open (can be https:// for App Links or custom scheme like iterable://)
+     * @param targetPackage Optional package to target specifically (defaults to integration tests package)
+     */
+    protected fun openDeepLinkViaAdb(url: String, targetPackage: String = "com.iterable.integration.tests") {
+        Log.d("BaseIntegrationTest", "Opening deep link via adb: $url")
+        
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        
+        // Use adb shell am start to open the URL
+        // This mimics opening a link from an external source
+        val command = "am start -a android.intent.action.VIEW -d \"$url\" -n $targetPackage/.activities.DeepLinkTestActivity"
+        
+        Log.d("BaseIntegrationTest", "Executing command: $command")
+        
+        try {
+            instrumentation.uiAutomation.executeShellCommand(command).use { parcelFileDescriptor ->
+                // Read output if needed for debugging
+                val inputStream = android.os.ParcelFileDescriptor.AutoCloseInputStream(parcelFileDescriptor)
+                val output = inputStream.bufferedReader().readText()
+                Log.d("BaseIntegrationTest", "Command output: $output")
+            }
+        } catch (e: Exception) {
+            Log.e("BaseIntegrationTest", "Failed to execute adb command", e)
+        }
+    }
+    
+    /**
+     * Open a deep link URL that should be handled by the app via App Links or intent filters.
+     * This opens the URL without specifying a target activity, letting Android's intent
+     * resolution system determine which app/activity should handle it.
+     * 
+     * @param url The URL to open
+     */
+    protected fun openDeepLinkViaIntent(url: String) {
+        Log.d("BaseIntegrationTest", "Opening deep link via intent: $url")
+        
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        
+        // Use am start without specifying a component to let Android resolve the intent
+        val command = "am start -a android.intent.action.VIEW -d \"$url\""
+        
+        Log.d("BaseIntegrationTest", "Executing command: $command")
+        
+        try {
+            instrumentation.uiAutomation.executeShellCommand(command).use { parcelFileDescriptor ->
+                val inputStream = android.os.ParcelFileDescriptor.AutoCloseInputStream(parcelFileDescriptor)
+                val output = inputStream.bufferedReader().readText()
+                Log.d("BaseIntegrationTest", "Command output: $output")
+            }
+        } catch (e: Exception) {
+            Log.e("BaseIntegrationTest", "Failed to execute adb command", e)
+        }
+    }
+    
+    /**
+     * Check if a specific app is in foreground
+     * 
+     * @param packageName The package name to check
+     * @return true if the app is in foreground
+     */
+    protected fun isAppInForeground(packageName: String): Boolean {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val command = "dumpsys activity activities | grep mResumedActivity"
+        
+        return try {
+            instrumentation.uiAutomation.executeShellCommand(command).use { parcelFileDescriptor ->
+                val inputStream = android.os.ParcelFileDescriptor.AutoCloseInputStream(parcelFileDescriptor)
+                val output = inputStream.bufferedReader().readText()
+                Log.d("BaseIntegrationTest", "Foreground activity check: $output")
+                output.contains(packageName)
+            }
+        } catch (e: Exception) {
+            Log.e("BaseIntegrationTest", "Failed to check foreground app", e)
+            false
+        }
+    }
+    
+    /**
+     * Open Chrome browser and navigate to a URL.
+     * Used for testing that non-app links open in browser instead of the app.
+     * 
+     * @param url The URL to open in Chrome
+     */
+    protected fun openUrlInBrowser(url: String) {
+        Log.d("BaseIntegrationTest", "Opening URL in browser: $url")
+        
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val command = "am start -a android.intent.action.VIEW -d \"$url\" -n com.android.chrome/com.google.android.apps.chrome.Main"
+        
+        try {
+            instrumentation.uiAutomation.executeShellCommand(command).use { parcelFileDescriptor ->
+                val inputStream = android.os.ParcelFileDescriptor.AutoCloseInputStream(parcelFileDescriptor)
+                val output = inputStream.bufferedReader().readText()
+                Log.d("BaseIntegrationTest", "Browser command output: $output")
+            }
+        } catch (e: Exception) {
+            Log.e("BaseIntegrationTest", "Failed to open URL in browser", e)
+        }
     }
 } 

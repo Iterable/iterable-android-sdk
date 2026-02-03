@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.6.4]
+### Fixed
+- Updated `customPayload` of In-App Messages to be `@Nullable`
+
+### Added
+- Made `isIterableDeepLink` method public
+
 ## [3.6.3]
 ### Fixed
 - Improved in-app message sizing and positioning calculations for better stability and performance, especially during device orientation changes

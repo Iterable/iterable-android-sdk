@@ -48,6 +48,23 @@ public class IterableInAppMessageTest {
     }
 
     @Test
+    public void testHtmlMessageWithoutCustomPayload() throws Exception {
+        JSONObject messageJson = new JSONObject()
+                .put("messageId", "test123")
+                .put("content", new JSONObject()
+                        .put("html", "<html><body>Test</body></html>")
+                        .put("inAppDisplaySettings", new JSONObject()
+                                .put("top", new JSONObject().put("percentage", 0))
+                                .put("right", new JSONObject().put("percentage", 0))
+                                .put("bottom", new JSONObject().put("percentage", 0))
+                                .put("left", new JSONObject().put("percentage", 0))));
+
+        IterableInAppMessage message = IterableInAppMessage.fromJSONObject(messageJson, null);
+        assertNotNull(message);
+        assertNull(message.getCustomPayload());
+    }
+
+    @Test
     public void testInAppLegacyPayloadDeserialization() throws Exception {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_legacy.json"));
         JSONArray jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);

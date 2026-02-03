@@ -18,7 +18,12 @@ class IterablePushNotificationUtil {
         boolean handled = false;
         if (pendingAction != null) {
             handled = executeAction(context, pendingAction);
-            pendingAction = null;
+            // Only clear pending action if it was handled.
+            // This allows the action to be processed later when SDK is fully initialized
+            // (e.g., when customActionHandler becomes available after initialize() is called).
+            if (handled) {
+                pendingAction = null;
+            }
         }
         return handled;
     }
@@ -38,6 +43,12 @@ class IterablePushNotificationUtil {
             IterableLogger.e(TAG, "handlePushAction: extras == null, can't handle push action");
             return;
         }
+
+        // Initialize minimal context for push handling if SDK hasn't been fully initialized.
+        // This ensures custom actions can be processed even when the app is in the background
+        // and the SDK hasn't been initialized yet (e.g., openApp=false scenarios).
+        IterableApi.initializeForPush(context);
+
         IterableNotificationData notificationData = new IterableNotificationData(intent.getExtras());
         String actionIdentifier = intent.getStringExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER);
         IterableAction action = null;

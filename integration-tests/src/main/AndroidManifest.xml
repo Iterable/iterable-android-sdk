@@ -76,8 +76,50 @@
 
         <activity
             android:name=".activities.DeepLinkTestActivity"
-            android:exported="false"
-            android:label="Deep Link Tests" />
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:label="Deep Link Tests">
+            
+            <!-- App Links (verified https links) - similar to iOS Universal Links -->
+            <!-- These require assetlinks.json on the server for verification -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Test domain - matches iOS tsetester.com domain -->
+                <data android:scheme="https"
+                    android:host="tsetester.com"
+                    android:pathPrefix="/update" />
+            </intent-filter>
+            
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Links domain for wrapped links -->
+                <data android:scheme="https"
+                    android:host="links.tsetester.com"
+                    android:pathPrefix="/a/click" />
+            </intent-filter>
+            
+            <!-- Custom URL scheme deep links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- iterable://deeplink/... -->
+                <data android:scheme="iterable"
+                    android:host="deeplink" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- iterabletest://... -->
+                <data android:scheme="iterabletest" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".activities.CampaignTriggerTestActivity"
