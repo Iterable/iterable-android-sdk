@@ -38,7 +38,7 @@ public class IterableHelper {
 }
 
 class IterableResponse {
-    static JSONObject setEmailLocalSuccessResponse = new JSONObject(Map.of("message", "setEmail was completed locally, but still requires the register device call. If possible, use autoPushRegistration."));
+    static final JSONObject setEmailLocalSuccessResponse = new JSONObject(Map.of("message", "setEmail was completed locally."));
 
-    static JSONObject setReadLocalSuccessResponse = new JSONObject(Map.of("message", "setRead was completed locally, no remote call was done yet."));
+    static final JSONObject setReadLocalSuccessResponse = new JSONObject(Map.of("message", "setRead was completed locally."));
 }
