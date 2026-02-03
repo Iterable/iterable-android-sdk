@@ -444,6 +444,7 @@ public class IterableApi {
             IterableLogger.w(TAG, "Cannot complete user login - JWT auth enabled but no validated authToken present");
             if (_setUserFailureCallbackHandler != null) {
                 _setUserFailureCallbackHandler.onFailure("JWT authentication is enabled but no valid authToken is available", null);
+                resetCallbackHandlers();
             }
             return;
         }
