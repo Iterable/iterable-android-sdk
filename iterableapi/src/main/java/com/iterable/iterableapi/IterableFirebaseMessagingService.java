@@ -58,7 +58,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         }
 
         boolean isGhostPush = IterableNotificationHelper.isGhostPush(extras);
-        
+
         if (!isGhostPush) {
             if (!IterableNotificationHelper.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
@@ -139,7 +139,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
     private static void enqueueNotificationWork(@NonNull final Context context, @NonNull final Bundle extras, boolean isGhostPush) {
         IterableNotificationWorkScheduler scheduler = new IterableNotificationWorkScheduler(context);
-        
+
         scheduler.scheduleNotificationWork(
                 extras,
                 isGhostPush,

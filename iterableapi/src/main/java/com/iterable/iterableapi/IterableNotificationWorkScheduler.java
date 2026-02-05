@@ -31,7 +31,7 @@ class IterableNotificationWorkScheduler {
      * Callback interface for work scheduling results.
      * Allows caller to handle success/failure appropriately.
      */
-    public interface SchedulerCallback {
+    interface SchedulerCallback {
         /**
          * Called when work is successfully scheduled.
          * @param workId UUID of the scheduled work
@@ -49,17 +49,17 @@ class IterableNotificationWorkScheduler {
     /**
      * Constructor for production use.
      * Initializes with application context and default WorkManager instance.
-     * 
+     *
      * @param context Application or service context
      */
-    public IterableNotificationWorkScheduler(@NonNull Context context) {
+    IterableNotificationWorkScheduler(@NonNull Context context) {
         this(context, WorkManager.getInstance(context));
     }
 
     /**
      * Constructor for testing.
      * Allows injection of mock WorkManager for unit testing.
-     * 
+     *
      * @param context Application or service context
      * @param workManager WorkManager instance (can be mocked for tests)
      */
@@ -71,11 +71,11 @@ class IterableNotificationWorkScheduler {
 
     /**
      * Schedules notification processing work using WorkManager.
-     * 
+     *
      * Creates an expedited OneTimeWorkRequest and enqueues it with WorkManager.
      * Expedited execution ensures high-priority notifications are processed promptly,
      * with quota exemption when called from FCM onMessageReceived.
-     * 
+     *
      * @param notificationData Bundle containing notification data
      * @param isGhostPush Whether this is a ghost/silent push
      * @param callback Optional callback for success/failure (can be null)
@@ -93,7 +93,7 @@ class IterableNotificationWorkScheduler {
         try {
             IterableLogger.d(TAG, "Step 1: Creating Worker input data");
             androidx.work.Data inputData = IterableNotificationWorker.createInputData(
-                    notificationData, 
+                    notificationData,
                     isGhostPush
             );
             IterableLogger.d(TAG, "  ✓ Worker input data created successfully");

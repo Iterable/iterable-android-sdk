@@ -6,7 +6,6 @@ import androidx.work.Data;
 import androidx.work.ListenableWorker;
 import androidx.work.testing.TestListenableWorkerBuilder;
 
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +15,6 @@ import okhttp3.mockwebserver.MockWebServer;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -37,7 +35,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
     public void setUp() throws Exception {
         IterableTestUtils.resetIterableApi();
         IterableTestUtils.createIterableApiNew();
-        
+
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
@@ -65,7 +63,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         when(helperSpy.isGhostPush(any())).thenCallRealMethod();
 
         Bundle bundle = new Bundle();
-        bundle.putString(IterableConstants.ITERABLE_DATA_KEY, 
+        bundle.putString(IterableConstants.ITERABLE_DATA_KEY,
                 IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         bundle.putString(IterableConstants.ITERABLE_DATA_BODY, "Test");
 
@@ -176,7 +174,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         when(helperSpy.isGhostPush(any())).thenCallRealMethod();
 
         Bundle bundle = new Bundle();
-        bundle.putString(IterableConstants.ITERABLE_DATA_KEY, 
+        bundle.putString(IterableConstants.ITERABLE_DATA_KEY,
                 IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         bundle.putString(IterableConstants.ITERABLE_DATA_BODY, "Test");
 
@@ -224,7 +222,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
 
         ListenableWorker.Result result = worker.doWork();
 
-        assertEquals("Worker should succeed even when builder is null", 
+        assertEquals("Worker should succeed even when builder is null",
                 ListenableWorker.Result.success(), result);
     }
 

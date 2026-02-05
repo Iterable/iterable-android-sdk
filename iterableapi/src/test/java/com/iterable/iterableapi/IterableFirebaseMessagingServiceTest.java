@@ -29,7 +29,6 @@ import static com.iterable.iterableapi.IterableTestUtils.bundleToMap;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -171,7 +170,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         // Verify WorkManager has enqueued work
         WorkManager workManager = WorkManager.getInstance(getContext());
         List<WorkInfo> workInfos = workManager.getWorkInfosByTag(IterableNotificationWorker.class.getName()).get(5, TimeUnit.SECONDS);
-        
+
         // Note: With SynchronousExecutor, work completes immediately
         // Verify that notification helper methods were called (indicating Worker ran)
         verify(notificationHelperSpy, atLeastOnce()).createNotification(any(), any(Bundle.class));
@@ -186,9 +185,9 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Worker test message");
         builder.addData(IterableConstants.ITERABLE_DATA_TITLE, "Worker Test");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
-        
+
         controller.get().onMessageReceived(builder.build());
-        
+
         // With SynchronousExecutor, work completes immediately
         // Verify the notification was processed
         verify(notificationHelperSpy, atLeastOnce()).createNotification(eq(getContext()), any(Bundle.class));

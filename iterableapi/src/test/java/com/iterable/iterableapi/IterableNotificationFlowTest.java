@@ -3,8 +3,6 @@ package com.iterable.iterableapi;
 import android.os.Bundle;
 
 import androidx.work.Configuration;
-import androidx.work.Data;
-import androidx.work.WorkManager;
 import androidx.work.testing.SynchronousExecutor;
 import androidx.work.testing.WorkManagerTestInitHelper;
 
@@ -15,14 +13,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import okhttp3.mockwebserver.MockWebServer;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -41,7 +35,7 @@ public class IterableNotificationFlowTest extends BaseTest {
     public void setUp() throws Exception {
         IterableTestUtils.resetIterableApi();
         IterableTestUtils.createIterableApiNew();
-        
+
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
@@ -74,10 +68,10 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
-        
+
         boolean isIterable = IterableFirebaseMessagingService.handleMessageReceived(
                 getContext(), builder.build());
-        
+
         assertTrue("Message with ITERABLE_DATA_KEY should be recognized", isIterable);
     }
 
@@ -87,20 +81,20 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData("some_other_key", "value");
-        
+
         boolean isIterable = IterableFirebaseMessagingService.handleMessageReceived(
                 getContext(), builder.build());
-        
+
         assertFalse("Message without ITERABLE_DATA_KEY should be ignored", isIterable);
     }
 
     @Test
     public void testEmptyMessageIsIgnored() {
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
-        
+
         boolean isIterable = IterableFirebaseMessagingService.handleMessageReceived(
                 getContext(), builder.build());
-        
+
         assertFalse("Empty message should be ignored", isIterable);
     }
 
@@ -111,9 +105,9 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_ghost_push.json"));
-        
+
         boolean isGhost = IterableFirebaseMessagingService.isGhostPush(builder.build());
-        
+
         assertTrue("Ghost push should be detected", isGhost);
     }
 
@@ -125,9 +119,9 @@ public class IterableNotificationFlowTest extends BaseTest {
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test");
-        
+
         boolean isGhost = IterableFirebaseMessagingService.isGhostPush(builder.build());
-        
+
         assertFalse("Regular push should not be ghost", isGhost);
     }
 
@@ -144,9 +138,9 @@ public class IterableNotificationFlowTest extends BaseTest {
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test body");
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(helperSpy).createNotification(any(), any(Bundle.class));
     }
 
@@ -157,9 +151,9 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_ghost_push.json"));
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(helperSpy, never()).createNotification(any(), any(Bundle.class));
     }
 
@@ -172,9 +166,9 @@ public class IterableNotificationFlowTest extends BaseTest {
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
         // No body
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(helperSpy, never()).createNotification(any(), any(Bundle.class));
     }
 
@@ -190,12 +184,12 @@ public class IterableNotificationFlowTest extends BaseTest {
         when(helperSpy.createNotification(any(), any())).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
-        builder.addData(IterableConstants.ITERABLE_DATA_KEY, 
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY,
                 IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test");
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(helperSpy).postNotificationOnDevice(any(), any(IterableNotificationBuilder.class));
     }
 
@@ -206,9 +200,9 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_ghost_push.json"));
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(helperSpy, never()).postNotificationOnDevice(any(), any());
     }
 
@@ -222,15 +216,15 @@ public class IterableNotificationFlowTest extends BaseTest {
         IterableApi apiMock = spy(IterableApi.sharedInstance);
         when(apiMock.getInAppManager()).thenReturn(inAppManager);
         IterableApi.sharedInstance = apiMock;
-        
+
         when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_inapp_update.json"));
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(inAppManager).syncInApp();
     }
 
@@ -240,15 +234,15 @@ public class IterableNotificationFlowTest extends BaseTest {
         IterableApi apiMock = spy(IterableApi.sharedInstance);
         when(apiMock.getInAppManager()).thenReturn(inAppManager);
         IterableApi.sharedInstance = apiMock;
-        
+
         when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_inapp_remove.json"));
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(inAppManager).removeMessage("1234567890abcdef");
     }
 
@@ -258,15 +252,15 @@ public class IterableNotificationFlowTest extends BaseTest {
         IterableApi apiMock = spy(IterableApi.sharedInstance);
         when(apiMock.getEmbeddedManager()).thenReturn(embeddedManager);
         IterableApi.sharedInstance = apiMock;
-        
+
         when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_embedded_update.json"));
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         verify(embeddedManager).syncMessages();
     }
 
@@ -286,12 +280,12 @@ public class IterableNotificationFlowTest extends BaseTest {
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
         builder.addData(IterableConstants.ITERABLE_DATA_TITLE, expectedTitle);
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Body");
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(helperSpy).createNotification(any(), bundleCaptor.capture());
-        
+
         assertEquals(expectedTitle, bundleCaptor.getValue().getString(IterableConstants.ITERABLE_DATA_TITLE));
     }
 
@@ -306,12 +300,12 @@ public class IterableNotificationFlowTest extends BaseTest {
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, expectedBody);
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(helperSpy).createNotification(any(), bundleCaptor.capture());
-        
+
         assertEquals(expectedBody, bundleCaptor.getValue().getString(IterableConstants.ITERABLE_DATA_BODY));
     }
 
@@ -326,12 +320,12 @@ public class IterableNotificationFlowTest extends BaseTest {
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, expectedData);
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Body");
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(helperSpy).createNotification(any(), bundleCaptor.capture());
-        
+
         assertEquals(expectedData, bundleCaptor.getValue().getString(IterableConstants.ITERABLE_DATA_KEY));
     }
 
@@ -347,12 +341,12 @@ public class IterableNotificationFlowTest extends BaseTest {
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Body");
         builder.addData("customField", customValue);
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(helperSpy).createNotification(any(), bundleCaptor.capture());
-        
+
         assertEquals(customValue, bundleCaptor.getValue().getString("customField"));
     }
 
@@ -368,12 +362,12 @@ public class IterableNotificationFlowTest extends BaseTest {
         when(helperSpy.createNotification(any(), any())).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
-        builder.addData(IterableConstants.ITERABLE_DATA_KEY, 
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY,
                 IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test");
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         // Verify notification was posted (via WorkManager with SynchronousExecutor)
         verify(helperSpy).postNotificationOnDevice(any(), any(IterableNotificationBuilder.class));
     }
@@ -390,10 +384,10 @@ public class IterableNotificationFlowTest extends BaseTest {
             RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
             builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
             builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test " + i);
-            
+
             IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
         }
-        
+
         // Verify all three notifications were created
         verify(helperSpy, org.mockito.Mockito.times(3))
                 .createNotification(any(), any(Bundle.class));
@@ -408,20 +402,20 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         String testTitle = "Scheduler Test Title";
         String testBody = "Scheduler Test Body";
-        
+
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
         builder.addData(IterableConstants.ITERABLE_DATA_TITLE, testTitle);
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, testBody);
-        
+
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
-        
+
         // Verify data was preserved through the scheduler -> worker -> notification flow
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(helperSpy).createNotification(any(), bundleCaptor.capture());
-        
+
         Bundle capturedBundle = bundleCaptor.getValue();
-        assertEquals("Title should be preserved through scheduler", 
+        assertEquals("Title should be preserved through scheduler",
                 testTitle, capturedBundle.getString(IterableConstants.ITERABLE_DATA_TITLE));
         assertEquals("Body should be preserved through scheduler",
                 testBody, capturedBundle.getString(IterableConstants.ITERABLE_DATA_BODY));
