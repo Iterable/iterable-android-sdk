@@ -118,7 +118,7 @@ class EmbeddedMessageTestActivity : AppCompatActivity() {
         
         if (messages.isNotEmpty()) {
             val firstMessage = messages.first()
-            val fragment = IterableEmbeddedView(IterableEmbeddedViewType.BANNER, firstMessage, null)
+            val fragment = IterableEmbeddedView.newInstance(IterableEmbeddedViewType.BANNER, firstMessage, null)
             supportFragmentManager.beginTransaction()
                 .replace(R.id.embedded_message_container, fragment)
                 .commitNowAllowingStateLoss()
