@@ -176,9 +176,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             applyWindowGravity(dialog.getWindow(), "onCreateDialog");
         }
 
-        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
-            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
+        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN && getInAppLayout(insetPadding) != InAppLayout.TOP) {
             // For TOP layout in-app, status bar will be opaque so that the in-app content does not overlap with translucent status bar.
             // For other non-fullscreen in-apps layouts (BOTTOM and CENTER), status bar will be translucent
             dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
@@ -190,10 +188,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
-            getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
 
         // Set initial window gravity based on inset padding (only for non-fullscreen)
         if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
@@ -623,7 +617,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                     if (insetPadding.bottom == 0 && insetPadding.top == 0) {
                         //Handle full screen
                         window.setLayout(webViewWidth, webViewHeight);
-                        getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
                     } else {
                         // Resize the WebView directly with explicit size
                         float relativeHeight = height * getResources().getDisplayMetrics().density;

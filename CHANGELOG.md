@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Fixed
+- Fixed close button position on full screen in-app messages being obscured by the system status bar.
+
 ## [3.6.5]
 ### Fixed
 - Fixed IterableEmbeddedView not having an empty constructor and causing crashes
