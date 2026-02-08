@@ -43,6 +43,7 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private boolean _autoRetryOnJwtFailure;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
@@ -104,6 +105,14 @@ public class IterableApi {
                     SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
+
+                    // Parse autoRetry flag from remote config. If not present, fall back to local config.
+                    if (jsonData.has(IterableConstants.KEY_AUTO_RETRY)) {
+                        boolean autoRetryRemote = jsonData.getBoolean(IterableConstants.KEY_AUTO_RETRY);
+                        editor.putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetryRemote);
+                        _autoRetryOnJwtFailure = autoRetryRemote;
+                    }
+
                     editor.apply();
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, "Failed to read remote configuration");
@@ -194,6 +203,22 @@ public class IterableApi {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
         sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+
+        // Load autoRetry: if a remote value was previously saved, use it; otherwise fall back to local config.
+        if (sharedPref.contains(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY)) {
+            sharedInstance._autoRetryOnJwtFailure = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false);
+        } else {
+            sharedInstance._autoRetryOnJwtFailure = sharedInstance.config.autoRetryOnJwtFailure;
+        }
+    }
+
+    /**
+     * Returns whether auto-retry on JWT failure is enabled.
+     * The remote configuration flag takes precedence when present;
+     * otherwise the local {@link IterableConfig#autoRetryOnJwtFailure} value is used.
+     */
+    boolean isAutoRetryOnJwtFailure() {
+        return _autoRetryOnJwtFailure;
     }
 
     /**

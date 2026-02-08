@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -153,20 +154,27 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 // Read the response body
                 try {
                     BufferedReader in;
-                    if (responseCode < 400) {
+                    if (responseCode >= 0 && responseCode < 400) {
                         in = new BufferedReader(
                                 new InputStreamReader(urlConnection.getInputStream()));
                     } else {
-                        in = new BufferedReader(
-                                new InputStreamReader(urlConnection.getErrorStream()));
+                        InputStream errorStream = urlConnection.getErrorStream();
+                        if (errorStream != null) {
+                            in = new BufferedReader(
+                                    new InputStreamReader(errorStream));
+                        } else {
+                            in = null;
+                        }
                     }
-                    String inputLine;
-                    StringBuffer response = new StringBuffer();
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
+                    if (in != null) {
+                        String inputLine;
+                        StringBuffer response = new StringBuffer();
+                        while ((inputLine = in.readLine()) != null) {
+                            response.append(inputLine);
+                        }
+                        in.close();
+                        requestResult = response.toString();
                     }
-                    in.close();
-                    requestResult = response.toString();
                 } catch (IOException e) {
                     logError(iterableApiRequest, baseUrl, e);
                     error = e.getMessage();
@@ -186,13 +194,36 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     jsonError = e.getMessage();
                 }
 
+                // If getResponseCode() returned -1 (e.g. due to network inspector
+                // interference) but the response body contains JWT error codes,
+                // we can infer the actual response was a 401.
+                if (responseCode == -1 && matchesJWTErrorCodes(jsonResponse)) {
+                    responseCode = 401;
+                }
+
                 // Handle HTTP status codes
                 if (responseCode == 401) {
                     if (matchesJWTErrorCodes(jsonResponse)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                         IterableApi.getInstance().getAuthManager().handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse));
-                        // We handle the JWT Retry for both online and offline here rather than handling online request in onPostExecute
-                        requestNewAuthTokenAndRetry(iterableApiRequest);
+
+                        // [F] When autoRetry is enabled and this is an offline task, skip the inline
+                        // retry. The task stays in the DB and IterableTaskRunner will retry it once
+                        // a valid JWT is obtained via the AuthTokenReadyListener callback.
+                        // For online requests or when autoRetry is disabled, use the existing inline retry.
+                        boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
+                        if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
+                            // Schedule a delayed token refresh (respects retry policy).
+                            // Do NOT retry the request inline -- IterableTaskRunner will handle
+                            // the retry after the AuthTokenReadyListener callback fires.
+                            IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+                            authManager.setIsLastAuthTokenValid(false);
+                            long retryInterval = authManager.getNextRetryInterval();
+                            authManager.scheduleAuthTokenRefresh(retryInterval, false, null);
+                        } else {
+                            // Existing behavior: retry request inline after obtaining new token
+                            requestNewAuthTokenAndRetry(iterableApiRequest);
+                        }
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -498,13 +529,27 @@ class IterableApiRequest {
     }
 
     static IterableApiRequest fromJSON(JSONObject jsonData, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        return fromJSON(jsonData, null, onSuccess, onFailure);
+    }
+
+    /**
+     * Deserializes an IterableApiRequest from JSON.
+     * @param authTokenOverride If non-null, uses this token instead of the one stored in JSON.
+     *                          This allows offline tasks to use the latest auth token rather
+     *                          than the stale one captured at queue time.
+     */
+    static IterableApiRequest fromJSON(JSONObject jsonData, @Nullable String authTokenOverride, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         try {
             String apikey = jsonData.getString("apiKey");
             String resourcePath = jsonData.getString("resourcePath");
             String requestType = jsonData.getString("requestType");
-            String authToken = "";
-            if (jsonData.has("authToken")) {
+            String authToken;
+            if (authTokenOverride != null) {
+                authToken = authTokenOverride;
+            } else if (jsonData.has("authToken")) {
                 authToken = jsonData.getString("authToken");
+            } else {
+                authToken = "";
             }
             JSONObject json = jsonData.getJSONObject("data");
             return new IterableApiRequest(apikey, resourcePath, json, requestType, authToken, onSuccess, onFailure);

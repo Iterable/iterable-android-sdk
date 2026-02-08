@@ -9,6 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +18,25 @@ import java.util.concurrent.Executors;
 public class IterableAuthManager implements IterableActivityMonitor.AppStateCallback {
     private static final String TAG = "IterableAuth";
     private static final String expirationString = "exp";
+
+    /**
+     * Represents the state of the JWT auth token.
+     * VALID: Last request succeeded with this token.
+     * INVALID: A 401 JWT error was received; processing should pause.
+     * UNKNOWN: A new token was obtained but not yet verified by a request.
+     */
+    enum AuthState {
+        VALID,
+        INVALID,
+        UNKNOWN
+    }
+
+    /**
+     * Listener interface for components that need to react when a new auth token is ready.
+     */
+    interface AuthTokenReadyListener {
+        void onAuthTokenReady();
+    }
 
     private final IterableApi api;
     private final IterableAuthHandler authHandler;
@@ -34,6 +54,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     private volatile boolean isTimerScheduled;
     private volatile boolean isInForeground = true; // Assume foreground initially
 
+    private volatile AuthState authState = AuthState.UNKNOWN;
+    private final ArrayList<AuthTokenReadyListener> authTokenReadyListeners = new ArrayList<>();
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, RetryPolicy authRetryPolicy, long expiringAuthTokenRefreshPeriod) {
@@ -43,6 +66,58 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
         this.activityMonitor = IterableActivityMonitor.getInstance();
         this.activityMonitor.addCallback(this);
+    }
+
+    void addAuthTokenReadyListener(AuthTokenReadyListener listener) {
+        authTokenReadyListeners.add(listener);
+    }
+
+    void removeAuthTokenReadyListener(AuthTokenReadyListener listener) {
+        authTokenReadyListeners.remove(listener);
+    }
+
+    /**
+     * Returns true if the auth token is in a state that allows requests to proceed.
+     * Requests can proceed when auth state is VALID or UNKNOWN (newly obtained token).
+     * If no authHandler is configured (JWT not used), this always returns true.
+     */
+    boolean isAuthTokenReady() {
+        if (authHandler == null) {
+            return true;
+        }
+        return authState != AuthState.INVALID;
+    }
+
+    /**
+     * Marks the auth token as invalid. Called when a 401 JWT error is received.
+     */
+    void setAuthTokenInvalid() {
+        setAuthState(AuthState.INVALID);
+    }
+
+    AuthState getAuthState() {
+        return authState;
+    }
+
+    /**
+     * Centralized auth state setter. Notifies AuthTokenReadyListeners only when
+     * transitioning from INVALID to a ready state (UNKNOWN or VALID), which means
+     * a new token has been obtained after a prior auth failure.
+     */
+    private void setAuthState(AuthState newState) {
+        AuthState previousState = this.authState;
+        this.authState = newState;
+
+        if (previousState == AuthState.INVALID && newState != AuthState.INVALID) {
+            notifyAuthTokenReadyListeners();
+        }
+    }
+
+    private void notifyAuthTokenReadyListeners() {
+        ArrayList<AuthTokenReadyListener> listenersCopy = new ArrayList<>(authTokenReadyListeners);
+        for (AuthTokenReadyListener listener : listenersCopy) {
+            listener.onAuthTokenReady();
+        }
     }
 
     public synchronized void requestNewAuthToken(boolean hasFailedPriorAuth, IterableHelper.SuccessHandler successCallback) {
@@ -61,6 +136,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     void setIsLastAuthTokenValid(boolean isValid) {
         isLastAuthTokenValid = isValid;
+        if (isValid) {
+            setAuthState(AuthState.VALID);
+        }
     }
 
     void resetRetryCount() {
@@ -132,6 +210,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     private void handleAuthTokenSuccess(String authToken, IterableHelper.SuccessHandler successCallback) {
         if (authToken != null) {
+            // Token obtained but not yet verified by a request - set state to UNKNOWN.
+            // setAuthState will notify listeners only if previous state was INVALID.
+            setAuthState(AuthState.UNKNOWN);
             IterableApi.getInstance().setAuthToken(authToken);
             queueExpirationRefresh(authToken);
 
