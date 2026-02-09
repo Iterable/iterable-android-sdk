@@ -41,7 +41,7 @@ class IterableEmbeddedView() : Fragment() {
     @Deprecated(
         message = "Use newInstance() factory method instead. This constructor causes crashes when Fragment is recreated by the system.",
         replaceWith = ReplaceWith("IterableEmbeddedView.newInstance(viewType, message, config)"),
-        level = DeprecationLevel.ERROR
+        level = DeprecationLevel.WARNING
     )
     constructor(
         viewType: IterableEmbeddedViewType,
