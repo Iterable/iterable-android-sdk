@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+- Fixed IterableEmbeddedView not having an empty constructor and causing crashes
+
 ## [3.6.4]
 ### Fixed
 - Updated `customPayload` of In-App Messages to be `@Nullable`
