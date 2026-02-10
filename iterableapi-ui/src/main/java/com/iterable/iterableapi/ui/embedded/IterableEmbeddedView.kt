@@ -29,10 +29,10 @@ class IterableEmbeddedView() : Fragment() {
      *
      * Migration example:
      * ```
-     * // Old (will crash):
+     * // Old (unstable / not-recommended):
      * val fragment = IterableEmbeddedView(viewType, message, config)
      *
-     * // New (production-ready):
+     * // New (more stable / recommended):
      * val fragment = IterableEmbeddedView.newInstance(viewType, message, config)
      * ```
      *
