@@ -142,17 +142,16 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
         scheduler.scheduleNotificationWork(
                 extras,
-                isGhostPush,
+                false,
                 new IterableNotificationWorkScheduler.SchedulerCallback() {
                     @Override
                     public void onScheduleSuccess(UUID workId) {
-                        IterableLogger.d(TAG, "Notification work scheduled successfully: " + workId);
+                        IterableLogger.d(TAG, "Notification work scheduled: " + workId);
                     }
 
                     @Override
                     public void onScheduleFailure(Exception exception, Bundle notificationData) {
-                        IterableLogger.e(TAG, "Failed to schedule notification work", exception);
-                        IterableLogger.e(TAG, "Attempting FALLBACK to direct processing...");
+                        IterableLogger.e(TAG, "Failed to schedule notification work, falling back", exception);
                         handleFallbackNotification(context, notificationData);
                     }
                 }

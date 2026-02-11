@@ -1,8 +1,17 @@
 package com.iterable.iterableapi;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import android.os.Bundle;
 
 import androidx.work.Data;
+import androidx.work.ForegroundInfo;
 import androidx.work.ListenableWorker;
 import androidx.work.testing.TestListenableWorkerBuilder;
 
@@ -12,14 +21,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import okhttp3.mockwebserver.MockWebServer;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * TDD-style atomic tests for IterableNotificationWorker.
@@ -399,5 +400,82 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
 
         Bundle deserializedBundle = bundleCaptor.getValue();
         assertEquals(complexJson, deserializedBundle.getString(IterableConstants.ITERABLE_DATA_KEY));
+    }
+
+    // ========================================================================
+    // FOREGROUND INFO TESTS (pre-Android 12 expedited work support)
+    // ========================================================================
+
+    @Test
+    public void testGetForegroundInfoReturnsNonNull() throws Exception {
+        Bundle bundle = new Bundle();
+        bundle.putString("key", "value");
+
+        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        IterableNotificationWorker worker = TestListenableWorkerBuilder
+                .from(getContext(), IterableNotificationWorker.class)
+                .setInputData(inputData)
+                .build();
+
+        ForegroundInfo foregroundInfo = worker.getForegroundInfo();
+
+        assertNotNull("getForegroundInfo should return non-null ForegroundInfo", foregroundInfo);
+    }
+
+    @Test
+    public void testGetForegroundInfoReturnsValidNotificationId() throws Exception {
+        Bundle bundle = new Bundle();
+        bundle.putString("key", "value");
+
+        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        IterableNotificationWorker worker = TestListenableWorkerBuilder
+                .from(getContext(), IterableNotificationWorker.class)
+                .setInputData(inputData)
+                .build();
+
+        ForegroundInfo foregroundInfo = worker.getForegroundInfo();
+
+        assertNotNull("ForegroundInfo should contain a notification", foregroundInfo.getNotification());
+    }
+
+    @Test
+    public void testGetForegroundInfoDoesNotThrow() throws Exception {
+        Bundle bundle = new Bundle();
+        bundle.putString("key", "value");
+
+        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        IterableNotificationWorker worker = TestListenableWorkerBuilder
+                .from(getContext(), IterableNotificationWorker.class)
+                .setInputData(inputData)
+                .build();
+
+        // Should not throw any exception - this is critical for pre-Android 12 expedited work
+        try {
+            ForegroundInfo foregroundInfo = worker.getForegroundInfo();
+            assertNotNull(foregroundInfo);
+        } catch (Exception e) {
+            throw new AssertionError(
+                    "getForegroundInfo() must not throw on pre-Android 12 devices. " +
+                    "Without this, setExpedited() causes IllegalStateException. Error: " + e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void testGetForegroundInfoCanBeCalledMultipleTimes() throws Exception {
+        Bundle bundle = new Bundle();
+        bundle.putString("key", "value");
+
+        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        IterableNotificationWorker worker = TestListenableWorkerBuilder
+                .from(getContext(), IterableNotificationWorker.class)
+                .setInputData(inputData)
+                .build();
+
+        // Should be safe to call multiple times without issues
+        ForegroundInfo first = worker.getForegroundInfo();
+        ForegroundInfo second = worker.getForegroundInfo();
+
+        assertNotNull(first);
+        assertNotNull(second);
     }
 }

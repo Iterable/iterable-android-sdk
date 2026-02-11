@@ -1,26 +1,19 @@
 package com.iterable.iterableapi
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.annotation.WorkerThread
+import androidx.core.app.NotificationCompat
 import androidx.work.Data
+import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import org.json.JSONObject
-import java.io.IOException
-import java.net.URL
 
-/**
- * WorkManager Worker to handle push notification processing.
- * This replaces the deprecated AsyncTask approach to comply with Firebase best practices.
- * 
- * The Worker handles:
- * - Downloading notification images from remote URLs
- * - Building notifications with proper styling
- * - Posting notifications to the system
- */
 internal class IterableNotificationWorker(
     context: Context,
     params: WorkerParameters
@@ -28,14 +21,11 @@ internal class IterableNotificationWorker(
 
     companion object {
         private const val TAG = "IterableNotificationWorker"
-        
+        private const val FOREGROUND_NOTIFICATION_ID = 10101
+
         const val KEY_NOTIFICATION_DATA_JSON = "notification_data_json"
         const val KEY_IS_GHOST_PUSH = "is_ghost_push"
-        
-        /**
-         * Creates input data for the Worker from a Bundle.
-         * Converts the Bundle to JSON for reliable serialization.
-         */
+
         @JvmStatic
         fun createInputData(extras: Bundle, isGhostPush: Boolean): Data {
             val jsonObject = JSONObject()
@@ -45,7 +35,7 @@ internal class IterableNotificationWorker(
                     jsonObject.put(key, value)
                 }
             }
-            
+
             return Data.Builder()
                 .putString(KEY_NOTIFICATION_DATA_JSON, jsonObject.toString())
                 .putBoolean(KEY_IS_GHOST_PUSH, isGhostPush)
@@ -53,76 +43,121 @@ internal class IterableNotificationWorker(
         }
     }
 
+    override fun getForegroundInfo(): ForegroundInfo {
+        val channelId = applicationContext.packageName
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = applicationContext
+                .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (notificationManager.getNotificationChannel(channelId) == null) {
+                val channel = NotificationChannel(
+                    channelId,
+                    getChannelName(),
+                    NotificationManager.IMPORTANCE_LOW
+                )
+                notificationManager.createNotificationChannel(channel)
+            }
+        }
+
+        val notification = NotificationCompat.Builder(applicationContext, channelId)
+            .setSmallIcon(getSmallIconId())
+            .setContentTitle(getAppName())
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        return ForegroundInfo(FOREGROUND_NOTIFICATION_ID, notification)
+    }
+
+    private fun getSmallIconId(): Int {
+        var iconId = 0
+
+        try {
+            val info = applicationContext.packageManager.getApplicationInfo(
+                applicationContext.packageName, PackageManager.GET_META_DATA
+            )
+            iconId = info.metaData?.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0) ?: 0
+        } catch (e: PackageManager.NameNotFoundException) {
+            IterableLogger.w(TAG, "Could not read application metadata for icon")
+        }
+
+        if (iconId == 0) {
+            iconId = applicationContext.resources.getIdentifier(
+                IterableApi.getNotificationIcon(applicationContext),
+                IterableConstants.ICON_FOLDER_IDENTIFIER,
+                applicationContext.packageName
+            )
+        }
+
+        if (iconId == 0) {
+            iconId = applicationContext.applicationInfo.icon
+        }
+
+        return iconId
+    }
+
+    private fun getAppName(): String {
+        return applicationContext.applicationInfo
+            .loadLabel(applicationContext.packageManager).toString()
+    }
+
+    private fun getChannelName(): String {
+        return try {
+            val info = applicationContext.packageManager.getApplicationInfo(
+                applicationContext.packageName, PackageManager.GET_META_DATA
+            )
+            info.metaData?.getString("iterable_notification_channel_name")
+                ?: "Notifications"
+        } catch (e: PackageManager.NameNotFoundException) {
+            "Notifications"
+        }
+    }
+
     @WorkerThread
     override fun doWork(): Result {
-        IterableLogger.d(TAG, "========================================")
         IterableLogger.d(TAG, "Starting notification processing in Worker")
-        IterableLogger.d(TAG, "Worker ID: $id")
-        IterableLogger.d(TAG, "Run attempt: $runAttemptCount")
-        
+
         try {
             val isGhostPush = inputData.getBoolean(KEY_IS_GHOST_PUSH, false)
-            IterableLogger.d(TAG, "Step 1: Ghost push check - isGhostPush=$isGhostPush")
-            
+
             if (isGhostPush) {
-                IterableLogger.d(TAG, "Ghost push detected - no user-visible notification to display")
+                IterableLogger.d(TAG, "Ghost push detected, skipping notification display")
                 return Result.success()
             }
 
             val jsonString = inputData.getString(KEY_NOTIFICATION_DATA_JSON)
-            IterableLogger.d(TAG, "Step 2: Retrieved notification JSON data (length=${jsonString?.length ?: 0})")
-            
+
             if (jsonString == null || jsonString.isEmpty()) {
-                IterableLogger.e(TAG, "CRITICAL ERROR: No notification data provided to Worker")
+                IterableLogger.e(TAG, "No notification data provided to Worker")
                 return Result.failure()
             }
 
-            IterableLogger.d(TAG, "Step 3: Deserializing notification data from JSON")
             val extras = jsonToBundle(jsonString)
-            val keyCount = extras.keySet().size
-            IterableLogger.d(TAG, "Step 3: Deserialized $keyCount keys from notification data")
-            
-            if (keyCount == 0) {
-                IterableLogger.e(TAG, "CRITICAL ERROR: Deserialized bundle is empty")
+
+            if (extras.keySet().size == 0) {
+                IterableLogger.e(TAG, "Deserialized bundle is empty")
                 return Result.failure()
             }
 
-            IterableLogger.d(TAG, "Step 4: Creating notification builder")
             val notificationBuilder = IterableNotificationHelper.createNotification(
                 applicationContext,
                 extras
             )
-            
+
             if (notificationBuilder == null) {
-                IterableLogger.w(TAG, "Step 4: Notification builder is null (likely ghost push or invalid data)")
+                IterableLogger.w(TAG, "Notification builder is null, skipping")
                 return Result.success()
             }
-            
-            IterableLogger.d(TAG, "Step 4: Notification builder created successfully")
-            val hasImage = extras.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE) != null
-            if (hasImage) {
-                IterableLogger.d(TAG, "Step 4: Notification contains image URL: ${extras.getString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE)}")
-            }
 
-            IterableLogger.d(TAG, "Step 5: Posting notification to device (this may download images)")
             IterableNotificationHelper.postNotificationOnDevice(
                 applicationContext,
                 notificationBuilder
             )
-            
-            IterableLogger.d(TAG, "Step 5: Notification posted successfully to NotificationManager")
-            IterableLogger.d(TAG, "Notification processing COMPLETED successfully")
-            IterableLogger.d(TAG, "========================================")
+
+            IterableLogger.d(TAG, "Notification posted successfully")
             return Result.success()
-            
+
         } catch (e: Exception) {
-            IterableLogger.e(TAG, "========================================")
-            IterableLogger.e(TAG, "CRITICAL ERROR processing notification in Worker", e)
-            IterableLogger.e(TAG, "Error type: ${e.javaClass.simpleName}")
-            IterableLogger.e(TAG, "Error message: ${e.message}")
-            IterableLogger.e(TAG, "Stack trace:", e)
-            IterableLogger.e(TAG, "========================================")
-            
+            IterableLogger.e(TAG, "Error processing notification in Worker", e)
             return Result.retry()
         }
     }
