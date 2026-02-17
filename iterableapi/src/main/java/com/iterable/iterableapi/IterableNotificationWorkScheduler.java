@@ -34,15 +34,13 @@ class IterableNotificationWorkScheduler {
         this.workManager = workManager;
     }
 
-    public void scheduleNotificationWork(
+    void scheduleNotificationWork(
             @NonNull Bundle notificationData,
-            boolean isGhostPush,
             @Nullable SchedulerCallback callback) {
 
         try {
             androidx.work.Data inputData = IterableNotificationWorker.createInputData(
-                    notificationData,
-                    isGhostPush
+                    notificationData
             );
 
             OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(IterableNotificationWorker.class)

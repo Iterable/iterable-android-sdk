@@ -1,8 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.Tasks;
@@ -63,7 +63,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             if (!IterableNotificationHelper.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
 
-                enqueueNotificationWork(context, extras, false);
+                enqueueNotificationWork(context, extras);
             } else {
                 IterableLogger.d(TAG, "Iterable OS notification push received");
             }
@@ -137,12 +137,11 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         }
     }
 
-    private static void enqueueNotificationWork(@NonNull final Context context, @NonNull final Bundle extras, boolean isGhostPush) {
+    private static void enqueueNotificationWork(@NonNull final Context context, @NonNull final Bundle extras) {
         IterableNotificationWorkScheduler scheduler = new IterableNotificationWorkScheduler(context);
 
         scheduler.scheduleNotificationWork(
                 extras,
-                false,
                 new IterableNotificationWorkScheduler.SchedulerCallback() {
                     @Override
                     public void onScheduleSuccess(UUID workId) {
@@ -172,22 +171,5 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             IterableLogger.e(TAG, "✗ CRITICAL: FALLBACK also failed!", fallbackException);
             IterableLogger.e(TAG, "NOTIFICATION WILL NOT BE DISPLAYED");
         }
-    }
-}
-
-/**
- * @deprecated This class is no longer used. Notification processing now uses WorkManager
- * to comply with Firebase best practices. This class is kept for backwards compatibility only.
- */
-@Deprecated
-class IterableNotificationManager extends AsyncTask<IterableNotificationBuilder, Void, Void> {
-
-    @Override
-    protected Void doInBackground(IterableNotificationBuilder... params) {
-        if (params != null && params[0] != null) {
-            IterableNotificationBuilder notificationBuilder = params[0];
-            IterableNotificationHelper.postNotificationOnDevice(notificationBuilder.context, notificationBuilder);
-        }
-        return null;
     }
 }

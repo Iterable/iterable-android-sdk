@@ -72,7 +72,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("key", "value");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }
@@ -85,7 +85,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         verify(callback).onScheduleSuccess(any(UUID.class));
     }
@@ -98,7 +98,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         ArgumentCaptor<UUID> uuidCaptor = ArgumentCaptor.forClass(UUID.class);
         verify(callback).onScheduleSuccess(uuidCaptor.capture());
@@ -113,7 +113,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         data.putString("key", "value");
 
         // Should not throw exception with null callback
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }
@@ -123,7 +123,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("key", "value");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         // Verify enqueue called exactly once
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
@@ -145,7 +145,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         verify(callback).onScheduleFailure(any(Exception.class), any(Bundle.class));
     }
@@ -161,7 +161,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         ArgumentCaptor<Exception> exceptionCaptor = ArgumentCaptor.forClass(Exception.class);
         verify(callback).onScheduleFailure(exceptionCaptor.capture(), any(Bundle.class));
@@ -180,7 +180,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(callback).onScheduleFailure(any(Exception.class), bundleCaptor.capture());
@@ -198,7 +198,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
             .when(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
 
         // Should not throw exception with null callback
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
     }
 
     // ========================================================================
@@ -211,7 +211,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         data.putString(IterableConstants.ITERABLE_DATA_TITLE, "Test Title");
         data.putString(IterableConstants.ITERABLE_DATA_BODY, "Test Body");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
             ArgumentCaptor.forClass(OneTimeWorkRequest.class);
@@ -227,46 +227,10 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
     }
 
     @Test
-    public void testScheduleNotificationWorkHandlesGhostPushFlagTrue() {
-        Bundle data = new Bundle();
-        data.putString("key", "value");
-
-        scheduler.scheduleNotificationWork(data, true, null);
-
-        ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
-            ArgumentCaptor.forClass(OneTimeWorkRequest.class);
-        verify(mockWorkManager).enqueue(requestCaptor.capture());
-
-        OneTimeWorkRequest capturedRequest = requestCaptor.getValue();
-        Data workData = capturedRequest.getWorkSpec().input;
-
-        boolean isGhostPush = workData.getBoolean(IterableNotificationWorker.KEY_IS_GHOST_PUSH, false);
-        assertEquals("Ghost push flag should be true", true, isGhostPush);
-    }
-
-    @Test
-    public void testScheduleNotificationWorkHandlesGhostPushFlagFalse() {
-        Bundle data = new Bundle();
-        data.putString("key", "value");
-
-        scheduler.scheduleNotificationWork(data, false, null);
-
-        ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
-            ArgumentCaptor.forClass(OneTimeWorkRequest.class);
-        verify(mockWorkManager).enqueue(requestCaptor.capture());
-
-        OneTimeWorkRequest capturedRequest = requestCaptor.getValue();
-        Data workData = capturedRequest.getWorkSpec().input;
-
-        boolean isGhostPush = workData.getBoolean(IterableNotificationWorker.KEY_IS_GHOST_PUSH, true);
-        assertEquals("Ghost push flag should be false", false, isGhostPush);
-    }
-
-    @Test
     public void testScheduleNotificationWorkHandlesEmptyBundle() {
         Bundle emptyData = new Bundle();
 
-        scheduler.scheduleNotificationWork(emptyData, false, null);
+        scheduler.scheduleNotificationWork(emptyData, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }
@@ -278,7 +242,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         data.putString("field2", "value2");
         data.putString("field3", "value3");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
             ArgumentCaptor.forClass(OneTimeWorkRequest.class);
@@ -302,7 +266,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("key", "value");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
             ArgumentCaptor.forClass(OneTimeWorkRequest.class);
@@ -319,7 +283,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("key", "value");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         // Verify a OneTimeWorkRequest was enqueued
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
@@ -330,7 +294,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("key", "value");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
             ArgumentCaptor.forClass(OneTimeWorkRequest.class);
@@ -356,7 +320,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         verify(callback).onScheduleSuccess(any(UUID.class));
         verify(callback, never()).onScheduleFailure(any(Exception.class), any(Bundle.class));
@@ -373,7 +337,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         verify(callback).onScheduleFailure(any(Exception.class), any(Bundle.class));
         verify(callback, never()).onScheduleSuccess(any(UUID.class));
@@ -385,7 +349,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         data.putString("key", "value");
 
         // Should work without callbacks (null)
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }
@@ -401,7 +365,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         ArgumentCaptor<Exception> exceptionCaptor = ArgumentCaptor.forClass(Exception.class);
         verify(callback).onScheduleFailure(exceptionCaptor.capture(), any(Bundle.class));
@@ -420,7 +384,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         IterableNotificationWorkScheduler.SchedulerCallback callback =
             mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
 
-        scheduler.scheduleNotificationWork(data, false, callback);
+        scheduler.scheduleNotificationWork(data, callback);
 
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(callback).onScheduleFailure(any(Exception.class), bundleCaptor.capture());
@@ -474,7 +438,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString(IterableConstants.ITERABLE_DATA_TITLE, "Title");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
             ArgumentCaptor.forClass(OneTimeWorkRequest.class);
@@ -489,7 +453,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("key", "value");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
             ArgumentCaptor.forClass(OneTimeWorkRequest.class);
@@ -500,11 +464,6 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         // Verify required keys are present
         assertNotNull("Should have notification JSON",
                 inputData.getString(IterableNotificationWorker.KEY_NOTIFICATION_DATA_JSON));
-
-        // Ghost push flag should be present (default false)
-        boolean hasFlag = inputData.getKeyValueMap()
-                .containsKey(IterableNotificationWorker.KEY_IS_GHOST_PUSH);
-        assertTrue("Should have ghost push flag", hasFlag);
     }
 
     @Test
@@ -515,7 +474,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         data.putString(IterableConstants.ITERABLE_DATA_BODY, "Body");
         data.putString("customField", "customValue");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }
@@ -529,7 +488,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("special", "Value with symbols: !@#$% and \"quotes\"");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }
@@ -539,7 +498,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("unicode", "Unicode: 你好 👋 émojis 🎉");
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }
@@ -551,7 +510,7 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
             data.putString("key" + i, "value" + i);
         }
 
-        scheduler.scheduleNotificationWork(data, false, null);
+        scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }

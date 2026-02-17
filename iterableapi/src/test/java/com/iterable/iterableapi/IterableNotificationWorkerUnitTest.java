@@ -68,23 +68,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
                 IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         bundle.putString(IterableConstants.ITERABLE_DATA_BODY, "Test");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
-        IterableNotificationWorker worker = TestListenableWorkerBuilder
-                .from(getContext(), IterableNotificationWorker.class)
-                .setInputData(inputData)
-                .build();
-
-        ListenableWorker.Result result = worker.doWork();
-
-        assertEquals(ListenableWorker.Result.success(), result);
-    }
-
-    @Test
-    public void testWorkerReturnsSuccessForGhostPush() throws Exception {
-        Bundle bundle = new Bundle();
-        bundle.putString("someKey", "someValue");
-
-        Data inputData = IterableNotificationWorker.createInputData(bundle, true); // isGhostPush=true
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -98,7 +82,6 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
     @Test
     public void testWorkerReturnsFailureWithNullData() throws Exception {
         Data inputData = new Data.Builder()
-                .putBoolean(IterableNotificationWorker.KEY_IS_GHOST_PUSH, false)
                 // No JSON data
                 .build();
 
@@ -116,7 +99,6 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
     public void testWorkerReturnsFailureWithEmptyData() throws Exception {
         Data inputData = new Data.Builder()
                 .putString(IterableNotificationWorker.KEY_NOTIFICATION_DATA_JSON, "")
-                .putBoolean(IterableNotificationWorker.KEY_IS_GHOST_PUSH, false)
                 .build();
 
         IterableNotificationWorker worker = TestListenableWorkerBuilder
@@ -141,7 +123,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         bundle.putString(IterableConstants.ITERABLE_DATA_KEY, "{}");
         bundle.putString(IterableConstants.ITERABLE_DATA_BODY, "Test");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -150,22 +132,6 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         worker.doWork();
 
         verify(helperSpy).createNotification(any(), any(Bundle.class));
-    }
-
-    @Test
-    public void testWorkerDoesNotCallCreateNotificationForGhostPush() throws Exception {
-        Bundle bundle = new Bundle();
-        bundle.putString("key", "value");
-
-        Data inputData = IterableNotificationWorker.createInputData(bundle, true); // isGhostPush=true
-        IterableNotificationWorker worker = TestListenableWorkerBuilder
-                .from(getContext(), IterableNotificationWorker.class)
-                .setInputData(inputData)
-                .build();
-
-        worker.doWork();
-
-        verify(helperSpy, never()).createNotification(any(), any());
     }
 
     @Test
@@ -179,7 +145,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
                 IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         bundle.putString(IterableConstants.ITERABLE_DATA_BODY, "Test");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -197,7 +163,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString(IterableConstants.ITERABLE_DATA_KEY, "{}");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -215,7 +181,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString(IterableConstants.ITERABLE_DATA_KEY, "{}");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -236,7 +202,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString("key", "value");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
 
         assertNotNull("Input data should not be null", inputData);
     }
@@ -246,29 +212,17 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString(IterableConstants.ITERABLE_DATA_TITLE, "Test");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
 
         String json = inputData.getString(IterableNotificationWorker.KEY_NOTIFICATION_DATA_JSON);
         assertNotNull("JSON string should be present", json);
     }
 
     @Test
-    public void testCreateInputDataIncludesGhostPushFlag() {
-        Bundle bundle = new Bundle();
-        bundle.putString("key", "value");
-
-        Data inputDataTrue = IterableNotificationWorker.createInputData(bundle, true);
-        Data inputDataFalse = IterableNotificationWorker.createInputData(bundle, false);
-
-        assertEquals(true, inputDataTrue.getBoolean(IterableNotificationWorker.KEY_IS_GHOST_PUSH, false));
-        assertEquals(false, inputDataFalse.getBoolean(IterableNotificationWorker.KEY_IS_GHOST_PUSH, true));
-    }
-
-    @Test
     public void testCreateInputDataHandlesEmptyBundle() {
         Bundle bundle = new Bundle();
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
 
         assertNotNull("Input data should not be null for empty bundle", inputData);
     }
@@ -285,7 +239,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         originalBundle.putString(IterableConstants.ITERABLE_DATA_TITLE, "Test Title");
         originalBundle.putString(IterableConstants.ITERABLE_DATA_KEY, "{}");
 
-        Data inputData = IterableNotificationWorker.createInputData(originalBundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(originalBundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -310,7 +264,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         originalBundle.putString(IterableConstants.ITERABLE_DATA_KEY, "{}");
         originalBundle.putString("custom", "value");
 
-        Data inputData = IterableNotificationWorker.createInputData(originalBundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(originalBundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -337,7 +291,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         originalBundle.putString(IterableConstants.ITERABLE_DATA_KEY, "{}");
         originalBundle.putString("special", specialValue);
 
-        Data inputData = IterableNotificationWorker.createInputData(originalBundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(originalBundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -364,7 +318,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
 
         int originalCount = originalBundle.keySet().size();
 
-        Data inputData = IterableNotificationWorker.createInputData(originalBundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(originalBundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -387,7 +341,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle originalBundle = new Bundle();
         originalBundle.putString(IterableConstants.ITERABLE_DATA_KEY, complexJson);
 
-        Data inputData = IterableNotificationWorker.createInputData(originalBundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(originalBundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -411,7 +365,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString("key", "value");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -427,7 +381,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString("key", "value");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -443,7 +397,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString("key", "value");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)
@@ -465,7 +419,7 @@ public class IterableNotificationWorkerUnitTest extends BaseTest {
         Bundle bundle = new Bundle();
         bundle.putString("key", "value");
 
-        Data inputData = IterableNotificationWorker.createInputData(bundle, false);
+        Data inputData = IterableNotificationWorker.createInputData(bundle);
         IterableNotificationWorker worker = TestListenableWorkerBuilder
                 .from(getContext(), IterableNotificationWorker.class)
                 .setInputData(inputData)

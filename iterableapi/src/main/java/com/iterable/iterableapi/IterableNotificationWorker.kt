@@ -24,10 +24,9 @@ internal class IterableNotificationWorker(
         private const val FOREGROUND_NOTIFICATION_ID = 10101
 
         const val KEY_NOTIFICATION_DATA_JSON = "notification_data_json"
-        const val KEY_IS_GHOST_PUSH = "is_ghost_push"
 
         @JvmStatic
-        fun createInputData(extras: Bundle, isGhostPush: Boolean): Data {
+        fun createInputData(extras: Bundle): Data {
             val jsonObject = JSONObject()
             for (key in extras.keySet()) {
                 val value = extras.getString(key)
@@ -38,7 +37,6 @@ internal class IterableNotificationWorker(
 
             return Data.Builder()
                 .putString(KEY_NOTIFICATION_DATA_JSON, jsonObject.toString())
-                .putBoolean(KEY_IS_GHOST_PUSH, isGhostPush)
                 .build()
         }
     }
@@ -117,13 +115,6 @@ internal class IterableNotificationWorker(
         IterableLogger.d(TAG, "Starting notification processing in Worker")
 
         try {
-            val isGhostPush = inputData.getBoolean(KEY_IS_GHOST_PUSH, false)
-
-            if (isGhostPush) {
-                IterableLogger.d(TAG, "Ghost push detected, skipping notification display")
-                return Result.success()
-            }
-
             val jsonString = inputData.getString(KEY_NOTIFICATION_DATA_JSON)
 
             if (jsonString == null || jsonString.isEmpty()) {
