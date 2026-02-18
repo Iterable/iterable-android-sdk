@@ -135,7 +135,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         if (button.openApp) {
             IterableLogger.d(TAG, "Go through TrampolineActivity");
             buttonIntent.setClass(context, IterableTrampolineActivity.class);
-            buttonIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            buttonIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             pendingButtonIntent = PendingIntent.getActivity(context, buttonIntent.hashCode(),
                     buttonIntent, pendingIntentFlag);
         } else {
