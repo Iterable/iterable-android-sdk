@@ -63,7 +63,11 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             if (!IterableNotificationHelper.isEmptyBody(extras)) {
                 IterableLogger.d(TAG, "Iterable push received " + messageData);
 
-                enqueueNotificationWork(context, extras);
+                if (IterableNotificationHelper.hasAttachmentUrl(extras)) {
+                    enqueueNotificationWork(context, extras);
+                } else {
+                    handleNow(context, extras);
+                }
             } else {
                 IterableLogger.d(TAG, "Iterable OS notification push received");
             }
@@ -155,6 +159,18 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
                     }
                 }
         );
+    }
+
+    private static void handleNow(@NonNull Context context, @NonNull Bundle extras) {
+        try {
+            IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
+                    context.getApplicationContext(), extras);
+            if (notificationBuilder != null) {
+                IterableNotificationHelper.postNotificationOnDevice(context, notificationBuilder);
+            }
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Failed to post notification directly", e);
+        }
     }
 
     private static void handleFallbackNotification(@NonNull Context context, @NonNull Bundle extras) {

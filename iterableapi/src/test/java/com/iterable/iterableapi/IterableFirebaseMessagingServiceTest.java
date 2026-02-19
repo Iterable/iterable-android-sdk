@@ -156,24 +156,46 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     }
 
     @Test
-    public void testWorkManagerIsUsedForNotifications() throws Exception {
+    public void testPlainTextNotificationIsHandledDirectly() throws Exception {
         when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
         when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.createNotification(any(), any(Bundle.class))).thenCallRealMethod();
 
-        // Send a regular push notification (not ghost push)
+        // Plain text push — no attachment-url
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test notification");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
         controller.get().onMessageReceived(builder.build());
 
-        // Verify WorkManager has enqueued work
+        // Direct path: no WorkManager work should be enqueued
         WorkManager workManager = WorkManager.getInstance(getContext());
         List<WorkInfo> workInfos = workManager.getWorkInfosByTag(IterableNotificationWorker.class.getName()).get(5, TimeUnit.SECONDS);
+        assertTrue("Plain text push should not enqueue WorkManager work", workInfos.isEmpty());
 
-        // Note: With SynchronousExecutor, work completes immediately
-        // Verify that notification helper methods were called (indicating Worker ran)
+        // Notification should still be created and posted directly
         verify(notificationHelperSpy, atLeastOnce()).createNotification(any(), any(Bundle.class));
+        verify(notificationHelperSpy, atLeastOnce()).postNotificationOnDevice(any(), any(IterableNotificationBuilder.class));
+    }
+
+    @Test
+    public void testImageNotificationUsesWorkManager() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
+
+        // Push with attachment-url
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Image notification");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_image_push.json"));
+        controller.get().onMessageReceived(builder.build());
+
+        // WorkManager should have been used for the image download path
+        WorkManager workManager = WorkManager.getInstance(getContext());
+        List<WorkInfo> workInfos = workManager.getWorkInfosByTag(IterableNotificationWorker.class.getName()).get(5, TimeUnit.SECONDS);
+        assertFalse("Image push should enqueue WorkManager work", workInfos.isEmpty());
     }
 
     @Test

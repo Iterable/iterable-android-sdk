@@ -87,6 +87,16 @@ class IterableNotificationHelper {
         return instance.isEmptyBody(extras);
     }
 
+    /**
+     * Returns whether the notification payload includes an image attachment URL,
+     * meaning display requires a network image download (long-running work).
+     * @param extras what is inside the bundle
+     * @return if it has an attachment url
+     */
+    static boolean hasAttachmentUrl(Bundle extras) {
+        return instance.hasAttachmentUrl(extras);
+    }
+
     static Bundle mapToBundle(Map<String, String> map) {
         Bundle bundle = new Bundle();
         for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -457,6 +467,20 @@ class IterableNotificationHelper {
             }
 
             return notificationBody.isEmpty();
+        }
+
+        boolean hasAttachmentUrl(Bundle extras) {
+            if (extras == null || !extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+                return false;
+            }
+            try {
+                String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+                JSONObject iterableJson = new JSONObject(iterableData);
+                String attachmentUrl = iterableJson.optString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE, "");
+                return !attachmentUrl.isEmpty();
+            } catch (Exception e) {
+                return false;
+            }
         }
     }
 

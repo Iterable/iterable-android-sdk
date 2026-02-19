@@ -351,14 +351,15 @@ public class IterableNotificationFlowTest extends BaseTest {
     }
 
     // ========================================================================
-    // SCHEDULER INTEGRATION TESTS
+    // DIRECT vs WORKMANAGER ROUTING TESTS
     // ========================================================================
 
     @Test
-    public void testNotificationUsesWorkManagerScheduling() throws Exception {
+    public void testPlainTextNotificationIsHandledDirectly() {
         when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(helperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.createNotification(any(), any())).thenCallRealMethod();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
@@ -368,40 +369,58 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
 
-        // Verify notification was posted (via WorkManager with SynchronousExecutor)
+        // Direct path: createNotification and postNotificationOnDevice called without WorkManager
+        verify(helperSpy).createNotification(any(), any(Bundle.class));
         verify(helperSpy).postNotificationOnDevice(any(), any(IterableNotificationBuilder.class));
     }
 
     @Test
-    public void testSchedulerHandlesMultipleNotifications() {
+    public void testImageNotificationUsesWorkManager() throws Exception {
         when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(helperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.createNotification(any(), any())).thenCallRealMethod();
 
-        // Send three notifications
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY,
+                IterableTestUtils.getResourceString("push_payload_image_push.json"));
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Image push");
+
+        IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
+
+        // WorkManager path: Worker eventually calls createNotification (via SynchronousExecutor)
+        verify(helperSpy).createNotification(any(), any(Bundle.class));
+    }
+
+    @Test
+    public void testMultiplePlainTextNotificationsAreHandledDirectly() {
+        when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(helperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(helperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
+        when(helperSpy.createNotification(any(), any())).thenCallRealMethod();
+
         for (int i = 0; i < 3; i++) {
             RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
             builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
             builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test " + i);
-
             IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
         }
 
-        // Verify all three notifications were created
-        verify(helperSpy, org.mockito.Mockito.times(3))
-                .createNotification(any(), any(Bundle.class));
+        verify(helperSpy, org.mockito.Mockito.times(3)).createNotification(any(), any(Bundle.class));
     }
 
     @Test
-    public void testSchedulerPreservesNotificationDataThroughWorkManager() {
+    public void testNotificationDataIsPreservedOnDirectPath() {
         when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(helperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.createNotification(any(), any())).thenCallRealMethod();
 
-        String testTitle = "Scheduler Test Title";
-        String testBody = "Scheduler Test Body";
+        String testTitle = "Direct Path Title";
+        String testBody = "Direct Path Body";
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
         builder.addData(IterableConstants.ITERABLE_DATA_KEY, "{}");
@@ -410,14 +429,11 @@ public class IterableNotificationFlowTest extends BaseTest {
 
         IterableFirebaseMessagingService.handleMessageReceived(getContext(), builder.build());
 
-        // Verify data was preserved through the scheduler -> worker -> notification flow
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(helperSpy).createNotification(any(), bundleCaptor.capture());
 
         Bundle capturedBundle = bundleCaptor.getValue();
-        assertEquals("Title should be preserved through scheduler",
-                testTitle, capturedBundle.getString(IterableConstants.ITERABLE_DATA_TITLE));
-        assertEquals("Body should be preserved through scheduler",
-                testBody, capturedBundle.getString(IterableConstants.ITERABLE_DATA_BODY));
+        assertEquals(testTitle, capturedBundle.getString(IterableConstants.ITERABLE_DATA_TITLE));
+        assertEquals(testBody, capturedBundle.getString(IterableConstants.ITERABLE_DATA_BODY));
     }
 }
