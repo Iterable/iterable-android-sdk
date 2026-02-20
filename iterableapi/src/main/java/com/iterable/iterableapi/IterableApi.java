@@ -469,6 +469,7 @@ public class IterableApi {
             IterableLogger.w(TAG, "Cannot complete user login - JWT auth enabled but no validated authToken present");
             if (_setUserFailureCallbackHandler != null) {
                 _setUserFailureCallbackHandler.onFailure("JWT authentication is enabled but no valid authToken is available", null);
+                resetCallbackHandlers();
             }
             return;
         }
@@ -476,7 +477,8 @@ public class IterableApi {
         if (config.autoPushRegistration) {
             registerForPush();
         } else if (_setUserSuccessCallbackHandler != null) {
-            _setUserSuccessCallbackHandler.onSuccess(new JSONObject()); // passing blank json object here as onSuccess is @Nonnull
+            _setUserSuccessCallbackHandler.onSuccess(IterableResponse.setEmailLocalSuccessResponse);
+            resetCallbackHandlers();
         }
 
         getInAppManager().syncInApp();
@@ -772,6 +774,7 @@ public class IterableApi {
 
                 if (originalSuccessHandler != null) {
                     originalSuccessHandler.onSuccess(data);
+                    resetCallbackHandlers();
                 }
             };
         }
@@ -787,10 +790,16 @@ public class IterableApi {
 
                 if (originalFailureHandler != null) {
                     originalFailureHandler.onFailure(reason, data);
+                    resetCallbackHandlers();
                 }
             };
         }
         return wrappedFailureHandler;
+    }
+
+    private void resetCallbackHandlers() {
+        _setUserFailureCallbackHandler = null;
+        _setUserSuccessCallbackHandler = null;
     }
 //endregion
 

@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.6.5]
+### Fixed
+- Fixed IterableEmbeddedView not having an empty constructor and causing crashes
+- Fixed custom actions not working in background when SDK is not initialized
+- Fixed double callback problem for setEmail with auto push registration
+
 ## [3.6.4]
 ### Fixed
 - Updated `customPayload` of In-App Messages to be `@Nullable`
