@@ -1,5 +1,9 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
+
+import androidx.test.core.app.ApplicationProvider;
+
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.json.JSONObject;
@@ -186,11 +190,16 @@ public class IterableTaskRunnerTest extends BaseTest {
         final IterableAuthHandler mockAuthHandler = mock(IterableAuthHandler.class);
         doReturn(null).when(mockAuthHandler).onAuthTokenRequested();
 
+        Context context = ApplicationProvider.getApplicationContext();
+        context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetryEnabled)
+                .apply();
+
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
                 return builder
-                        .setAutoRetryOnJwtFailure(autoRetryEnabled)
                         .setAuthHandler(mockAuthHandler);
             }
         });

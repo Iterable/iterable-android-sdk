@@ -141,14 +141,6 @@ public class IterableConfig {
     final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     /**
-     * When set to true, the SDK will automatically retry API requests that fail due to
-     * JWT authentication errors (401). Failed requests are retained in the local DB and
-     * processing is paused until a valid JWT token is obtained.
-     * This value can be overridden by the remote configuration flag `autoRetry`.
-     */
-    final boolean autoRetryOnJwtFailure;
-
-    /**
      * Base URL for Webview content loading. Specifically used to enable CORS for external resources.
      * If null or empty, defaults to empty string (original behavior with about:blank origin).
      * Set this to according to your CORS settings for example (e.g., "https://app.iterable.com") to allow external resource loading.
@@ -191,7 +183,6 @@ public class IterableConfig {
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
         webViewBaseUrl = builder.webViewBaseUrl;
-        autoRetryOnJwtFailure = builder.autoRetryOnJwtFailure;
     }
 
     public static class Builder {
@@ -220,7 +211,6 @@ public class IterableConfig {
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableUnknownUserHandler iterableUnknownUserHandler;
         private String webViewBaseUrl;
-        private boolean autoRetryOnJwtFailure = false;
 
         public Builder() {}
 
@@ -460,19 +450,6 @@ public class IterableConfig {
         @NonNull
         public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
             this.mobileFrameworkInfo = mobileFrameworkInfo;
-            return this;
-        }
-
-        /**
-         * Enable or disable automatic retry of API requests that fail due to JWT authentication
-         * errors (401). When enabled, failed requests are retained in the local DB and processing
-         * is paused until a valid JWT token is obtained.
-         * This value can be overridden by the remote configuration flag `autoRetry`.
-         * @param autoRetryOnJwtFailure `true` to enable auto-retry on JWT failure
-         */
-        @NonNull
-        public Builder setAutoRetryOnJwtFailure(boolean autoRetryOnJwtFailure) {
-            this.autoRetryOnJwtFailure = autoRetryOnJwtFailure;
             return this;
         }
 
