@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -263,6 +264,37 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         shadowOf(getMainLooper()).idle();
 
         verify(mockHandler1).onEmbeddedMessagingDisabled();
+    }
+
+    @Test
+    public void testOnEmbeddedMessagingSyncSucceeded() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setBody(IterableTestUtils.getResourceString("embedded_payload_single_1.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler = mock(IterableEmbeddedUpdateHandler.class);
+        embeddedManager.addUpdateListener(mockHandler);
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        verify(mockHandler).onEmbeddedMessagingSyncSucceeded();
+        verify(mockHandler, never()).onEmbeddedMessagingSyncFailed(anyString());
+        assertEquals(1, embeddedManager.getMessages(0L).size());
+    }
+
+    @Test
+    public void testOnEmbeddedMessagingSyncFailed() throws Exception {
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(401).setBody(IterableTestUtils.getResourceString("embedded_payload_bad_api_key.json")));
+        IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
+
+        IterableEmbeddedUpdateHandler mockHandler = mock(IterableEmbeddedUpdateHandler.class);
+        embeddedManager.addUpdateListener(mockHandler);
+
+        embeddedManager.syncMessages();
+        shadowOf(getMainLooper()).idle();
+
+        verify(mockHandler).onEmbeddedMessagingSyncFailed(anyString());
+        verify(mockHandler, never()).onEmbeddedMessagingSyncSucceeded();
     }
 
 }
