@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Fixed
+- In-app messages now match the host app's system bar behavior instead of overriding it. This fixes fullscreen in-apps drawing content behind the status bar.
+
 ## [3.6.5]
 ### Fixed
 - Fixed IterableEmbeddedView not having an empty constructor and causing crashes
