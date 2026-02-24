@@ -11,7 +11,6 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class IterableFirebaseMessagingService extends FirebaseMessagingService {
@@ -146,18 +145,7 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
         scheduler.scheduleNotificationWork(
                 extras,
-                new IterableNotificationWorkScheduler.SchedulerCallback() {
-                    @Override
-                    public void onScheduleSuccess(UUID workId) {
-                        IterableLogger.d(TAG, "Notification work scheduled: " + workId);
-                    }
-
-                    @Override
-                    public void onScheduleFailure(Exception exception, Bundle notificationData) {
-                        IterableLogger.e(TAG, "Failed to schedule notification work, falling back", exception);
-                        handleFallbackNotification(context, notificationData);
-                    }
-                }
+            workId -> IterableLogger.d(TAG, "Notification work scheduled: " + workId)
         );
     }
 
@@ -170,22 +158,6 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Failed to post notification directly", e);
-        }
-    }
-
-    private static void handleFallbackNotification(@NonNull Context context, @NonNull Bundle extras) {
-        try {
-            IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
-                    context.getApplicationContext(), extras);
-            if (notificationBuilder != null) {
-                IterableNotificationHelper.postNotificationOnDevice(context, notificationBuilder);
-                IterableLogger.d(TAG, "✓ FALLBACK succeeded - notification posted directly");
-            } else {
-                IterableLogger.w(TAG, "✗ FALLBACK: Notification builder is null");
-            }
-        } catch (Exception fallbackException) {
-            IterableLogger.e(TAG, "✗ CRITICAL: FALLBACK also failed!", fallbackException);
-            IterableLogger.e(TAG, "NOTIFICATION WILL NOT BE DISPLAYED");
         }
     }
 }

@@ -21,7 +21,6 @@ class IterableNotificationWorkScheduler {
 
     interface SchedulerCallback {
         void onScheduleSuccess(UUID workId);
-        void onScheduleFailure(Exception exception, Bundle notificationData);
     }
 
     IterableNotificationWorkScheduler(@NonNull Context context) {
@@ -59,10 +58,6 @@ class IterableNotificationWorkScheduler {
 
         } catch (Exception e) {
             IterableLogger.e(TAG, "Failed to schedule notification work", e);
-
-            if (callback != null) {
-                callback.onScheduleFailure(e, notificationData);
-            }
         }
     }
 
