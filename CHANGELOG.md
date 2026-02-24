@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Fixed
-- Fixed close button position on full screen in-app messages being obscured by the system status bar.
+- In-app messages now match the host app's system bar behavior instead of overriding it. This fixes fullscreen in-apps drawing content behind the status bar.
 
 ## [3.7.0]
 - Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
