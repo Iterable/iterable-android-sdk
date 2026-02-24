@@ -17,10 +17,11 @@ import com.iterable.iterableapi.util.DeviceInfoUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -53,7 +54,7 @@ public class IterableApi {
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
-    private HashMap<String, String> deviceAttributes = new HashMap<>();
+    private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
     private IterableKeychain keychain;
 
 
@@ -149,7 +150,7 @@ public class IterableApi {
         );
     }
 
-    HashMap getDeviceAttributes() {
+    Map<String, String> getDeviceAttributes() {
         return deviceAttributes;
     }
 
@@ -676,7 +677,7 @@ public class IterableApi {
         }
     }
 
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes) {
         if (deviceToken != null) {
             if (!checkSDKInitialization() && _userIdUnknown == null) {
                 if (sharedInstance.config.enableUnknownUserActivation) {
@@ -721,7 +722,7 @@ public class IterableApi {
      * @param deviceToken
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, Map<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1226,10 +1227,18 @@ public class IterableApi {
     }
 
     public void setDeviceAttribute(String key, String value) {
+        if (key == null || value == null) {
+            IterableLogger.e(TAG, "setDeviceAttribute: key and value must not be null");
+            return;
+        }
         deviceAttributes.put(key, value);
     }
 
     public void removeDeviceAttribute(String key) {
+        if (key == null) {
+            IterableLogger.e(TAG, "removeDeviceAttribute: key must not be null");
+            return;
+        }
         deviceAttributes.remove(key);
     }
 //endregion
