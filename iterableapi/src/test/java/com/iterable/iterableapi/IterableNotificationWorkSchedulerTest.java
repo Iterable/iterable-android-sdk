@@ -72,7 +72,10 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         Bundle data = new Bundle();
         data.putString("key", "value");
 
-        scheduler.scheduleNotificationWork(data, null);
+        IterableNotificationWorkScheduler.SchedulerCallback callback =
+            mock(IterableNotificationWorkScheduler.SchedulerCallback.class);
+
+        scheduler.scheduleNotificationWork(data, callback);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
     }

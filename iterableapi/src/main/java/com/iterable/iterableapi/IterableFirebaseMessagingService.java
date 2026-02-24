@@ -11,6 +11,7 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 public class IterableFirebaseMessagingService extends FirebaseMessagingService {
@@ -145,7 +146,18 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
 
         scheduler.scheduleNotificationWork(
                 extras,
-            workId -> IterableLogger.d(TAG, "Notification work scheduled: " + workId)
+                new IterableNotificationWorkScheduler.SchedulerCallback() {
+                    @Override
+                    public void onScheduleSuccess(UUID workId) {
+                        IterableLogger.d(TAG, "Notification work scheduled: " + workId);
+                    }
+
+                    @Override
+                    public void onScheduleFailure(Exception exception, Bundle notificationData) {
+                        IterableLogger.e(TAG, "Failed to schedule notification work, falling back to immediate posting", exception);
+                        handleNow(context, notificationData);
+                    }
+                }
         );
     }
 
