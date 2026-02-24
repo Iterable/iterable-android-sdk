@@ -3,7 +3,8 @@
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS"
-        tools:ignore="ProtectedPermissions" />
+        tools:ignore="ProtectedPermissions"
+        android:maxSdkVersion="30" />
 
     <application>
         <!--FCM-->
