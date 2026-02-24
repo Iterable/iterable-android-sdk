@@ -43,6 +43,7 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private boolean _autoRetryOnJwtFailure;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
@@ -104,6 +105,14 @@ public class IterableApi {
                     SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
+
+                    // Parse autoRetry flag from remote config.
+                    if (jsonData.has(IterableConstants.KEY_AUTO_RETRY)) {
+                        boolean autoRetryRemote = jsonData.getBoolean(IterableConstants.KEY_AUTO_RETRY);
+                        editor.putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetryRemote);
+                        _autoRetryOnJwtFailure = autoRetryRemote;
+                    }
+
                     editor.apply();
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, "Failed to read remote configuration");
@@ -194,6 +203,15 @@ public class IterableApi {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
         sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+
+        sharedInstance._autoRetryOnJwtFailure = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false);
+    }
+
+    /**
+     * Returns whether auto-retry on JWT failure is enabled, as determined by remote configuration.
+     */
+    boolean isAutoRetryOnJwtFailure() {
+        return _autoRetryOnJwtFailure;
     }
 
     /**

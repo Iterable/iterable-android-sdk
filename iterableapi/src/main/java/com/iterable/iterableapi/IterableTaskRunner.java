@@ -14,7 +14,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback, IterableNetworkConnectivityManager.IterableNetworkMonitorListener, IterableActivityMonitor.AppStateCallback {
+class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback, IterableNetworkConnectivityManager.IterableNetworkMonitorListener, IterableActivityMonitor.AppStateCallback, IterableAuthManager.AuthTokenReadyListener {
     private static final String TAG = "IterableTaskRunner";
     private IterableTaskStorage taskStorage;
     private IterableActivityMonitor activityMonitor;
@@ -38,6 +38,9 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     }
 
     private ArrayList<TaskCompletedListener> taskCompletedListeners = new ArrayList<>();
+
+    // Tracks whether processing is paused due to a JWT auth failure
+    private volatile boolean isPausedForAuth = false;
 
     IterableTaskRunner(IterableTaskStorage taskStorage,
                        IterableActivityMonitor activityMonitor,
@@ -87,6 +90,12 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     }
 
+    @Override
+    public void onAuthTokenReady() {
+        isPausedForAuth = false;
+        runNow();
+    }
+
     private synchronized void runNow() {
         handler.removeMessages(OPERATION_PROCESS_TASKS);
         handler.sendEmptyMessage(OPERATION_PROCESS_TASKS);
@@ -118,7 +127,15 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             return;
         }
 
+        boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
+
         while (networkConnectivityManager.isConnected()) {
+            // [F] When autoRetry is enabled, also check that auth token is ready before processing
+            if (autoRetry && !IterableApi.getInstance().getAuthManager().isAuthTokenReady()) {
+                IterableLogger.d(TAG, "Auth token not ready, pausing task processing");
+                return;
+            }
+
             IterableTask task = taskStorage.getNextScheduledTask();
 
             if (task == null) {
@@ -127,7 +144,11 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
             boolean proceed = processTask(task);
             if (!proceed) {
-                scheduleRetry();
+                // Only schedule timed retry for non-auth failures.
+                // Auth failures will resume via onAuthTokenReady() callback.
+                if (!autoRetry || !isPausedForAuth) {
+                    scheduleRetry();
+                }
                 return;
             }
         }
@@ -135,11 +156,16 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     @WorkerThread
     private boolean processTask(@NonNull IterableTask task) {
+        isPausedForAuth = false;
+
         if (task.taskType == IterableTaskType.API) {
             IterableApiResponse response = null;
             TaskResult result = TaskResult.FAILURE;
             try {
-                IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), null, null);
+                // Use the current live auth token instead of the stale one stored in the DB.
+                // The token in the DB was captured at queue time and may have since expired.
+                String currentAuthToken = IterableApi.getInstance().getAuthToken();
+                IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), currentAuthToken, null, null);
                 request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
                 response = IterableRequestTask.executeApiRequest(request);
             } catch (Exception e) {
@@ -147,10 +173,22 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 healthMonitor.onDBError();
             }
 
+            boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
+
             if (response != null) {
                 if (response.success) {
                     result = TaskResult.SUCCESS;
                 } else {
+                    // [F] If autoRetry is enabled and response is a 401 JWT error,
+                    // retain the task and pause processing until a valid JWT is obtained.
+                    if (autoRetry && isJwtFailure(response)) {
+                        IterableLogger.d(TAG, "JWT auth failure on task " + task.id + ". Retaining task and pausing processing.");
+                        IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
+                        isPausedForAuth = true;
+                        callTaskCompletedListeners(task.id, TaskResult.RETRY, response);
+                        return false;
+                    }
+
                     if (isRetriableError(response.errorMessage)) {
                         result = TaskResult.RETRY;
                     } else {
@@ -183,6 +221,15 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     private boolean isRetriableError(String errorMessage) {
         return errorMessage.contains("failed to connect");
+    }
+
+    /**
+     * Checks if the response indicates a JWT authentication failure (401).
+     * In the offline processing context, the API key is known to be valid (the task was
+     * queued with it), so any 401 response is a JWT auth error.
+     */
+    private boolean isJwtFailure(IterableApiResponse response) {
+        return response.responseCode == 401;
     }
 
     @WorkerThread

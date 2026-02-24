@@ -43,6 +43,13 @@ class OfflineRequestProcessor implements RequestProcessor {
                 networkConnectivityManager,
                 healthMonitor);
         taskScheduler = new TaskScheduler(taskStorage, taskRunner);
+
+        // Register task runner as auth token ready listener for JWT auto-retry support
+        try {
+            IterableApi.getInstance().getAuthManager().addAuthTokenReadyListener(taskRunner);
+        } catch (Exception e) {
+            IterableLogger.d("OfflineRequestProcessor", "AuthManager not available yet for listener registration");
+        }
     }
 
     @VisibleForTesting
