@@ -4,6 +4,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -63,6 +66,20 @@ public class IterableInboxMessageFragment extends Fragment {
         loadMessage();
         return view;
     }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(0, bars.top, 0, bars.bottom);
+            return insets;
+        });
+
+        ViewCompat.requestApplyInsets(view);
+    }
+
 
     private IterableInAppMessage getMessageById(String messageId) {
         List<IterableInAppMessage> messages = IterableApi.getInstance().getInAppManager().getMessages();
