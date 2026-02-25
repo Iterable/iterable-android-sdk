@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.AndroidRuntimeException;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -200,9 +201,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             applyWindowGravity(getDialog().getWindow(), "onCreateView");
         }
 
-        webView = new IterableWebView(getContext());
+        webView = createWebViewSafely(getContext());
+        if (webView == null) {
+            dismissAllowingStateLoss();
+            return null;
+        }
         webView.setId(R.id.webView);
-
         webView.createWithHtml(this, htmlString);
 
         if (orientationListener == null) {
@@ -324,7 +328,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      */
     @Override
     public void onStop() {
-        orientationListener.disable();
+        if (orientationListener != null) {
+            orientationListener.disable();
+        }
 
         super.onStop();
     }
@@ -745,6 +751,15 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             return InAppLayout.BOTTOM;
         } else {
             return InAppLayout.CENTER;
+        }
+    }
+
+    private IterableWebView createWebViewSafely(Context context) {
+        try {
+            return new IterableWebView(context);
+        } catch (AndroidRuntimeException e) {
+            IterableLogger.e(TAG, "Failed to create WebView", e);
+            return null;
         }
     }
 }
