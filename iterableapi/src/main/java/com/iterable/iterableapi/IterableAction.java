@@ -14,6 +14,7 @@ public class IterableAction {
 
     /** Open the URL or deep link */
     public static final String ACTION_TYPE_OPEN_URL    = "openUrl";
+    public static final String ACTION_TYPE_OPEN_APP    = "openApp";
 
     private final @NonNull JSONObject config;
 
@@ -67,6 +68,8 @@ public class IterableAction {
     /**
      * If {@link #ACTION_TYPE_OPEN_URL}, the SDK will call {@link IterableUrlHandler} and then try to
      * open the URL if the delegate returned `false` or was not set.
+     *
+     * If {@link #ACTION_TYPE_OPEN_APP}, the SDK will open the app's main activity.
      *
      * For other types, {@link IterableCustomActionHandler} will be called.
      * @return Action type

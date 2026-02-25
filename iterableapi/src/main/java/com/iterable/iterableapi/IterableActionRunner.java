@@ -41,6 +41,8 @@ class IterableActionRunner {
 
             if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
                 return openUri(context, Uri.parse(action.getData()), actionContext);
+            } else if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_APP)) {
+                return false;
             } else {
                 return callCustomActionIfSpecified(action, actionContext);
             }
