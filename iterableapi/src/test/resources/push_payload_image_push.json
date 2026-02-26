@@ -1,0 +1,11 @@
+{
+  "campaignId": 1234,
+  "templateId": 4321,
+  "messageId": "abc123imagepush",
+  "isGhostPush": false,
+  "attachment-url": "https://example.com/promo-image.jpg",
+  "defaultAction": {
+    "type": "openUrl",
+    "data": "https://example.com"
+  }
+}

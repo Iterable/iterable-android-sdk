@@ -87,6 +87,20 @@ class IterableNotificationHelper {
         return instance.isEmptyBody(extras);
     }
 
+    /**
+     * Returns whether the notification payload includes an image attachment URL,
+     * meaning display requires a network image download (long-running work).
+     * @param extras what is inside the bundle
+     * @return if it has an attachment url
+     */
+    static boolean hasAttachmentUrl(Bundle extras) {
+        return instance.hasAttachmentUrl(extras);
+    }
+
+    static Bundle removePushImageFromBundle(Bundle extras) {
+        return instance.removePushImageFromBundle(extras);
+    }
+
     static Bundle mapToBundle(Map<String, String> map) {
         Bundle bundle = new Bundle();
         for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -98,6 +112,11 @@ class IterableNotificationHelper {
     static class IterableNotificationHelperImpl {
 
         public IterableNotificationBuilder createNotification(Context context, Bundle extras) {
+            if (extras == null) {
+                IterableLogger.w(IterableNotificationBuilder.TAG, "Notification extras is null. Skipping.");
+                return null;
+            }
+
             String applicationName = context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
             String title = null;
             String notificationBody = null;
@@ -436,7 +455,7 @@ class IterableNotificationHelper {
 
         boolean isGhostPush(Bundle extras) {
             boolean isGhostPush = false;
-            if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
                 String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
                 IterableNotificationData data = new IterableNotificationData(iterableData);
                 isGhostPush = data.getIsGhostPush();
@@ -447,11 +466,49 @@ class IterableNotificationHelper {
 
         boolean isEmptyBody(Bundle extras) {
             String notificationBody = "";
-            if (extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+            if (extras != null && extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
                 notificationBody = extras.getString(IterableConstants.ITERABLE_DATA_BODY, "");
             }
 
             return notificationBody.isEmpty();
+        }
+
+        @Nullable
+        private JSONObject getIterableJsonFromBundle(Bundle extras) {
+            if (extras == null || !extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
+                return null;
+            }
+            try {
+                String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
+                return new JSONObject(iterableData);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        boolean hasAttachmentUrl(Bundle extras) {
+            JSONObject iterableJson = getIterableJsonFromBundle(extras);
+            if (iterableJson == null) {
+                return false;
+            }
+            String attachmentUrl = iterableJson.optString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE, "");
+            return !attachmentUrl.isEmpty();
+        }
+
+        Bundle removePushImageFromBundle(Bundle extras) {
+            JSONObject iterableJson = getIterableJsonFromBundle(extras);
+            if (iterableJson == null) {
+                return extras;
+            }
+            try {
+                Bundle newExtras = new Bundle(extras);
+                iterableJson.remove(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
+                newExtras.putString(IterableConstants.ITERABLE_DATA_KEY, iterableJson.toString());
+                return newExtras;
+            } catch (Exception e) {
+                IterableLogger.e("IterableNotificationHelper", "Failed to remove push image from bundle", e);
+                return extras;
+            }
         }
     }
 
