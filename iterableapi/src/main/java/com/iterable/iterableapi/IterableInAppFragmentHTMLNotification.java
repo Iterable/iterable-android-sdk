@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -16,7 +17,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.AndroidRuntimeException;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Gravity;
@@ -757,8 +757,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private IterableWebView createWebViewSafely(Context context) {
         try {
             return new IterableWebView(context);
-        } catch (AndroidRuntimeException e) {
-            IterableLogger.e(TAG, "Failed to create WebView", e);
+        } catch (Resources.NotFoundException e) {
+            IterableLogger.e(TAG, "Failed to create WebView - system WebView resource issue", e);
+            return null;
+        } catch (RuntimeException e) {
+            IterableLogger.e(TAG, "Failed to create WebView - unexpected error", e);
             return null;
         }
     }
