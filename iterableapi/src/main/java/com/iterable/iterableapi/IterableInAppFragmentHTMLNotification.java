@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -200,9 +201,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             applyWindowGravity(getDialog().getWindow(), "onCreateView");
         }
 
-        webView = new IterableWebView(getContext());
+        webView = createWebViewSafely(getContext());
+        if (webView == null) {
+            dismissAllowingStateLoss();
+            return null;
+        }
         webView.setId(R.id.webView);
-
         webView.createWithHtml(this, htmlString);
 
         if (orientationListener == null) {
@@ -324,7 +328,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
      */
     @Override
     public void onStop() {
-        orientationListener.disable();
+        if (orientationListener != null) {
+            orientationListener.disable();
+        }
 
         super.onStop();
     }
@@ -745,6 +751,18 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             return InAppLayout.BOTTOM;
         } else {
             return InAppLayout.CENTER;
+        }
+    }
+
+    private IterableWebView createWebViewSafely(Context context) {
+        try {
+            return new IterableWebView(context);
+        } catch (Resources.NotFoundException e) {
+            IterableLogger.e(TAG, "Failed to create WebView - system WebView resource issue", e);
+            return null;
+        } catch (RuntimeException e) {
+            IterableLogger.e(TAG, "Failed to create WebView - unexpected error", e);
+            return null;
         }
     }
 }
