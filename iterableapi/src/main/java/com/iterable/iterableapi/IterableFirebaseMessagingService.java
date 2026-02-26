@@ -162,9 +162,19 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private static void handleNow(@NonNull Context context, @NonNull Bundle extras) {
+        Bundle safeExtras = extras;
+
+        if (IterableNotificationHelper.hasAttachmentUrl(extras)) {
+            IterableLogger.w(TAG, "image found when handling on main thread, removing it for safe handling");
+            safeExtras = IterableNotificationHelper.removePushImageFromBundle(extras);
+        }
+
         try {
-            IterableNotificationBuilder notificationBuilder = IterableNotificationHelper.createNotification(
-                    context.getApplicationContext(), extras);
+            IterableNotificationBuilder notificationBuilder = IterableNotificationHelper
+                .createNotification(
+                    context.getApplicationContext(),
+                    safeExtras
+                );
             if (notificationBuilder != null) {
                 IterableNotificationHelper.postNotificationOnDevice(context, notificationBuilder);
             }

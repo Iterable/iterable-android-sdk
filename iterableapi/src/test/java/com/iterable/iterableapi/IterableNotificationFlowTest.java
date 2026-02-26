@@ -355,7 +355,7 @@ public class IterableNotificationFlowTest extends BaseTest {
     // ========================================================================
 
     @Test
-    public void testPlainTextNotificationIsHandledDirectly() {
+    public void testPlainTextNotificationIsHandledDirectly() throws Exception {
         when(helperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
         when(helperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();

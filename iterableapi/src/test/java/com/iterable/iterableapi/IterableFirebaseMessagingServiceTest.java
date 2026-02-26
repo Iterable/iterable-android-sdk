@@ -214,4 +214,53 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         // Verify the notification was processed
         verify(notificationHelperSpy, atLeastOnce()).createNotification(eq(getContext()), any(Bundle.class));
     }
+
+    @Test
+    public void testRemovePushImageFromBundle() throws Exception {
+        when(notificationHelperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.removePushImageFromBundle(any(Bundle.class))).thenCallRealMethod();
+
+        // Create a bundle with an attachment URL
+        Bundle bundleWithImage = new Bundle();
+        bundleWithImage.putString(IterableConstants.ITERABLE_DATA_BODY, "Image notification");
+        bundleWithImage.putString(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_image_push.json"));
+
+        // Verify the bundle has an attachment URL
+        assertTrue("Bundle should have attachment URL", notificationHelperSpy.hasAttachmentUrl(bundleWithImage));
+
+        // Remove the image from the bundle
+        Bundle bundleWithoutImage = notificationHelperSpy.removePushImageFromBundle(bundleWithImage);
+
+        // Verify the returned bundle no longer has an attachment URL
+        assertFalse("Bundle should not have attachment URL after removal",
+                    notificationHelperSpy.hasAttachmentUrl(bundleWithoutImage));
+
+        // Verify the original bundle is not modified (immutable pattern)
+        assertTrue("Original bundle should still have attachment URL",
+                   notificationHelperSpy.hasAttachmentUrl(bundleWithImage));
+    }
+
+    @Test
+    public void testRemovePushImageFromBundleWithNullBundle() throws Exception {
+        when(notificationHelperSpy.removePushImageFromBundle(any())).thenCallRealMethod();
+
+        // Test with null bundle
+        Bundle result = notificationHelperSpy.removePushImageFromBundle(null);
+        assertEquals("Should return null for null input", null, result);
+    }
+
+    @Test
+    public void testRemovePushImageFromBundleWithoutIterableData() throws Exception {
+        when(notificationHelperSpy.removePushImageFromBundle(any(Bundle.class))).thenCallRealMethod();
+
+        // Create a bundle without Iterable data
+        Bundle bundleWithoutIterableData = new Bundle();
+        bundleWithoutIterableData.putString("someKey", "someValue");
+
+        // Remove the image (should return the same bundle)
+        Bundle result = notificationHelperSpy.removePushImageFromBundle(bundleWithoutIterableData);
+
+        // Should return the original bundle unchanged
+        assertEquals("Should return the same bundle when no Iterable data", bundleWithoutIterableData, result);
+    }
 }

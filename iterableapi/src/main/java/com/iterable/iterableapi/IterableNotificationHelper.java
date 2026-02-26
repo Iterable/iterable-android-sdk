@@ -97,6 +97,10 @@ class IterableNotificationHelper {
         return instance.hasAttachmentUrl(extras);
     }
 
+    static Bundle removePushImageFromBundle(Bundle extras) {
+        return instance.removePushImageFromBundle(extras);
+    }
+
     static Bundle mapToBundle(Map<String, String> map) {
         Bundle bundle = new Bundle();
         for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -469,17 +473,41 @@ class IterableNotificationHelper {
             return notificationBody.isEmpty();
         }
 
-        boolean hasAttachmentUrl(Bundle extras) {
+        @Nullable
+        private JSONObject getIterableJsonFromBundle(Bundle extras) {
             if (extras == null || !extras.containsKey(IterableConstants.ITERABLE_DATA_KEY)) {
-                return false;
+                return null;
             }
             try {
                 String iterableData = extras.getString(IterableConstants.ITERABLE_DATA_KEY);
-                JSONObject iterableJson = new JSONObject(iterableData);
-                String attachmentUrl = iterableJson.optString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE, "");
-                return !attachmentUrl.isEmpty();
+                return new JSONObject(iterableData);
             } catch (Exception e) {
+                return null;
+            }
+        }
+
+        boolean hasAttachmentUrl(Bundle extras) {
+            JSONObject iterableJson = getIterableJsonFromBundle(extras);
+            if (iterableJson == null) {
                 return false;
+            }
+            String attachmentUrl = iterableJson.optString(IterableConstants.ITERABLE_DATA_PUSH_IMAGE, "");
+            return !attachmentUrl.isEmpty();
+        }
+
+        Bundle removePushImageFromBundle(Bundle extras) {
+            JSONObject iterableJson = getIterableJsonFromBundle(extras);
+            if (iterableJson == null) {
+                return extras;
+            }
+            try {
+                Bundle newExtras = new Bundle(extras);
+                iterableJson.remove(IterableConstants.ITERABLE_DATA_PUSH_IMAGE);
+                newExtras.putString(IterableConstants.ITERABLE_DATA_KEY, iterableJson.toString());
+                return newExtras;
+            } catch (Exception e) {
+                IterableLogger.e("IterableNotificationHelper", "Failed to remove push image from bundle", e);
+                return extras;
             }
         }
     }
