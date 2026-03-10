@@ -34,6 +34,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
@@ -77,6 +78,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private double inAppBackgroundAlpha;
     private String inAppBackgroundColor;
     private boolean hostIsEdgeToEdge;
+    private IterableInAppDisplayMode displayMode = IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
 
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
         return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
@@ -148,6 +150,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
 
         notification = this;
+        displayMode = resolveDisplayMode();
     }
 
     @NonNull
@@ -176,7 +179,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
 
         hostIsEdgeToEdge = isHostActivityEdgeToEdge();
-        configureSystemBarBehavior(dialog.getWindow());
+        configureSystemBarsForMode(dialog.getWindow());
         return dialog;
     }
 
@@ -288,7 +291,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN && hostIsEdgeToEdge) {
+        if (shouldApplySystemBarInsets()) {
             ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
                 Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 v.setPadding(0, sysBars.top, 0, sysBars.bottom);
@@ -500,11 +503,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         };
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            webView.postOnAnimationDelayed(dismissWebViewRunnable, 400);
-        } else {
-            webView.postDelayed(dismissWebViewRunnable, 400);
-        }
+        webView.postOnAnimationDelayed(dismissWebViewRunnable, 400);
     }
 
     private void processMessageRemoval() {
@@ -684,19 +683,92 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
     }
 
-    private void configureSystemBarBehavior(Window window) {
+    private IterableInAppDisplayMode resolveDisplayMode() {
+        try {
+            IterableConfig config = IterableApi.sharedInstance.config;
+            if (config != null) {
+                return config.inAppDisplayMode;
+            }
+        } catch (Exception e) {
+            IterableLogger.w(TAG, "Could not resolve display mode from config, using default");
+        }
+        return IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void configureSystemBarsForMode(Window window) {
         if (window == null) return;
+        InAppLayout layout = getInAppLayout(insetPadding);
+
+        switch (displayMode) {
+            case FORCE_EDGE_TO_EDGE:
+                applyEdgeToEdge(window);
+                break;
+
+            case FORCE_FULLSCREEN:
+                hideStatusBar(window);
+                break;
+
+            case FORCE_RESPECT_BOUNDS:
+                applyRespectBounds(window);
+                break;
+
+            case FOLLOW_APP_LAYOUT:
+            default:
+                configureSystemBarsFollowingApp(window, layout);
+                break;
+        }
+    }
+
+    private void applyEdgeToEdge(Window window) {
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        // On API 35+, system bars are transparent by default; these setters are no-ops
+        if (Build.VERSION.SDK_INT < 35) {
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void hideStatusBar(Window window) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
+            controller.hide(WindowInsetsCompat.Type.statusBars());
+            controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        } else {
+            window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
+    }
+
+    private void applyRespectBounds(Window window) {
+        WindowCompat.setDecorFitsSystemWindows(window, true);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void configureSystemBarsFollowingApp(Window window, InAppLayout layout) {
         Activity activity = getActivity();
         if (activity == null || activity.getWindow() == null) return;
 
         if (hostIsEdgeToEdge) {
-            WindowCompat.setDecorFitsSystemWindows(window, false);
-            window.setStatusBarColor(Color.TRANSPARENT);
-            window.setNavigationBarColor(Color.TRANSPARENT);
+            applyEdgeToEdge(window);
         } else {
-            window.setStatusBarColor(activity.getWindow().getStatusBarColor());
-            window.setNavigationBarColor(activity.getWindow().getNavigationBarColor());
+            if (Build.VERSION.SDK_INT < 35) {
+                window.setStatusBarColor(activity.getWindow().getStatusBarColor());
+                window.setNavigationBarColor(activity.getWindow().getNavigationBarColor());
+            }
         }
+    }
+
+    private boolean shouldApplySystemBarInsets() {
+        InAppLayout layout = getInAppLayout(insetPadding);
+
+        return switch (displayMode) {
+            case FORCE_EDGE_TO_EDGE, FORCE_FULLSCREEN -> false;
+            case FORCE_RESPECT_BOUNDS -> true;
+            default ->
+                layout != InAppLayout.FULLSCREEN && hostIsEdgeToEdge;
+        };
     }
 
     private boolean isHostActivityEdgeToEdge() {
@@ -714,6 +786,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     private boolean hasEdgeToEdgeLegacyFlags(Activity activity) {
         int flags = activity.getWindow().getDecorView().getSystemUiVisibility();
         return (flags & View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN) != 0;
