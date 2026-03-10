@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -17,8 +16,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.DisplayMetrics;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
@@ -36,7 +33,9 @@ import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.DialogFragment;
 
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
@@ -79,6 +78,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private boolean shouldAnimate;
     private double inAppBackgroundAlpha;
     private String inAppBackgroundColor;
+    private boolean hostIsEdgeToEdge;
+    private IterableInAppDisplayMode displayMode = IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
 
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
         return IterableInAppFragmentHTMLNotification.createInstance(htmlString, callbackOnCancel, clickCallback, location, messageId, backgroundAlpha, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
@@ -150,6 +151,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         }
 
         notification = this;
+        displayMode = resolveDisplayMode();
     }
 
     @NonNull
@@ -177,13 +179,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             applyWindowGravity(dialog.getWindow(), "onCreateDialog");
         }
 
-        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
-            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        } else if (getInAppLayout(insetPadding) != InAppLayout.TOP) {
-            // For TOP layout in-app, status bar will be opaque so that the in-app content does not overlap with translucent status bar.
-            // For other non-fullscreen in-apps layouts (BOTTOM and CENTER), status bar will be translucent
-            dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        }
+        hostIsEdgeToEdge = isHostActivityEdgeToEdge();
+        configureSystemBarsForMode(dialog.getWindow());
         return dialog;
     }
 
@@ -191,10 +188,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-        if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
-            getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
 
         // Set initial window gravity based on inset padding (only for non-fullscreen)
         if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
@@ -299,9 +292,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // Handle edge-to-edge insets with modern approach (only for non-fullscreen)
-        // Full screen in-apps should not have padding from system bars
-        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
+        if (shouldApplySystemBarInsets()) {
             ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
                 Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 v.setPadding(0, sysBars.top, 0, sysBars.bottom);
@@ -513,11 +504,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             }
         };
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            webView.postOnAnimationDelayed(dismissWebViewRunnable, 400);
-        } else {
-            webView.postDelayed(dismissWebViewRunnable, 400);
-        }
+        webView.postOnAnimationDelayed(dismissWebViewRunnable, 400);
     }
 
     private void processMessageRemoval() {
@@ -606,30 +593,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         return;
                     }
 
-                    DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
                     Window window = notification.getDialog().getWindow();
                     Rect insetPadding = notification.insetPadding;
 
-                    WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-                    Display display = wm.getDefaultDisplay();
-                    Point size = new Point();
-
-                    // Get the correct screen size based on api level
-                    // https://stackoverflow.com/questions/35780980/getting-the-actual-screen-height-android
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        display.getRealSize(size);
-                    } else {
-                        display.getSize(size);
-                    }
-
-                    int webViewWidth = size.x;
-                    int webViewHeight = size.y;
-
-                    //Check if the dialog is full screen
                     if (insetPadding.bottom == 0 && insetPadding.top == 0) {
-                        //Handle full screen
-                        window.setLayout(webViewWidth, webViewHeight);
-                        getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
                     } else {
                         // Resize the WebView directly with explicit size
                         float relativeHeight = height * getResources().getDisplayMetrics().density;
@@ -714,6 +682,130 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             // Math.floor((-46 + 45) / 90.0) = Math.floor(-1/90.0) = -1, so -1 * 90 = -90
             return (int) (Math.floor((orientation + 45.0) / 90.0) * 90);
         }
+    }
+
+    private IterableInAppDisplayMode resolveDisplayMode() {
+        try {
+            IterableConfig config = IterableApi.sharedInstance.config;
+            if (config != null) {
+                return config.inAppDisplayMode;
+            }
+        } catch (Exception e) {
+            IterableLogger.w(TAG, "Could not resolve display mode from config, using default");
+        }
+        return IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void configureSystemBarsForMode(Window window) {
+        if (window == null) return;
+        InAppLayout layout = getInAppLayout(insetPadding);
+
+        switch (displayMode) {
+            case FORCE_EDGE_TO_EDGE:
+                applyEdgeToEdge(window);
+                break;
+
+            case FORCE_FULLSCREEN:
+                hideStatusBar(window);
+                break;
+
+            case FORCE_RESPECT_BOUNDS:
+                applyRespectBounds(window);
+                break;
+
+            case FOLLOW_APP_LAYOUT:
+            default:
+                configureSystemBarsFollowingApp(window, layout);
+                break;
+        }
+    }
+
+    private void applyEdgeToEdge(Window window) {
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        // On API 35+, system bars are transparent by default; these setters are no-ops
+        if (Build.VERSION.SDK_INT < 35) {
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void hideStatusBar(Window window) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
+            controller.hide(WindowInsetsCompat.Type.statusBars());
+            controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        } else {
+            window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
+    }
+
+    private void applyRespectBounds(Window window) {
+        WindowCompat.setDecorFitsSystemWindows(window, true);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void configureSystemBarsFollowingApp(Window window, InAppLayout layout) {
+        Activity activity = getActivity();
+        if (activity == null || activity.getWindow() == null) return;
+
+        if (hostIsEdgeToEdge) {
+            applyEdgeToEdge(window);
+        } else {
+            if (Build.VERSION.SDK_INT < 35) {
+                window.setStatusBarColor(activity.getWindow().getStatusBarColor());
+                window.setNavigationBarColor(activity.getWindow().getNavigationBarColor());
+            }
+        }
+    }
+
+    private boolean shouldApplySystemBarInsets() {
+        InAppLayout layout = getInAppLayout(insetPadding);
+
+        return switch (displayMode) {
+            case FORCE_EDGE_TO_EDGE, FORCE_FULLSCREEN -> false;
+            case FORCE_RESPECT_BOUNDS -> true;
+            default ->
+                layout != InAppLayout.FULLSCREEN && hostIsEdgeToEdge;
+        };
+    }
+
+    private boolean isHostActivityEdgeToEdge() {
+        Activity activity = getActivity();
+        if (activity == null || activity.getWindow() == null) return false;
+
+        if (hasEdgeToEdgeLegacyFlags(activity)) {
+            return true;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return isContentDrawnBehindSystemBars(activity);
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean hasEdgeToEdgeLegacyFlags(Activity activity) {
+        int flags = activity.getWindow().getDecorView().getSystemUiVisibility();
+        return (flags & View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN) != 0;
+    }
+
+    private boolean isContentDrawnBehindSystemBars(Activity activity) {
+        View contentView = activity.findViewById(android.R.id.content);
+        if (contentView == null) return false;
+
+        int contentTop = getViewTopPositionInWindow(contentView);
+        boolean statusBarPushesContentDown = contentTop > 0;
+        return !statusBarPushesContentDown;
+    }
+
+    private int getViewTopPositionInWindow(View view) {
+        int[] position = new int[2];
+        view.getLocationInWindow(position);
+        return position[1];
     }
 
     /**
