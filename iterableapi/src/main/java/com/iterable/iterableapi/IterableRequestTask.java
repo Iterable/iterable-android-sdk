@@ -207,23 +207,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                         IterableApi.getInstance().getAuthManager().handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse));
 
-                        // [F] When autoRetry is enabled and this is an offline task, skip the inline
-                        // retry. The task stays in the DB and IterableTaskRunner will retry it once
-                        // a valid JWT is obtained via the AuthTokenReadyListener callback.
-                        // For online requests or when autoRetry is disabled, use the existing inline retry.
-                        boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
-                        if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
-                            // Schedule a delayed token refresh (respects retry policy).
-                            // Do NOT retry the request inline -- IterableTaskRunner will handle
-                            // the retry after the AuthTokenReadyListener callback fires.
-                            IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
-                            authManager.setIsLastAuthTokenValid(false);
-                            long retryInterval = authManager.getNextRetryInterval();
-                            authManager.scheduleAuthTokenRefresh(retryInterval, false, null);
-                        } else {
-                            // Existing behavior: retry request inline after obtaining new token
-                            requestNewAuthTokenAndRetry(iterableApiRequest);
-                        }
+                        handleJwtAuthRetry(iterableApiRequest);
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -275,6 +259,24 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             IterableLogger.v(TAG, "======================================");
         }
         return apiResponse;
+    }
+
+    /**
+     * When autoRetry is enabled and this is an offline task, skip the inline retry.
+     * The task stays in the DB and IterableTaskRunner will retry it once a valid JWT
+     * is obtained via the AuthTokenReadyListener callback.
+     * For online requests or when autoRetry is disabled, use the existing inline retry.
+     */
+    private static void handleJwtAuthRetry(IterableApiRequest iterableApiRequest) {
+        boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
+        if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
+            IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+            authManager.setIsLastAuthTokenValid(false);
+            long retryInterval = authManager.getNextRetryInterval();
+            authManager.scheduleAuthTokenRefresh(retryInterval, false, null);
+        } else {
+            requestNewAuthTokenAndRetry(iterableApiRequest);
+        }
     }
 
     private static String getBaseUrl() {

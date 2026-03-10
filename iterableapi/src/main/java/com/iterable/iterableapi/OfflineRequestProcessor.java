@@ -48,7 +48,20 @@ class OfflineRequestProcessor implements RequestProcessor {
         try {
             IterableApi.getInstance().getAuthManager().addAuthTokenReadyListener(taskRunner);
         } catch (Exception e) {
-            IterableLogger.d("OfflineRequestProcessor", "AuthManager not available yet for listener registration");
+            IterableLogger.w("OfflineRequestProcessor", "Failed to register auth token listener. " +
+                    "Auto-retry on JWT failure will not work until AuthManager is available.");
+        }
+    }
+
+    /**
+     * Unregisters the auth token listener to prevent stale listener accumulation
+     * when the processor is replaced (e.g., when offline mode is toggled).
+     */
+    void dispose() {
+        try {
+            IterableApi.getInstance().getAuthManager().removeAuthTokenReadyListener(taskRunner);
+        } catch (Exception e) {
+            IterableLogger.w("OfflineRequestProcessor", "Failed to unregister auth token listener on dispose.");
         }
     }
 

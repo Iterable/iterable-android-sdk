@@ -142,7 +142,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 return;
             }
 
-            boolean proceed = processTask(task);
+            boolean proceed = processTask(task, autoRetry);
             if (!proceed) {
                 // Only schedule timed retry for non-auth failures.
                 // Auth failures will resume via onAuthTokenReady() callback.
@@ -155,7 +155,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     }
 
     @WorkerThread
-    private boolean processTask(@NonNull IterableTask task) {
+    private boolean processTask(@NonNull IterableTask task, boolean autoRetry) {
         isPausedForAuth = false;
 
         if (task.taskType == IterableTaskType.API) {
@@ -172,8 +172,6 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 IterableLogger.e(TAG, "Error while processing request task", e);
                 healthMonitor.onDBError();
             }
-
-            boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
 
             if (response != null) {
                 if (response.success) {
