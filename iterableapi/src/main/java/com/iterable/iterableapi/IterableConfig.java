@@ -141,6 +141,12 @@ public class IterableConfig {
     final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     /**
+     * Controls how in-app messages interact with the system bars (status bar, navigation bar).
+     * Defaults to {@link IterableInAppDisplayMode#FOLLOW_APP_LAYOUT}.
+     */
+    final IterableInAppDisplayMode inAppDisplayMode;
+
+    /**
      * Base URL for Webview content loading. Specifically used to enable CORS for external resources.
      * If null or empty, defaults to empty string (original behavior with about:blank origin).
      * Set this to according to your CORS settings for example (e.g., "https://app.iterable.com") to allow external resource loading.
@@ -183,6 +189,7 @@ public class IterableConfig {
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
         webViewBaseUrl = builder.webViewBaseUrl;
+        inAppDisplayMode = builder.inAppDisplayMode;
     }
 
     public static class Builder {
@@ -211,6 +218,7 @@ public class IterableConfig {
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableUnknownUserHandler iterableUnknownUserHandler;
         private String webViewBaseUrl;
+        private IterableInAppDisplayMode inAppDisplayMode = IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
 
         public Builder() {}
 
@@ -450,6 +458,17 @@ public class IterableConfig {
         @NonNull
         public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
             this.mobileFrameworkInfo = mobileFrameworkInfo;
+            return this;
+        }
+
+        /**
+         * Set how in-app messages interact with the system bars (status bar, navigation bar).
+         * Defaults to {@link IterableInAppDisplayMode#FOLLOW_APP_LAYOUT}, which preserves existing behavior.
+         * @param inAppDisplayMode the display mode for in-app messages
+         */
+        @NonNull
+        public Builder setInAppDisplayMode(@NonNull IterableInAppDisplayMode inAppDisplayMode) {
+            this.inAppDisplayMode = inAppDisplayMode;
             return this;
         }
 
