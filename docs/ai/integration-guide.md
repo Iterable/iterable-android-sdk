@@ -97,7 +97,7 @@ class YourApplication : Application() {
             .setCustomActionHandler(AppCustomActionHandler())
             .setUrlHandler(AppUrlHandler(this))
             .setAllowedProtocols(arrayOf("yourscheme"))          // REQUIRED for custom deep link schemes
-            .setAuthHandler(AppAuthHandler())                     // REQUIRED if JWT key
+            .setAuthHandler(AppAuthHandler { getFreshEmail() })     // REQUIRED if JWT key — see note below
             .setEnableEmbeddedMessaging(true)                     // Only if using embedded messages
             .build()
 
@@ -116,6 +116,9 @@ class YourApplication : Application() {
 
 ### Gotcha: Do NOT call setEmail in the init callback
 The SDK's `IterableAuthManager` has internal retry limits. Calling `setEmail` too early consumes the retry budget, causing `AUTH_TOKEN_MISSING` for all subsequent calls in the same process.
+
+### Gotcha: Auth handler must read the email FRESH every time
+The SDK calls `onAuthTokenRequested()` at unpredictable times (token refresh, retries, etc.). The lambda or function that provides the email to the auth handler must **read from the source of truth every time** (e.g. DataStore, SharedPreferences, database). Do NOT cache the email in a variable at startup and pass that — the cached value will be empty or stale if the user logs in after app launch, causing `AUTH_TOKEN_NULL`.
 
 ---
 
@@ -253,7 +256,38 @@ class AppFirebaseMessagingService : IterableFirebaseMessagingService() {
 ```
 
 ### Runtime permission (Android 13+)
-Request `POST_NOTIFICATIONS` in the app's main activity.
+
+> **Agent note:** This is REQUIRED for push notifications to work on Android 13+ (API 33+). Without it, the system silently blocks all notifications. Add this to the app's main activity (or wherever the app first loads). Adapt it to the app's existing permission-handling pattern if one exists.
+
+```kotlin
+// In your main activity:
+
+private val notificationPermissionLauncher = registerForActivityResult(
+    ActivityResultContracts.RequestPermission()
+) { granted ->
+    Log.d("Iterable", "Notification permission granted: $granted")
+}
+
+// Call this in onCreate():
+private fun requestNotificationPermission() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+}
+```
+
+Required imports:
+```kotlin
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+```
 
 ### Dashboard setup (user must do this)
 - Upload Firebase service account JSON (NOT the deprecated Server Key)
@@ -402,15 +436,17 @@ Before testing ANY channel, the user must configure these in Iterable:
 
 ---
 
-## Top 10 Traps (ordered by severity)
+## Top 12 Traps (ordered by severity)
 
 1. **JWT-required key with no auth handler** → ALL SDK calls silently fail, zero errors
 2. **JWT secret encoding** → use raw UTF-8, not hex-decode, not base64-decode
-3. **Calling setEmail in Application.onCreate init callback** → poisons SDK auth retry state
-4. **Custom URL schemes silently blocked** → must use `setAllowedProtocols`
-5. **`onTokenRegistrationSuccessful` is local, not server** → don't trust it
-6. **Firing setEmail + updateUser + registerForPush simultaneously** → auth race condition. Use `setEmail(email, onSuccess, onFailure)` and chain `updateUser` in `onSuccess`
-7. **Accessing embeddedManager before SDK init** → crash
-8. **Placement IDs are auto-generated** → never hardcode assumed values
-9. **Message Types must exist before templates** → dashboard prerequisite for every channel
-10. **Don't hallucinate Iterable dashboard paths** → defer to user or official docs
+3. **Caching email at startup for the auth handler** → `AUTH_TOKEN_NULL`. The auth handler lambda must read the email fresh from the source of truth (DataStore, SharedPreferences, etc.) every time `onAuthTokenRequested()` is called
+4. **Calling setEmail in Application.onCreate init callback** → poisons SDK auth retry state
+5. **Missing runtime POST_NOTIFICATIONS permission** → push silently fails on Android 13+. Must use `ActivityResultContracts.RequestPermission()` in the main activity
+6. **Custom URL schemes silently blocked** → must use `setAllowedProtocols`
+7. **`onTokenRegistrationSuccessful` is local, not server** → don't trust it
+8. **Firing setEmail + updateUser + registerForPush simultaneously** → auth race condition. Use `setEmail(email, onSuccess, onFailure)` and chain `updateUser` in `onSuccess`
+9. **Accessing embeddedManager before SDK init** → crash
+10. **Placement IDs are auto-generated** → never hardcode assumed values
+11. **Message Types must exist before templates** → dashboard prerequisite for every channel
+12. **Don't hallucinate Iterable dashboard paths** → defer to user or official docs
