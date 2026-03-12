@@ -38,10 +38,12 @@ class OfflineRequestProcessor implements RequestProcessor {
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
         taskStorage = IterableTaskStorage.sharedInstance(context);
         healthMonitor = new HealthMonitor(taskStorage);
+        ApiEndpointClassification classification = IterableApi.getInstance().apiEndpointClassification;
         taskRunner = new IterableTaskRunner(taskStorage,
                 IterableActivityMonitor.getInstance(),
                 networkConnectivityManager,
-                healthMonitor);
+                healthMonitor,
+                classification);
         taskScheduler = new TaskScheduler(taskStorage, taskRunner);
 
         // Register task runner as auth token ready listener for JWT auto-retry support

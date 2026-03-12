@@ -20,6 +20,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     private IterableActivityMonitor activityMonitor;
     private IterableNetworkConnectivityManager networkConnectivityManager;
     private HealthMonitor healthMonitor;
+    private ApiEndpointClassification classification;
 
     private static final int RETRY_INTERVAL_SECONDS = 60;
 
@@ -45,16 +46,26 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     IterableTaskRunner(IterableTaskStorage taskStorage,
                        IterableActivityMonitor activityMonitor,
                        IterableNetworkConnectivityManager networkConnectivityManager,
-                       HealthMonitor healthMonitor) {
+                       HealthMonitor healthMonitor,
+                       ApiEndpointClassification classification) {
         this.taskStorage = taskStorage;
         this.activityMonitor = activityMonitor;
         this.networkConnectivityManager = networkConnectivityManager;
         this.healthMonitor = healthMonitor;
+        this.classification = classification;
         networkThread.start();
         handler = new Handler(networkThread.getLooper(), this);
         taskStorage.addTaskCreatedListener(this);
         networkConnectivityManager.addNetworkListener(this);
         activityMonitor.addCallback(this);
+    }
+
+    // Preserved for backward compatibility with existing tests
+    IterableTaskRunner(IterableTaskStorage taskStorage,
+                       IterableActivityMonitor activityMonitor,
+                       IterableNetworkConnectivityManager networkConnectivityManager,
+                       HealthMonitor healthMonitor) {
+        this(taskStorage, activityMonitor, networkConnectivityManager, healthMonitor, new ApiEndpointClassification());
     }
 
     void addTaskCompletedListener(TaskCompletedListener listener) {
@@ -130,13 +141,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
 
         while (networkConnectivityManager.isConnected()) {
-            // [F] When autoRetry is enabled, also check that auth token is ready before processing
-            if (autoRetry && !IterableApi.getInstance().getAuthManager().isAuthTokenReady()) {
-                IterableLogger.d(TAG, "Auth token not ready, pausing task processing");
-                return;
-            }
-
-            IterableTask task = taskStorage.getNextScheduledTask();
+            IterableTask task = getNextActionableTask(autoRetry);
 
             if (task == null) {
                 return;
@@ -154,10 +159,21 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         }
     }
 
+    private IterableTask getNextActionableTask(boolean autoRetry) {
+        boolean authBlocked = isPausedForAuth ||
+                (autoRetry && !IterableApi.getInstance().getAuthManager().isAuthTokenReady());
+        if (!authBlocked) {
+            return taskStorage.getNextScheduledTask();
+        }
+        return taskStorage.getNextScheduledTaskNotRequiringJwt(classification);
+    }
+
+    void setIsPausedForAuth(boolean paused) {
+        this.isPausedForAuth = paused;
+    }
+
     @WorkerThread
     private boolean processTask(@NonNull IterableTask task, boolean autoRetry) {
-        isPausedForAuth = false;
-
         if (task.taskType == IterableTaskType.API) {
             IterableApiResponse response = null;
             TaskResult result = TaskResult.FAILURE;
@@ -177,7 +193,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 if (response.success) {
                     result = TaskResult.SUCCESS;
                 } else {
-                    // [F] If autoRetry is enabled and response is a 401 JWT error,
+                    // If autoRetry is enabled and response is a 401 JWT error,
                     // retain the task and pause processing until a valid JWT is obtained.
                     if (autoRetry && isJwtFailure(response)) {
                         IterableLogger.d(TAG, "JWT auth failure on task " + task.id + ". Retaining task and pausing processing.");

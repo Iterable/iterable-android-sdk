@@ -48,6 +48,7 @@ public class IterableApi {
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    final ApiEndpointClassification apiEndpointClassification = new ApiEndpointClassification();
     private static final UnknownUserMerge unknownUserMerge = new UnknownUserMerge();
     private @Nullable UnknownUserManager unknownUserManager;
     private @Nullable IterableInAppManager inAppManager;

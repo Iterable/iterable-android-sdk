@@ -27,13 +27,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doReturn;
 import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(TestRunner.class)
@@ -172,9 +172,6 @@ public class IterableTaskRunnerTest extends BaseTest {
 
     // region Auto-Retry on JWT Failure Tests
 
-    /**
-     * Helper to create a JWT 401 error response body matching IterableRequestTask's JWT error codes.
-     */
     private String createJwt401ResponseBody() throws Exception {
         JSONObject body = new JSONObject();
         body.put("code", "InvalidJwtPayload");
@@ -182,9 +179,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         return body.toString();
     }
 
-    /**
-     * Helper to initialize IterableApi with autoRetry enabled and a mock auth handler.
-     */
     private IterableAuthHandler initApiWithAutoRetry(boolean autoRetryEnabled) {
         IterableApi.sharedInstance = new IterableApi();
         final IterableAuthHandler mockAuthHandler = mock(IterableAuthHandler.class);
@@ -219,7 +213,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
 
-        // Server returns 401 with JWT error code
         server.enqueue(new MockResponse()
                 .setResponseCode(401)
                 .setBody(createJwt401ResponseBody()));
@@ -233,14 +226,11 @@ public class IterableTaskRunnerTest extends BaseTest {
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
 
-        // Task should NOT be deleted from DB when autoRetry is enabled
         verify(mockTaskStorage, never()).deleteTask(any(String.class));
 
-        // Completion listener should be called with RETRY result
         shadowOf(getMainLooper()).idle();
         verify(taskCompletedListener).onTaskCompleted(any(String.class), eq(IterableTaskRunner.TaskResult.RETRY), any(IterableApiResponse.class));
 
-        // Auth state should be INVALID
         assertEquals(IterableAuthManager.AuthState.INVALID, IterableApi.getInstance().getAuthManager().getAuthState());
     }
 
@@ -255,7 +245,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
 
-        // Server returns 401 with JWT error code
         server.enqueue(new MockResponse()
                 .setResponseCode(401)
                 .setBody(createJwt401ResponseBody()));
@@ -266,7 +255,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
 
-        // Task should be deleted from DB when autoRetry is disabled (existing behavior)
         shadowOf(getMainLooper()).idle();
         verify(mockTaskStorage).deleteTask(any(String.class));
     }
@@ -275,7 +263,6 @@ public class IterableTaskRunnerTest extends BaseTest {
     public void testAutoRetryEnabled_ProcessingPausesWhenAuthInvalid() throws Exception {
         initApiWithAutoRetry(true);
 
-        // Mark auth as invalid
         IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
 
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
@@ -289,11 +276,9 @@ public class IterableTaskRunnerTest extends BaseTest {
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
 
-        // No request should be made because auth is invalid
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNull(recordedRequest);
 
-        // Task should NOT be deleted since processing was paused
         verify(mockTaskStorage, never()).deleteTask(any(String.class));
     }
 
@@ -301,7 +286,6 @@ public class IterableTaskRunnerTest extends BaseTest {
     public void testAutoRetryEnabled_ProcessingResumesOnAuthTokenReady() throws Exception {
         initApiWithAutoRetry(true);
 
-        // Mark auth as invalid first
         IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
 
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
@@ -311,30 +295,24 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
 
-        // First attempt: auth is invalid, should not process
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
 
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNull(recordedRequest);
 
-        // Register our test taskRunner as a listener so it gets notified
         IterableApi.getInstance().getAuthManager().addAuthTokenReadyListener(taskRunner);
 
-        // Simulate auth token becoming ready: INVALID → VALID via setIsLastAuthTokenValid(true).
-        // This transitions auth state and notifies listeners (including taskRunner).
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
 
         IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(true);
         runHandlerTasks(taskRunner);
 
-        // Now request should be made since auth is valid again
         recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
         assertEquals("/api/test", recordedRequest.getPath());
 
-        // Task should be deleted after successful execution
         verify(mockTaskStorage).deleteTask(any(String.class));
     }
 
@@ -359,7 +337,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
 
-        // Task should be deleted on success even with autoRetry enabled
         verify(mockTaskStorage).deleteTask(any(String.class));
 
         shadowOf(getMainLooper()).idle();
@@ -377,9 +354,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
 
-        // Server returns 401 without JWT-specific error code.
-        // In offline context, the API key is valid (task was queued with it),
-        // so any 401 is treated as a JWT auth issue and the task is retained.
         JSONObject body401 = new JSONObject();
         body401.put("code", "InvalidApiKey");
         body401.put("msg", "Invalid API key");
@@ -393,7 +367,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
 
-        // Any 401 should retain the task when autoRetry is enabled (offline tasks have valid API keys)
         shadowOf(getMainLooper()).idle();
         verify(mockTaskStorage, never()).deleteTask(any(String.class));
     }
@@ -409,7 +382,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
 
-        // Server returns 400 (not 401) - should be treated as a normal failure
         JSONObject body400 = new JSONObject();
         body400.put("msg", "Bad request");
         server.enqueue(new MockResponse()
@@ -422,7 +394,6 @@ public class IterableTaskRunnerTest extends BaseTest {
         RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
 
-        // Non-401 errors should delete the task as a FAILURE
         shadowOf(getMainLooper()).idle();
         verify(mockTaskStorage).deleteTask(any(String.class));
     }
@@ -432,18 +403,14 @@ public class IterableTaskRunnerTest extends BaseTest {
         initApiWithAutoRetry(true);
         IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
 
-        // Register the task runner as a listener
         authManager.addAuthTokenReadyListener(taskRunner);
 
-        // Auth should be ready initially (UNKNOWN state)
         assertTrue(authManager.isAuthTokenReady());
 
-        // Mark invalid
         authManager.setAuthTokenInvalid();
         assertFalse(authManager.isAuthTokenReady());
         assertEquals(IterableAuthManager.AuthState.INVALID, authManager.getAuthState());
 
-        // Mark valid
         authManager.setIsLastAuthTokenValid(true);
         assertTrue(authManager.isAuthTokenReady());
         assertEquals(IterableAuthManager.AuthState.VALID, authManager.getAuthState());
@@ -453,7 +420,6 @@ public class IterableTaskRunnerTest extends BaseTest {
     public void testAutoRetryEnabled_UsesCurrentLiveAuthToken() throws Exception {
         initApiWithAutoRetry(true);
 
-        // Create a task with a stale auth token stored in the DB
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "stale_token_from_db", null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
@@ -461,14 +427,11 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
 
-        // Verify that fromJSON with authTokenOverride replaces the stale token.
-        // We verify by checking the deserialized request object directly.
         JSONObject taskJson = request.toJSONObject();
         IterableApiRequest deserializedRequest = IterableApiRequest.fromJSON(taskJson, "fresh_live_token", null, null);
         assertEquals("fromJSON should use authTokenOverride instead of stored token",
                 "fresh_live_token", deserializedRequest.authToken);
 
-        // Also verify that without override, the original stale token is used
         IterableApiRequest deserializedWithoutOverride = IterableApiRequest.fromJSON(taskJson, null, null, null);
         assertEquals("fromJSON without override should use stored token",
                 "stale_token_from_db", deserializedWithoutOverride.authToken);
@@ -478,7 +441,6 @@ public class IterableTaskRunnerTest extends BaseTest {
     public void testAutoRetryEnabled_MultipleTasksInQueue_PausesAfterFirstJwtFailure() throws Exception {
         initApiWithAutoRetry(true);
 
-        // Create 3 tasks in the queue
         IterableApiRequest request1 = new IterableApiRequest("apiKey", "api/test1", new JSONObject(), "POST", null, null, null);
         IterableApiRequest request2 = new IterableApiRequest("apiKey", "api/test2", new JSONObject(), "POST", null, null, null);
         IterableApiRequest request3 = new IterableApiRequest("apiKey", "api/test3", new JSONObject(), "POST", null, null, null);
@@ -487,36 +449,29 @@ public class IterableTaskRunnerTest extends BaseTest {
         IterableTask task2 = new IterableTask("task2", IterableTaskType.API, request2.toJSONObject().toString());
         IterableTask task3 = new IterableTask("task3", IterableTaskType.API, request3.toJSONObject().toString());
 
-        // Return task1 first, then task2, then task3
         when(mockTaskStorage.getNextScheduledTask()).thenReturn(task1).thenReturn(task2).thenReturn(task3).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
 
-        // First task gets a 401 JWT error
         server.enqueue(new MockResponse()
                 .setResponseCode(401)
                 .setBody(createJwt401ResponseBody()));
-        // Enqueue success responses for task2 and task3 (should NOT be reached)
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
 
-        // Only one request should have been made (task1)
         RecordedRequest recordedRequest1 = server.takeRequest(1, TimeUnit.SECONDS);
         assertNotNull(recordedRequest1);
         assertEquals("/api/test1", recordedRequest1.getPath());
 
-        // Task2 and task3 should NOT have been attempted
         RecordedRequest recordedRequest2 = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNull("Processing should pause after first JWT failure — task2 should not be attempted", recordedRequest2);
+        assertNull("Processing should pause after first JWT failure", recordedRequest2);
 
-        // No tasks should be deleted (task1 retained for retry, task2/task3 never processed)
         verify(mockTaskStorage, never()).deleteTask(any(String.class));
 
-        // Auth state should be INVALID
         assertEquals(IterableAuthManager.AuthState.INVALID, IterableApi.getInstance().getAuthManager().getAuthState());
     }
 
@@ -525,35 +480,148 @@ public class IterableTaskRunnerTest extends BaseTest {
         initApiWithAutoRetry(true);
         IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
 
-        // Use a mock listener to verify notification
         IterableAuthManager.AuthTokenReadyListener mockListener = mock(IterableAuthManager.AuthTokenReadyListener.class);
         authManager.addAuthTokenReadyListener(mockListener);
 
-        // UNKNOWN → INVALID: no notification expected
         authManager.setAuthTokenInvalid();
         verify(mockListener, never()).onAuthTokenReady();
 
-        // INVALID → VALID (via setIsLastAuthTokenValid): notification expected
         authManager.setIsLastAuthTokenValid(true);
         verify(mockListener, times(1)).onAuthTokenReady();
 
-        // VALID → INVALID: no notification expected
         authManager.setAuthTokenInvalid();
-        verify(mockListener, times(1)).onAuthTokenReady(); // still just 1
+        verify(mockListener, times(1)).onAuthTokenReady();
 
-        // INVALID → INVALID: no notification expected
         authManager.setAuthTokenInvalid();
-        verify(mockListener, times(1)).onAuthTokenReady(); // still just 1
+        verify(mockListener, times(1)).onAuthTokenReady();
 
-        // INVALID → UNKNOWN (simulating handleAuthTokenSuccess path via setIsLastAuthTokenValid(false)
-        // then a new token obtained): this doesn't trigger because setIsLastAuthTokenValid(false) doesn't change auth state.
-        // The actual INVALID→UNKNOWN transition happens inside handleAuthTokenSuccess when authHandler returns a token.
-        // We can verify INVALID → VALID again as the primary production path.
         authManager.setIsLastAuthTokenValid(true);
         verify(mockListener, times(2)).onAuthTokenReady();
 
-        // Cleanup
         authManager.removeAuthTokenReadyListener(mockListener);
+    }
+
+    // endregion
+
+    // region Unauthenticated API Bypass Tests
+
+    @Test
+    public void testUnauthenticatedTaskExecutesDuringAuthPause() throws Exception {
+        ApiEndpointClassification classification = new ApiEndpointClassification();
+        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+
+        IterableApiRequest request = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_DISABLE_DEVICE, new JSONObject(), "POST", null, null, null);
+        IterableTask unauthTask = new IterableTask(IterableConstants.ENDPOINT_DISABLE_DEVICE, IterableTaskType.API, request.toJSONObject().toString());
+
+        when(mockTaskStorage.getNextScheduledTaskNotRequiringJwt(classification)).thenReturn(unauthTask).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        runner.setIsPausedForAuth(true);
+        runner.onTaskCreated(null);
+        runHandlerTasks(runner);
+
+        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(recordedRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_DISABLE_DEVICE, recordedRequest.getPath());
+        verify(mockTaskStorage).deleteTask(unauthTask.id);
+    }
+
+    @Test
+    public void testAuthRequiredTaskStaysBlockedDuringAuthPause() throws Exception {
+        ApiEndpointClassification classification = new ApiEndpointClassification();
+        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+
+        when(mockTaskStorage.getNextScheduledTaskNotRequiringJwt(classification)).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+
+        runner.setIsPausedForAuth(true);
+        runner.onTaskCreated(null);
+        runHandlerTasks(runner);
+
+        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNull(recordedRequest);
+        verify(mockTaskStorage, never()).deleteTask(any(String.class));
+    }
+
+    @Test
+    public void testQueueIntegrityAfterAuthPausedProcessing() throws Exception {
+        ApiEndpointClassification classification = new ApiEndpointClassification();
+        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+
+        IterableApiRequest trackRequestA = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject("{\"eventName\":\"A\"}"), "POST", null, null, null);
+        IterableTask trackTaskA = new IterableTask(IterableConstants.ENDPOINT_TRACK, IterableTaskType.API, trackRequestA.toJSONObject().toString());
+
+        IterableApiRequest disableRequest = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_DISABLE_DEVICE, new JSONObject(), "POST", null, null, null);
+        IterableTask disableTask = new IterableTask(IterableConstants.ENDPOINT_DISABLE_DEVICE, IterableTaskType.API, disableRequest.toJSONObject().toString());
+
+        IterableApiRequest trackRequestB = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject("{\"eventName\":\"B\"}"), "POST", null, null, null);
+        IterableTask trackTaskB = new IterableTask(IterableConstants.ENDPOINT_TRACK, IterableTaskType.API, trackRequestB.toJSONObject().toString());
+
+        IterableApiRequest trackRequestC = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject("{\"eventName\":\"C\"}"), "POST", null, null, null);
+        IterableTask trackTaskC = new IterableTask(IterableConstants.ENDPOINT_TRACK, IterableTaskType.API, trackRequestC.toJSONObject().toString());
+
+        when(mockTaskStorage.getNextScheduledTaskNotRequiringJwt(classification)).thenReturn(disableTask).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        runner.setIsPausedForAuth(true);
+        runner.onTaskCreated(null);
+        runHandlerTasks(runner);
+
+        verify(mockTaskStorage).deleteTask(disableTask.id);
+        verify(mockTaskStorage, never()).deleteTask(trackTaskA.id);
+        verify(mockTaskStorage, never()).deleteTask(trackTaskB.id);
+        verify(mockTaskStorage, never()).deleteTask(trackTaskC.id);
+
+        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(recordedRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_DISABLE_DEVICE, recordedRequest.getPath());
+
+        RecordedRequest secondRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNull(secondRequest);
+    }
+
+    @Test
+    public void testAuthRequiredTasksResumeAfterAuthReady() throws Exception {
+        ApiEndpointClassification classification = new ApiEndpointClassification();
+        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+
+        IterableApiRequest trackRequest = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject(), "POST", null, null, null);
+        IterableTask trackTask = new IterableTask(IterableConstants.ENDPOINT_TRACK, IterableTaskType.API, trackRequest.toJSONObject().toString());
+
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+
+        // Phase 1: Auth paused, no unauthenticated tasks available
+        when(mockTaskStorage.getNextScheduledTaskNotRequiringJwt(classification)).thenReturn(null);
+        runner.setIsPausedForAuth(true);
+        runner.onTaskCreated(null);
+        runHandlerTasks(runner);
+
+        verify(mockTaskStorage, never()).deleteTask(any(String.class));
+
+        // Phase 2: Auth ready, track task should now process
+        when(mockTaskStorage.getNextScheduledTask()).thenReturn(trackTask).thenReturn(null);
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        runner.setIsPausedForAuth(false);
+        runner.onTaskCreated(null);
+        runHandlerTasks(runner);
+
+        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(recordedRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK, recordedRequest.getPath());
+        verify(mockTaskStorage).deleteTask(trackTask.id);
     }
 
     // endregion
