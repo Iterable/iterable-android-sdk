@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [3.6.6]
 ### Fixed
 - Fixed push notifications killing the existing activity when opened
 - Fixed in-app message crash caused by WebView creation issues
