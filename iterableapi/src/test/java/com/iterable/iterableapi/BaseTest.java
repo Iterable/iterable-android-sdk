@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider;
 
 import com.iterable.iterableapi.unit.TestRunner;
 
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -21,6 +22,14 @@ public abstract class BaseTest {
 
     @Rule
     public AsyncTaskRule asyncTaskRule = new AsyncTaskRule();
+
+    @After
+    public void baseTestTearDown() {
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+        IterablePushNotificationUtil.clearPendingAction();
+        IterableApi.sharedInstance = new IterableApi();
+    }
 
     protected IterableUtilImpl getIterableUtilSpy() {
         return utilsRule.iterableUtilSpy;

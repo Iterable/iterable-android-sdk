@@ -196,13 +196,15 @@ public class IterableTaskRunnerTest extends BaseTest {
                 .putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetryEnabled)
                 .apply();
 
-        IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
-            @Override
-            public IterableConfig.Builder run(IterableConfig.Builder builder) {
-                return builder
-                        .setAuthHandler(mockAuthHandler);
-            }
-        });
+        // Initialize directly without calling setEmail to avoid triggering an async
+        // auth flow. The null token from the mock handler would race with the test,
+        // and the resulting syncInApp() call would send unexpected requests to the
+        // mock server, breaking assertions that check for no requests.
+        IterableConfig config = new IterableConfig.Builder()
+                .setAutoPushRegistration(false)
+                .setAuthHandler(mockAuthHandler)
+                .build();
+        IterableApi.initialize(context, IterableTestUtils.apiKey, config);
         return mockAuthHandler;
     }
 
