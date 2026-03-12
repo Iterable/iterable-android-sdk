@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fixed push notifications killing the existing activity when opened
 - Fixed in-app message crash caused by WebView creation issues
-- Fixed `BROADCAST_CLOSE_SYSTEM_DIALOGS` permission error on Android 12+ by restricting usage to SDK 30 and below
+- Fixed `BROADCAST_CLOSE_SYSTEM_DIALOGS` permission error on Android 12+ by restricting usage to Android SDK 30 and below
 
 ## [3.6.5]
 ### Fixed
