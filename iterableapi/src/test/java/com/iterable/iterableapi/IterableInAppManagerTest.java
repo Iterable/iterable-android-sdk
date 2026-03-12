@@ -88,8 +88,6 @@ public class IterableInAppManagerTest extends BaseTest {
     public void tearDown() throws IOException {
         server.shutdown();
         server = null;
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
-        IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
     @Ignore("Ignoring due to stalling")
