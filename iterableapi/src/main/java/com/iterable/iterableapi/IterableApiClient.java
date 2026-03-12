@@ -52,17 +52,20 @@ class IterableApiClient {
     }
 
     void setOfflineProcessingEnabled(boolean offlineMode) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (offlineMode) {
-                if (this.requestProcessor == null || this.requestProcessor.getClass() != OfflineRequestProcessor.class) {
-                    this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
-                }
-            } else {
-                if (this.requestProcessor == null || this.requestProcessor.getClass() != OnlineRequestProcessor.class) {
-                    this.requestProcessor = new OnlineRequestProcessor();
-                }
-            }
+        if (offlineMode && this.requestProcessor instanceof OfflineRequestProcessor) {
+            return;
         }
+        if (!offlineMode && this.requestProcessor instanceof OnlineRequestProcessor) {
+            return;
+        }
+
+        if (this.requestProcessor instanceof OfflineRequestProcessor) {
+            ((OfflineRequestProcessor) this.requestProcessor).dispose();
+        }
+
+        this.requestProcessor = offlineMode
+                ? new OfflineRequestProcessor(authProvider.getContext())
+                : new OnlineRequestProcessor();
     }
 
     void getRemoteConfiguration(IterableHelper.IterableActionHandler actionHandler) {
