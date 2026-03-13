@@ -47,7 +47,7 @@ class IterableWebView extends WebView {
         loadDataWithBaseURL(IterableUtil.getWebViewBaseUrl(), html, MIME_TYPE, ENCODING, "");
     }
 
-    interface HTMLNotificationCallbacks {
+    public interface HTMLNotificationCallbacks {
         void onUrlClicked(String url);
         void setLoaded(boolean loaded);
         void runResizeScript();
