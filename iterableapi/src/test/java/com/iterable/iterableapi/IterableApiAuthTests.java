@@ -23,9 +23,14 @@ import static com.iterable.iterableapi.IterableConstants.HEADER_SDK_AUTH_FORMAT;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
+
+import org.mockito.Mockito;
 import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 
 @LooperMode(PAUSED)
@@ -507,6 +512,54 @@ public class IterableApiAuthTests extends BaseTest {
         shadowOf(getMainLooper()).runToEndOfTasks();
 
         // Test passes if no exceptions were thrown and lifecycle methods executed successfully
+    }
+
+    @Test
+    public void testTokenRefreshDoesNotTriggerPushRegistration() throws Exception {
+        IterablePushRegistration.IterablePushRegistrationImpl originalPushImpl = IterablePushRegistration.instance;
+        IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
+
+        try {
+            // Initialize with auth and auto push registration enabled
+            IterableApi.sharedInstance = new IterableApi();
+            authHandler = mock(IterableAuthHandler.class);
+            IterableApi.initialize(getContext(), "apiKey",
+                    new IterableConfig.Builder()
+                            .setAuthHandler(authHandler)
+                            .setAutoPushRegistration(true)
+                            .setPushIntegrationName("pushIntegration")
+                            .build());
+
+            // Initial login: setEmail triggers requestNewAuthToken on executor thread
+            doReturn(validJWT).when(authHandler).onAuthTokenRequested();
+            IterableApi.getInstance().setEmail("test@example.com");
+            // Allow executor thread to complete and main looper to process callbacks
+            Thread.sleep(500);
+            shadowOf(getMainLooper()).idle();
+            shadowOf(getMainLooper()).runToEndOfTasks();
+
+            // Verify initial push registration happened
+            verify(IterablePushRegistration.instance).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+
+            // Reset mock to clear invocation history
+            Mockito.reset(IterablePushRegistration.instance);
+
+            // Trigger auth token refresh with a different JWT
+            doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+            IterableApi.getInstance().getAuthManager().requestNewAuthToken(false, null);
+            // Allow executor thread to complete and main looper to process callbacks
+            Thread.sleep(500);
+            shadowOf(getMainLooper()).idle();
+            shadowOf(getMainLooper()).runToEndOfTasks();
+
+            // Verify the token was actually refreshed
+            assertEquals(newJWT, IterableApi.getInstance().getAuthToken());
+
+            // Assert that push registration was NOT called again on token refresh
+            verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+        } finally {
+            IterablePushRegistration.instance = originalPushImpl;
+        }
     }
 
 }

@@ -137,7 +137,7 @@ public class IterableApi {
     private void checkAndUpdateAuthToken(@Nullable String authToken) {
         // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
         if (config.authHandler != null && authToken != null && authToken != _authToken) {
-            setAuthToken(authToken);
+            updateAuthToken(authToken);
         }
     }
 
@@ -425,20 +425,24 @@ public class IterableApi {
             @Nullable IterableHelper.FailureHandler failureHandler
     ) {
         if (!isInitialized()) {
-            setAuthToken(null);
+            updateAuthToken(null);
             return;
         }
 
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
-            setAuthToken(authToken);
+            updateAuthToken(authToken);
+            completeUserLogin();
             attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
         } else {
-            getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler));
+            getAuthManager().requestNewAuthToken(false, data -> {
+                completeUserLogin();
+                attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
+            });
         }
     }
 
-    private void completeUserLogin() {
+    void completeUserLogin() {
         completeUserLogin(_email, _userId, _authToken);
     }
 
@@ -679,19 +683,16 @@ public class IterableApi {
 
 //region API functions (private/internal)
 //---------------------------------------------------------------------------------------
-    void setAuthToken(String authToken, boolean bypassAuth) {
+
+    /**
+     * Updates the auth token without triggering login side effects (push registration, in-app sync, etc.).
+     * Use this method when you only need to update the token for an already logged-in user.
+     * For initial login, use {@code setEmail(email, authToken)} or {@code setUserId(userId, authToken)}.
+     */
+    public void updateAuthToken(@Nullable String authToken) {
         if (isInitialized()) {
-            if ((authToken != null && !authToken.equalsIgnoreCase(_authToken)) || (_authToken != null && !_authToken.equalsIgnoreCase(authToken))) {
-                _authToken = authToken;
-                // SECURITY: Use completion handler to atomically store and pass validated credentials.
-                // The completion handler receives exact values stored to keychain, preventing TOCTOU
-                // attacks where keychain could be modified between storage and completeUserLogin execution.
-                storeAuthData((email, userId, token) -> completeUserLogin(email, userId, token));
-            } else if (bypassAuth) {
-                // SECURITY: Pass current credentials directly to completeUserLogin.
-                // completeUserLogin will validate authToken presence when JWT auth is enabled.
-                completeUserLogin(_email, _userId, _authToken);
-            }
+            _authToken = authToken;
+            storeAuthData();
         }
     }
 
@@ -1211,8 +1212,24 @@ public class IterableApi {
         });
     }
 
-    public void setAuthToken(String authToken) {
-        setAuthToken(authToken, false);
+    /**
+     * Sets the auth token and triggers login operations (push registration, in-app sync, embedded sync).
+     *
+     * @deprecated This method triggers login side effects beyond just setting the token.
+     * To update the auth token without login side effects, use {@link #updateAuthToken(String)}.
+     * To set credentials and trigger login operations, use {@code setEmail(email, authToken)}
+     * or {@code setUserId(userId, authToken)}.
+     * In a future release, this method will only store the auth token without triggering login operations.
+     */
+    @Deprecated
+    public void setAuthToken(@Nullable String authToken) {
+        if (isInitialized()) {
+            IterableLogger.w(TAG, "setAuthToken() is deprecated. Use updateAuthToken() to update the token, " +
+                    "or setEmail(email, authToken) / setUserId(userId, authToken) for login. " +
+                    "In a future release, this method will only store the auth token without triggering login operations.");
+            _authToken = authToken;
+            storeAuthData(this::completeUserLogin);
+        }
     }
 
     /**
