@@ -204,7 +204,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             }
 
         } else {
-            IterableApi.getInstance().setAuthToken(null, true);
+            IterableApi.getInstance().completeUserLogin();
         }
     }
 
@@ -213,7 +213,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             // Token obtained but not yet verified by a request - set state to UNKNOWN.
             // setAuthState will notify listeners only if previous state was INVALID.
             setAuthState(AuthState.UNKNOWN);
-            IterableApi.getInstance().setAuthToken(authToken);
+            IterableApi.getInstance().updateAuthToken(authToken);
             queueExpirationRefresh(authToken);
 
             if (successCallback != null) {
@@ -221,7 +221,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             }
         } else {
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
-            IterableApi.getInstance().setAuthToken(authToken);
+            IterableApi.getInstance().updateAuthToken(authToken);
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
             return;
         }

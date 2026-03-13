@@ -99,13 +99,13 @@ public class IterableApiAuthSecurityTests extends BaseTest {
         when(api.getInAppManager()).thenReturn(mockInAppManager);
         when(api.getEmbeddedManager()).thenReturn(mockEmbeddedManager);
 
-        // Directly call setAuthToken with null and bypassAuth=true to simulate
+        // Directly call updateAuthToken with null to simulate
         // attempting to bypass with no token (user-controlled bypass scenario)
-        api.setAuthToken(null, true);
+        api.updateAuthToken(null);
 
         shadowOf(getMainLooper()).idle();
 
-        // Verify sensitive operations were NOT called (JWT auth enabled, no token)
+        // Verify sensitive operations were NOT called (updateAuthToken only stores, no login side effects)
         verify(mockInAppManager, never()).syncInApp();
         verify(mockEmbeddedManager, never()).syncMessages();
     }
@@ -246,14 +246,16 @@ public class IterableApiAuthSecurityTests extends BaseTest {
         org.mockito.Mockito.clearInvocations(mockInAppManager, mockEmbeddedManager);
 
         // Now update auth token (simulating token refresh)
+        // updateAuthToken just stores the token — it does not trigger completeUserLogin.
+        // Sensitive operations (syncInApp, syncMessages) are only triggered during login flow.
         final String newToken = "new_jwt_token_here";
-        api.setAuthToken(newToken, false);
+        api.updateAuthToken(newToken);
 
         shadowOf(getMainLooper()).idle();
 
-        // Verify sensitive operations were called with updated token
-        verify(mockInAppManager).syncInApp();
-        verify(mockEmbeddedManager).syncMessages();
+        // Verify sensitive operations were NOT called (updateAuthToken only stores, doesn't trigger login)
+        verify(mockInAppManager, never()).syncInApp();
+        verify(mockEmbeddedManager, never()).syncMessages();
         assertEquals("Token should be updated", newToken, api.getAuthToken());
     }
 
@@ -274,7 +276,7 @@ public class IterableApiAuthSecurityTests extends BaseTest {
         when(api.getEmbeddedManager()).thenReturn(mockEmbeddedManager);
 
         // Try to bypass with no token set
-        api.setAuthToken(null, true);
+        api.updateAuthToken(null);
 
         shadowOf(getMainLooper()).idle();
 

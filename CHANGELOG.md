@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Added `updateAuthToken(String)` method for updating the auth token without triggering login side effects (push registration, in-app sync, embedded sync). Use this when you only need to refresh the token for an already logged-in user.
+
+### Deprecated
+- `setAuthToken(String)` is now deprecated. It still triggers login operations (push registration, in-app sync, embedded sync) for backward compatibility, but will be changed to only store the token in a future release. Migrate to `updateAuthToken(String)` to update the token without side effects, or use `setEmail(email, authToken)` / `setUserId(userId, authToken)` to set credentials and trigger login operations.
+
 ## [3.6.5]
 ### Fixed
 - Fixed IterableEmbeddedView not having an empty constructor and causing crashes
