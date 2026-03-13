@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
+
 import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import org.junit.After;
@@ -46,6 +48,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     @Before
     public void setUp() {
+        getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE).edit().clear().apply();
 
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
@@ -521,6 +524,8 @@ public class IterableApiAuthTests extends BaseTest {
 
         try {
             // Initialize with auth and auto push registration enabled
+            // Clear keychain data from setUp so retrieveEmailAndUserId starts fresh
+            getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE).edit().clear().apply();
             IterableApi.sharedInstance = new IterableApi();
             authHandler = mock(IterableAuthHandler.class);
             IterableApi.initialize(getContext(), "apiKey",

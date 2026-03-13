@@ -1076,6 +1076,9 @@ public class IterableApi {
 
         if (_email != null && _email.equals(email)) {
             checkAndUpdateAuthToken(authToken);
+            _setUserSuccessCallbackHandler = successHandler;
+            _setUserFailureCallbackHandler = failureHandler;
+            onLogin(authToken, email, true, merge, replay, false, failureHandler);
             return;
         }
 
@@ -1146,6 +1149,9 @@ public class IterableApi {
 
         if (_userId != null && _userId.equals(userId)) {
             checkAndUpdateAuthToken(authToken);
+            _setUserSuccessCallbackHandler = successHandler;
+            _setUserFailureCallbackHandler = failureHandler;
+            onLogin(authToken, userId, false, merge, replay, isUnknown, failureHandler);
             return;
         }
 
