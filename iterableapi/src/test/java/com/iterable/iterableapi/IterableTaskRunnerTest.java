@@ -71,6 +71,7 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
         when(mockHealthMonitor.canSchedule()).thenReturn(true);
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
 
@@ -163,6 +164,7 @@ public class IterableTaskRunnerTest extends BaseTest {
         when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
         when(mockHealthMonitor.canProcess()).thenReturn(true);
         when(mockHealthMonitor.canSchedule()).thenReturn(true);
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
 

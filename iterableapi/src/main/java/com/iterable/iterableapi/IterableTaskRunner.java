@@ -203,10 +203,10 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                         return false;
                     }
 
-                    if (isRetriableError(response.errorMessage)) {
-                        result = TaskResult.RETRY;
-                    } else {
+                    if (isPermanentFailure(response)) {
                         result = TaskResult.FAILURE;
+                    } else {
+                        result = TaskResult.RETRY;
                     }
                 }
             }
@@ -233,8 +233,22 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         return null;
     }
 
-    private boolean isRetriableError(String errorMessage) {
-        return errorMessage.contains("failed to connect");
+    /**
+     * Returns true for permanent client errors that should NOT be retried.
+     * 4xx (except 401 JWT handled above, and 429 rate limit) are permanent.
+     * 5xx, network errors (responseCode 0), timeouts, and connection failures are transient.
+     */
+    private boolean isPermanentFailure(IterableApiResponse response) {
+        int code = response.responseCode;
+        if (code == 0) {
+            // No HTTP status — network-level error (timeout, DNS, connection reset). Transient.
+            return false;
+        }
+        if (code == 429) {
+            // Rate limit — server asking us to retry later. Transient.
+            return false;
+        }
+        return code >= 400 && code < 500;
     }
 
     /**
