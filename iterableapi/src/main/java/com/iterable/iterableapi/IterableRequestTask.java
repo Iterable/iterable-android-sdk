@@ -262,18 +262,17 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     /**
-     * When autoRetry is enabled and this is an offline task, skip the inline retry.
-     * The task stays in the DB and IterableTaskRunner will retry it once a valid JWT
-     * is obtained via the AuthTokenReadyListener callback.
+     * When autoRetry is enabled and this is an offline task, do nothing here.
+     * IterableTaskRunner.processTask() is the sole owner of 401 handling for offline tasks:
+     * it calls setAuthTokenInvalid() which invalidates the token and schedules a refresh.
+     * When the new token arrives, onAuthTokenReady() resumes the queue.
      * For online requests or when autoRetry is disabled, use the existing inline retry.
      */
     private static void handleJwtAuthRetry(IterableApiRequest iterableApiRequest) {
         boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
         if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
-            IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
-            authManager.setIsLastAuthTokenValid(false);
-            long retryInterval = authManager.getNextRetryInterval();
-            authManager.scheduleAuthTokenRefresh(retryInterval, false, null);
+            IterableLogger.d(TAG, "Offline task 401 - deferring retry to IterableTaskRunner");
+            return;
         } else {
             requestNewAuthTokenAndRetry(iterableApiRequest);
         }
