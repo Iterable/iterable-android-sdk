@@ -1304,15 +1304,9 @@ public class IterableAsyncInitializationTest {
 
     @Test
     public void testNestedQueueOrExecute_MultipleOverloadChains() throws InterruptedException {
-        CountDownLatch initLatch = new CountDownLatch(1);
-
-        // Start background initialization
-        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
-            @Override
-            public void onSDKInitialized() {
-                initLatch.countDown();
-            }
-        });
+        // Simulate the initializing state deterministically (no actual background init)
+        // This avoids race conditions where init completes before operations are called
+        IterableBackgroundInitializer.simulateInitializingState();
 
         // Call multiple overloaded method chains during initialization
         // Each overload internally delegates to the full signature
@@ -1324,13 +1318,19 @@ public class IterableAsyncInitializationTest {
 
         // Verify operations are queued
         int queuedOps = IterableBackgroundInitializer.getQueuedOperationCount();
-        assertTrue("Should have queued multiple operations", queuedOps >= 5);
+        assertTrue("Should have queued multiple operations, but was " + queuedOps, queuedOps >= 5);
 
-        // Wait for initialization
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        // Simulate initialization completion which processes queued operations
+        IterableBackgroundInitializer.simulateInitializationComplete();
 
-        // All operations should be processed
-        Thread.sleep(200);
+        // Wait for background executor to process all operations
+        for (int i = 0; i < 20; i++) {
+            if (IterableBackgroundInitializer.getQueuedOperationCount() == 0) {
+                break;
+            }
+            Thread.sleep(100);
+        }
+
         assertEquals("All operations should be processed", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 

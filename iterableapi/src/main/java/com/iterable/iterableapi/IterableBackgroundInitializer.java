@@ -377,6 +377,31 @@ class IterableBackgroundInitializer {
     }
 
     /**
+     * Simulate the "initializing" state for testing, without starting actual background init.
+     * This allows tests to deterministically queue operations without race conditions.
+     */
+    @VisibleForTesting
+    static void simulateInitializingState() {
+        synchronized (initLock) {
+            isInitializing = true;
+            isBackgroundInitialized = false;
+        }
+    }
+
+    /**
+     * Simulate initialization completion for testing.
+     * Marks initialization as complete and processes any queued operations.
+     */
+    @VisibleForTesting
+    static void simulateInitializationComplete() {
+        synchronized (initLock) {
+            isBackgroundInitialized = true;
+            isInitializing = false;
+        }
+        operationQueue.processAll(backgroundExecutor);
+    }
+
+    /**
      * Reset background initialization state - for testing only
      */
     @VisibleForTesting

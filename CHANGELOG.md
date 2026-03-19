@@ -2,6 +2,28 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+- Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
+
+## [3.6.6]
+### Fixed
+- Fixed push notifications killing the existing activity when opened
+- Fixed in-app message crash caused by WebView creation issues
+- Fixed `BROADCAST_CLOSE_SYSTEM_DIALOGS` permission error on Android 12+ by restricting usage to Android SDK 30 and below
+
+## [3.6.5]
+### Fixed
+- Fixed IterableEmbeddedView not having an empty constructor and causing crashes
+- Fixed custom actions not working in background when SDK is not initialized
+- Fixed double callback problem for setEmail with auto push registration
+
+## [3.6.4]
+### Fixed
+- Updated `customPayload` of In-App Messages to be `@Nullable`
+
+### Added
+- Made `isIterableDeepLink` method public
+
 ## [3.6.3]
 ### Fixed
 - Improved in-app message sizing and positioning calculations for better stability and performance, especially during device orientation changes

@@ -3,6 +3,12 @@ package com.iterable.iterableapi;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.work.Configuration;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+import androidx.work.testing.SynchronousExecutor;
+import androidx.work.testing.WorkManagerTestInitHelper;
+
 import com.google.firebase.messaging.RemoteMessage;
 
 import org.junit.After;
@@ -13,7 +19,9 @@ import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ServiceController;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockWebServer;
 
@@ -45,6 +53,13 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         IterableTestUtils.createIterableApiNew();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+
+        // Initialize WorkManager for testing with a synchronous executor
+        Configuration config = new Configuration.Builder()
+                .setMinimumLoggingLevel(android.util.Log.DEBUG)
+                .setExecutor(new SynchronousExecutor())
+                .build();
+        WorkManagerTestInitHelper.initializeTestWorkManager(getContext(), config);
 
         controller = Robolectric.buildService(IterableFirebaseMessagingService.class);
         Intent intent = new Intent(getContext(), IterableFirebaseMessagingService.class);
@@ -138,5 +153,114 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_embedded_update.json"));
         controller.get().onMessageReceived(builder.build());
         verify(embeddedManagerSpy, atLeastOnce()).syncMessages();
+    }
+
+    @Test
+    public void testPlainTextNotificationIsHandledDirectly() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.createNotification(any(), any(Bundle.class))).thenCallRealMethod();
+
+        // Plain text push — no attachment-url
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Test notification");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+        controller.get().onMessageReceived(builder.build());
+
+        // Direct path: no WorkManager work should be enqueued
+        WorkManager workManager = WorkManager.getInstance(getContext());
+        List<WorkInfo> workInfos = workManager.getWorkInfosByTag(IterableNotificationWorker.class.getName()).get(5, TimeUnit.SECONDS);
+        assertTrue("Plain text push should not enqueue WorkManager work", workInfos.isEmpty());
+
+        // Notification should still be created and posted directly
+        verify(notificationHelperSpy, atLeastOnce()).createNotification(any(), any(Bundle.class));
+        verify(notificationHelperSpy, atLeastOnce()).postNotificationOnDevice(any(), any(IterableNotificationBuilder.class));
+    }
+
+    @Test
+    public void testImageNotificationUsesWorkManager() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isGhostPush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.isEmptyBody(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
+
+        // Push with attachment-url
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Image notification");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_image_push.json"));
+        controller.get().onMessageReceived(builder.build());
+
+        // WorkManager should have been used for the image download path
+        WorkManager workManager = WorkManager.getInstance(getContext());
+        List<WorkInfo> workInfos = workManager.getWorkInfosByTag(IterableNotificationWorker.class.getName()).get(5, TimeUnit.SECONDS);
+        assertFalse("Image push should enqueue WorkManager work", workInfos.isEmpty());
+    }
+
+    @Test
+    public void testNotificationWorkerProcessesData() throws Exception {
+        when(notificationHelperSpy.isIterablePush(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.createNotification(any(), any(Bundle.class))).thenCallRealMethod();
+
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Worker test message");
+        builder.addData(IterableConstants.ITERABLE_DATA_TITLE, "Worker Test");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+
+        controller.get().onMessageReceived(builder.build());
+
+        // With SynchronousExecutor, work completes immediately
+        // Verify the notification was processed
+        verify(notificationHelperSpy, atLeastOnce()).createNotification(eq(getContext()), any(Bundle.class));
+    }
+
+    @Test
+    public void testRemovePushImageFromBundle() throws Exception {
+        when(notificationHelperSpy.hasAttachmentUrl(any(Bundle.class))).thenCallRealMethod();
+        when(notificationHelperSpy.removePushImageFromBundle(any(Bundle.class))).thenCallRealMethod();
+
+        // Create a bundle with an attachment URL
+        Bundle bundleWithImage = new Bundle();
+        bundleWithImage.putString(IterableConstants.ITERABLE_DATA_BODY, "Image notification");
+        bundleWithImage.putString(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_image_push.json"));
+
+        // Verify the bundle has an attachment URL
+        assertTrue("Bundle should have attachment URL", notificationHelperSpy.hasAttachmentUrl(bundleWithImage));
+
+        // Remove the image from the bundle
+        Bundle bundleWithoutImage = notificationHelperSpy.removePushImageFromBundle(bundleWithImage);
+
+        // Verify the returned bundle no longer has an attachment URL
+        assertFalse("Bundle should not have attachment URL after removal",
+                    notificationHelperSpy.hasAttachmentUrl(bundleWithoutImage));
+
+        // Verify the original bundle is not modified (immutable pattern)
+        assertTrue("Original bundle should still have attachment URL",
+                   notificationHelperSpy.hasAttachmentUrl(bundleWithImage));
+    }
+
+    @Test
+    public void testRemovePushImageFromBundleWithNullBundle() throws Exception {
+        when(notificationHelperSpy.removePushImageFromBundle(any())).thenCallRealMethod();
+
+        // Test with null bundle
+        Bundle result = notificationHelperSpy.removePushImageFromBundle(null);
+        assertEquals("Should return null for null input", null, result);
+    }
+
+    @Test
+    public void testRemovePushImageFromBundleWithoutIterableData() throws Exception {
+        when(notificationHelperSpy.removePushImageFromBundle(any(Bundle.class))).thenCallRealMethod();
+
+        // Create a bundle without Iterable data
+        Bundle bundleWithoutIterableData = new Bundle();
+        bundleWithoutIterableData.putString("someKey", "someValue");
+
+        // Remove the image (should return the same bundle)
+        Bundle result = notificationHelperSpy.removePushImageFromBundle(bundleWithoutIterableData);
+
+        // Should return the original bundle unchanged
+        assertEquals("Should return the same bundle when no Iterable data", bundleWithoutIterableData, result);
     }
 }

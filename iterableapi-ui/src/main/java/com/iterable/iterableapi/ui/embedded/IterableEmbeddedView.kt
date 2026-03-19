@@ -7,22 +7,49 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
-import com.google.android.flexbox.FlexboxLayout
 import com.iterable.iterableapi.EmbeddedMessageElementsButton
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.iterableapi.ui.R
 
-class IterableEmbeddedView(
-    private var viewType: IterableEmbeddedViewType,
-    private var message: IterableEmbeddedMessage,
-    private var config: IterableEmbeddedViewConfig?
-): Fragment() {
+class IterableEmbeddedView() : Fragment() {
+
+    private lateinit var viewType: IterableEmbeddedViewType
+    private lateinit var message: IterableEmbeddedMessage
+    private var config: IterableEmbeddedViewConfig? = null
+
+    /**
+     * @deprecated This constructor violates Android Fragment best practices and will cause crashes
+     * when the Fragment is recreated by the system (e.g., after configuration changes or process death).
+     * Use [newInstance] factory method instead.
+     *
+     * Migration example:
+     * ```
+     * // Old (unstable / not-recommended):
+     * val fragment = IterableEmbeddedView(viewType, message, config)
+     *
+     * // New (more stable / recommended):
+     * val fragment = IterableEmbeddedView.newInstance(viewType, message, config)
+     * ```
+     *
+     * This constructor will be removed in a future version.
+     */
+    @Deprecated(
+        message = "Use newInstance() factory method instead. This constructor causes crashes when Fragment is recreated by the system.",
+        replaceWith = ReplaceWith("IterableEmbeddedView.newInstance(viewType, message, config)"),
+        level = DeprecationLevel.WARNING
+    )
+    constructor(
+        viewType: IterableEmbeddedViewType,
+        message: IterableEmbeddedMessage,
+        config: IterableEmbeddedViewConfig?
+    ) : this() {
+        arguments = IterableEmbeddedViewArguments.toBundle(viewType, message, config)
+    }
 
     private val defaultBackgroundColor : Int by lazy  { getDefaultColor(viewType, R.color.notification_background_color, R.color.banner_background_color, R.color.banner_background_color) }
     private val defaultBorderColor : Int by lazy { getDefaultColor(viewType, R.color.notification_border_color, R.color.banner_border_color, R.color.banner_border_color) }
@@ -34,6 +61,39 @@ class IterableEmbeddedView(
     private val defaultBodyTextColor: Int by lazy { getDefaultColor(viewType, R.color.notification_text_color, R.color.body_text_color, R.color.body_text_color) }
     private val defaultBorderWidth = 1
     private val defaultBorderCornerRadius = 8f
+
+    companion object {
+        /**
+         * Factory method to create a new instance of IterableEmbeddedView with the required parameters.
+         *
+         * @param viewType The type of embedded view to display
+         * @param message The embedded message to display
+         * @param config Optional configuration for customizing the view appearance
+         * @return A new instance of IterableEmbeddedView
+         */
+        @JvmStatic
+        fun newInstance(
+            viewType: IterableEmbeddedViewType,
+            message: IterableEmbeddedMessage,
+            config: IterableEmbeddedViewConfig? = null
+        ): IterableEmbeddedView {
+            return IterableEmbeddedView().apply {
+                arguments = IterableEmbeddedViewArguments.toBundle(viewType, message, config)
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        arguments?.let { args ->
+            viewType = IterableEmbeddedViewArguments.getViewType(args)
+            message = IterableEmbeddedViewArguments.getMessage(args)
+            config = IterableEmbeddedViewArguments.getConfig(args)
+        } ?: throw IllegalStateException(
+            "IterableEmbeddedView requires arguments. Use newInstance() factory method to create this fragment."
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
