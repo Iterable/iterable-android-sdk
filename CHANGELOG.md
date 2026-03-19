@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 - Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
+- Added `onEmbeddedMessagingSyncSucceeded()` and `onEmbeddedMessagingSyncFailed()` callbacks to `IterableEmbeddedUpdateHandler` for monitoring embedded message sync results.
 
 ## [3.6.6]
 ### Fixed
