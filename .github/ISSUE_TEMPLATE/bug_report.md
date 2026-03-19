@@ -3,7 +3,7 @@ name: Issue report
 about: Create a report to help us improve
 title: ''
 labels: ''
-assignees: 'joaodordio, sumeruchat, Ayyanchira, franco-zalamena-iterable'
+assignees: 'joaodordio, sumeruchat, franco-zalamena-iterable'
 
 ---
 
