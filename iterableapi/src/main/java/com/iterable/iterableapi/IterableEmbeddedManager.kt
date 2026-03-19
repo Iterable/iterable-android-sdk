@@ -78,10 +78,11 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 { data ->
                     try {
                         processEmbeddedMessagesResponse(data)
+                        notifySyncSucceeded()
                     } catch (e: JSONException) {
                         IterableLogger.e(TAG, e.toString())
+                        notifySyncFailed(e.message)
                     }
-                    notifySyncSucceeded()
                 },
                 { reason, data ->
                     handleSyncFailure(reason, data)
