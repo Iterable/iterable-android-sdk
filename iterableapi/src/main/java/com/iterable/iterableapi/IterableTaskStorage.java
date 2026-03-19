@@ -288,6 +288,34 @@ class IterableTaskStorage {
     }
 
     /**
+     * Returns the next scheduled task that does not require JWT authentication.
+     * Iterates tasks ordered by scheduledAt and returns the first one classified
+     * as unauthenticated by the given classification.
+     *
+     * @param classification the endpoint classification to check against
+     * @return next unauthenticated {@link IterableTask}, or null if none found
+     */
+    @Nullable
+    IterableTask getNextScheduledTaskNotRequiringJwt(ApiEndpointClassification classification) {
+        if (!isDatabaseReady()) {
+            return null;
+        }
+        Cursor cursor = database.rawQuery("select * from OfflineTask order by scheduled", null);
+        IterableTask task = null;
+        if (cursor.moveToFirst()) {
+            do {
+                IterableTask candidate = createTaskFromCursor(cursor);
+                if (!candidate.requiresJwt(classification)) {
+                    task = candidate;
+                    break;
+                }
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return task;
+    }
+
+    /**
      * Deletes all the entries from the OfflineTask table.
      */
     void deleteAllTasks() {

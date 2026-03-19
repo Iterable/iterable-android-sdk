@@ -30,19 +30,44 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_TRACK_INAPP_CLOSE,
             IterableConstants.ENDPOINT_TRACK_INBOX_SESSION,
             IterableConstants.ENDPOINT_TRACK_INAPP_DELIVERY,
-            IterableConstants.ENDPOINT_GET_EMBEDDED_MESSAGES,
             IterableConstants.ENDPOINT_INAPP_CONSUME,
+            IterableConstants.ENDPOINT_UPDATE_CART,
+            IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED,
+            IterableConstants.ENDPOINT_TRACK_EMBEDDED_CLICK,
+            IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION,
             IterableConstants.ENDPOINT_DISABLE_DEVICE));
 
     OfflineRequestProcessor(Context context) {
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
         taskStorage = IterableTaskStorage.sharedInstance(context);
         healthMonitor = new HealthMonitor(taskStorage);
+        ApiEndpointClassification classification = IterableApi.getInstance().apiEndpointClassification;
         taskRunner = new IterableTaskRunner(taskStorage,
                 IterableActivityMonitor.getInstance(),
                 networkConnectivityManager,
-                healthMonitor);
+                healthMonitor,
+                classification);
         taskScheduler = new TaskScheduler(taskStorage, taskRunner);
+
+        // Register task runner as auth token ready listener for JWT auto-retry support
+        try {
+            IterableApi.getInstance().getAuthManager().addAuthTokenReadyListener(taskRunner);
+        } catch (Exception e) {
+            IterableLogger.w("OfflineRequestProcessor", "Failed to register auth token listener. " +
+                    "Auto-retry on JWT failure will not work until AuthManager is available.");
+        }
+    }
+
+    /**
+     * Unregisters the auth token listener to prevent stale listener accumulation
+     * when the processor is replaced (e.g., when offline mode is toggled).
+     */
+    void dispose() {
+        try {
+            IterableApi.getInstance().getAuthManager().removeAuthTokenReadyListener(taskRunner);
+        } catch (Exception e) {
+            IterableLogger.w("OfflineRequestProcessor", "Failed to unregister auth token listener on dispose.");
+        }
     }
 
     @VisibleForTesting
