@@ -214,7 +214,8 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
                 .firstOrNull() as? EmbeddedMessageTestActivity
             
             if (activity != null) {
-                val fragment = IterableEmbeddedView(IterableEmbeddedViewType.BANNER, message, null)
+                val fragment =
+                    IterableEmbeddedView.newInstance(IterableEmbeddedViewType.BANNER, message, null)
                 activity.supportFragmentManager.beginTransaction()
                     .replace(R.id.embedded_message_container, fragment)
                     .commitNow()

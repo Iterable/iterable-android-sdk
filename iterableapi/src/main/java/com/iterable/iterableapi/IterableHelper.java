@@ -6,6 +6,8 @@ import androidx.annotation.Nullable;
 
 import org.json.JSONObject;
 
+import java.util.Map;
+
 /**
  * Created by David Truong dt@iterable.com
  */
@@ -33,4 +35,10 @@ public class IterableHelper {
     public interface SuccessAuthHandler {
         void onSuccess(@NonNull String authToken);
     }
+}
+
+class IterableResponse {
+    static final JSONObject setEmailLocalSuccessResponse = new JSONObject(Map.of("message", "setEmail was completed locally."));
+
+    static final JSONObject setReadLocalSuccessResponse = new JSONObject(Map.of("message", "setRead was completed locally."));
 }

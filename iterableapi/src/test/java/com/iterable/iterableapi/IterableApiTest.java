@@ -1199,4 +1199,36 @@ public class IterableApiTest extends BaseTest {
 
     //endregion
 
+    @Test
+    public void testSetEmailWithCallbackAndManualRegisterDeviceToken_NoDoubleCallback() throws Exception {
+        // Setup: Mock server responses
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableConfig config = new IterableConfig.Builder()
+            .setAutoPushRegistration(false)
+            .setPushIntegrationName("testIntegration")
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        IterableHelper.SuccessHandler successHandler = mock(IterableHelper.SuccessHandler.class);
+
+        IterableApi.getInstance().setEmail("test@example.com", successHandler, null);
+
+        verify(successHandler, times(1)).onSuccess(any(JSONObject.class));
+
+        IterableApi.getInstance().registerDeviceToken("test_token");
+
+        Thread.sleep(200);
+        shadowOf(getMainLooper()).idle();
+
+        verify(successHandler, times(1)).onSuccess(any(JSONObject.class));
+
+        RecordedRequest registerRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("Should have made registerDeviceToken request", registerRequest);
+        assertTrue("Should be registerDeviceToken endpoint", registerRequest.getPath().contains("registerDeviceToken"));
+    }
+
+    //endregion
+
 }

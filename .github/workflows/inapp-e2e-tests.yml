@@ -10,7 +10,7 @@ on:
 jobs:
   inapp-e2e-tests:
     name: In-App Message E2E Tests
-    runs-on: macos-13   # Intel host → HVF works, emulator boots
+    runs-on: macos-15-intel
     
     strategy:
       matrix:
