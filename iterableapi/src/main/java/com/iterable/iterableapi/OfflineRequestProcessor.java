@@ -34,8 +34,8 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_UPDATE_CART,
             IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED,
             IterableConstants.ENDPOINT_TRACK_EMBEDDED_CLICK,
-            IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION,
-            IterableConstants.ENDPOINT_DISABLE_DEVICE));
+            IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION
+    ));
 
     OfflineRequestProcessor(Context context) {
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
