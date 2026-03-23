@@ -14,12 +14,13 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback, IterableNetworkConnectivityManager.IterableNetworkMonitorListener, IterableActivityMonitor.AppStateCallback {
+class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Handler.Callback, IterableNetworkConnectivityManager.IterableNetworkMonitorListener, IterableActivityMonitor.AppStateCallback, IterableAuthManager.AuthTokenReadyListener {
     private static final String TAG = "IterableTaskRunner";
     private IterableTaskStorage taskStorage;
     private IterableActivityMonitor activityMonitor;
     private IterableNetworkConnectivityManager networkConnectivityManager;
     private HealthMonitor healthMonitor;
+    private ApiEndpointClassification classification;
 
     private static final int RETRY_INTERVAL_SECONDS = 60;
 
@@ -39,19 +40,32 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     private ArrayList<TaskCompletedListener> taskCompletedListeners = new ArrayList<>();
 
+    // Tracks whether processing is paused due to a JWT auth failure
+    private volatile boolean isPausedForAuth = false;
+
     IterableTaskRunner(IterableTaskStorage taskStorage,
                        IterableActivityMonitor activityMonitor,
                        IterableNetworkConnectivityManager networkConnectivityManager,
-                       HealthMonitor healthMonitor) {
+                       HealthMonitor healthMonitor,
+                       ApiEndpointClassification classification) {
         this.taskStorage = taskStorage;
         this.activityMonitor = activityMonitor;
         this.networkConnectivityManager = networkConnectivityManager;
         this.healthMonitor = healthMonitor;
+        this.classification = classification;
         networkThread.start();
         handler = new Handler(networkThread.getLooper(), this);
         taskStorage.addTaskCreatedListener(this);
         networkConnectivityManager.addNetworkListener(this);
         activityMonitor.addCallback(this);
+    }
+
+    // Preserved for backward compatibility with existing tests
+    IterableTaskRunner(IterableTaskStorage taskStorage,
+                       IterableActivityMonitor activityMonitor,
+                       IterableNetworkConnectivityManager networkConnectivityManager,
+                       HealthMonitor healthMonitor) {
+        this(taskStorage, activityMonitor, networkConnectivityManager, healthMonitor, new ApiEndpointClassification());
     }
 
     void addTaskCompletedListener(TaskCompletedListener listener) {
@@ -87,6 +101,12 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     }
 
+    @Override
+    public void onAuthTokenReady() {
+        isPausedForAuth = false;
+        runNow();
+    }
+
     private synchronized void runNow() {
         handler.removeMessages(OPERATION_PROCESS_TASKS);
         handler.sendEmptyMessage(OPERATION_PROCESS_TASKS);
@@ -118,28 +138,50 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             return;
         }
 
+        boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
+
         while (networkConnectivityManager.isConnected()) {
-            IterableTask task = taskStorage.getNextScheduledTask();
+            IterableTask task = getNextActionableTask(autoRetry);
 
             if (task == null) {
                 return;
             }
 
-            boolean proceed = processTask(task);
+            boolean proceed = processTask(task, autoRetry);
             if (!proceed) {
-                scheduleRetry();
+                // Only schedule timed retry for non-auth failures.
+                // Auth failures will resume via onAuthTokenReady() callback.
+                if (!autoRetry || !isPausedForAuth) {
+                    scheduleRetry();
+                }
                 return;
             }
         }
     }
 
+    private IterableTask getNextActionableTask(boolean autoRetry) {
+        boolean authBlocked = isPausedForAuth ||
+                (autoRetry && !IterableApi.getInstance().getAuthManager().isAuthTokenReady());
+        if (!authBlocked) {
+            return taskStorage.getNextScheduledTask();
+        }
+        return taskStorage.getNextScheduledTaskNotRequiringJwt(classification);
+    }
+
+    void setIsPausedForAuth(boolean paused) {
+        this.isPausedForAuth = paused;
+    }
+
     @WorkerThread
-    private boolean processTask(@NonNull IterableTask task) {
+    private boolean processTask(@NonNull IterableTask task, boolean autoRetry) {
         if (task.taskType == IterableTaskType.API) {
             IterableApiResponse response = null;
             TaskResult result = TaskResult.FAILURE;
             try {
-                IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), null, null);
+                // Use the current live auth token instead of the stale one stored in the DB.
+                // The token in the DB was captured at queue time and may have since expired.
+                String currentAuthToken = IterableApi.getInstance().getAuthToken();
+                IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), currentAuthToken, null, null);
                 request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
                 response = IterableRequestTask.executeApiRequest(request);
             } catch (Exception e) {
@@ -151,10 +193,20 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 if (response.success) {
                     result = TaskResult.SUCCESS;
                 } else {
-                    if (isRetriableError(response.errorMessage)) {
-                        result = TaskResult.RETRY;
-                    } else {
+                    // If autoRetry is enabled and response is a 401 JWT error,
+                    // retain the task and pause processing until a valid JWT is obtained.
+                    if (autoRetry && isJwtFailure(response)) {
+                        IterableLogger.d(TAG, "JWT auth failure on task " + task.id + ". Retaining task and pausing processing.");
+                        IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
+                        isPausedForAuth = true;
+                        callTaskCompletedListeners(task.id, TaskResult.RETRY, response);
+                        return false;
+                    }
+
+                    if (isPermanentFailure(response)) {
                         result = TaskResult.FAILURE;
+                    } else {
+                        result = TaskResult.RETRY;
                     }
                 }
             }
@@ -181,8 +233,31 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         return null;
     }
 
-    private boolean isRetriableError(String errorMessage) {
-        return errorMessage.contains("failed to connect");
+    /**
+     * Returns true for permanent client errors that should NOT be retried.
+     * 4xx (except 401 JWT handled above, and 429 rate limit) are permanent.
+     * 5xx, network errors (responseCode 0), timeouts, and connection failures are transient.
+     */
+    private boolean isPermanentFailure(IterableApiResponse response) {
+        int code = response.responseCode;
+        if (code == 0) {
+            // No HTTP status — network-level error (timeout, DNS, connection reset). Transient.
+            return false;
+        }
+        if (code == 429) {
+            // Rate limit — server asking us to retry later. Transient.
+            return false;
+        }
+        return code >= 400 && code < 500;
+    }
+
+    /**
+     * Checks if the response indicates a JWT authentication failure (401).
+     * In the offline processing context, the API key is known to be valid (the task was
+     * queued with it), so any 401 response is a JWT auth error.
+     */
+    private boolean isJwtFailure(IterableApiResponse response) {
+        return response.responseCode == 401;
     }
 
     @WorkerThread
