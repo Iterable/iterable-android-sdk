@@ -277,9 +277,13 @@ public class IterableInAppManagerTest extends BaseTest {
         });
         doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
 
+        // Flush the looper so the constructor's syncInApp() completes and sets lastSyncTime.
+        // Without this, the foreground transition triggers a second syncInApp() that clears messages.
+        shadowOf(getMainLooper()).idle();
+
         // Bring the app into foreground to trigger in-app display
         Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         ArgumentCaptor<IterableHelper.IterableUrlCallback> callbackCaptor = ArgumentCaptor.forClass(IterableHelper.IterableUrlCallback.class);
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         IterableInAppMessage message = inAppManager.getMessages().get(0);
@@ -341,9 +345,13 @@ public class IterableInAppManagerTest extends BaseTest {
         });
         doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
 
+        // Flush the looper so the constructor's syncInApp() completes and sets lastSyncTime.
+        // Without this, the foreground transition triggers a second syncInApp() that clears messages.
+        shadowOf(getMainLooper()).idle();
+
         // Bring the app into foreground
         Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         IterableInAppMessage message = inAppManager.getMessages().get(0);
 
         // Verify that message is not consumed by default if consume = false and iterable://dismiss is clicked
@@ -378,7 +386,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         inAppManager.setAutoDisplayPaused(true);
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler, times(0)).onNewInApp(inAppMessageCaptor.capture());
 
