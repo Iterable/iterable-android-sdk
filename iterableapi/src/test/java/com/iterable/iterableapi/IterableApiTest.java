@@ -238,7 +238,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
     }
 
-    @Ignore
+    @Ignore("handleAppLink performs real HTTP redirect - needs MockWebServer to stub the redirect endpoint")
     @Test
     public void testHandleUniversalLinkRewrite() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
@@ -423,7 +423,7 @@ public class IterableApiTest extends BaseTest {
         verify(IterableApi.sharedInstance.getInAppManager(), times(2)).reset();
     }
 
-    @Ignore("Ignoring this test as it fails on CI for some reason")
+    @Ignore("Fails on CI: likely IterableTaskStorage singleton state leakage between tests - needs investigation")
     @Test
     public void databaseClearOnLogout() throws Exception {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(getContext());

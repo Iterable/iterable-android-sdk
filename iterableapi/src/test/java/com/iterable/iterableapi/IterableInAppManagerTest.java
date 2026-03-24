@@ -89,7 +89,7 @@ public class IterableInAppManagerTest extends BaseTest {
         server = null;
     }
 
-    @Ignore("Ignoring due to stalling")
+    @Ignore("Stalls under Robolectric: showIterableFragmentNotificationHTML requires real Activity lifecycle - candidate for androidTest with Espresso")
     @Test
     public void testDoNotShowMultipleTimes() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
@@ -103,7 +103,7 @@ public class IterableInAppManagerTest extends BaseTest {
         controller.pause().stop().destroy();
     }
 
-    @Ignore("Ignoring due to stalling")
+    @Ignore("Stalls under Robolectric: showIterableFragmentNotificationHTML requires real Activity lifecycle - candidate for androidTest with Espresso")
     @Test
     public void testIfDialogDoesNotDestroysAfterConfigurationChange() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
@@ -117,7 +117,7 @@ public class IterableInAppManagerTest extends BaseTest {
         controller.pause().stop().destroy();
     }
 
-    @Ignore("Ignoring due to stalling")
+    @Ignore("Stalls under Robolectric: showIterableFragmentNotificationHTML requires real Activity lifecycle - candidate for androidTest with Espresso")
     @Test
     public void testIfDialogFragmentExistAfterRotation() throws Exception {
         ActivityController controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
