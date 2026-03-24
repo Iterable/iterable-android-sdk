@@ -44,7 +44,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
@@ -256,7 +255,7 @@ public class IterableInAppManagerTest extends BaseTest {
         backgroundExecutor.runAll();
         shadowOf(getMainLooper()).idle();
 
-        verify(listener, timeout(100)).onInboxUpdated();
+        verify(listener).onInboxUpdated();
     }
 
     @Test
