@@ -2,7 +2,6 @@ package com.iterable.iterableapi;
 
 import android.app.Activity;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.robolectric.Robolectric;
@@ -20,12 +19,6 @@ public class IterableActivityMonitorTest extends BaseTest {
     @Before
     public void setUp() {
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(getContext());
-    }
-
-    @After
-    public void tearDown() {
-        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
-        IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
     @Test
