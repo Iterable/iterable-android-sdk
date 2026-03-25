@@ -1,7 +1,6 @@
 package com.iterable.iterableapi
 
 import android.content.Context
-import com.iterable.iterableapi.IterableHelper.SuccessHandler
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -80,12 +79,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         return localPlacementIds
     }
 
-    fun syncMessages() {
-        syncMessages(emptyArray<Long>())
-    }
-
-    //Network call to get the embedded messages
-    fun syncMessages(placementIds: Array<Long>) {
+    @JvmOverloads
+    fun syncMessages(placementIds: Array<Long> = emptyArray()) {
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
@@ -141,8 +136,10 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                     //store placements from payload for next comparison
                     localPlacementIds = currentPlacementIds
 
+                    notifySyncSucceeded()
                 } catch (e: JSONException) {
                     IterableLogger.e(TAG, e.toString())
+                    notifySyncFailed(e.message)
                 }
             }, object : IterableHelper.FailureHandler {
                 override fun onFailure(reason: String, data: JSONObject?) {
@@ -154,10 +151,9 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                         IterableLogger.e(TAG, "Subscription is inactive. Stopping sync")
                         broadcastSubscriptionInactive()
                         return
-                    } else {
-                        //TODO: Instead of generic condition, have the retry only in certain situation
-                        IterableLogger.e(TAG, "Error while fetching embedded messages: $reason")
                     }
+                    IterableLogger.e(TAG, "Error while fetching embedded messages: $reason")
+                    notifySyncFailed(reason)
                 }
             })
         }
@@ -188,6 +184,18 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                     IterableActionSource.EMBEDDED
                 )
             }
+        }
+    }
+
+    private fun notifySyncSucceeded() {
+        updateHandleListeners.forEach {
+            it.onEmbeddedMessagingSyncSucceeded()
+        }
+    }
+
+    private fun notifySyncFailed(reason: String?) {
+        updateHandleListeners.forEach {
+            it.onEmbeddedMessagingSyncFailed(reason)
         }
     }
 
@@ -263,7 +271,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 public interface IterableEmbeddedUpdateHandler {
     fun onMessagesUpdated()
     fun onEmbeddedMessagingDisabled()
+    fun onEmbeddedMessagingSyncSucceeded() {}
+    fun onEmbeddedMessagingSyncFailed(reason: String?) {}
 }
 
 // endregion
-
