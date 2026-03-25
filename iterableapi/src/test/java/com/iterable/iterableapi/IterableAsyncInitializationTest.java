@@ -1036,15 +1036,9 @@ public class IterableAsyncInitializationTest {
 
     @Test
     public void testPIIMasking_EmailMasked() throws InterruptedException {
-        CountDownLatch initLatch = new CountDownLatch(1);
-
-        // Start background initialization
-        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
-            @Override
-            public void onSDKInitialized() {
-                initLatch.countDown();
-            }
-        });
+        // Hold initialization in progress so operations queue instead of executing
+        IterableBackgroundInitializer.simulateInitializingState();
+        IterableApi.initialize(context, TEST_API_KEY);
 
         // Use sensitive PII data that should be masked
         String sensitiveEmail = "sensitive.user@company.com";
@@ -1085,8 +1079,8 @@ public class IterableAsyncInitializationTest {
             }
         }
 
-        // Wait for initialization to complete
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        // Complete initialization
+        IterableBackgroundInitializer.simulateInitializationComplete();
     }
 
     @Test
@@ -1130,21 +1124,15 @@ public class IterableAsyncInitializationTest {
 
     @Test
     public void testPIIMasking_AuthTokenMasked() throws InterruptedException {
-        CountDownLatch initLatch = new CountDownLatch(1);
-
-        // Start background initialization
-        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
-            @Override
-            public void onSDKInitialized() {
-                initLatch.countDown();
-            }
-        });
+        // Hold initialization in progress so setEmail/setUserId queue instead of execute
+        IterableBackgroundInitializer.simulateInitializingState();
+        IterableApi.initialize(context, TEST_API_KEY);
 
         // Use sensitive auth token
         String sensitiveEmail = "test@example.com";
         String sensitiveAuthToken = "SecretAuthToken12345";
 
-        // Make API calls with auth tokens
+        // Make API calls with auth tokens — these should queue since init is "in progress"
         IterableApi.getInstance().setEmail(sensitiveEmail, sensitiveAuthToken);
         IterableApi.getInstance().setUserId("testuser", sensitiveAuthToken);
 
@@ -1165,21 +1153,15 @@ public class IterableAsyncInitializationTest {
             }
         }
 
-        // Wait for initialization
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        // Complete initialization
+        IterableBackgroundInitializer.simulateInitializationComplete();
     }
 
     @Test
     public void testPIIMasking_VerifyExactFormat() throws InterruptedException {
-        CountDownLatch initLatch = new CountDownLatch(1);
-
-        // Start background initialization
-        IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
-            @Override
-            public void onSDKInitialized() {
-                initLatch.countDown();
-            }
-        });
+        // Hold initialization in progress so operations queue instead of executing
+        IterableBackgroundInitializer.simulateInitializingState();
+        IterableApi.initialize(context, TEST_API_KEY);
 
         // Test various PII formats
         String email1 = "john.doe@example.com";      // Should mask to "j***"
@@ -1225,8 +1207,8 @@ public class IterableAsyncInitializationTest {
         assertTrue("UserId 'user_123_abc' should be masked to 'u***'", foundUserId1Masked);
         assertTrue("Email 'a@b.com' should be masked to 'a***'", foundEmail2Masked);
 
-        // Wait for initialization
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        // Complete initialization
+        IterableBackgroundInitializer.simulateInitializationComplete();
     }
 
     // ========================================
