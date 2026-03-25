@@ -230,9 +230,13 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testListenerCalledOnMainThread() throws Exception {
+        // Flush any pending callbacks from setUp's createIterableApiNew
+        shadowOf(getMainLooper()).idle();
+
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
         final IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
 
         IterableInAppManager.Listener listener = mock(IterableInAppManager.Listener.class);
@@ -260,6 +264,9 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testHandleActionLink() throws Exception {
+        // Enqueue a dummy response for the sync triggered by createIterableApiNew's setEmail()
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody("{}"));
+        // Enqueue the real response for the test's sync
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
 
         // Reset the existing IterableApi
@@ -328,6 +335,9 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testHandleCustomActionDelete() throws Exception {
+        // Enqueue a dummy response for the sync triggered by createIterableApiNew's setEmail()
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody("{}"));
+        // Enqueue the real response for the test's sync
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
 
         // Reset the existing IterableApi
@@ -345,8 +355,7 @@ public class IterableInAppManagerTest extends BaseTest {
         });
         doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
 
-        // Flush the looper so the constructor's syncInApp() completes and sets lastSyncTime.
-        // Without this, the foreground transition triggers a second syncInApp() that clears messages.
+        // Flush pending callbacks so the setUp sync completes and sets lastSyncTime.
         shadowOf(getMainLooper()).idle();
 
         // Bring the app into foreground
