@@ -396,6 +396,11 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testMessagePersistentReadStateFromServer() throws Exception {
+        // Flush any pending callbacks from setUp's createIterableApiNew (which triggers syncInApp
+        // via both the InAppManager constructor and completeUserLogin). Without this, stale
+        // onPostExecute callbacks can corrupt the InlineExecutorService state under CI load.
+        shadowOf(getMainLooper()).idle();
+
         // load the in-app that has not been synchronized with the server yet (read state is set to false)
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_read_state_1.json")));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();

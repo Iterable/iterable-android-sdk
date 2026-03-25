@@ -262,6 +262,8 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSetEmailWithAutomaticPushRegistration() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        // Reset after initialize since it may trigger push registration via background init
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setEmail("test@email.com");
@@ -290,6 +292,8 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSetUserIdWithAutomaticPushRegistration() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        // Reset after initialize since it may trigger push registration via background init
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setUserId calls registerForPush
         IterableApi.getInstance().setUserId("userId");
