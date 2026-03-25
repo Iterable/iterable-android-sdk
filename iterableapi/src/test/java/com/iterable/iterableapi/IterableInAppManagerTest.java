@@ -27,6 +27,7 @@ import org.robolectric.android.util.concurrent.PausedExecutorService;
 import org.robolectric.shadows.ShadowDialog;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -60,7 +61,7 @@ public class IterableInAppManagerTest extends BaseTest {
     private PausedExecutorService backgroundExecutor;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         backgroundExecutor = new PausedExecutorService();
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
@@ -80,6 +81,10 @@ public class IterableInAppManagerTest extends BaseTest {
                         .setUrlHandler(urlHandler);
             }
         });
+        // Drain init sync HTTP requests from MockWebServer (constructor sync + setEmail sync)
+        // and flush their callbacks, so they don't consume responses enqueued by tests
+        while (server.takeRequest(200, TimeUnit.MILLISECONDS) != null) { }
+        shadowOf(getMainLooper()).idle();
         IterableInAppFragmentHTMLNotification.notification = null;
     }
 
@@ -230,9 +235,6 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testListenerCalledOnMainThread() throws Exception {
-        // Flush any pending callbacks from setUp's createIterableApiNew
-        shadowOf(getMainLooper()).idle();
-
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
         final IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
@@ -264,9 +266,6 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testHandleActionLink() throws Exception {
-        // Enqueue a dummy response for the sync triggered by createIterableApiNew's setEmail()
-        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody("{}"));
-        // Enqueue the real response for the test's sync
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
 
         // Reset the existing IterableApi
@@ -284,8 +283,7 @@ public class IterableInAppManagerTest extends BaseTest {
         });
         doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
 
-        // Flush the looper so the constructor's syncInApp() completes and sets lastSyncTime.
-        // Without this, the foreground transition triggers a second syncInApp() that clears messages.
+        // Flush init sync callbacks so messages are loaded before foreground transition
         shadowOf(getMainLooper()).idle();
 
         // Bring the app into foreground to trigger in-app display
@@ -335,9 +333,6 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testHandleCustomActionDelete() throws Exception {
-        // Enqueue a dummy response for the sync triggered by createIterableApiNew's setEmail()
-        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody("{}"));
-        // Enqueue the real response for the test's sync
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
 
         // Reset the existing IterableApi
@@ -355,7 +350,7 @@ public class IterableInAppManagerTest extends BaseTest {
         });
         doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
 
-        // Flush pending callbacks so the setUp sync completes and sets lastSyncTime.
+        // Flush init sync callbacks so messages are loaded before foreground transition
         shadowOf(getMainLooper()).idle();
 
         // Bring the app into foreground
@@ -405,10 +400,6 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testMessagePersistentReadStateFromServer() throws Exception {
-        // Flush any pending callbacks from setUp's createIterableApiNew (which triggers syncInApp
-        // via both the InAppManager constructor and completeUserLogin). Without this, stale
-        // onPostExecute callbacks can corrupt the InlineExecutorService state under CI load.
-        shadowOf(getMainLooper()).idle();
 
         // load the in-app that has not been synchronized with the server yet (read state is set to false)
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_read_state_1.json")));
@@ -612,8 +603,7 @@ public class IterableInAppManagerTest extends BaseTest {
                 mock(IterableInAppDisplayer.class)));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
 
-        // First sync to get messages
-        inAppManager.syncInApp();
+        // Flush constructor sync callback so messages are loaded
         shadowOf(getMainLooper()).idle();
 
         // Process messages by bringing app to foreground
