@@ -307,9 +307,11 @@ public class IterableEmbeddedManagerTest extends BaseTest {
 
     @Test
     public void testOnEmbeddedMessagingSyncFailed() throws Exception {
-        // Enqueue 401 responses so auto-syncs also fail (avoiding mixed success/failure)
-        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(401).setBody(IterableTestUtils.getResourceString("embedded_payload_bad_api_key.json")));
-        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(401).setBody(IterableTestUtils.getResourceString("embedded_payload_bad_api_key.json")));
+        // Enqueue 500 responses so auto-syncs also fail (avoiding mixed success/failure)
+        // Note: 401 + "Invalid API Key" triggers the subscription-inactive path
+        // (onEmbeddedMessagingDisabled), not the generic failure path (onEmbeddedMessagingSyncFailed)
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(500));
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(500));
         IterableEmbeddedManager embeddedManager = IterableApi.getInstance().getEmbeddedManager();
 
         IterableEmbeddedUpdateHandler mockHandler = mock(IterableEmbeddedUpdateHandler.class);
@@ -317,7 +319,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         shadowOf(getMainLooper()).idle();
         clearInvocations(mockHandler);
 
-        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(401).setBody(IterableTestUtils.getResourceString("embedded_payload_bad_api_key.json")));
+        dispatcher.enqueueResponse("/embedded-messaging/messages", new MockResponse().setResponseCode(500));
         embeddedManager.syncMessages();
         shadowOf(getMainLooper()).idle();
 
