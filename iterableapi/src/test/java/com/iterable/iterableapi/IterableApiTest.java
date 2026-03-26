@@ -262,7 +262,8 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSetEmailWithAutomaticPushRegistration() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
-        // Reset after initialize since it may trigger push registration via background init
+        // Flush any pending looper callbacks from initialize, then reset mock
+        shadowOf(getMainLooper()).idle();
         Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setEmail calls registerForPush

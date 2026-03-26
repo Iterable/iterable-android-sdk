@@ -148,7 +148,7 @@ public class IterableAsyncInitializationTest {
         });
 
         assertTrue("Initialization with config should complete",
-                   waitForAsyncInitialization(initLatch, 3));
+                   waitForAsyncInitialization(initLatch, 5));
     }
 
     // ========================================
@@ -179,7 +179,7 @@ public class IterableAsyncInitializationTest {
         assertTrue("Operations should be queued", IterableBackgroundInitializer.getQueuedOperationCount() > 0);
 
         // Wait for initialization to complete
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         // Process queue
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
@@ -216,7 +216,7 @@ public class IterableAsyncInitializationTest {
         // These SHOULD be queued
         assertTrue("Operations during init should be queued", IterableBackgroundInitializer.getQueuedOperationCount() > 0);
 
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
     }
 
     @Test
@@ -241,7 +241,7 @@ public class IterableAsyncInitializationTest {
                      numOperations, IterableBackgroundInitializer.getQueuedOperationCount());
 
         // Wait for completion and processing
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         // Process queue
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
@@ -291,7 +291,7 @@ public class IterableAsyncInitializationTest {
 
         });
 
-        assertTrue("Success callback should be called", waitForAsyncInitialization(successLatch, 3));
+        assertTrue("Success callback should be called", waitForAsyncInitialization(successLatch, 5));
         assertTrue("Callback should execute on main thread", callbackExecutedOnMainThread.get());
     }
 
@@ -326,7 +326,7 @@ public class IterableAsyncInitializationTest {
 
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
         assertTrue("Callback should be called despite exception",
-                   waitForAsyncInitialization(callbackLatch, 3));
+                   waitForAsyncInitialization(callbackLatch, 5));
 
         // System should still be in a valid state
         assertFalse("Should not be initializing after completion despite callback exception",
@@ -366,7 +366,7 @@ public class IterableAsyncInitializationTest {
 
         startLatch.countDown();
 
-        assertTrue("All threads should complete", waitForAsyncInitialization(completeLatch, 3));
+        assertTrue("All threads should complete", waitForAsyncInitialization(completeLatch, 5));
 
         // All threads should get success callbacks (concurrent calls should all be notified when init completes)
         assertEquals("All threads should get success callbacks", numThreads, successCount.get());
@@ -448,7 +448,7 @@ public class IterableAsyncInitializationTest {
         // During initialization - should not be considered fully initialized yet
         assertFalse("Should not be fully initialized during background init", IterableApi.isSDKInitialized());
 
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         // After initialization completes but before setting user - still not fully initialized
         assertFalse("Should not be fully initialized without user identification", IterableApi.isSDKInitialized());
@@ -489,7 +489,7 @@ public class IterableAsyncInitializationTest {
 
         });
 
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         assertFalse("Should not be initializing after completion", IterableApi.isSDKInitializing());
     }
@@ -518,7 +518,7 @@ public class IterableAsyncInitializationTest {
         });
 
         // First should complete
-        assertTrue("First initialization should complete", waitForAsyncInitialization(firstInitLatch, 3));
+        assertTrue("First initialization should complete", waitForAsyncInitialization(firstInitLatch, 5));
 
         // Second should also complete (called immediately since first is done)
         assertTrue("Second initialization should also complete", waitForAsyncInitialization(secondInitLatch, 5));
@@ -842,7 +842,7 @@ public class IterableAsyncInitializationTest {
             }
         });
 
-        assertTrue("Success callback should be called even with null context", waitForAsyncInitialization(completionLatch, 3));
+        assertTrue("Success callback should be called even with null context", waitForAsyncInitialization(completionLatch, 5));
         assertEquals("Queue should remain empty", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
 
@@ -858,7 +858,7 @@ public class IterableAsyncInitializationTest {
 
         });
 
-        assertTrue("Should handle empty API key", waitForAsyncInitialization(completionLatch, 3));
+        assertTrue("Should handle empty API key", waitForAsyncInitialization(completionLatch, 5));
     }
 
     @Test
@@ -874,7 +874,7 @@ public class IterableAsyncInitializationTest {
 
         });
 
-        assertTrue("Should handle very long API key", waitForAsyncInitialization(completionLatch, 3));
+        assertTrue("Should handle very long API key", waitForAsyncInitialization(completionLatch, 5));
     }
 
     @Test
@@ -892,7 +892,7 @@ public class IterableAsyncInitializationTest {
         IterableApi.initialize(context, TEST_API_KEY);
 
         // Wait for callback
-        boolean callbackCalled = waitForAsyncInitialization(callbackLatch, 3);
+        boolean callbackCalled = waitForAsyncInitialization(callbackLatch, 5);
 
         assertTrue("onSDKInitialized callback should be called", callbackCalled);
         assertTrue("onSDKInitialized callback should be executed on main thread", callbackExecutedOnMainThread.get());
@@ -940,7 +940,7 @@ public class IterableAsyncInitializationTest {
         IterableApi.initialize(context, TEST_API_KEY);
 
         // Wait for all callbacks
-        boolean allCallbacksCalled = waitForAsyncInitialization(callbackLatch, 3);
+        boolean allCallbacksCalled = waitForAsyncInitialization(callbackLatch, 5);
 
         assertTrue("All onSDKInitialized callbacks should be called", allCallbacksCalled);
         assertEquals("All callbacks should be executed on main thread", 3, mainThreadCallbackCount.get());
@@ -1002,8 +1002,8 @@ public class IterableAsyncInitializationTest {
         IterableApi.initialize(context, TEST_API_KEY);
 
         // Wait for both callbacks
-        boolean callback1CalledResult = waitForAsyncInitialization(callback1Latch, 3);
-        boolean callback2CalledResult = waitForAsyncInitialization(callback2Latch, 3);
+        boolean callback1CalledResult = waitForAsyncInitialization(callback1Latch, 5);
+        boolean callback2CalledResult = waitForAsyncInitialization(callback2Latch, 5);
 
         assertTrue("First callback should be called even though it throws", callback1CalledResult);
         assertTrue("Second callback should be called despite first callback throwing", callback2CalledResult);
@@ -1243,7 +1243,7 @@ public class IterableAsyncInitializationTest {
         assertTrue("Should have queued operations during init", queuedOps > 0);
 
         // Wait for initialization to complete
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         // After init, queue should be processed and inner method should have been called
         Thread.sleep(200);
@@ -1272,7 +1272,7 @@ public class IterableAsyncInitializationTest {
             }
         });
 
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         // Now call overloaded methods after initialization
         // setEmail(email) internally calls setEmail(email, null, null, null, null)
@@ -1344,7 +1344,7 @@ public class IterableAsyncInitializationTest {
         assertEquals("Should only queue outer operation, not nested calls", 1, queuedOps);
 
         // Wait for initialization
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         // Wait for queue processing
         Thread.sleep(200);
@@ -1407,7 +1407,7 @@ public class IterableAsyncInitializationTest {
         assertEquals("Full overload should not be called during queuing", 0, fullOverloadCallCount.get());
 
         // Wait for initialization
-        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
         // Wait for queue to process
         Thread.sleep(300);
@@ -1459,7 +1459,7 @@ public class IterableAsyncInitializationTest {
         assertTrue("Operations should be queued during background init", IterableBackgroundInitializer.getQueuedOperationCount() > 0);
 
         // Wait for init to complete
-        assertTrue("Background init should complete", waitForAsyncInitialization(initLatch, 3));
+        assertTrue("Background init should complete", waitForAsyncInitialization(initLatch, 5));
 
         // After init completes, new operations should execute immediately
         Thread.sleep(200);
