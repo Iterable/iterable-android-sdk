@@ -4,6 +4,13 @@ import android.content.Context
 import org.json.JSONException
 import org.json.JSONObject
 
+/**
+ * Manages embedded messages for the Iterable SDK.
+ *
+ * Provides methods to sync, retrieve, and handle interactions with embedded messages.
+ * Register an [IterableEmbeddedUpdateHandler] via [addUpdateListener] to be notified
+ * when embedded messages are updated.
+ */
 public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback {
 
     // region constants
@@ -159,8 +166,16 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
-        if ((clickedUrl != null) && clickedUrl.toString().isNotEmpty()) {
+    /**
+     * Handles a click on an embedded message by processing the given URL.
+     *
+     * URLs with the `action://` or `itbl://` scheme are routed to the custom action handler.
+     * All other URLs are opened via the default URL handler.
+     *
+     * @param clickedUrl The URL associated with the clicked element.
+     */
+    fun handleEmbeddedClick(clickedUrl: String) {
+        if (clickedUrl.isNotEmpty()) {
             if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
                 // This is an action:// URL, pass that to the custom action handler
                 val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ACTION, "")
@@ -185,6 +200,22 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 )
             }
         }
+    }
+
+    /**
+     * Handles a click on an embedded message by processing the given URL.
+     *
+     * @param message The embedded message that was clicked.
+     * @param buttonIdentifier The identifier of the button that was clicked, or null.
+     * @param clickedUrl The URL associated with the clicked element, or null.
+     */
+    @Deprecated(
+        message = "Use handleEmbeddedClick(clickedUrl: String) instead. The message and buttonIdentifier parameters are unused.",
+        replaceWith = ReplaceWith("clickedUrl?.let { handleEmbeddedClick(it) }"),
+        level = DeprecationLevel.WARNING
+    )
+    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
+        clickedUrl?.let { handleEmbeddedClick(it) }
     }
 
     private fun notifySyncSucceeded() {

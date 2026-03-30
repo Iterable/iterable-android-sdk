@@ -211,7 +211,7 @@ class IterableEmbeddedView() : Fragment() {
             val clickedUrl = message.elements?.defaultAction?.data.takeIf { it?.isNotEmpty() == true } ?: message.elements?.defaultAction?.type
 
             view.setOnClickListener {
-                IterableApi.getInstance().embeddedManager.handleEmbeddedClick(message, null, clickedUrl)
+                clickedUrl?.let { IterableApi.getInstance().embeddedManager.handleEmbeddedClick(it) }
                 IterableApi.getInstance().trackEmbeddedClick(message, null, clickedUrl)
             }
         }
@@ -224,7 +224,7 @@ class IterableEmbeddedView() : Fragment() {
         val clickedUrl = if (button?.action?.data?.isNotEmpty() == true) button.action?.data else button?.action?.type
 
         buttonView.setOnClickListener {
-            IterableApi.getInstance().embeddedManager.handleEmbeddedClick(message, button?.id, clickedUrl)
+            clickedUrl?.let { IterableApi.getInstance().embeddedManager.handleEmbeddedClick(it) }
             IterableApi.getInstance().trackEmbeddedClick(message, button?.id, clickedUrl)
         }
     }
