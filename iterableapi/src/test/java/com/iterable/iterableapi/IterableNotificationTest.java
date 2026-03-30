@@ -28,6 +28,9 @@ import static junit.framework.Assert.assertTrue;
 
 import static org.robolectric.Shadows.shadowOf;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -239,5 +242,75 @@ public class IterableNotificationTest {
         int textInputFlags = shadowOf(notification.actions[2].actionIntent).getFlags();
         assertTrue((textInputFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
         assertTrue((textInputFlags & PendingIntent.FLAG_MUTABLE) != 0);  // Should be mutable for text input
+    }
+
+    @Test
+    public void testIconFallbackToAppIcon() throws Exception {
+        // When no iterable_notification_icon, Firebase icon, notification_icon, or ic_notification
+        // are configured, the notification should fall back to the app icon
+        Bundle notif = new Bundle();
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itbl1);
+        notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
+
+        IterableNotificationBuilder iterableNotification = postNotification(notif);
+        Notification notification = iterableNotification.build();
+        // The app icon is set in postNotification as android.R.drawable.sym_def_app_icon
+        assertEquals(android.R.drawable.sym_def_app_icon, notification.icon);
+    }
+
+    @Test
+    public void testIconFallbackToFirebaseMetadata() throws Exception {
+        // Set up Firebase default notification icon in metadata
+        ApplicationInfo appInfo = getContext().getPackageManager().getApplicationInfo(
+                getContext().getPackageName(), PackageManager.GET_META_DATA);
+        if (appInfo.metaData == null) {
+            appInfo.metaData = new Bundle();
+        }
+        // Use a known Android framework drawable as a stand-in for the Firebase icon
+        appInfo.metaData.putInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY,
+                android.R.drawable.ic_dialog_info);
+
+        Bundle notif = new Bundle();
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itbl1);
+        notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
+
+        getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
+        IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notif);
+        Notification notification = iterableNotification.build();
+
+        // Should use the Firebase icon, not the app icon
+        assertEquals(android.R.drawable.ic_dialog_info, notification.icon);
+
+        // Clean up metadata
+        appInfo.metaData.remove(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY);
+    }
+
+    @Test
+    public void testIconIterableMetadataTakesPriorityOverFirebase() throws Exception {
+        // Set up both Iterable and Firebase metadata icons
+        ApplicationInfo appInfo = getContext().getPackageManager().getApplicationInfo(
+                getContext().getPackageName(), PackageManager.GET_META_DATA);
+        if (appInfo.metaData == null) {
+            appInfo.metaData = new Bundle();
+        }
+        appInfo.metaData.putInt(IterableConstants.NOTIFICATION_ICON_NAME,
+                android.R.drawable.ic_dialog_alert);
+        appInfo.metaData.putInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY,
+                android.R.drawable.ic_dialog_info);
+
+        Bundle notif = new Bundle();
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itbl1);
+        notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
+
+        getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
+        IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notif);
+        Notification notification = iterableNotification.build();
+
+        // Should use the Iterable icon (higher priority), not the Firebase icon
+        assertEquals(android.R.drawable.ic_dialog_alert, notification.icon);
+
+        // Clean up metadata
+        appInfo.metaData.remove(IterableConstants.NOTIFICATION_ICON_NAME);
+        appInfo.metaData.remove(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY);
     }
 }
