@@ -43,7 +43,7 @@ jobs:
 
           # --- Check: Version consistency ---
           api_lib_ver=$(grep -oP "libraryVersion\s*=\s*'\K[^']+" iterableapi/build.gradle)
-          api_sdk_ver=$(grep -oP 'ITERABLE_SDK_VERSION.*"\K[0-9][^"]+' iterableapi/build.gradle)
+          api_sdk_ver=$(grep -oP 'ITERABLE_SDK_VERSION.*"\K[0-9][^"\\]+' iterableapi/build.gradle)
           ui_lib_ver=$(grep -oP "libraryVersion\s*=\s*'\K[^']+" iterableapi-ui/build.gradle)
 
           if [ "$api_lib_ver" != "$version" ]; then
