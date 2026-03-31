@@ -1,5 +1,7 @@
 package com.iterable.iterableapi.ui.embedded
 
+import android.widget.ImageView
+
 data class IterableEmbeddedViewConfig(
     val backgroundColor: Int?,
     val borderColor: Int?,
@@ -10,5 +12,6 @@ data class IterableEmbeddedViewConfig(
     val secondaryBtnBackgroundColor: Int?,
     val secondaryBtnTextColor: Int?,
     val titleTextColor: Int?,
-    val bodyTextColor: Int?
+    val bodyTextColor: Int?,
+    val imageScaleType: ImageView.ScaleType? = null
 )
