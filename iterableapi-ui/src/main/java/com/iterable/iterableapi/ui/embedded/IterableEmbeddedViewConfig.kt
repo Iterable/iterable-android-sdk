@@ -3,15 +3,15 @@ package com.iterable.iterableapi.ui.embedded
 import android.widget.ImageView
 
 data class IterableEmbeddedViewConfig(
-    val backgroundColor: Int?,
-    val borderColor: Int?,
-    val borderWidth: Int?,
-    val borderCornerRadius: Float?,
-    val primaryBtnBackgroundColor: Int?,
-    val primaryBtnTextColor: Int?,
-    val secondaryBtnBackgroundColor: Int?,
-    val secondaryBtnTextColor: Int?,
-    val titleTextColor: Int?,
-    val bodyTextColor: Int?,
+    val backgroundColor: Int? = null,
+    val borderColor: Int? = null,
+    val borderWidth: Int? = null,
+    val borderCornerRadius: Float? = null,
+    val primaryBtnBackgroundColor: Int? = null,
+    val primaryBtnTextColor: Int? = null,
+    val secondaryBtnBackgroundColor: Int? = null,
+    val secondaryBtnTextColor: Int? = null,
+    val titleTextColor: Int? = null,
+    val bodyTextColor: Int? = null,
     val imageScaleType: ImageView.ScaleType? = null
 )
