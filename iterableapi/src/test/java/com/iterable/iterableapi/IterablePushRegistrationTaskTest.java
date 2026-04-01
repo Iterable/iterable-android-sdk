@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
@@ -73,7 +72,8 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         new IterablePushRegistrationTask().execute(data);
         deviceAttributes.put(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
 
-        verify(apiMock, timeout(100)).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), isNull(), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(deviceAttributes));
+        shadowOf(getMainLooper()).idle();
+        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), isNull(), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(deviceAttributes));
 
         verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), nullable(String.class), nullable(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }
@@ -87,6 +87,6 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         new IterablePushRegistrationTask().execute(data);
         shadowOf(getMainLooper()).idle();
 
-        verify(apiMock, timeout(100)).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
+        verify(apiMock).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }
 }

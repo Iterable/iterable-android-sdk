@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static android.os.Looper.getMainLooper;
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
@@ -50,11 +51,11 @@ public class IterableNotificationTest {
         return getApplicationContext();
     }
 
-    private IterableNotificationBuilder postNotification(Bundle notificationData) throws InterruptedException {
+    private IterableNotificationBuilder postNotification(Bundle notificationData) {
         getContext().getApplicationInfo().icon = android.R.drawable.sym_def_app_icon;
         IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notificationData);
         IterableNotificationHelper.postNotificationOnDevice(appContext, iterableNotification);
-        Thread.sleep(1000);
+        shadowOf(getMainLooper()).idle();
         return iterableNotification;
     }
 

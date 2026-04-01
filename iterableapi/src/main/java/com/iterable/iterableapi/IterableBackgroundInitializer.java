@@ -338,24 +338,25 @@ class IterableBackgroundInitializer {
      * Used internally after initialization completes
      */
     private static void shutdownBackgroundExecutorAsync() {
-        // Schedule shutdown on a separate thread to avoid blocking the executor thread
+        // Capture the current executor reference so the shutdown thread only shuts down
+        // THIS executor, not a replacement created by resetBackgroundInitializationState().
+        final ExecutorService executorToShutdown = backgroundExecutor;
+        if (executorToShutdown == null || executorToShutdown.isShutdown()) {
+            return;
+        }
         new Thread(() -> {
-            synchronized (initLock) {
-                if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
-                    backgroundExecutor.shutdown();
-                    try {
-                        if (!backgroundExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                            IterableLogger.w(TAG, "Background executor did not terminate gracefully, forcing shutdown");
-                            backgroundExecutor.shutdownNow();
-                        }
-                    } catch (InterruptedException e) {
-                        IterableLogger.w(TAG, "Interrupted while waiting for executor termination");
-                        backgroundExecutor.shutdownNow();
-                        Thread.currentThread().interrupt();
-                    }
-                    IterableLogger.d(TAG, "Background executor shutdown completed");
+            try {
+                executorToShutdown.shutdown();
+                if (!executorToShutdown.awaitTermination(5, TimeUnit.SECONDS)) {
+                    IterableLogger.w(TAG, "Background executor did not terminate gracefully, forcing shutdown");
+                    executorToShutdown.shutdownNow();
                 }
+            } catch (InterruptedException e) {
+                IterableLogger.w(TAG, "Interrupted while waiting for executor termination");
+                executorToShutdown.shutdownNow();
+                Thread.currentThread().interrupt();
             }
+            IterableLogger.d(TAG, "Background executor shutdown completed");
         }, "IterableExecutorShutdown").start();
     }
 
@@ -413,10 +414,13 @@ class IterableBackgroundInitializer {
             pendingCallbacks.clear();
             callbackManager.reset();
 
-            // Recreate executor if it was shut down
-            if (backgroundExecutor == null || backgroundExecutor.isShutdown()) {
-                backgroundExecutor = createExecutor();
+            // Always create a fresh executor. The old one may have a pending
+            // shutdownBackgroundExecutorAsync that hasn't run yet — if we kept it,
+            // the async shutdown would kill the executor under the next test.
+            if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
+                backgroundExecutor.shutdownNow();
             }
+            backgroundExecutor = createExecutor();
         }
     }
 
