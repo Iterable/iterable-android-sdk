@@ -3,14 +3,19 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:layout_gravity="center_vertical"
+    android:layout_marginStart="16dp"
     android:layout_marginTop="8dp"
+    android:layout_marginEnd="16dp"
     android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="0dp"
     android:background="@drawable/banner_card_border"
+    android:clipToOutline="true"
+    android:outlineProvider="background"
     android:orientation="vertical">
 
     <com.google.android.material.imageview.ShapeableImageView
@@ -19,18 +24,18 @@
         android:layout_height="0dp"
         android:contentDescription=""
         android:scaleType="centerCrop"
+        app:layout_constraintDimensionRatio="H,16:9"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/embedded_message_text_container"
-        app:shapeAppearanceOverlay="@style/classCardStyle" />
+        />
 
     <LinearLayout
         android:id="@+id/embedded_message_text_container"
         android:layout_width="0dp"
-        android:layout_height="@dimen/card_text_container_height"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintBottom_toTopOf="@id/embedded_message_buttons_container"
+        app:layout_constraintTop_toBottomOf="@id/embedded_message_image"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -79,41 +84,32 @@
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/embedded_message_text_container"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/embedded_message_first_button"
-            style="@style/Widget.MaterialComponents.Button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginStart="16dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minWidth="0dp"
             android:ellipsize="end"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
             android:singleLine="true"
-            android:stateListAnimator="@null"
             android:textAllCaps="false"
-            android:textSize="14sp"
-            app:cornerRadius="32dp" />
+            android:textSize="14sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/embedded_message_second_button"
-            style="@style/Widget.MaterialComponents.Button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginEnd="16dp"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
             android:ellipsize="end"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
             android:singleLine="true"
-            android:stateListAnimator="@null"
             android:text=""
             android:textAllCaps="false"
-            app:cornerRadius="32dp" />
+            android:textSize="14sp" />
 
     </LinearLayout>
 

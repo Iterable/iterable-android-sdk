@@ -1,6 +1,7 @@
 package com.iterable.iterableapi.ui.embedded
 
 import android.os.Bundle
+import android.widget.ImageView
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.iterableapi.IterableLogger
 import org.json.JSONException
@@ -23,6 +24,7 @@ internal object IterableEmbeddedViewArguments {
     private const val KEY_SECONDARY_BTN_TEXT = "secondary_btn_text"
     private const val KEY_TITLE_COLOR = "title_color"
     private const val KEY_BODY_COLOR = "body_color"
+    private const val KEY_IMAGE_SCALE_TYPE = "image_scale_type"
 
     fun toBundle(
         viewType: IterableEmbeddedViewType,
@@ -78,7 +80,8 @@ internal object IterableEmbeddedViewArguments {
                        arguments.containsKey(KEY_SECONDARY_BTN_BG) ||
                        arguments.containsKey(KEY_SECONDARY_BTN_TEXT) ||
                        arguments.containsKey(KEY_TITLE_COLOR) ||
-                       arguments.containsKey(KEY_BODY_COLOR)
+                       arguments.containsKey(KEY_BODY_COLOR) ||
+                       arguments.containsKey(KEY_IMAGE_SCALE_TYPE)
 
         return if (hasConfig) {
             IterableEmbeddedViewConfig(
@@ -91,7 +94,15 @@ internal object IterableEmbeddedViewArguments {
                 secondaryBtnBackgroundColor = arguments.getIntOrNull(KEY_SECONDARY_BTN_BG),
                 secondaryBtnTextColor = arguments.getIntOrNull(KEY_SECONDARY_BTN_TEXT),
                 titleTextColor = arguments.getIntOrNull(KEY_TITLE_COLOR),
-                bodyTextColor = arguments.getIntOrNull(KEY_BODY_COLOR)
+                bodyTextColor = arguments.getIntOrNull(KEY_BODY_COLOR),
+                imageScaleType = arguments.getStringOrNull(KEY_IMAGE_SCALE_TYPE)?.let {
+                    try {
+                        ImageView.ScaleType.valueOf(it)
+                    } catch (e: IllegalArgumentException) {
+                        IterableLogger.e(TAG, "Invalid image scale type: $it, using default")
+                        null
+                    }
+                }
             )
         } else {
             null
@@ -110,6 +121,7 @@ internal object IterableEmbeddedViewArguments {
             cfg.secondaryBtnTextColor?.let { putInt(KEY_SECONDARY_BTN_TEXT, it) }
             cfg.titleTextColor?.let { putInt(KEY_TITLE_COLOR, it) }
             cfg.bodyTextColor?.let { putInt(KEY_BODY_COLOR, it) }
+            cfg.imageScaleType?.let { putString(KEY_IMAGE_SCALE_TYPE, it.name) }
         }
     }
 
@@ -119,5 +131,9 @@ internal object IterableEmbeddedViewArguments {
 
     private fun Bundle.getFloatOrNull(key: String): Float? {
         return if (containsKey(key)) getFloat(key) else null
+    }
+
+    private fun Bundle.getStringOrNull(key: String): String? {
+        return if (containsKey(key)) getString(key) else null
     }
 }
