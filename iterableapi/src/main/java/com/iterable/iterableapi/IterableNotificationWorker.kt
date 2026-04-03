@@ -86,6 +86,43 @@ internal class IterableNotificationWorker(
             )
         }
 
+        // Check standard notification icon conventions (Firebase, Expo, common Android)
+        if (iconId == 0) {
+            try {
+                val info = applicationContext.packageManager.getApplicationInfo(
+                    applicationContext.packageName, PackageManager.GET_META_DATA
+                )
+                iconId = info.metaData?.getInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, 0) ?: 0
+                if (iconId != 0) {
+                    IterableLogger.d(TAG, "Using Firebase default notification icon")
+                }
+            } catch (e: PackageManager.NameNotFoundException) {
+                IterableLogger.w(TAG, "Could not read application metadata for Firebase icon")
+            }
+        }
+
+        if (iconId == 0) {
+            iconId = applicationContext.resources.getIdentifier(
+                IterableConstants.NOTIFICATION_ICON_DRAWABLE_NOTIFICATION_ICON,
+                IterableConstants.ICON_FOLDER_IDENTIFIER,
+                applicationContext.packageName
+            )
+            if (iconId != 0) {
+                IterableLogger.d(TAG, "Using notification_icon drawable")
+            }
+        }
+
+        if (iconId == 0) {
+            iconId = applicationContext.resources.getIdentifier(
+                IterableConstants.NOTIFICATION_ICON_DRAWABLE_IC_NOTIFICATION,
+                IterableConstants.ICON_FOLDER_IDENTIFIER,
+                applicationContext.packageName
+            )
+            if (iconId != 0) {
+                IterableLogger.d(TAG, "Using ic_notification drawable")
+            }
+        }
+
         if (iconId == 0) {
             iconId = applicationContext.applicationInfo.icon
         }
