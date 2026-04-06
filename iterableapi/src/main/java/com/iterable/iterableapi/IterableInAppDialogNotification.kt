@@ -45,11 +45,13 @@ class IterableInAppDialogNotification internal constructor(
     private var loaded: Boolean = false
     private var orientationListener: OrientationEventListener? = null
     private var backPressedCallback: OnBackPressedCallback? = null
+    private var inAppOpenTracked: Boolean = false
 
     companion object {
         private const val TAG = "IterableInAppDialog"
         private const val BACK_BUTTON = "itbl://backButton"
         private const val DELAY_THRESHOLD_MS = 500L
+        private const val IN_APP_OPEN_TRACKED = "InAppOpenTracked"
 
         @JvmStatic
         private var notification: IterableInAppDialogNotification? = null
@@ -120,47 +122,68 @@ class IterableInAppDialogNotification internal constructor(
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
+        if (savedInstanceState != null) {
+            inAppOpenTracked = savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)
+        }
+
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-        
+
         val layout = layoutService.getInAppLayout(insetPadding)
         window?.let { layoutService.configureWindowFlags(it, layout) }
-        
+
         if (layout != InAppLayoutService.InAppLayout.FULLSCREEN) {
             window?.let { layoutService.applyWindowGravity(it, insetPadding, "onCreate") }
         }
-        
+
         setOnCancelListener {
             if (callbackOnCancel && clickCallback != null) {
                 clickCallback?.execute(null)
             }
         }
-        
+
         setupBackPressHandling()
-        
+
         val contentView = createContentView()
         setContentView(contentView)
-        
+
         setupOrientationListener()
-        
-        trackingService.trackInAppOpen(messageId, location)
-        
+
+        if (!inAppOpenTracked) {
+            trackingService.trackInAppOpen(messageId, location)
+            inAppOpenTracked = true
+        }
+
         prepareToShowWebView()
+    }
+
+    override fun onSaveInstanceState(): Bundle {
+        val bundle = super.onSaveInstanceState()
+        bundle.putBoolean(IN_APP_OPEN_TRACKED, inAppOpenTracked)
+        return bundle
     }
 
     override fun dismiss() {
         backPressedCallback?.remove()
         backPressedCallback = null
-        
+
         orientationService.disableListener(orientationListener)
         orientationListener = null
-        
+
         webViewService.cleanupWebView(webView)
         webView = null
-        
+
+        val activity = ownerActivity ?: context as? Activity
+        if (activity != null && activity.isChangingConfigurations) {
+            super.dismiss()
+            return
+        }
+
         notification = null
-        
+        clickCallback = null
+        location = null
+
         super.dismiss()
     }
 
