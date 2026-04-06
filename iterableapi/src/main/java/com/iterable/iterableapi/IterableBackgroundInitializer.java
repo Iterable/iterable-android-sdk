@@ -338,12 +338,15 @@ class IterableBackgroundInitializer {
      * Used internally after initialization completes
      */
     private static void shutdownBackgroundExecutorAsync() {
-        // Capture the current executor reference so the shutdown thread only shuts down
-        // THIS executor, not a replacement created by resetBackgroundInitializationState().
-        final ExecutorService executorToShutdown = backgroundExecutor;
-        if (executorToShutdown == null || executorToShutdown.isShutdown()) {
-            return;
+        final ExecutorService executorToShutdown;
+        synchronized (initLock) {
+            executorToShutdown = backgroundExecutor;
+            if (executorToShutdown == null || executorToShutdown.isShutdown()) {
+                return;
+            }
         }
+        // Blocking operations happen outside the lock to avoid deadlock
+        // (this method is called from a task running on the executor itself)
         new Thread(() -> {
             try {
                 executorToShutdown.shutdown();
