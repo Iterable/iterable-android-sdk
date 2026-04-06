@@ -53,12 +53,15 @@ class IterableInAppDialogNotification internal constructor(
         private const val DELAY_THRESHOLD_MS = 500L
         private const val IN_APP_OPEN_TRACKED = "InAppOpenTracked"
 
+        @Volatile
         @JvmStatic
         private var notification: IterableInAppDialogNotification? = null
 
+        @Volatile
         @JvmStatic
         private var clickCallback: IterableHelper.IterableUrlCallback? = null
 
+        @Volatile
         @JvmStatic
         private var location: IterableInAppLocation? = null
 

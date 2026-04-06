@@ -55,11 +55,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private static final int DELAY_THRESHOLD_MS = 500;
 
     @Nullable
-    static IterableInAppFragmentHTMLNotification notification;
+    static volatile IterableInAppFragmentHTMLNotification notification;
     @Nullable
-    static IterableHelper.IterableUrlCallback clickCallback;
+    static volatile IterableHelper.IterableUrlCallback clickCallback;
     @Nullable
-    static IterableInAppLocation location;
+    static volatile IterableInAppLocation location;
 
     private IterableWebView webView;
     private boolean loaded;
