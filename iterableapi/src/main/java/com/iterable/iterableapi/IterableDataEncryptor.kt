@@ -19,8 +19,9 @@ class IterableDataEncryptor {
     companion object {
         private const val TAG = "IterableDataEncryptor"
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        private const val TRANSFORMATION_MODERN = "AES/GCM/NoPadding"
-        private const val TRANSFORMATION_LEGACY = "AES/CBC/PKCS5Padding"
+        private const val TRANSFORMATION_GCM = "AES/GCM/NoPadding"
+        @Deprecated("CBC padding is vulnerable to Padding Oracle Attacks. Used only for one-time migration of legacy data.")
+        private const val TRANSFORMATION_LEGACY_CBC = "AES/CBC/PKCS5Padding"
         private const val ITERABLE_KEY_ALIAS = "iterable_encryption_key"
         private const val GCM_TAG_LENGTH = 128
         private const val GCM_IV_LENGTH = 12
@@ -83,8 +84,8 @@ class IterableDataEncryptor {
                     ITERABLE_KEY_ALIAS,
                     KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
                 )
-                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM, KeyProperties.BLOCK_MODE_CBC)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE, KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                     .build()
 
                 keyGenerator.init(keySpec)
@@ -127,15 +128,11 @@ class IterableDataEncryptor {
 
         try {
             val data = value.toByteArray(Charsets.UTF_8)
-            val encryptedData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                encryptModern(data)
-            } else {
-                encryptLegacy(data)
-            }
+            val encryptedData = encryptGcm(data)
 
             // Combine isModern flag, IV length, IV, and encrypted data
             val combined = ByteArray(1 + 1 + encryptedData.iv.size + encryptedData.data.size)
-            combined[0] = if (encryptedData.isModernEncryption) 1 else 0
+            combined[0] = 1 // Always GCM
             combined[1] = encryptedData.iv.size.toByte()  // Store IV length
             System.arraycopy(encryptedData.iv, 0, combined, 2, encryptedData.iv.size)
             System.arraycopy(encryptedData.data, 0, combined, 2 + encryptedData.iv.size, encryptedData.data.size)
@@ -160,17 +157,15 @@ class IterableDataEncryptor {
             val encrypted = combined.copyOfRange(2 + ivLength, combined.size)
 
             val encryptedData = EncryptedData(encrypted, iv, isModern)
-            
-            // If it's modern encryption and we're on an old device, fail fast
-            if (isModern && Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                throw DecryptionException("Modern encryption cannot be decrypted on legacy devices")
-            }
 
-            // Use the appropriate decryption method
             val decrypted = if (isModern) {
-                decryptModern(encryptedData)
+                decryptGcm(encryptedData)
             } else {
-                decryptLegacy(encryptedData)
+                // Legacy CBC data detected: decrypt with CBC as a one-time migration.
+                // The caller will re-encrypt with GCM on the next save.
+                IterableLogger.w(TAG, "Migrating legacy CBC-encrypted data to GCM")
+                @Suppress("DEPRECATION")
+                decryptLegacyCbc(encryptedData)
             }
 
             return String(decrypted, Charsets.UTF_8)
@@ -183,52 +178,34 @@ class IterableDataEncryptor {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    private fun encryptModern(data: ByteArray): EncryptedData {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            return encryptLegacy(data)
-        }
-        
-        val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
+    private fun encryptGcm(data: ByteArray): EncryptedData {
+        val cipher = Cipher.getInstance(TRANSFORMATION_GCM)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
         val iv = cipher.iv
         val encrypted = cipher.doFinal(data)
         return EncryptedData(encrypted, iv, true)
     }
 
-    private fun encryptLegacy(data: ByteArray): EncryptedData {
-        val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
-        val iv = generateIV(isModern = false)
-        val spec = IvParameterSpec(iv)
-        cipher.init(Cipher.ENCRYPT_MODE, getKey(), spec)
-        val encrypted = cipher.doFinal(data)
-        return EncryptedData(encrypted, iv, false)
-    }
-
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    private fun decryptModern(encryptedData: EncryptedData): ByteArray {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            throw DecryptionException("Cannot decrypt modern encryption on legacy device")
-        }
-        
-        val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
+    private fun decryptGcm(encryptedData: EncryptedData): ByteArray {
+        val cipher = Cipher.getInstance(TRANSFORMATION_GCM)
         val spec = GCMParameterSpec(GCM_TAG_LENGTH, encryptedData.iv)
         cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
         return cipher.doFinal(encryptedData.data)
     }
 
-    private fun decryptLegacy(encryptedData: EncryptedData): ByteArray {
-        val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
+    /**
+     * Decrypts data that was previously encrypted with AES/CBC/PKCS5Padding.
+     * This method exists solely for backward compatibility to support one-time
+     * migration of legacy encrypted data to AES/GCM/NoPadding. It is not used
+     * for new encryption operations.
+     */
+    @Deprecated("Used only for one-time migration of legacy CBC data to GCM.")
+    private fun decryptLegacyCbc(encryptedData: EncryptedData): ByteArray {
+        @Suppress("DEPRECATION")
+        val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY_CBC)
         val spec = IvParameterSpec(encryptedData.iv)
         cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
         return cipher.doFinal(encryptedData.data)
-    }
-
-    private fun generateIV(isModern: Boolean = false): ByteArray {
-        val length = if (isModern) GCM_IV_LENGTH else CBC_IV_LENGTH
-        val iv = ByteArray(length)
-        SecureRandom().nextBytes(iv)
-        return iv
     }
 
     data class EncryptedData(
