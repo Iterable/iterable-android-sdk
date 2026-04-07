@@ -17,9 +17,10 @@
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/embedded_message_image"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
         android:contentDescription=""
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -31,6 +32,7 @@
         android:layout_width="0dp"
         android:layout_height="@dimen/card_text_container_height"
         android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/embedded_message_image"
         app:layout_constraintBottom_toTopOf="@id/embedded_message_buttons_container"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
