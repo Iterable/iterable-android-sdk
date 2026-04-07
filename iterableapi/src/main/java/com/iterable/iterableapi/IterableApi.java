@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -816,6 +820,43 @@ public class IterableApi {
 
         if (sharedInstance.config == null) {
             sharedInstance.config = new IterableConfig.Builder().build();
+        }
+
+        // Pre-load SharedPreferences on a background thread to avoid StrictMode
+        // DiskReadViolation. Android caches SharedPreferences in memory after the
+        // first access, so subsequent reads from the main thread will hit the
+        // in-memory cache instead of performing disk I/O.
+        // This fixes: https://github.com/Iterable/iterable-android-sdk/issues/480
+        final Context appContext = context.getApplicationContext();
+        final CountDownLatch preloadLatch = new CountDownLatch(1);
+        final ExecutorService preloadExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "IterablePrefsPreload");
+            t.setDaemon(true);
+            return t;
+        });
+        preloadExecutor.execute(() -> {
+            try {
+                // Trigger SharedPreferences loading from disk on this background thread.
+                // After this, getSharedPreferences calls with the same name return
+                // the already-loaded, in-memory cached instance.
+                appContext.getSharedPreferences(
+                    IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+                appContext.getSharedPreferences(
+                    IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+            } finally {
+                preloadLatch.countDown();
+            }
+        });
+
+        try {
+            // Wait for the background preload to finish (with a timeout to prevent hangs).
+            // 3 seconds is generous; SharedPreferences loading is typically < 50ms.
+            preloadLatch.await(3, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            IterableLogger.w(TAG, "Interrupted while waiting for SharedPreferences preload");
+            Thread.currentThread().interrupt();
+        } finally {
+            preloadExecutor.shutdown();
         }
 
         sharedInstance.retrieveEmailAndUserId();
