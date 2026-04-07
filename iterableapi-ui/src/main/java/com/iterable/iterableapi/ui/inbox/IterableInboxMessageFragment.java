@@ -1,13 +1,16 @@
 package com.iterable.iterableapi.ui.inbox;
 
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -22,6 +25,7 @@ import java.util.List;
 public class IterableInboxMessageFragment extends Fragment {
     public static final String ARG_MESSAGE_ID = "messageId";
     public static final String STATE_LOADED = "loaded";
+    private static final String TAG = "IterableInboxMsgFrag";
 
     private String messageId;
     private WebView webView;
@@ -99,6 +103,32 @@ public class IterableInboxMessageFragment extends Fragment {
                 getActivity().finish();
             }
             return true;
+        }
+
+        @Override
+        public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                boolean didCrash = detail.didCrash();
+                Log.w(TAG, "WebView render process gone. didCrash: " + didCrash);
+
+                // Clean up the WebView to prevent further issues
+                if (view != null) {
+                    try {
+                        view.destroy();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error destroying WebView after render process gone", e);
+                    }
+                }
+
+                // Close the fragment's activity since the WebView is no longer usable
+                if (getActivity() != null) {
+                    getActivity().finish();
+                }
+
+                // Return true to prevent the app from crashing
+                return true;
+            }
+            return super.onRenderProcessGone(view, detail);
         }
     };
 }
