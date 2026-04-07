@@ -407,15 +407,22 @@ class IterableNotificationHelper {
         }
 
         /**
-         * Returns the iconId from potential resource locations
+         * Returns the iconId from potential resource locations.
+         *
+         * Fallback order:
+         * 1. {@code iterable_notification_icon} meta-data or icon set via {@link IterableApi#setNotificationIcon}
+         * 2. Firebase {@code com.google.firebase.messaging.default_notification_icon} meta-data
+         * 3. {@code @drawable/notification_icon} (Expo / React Native convention)
+         * 4. {@code @drawable/ic_notification} (common Android convention)
+         * 5. App launcher icon (last resort — renders as a white square on Android 5.0+)
          *
          * @param context
-         * @return
+         * @return resource id of the notification icon to use
          */
         private int getIconId(Context context) {
             int iconId = 0;
 
-            //Get the iconId set in the AndroidManifest.xml
+            // 1a. Check iterable_notification_icon set in AndroidManifest.xml meta-data
             if (iconId == 0) {
                 try {
                     ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
@@ -428,7 +435,7 @@ class IterableNotificationHelper {
                 }
             }
 
-            //Get the iconId set in code
+            // 1b. Check icon set programmatically via IterableApi.setNotificationIcon()
             if (iconId == 0) {
                 iconId = context.getResources().getIdentifier(
                         IterableApi.getNotificationIcon(context),
@@ -436,7 +443,47 @@ class IterableNotificationHelper {
                         context.getPackageName());
             }
 
-            //Get id from the default app settings
+            // 2. Check Firebase default_notification_icon meta-data
+            if (iconId == 0) {
+                try {
+                    ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                    if (info.metaData != null) {
+                        int firebaseIconId = info.metaData.getInt("com.google.firebase.messaging.default_notification_icon", 0);
+                        if (firebaseIconId != 0) {
+                            IterableLogger.d(IterableNotificationBuilder.TAG, "Using Firebase default_notification_icon");
+                            iconId = firebaseIconId;
+                        }
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // 3. Check @drawable/notification_icon (Expo / React Native convention)
+            if (iconId == 0) {
+                int drawableIconId = context.getResources().getIdentifier(
+                        "notification_icon",
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (drawableIconId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using @drawable/notification_icon");
+                    iconId = drawableIconId;
+                }
+            }
+
+            // 4. Check @drawable/ic_notification (common Android convention)
+            if (iconId == 0) {
+                int icNotificationId = context.getResources().getIdentifier(
+                        "ic_notification",
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (icNotificationId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using @drawable/ic_notification");
+                    iconId = icNotificationId;
+                }
+            }
+
+            // 5. Fall back to the app launcher icon (may render as white square on Android 5.0+)
             if (iconId == 0) {
                 if (context.getApplicationInfo().icon != 0) {
                     IterableLogger.d(IterableNotificationBuilder.TAG, "No Notification Icon defined - defaulting to app icon");
