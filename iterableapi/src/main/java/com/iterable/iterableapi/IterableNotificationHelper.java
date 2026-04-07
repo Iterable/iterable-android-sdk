@@ -436,6 +436,43 @@ class IterableNotificationHelper {
                         context.getPackageName());
             }
 
+            //Check Firebase FCM default notification icon
+            if (iconId == 0) {
+                try {
+                    ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                    if (info.metaData != null) {
+                        iconId = info.metaData.getInt("com.google.firebase.messaging.default_notification_icon", 0);
+                        if (iconId != 0) {
+                            IterableLogger.d(IterableNotificationBuilder.TAG, "Using Firebase default notification icon");
+                        }
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    IterableLogger.w(IterableNotificationBuilder.TAG, e.toString());
+                }
+            }
+
+            //Check Expo/React Native convention: @drawable/notification_icon
+            if (iconId == 0) {
+                iconId = context.getResources().getIdentifier(
+                        "notification_icon",
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (iconId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using notification_icon drawable (Expo/React Native convention)");
+                }
+            }
+
+            //Check common Android convention: @drawable/ic_notification
+            if (iconId == 0) {
+                iconId = context.getResources().getIdentifier(
+                        "ic_notification",
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (iconId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using ic_notification drawable (common Android convention)");
+                }
+            }
+
             //Get id from the default app settings
             if (iconId == 0) {
                 if (context.getApplicationInfo().icon != 0) {
