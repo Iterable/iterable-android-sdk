@@ -4,6 +4,19 @@ import android.content.Context
 import org.json.JSONException
 import org.json.JSONObject
 
+/**
+ * Manages embedded messages for the Iterable SDK.
+ *
+ * This class is responsible for syncing embedded messages from the Iterable backend,
+ * maintaining a local in-memory cache of messages per placement, and notifying registered
+ * [IterableEmbeddedUpdateHandler] listeners when messages change.
+ *
+ * It also tracks embedded session lifecycle (foreground/background transitions) via
+ * [IterableActivityMonitor] and exposes [handleEmbeddedClick] for processing URL clicks
+ * originating from embedded message UI components.
+ *
+ * Obtain an instance via [IterableApi.getEmbeddedManager].
+ */
 public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback {
 
     // region constants
@@ -26,7 +39,14 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region constructor
 
-    //Constructor of this class with actionHandler and updateHandler
+    /**
+     * Creates a new [IterableEmbeddedManager].
+     *
+     * If [IterableConfig.enableEmbeddedMessaging] is `true` the manager will automatically
+     * start/stop embedded sessions and sync messages on app foreground/background transitions.
+     *
+     * @param iterableApi The [IterableApi] instance used for network calls and configuration.
+     */
     public constructor(
         iterableApi: IterableApi
     ) {
@@ -42,22 +62,40 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region getters and setters
 
-    //Add updateHandler to the list
+    /**
+     * Registers a listener that will be notified whenever the embedded message cache changes
+     * or sync events occur.
+     *
+     * @param updateHandler The [IterableEmbeddedUpdateHandler] to add.
+     */
     public fun addUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.add(updateHandler)
     }
 
-    //Remove updateHandler from the list
+    /**
+     * Unregisters a previously added listener and ends the current embedded session.
+     *
+     * @param updateHandler The [IterableEmbeddedUpdateHandler] to remove.
+     */
     public fun removeUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
     }
 
-    //Get the list of updateHandlers
+    /**
+     * Returns the current list of registered update listeners.
+     *
+     * @return An immutable snapshot of all registered [IterableEmbeddedUpdateHandler] instances.
+     */
     public fun getUpdateHandlers(): List<IterableEmbeddedUpdateHandler> {
         return updateHandleListeners
     }
 
+    /**
+     * Returns the [EmbeddedSessionManager] used to track embedded session start/end events.
+     *
+     * @return The active [EmbeddedSessionManager].
+     */
     public fun getEmbeddedSessionManager(): EmbeddedSessionManager {
         return embeddedSessionManager
     }
@@ -66,19 +104,46 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
 
     // region public methods
 
-    //Gets the list of embedded messages in memory without syncing
+    /**
+     * Returns the cached list of embedded messages for the given placement, or `null` if no
+     * messages are currently stored for that placement.
+     *
+     * This does **not** trigger a network sync; call [syncMessages] to refresh data.
+     *
+     * @param placementId The placement ID whose messages should be returned.
+     * @return The list of [IterableEmbeddedMessage] objects, or `null` if none are cached.
+     */
     fun getMessages(placementId: Long): List<IterableEmbeddedMessage>? {
         return localPlacementMessagesMap[placementId]
     }
 
+    /**
+     * Clears the in-memory message cache for all placements.
+     */
     fun reset() {
         localPlacementMessagesMap = mutableMapOf()
     }
 
+    /**
+     * Returns the list of placement IDs currently held in the local message cache.
+     *
+     * @return A list of placement IDs.
+     */
     fun getPlacementIds(): List<Long> {
         return localPlacementIds
     }
 
+    /**
+     * Syncs embedded messages from the Iterable backend for the given placement IDs.
+     *
+     * When the response is received the local cache is updated and all registered
+     * [IterableEmbeddedUpdateHandler] listeners are notified. If [placementIds] is empty, all
+     * available placements are returned by the backend.
+     *
+     * This method is a no-op when [IterableConfig.enableEmbeddedMessaging] is `false`.
+     *
+     * @param placementIds Array of placement IDs to sync. Defaults to an empty array (all placements).
+     */
     @JvmOverloads
     fun syncMessages(placementIds: Array<Long> = emptyArray()) {
         if (iterableApi.config.enableEmbeddedMessaging) {
@@ -159,31 +224,60 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
+    /**
+     * Handles a click on a URL originating from an embedded message.
+     *
+     * The URL is dispatched as follows:
+     * - URLs with the `action://` scheme are forwarded to the custom action handler.
+     * - URLs with the `itbl://` scheme are forwarded to the custom action handler for
+     *   backwards compatibility.
+     * - All other URLs are opened via [IterableActionRunner] as a standard open-URL action.
+     *
+     * @param clickedUrl The URL that was clicked. Must not be null or empty.
+     */
+    fun handleEmbeddedClick(clickedUrl: String) {
+        if (clickedUrl.isEmpty()) return
+
+        if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
+            val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ACTION, "")
+            IterableActionRunner.executeAction(
+                context,
+                IterableAction.actionCustomAction(actionName),
+                IterableActionSource.EMBEDDED
+            )
+        } else if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
+            val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ITBL, "")
+            IterableActionRunner.executeAction(
+                context,
+                IterableAction.actionCustomAction(actionName),
+                IterableActionSource.EMBEDDED
+            )
+        } else {
+            IterableActionRunner.executeAction(
+                context,
+                IterableAction.actionOpenUrl(clickedUrl),
+                IterableActionSource.EMBEDDED
+            )
+        }
+    }
+
+    /**
+     * Handles a click on an embedded message URL.
+     *
+     * The [message] and [buttonIdentifier] parameters are not used internally; use the
+     * simplified [handleEmbeddedClick] overload that accepts only the URL instead.
+     *
+     * @param message The embedded message containing the clicked element (unused).
+     * @param buttonIdentifier The identifier of the clicked button, if any (unused).
+     * @param clickedUrl The URL that was clicked. When `null` or empty this method is a no-op.
+     */
+    @Deprecated(
+        message = "Use handleEmbeddedClick(clickedUrl: String) instead. The message and buttonIdentifier parameters are unused.",
+        replaceWith = ReplaceWith("handleEmbeddedClick(clickedUrl ?: return)")
+    )
     fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
-        if ((clickedUrl != null) && clickedUrl.toString().isNotEmpty()) {
-            if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
-                // This is an action:// URL, pass that to the custom action handler
-                val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ACTION, "")
-                IterableActionRunner.executeAction(
-                    context,
-                    IterableAction.actionCustomAction(actionName),
-                    IterableActionSource.EMBEDDED
-                )
-            } else if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ITBL)) {
-                // Handle itbl:// URLs, pass that to the custom action handler for compatibility
-                val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ITBL, "")
-                IterableActionRunner.executeAction(
-                    context,
-                    IterableAction.actionCustomAction(actionName),
-                    IterableActionSource.EMBEDDED
-                )
-            } else {
-                IterableActionRunner.executeAction(
-                    context,
-                    IterableAction.actionOpenUrl(clickedUrl),
-                    IterableActionSource.EMBEDDED
-                )
-            }
+        if (clickedUrl != null && clickedUrl.isNotEmpty()) {
+            handleEmbeddedClick(clickedUrl)
         }
     }
 
