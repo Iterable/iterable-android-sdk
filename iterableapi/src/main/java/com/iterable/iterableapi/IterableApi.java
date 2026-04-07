@@ -998,20 +998,22 @@ public class IterableApi {
      * Make sure the Iterable API is initialized before calling this method.
      * @return {@link IterableInAppManager} instance
      */
-    @NonNull
+    @Nullable
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getInAppManager(). " +
+            IterableLogger.e(TAG, "IterableApi must be initialized before calling getInAppManager(). " +
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
+            return null;
         }
         return inAppManager;
     }
 
-    @NonNull
+    @Nullable
     public IterableEmbeddedManager getEmbeddedManager() {
         if (embeddedManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getEmbeddedManager(). " +
+            IterableLogger.e(TAG, "IterableApi must be initialized before calling getEmbeddedManager(). " +
                     "Make sure you call IterableApi#initialize() in Application#onCreate");
+            return null;
         }
         return embeddedManager;
     }
