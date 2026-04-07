@@ -11,20 +11,19 @@ import javax.crypto.spec.GCMParameterSpec
 import android.os.Build
 import java.security.KeyStore.PasswordProtection
 import androidx.annotation.VisibleForTesting
-import java.security.SecureRandom
 import javax.crypto.spec.IvParameterSpec
-import android.annotation.TargetApi
 
 class IterableDataEncryptor {
     companion object {
         private const val TAG = "IterableDataEncryptor"
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val TRANSFORMATION_MODERN = "AES/GCM/NoPadding"
+        // TRANSFORMATION_LEGACY is retained for DECRYPTION ONLY to support migration of data
+        // written by older SDK versions. It MUST NOT be used for any new encryption because
+        // AES/CBC/PKCS5Padding is susceptible to Padding Oracle Attacks. See decryptLegacy().
         private const val TRANSFORMATION_LEGACY = "AES/CBC/PKCS5Padding"
         private const val ITERABLE_KEY_ALIAS = "iterable_encryption_key"
         private const val GCM_TAG_LENGTH = 128
-        private const val GCM_IV_LENGTH = 12
-        private const val CBC_IV_LENGTH = 16
         private val TEST_KEYSTORE_PASSWORD = "test_password".toCharArray()
 
         private val keyStore: KeyStore by lazy {
@@ -70,7 +69,6 @@ class IterableDataEncryptor {
                keyStore.type == ANDROID_KEYSTORE
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     private fun generateAndroidKeyStoreKey(): Unit? {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -127,16 +125,17 @@ class IterableDataEncryptor {
 
         try {
             val data = value.toByteArray(Charsets.UTF_8)
-            val encryptedData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                encryptModern(data)
-            } else {
-                encryptLegacy(data)
-            }
+            // Always encrypt using AES/GCM/NoPadding (TRANSFORMATION_MODERN).
+            // AES/CBC/PKCS5Padding (TRANSFORMATION_LEGACY) is intentionally NOT used here
+            // because CBC mode is vulnerable to Padding Oracle Attacks. Legacy CBC data may
+            // still be DECRYPTED for migration purposes via decryptLegacy(), but new data
+            // must never be written with CBC.
+            val encryptedData = encryptModern(data)
 
             // Combine isModern flag, IV length, IV, and encrypted data
             val combined = ByteArray(1 + 1 + encryptedData.iv.size + encryptedData.data.size)
             combined[0] = if (encryptedData.isModernEncryption) 1 else 0
-            combined[1] = encryptedData.iv.size.toByte()  // Store IV length
+            combined[1] = encryptedData.iv.size.toByte()
             System.arraycopy(encryptedData.iv, 0, combined, 2, encryptedData.iv.size)
             System.arraycopy(encryptedData.data, 0, combined, 2 + encryptedData.iv.size, encryptedData.data.size)
 
@@ -152,7 +151,7 @@ class IterableDataEncryptor {
 
         try {
             val combined = Base64.decode(value, Base64.NO_WRAP)
-            
+
             // Extract components
             val isModern = combined[0] == 1.toByte()
             val ivLength = combined[1].toInt()
@@ -160,13 +159,15 @@ class IterableDataEncryptor {
             val encrypted = combined.copyOfRange(2 + ivLength, combined.size)
 
             val encryptedData = EncryptedData(encrypted, iv, isModern)
-            
+
             // If it's modern encryption and we're on an old device, fail fast
             if (isModern && Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
                 throw DecryptionException("Modern encryption cannot be decrypted on legacy devices")
             }
 
-            // Use the appropriate decryption method
+            // Use the appropriate decryption method.
+            // decryptLegacy() is the ONLY place AES/CBC is used and it is read-only
+            // (migration path). No new data is ever encrypted with CBC.
             val decrypted = if (isModern) {
                 decryptModern(encryptedData)
             } else {
@@ -175,7 +176,6 @@ class IterableDataEncryptor {
 
             return String(decrypted, Charsets.UTF_8)
         } catch (e: DecryptionException) {
-            // Re-throw DecryptionException directly
             throw e
         } catch (e: Exception) {
             IterableLogger.e(TAG, "Decryption failed", e)
@@ -183,12 +183,35 @@ class IterableDataEncryptor {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    private fun encryptModern(data: ByteArray): EncryptedData {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            return encryptLegacy(data)
+    /**
+     * Decrypts [value] and, if the ciphertext was produced with the legacy AES/CBC scheme,
+     * immediately re-encrypts the plaintext with AES/GCM and returns the new ciphertext so the
+     * caller can persist it.  If the data is already GCM-encrypted, the original [value] is
+     * returned unchanged as the second component.
+     *
+     * Use this helper to migrate persisted CBC-encrypted values to GCM on first read.
+     *
+     * @return Pair(plaintext, updatedCiphertext). updatedCiphertext equals [value] when no
+     *         migration was required.
+     */
+    fun decryptAndMigrate(value: String?): Pair<String?, String?> {
+        if (value == null) return Pair(null, null)
+
+        val combined = Base64.decode(value, Base64.NO_WRAP)
+        val isModern = combined[0] == 1.toByte()
+        val plaintext = decrypt(value)
+
+        return if (!isModern) {
+            // Data was CBC-encrypted — re-encrypt with GCM so future reads are secure.
+            val migratedCiphertext = encrypt(plaintext)
+            Pair(plaintext, migratedCiphertext)
+        } else {
+            Pair(plaintext, value)
         }
-        
+    }
+
+    // AES/GCM/NoPadding encryption — used for ALL new write operations.
+    private fun encryptModern(data: ByteArray): EncryptedData {
         val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
         val iv = cipher.iv
@@ -196,39 +219,22 @@ class IterableDataEncryptor {
         return EncryptedData(encrypted, iv, true)
     }
 
-    private fun encryptLegacy(data: ByteArray): EncryptedData {
-        val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
-        val iv = generateIV(isModern = false)
-        val spec = IvParameterSpec(iv)
-        cipher.init(Cipher.ENCRYPT_MODE, getKey(), spec)
-        val encrypted = cipher.doFinal(data)
-        return EncryptedData(encrypted, iv, false)
-    }
-
-    @TargetApi(Build.VERSION_CODES.KITKAT)
     private fun decryptModern(encryptedData: EncryptedData): ByteArray {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            throw DecryptionException("Cannot decrypt modern encryption on legacy device")
-        }
-        
         val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
         val spec = GCMParameterSpec(GCM_TAG_LENGTH, encryptedData.iv)
         cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
         return cipher.doFinal(encryptedData.data)
     }
 
+    // SECURITY NOTE: AES/CBC/PKCS5Padding is vulnerable to Padding Oracle Attacks and MUST NOT
+    // be used for encryption. This method exists solely to decrypt data that was written by older
+    // versions of the SDK. Callers should migrate the plaintext back to GCM via encryptModern()
+    // (or use decryptAndMigrate()) so the CBC ciphertext is never read again.
     private fun decryptLegacy(encryptedData: EncryptedData): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
         val spec = IvParameterSpec(encryptedData.iv)
         cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
         return cipher.doFinal(encryptedData.data)
-    }
-
-    private fun generateIV(isModern: Boolean = false): ByteArray {
-        val length = if (isModern) GCM_IV_LENGTH else CBC_IV_LENGTH
-        val iv = ByteArray(length)
-        SecureRandom().nextBytes(iv)
-        return iv
     }
 
     data class EncryptedData(
