@@ -159,8 +159,16 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
-        if ((clickedUrl != null) && clickedUrl.toString().isNotEmpty()) {
+    /**
+     * Handles an embedded message click by processing the given URL.
+     *
+     * Supports `action://`, `itbl://`, and standard URLs. Action and itbl scheme URLs
+     * are routed to the custom action handler, while other URLs are opened directly.
+     *
+     * @param clickedUrl The URL associated with the embedded message click.
+     */
+    fun handleEmbeddedClick(clickedUrl: String) {
+        if (clickedUrl.isNotEmpty()) {
             if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
                 // This is an action:// URL, pass that to the custom action handler
                 val actionName: String = clickedUrl.replace(IterableConstants.URL_SCHEME_ACTION, "")
@@ -185,6 +193,22 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
                 )
             }
         }
+    }
+
+    /**
+     * Handles an embedded message click by processing the given URL.
+     *
+     * @param message The embedded message that was clicked. This parameter is unused.
+     * @param buttonIdentifier The identifier of the button that was clicked. This parameter is unused.
+     * @param clickedUrl The URL associated with the embedded message click.
+     * @see handleEmbeddedClick
+     */
+    @Deprecated(
+        message = "Use handleEmbeddedClick(clickedUrl) instead. The message and buttonIdentifier parameters are unused.",
+        replaceWith = ReplaceWith("handleEmbeddedClick(clickedUrl ?: "")")
+    )
+    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
+        handleEmbeddedClick(clickedUrl ?: "")
     }
 
     private fun notifySyncSucceeded() {
