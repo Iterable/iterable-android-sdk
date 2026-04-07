@@ -436,6 +436,41 @@ class IterableNotificationHelper {
                         context.getPackageName());
             }
 
+            //Check standard notification icon conventions (Firebase, Expo, common Android)
+            if (iconId == 0) {
+                try {
+                    ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                    if (info.metaData != null) {
+                        iconId = info.metaData.getInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, 0);
+                        if (iconId != 0) {
+                            IterableLogger.d(IterableNotificationBuilder.TAG, "Using Firebase default notification icon");
+                        }
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (iconId == 0) {
+                iconId = context.getResources().getIdentifier(
+                        IterableConstants.NOTIFICATION_ICON_DRAWABLE_NOTIFICATION_ICON,
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (iconId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using notification_icon drawable");
+                }
+            }
+
+            if (iconId == 0) {
+                iconId = context.getResources().getIdentifier(
+                        IterableConstants.NOTIFICATION_ICON_DRAWABLE_IC_NOTIFICATION,
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (iconId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using ic_notification drawable");
+                }
+            }
+
             //Get id from the default app settings
             if (iconId == 0) {
                 if (context.getApplicationInfo().icon != 0) {
