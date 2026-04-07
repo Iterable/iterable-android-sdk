@@ -141,12 +141,30 @@ public class IterableConfig {
     final IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
 
     /**
+     * Custom notification channel name for push notifications.
+     * If set, this name will be used for all Iterable notification channels instead of
+     * deriving the channel name from the sound file name. This prevents non-human-readable
+     * sound file names from appearing as channel names in the device notification settings.
+     */
+    @Nullable
+    final String notificationChannelName;
+
+    /**
      * Base URL for Webview content loading. Specifically used to enable CORS for external resources.
      * If null or empty, defaults to empty string (original behavior with about:blank origin).
      * Set this to according to your CORS settings for example (e.g., "https://app.iterable.com") to allow external resource loading.
      */
     @Nullable
     final String webViewBaseUrl;
+
+    /**
+     * Get the configured notification channel name
+     * @return Custom notification channel name, or null if not configured
+     */
+    @Nullable
+    public String getNotificationChannelName() {
+        return notificationChannelName;
+    }
 
     /**
      * Get the configured WebView base URL
@@ -182,6 +200,7 @@ public class IterableConfig {
         iterableUnknownUserHandler = builder.iterableUnknownUserHandler;
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
+        notificationChannelName = builder.notificationChannelName;
         webViewBaseUrl = builder.webViewBaseUrl;
     }
 
@@ -210,6 +229,7 @@ public class IterableConfig {
         private int eventThresholdLimit = 100;
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableUnknownUserHandler iterableUnknownUserHandler;
+        private String notificationChannelName;
         private String webViewBaseUrl;
 
         public Builder() {}
@@ -450,6 +470,18 @@ public class IterableConfig {
         @NonNull
         public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
             this.mobileFrameworkInfo = mobileFrameworkInfo;
+            return this;
+        }
+
+        /**
+         * Set a custom notification channel name for push notifications.
+         * If set, this name will be used for all Iterable notification channels instead of
+         * deriving the channel name from the sound file name.
+         * @param notificationChannelName Custom channel name for notifications
+         */
+        @NonNull
+        public Builder setNotificationChannelName(@Nullable String notificationChannelName) {
+            this.notificationChannelName = notificationChannelName;
             return this;
         }
 

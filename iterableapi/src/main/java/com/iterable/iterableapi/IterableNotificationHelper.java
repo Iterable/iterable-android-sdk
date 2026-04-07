@@ -158,9 +158,21 @@ class IterableNotificationHelper {
 
             soundUri = getSoundUri(context, soundName, soundUrl);
 
-            String channelName = (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI)
-                    ? getChannelName(context)
-                    : soundName;
+            // Use custom channel name from config if available, otherwise fall back to sound name
+            String customChannelName = null;
+            IterableConfig config = IterableApi.getInstance().config;
+            if (config != null) {
+                customChannelName = config.getNotificationChannelName();
+            }
+
+            String channelName;
+            if (customChannelName != null && !customChannelName.isEmpty()) {
+                channelName = customChannelName;
+            } else if (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI) {
+                channelName = getChannelName(context);
+            } else {
+                channelName = soundName;
+            }
 
             String channelId = (soundUri == Settings.System.DEFAULT_NOTIFICATION_URI)
                     ? context.getPackageName()

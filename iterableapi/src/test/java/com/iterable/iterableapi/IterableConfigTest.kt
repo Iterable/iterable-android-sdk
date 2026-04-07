@@ -51,4 +51,19 @@ class IterableConfigTest {
         val config: IterableConfig = configBuilder.build()
         assertFalse(config.keychainEncryption)
     }
+
+    @Test
+    fun defaultNotificationChannelName() {
+        val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
+        val config: IterableConfig = configBuilder.build()
+        assertThat(config.notificationChannelName, `is`(nullValue()))
+    }
+
+    @Test
+    fun setNotificationChannelName() {
+        val configBuilder: IterableConfig.Builder = IterableConfig.Builder()
+            .setNotificationChannelName("My App Notifications")
+        val config: IterableConfig = configBuilder.build()
+        assertThat(config.notificationChannelName, `is`("My App Notifications"))
+    }
 }
