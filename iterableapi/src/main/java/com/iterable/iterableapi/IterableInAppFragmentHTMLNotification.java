@@ -758,9 +758,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         try {
             return new IterableWebView(context);
         } catch (Resources.NotFoundException e) {
-            IterableLogger.e(TAG, "Failed to create WebView - system WebView resource issue", e);
+            IterableLogger.e(TAG, "Failed to create WebView - system WebView resource not found", e);
             return null;
         } catch (RuntimeException e) {
+            // Catches android.util.AndroidRuntimeException thrown by WebViewFactory when the
+            // WebView process is unavailable or the WebView provider cannot be initialized (#1013)
+            IterableLogger.e(TAG, "Failed to create WebView - WebView process may be unavailable (AndroidRuntimeException)", e);
+            return null;
+        } catch (Exception e) {
             IterableLogger.e(TAG, "Failed to create WebView - unexpected error", e);
             return null;
         }
