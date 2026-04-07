@@ -6,4 +6,9 @@
         <item name="cornerSizeBottomRight">0dp</item>
         <item name="cornerSizeBottomLeft">0dp</item>
     </style>
+
+    <style name="IterableInboxActivityTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/iterableInboxToolbarBackground</item>
+        <item name="colorPrimaryDark">@color/iterableInboxToolbarBackground</item>
+    </style>
 </resources>

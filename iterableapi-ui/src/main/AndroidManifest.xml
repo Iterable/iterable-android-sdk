@@ -5,7 +5,8 @@
         <activity
             android:name=".inbox.IterableInboxActivity"
             android:exported="false"
-            android:label="Inbox" />
+            android:label="Inbox"
+            android:theme="@style/IterableInboxActivityTheme" />
         <activity
             android:name=".inbox.IterableInboxMessageActivity"
             android:exported="false"/>
