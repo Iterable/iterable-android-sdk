@@ -53,6 +53,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private static final String IN_APP_SHOULD_ANIMATE = "ShouldAnimate";
 
     private static final int DELAY_THRESHOLD_MS = 500;
+    private static final int HTML_SIZE_WARNING_THRESHOLD = 250 * 1024; // 250KB
 
     @Nullable
     static IterableInAppFragmentHTMLNotification notification;
@@ -60,6 +61,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     static IterableHelper.IterableUrlCallback clickCallback;
     @Nullable
     static IterableInAppLocation location;
+    /**
+     * Static holder for HTML content to avoid persisting large HTML strings in Bundle,
+     * which can cause TransactionTooLargeException when Android saves activity state.
+     */
+    @Nullable
+    private static String pendingHtmlString;
 
     private IterableWebView webView;
     private boolean loaded;
@@ -86,8 +93,19 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding, @NonNull boolean shouldAnimate, IterableInAppMessage.InAppBgColor inAppBgColor) {
         notification = new IterableInAppFragmentHTMLNotification();
+
+        // Log a warning if the HTML content is large enough to potentially cause TransactionTooLargeException
+        int htmlSizeBytes = htmlString.getBytes().length;
+        if (htmlSizeBytes > HTML_SIZE_WARNING_THRESHOLD) {
+            IterableLogger.w(TAG, "In-app HTML content is large (" + htmlSizeBytes + " bytes). " +
+                    "Content will be held in memory instead of Bundle to avoid TransactionTooLargeException.");
+        }
+
+        // Store HTML in static field instead of Bundle to avoid TransactionTooLargeException
+        pendingHtmlString = htmlString;
+
         Bundle args = new Bundle();
-        args.putString(HTML_STRING, htmlString);
+        // Do NOT put htmlString in the Bundle - it can cause TransactionTooLargeException for large content
         args.putBoolean(CALLBACK_ON_CANCEL, callbackOnCancel);
         args.putString(MESSAGE_ID, messageId);
         args.putDouble(BACKGROUND_ALPHA, backgroundAlpha);
@@ -139,7 +157,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         Bundle args = getArguments();
 
         if (args != null) {
-            htmlString = args.getString(HTML_STRING, null);
             callbackOnCancel = args.getBoolean(CALLBACK_ON_CANCEL, false);
             messageId = args.getString(MESSAGE_ID);
             backgroundAlpha = args.getDouble(BACKGROUND_ALPHA);
@@ -147,6 +164,23 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             inAppBackgroundAlpha = args.getDouble(IN_APP_BG_ALPHA);
             inAppBackgroundColor = args.getString(IN_APP_BG_COLOR, null);
             shouldAnimate = args.getBoolean(IN_APP_SHOULD_ANIMATE);
+        }
+
+        // Retrieve HTML from static holder (avoids Bundle size issues)
+        if (pendingHtmlString != null) {
+            htmlString = pendingHtmlString;
+        } else {
+            // Fallback: try to get from Bundle for backward compatibility
+            if (args != null) {
+                htmlString = args.getString(HTML_STRING, null);
+            }
+        }
+
+        if (htmlString == null) {
+            IterableLogger.w(TAG, "HTML content is not available. The in-app message cannot be displayed. " +
+                    "This may happen if the app process was killed while the in-app was displayed.");
+            dismissAllowingStateLoss();
+            return;
         }
 
         notification = this;
@@ -190,6 +224,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        if (htmlString == null) {
+            IterableLogger.w(TAG, "HTML content is null in onCreateView, dismissing in-app notification.");
+            dismissAllowingStateLoss();
+            return null;
+        }
+
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         if (getInAppLayout(insetPadding) == InAppLayout.FULLSCREEN) {
@@ -207,6 +247,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             return null;
         }
         webView.setId(R.id.webView);
+
+        // Disable WebView state saving to prevent large HTML content from being
+        // persisted in view state, which can cause TransactionTooLargeException
+        webView.setSaveEnabled(false);
+
         webView.createWithHtml(this, htmlString);
 
         if (orientationListener == null) {
@@ -315,12 +360,22 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     /**
-     * Sets up the webView and the dialog layout
+     * Saves instance state, explicitly excluding large HTML content to prevent
+     * TransactionTooLargeException. The HTML content is held in memory via the
+     * static {@link #pendingHtmlString} field instead.
      */
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(IN_APP_OPEN_TRACKED, true);
+
+        // Remove HTML string from arguments bundle if present.
+        // This prevents the large HTML from being persisted in the saved instance state,
+        // which can cause TransactionTooLargeException.
+        Bundle args = getArguments();
+        if (args != null) {
+            args.remove(HTML_STRING);
+        }
     }
 
     /**
@@ -353,6 +408,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         notification = null;
         clickCallback = null;
         location = null;
+        pendingHtmlString = null;
     }
 
     @Override
