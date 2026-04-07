@@ -5,6 +5,7 @@ import android.webkit.WebView;
 
 public class IterableWebChromeClient extends WebChromeClient {
     IterableWebView.HTMLNotificationCallbacks inAppHTMLNotification;
+    private boolean hasTriggeredResize = false;
 
     IterableWebChromeClient(IterableWebView.HTMLNotificationCallbacks inAppHTMLNotification) {
         this.inAppHTMLNotification = inAppHTMLNotification;
@@ -12,8 +13,10 @@ public class IterableWebChromeClient extends WebChromeClient {
 
     @Override
     public void onProgressChanged(WebView view, int newProgress) {
-        // Only trigger resize when page is fully loaded (100%) to avoid multiple rapid calls
-        if (newProgress == 100) {
+        // Only trigger resize once when page is fully loaded (100%)
+        // Avoid triggering on subsequent 100% progress reports which can cause redraw loops
+        if (newProgress == 100 && !hasTriggeredResize) {
+            hasTriggeredResize = true;
             inAppHTMLNotification.runResizeScript();
         }
     }

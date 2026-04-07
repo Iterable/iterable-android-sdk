@@ -11,8 +11,40 @@ class IterableWebView extends WebView {
     static final String MIME_TYPE = "text/html";
     static final String ENCODING = "UTF-8";
 
+    private boolean layoutStabilized = false;
+
     IterableWebView(Context context) {
         super(context);
+    }
+
+    /**
+     * Marks layout as stabilized to prevent continuous layout passes.
+     * After calling this, requestLayout() and invalidate() calls from
+     * internal WebView reflows will be suppressed until
+     * setLayoutStabilized(false) is called.
+     */
+    void setLayoutStabilized(boolean stabilized) {
+        this.layoutStabilized = stabilized;
+    }
+
+    boolean isLayoutStabilized() {
+        return layoutStabilized;
+    }
+
+    @Override
+    public void requestLayout() {
+        if (layoutStabilized) {
+            return;
+        }
+        super.requestLayout();
+    }
+
+    @Override
+    public void invalidate() {
+        if (layoutStabilized) {
+            return;
+        }
+        super.invalidate();
     }
 
     void createWithHtml(IterableWebView.HTMLNotificationCallbacks notificationDialog, String html) {

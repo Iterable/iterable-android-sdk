@@ -14,7 +14,7 @@ import static org.mockito.Mockito.verify;
 
 /**
  * Tests for IterableWebChromeClient
- * Verifies that resize is only triggered when page is fully loaded (100% progress)
+ * Verifies that resize is only triggered once when page is fully loaded (100% progress)
  */
 public class IterableWebChromeClientTest extends BaseTest {
 
@@ -65,13 +65,13 @@ public class IterableWebChromeClientTest extends BaseTest {
 
     @Test
     public void testOnProgressChanged_Multiple100PercentCalls() {
-        // Test: If 100% is called multiple times, resize should be called each time
-        // (though this is unlikely in practice, we test the behavior)
+        // Test: If 100% is called multiple times, resize should only be called once
+        // to prevent continuous redraw cycles (fixes #901)
         webChromeClient.onProgressChanged(mockWebView, 100);
         webChromeClient.onProgressChanged(mockWebView, 100);
         webChromeClient.onProgressChanged(mockWebView, 100);
 
-        verify(mockCallbacks, times(3)).runResizeScript();
+        verify(mockCallbacks, times(1)).runResizeScript();
     }
 
     @Test
@@ -98,4 +98,3 @@ public class IterableWebChromeClientTest extends BaseTest {
         verify(mockCallbacks, times(1)).runResizeScript();
     }
 }
-

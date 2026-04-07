@@ -72,7 +72,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private Handler resizeHandler;
     private Runnable pendingResizeRunnable;
     private float lastContentHeight = -1;
+    private boolean resizeComplete = false;
+    private int resizeAttemptCount = 0;
     private static final int RESIZE_DEBOUNCE_DELAY_MS = 200;
+    private static final int MAX_RESIZE_ATTEMPTS = 5;
+    private static final int STABILIZE_DELAY_MS = 500;
 
     private double backgroundAlpha; //TODO: remove in a future version
     private Rect insetPadding;
@@ -220,6 +224,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         int currentOrientation = roundToNearest90Degrees(orientation);
                         if (currentOrientation != lastOrientation && lastOrientation != -1) {
                             lastOrientation = currentOrientation;
+
+                            // Reset stabilization on orientation change so resize can happen
+                            resizeComplete = false;
+                            resizeAttemptCount = 0;
+                            lastContentHeight = -1;
+                            if (webView != null) {
+                                webView.setLayoutStabilized(false);
+                            }
 
                             // Use longer delay for orientation changes to allow layout to stabilize
                             final Handler handler = new Handler(Looper.getMainLooper());
@@ -473,6 +485,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     private void hideWebView() {
+        // Un-stabilize layout so dismiss animations can work
+        if (webView != null) {
+            webView.setLayoutStabilized(false);
+        }
+
         if (shouldAnimate) {
             int animationResource;
             InAppLayout inAppLayout = getInAppLayout(insetPadding);
@@ -534,6 +551,19 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     @Override
     public void runResizeScript() {
+        // If resize is already complete and layout is stabilized, skip
+        if (resizeComplete) {
+            IterableLogger.d(TAG, "Resize already complete, ignoring resize request");
+            return;
+        }
+
+        // Guard against excessive resize attempts to prevent infinite loops
+        if (resizeAttemptCount >= MAX_RESIZE_ATTEMPTS) {
+            IterableLogger.d(TAG, "Max resize attempts reached (" + MAX_RESIZE_ATTEMPTS + "), stabilizing layout");
+            markResizeComplete();
+            return;
+        }
+
         // Initialize handler lazily with main looper to avoid Looper issues in tests
         if (resizeHandler == null) {
             resizeHandler = new Handler(Looper.getMainLooper());
@@ -571,18 +601,44 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         // Check if height has stabilized (avoid unnecessary resizes for same height)
         if (Math.abs(currentHeight - lastContentHeight) < 1.0f) {
-            IterableLogger.d(TAG, "Content height unchanged (" + currentHeight + "dp), skipping resize");
+            IterableLogger.d(TAG, "Content height unchanged (" + currentHeight + "dp), marking resize complete");
+            markResizeComplete();
             return;
         }
 
         lastContentHeight = currentHeight;
+        resizeAttemptCount++;
 
         IterableLogger.d(
             TAG,
-            "💚 Resizing in-app to height: " + currentHeight + "dp"
+            "Resizing in-app to height: " + currentHeight + "dp (attempt " + resizeAttemptCount + ")"
         );
 
         resize(currentHeight);
+    }
+
+    /**
+     * Marks the resize process as complete and stabilizes the WebView layout
+     * to prevent continuous redraw cycles.
+     */
+    private void markResizeComplete() {
+        resizeComplete = true;
+        if (webView != null) {
+            // Schedule stabilization after a short delay to allow the final
+            // layout pass to complete before suppressing further requests
+            if (resizeHandler == null) {
+                resizeHandler = new Handler(Looper.getMainLooper());
+            }
+            resizeHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (webView != null) {
+                        webView.setLayoutStabilized(true);
+                        IterableLogger.d(TAG, "WebView layout stabilized - suppressing further layout requests");
+                    }
+                }
+            }, STABILIZE_DELAY_MS);
+        }
     }
 
     /**
@@ -660,13 +716,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
 
                         // Apply the new layout params to WebView
+                        // Note: setLayoutParams() already triggers requestLayout() internally,
+                        // so we do NOT call requestLayout() explicitly to avoid redundant layout passes
                         webView.setLayoutParams(webViewParams);
-
-                        // Force layout updates
-                        webView.requestLayout();
-                        if (webView.getParent() instanceof ViewGroup) {
-                            ((ViewGroup) webView.getParent()).requestLayout();
-                        }
 
                         IterableLogger.d(TAG, "Applied explicit size and positioning to WebView: " + newWebViewWidth + "x" + newWebViewHeight);
                     }
