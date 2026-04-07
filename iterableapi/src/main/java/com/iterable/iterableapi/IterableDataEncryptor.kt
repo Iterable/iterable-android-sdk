@@ -83,8 +83,8 @@ class IterableDataEncryptor {
                     ITERABLE_KEY_ALIAS,
                     KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
                 )
-                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM, KeyProperties.BLOCK_MODE_CBC)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE, KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                     .build()
 
                 keyGenerator.init(keySpec)
@@ -127,11 +127,10 @@ class IterableDataEncryptor {
 
         try {
             val data = value.toByteArray(Charsets.UTF_8)
-            val encryptedData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                encryptModern(data)
-            } else {
-                encryptLegacy(data)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                throw UnsupportedOperationException("Encryption requires Android API 19 (KitKat) or higher")
             }
+            val encryptedData = encryptModern(data)
 
             // Combine isModern flag, IV length, IV, and encrypted data
             val combined = ByteArray(1 + 1 + encryptedData.iv.size + encryptedData.data.size)
@@ -185,10 +184,6 @@ class IterableDataEncryptor {
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private fun encryptModern(data: ByteArray): EncryptedData {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            return encryptLegacy(data)
-        }
-        
         val cipher = Cipher.getInstance(TRANSFORMATION_MODERN)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
         val iv = cipher.iv
@@ -196,7 +191,9 @@ class IterableDataEncryptor {
         return EncryptedData(encrypted, iv, true)
     }
 
-    private fun encryptLegacy(data: ByteArray): EncryptedData {
+    @Deprecated("Legacy CBC encryption is insecure due to padding oracle vulnerability. Only retained for testing backward compatibility of decryption.")
+    @VisibleForTesting
+    fun encryptLegacy(data: ByteArray): EncryptedData {
         val cipher = Cipher.getInstance(TRANSFORMATION_LEGACY)
         val iv = generateIV(isModern = false)
         val spec = IvParameterSpec(iv)
