@@ -125,12 +125,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     @Override
     public void onStart() {
         super.onStart();
-
-        // Set dialog positioning after the dialog is created and shown (only for non-fullscreen)
-        Dialog dialog = getDialog();
-        if (dialog != null && getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
-            applyWindowGravity(dialog.getWindow(), "onStart");
-        }
+        // Window gravity is set once in onCreateDialog to avoid redundant updates
+        // that cause flickering with Jetpack Compose recomposition.
     }
 
     @Override
@@ -172,6 +168,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         });
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
+        // Disable default window animations to prevent flickering with Jetpack Compose.
+        // Compose's recomposition cycle can conflict with the window animation system,
+        // causing visual artifacts. We handle animations manually via showAndAnimateWebView().
+        Window dialogWindow = dialog.getWindow();
+        if (dialogWindow != null) {
+            dialogWindow.setWindowAnimations(0);
+        }
+
         // Set window gravity for the dialog (only for non-fullscreen)
         if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
             applyWindowGravity(dialog.getWindow(), "onCreateDialog");
@@ -196,10 +200,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             getDialog().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
 
-        // Set initial window gravity based on inset padding (only for non-fullscreen)
-        if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
-            applyWindowGravity(getDialog().getWindow(), "onCreateView");
-        }
+        // Window gravity is set once in onCreateDialog; avoid redundant calls
+        // that trigger layout invalidation and cause flickering with Compose.
 
         webView = createWebViewSafely(getContext());
         if (webView == null) {
@@ -207,6 +209,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             return null;
         }
         webView.setId(R.id.webView);
+        // Use hardware layer to stabilize rendering and prevent flickering
+        // during Jetpack Compose layout passes
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.createWithHtml(this, htmlString);
 
         if (orientationListener == null) {
@@ -662,11 +667,11 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
                         // Apply the new layout params to WebView
                         webView.setLayoutParams(webViewParams);
 
-                        // Force layout updates
-                        webView.requestLayout();
-                        if (webView.getParent() instanceof ViewGroup) {
-                            ((ViewGroup) webView.getParent()).requestLayout();
-                        }
+                        // Skip explicit requestLayout() calls - setLayoutParams() already triggers
+                        // a layout pass internally. Redundant requestLayout() calls cause layout
+                        // thrashing with Jetpack Compose's recomposition cycle, leading to flickering.
+                        //
+                        //
 
                         IterableLogger.d(TAG, "Applied explicit size and positioning to WebView: " + newWebViewWidth + "x" + newWebViewHeight);
                     }
