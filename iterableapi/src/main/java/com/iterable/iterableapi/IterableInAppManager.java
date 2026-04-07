@@ -339,20 +339,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         Map<String, IterableInAppMessage> remoteQueueMap = new HashMap<>();
 
         for (IterableInAppMessage message : remoteQueue) {
+            if (message == null) {
+                continue;
+            }
+
             remoteQueueMap.put(message.getMessageId(), message);
 
-            boolean isInAppStored = storage.getMessage(message.getMessageId()) != null;
+            IterableInAppMessage localMessage = storage.getMessage(message.getMessageId());
 
-            if (!isInAppStored) {
+            if (localMessage == null) {
                 storage.addMessage(message);
                 onMessageAdded(message);
 
                 changed = true;
-            }
-
-            if (isInAppStored) {
-                IterableInAppMessage localMessage = storage.getMessage(message.getMessageId());
-
+            } else {
                 boolean shouldOverwriteInApp = !localMessage.isRead() && message.isRead();
 
                 if (shouldOverwriteInApp) {
@@ -363,7 +363,11 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
             }
         }
 
-        for (IterableInAppMessage localMessage : storage.getMessages()) {
+        List<IterableInAppMessage> localMessages = storage.getMessages();
+        for (IterableInAppMessage localMessage : localMessages) {
+            if (localMessage == null) {
+                continue;
+            }
             if (!remoteQueueMap.containsKey(localMessage.getMessageId())) {
                 storage.removeMessage(localMessage);
 
