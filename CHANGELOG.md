@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
 
 ## [3.7.0]
 - Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
