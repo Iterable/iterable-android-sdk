@@ -203,6 +203,10 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
         webView = createWebViewSafely(getContext());
         if (webView == null) {
+            IterableLogger.e(TAG, "WebView creation failed for message: " + messageId + ". In-app will be dismissed.");
+            if (clickCallback != null) {
+                clickCallback.execute(null);
+            }
             dismissAllowingStateLoss();
             return null;
         }
@@ -757,11 +761,8 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private IterableWebView createWebViewSafely(Context context) {
         try {
             return new IterableWebView(context);
-        } catch (Resources.NotFoundException e) {
-            IterableLogger.e(TAG, "Failed to create WebView - system WebView resource issue", e);
-            return null;
-        } catch (RuntimeException e) {
-            IterableLogger.e(TAG, "Failed to create WebView - unexpected error", e);
+        } catch (Throwable e) {
+            IterableLogger.e(TAG, "Failed to create WebView", e);
             return null;
         }
     }
