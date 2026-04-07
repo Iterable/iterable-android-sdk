@@ -135,6 +135,12 @@ public class IterableConfig {
     final IterableDecryptionFailureHandler decryptionFailureHandler;
 
     /**
+     * Handler for push notification click events.
+     * Called when a user taps on a push notification, providing the notification payload data.
+     */
+    final IterableNotificationClickHandler notificationClickHandler;
+
+    /**
      * Mobile framework information for the app
      */
     @Nullable
@@ -183,6 +189,7 @@ public class IterableConfig {
         decryptionFailureHandler = builder.decryptionFailureHandler;
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
         webViewBaseUrl = builder.webViewBaseUrl;
+        notificationClickHandler = builder.notificationClickHandler;
     }
 
     public static class Builder {
@@ -211,6 +218,7 @@ public class IterableConfig {
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableUnknownUserHandler iterableUnknownUserHandler;
         private String webViewBaseUrl;
+        private IterableNotificationClickHandler notificationClickHandler;
 
         public Builder() {}
 
@@ -462,6 +470,18 @@ public class IterableConfig {
         @NonNull
         public Builder setWebViewBaseUrl(@Nullable String webViewBaseUrl) {
             this.webViewBaseUrl = webViewBaseUrl;
+            return this;
+        }
+
+        /**
+         * Set a handler for push notification click events.
+         * The handler will be called when a user taps on a push notification,
+         * providing the notification payload data.
+         * @param notificationClickHandler Notification click handler provided by the app
+         */
+        @NonNull
+        public Builder setNotificationClickHandler(@NonNull IterableNotificationClickHandler notificationClickHandler) {
+            this.notificationClickHandler = notificationClickHandler;
             return this;
         }
 

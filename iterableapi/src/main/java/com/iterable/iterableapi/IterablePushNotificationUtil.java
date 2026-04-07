@@ -36,6 +36,13 @@ class IterablePushNotificationUtil {
         // Automatic tracking
         IterableApi.sharedInstance.setPayloadData(action.intent);
         IterableApi.sharedInstance.setNotificationData(action.notificationData);
+
+        // Invoke notification click handler if registered
+        if (IterableApi.sharedInstance.config.notificationClickHandler != null && action.intent.getExtras() != null) {
+            IterableApi.sharedInstance.config.notificationClickHandler.onNotificationClicked(
+                    action.notificationData, action.intent.getExtras());
+        }
+
         IterableApi.sharedInstance.trackPushOpen(action.notificationData.getCampaignId(), action.notificationData.getTemplateId(),
                 action.notificationData.getMessageId(), action.dataFields);
 

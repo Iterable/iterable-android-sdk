@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Created by davidtruong on 5/23/16.
  */
-class IterableNotificationData {
+public class IterableNotificationData {
     static final String TAG = "IterableNoticationData";
 
     private int campaignId;
