@@ -1245,6 +1245,15 @@ public class IterableApi {
         return _payloadData;
     }
 
+    /**
+     * Resets the notification payload data by setting it to null.
+     * Call this method after you have finished processing the notification payload
+     * to prevent stale data from being returned by {@link #getPayloadData()}.
+     */
+    public void clearPayloadData() {
+        _payloadData = null;
+    }
+
     public void setDeviceAttribute(String key, String value) {
         if (key == null || value == null) {
             IterableLogger.e(TAG, "setDeviceAttribute: key and value must not be null");
