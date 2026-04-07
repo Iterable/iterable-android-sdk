@@ -8,6 +8,7 @@ import android.webkit.WebView;
  * The custom html webView
  */
 class IterableWebView extends WebView {
+    private static final String TAG = "IterableWebView";
     static final String MIME_TYPE = "text/html";
     static final String ENCODING = "UTF-8";
 
