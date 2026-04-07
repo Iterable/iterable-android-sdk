@@ -201,6 +201,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             applyWindowGravity(getDialog().getWindow(), "onCreateView");
         }
 
+        // If htmlString is null (e.g., after state restoration where it was stripped
+        // to prevent TransactionTooLargeException), dismiss the fragment gracefully.
+        if (htmlString == null) {
+            IterableLogger.w(TAG, "HTML content not available, dismissing in-app notification");
+            dismissAllowingStateLoss();
+            return null;
+        }
+
         webView = createWebViewSafely(getContext());
         if (webView == null) {
             dismissAllowingStateLoss();
@@ -321,6 +329,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(IN_APP_OPEN_TRACKED, true);
+
+        // Remove the HTML string from arguments to prevent TransactionTooLargeException
+        // when large in-app HTML (>250KB) is persisted via the saved state bundle.
+        // The HTML will be re-read from arguments on recreation if needed.
+        Bundle args = getArguments();
+        if (args != null) {
+            args.remove(HTML_STRING);
+        }
     }
 
     /**
