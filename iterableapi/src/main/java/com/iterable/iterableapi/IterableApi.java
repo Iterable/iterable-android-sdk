@@ -135,13 +135,6 @@ public class IterableApi {
         return _authToken;
     }
 
-    private void checkAndUpdateAuthToken(@Nullable String authToken) {
-        // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
-        if (config.authHandler != null && authToken != null && authToken != _authToken) {
-            updateAuthToken(authToken);
-        }
-    }
-
     /**
      * Stores attribution information.
      * @param attributionInfo Attribution information object
