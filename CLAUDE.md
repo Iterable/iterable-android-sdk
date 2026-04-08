@@ -12,19 +12,29 @@ The Iterable Android SDK integrates Android apps with [Iterable](https://www.ite
 
 ```bash
 # Build (incremental, fast)
-./gradlew build -x test
+./build.sh
 
 # Build (clean)
-./gradlew clean build -x test
+./build.sh --clean
 
 # Run all unit tests
-./gradlew :iterableapi:testDebugUnitTest
+./test.sh
 
 # Run a specific test class
-./gradlew :iterableapi:testDebugUnitTest --tests "*IterableApiTest*"
+./test.sh IterableApiTest
 
 # Run a specific test method
-./gradlew :iterableapi:testDebugUnitTest --tests "*IterableApiTest.testSetEmail*"
+./test.sh "IterableApiTest.testSetEmail"
+
+# List all available test classes
+./test.sh --list
+```
+
+The wrapper scripts (`build.sh`, `test.sh`) provide formatted output and error summaries. You can also use Gradle directly:
+
+```bash
+./gradlew build -x test                                                    # build
+./gradlew :iterableapi:testDebugUnitTest --tests "*IterableApiTest*"       # test
 ```
 
 ### Requirements
