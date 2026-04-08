@@ -197,7 +197,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                     // retain the task and pause processing until a valid JWT is obtained.
                     if (autoRetry && isJwtFailure(response)) {
                         IterableLogger.d(TAG, "JWT auth failure on task " + task.id + ". Retaining task and pausing processing.");
-                        IterableApi.getInstance().getAuthManager().handleAuthTokenRejection();
+                        IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
                         isPausedForAuth = true;
                         callTaskCompletedListeners(task.id, TaskResult.RETRY, response);
                         return false;

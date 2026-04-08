@@ -96,21 +96,6 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         setAuthState(AuthState.INVALID);
     }
 
-    /**
-     * Handles a server-side JWT rejection (401). Invalidates the current token,
-     * clears any pending refresh, and schedules a new token request using the retry policy.
-     * When the new token arrives, AuthTokenReadyListeners are notified via the
-     * INVALID → UNKNOWN state transition.
-     */
-    void handleAuthTokenRejection() {
-        setAuthState(AuthState.INVALID);
-        setIsLastAuthTokenValid(false);
-        clearRefreshTimer();
-        resetFailedAuth();
-        long retryInterval = getNextRetryInterval();
-        scheduleAuthTokenRefresh(retryInterval, false, null);
-    }
-
     AuthState getAuthState() {
         return authState;
     }
@@ -226,10 +211,10 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     private void handleAuthTokenSuccess(String authToken, IterableHelper.SuccessHandler successCallback) {
         if (authToken != null) {
-            // Token obtained but not yet verified by a request - set state to UNKNOWN.
-            // setAuthState will notify listeners only if previous state was INVALID.
-            setAuthState(AuthState.UNKNOWN);
+            // Store the new token before notifying listeners, so any requests
+            // triggered by listeners (e.g. AuthRecoverySyncManager) use the new token.
             IterableApi.getInstance().updateAuthToken(authToken);
+            setAuthState(AuthState.UNKNOWN);
             queueExpirationRefresh(authToken);
 
             if (successCallback != null) {
