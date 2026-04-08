@@ -1090,7 +1090,6 @@ public class IterableApi implements IterableAuthManager.AuthTokenReadyListener {
         boolean merge = isMerge(iterableIdentityResolution);
 
         if (_email != null && _email.equals(email)) {
-            checkAndUpdateAuthToken(authToken);
             _setUserSuccessCallbackHandler = successHandler;
             _setUserFailureCallbackHandler = failureHandler;
             onLogin(authToken, email, true, merge, replay, false, failureHandler);
@@ -1163,7 +1162,6 @@ public class IterableApi implements IterableAuthManager.AuthTokenReadyListener {
         boolean merge = isMerge(iterableIdentityResolution);
 
         if (_userId != null && _userId.equals(userId)) {
-            checkAndUpdateAuthToken(authToken);
             _setUserSuccessCallbackHandler = successHandler;
             _setUserFailureCallbackHandler = failureHandler;
             onLogin(authToken, userId, false, merge, replay, isUnknown, failureHandler);
