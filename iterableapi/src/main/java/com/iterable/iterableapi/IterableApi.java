@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by David Truong dt@iterable.com
  */
-public class IterableApi {
+public class IterableApi implements IterableAuthManager.AuthTokenReadyListener {
 //region SDK (private/internal)
 //---------------------------------------------------------------------------------------
     static volatile IterableApi sharedInstance = new IterableApi();
@@ -181,6 +181,7 @@ public class IterableApi {
     IterableAuthManager getAuthManager() {
         if (authManager == null) {
             authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod);
+            authManager.addAuthTokenReadyListener(this);
         }
         return authManager;
     }
@@ -480,6 +481,19 @@ public class IterableApi {
             resetCallbackHandlers();
         }
 
+        getInAppManager().syncInApp();
+        getEmbeddedManager().syncMessages();
+    }
+
+    @Override
+    public void onAuthTokenReady() {
+        IterableLogger.d(TAG, "Auth token recovered after invalidation. Resyncing messages and push registration.");
+        if (!isInitialized()) {
+            return;
+        }
+        if (config.autoPushRegistration) {
+            registerForPush();
+        }
         getInAppManager().syncInApp();
         getEmbeddedManager().syncMessages();
     }

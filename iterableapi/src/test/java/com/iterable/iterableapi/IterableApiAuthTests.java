@@ -567,4 +567,98 @@ public class IterableApiAuthTests extends BaseTest {
         }
     }
 
+    @Test
+    public void testAuthTokenRecoveryFrom401TriggersPushAndMessageSync() throws Exception {
+        IterablePushRegistration.IterablePushRegistrationImpl originalPushImpl = IterablePushRegistration.instance;
+        IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
+
+        try {
+            // Initialize with auth and auto push registration enabled
+            getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE).edit().clear().apply();
+            IterableApi.sharedInstance = new IterableApi();
+            authHandler = mock(IterableAuthHandler.class);
+            IterableApi.initialize(getContext(), "apiKey",
+                    new IterableConfig.Builder()
+                            .setAuthHandler(authHandler)
+                            .setAutoPushRegistration(true)
+                            .setPushIntegrationName("pushIntegration")
+                            .build());
+
+            // Initial login
+            doReturn(validJWT).when(authHandler).onAuthTokenRequested();
+            IterableApi.getInstance().setEmail("test@example.com");
+            Thread.sleep(500);
+            shadowOf(getMainLooper()).idle();
+            shadowOf(getMainLooper()).runToEndOfTasks();
+
+            // Verify initial push registration happened
+            verify(IterablePushRegistration.instance).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+
+            // Reset mock to clear invocation history
+            Mockito.reset(IterablePushRegistration.instance);
+
+            // Simulate 401 rejection: mark auth token as INVALID
+            IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
+
+            // Simulate token recovery: transition from INVALID -> VALID
+            // This should trigger AuthTokenReadyListeners (including IterableApi)
+            IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(true);
+
+            // Allow main looper to process any posted callbacks
+            shadowOf(getMainLooper()).idle();
+            shadowOf(getMainLooper()).runToEndOfTasks();
+
+            // After 401 recovery, push registration SHOULD be triggered
+            verify(IterablePushRegistration.instance).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+        } finally {
+            IterablePushRegistration.instance = originalPushImpl;
+        }
+    }
+
+    @Test
+    public void testRoutineTokenRefreshDoesNotTriggerResync() throws Exception {
+        IterablePushRegistration.IterablePushRegistrationImpl originalPushImpl = IterablePushRegistration.instance;
+        IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
+
+        try {
+            // Initialize with auth and auto push registration enabled
+            getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE).edit().clear().apply();
+            IterableApi.sharedInstance = new IterableApi();
+            authHandler = mock(IterableAuthHandler.class);
+            IterableApi.initialize(getContext(), "apiKey",
+                    new IterableConfig.Builder()
+                            .setAuthHandler(authHandler)
+                            .setAutoPushRegistration(true)
+                            .setPushIntegrationName("pushIntegration")
+                            .build());
+
+            // Initial login
+            doReturn(validJWT).when(authHandler).onAuthTokenRequested();
+            IterableApi.getInstance().setEmail("test@example.com");
+            Thread.sleep(500);
+            shadowOf(getMainLooper()).idle();
+            shadowOf(getMainLooper()).runToEndOfTasks();
+
+            // Verify initial push registration happened
+            verify(IterablePushRegistration.instance).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+            Mockito.reset(IterablePushRegistration.instance);
+
+            // Simulate routine token refresh (no INVALID state involved)
+            // Auth state stays UNKNOWN -> UNKNOWN, so listener should NOT fire
+            doReturn(newJWT).when(authHandler).onAuthTokenRequested();
+            IterableApi.getInstance().getAuthManager().requestNewAuthToken(false, null);
+            Thread.sleep(500);
+            shadowOf(getMainLooper()).idle();
+            shadowOf(getMainLooper()).runToEndOfTasks();
+
+            // Verify token was actually refreshed
+            assertEquals(newJWT, IterableApi.getInstance().getAuthToken());
+
+            // Assert that push registration was NOT called on routine refresh
+            verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+        } finally {
+            IterablePushRegistration.instance = originalPushImpl;
+        }
+    }
+
 }
