@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
+- Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
 
 ### Added
 - Added `updateAuthToken(String)` method for updating the auth token without triggering login side effects (push registration, in-app sync, embedded sync). Use this when you only need to refresh the token for an already logged-in user.
