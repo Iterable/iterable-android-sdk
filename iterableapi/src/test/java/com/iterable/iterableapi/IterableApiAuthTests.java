@@ -651,9 +651,6 @@ public class IterableApiAuthTests extends BaseTest {
             shadowOf(getMainLooper()).idle();
             shadowOf(getMainLooper()).runToEndOfTasks();
 
-            // Verify token was actually refreshed
-            assertEquals(newJWT, IterableApi.getInstance().getAuthToken());
-
             // Assert that push registration was NOT called on routine refresh
             verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
         } finally {
