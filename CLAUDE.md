@@ -4,7 +4,7 @@
 
 The Iterable Android SDK integrates Android apps with [Iterable](https://www.iterable.com), a growth marketing platform. The SDK provides push notifications (FCM), in-app messaging, embedded messaging, mobile inbox, event tracking, deep linking, and user management.
 
-**Current version:** 3.7.0 | **Min SDK:** 21 (Android 5.0+) | **Language:** Java (75%) + Kotlin (25%)
+**Min SDK:** 21 (Android 5.0+) | **Language:** Java (75%) + Kotlin (25%)
 
 ## Quick Reference
 
