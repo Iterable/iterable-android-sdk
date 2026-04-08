@@ -74,9 +74,11 @@ class IterableBackgroundInitializer {
                 }
                 isProcessing = false;
 
-                // After processing all operations, shut down the executor
+                // After processing all operations, shut down the executor.
+                // Pass the executor reference explicitly so a concurrent reset()
+                // cannot swap in a new one that we accidentally shut down.
                 IterableLogger.d(TAG, "All queued operations processed, shutting down background executor");
-                shutdownBackgroundExecutorAsync();
+                shutdownBackgroundExecutorAsync(backgroundExecutor);
             });
         }
 
@@ -334,19 +336,14 @@ class IterableBackgroundInitializer {
     }
 
     /**
-     * Shutdown the background executor asynchronously to avoid blocking the executor thread itself
-     * Used internally after initialization completes
+     * Shutdown the given executor asynchronously to avoid blocking the executor thread itself.
+     * The caller passes the exact executor instance that should be shut down, so a concurrent
+     * reset() that swaps in a new executor cannot cause us to shut down the wrong one.
      */
-    private static void shutdownBackgroundExecutorAsync() {
-        final ExecutorService executorToShutdown;
-        synchronized (initLock) {
-            executorToShutdown = backgroundExecutor;
-            if (executorToShutdown == null || executorToShutdown.isShutdown()) {
-                return;
-            }
+    private static void shutdownBackgroundExecutorAsync(ExecutorService executorToShutdown) {
+        if (executorToShutdown == null || executorToShutdown.isShutdown()) {
+            return;
         }
-        // Blocking operations happen outside the lock to avoid deadlock
-        // (this method is called from a task running on the executor itself)
         new Thread(() -> {
             try {
                 executorToShutdown.shutdown();
@@ -417,13 +414,14 @@ class IterableBackgroundInitializer {
             pendingCallbacks.clear();
             callbackManager.reset();
 
-            // Always create a fresh executor. The old one may have a pending
-            // shutdownBackgroundExecutorAsync that hasn't run yet — if we kept it,
-            // the async shutdown would kill the executor under the next test.
-            if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
-                backgroundExecutor.shutdownNow();
-            }
+            // Swap in a fresh executor first, then shut down the old one.
+            // This ensures shutdownBackgroundExecutorAsync (which may still be
+            // pending from the old executor) cannot kill the new one.
+            ExecutorService oldExecutor = backgroundExecutor;
             backgroundExecutor = createExecutor();
+            if (oldExecutor != null && !oldExecutor.isShutdown()) {
+                oldExecutor.shutdownNow();
+            }
         }
     }
 
