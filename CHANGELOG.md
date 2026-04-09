@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - In-app messages now match the host app's system bar behavior by default. Previously, fullscreen in-apps would always draw content behind the status bar, which could cause UI elements like the close button to be obscured. The new default (`FOLLOW_APP_LAYOUT`) detects whether your app uses edge-to-edge and matches that configuration.
 
+### Fixed
+- Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
+- Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
+
 ### Migration guide
 **No action required for most apps.** The new default `FOLLOW_APP_LAYOUT` automatically adapts to your app's layout.
 
