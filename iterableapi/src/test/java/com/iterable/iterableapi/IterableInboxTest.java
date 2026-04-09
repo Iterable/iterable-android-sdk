@@ -43,7 +43,7 @@ public class IterableInboxTest extends BaseTest {
     private IterableUrlHandler urlHandler;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
         server.setDispatcher(dispatcher);
@@ -62,6 +62,9 @@ public class IterableInboxTest extends BaseTest {
                         .setUrlHandler(urlHandler);
             }
         });
+        // Drain init sync HTTP requests so they don't consume responses enqueued by tests
+        while (server.takeRequest(200, TimeUnit.MILLISECONDS) != null) { }
+        shadowOf(getMainLooper()).idle();
     }
 
     @After
