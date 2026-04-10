@@ -14,6 +14,10 @@ class IterablePushNotificationUtil {
     private static PendingAction pendingAction = null;
     private static final String TAG = "IterablePushNotificationUtil";
 
+    static void clearPendingAction() {
+        pendingAction = null;
+    }
+
     static boolean processPendingAction(Context context) {
         boolean handled = false;
         if (pendingAction != null) {

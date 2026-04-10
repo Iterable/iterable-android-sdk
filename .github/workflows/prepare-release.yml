@@ -98,7 +98,7 @@ jobs:
           sed -i "s/implementation 'com.iterable:iterableapi-ui:[^']*'/implementation 'com.iterable:iterableapi-ui:${{ github.event.inputs.version }}'/" sample-apps/inbox-customization/app/build.gradle
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "Prepare for Release ${{ steps.update_changelog.outputs.new_version }}"

@@ -56,6 +56,7 @@ public final class IterableConstants {
     public static final String KEY_INBOX_SESSION_ID     = "inboxSessionId";
     public static final String KEY_EMBEDDED_SESSION_ID     = "id";
     public static final String KEY_OFFLINE_MODE         = "offlineMode";
+    public static final String KEY_AUTO_RETRY           = "autoRetry";
     public static final String KEY_FIRETV = "FireTV";
     public static final String KEY_CREATE_NEW_FIELDS    = "createNewFields";
     public static final String KEY_IS_USER_KNOWN = "isUserKnown";
@@ -130,6 +131,7 @@ public final class IterableConstants {
     public static final String SHARED_PREFS_FCM_MIGRATION_DONE_KEY = "itbl_fcm_migration_done";
     public static final String SHARED_PREFS_SAVED_CONFIGURATION = "itbl_saved_configuration";
     public static final String SHARED_PREFS_OFFLINE_MODE_KEY = "itbl_offline_mode";
+    public static final String SHARED_PREFS_AUTO_RETRY_KEY = "itbl_auto_retry";
     public static final String SHARED_PREFS_EVENT_LIST_KEY = "itbl_event_list";
     public static final String SHARED_PREFS_USER_UPDATE_OBJECT_KEY = "itbl_user_update_object";
     public static final String SHARED_PREFS_UNKNOWN_SESSIONS = "itbl_unknown_sessions";

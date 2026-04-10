@@ -14,8 +14,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
@@ -52,17 +52,20 @@ class IterableApiClient {
     }
 
     void setOfflineProcessingEnabled(boolean offlineMode) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (offlineMode) {
-                if (this.requestProcessor == null || this.requestProcessor.getClass() != OfflineRequestProcessor.class) {
-                    this.requestProcessor = new OfflineRequestProcessor(authProvider.getContext());
-                }
-            } else {
-                if (this.requestProcessor == null || this.requestProcessor.getClass() != OnlineRequestProcessor.class) {
-                    this.requestProcessor = new OnlineRequestProcessor();
-                }
-            }
+        if (offlineMode && this.requestProcessor instanceof OfflineRequestProcessor) {
+            return;
         }
+        if (!offlineMode && this.requestProcessor instanceof OnlineRequestProcessor) {
+            return;
+        }
+
+        if (this.requestProcessor instanceof OfflineRequestProcessor) {
+            ((OfflineRequestProcessor) this.requestProcessor).dispose();
+        }
+
+        this.requestProcessor = offlineMode
+                ? new OfflineRequestProcessor(authProvider.getContext())
+                : new OnlineRequestProcessor();
     }
 
     void getRemoteConfiguration(IterableHelper.IterableActionHandler actionHandler) {
@@ -620,7 +623,7 @@ class IterableApiClient {
         }
     }
 
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, Map<String, String> deviceAttributes, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
         Context context = authProvider.getContext();
         JSONObject requestJSON = new JSONObject();
         try {
@@ -630,7 +633,7 @@ class IterableApiClient {
                 dataFields = new JSONObject();
             }
 
-            for (HashMap.Entry<String, String> entry : deviceAttributes.entrySet()) {
+            for (Map.Entry<String, String> entry : deviceAttributes.entrySet()) {
                 dataFields.put(entry.getKey(), entry.getValue());
             }
 

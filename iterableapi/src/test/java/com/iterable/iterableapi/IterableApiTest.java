@@ -143,8 +143,8 @@ public class IterableApiTest extends BaseTest {
         assertEquals(attributionInfo.templateId, storedAttributionInfo.templateId);
         assertEquals(attributionInfo.messageId, storedAttributionInfo.messageId);
 
-        // 24 hours, expired, attributionInfo should be null
-        doReturn(System.currentTimeMillis() + 3600 * 24 * 1000).when(utilsRule.iterableUtilSpy).currentTimeMillis();
+        // Just past 24 hours, expired, attributionInfo should be null
+        doReturn(System.currentTimeMillis() + 3600 * 24 * 1000 + 1).when(utilsRule.iterableUtilSpy).currentTimeMillis();
         storedAttributionInfo = IterableApi.getInstance().getAttributionInfo();
         assertNull(storedAttributionInfo);
     }

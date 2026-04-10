@@ -2,6 +2,22 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Fixed
+- Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
+- Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
+
+## [3.7.0]
+- Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
+- Fixed lost event tracking and missed API calls with an auto-retry feature for JWT token failures.
+- Added `onEmbeddedMessagingSyncSucceeded()` and `onEmbeddedMessagingSyncFailed()` callbacks to `IterableEmbeddedUpdateHandler` for monitoring embedded message sync results.
+
+## [3.6.6]
+### Fixed
+- Fixed push notifications killing the existing activity when opened
+- Fixed in-app message crash caused by WebView creation issues
+- Fixed `BROADCAST_CLOSE_SYSTEM_DIALOGS` permission error on Android 12+ by restricting usage to Android SDK 30 and below
+
 ## [3.6.5]
 ### Fixed
 - Fixed IterableEmbeddedView not having an empty constructor and causing crashes

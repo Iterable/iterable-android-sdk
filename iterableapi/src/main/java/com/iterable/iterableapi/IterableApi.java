@@ -17,10 +17,11 @@ import com.iterable.iterableapi.util.DeviceInfoUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -43,17 +44,19 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
+    private boolean _autoRetryOnJwtFailure;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    final ApiEndpointClassification apiEndpointClassification = new ApiEndpointClassification();
     private static final UnknownUserMerge unknownUserMerge = new UnknownUserMerge();
     private @Nullable UnknownUserManager unknownUserManager;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
     private String inboxSessionId;
     private IterableAuthManager authManager;
-    private HashMap<String, String> deviceAttributes = new HashMap<>();
+    private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
     private IterableKeychain keychain;
 
 
@@ -104,6 +107,14 @@ public class IterableApi {
                     SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
+
+                    // Parse autoRetry flag from remote config.
+                    if (jsonData.has(IterableConstants.KEY_AUTO_RETRY)) {
+                        boolean autoRetryRemote = jsonData.getBoolean(IterableConstants.KEY_AUTO_RETRY);
+                        editor.putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetryRemote);
+                        _autoRetryOnJwtFailure = autoRetryRemote;
+                    }
+
                     editor.apply();
                 } catch (JSONException e) {
                     IterableLogger.e(TAG, "Failed to read remote configuration");
@@ -149,7 +160,7 @@ public class IterableApi {
         );
     }
 
-    HashMap getDeviceAttributes() {
+    Map<String, String> getDeviceAttributes() {
         return deviceAttributes;
     }
 
@@ -194,6 +205,15 @@ public class IterableApi {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
         sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
+
+        sharedInstance._autoRetryOnJwtFailure = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false);
+    }
+
+    /**
+     * Returns whether auto-retry on JWT failure is enabled, as determined by remote configuration.
+     */
+    boolean isAutoRetryOnJwtFailure() {
+        return _autoRetryOnJwtFailure;
     }
 
     /**
@@ -676,7 +696,7 @@ public class IterableApi {
         }
     }
 
-    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes) {
         if (deviceToken != null) {
             if (!checkSDKInitialization() && _userIdUnknown == null) {
                 if (sharedInstance.config.enableUnknownUserActivation) {
@@ -721,7 +741,7 @@ public class IterableApi {
      * @param deviceToken
      * @param dataFields
      */
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, Map<String, String> deviceAttributes) {
         if (!checkSDKInitialization()) {
             return;
         }
@@ -1226,10 +1246,18 @@ public class IterableApi {
     }
 
     public void setDeviceAttribute(String key, String value) {
+        if (key == null || value == null) {
+            IterableLogger.e(TAG, "setDeviceAttribute: key and value must not be null");
+            return;
+        }
         deviceAttributes.put(key, value);
     }
 
     public void removeDeviceAttribute(String key) {
+        if (key == null) {
+            IterableLogger.e(TAG, "removeDeviceAttribute: key must not be null");
+            return;
+        }
         deviceAttributes.remove(key);
     }
 //endregion

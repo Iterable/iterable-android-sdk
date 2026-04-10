@@ -58,6 +58,10 @@ class IterableTask {
         this.taskType = taskType;
     }
 
+    boolean requiresJwt(ApiEndpointClassification classification) {
+        return classification.requiresJwt(this.name);
+    }
+
 }
 
 enum IterableTaskType {
