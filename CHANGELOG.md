@@ -3,9 +3,35 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- New `IterableInAppDisplayMode` enum to control how in-app messages interact with system bars. Configure via `IterableConfig.Builder.setInAppDisplayMode()`:
+  - `FORCE_EDGE_TO_EDGE` (default) — draws in-app content behind system bars with transparent status and navigation bars. This preserves the previous SDK behavior.
+  - `FOLLOW_APP_LAYOUT` — matches the host app's system bar configuration automatically.
+  - `FORCE_FULLSCREEN` — hides the status bar entirely for all in-app messages.
+  - `FORCE_RESPECT_BOUNDS` — ensures in-app content never overlaps system bars, keeping UI elements like the close button always accessible.
+
 ### Fixed
 - Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
 - Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
+
+### Migration guide
+**No action required for most apps.** The default `FORCE_EDGE_TO_EDGE` preserves the existing behavior where in-app content draws behind system bars.
+
+If the close button in your fullscreen in-app messages is obscured by the status bar, you can fix it by choosing one of these modes:
+
+```java
+// Automatically match the host app's system bar configuration
+IterableConfig config = new IterableConfig.Builder()
+    .setInAppDisplayMode(IterableInAppDisplayMode.FOLLOW_APP_LAYOUT)
+    .build();
+```
+
+```java
+// Ensure in-app content never goes behind system bars
+IterableConfig config = new IterableConfig.Builder()
+    .setInAppDisplayMode(IterableInAppDisplayMode.FORCE_RESPECT_BOUNDS)
+    .build();
+```
 
 ## [3.7.0]
 - Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
