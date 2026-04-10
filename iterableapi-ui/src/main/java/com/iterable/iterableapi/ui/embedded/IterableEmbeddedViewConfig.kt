@@ -2,7 +2,7 @@ package com.iterable.iterableapi.ui.embedded
 
 import android.widget.ImageView
 
-data class IterableEmbeddedViewConfig(
+data class IterableEmbeddedViewConfig @JvmOverloads constructor(
     val backgroundColor: Int? = null,
     val borderColor: Int? = null,
     val borderWidth: Int? = null,
