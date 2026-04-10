@@ -270,10 +270,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     private static void handleJwtAuthRetry(IterableApiRequest iterableApiRequest) {
         boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
         if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
-            IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
-            authManager.setIsLastAuthTokenValid(false);
-            long retryInterval = authManager.getNextRetryInterval();
-            authManager.scheduleAuthTokenRefresh(retryInterval, false, null);
+            IterableLogger.d(TAG, "Offline task 401 - deferring retry to IterableTaskRunner");
+            return;
         } else {
             requestNewAuthTokenAndRetry(iterableApiRequest);
         }
@@ -426,6 +424,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     private static void requestNewAuthTokenAndRetry(IterableApiRequest iterableApiRequest) {
         IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
+        IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
         IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, false, data -> {
             try {

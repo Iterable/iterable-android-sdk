@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
 - Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
 
+### Added
+- Added `updateAuthToken(String)` method for updating the auth token without triggering login side effects (push registration, in-app sync, embedded sync). Use this when you only need to refresh the token for an already logged-in user.
+
+### Deprecated
+- `setAuthToken(String)` is now deprecated. It still triggers login operations (push registration, in-app sync, embedded sync) for backward compatibility, but will be changed to only store the token in a future release. Migrate to `updateAuthToken(String)` to update the token without side effects, or use `setEmail(email, authToken)` / `setUserId(userId, authToken)` to set credentials and trigger login operations.
+
 ## [3.7.0]
 - Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
 - Fixed lost event tracking and missed API calls with an auto-retry feature for JWT token failures.
