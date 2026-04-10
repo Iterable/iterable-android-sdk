@@ -693,13 +693,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         } catch (Exception e) {
             IterableLogger.w(TAG, "Could not resolve display mode from config, using default");
         }
-        return IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
+        return IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE;
     }
 
     @SuppressWarnings("deprecation")
     private void configureSystemBarsForMode(Window window) {
         if (window == null) return;
-        InAppLayout layout = getInAppLayout(insetPadding);
 
         switch (displayMode) {
             case FORCE_EDGE_TO_EDGE:
@@ -716,7 +715,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
             case FOLLOW_APP_LAYOUT:
             default:
-                configureSystemBarsFollowingApp(window, layout);
+                configureSystemBarsFollowingApp(window);
                 break;
         }
     }
@@ -747,7 +746,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     @SuppressWarnings("deprecation")
-    private void configureSystemBarsFollowingApp(Window window, InAppLayout layout) {
+    private void configureSystemBarsFollowingApp(Window window) {
         Activity activity = getActivity();
         if (activity == null || activity.getWindow() == null) return;
 
@@ -762,14 +761,17 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     }
 
     private boolean shouldApplySystemBarInsets() {
-        InAppLayout layout = getInAppLayout(insetPadding);
-
-        return switch (displayMode) {
-            case FORCE_EDGE_TO_EDGE, FORCE_FULLSCREEN -> false;
-            case FORCE_RESPECT_BOUNDS -> true;
-            default ->
-                layout != InAppLayout.FULLSCREEN && hostIsEdgeToEdge;
-        };
+        switch (displayMode) {
+            case FORCE_EDGE_TO_EDGE:
+            case FORCE_FULLSCREEN:
+                return false;
+            case FORCE_RESPECT_BOUNDS:
+                return true;
+            case FOLLOW_APP_LAYOUT:
+            default:
+                InAppLayout layout = getInAppLayout(insetPadding);
+                return layout != InAppLayout.FULLSCREEN && hostIsEdgeToEdge;
+        }
     }
 
     private boolean isHostActivityEdgeToEdge() {

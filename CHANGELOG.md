@@ -5,34 +5,29 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - New `IterableInAppDisplayMode` enum to control how in-app messages interact with system bars. Configure via `IterableConfig.Builder.setInAppDisplayMode()`:
-  - `FOLLOW_APP_LAYOUT` (default) — matches the host app's system bar configuration. No change needed for existing integrations.
-  - `FORCE_EDGE_TO_EDGE` — forces in-app content to draw behind system bars with transparent status and navigation bars.
+  - `FORCE_EDGE_TO_EDGE` (default) — draws in-app content behind system bars with transparent status and navigation bars. This preserves the previous SDK behavior.
+  - `FOLLOW_APP_LAYOUT` — matches the host app's system bar configuration automatically.
   - `FORCE_FULLSCREEN` — hides the status bar entirely for all in-app messages.
   - `FORCE_RESPECT_BOUNDS` — ensures in-app content never overlaps system bars, keeping UI elements like the close button always accessible.
-
-### Changed
-- In-app messages now match the host app's system bar behavior by default. Previously, fullscreen in-apps would always draw content behind the status bar, which could cause UI elements like the close button to be obscured. The new default (`FOLLOW_APP_LAYOUT`) detects whether your app uses edge-to-edge and matches that configuration.
 
 ### Fixed
 - Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
 - Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
 
 ### Migration guide
-**No action required for most apps.** The new default `FOLLOW_APP_LAYOUT` automatically adapts to your app's layout.
+**No action required for most apps.** The default `FORCE_EDGE_TO_EDGE` preserves the existing behavior where in-app content draws behind system bars.
 
-If you relied on the previous behavior where fullscreen in-apps drew content behind the status bar, you can restore it explicitly:
+If the close button in your fullscreen in-app messages is obscured by the status bar, you can fix it by choosing one of these modes:
 
 ```java
-// Restore previous behavior: in-app content draws behind system bars
+// Automatically match the host app's system bar configuration
 IterableConfig config = new IterableConfig.Builder()
-    .setInAppDisplayMode(IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE)
+    .setInAppDisplayMode(IterableInAppDisplayMode.FOLLOW_APP_LAYOUT)
     .build();
 ```
 
-If you want to ensure the close button is always accessible regardless of app configuration:
-
 ```java
-// In-app content never goes behind system bars
+// Ensure in-app content never goes behind system bars
 IterableConfig config = new IterableConfig.Builder()
     .setInAppDisplayMode(IterableInAppDisplayMode.FORCE_RESPECT_BOUNDS)
     .build();

@@ -142,7 +142,7 @@ public class IterableConfig {
 
     /**
      * Controls how in-app messages interact with the system bars (status bar, navigation bar).
-     * Defaults to {@link IterableInAppDisplayMode#FOLLOW_APP_LAYOUT}.
+     * Defaults to {@link IterableInAppDisplayMode#FORCE_EDGE_TO_EDGE}.
      */
     final IterableInAppDisplayMode inAppDisplayMode;
 
@@ -218,7 +218,7 @@ public class IterableConfig {
         private IterableIdentityResolution identityResolution = new IterableIdentityResolution();
         private IterableUnknownUserHandler iterableUnknownUserHandler;
         private String webViewBaseUrl;
-        private IterableInAppDisplayMode inAppDisplayMode = IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
+        private IterableInAppDisplayMode inAppDisplayMode = IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE;
 
         public Builder() {}
 
@@ -463,7 +463,7 @@ public class IterableConfig {
 
         /**
          * Set how in-app messages interact with the system bars (status bar, navigation bar).
-         * Defaults to {@link IterableInAppDisplayMode#FOLLOW_APP_LAYOUT}, which preserves existing behavior.
+         * Defaults to {@link IterableInAppDisplayMode#FORCE_EDGE_TO_EDGE}, which preserves existing behavior.
          * @param inAppDisplayMode the display mode for in-app messages
          */
         @NonNull
