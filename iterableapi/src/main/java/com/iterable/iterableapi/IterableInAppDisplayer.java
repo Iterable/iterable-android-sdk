@@ -66,7 +66,8 @@ class IterableInAppDisplayer {
      * @param padding
      */
     static boolean showIterableFragmentNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull String messageId, @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha,  @NonNull Rect padding, boolean shouldAnimate, IterableInAppMessage.InAppBgColor bgColor, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
-        if (context instanceof FragmentActivity currentActivity) {
+        if (context instanceof FragmentActivity) {
+            FragmentActivity currentActivity = (FragmentActivity) context;
             if (htmlString != null) {
                 if (IterableInAppFragmentHTMLNotification.getInstance() != null) {
                     IterableLogger.w(IterableInAppManager.TAG, "Skipping the in-app notification: another notification is already being displayed");
