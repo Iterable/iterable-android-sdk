@@ -1226,8 +1226,14 @@ public class IterableApi {
             IterableLogger.w(TAG, "setAuthToken() is deprecated. Use updateAuthToken() to update the token, " +
                     "or setEmail(email, authToken) / setUserId(userId, authToken) for login. " +
                     "In a future release, this method will only store the auth token without triggering login operations.");
+            boolean tokenChanged = (authToken != null && !authToken.equalsIgnoreCase(_authToken))
+                    || (_authToken != null && !_authToken.equalsIgnoreCase(authToken));
             _authToken = authToken;
-            storeAuthData(this::completeUserLogin);
+            if (tokenChanged) {
+                storeAuthData(this::completeUserLogin);
+            } else {
+                storeAuthData();
+            }
         }
     }
 
