@@ -1079,9 +1079,7 @@ public class IterableAsyncInitializationTest {
             }
         }
 
-        // No need to call simulateInitializationComplete() here — tearDown resets state.
-        // Calling it would trigger processAll() -> shutdownBackgroundExecutorAsync() which
-        // can race with the next test's executor setup.
+        IterableBackgroundInitializer.simulateInitializationComplete();
     }
 
     @Test
@@ -1154,7 +1152,7 @@ public class IterableAsyncInitializationTest {
             }
         }
 
-        // No need to call simulateInitializationComplete() — tearDown resets state.
+        IterableBackgroundInitializer.simulateInitializationComplete();
     }
 
     @Test
@@ -1207,7 +1205,7 @@ public class IterableAsyncInitializationTest {
         assertTrue("UserId 'user_123_abc' should be masked to 'u***'", foundUserId1Masked);
         assertTrue("Email 'a@b.com' should be masked to 'a***'", foundEmail2Masked);
 
-        // No need to call simulateInitializationComplete() — tearDown resets state.
+        IterableBackgroundInitializer.simulateInitializationComplete();
     }
 
     // ========================================

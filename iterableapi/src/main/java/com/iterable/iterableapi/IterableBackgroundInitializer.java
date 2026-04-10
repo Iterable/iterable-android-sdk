@@ -74,11 +74,8 @@ class IterableBackgroundInitializer {
                 }
                 isProcessing = false;
 
-                // After processing all operations, shut down the executor.
-                // Pass the executor reference explicitly so a concurrent reset()
-                // cannot swap in a new one that we accidentally shut down.
                 IterableLogger.d(TAG, "All queued operations processed, shutting down background executor");
-                shutdownBackgroundExecutorAsync(backgroundExecutor);
+                shutdownBackgroundExecutorAsync(executor);
             });
         }
 
