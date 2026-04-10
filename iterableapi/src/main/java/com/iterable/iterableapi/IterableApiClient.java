@@ -14,8 +14,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
@@ -623,7 +623,7 @@ class IterableApiClient {
         }
     }
 
-    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, HashMap<String, String> deviceAttributes, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
+    protected void registerDeviceToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String applicationName, @NonNull String deviceToken, @Nullable JSONObject dataFields, Map<String, String> deviceAttributes, @Nullable final IterableHelper.SuccessHandler successHandler, @Nullable final IterableHelper.FailureHandler failureHandler) {
         Context context = authProvider.getContext();
         JSONObject requestJSON = new JSONObject();
         try {
@@ -633,7 +633,7 @@ class IterableApiClient {
                 dataFields = new JSONObject();
             }
 
-            for (HashMap.Entry<String, String> entry : deviceAttributes.entrySet()) {
+            for (Map.Entry<String, String> entry : deviceAttributes.entrySet()) {
                 dataFields.put(entry.getKey(), entry.getValue());
             }
 

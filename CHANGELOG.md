@@ -4,7 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Fixed
-- Fixed `IterableEmbeddedView` card layout rendering issues: image now displays at a 16:9 aspect ratio instead of collapsing to zero height, card container no longer expands to fill the parent, buttons use a text style for better alignment with the campaign preview, missing end margin on the card is now applied, bottom spacing on buttons is no longer cut off, and the image properly clips to the card's rounded corners.
+- Fixed `IterableEmbeddedView` card layout rendering issues: image now displays at a 16:9 aspect ratio instead of collapsing to zero height, card container no longer expands to fill the parent, missing end margin on the card is now applied, bottom spacing on buttons is no longer cut off, and the image properly clips to the card's rounded corners.
+- Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
+- Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
 
 ### Added
 - Added `imageScaleType` to `IterableEmbeddedViewConfig` to allow configuring the image scale type for embedded message views.
