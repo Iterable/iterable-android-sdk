@@ -75,7 +75,7 @@ public class IterableApiAuthTests extends BaseTest {
         authHandler = mock(IterableAuthHandler.class);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testRefreshToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -103,7 +103,7 @@ public class IterableApiAuthTests extends BaseTest {
         timer = IterableApi.getInstance().getAuthManager().timer;
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSetEmailWithToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -127,7 +127,7 @@ public class IterableApiAuthTests extends BaseTest {
         shadowOf(getMainLooper()).runToEndOfTasks();
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSetEmailWithTokenExpired() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -141,7 +141,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSetUserIdWithToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -165,7 +165,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(expiredJWT, IterableApi.getInstance().getAuthToken());
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSameEmailWithNewToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -189,7 +189,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), newJWT);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSameUserIdWithNewToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -208,7 +208,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), newJWT);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSetSameEmailAndRemoveToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -227,7 +227,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getAuthToken());
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSetSameUserIdAndRemoveToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -285,7 +285,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getAuthToken());
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSetSameEmailWithSameToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -305,7 +305,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), token);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testSetSameUserIdWithSameToken() throws Exception {
         IterableApi.initialize(getContext(), "apiKey");
@@ -360,7 +360,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getAuthToken());
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testAuthTokenPresentInRequest() throws Exception {
 //        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
@@ -400,7 +400,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(HEADER_SDK_AUTH_FORMAT + newJWT, getMessagesSet2Request.getHeader("Authorization"));
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testAuthFailureReturns401() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -426,7 +426,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testAuthRequestedOnSetEmail() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -441,7 +441,7 @@ public class IterableApiAuthTests extends BaseTest {
 
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testAuthRequestedOnUpdateEmail() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -455,7 +455,7 @@ public class IterableApiAuthTests extends BaseTest {
         //TODO: Shouldn't the update call also update the authToken in IterableAPI class?
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testAuthRequestedOnSetUserId() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -464,7 +464,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertEquals(IterableApi.getInstance().getAuthToken(), expiredJWT);
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testAuthSetToNullOnLogOut() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();
@@ -477,7 +477,7 @@ public class IterableApiAuthTests extends BaseTest {
         assertNull(IterableApi.getInstance().getAuthToken());
     }
 
-    @Ignore ("Ignoring the JWT Tests")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testRegisterForPushInvokedAfterTokenRefresh() throws InterruptedException {
         doReturn(expiredJWT).when(authHandler).onAuthTokenRequested();

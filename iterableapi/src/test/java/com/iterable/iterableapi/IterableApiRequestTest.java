@@ -225,7 +225,7 @@ public class IterableApiRequestTest {
         Assert.assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
     }
 
-    @Ignore("Ignoring the JWT related test error")
+    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
     @Test
     public void testUpdateEmailRequest() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
