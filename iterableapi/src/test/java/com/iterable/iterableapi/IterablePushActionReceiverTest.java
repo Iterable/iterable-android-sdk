@@ -90,9 +90,13 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertNotNull(activityIntent);
         assertEquals(Intent.ACTION_MAIN, activityIntent.getAction());
 
-        // Verify trackPushOpen HTTP request
-        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, recordedRequest.getPath());
+        // Verify trackPushOpen HTTP request (skip any in-app sync requests from cross-test state)
+        String expectedPath = "/" + IterableConstants.ENDPOINT_TRACK_PUSH_OPEN;
+        RecordedRequest recordedRequest;
+        do {
+            recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+            assertNotNull("Expected trackPushOpen request but no more requests arrived", recordedRequest);
+        } while (!recordedRequest.getPath().startsWith(expectedPath));
         JSONObject jsonBody = new JSONObject(recordedRequest.getBody().readUtf8());
         assertEquals(1234, jsonBody.getInt(IterableConstants.KEY_CAMPAIGN_ID));
         assertEquals(4321, jsonBody.getInt(IterableConstants.KEY_TEMPLATE_ID));

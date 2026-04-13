@@ -27,6 +27,7 @@ import org.robolectric.android.util.concurrent.PausedExecutorService;
 import org.robolectric.shadows.ShadowDialog;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -44,7 +45,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
@@ -61,7 +61,7 @@ public class IterableInAppManagerTest extends BaseTest {
     private PausedExecutorService backgroundExecutor;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         backgroundExecutor = new PausedExecutorService();
         server = new MockWebServer();
         dispatcher = new PathBasedQueueDispatcher();
@@ -81,6 +81,10 @@ public class IterableInAppManagerTest extends BaseTest {
                         .setUrlHandler(urlHandler);
             }
         });
+        // Drain init sync HTTP requests from MockWebServer (constructor sync + setEmail sync)
+        // and flush their callbacks, so they don't consume responses enqueued by tests
+        while (server.takeRequest(200, TimeUnit.MILLISECONDS) != null) { }
+        shadowOf(getMainLooper()).idle();
         IterableInAppFragmentHTMLNotification.notification = null;
     }
 
@@ -90,7 +94,7 @@ public class IterableInAppManagerTest extends BaseTest {
         server = null;
     }
 
-    @Ignore("Ignoring due to stalling")
+    @Ignore("Stalls under Robolectric: showIterableFragmentNotificationHTML requires real Activity lifecycle - candidate for androidTest with Espresso")
     @Test
     public void testDoNotShowMultipleTimes() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
@@ -104,7 +108,7 @@ public class IterableInAppManagerTest extends BaseTest {
         controller.pause().stop().destroy();
     }
 
-    @Ignore("Ignoring due to stalling")
+    @Ignore("Stalls under Robolectric: showIterableFragmentNotificationHTML requires real Activity lifecycle - candidate for androidTest with Espresso")
     @Test
     public void testIfDialogDoesNotDestroysAfterConfigurationChange() throws Exception {
         ActivityController<FragmentActivity> controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
@@ -118,7 +122,7 @@ public class IterableInAppManagerTest extends BaseTest {
         controller.pause().stop().destroy();
     }
 
-    @Ignore("Ignoring due to stalling")
+    @Ignore("Stalls under Robolectric: showIterableFragmentNotificationHTML requires real Activity lifecycle - candidate for androidTest with Espresso")
     @Test
     public void testIfDialogFragmentExistAfterRotation() throws Exception {
         ActivityController controller = Robolectric.buildActivity(FragmentActivity.class).create().start().resume();
@@ -234,6 +238,7 @@ public class IterableInAppManagerTest extends BaseTest {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
         final IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+        inAppManager.syncInApp();
         shadowOf(getMainLooper()).idle();
 
         IterableInAppManager.Listener listener = mock(IterableInAppManager.Listener.class);
@@ -256,7 +261,7 @@ public class IterableInAppManagerTest extends BaseTest {
         backgroundExecutor.runAll();
         shadowOf(getMainLooper()).idle();
 
-        verify(listener, timeout(100)).onInboxUpdated();
+        verify(listener).onInboxUpdated();
     }
 
     @Test
@@ -278,9 +283,12 @@ public class IterableInAppManagerTest extends BaseTest {
         });
         doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
 
+        // Flush init sync callbacks so messages are loaded before foreground transition
+        shadowOf(getMainLooper()).idle();
+
         // Bring the app into foreground to trigger in-app display
         Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         ArgumentCaptor<IterableHelper.IterableUrlCallback> callbackCaptor = ArgumentCaptor.forClass(IterableHelper.IterableUrlCallback.class);
         verify(inAppDisplayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), callbackCaptor.capture());
         IterableInAppMessage message = inAppManager.getMessages().get(0);
@@ -342,9 +350,12 @@ public class IterableInAppManagerTest extends BaseTest {
         });
         doReturn(true).when(urlHandler).handleIterableURL(any(Uri.class), any(IterableActionContext.class));
 
+        // Flush init sync callbacks so messages are loaded before foreground transition
+        shadowOf(getMainLooper()).idle();
+
         // Bring the app into foreground
         Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         IterableInAppMessage message = inAppManager.getMessages().get(0);
 
         // Verify that message is not consumed by default if consume = false and iterable://dismiss is clicked
@@ -379,7 +390,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         inAppManager.setAutoDisplayPaused(true);
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
-        Robolectric.flushForegroundThreadScheduler();
+        shadowOf(getMainLooper()).idle();
         ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler, times(0)).onNewInApp(inAppMessageCaptor.capture());
 
@@ -389,6 +400,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
     @Test
     public void testMessagePersistentReadStateFromServer() throws Exception {
+
         // load the in-app that has not been synchronized with the server yet (read state is set to false)
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_inbox_read_state_1.json")));
         IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
@@ -591,8 +603,7 @@ public class IterableInAppManagerTest extends BaseTest {
                 mock(IterableInAppDisplayer.class)));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
 
-        // First sync to get messages
-        inAppManager.syncInApp();
+        // Flush constructor sync callback so messages are loaded
         shadowOf(getMainLooper()).idle();
 
         // Process messages by bringing app to foreground
