@@ -181,6 +181,21 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         dispatcher.enqueueResponse("/" + endPoint, new MockResponse().setResponseCode(200).setBody("{}"));
     }
 
+    /**
+     * Takes the next request matching the expected endpoint, skipping any spurious
+     * in-app sync requests caused by cross-test state leakage.
+     */
+    private RecordedRequest takeRequestWithPath(String expectedEndpoint) throws InterruptedException {
+        String expectedPath = "/" + expectedEndpoint;
+        RecordedRequest request;
+        do {
+            request = server.takeRequest(1, TimeUnit.SECONDS);
+            if (request == null) return null;
+        } while (request.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES)
+                && !expectedPath.startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
+        return request;
+    }
+
     // all userId tests
     @Test
     public void testCriteriaNotMetUserIdDefault() throws Exception {
@@ -844,18 +859,18 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         triggerTrackPurchaseEvent("test", "keyboard", 4.67, 3);
         shadowOf(getMainLooper()).idle();
 
-        // check if request was sent to unknown user session endpoint
-        RecordedRequest unknownSessionRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        // check if request was sent to unknown user session endpoint (skip any spurious in-app syncs)
+        RecordedRequest unknownSessionRequest = takeRequestWithPath(IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION);
         assertNotNull("Unknown user session request should not be null", unknownSessionRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_UNKNOWN_SESSION, unknownSessionRequest.getPath());
 
         // check if request was sent to track purchase endpoint
-        RecordedRequest purchaseRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest purchaseRequest = takeRequestWithPath(IterableConstants.ENDPOINT_TRACK_PURCHASE);
         assertNotNull("Purchase request should not be null", purchaseRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, purchaseRequest.getPath());
 
         // check if request was sent to getInAppMessages endpoint (triggered by completeUserLogin)
-        RecordedRequest inAppRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest inAppRequest = takeRequestWithPath(IterableConstants.ENDPOINT_GET_INAPP_MESSAGES);
         assertNotNull("InApp messages request should be sent", inAppRequest);
         assertTrue("InApp messages request path should start with correct endpoint",
             inAppRequest.getPath().startsWith("/" + IterableConstants.ENDPOINT_GET_INAPP_MESSAGES));
@@ -872,7 +887,7 @@ public class IterableApiMergeUserEmailTests extends BaseTest {
         IterableApi.getInstance().setEmail(email, identityResolution);
 
         // check if request was sent to merge endpoint
-        RecordedRequest mergeRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest mergeRequest = takeRequestWithPath(IterableConstants.ENDPOINT_MERGE_USER);
         assertNotNull(mergeRequest);
         assertEquals("/" + IterableConstants.ENDPOINT_MERGE_USER, mergeRequest.getPath());
 

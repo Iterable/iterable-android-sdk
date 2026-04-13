@@ -77,6 +77,8 @@ public class IterableInAppManagerSyncTest extends BaseTest {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
         IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
         IterableApi.initialize(getApplicationContext(), "apiKey");
+        // Reset after initialize since it may also trigger syncInApp via background init
+        reset(inAppManagerMock);
         IterableApi.getInstance().setEmail("test@email.com");
         verify(inAppManagerMock).syncInApp();
     }
