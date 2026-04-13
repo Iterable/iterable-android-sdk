@@ -55,6 +55,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     private volatile boolean isInForeground = true; // Assume foreground initially
 
     private volatile AuthState authState = AuthState.UNKNOWN;
+    private final Object timerLock = new Object();
     private final ArrayList<AuthTokenReadyListener> authTokenReadyListeners = new ArrayList<>();
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -204,16 +205,16 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             }
 
         } else {
-            IterableApi.getInstance().setAuthToken(null, true);
+            IterableApi.getInstance().completeUserLogin();
         }
     }
 
     private void handleAuthTokenSuccess(String authToken, IterableHelper.SuccessHandler successCallback) {
         if (authToken != null) {
-            // Token obtained but not yet verified by a request - set state to UNKNOWN.
-            // setAuthState will notify listeners only if previous state was INVALID.
+            // Store the new token before notifying listeners, so any requests
+            // triggered by listeners (e.g. AuthRecoverySyncManager) use the new token.
+            IterableApi.getInstance().updateAuthToken(authToken);
             setAuthState(AuthState.UNKNOWN);
-            IterableApi.getInstance().setAuthToken(authToken);
             queueExpirationRefresh(authToken);
 
             if (successCallback != null) {
@@ -221,7 +222,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             }
         } else {
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
-            IterableApi.getInstance().setAuthToken(authToken);
+            IterableApi.getInstance().updateAuthToken(authToken);
             scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
             return;
         }
@@ -292,29 +293,31 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
-        if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
-            // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
-            return;
-        }
-        if (timer == null) {
-            timer = new Timer(true);
-        }
+        synchronized (timerLock) {
+            if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
+                // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
+                return;
+            }
+            if (timer == null) {
+                timer = new Timer(true);
+            }
 
-        try {
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if (api.getEmail() != null || api.getUserId() != null) {
-                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh);
-                    } else {
-                        IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
+            try {
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (api.getEmail() != null || api.getUserId() != null) {
+                            api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh);
+                        } else {
+                            IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
+                        }
+                        isTimerScheduled = false;
                     }
-                    isTimerScheduled = false;
-                }
-            }, timeDuration);
-            isTimerScheduled = true;
-        } catch (Exception e) {
-            IterableLogger.e(TAG, "timer exception: " + timer, e);
+                }, timeDuration);
+                isTimerScheduled = true;
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "timer exception: " + timer, e);
+            }
         }
     }
 
@@ -363,10 +366,12 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     void clearRefreshTimer() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-            isTimerScheduled = false;
+        synchronized (timerLock) {
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
+                isTimerScheduled = false;
+            }
         }
     }
 
