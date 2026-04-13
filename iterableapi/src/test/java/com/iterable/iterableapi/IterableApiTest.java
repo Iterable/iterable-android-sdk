@@ -238,7 +238,7 @@ public class IterableApiTest extends BaseTest {
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
     }
 
-    @Ignore
+    @Ignore("handleAppLink performs real HTTP redirect - needs MockWebServer to stub the redirect endpoint")
     @Test
     public void testHandleUniversalLinkRewrite() throws Exception {
         IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
@@ -262,6 +262,9 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSetEmailWithAutomaticPushRegistration() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        // Flush any pending looper callbacks from initialize, then reset mock
+        shadowOf(getMainLooper()).idle();
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setEmail("test@email.com");
@@ -290,6 +293,8 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSetUserIdWithAutomaticPushRegistration() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
+        // Reset after initialize since it may trigger push registration via background init
+        Mockito.reset(IterablePushRegistration.instance);
 
         // Check that setUserId calls registerForPush
         IterableApi.getInstance().setUserId("userId");
@@ -423,7 +428,7 @@ public class IterableApiTest extends BaseTest {
         verify(IterableApi.sharedInstance.getInAppManager(), times(2)).reset();
     }
 
-    @Ignore("Ignoring this test as it fails on CI for some reason")
+    @Ignore("Fails on CI: likely IterableTaskStorage singleton state leakage between tests - needs investigation")
     @Test
     public void databaseClearOnLogout() throws Exception {
         IterableTaskStorage taskStorage = IterableTaskStorage.sharedInstance(getContext());
