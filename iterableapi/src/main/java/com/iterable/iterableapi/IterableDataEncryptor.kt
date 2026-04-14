@@ -122,10 +122,11 @@ class IterableDataEncryptor {
             val iv = cipher.iv
             val encrypted = cipher.doFinal(data)
 
-            val combined = ByteArray(1 + iv.size + encrypted.size)
-            combined[0] = iv.size.toByte()
-            System.arraycopy(iv, 0, combined, 1, iv.size)
-            System.arraycopy(encrypted, 0, combined, 1 + iv.size, encrypted.size)
+            val combined = ByteArray(1 + 1 + iv.size + encrypted.size)
+            combined[0] = 1 // GCM flag (kept for format compatibility)
+            combined[1] = iv.size.toByte()
+            System.arraycopy(iv, 0, combined, 2, iv.size)
+            System.arraycopy(encrypted, 0, combined, 2 + iv.size, encrypted.size)
 
             return Base64.encodeToString(combined, Base64.NO_WRAP)
         } catch (e: Exception) {
@@ -140,9 +141,9 @@ class IterableDataEncryptor {
         try {
             val combined = Base64.decode(value, Base64.NO_WRAP)
 
-            val ivLength = combined[0].toInt()
-            val iv = combined.copyOfRange(1, 1 + ivLength)
-            val encrypted = combined.copyOfRange(1 + ivLength, combined.size)
+            val ivLength = combined[1].toInt()
+            val iv = combined.copyOfRange(2, 2 + ivLength)
+            val encrypted = combined.copyOfRange(2 + ivLength, combined.size)
 
             val cipher = Cipher.getInstance(TRANSFORMATION)
             val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)

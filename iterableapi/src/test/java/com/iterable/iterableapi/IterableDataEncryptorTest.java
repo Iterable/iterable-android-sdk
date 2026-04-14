@@ -305,7 +305,8 @@ public class IterableDataEncryptorTest extends BaseTest {
         String encrypted = encryptor.encrypt(testData);
         byte[] bytes = Base64.decode(encrypted, Base64.NO_WRAP);
 
-        assertEquals("IV length byte should be 12 (GCM)", 12, bytes[0]);
+        assertEquals("GCM flag should be 1", 1, bytes[0]);
+        assertEquals("IV length byte should be 12 (GCM)", 12, bytes[1]);
     }
 
     @Test
@@ -333,8 +334,8 @@ public class IterableDataEncryptorTest extends BaseTest {
         String encrypted = encryptor.encrypt(testData);
         byte[] bytes = Base64.decode(encrypted, Base64.NO_WRAP);
 
-        // Manipulate the IV
-        bytes[1] ^= 0xFF;  // First byte after version flag
+        // Manipulate the first byte of the IV
+        bytes[2] ^= 0xFF;
         String manipulated = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         try {
