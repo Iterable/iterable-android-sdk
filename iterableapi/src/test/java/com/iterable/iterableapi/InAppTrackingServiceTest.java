@@ -12,9 +12,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 @RunWith(MockitoJUnitRunner.class)
 public class InAppTrackingServiceTest {
 
@@ -159,72 +156,68 @@ public class InAppTrackingServiceTest {
     // Remove Message Tests
 
     @Test
-    public void removeMessage_shouldFindAndRemoveMessage_whenMessageExists() {
+    public void removeMessage_shouldRemoveMessage_whenMarkedForDeletionAndNotConsumed() {
         // Arrange
         String messageId = "test-message-123";
-        when(mockMessage.getMessageId()).thenReturn(messageId);
+        when(mockMessage.isMarkedForDeletion()).thenReturn(true);
+        when(mockMessage.isConsumed()).thenReturn(false);
 
         when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessages()).thenReturn(Arrays.asList(mockMessage));
+        when(mockInAppManager.getMessageById(messageId)).thenReturn(mockMessage);
 
         // Act
-        trackingService.removeMessage(messageId, IterableInAppLocation.INBOX);
+        trackingService.removeMessage(messageId);
 
         // Assert
-        verify(mockInAppManager).removeMessage(
-            mockMessage,
-            IterableInAppDeleteActionType.INBOX_SWIPE,
-            IterableInAppLocation.INBOX
-        );
+        verify(mockInAppManager).removeMessage(mockMessage);
     }
 
     @Test
-    public void removeMessage_shouldUseDefaultLocation_whenLocationIsNull() {
+    public void removeMessage_shouldNotRemove_whenNotMarkedForDeletion() {
         // Arrange
         String messageId = "test-message-123";
-        when(mockMessage.getMessageId()).thenReturn(messageId);
+        when(mockMessage.isMarkedForDeletion()).thenReturn(false);
 
         when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessages()).thenReturn(Arrays.asList(mockMessage));
+        when(mockInAppManager.getMessageById(messageId)).thenReturn(mockMessage);
 
         // Act
-        trackingService.removeMessage(messageId, null);
+        trackingService.removeMessage(messageId);
 
         // Assert
-        verify(mockInAppManager).removeMessage(
-            mockMessage,
-            IterableInAppDeleteActionType.INBOX_SWIPE,
-            IterableInAppLocation.IN_APP
-        );
+        verify(mockInAppManager, never()).removeMessage(any(IterableInAppMessage.class));
+    }
+
+    @Test
+    public void removeMessage_shouldNotRemove_whenAlreadyConsumed() {
+        // Arrange
+        String messageId = "test-message-123";
+        when(mockMessage.isMarkedForDeletion()).thenReturn(true);
+        when(mockMessage.isConsumed()).thenReturn(true);
+
+        when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
+        when(mockInAppManager.getMessageById(messageId)).thenReturn(mockMessage);
+
+        // Act
+        trackingService.removeMessage(messageId);
+
+        // Assert
+        verify(mockInAppManager, never()).removeMessage(any(IterableInAppMessage.class));
     }
 
     @Test
     public void removeMessage_shouldNotCrash_whenMessageNotFound() {
         // Arrange
         String messageId = "test-message-123";
-        String differentId = "different-id-456";
-        when(mockMessage.getMessageId()).thenReturn(differentId);
 
         when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessages()).thenReturn(Arrays.asList(mockMessage));
+        when(mockInAppManager.getMessageById(messageId)).thenReturn(null);
 
         // Act & Assert - should not throw exception
-        trackingService.removeMessage(messageId, IterableInAppLocation.IN_APP);
+        trackingService.removeMessage(messageId);
 
         // Should not call removeMessage since message wasn't found
-        verify(mockInAppManager, never()).removeMessage(any(), any(), any());
-    }
-
-    @Test
-    public void removeMessage_shouldNotCrash_whenMessagesListIsEmpty() {
-        // Arrange
-        String messageId = "test-message-123";
-
-        when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessages()).thenReturn(Collections.emptyList());
-
-        // Act & Assert - should not throw exception
-        trackingService.removeMessage(messageId, IterableInAppLocation.IN_APP);
+        verify(mockInAppManager, never()).removeMessage(any(IterableInAppMessage.class));
     }
 
     @Test
@@ -234,7 +227,7 @@ public class InAppTrackingServiceTest {
         InAppTrackingService nullApiService = new InAppTrackingService(null);
 
         // Act & Assert - should not throw exception
-        nullApiService.removeMessage(messageId, IterableInAppLocation.IN_APP);
+        nullApiService.removeMessage(messageId);
     }
 
     @Test
@@ -245,7 +238,7 @@ public class InAppTrackingServiceTest {
         when(mockIterableApi.getInAppManager()).thenReturn(null);
 
         // Act & Assert - should not throw exception
-        trackingService.removeMessage(messageId, IterableInAppLocation.IN_APP);
+        trackingService.removeMessage(messageId);
     }
 
     // Track Screen View Tests

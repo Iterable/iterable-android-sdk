@@ -20,9 +20,9 @@ internal class InAppLayoutService {
     fun getInAppLayout(padding: InAppPadding): InAppLayout {
         if (padding.top == 0 && padding.bottom == 0) {
             return InAppLayout.FULLSCREEN
-        } else if (padding.top > 0 && padding.bottom <= 0) {
+        } else if (padding.top == 0 && padding.bottom < 0) {
             return InAppLayout.TOP
-        } else if (padding.top <= 0 && padding.bottom > 0) {
+        } else if (padding.top < 0 && padding.bottom == 0) {
             return InAppLayout.BOTTOM
         } else {
             return InAppLayout.CENTER

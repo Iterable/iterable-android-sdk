@@ -177,12 +177,9 @@ class IterableInAppDialogNotification internal constructor(
         webViewService.cleanupWebView(webView)
         webView = null
 
-        val activity = ownerActivity ?: context as? Activity
-        if (activity != null && activity.isChangingConfigurations) {
-            super.dismiss()
-            return
-        }
-
+        // Always clear statics. Unlike DialogFragment, Dialog is not recreated
+        // after configuration changes, so a stale reference would permanently
+        // block isShowingInApp() and prevent future in-app messages.
         notification = null
         clickCallback = null
         location = null
@@ -342,7 +339,7 @@ class IterableInAppDialogNotification internal constructor(
     }
 
     private fun processMessageRemoval() {
-        trackingService.removeMessage(messageId, location)
+        trackingService.removeMessage(messageId)
     }
 }
 

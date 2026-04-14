@@ -50,9 +50,7 @@ internal class InAppTrackingService internal constructor(
         }
     }
 
-    fun removeMessage(messageId: String, location: IterableInAppLocation?) {
-        val loc = location ?: IterableInAppLocation.IN_APP
-
+    fun removeMessage(messageId: String) {
         if (iterableApi == null) {
             IterableLogger.w(TAG, "Cannot remove message: IterableApi not initialized")
             return
@@ -63,29 +61,26 @@ internal class InAppTrackingService internal constructor(
         } catch (e: Exception) {
             null
         }
-        
+
         if (inAppManager == null) {
             IterableLogger.w(TAG, "Cannot remove message: InAppManager not initialized")
             return
         }
 
         val message: IterableInAppMessage? = try {
-            inAppManager.messages.firstOrNull { msg ->
-                msg != null && messageId == msg.messageId
-            }
+            inAppManager.getMessageById(messageId)
         } catch (e: Exception) {
             null
         }
 
-        if (message != null) {
-            inAppManager.removeMessage(
-                message,
-                IterableInAppDeleteActionType.INBOX_SWIPE,
-                loc
-            )
-            IterableLogger.d(TAG, "Removed message: $messageId at location: $loc")
-        } else {
-            IterableLogger.w(TAG, "Message not found for removal: $messageId")
+        if (message == null) {
+            IterableLogger.w(TAG, "Message with id $messageId does not exist")
+            return
+        }
+
+        if (message.isMarkedForDeletion && !message.isConsumed) {
+            inAppManager.removeMessage(message)
+            IterableLogger.d(TAG, "Removed message: $messageId")
         }
     }
 
