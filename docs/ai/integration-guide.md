@@ -97,7 +97,7 @@ class YourApplication : Application() {
             .setCustomActionHandler(AppCustomActionHandler())
             .setUrlHandler(AppUrlHandler(this))
             .setAllowedProtocols(arrayOf("yourscheme"))          // REQUIRED for custom deep link schemes
-            .setAuthHandler(AppAuthHandler { getFreshEmail() })     // REQUIRED if JWT key — see note below
+            .setAuthHandler(AppAuthHandler { generateJwtForEmail(getFreshEmail()) })  // REQUIRED if JWT key — see note below
             .setEnableEmbeddedMessaging(true)                     // Only if using embedded messages
             .build()
 
