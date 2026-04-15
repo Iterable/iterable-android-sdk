@@ -33,6 +33,9 @@ IterableConfig config = new IterableConfig.Builder()
     .build();
 ```
 
+### Removed
+- Removed insecure `AES/CBC/PKCS5Padding` encryption from `IterableDataEncryptor`. The SDK now exclusively uses `AES/GCM/NoPadding`. The legacy CBC algorithm was only used on Android versions below KitKat (API 19), which have been unsupported since `minSdkVersion` was raised to 21.
+
 ## [3.7.0]
 - Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
 - Fixed lost event tracking and missed API calls with an auto-retry feature for JWT token failures.
