@@ -158,7 +158,7 @@ IterableApi.onSDKInitialized {
 `setAutoPushRegistration(true)` handles it automatically when `setEmail` is called.
 
 ### Gotcha: Always wrap SDK calls in `onSDKInitialized`
-The SDK init is async. Calling `setEmail` before init completes silently fails.
+When using `initializeInBackground`, wrap SDK calls in `IterableApi.onSDKInitialized { }` to ensure the SDK is ready before proceeding.
 
 ### Gotcha: Never use `Handler.postDelayed` to sequence SDK calls
 The SDK provides proper async callbacks. Always use `setEmail(email, onSuccess, onFailure)` and chain dependent calls in `onSuccess`. Arbitrary delays are fragile and will break under varying network conditions.
