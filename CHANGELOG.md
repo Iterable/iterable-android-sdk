@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
 
 ### Added
+- Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 - Added `imageScaleType` to `IterableEmbeddedViewConfig` to allow configuring how the image is scaled within the 16:9 container for embedded message views.
 - Added default values to all `IterableEmbeddedViewConfig` constructor parameters for easier configuration.
 
