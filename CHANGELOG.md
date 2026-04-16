@@ -9,8 +9,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   - `FOLLOW_APP_LAYOUT` — matches the host app's system bar configuration automatically.
   - `FORCE_FULLSCREEN` — hides the status bar entirely for all in-app messages.
   - `FORCE_RESPECT_BOUNDS` — ensures in-app content never overlaps system bars, keeping UI elements like the close button always accessible.
+- Added `imageScaleType` to `IterableEmbeddedViewConfig` to allow configuring how the image is scaled within the 16:9 container for embedded message views.
+- Added default values to all `IterableEmbeddedViewConfig` constructor parameters for easier configuration.
 
 ### Fixed
+- Fixed `IterableEmbeddedView` card layout rendering issues: image now displays at a 16:9 aspect ratio instead of collapsing to zero height, card container no longer expands to fill the parent, missing end margin on the card is now applied, bottom spacing on buttons is no longer cut off, and the image properly clips to the card's rounded corners.
 - Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
 - Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
 
