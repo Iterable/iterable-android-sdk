@@ -179,7 +179,7 @@ class IterableEmbeddedView() : Fragment() {
             if(message.elements?.mediaURL?.isEmpty() == true) {
                 embeddedMessageImageView.visibility = View.GONE
             } else {
-                config?.imageScaleType?.let { embeddedMessageImageView.scaleType = it }
+                config?.let { embeddedMessageImageView.scaleType = it.imageScaleType }
                 Glide.with(view.context).load(message.elements?.mediaURL).into(embeddedMessageImageView)
                 embeddedMessageImageView.contentDescription = message.elements?.mediaUrlCaption
             }

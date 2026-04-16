@@ -23,12 +23,11 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:contentDescription=""
-        android:scaleType="centerCrop"
         app:layout_constraintDimensionRatio="H,16:9"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        /> <!-- Default 16:9 aspect ratio. The scale type can be changed in #IterableEmbeddedViewConfig -->
+        /> <!-- 16:9 aspect ratio. Scale type is configured via IterableEmbeddedViewConfig.imageScaleType -->
 
     <LinearLayout
         android:id="@+id/embedded_message_text_container"

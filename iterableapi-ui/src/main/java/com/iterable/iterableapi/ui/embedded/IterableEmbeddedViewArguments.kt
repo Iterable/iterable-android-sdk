@@ -95,13 +95,11 @@ internal object IterableEmbeddedViewArguments {
                 secondaryBtnTextColor = arguments.getIntOrNull(KEY_SECONDARY_BTN_TEXT),
                 titleTextColor = arguments.getIntOrNull(KEY_TITLE_COLOR),
                 bodyTextColor = arguments.getIntOrNull(KEY_BODY_COLOR),
-                imageScaleType = arguments.getStringOrNull(KEY_IMAGE_SCALE_TYPE)?.let {
-                    try {
-                        ImageView.ScaleType.valueOf(it)
-                    } catch (e: IllegalArgumentException) {
-                        IterableLogger.e(TAG, "Invalid image scale type: $it, using default")
-                        null
-                    }
+                imageScaleType = try {
+                    arguments.getString(KEY_IMAGE_SCALE_TYPE)?.let { ImageView.ScaleType.valueOf(it) }
+                        ?: IterableEmbeddedViewConfig.DEFAULT_IMAGE_SCALE_TYPE
+                } catch (e: IllegalArgumentException) {
+                    IterableEmbeddedViewConfig.DEFAULT_IMAGE_SCALE_TYPE
                 }
             )
         } else {
@@ -121,7 +119,7 @@ internal object IterableEmbeddedViewArguments {
             cfg.secondaryBtnTextColor?.let { putInt(KEY_SECONDARY_BTN_TEXT, it) }
             cfg.titleTextColor?.let { putInt(KEY_TITLE_COLOR, it) }
             cfg.bodyTextColor?.let { putInt(KEY_BODY_COLOR, it) }
-            cfg.imageScaleType?.let { putString(KEY_IMAGE_SCALE_TYPE, it.name) }
+            putString(KEY_IMAGE_SCALE_TYPE, cfg.imageScaleType.name)
         }
     }
 
@@ -131,9 +129,5 @@ internal object IterableEmbeddedViewArguments {
 
     private fun Bundle.getFloatOrNull(key: String): Float? {
         return if (containsKey(key)) getFloat(key) else null
-    }
-
-    private fun Bundle.getStringOrNull(key: String): String? {
-        return if (containsKey(key)) getString(key) else null
     }
 }
