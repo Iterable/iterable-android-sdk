@@ -1,0 +1,46 @@
+# Iterable Android SDK
+
+> Iterable is a cross-channel marketing platform. This SDK integrates Android apps with Iterable for push notifications, in-app messages, mobile inbox, embedded messaging, event tracking, and JWT authentication.
+
+Other Iterable SDKs: [iOS/Swift](https://github.com/Iterable/swift-sdk) | [React Native](https://github.com/Iterable/react-native-sdk) | [Web](https://github.com/Iterable/web-sdk)
+
+## Quick Facts
+
+- Minimum Android API: 21 (Android 5.0)
+- Latest version: check `CHANGELOG.md` — first `## [x.y.z]` after `## [Unreleased]`
+- Maven: `com.iterable:iterableapi:<version>` (core) + `com.iterable:iterableapi-ui:<version>` (UI)
+- Initialize with `IterableApi.initializeInBackground(context, apiKey, config, callback)`
+- Identify users with `IterableApi.getInstance().setEmail(email)` or `setUserId(userId)`
+- When using `initializeInBackground`, wrap SDK calls in `IterableApi.onSDKInitialized { }` to ensure the SDK is ready before proceeding
+- JWT auth is opt-in, but if the API key requires it, ALL calls silently fail without an auth handler
+- Push requires Firebase + runtime POST_NOTIFICATIONS permission on Android 13+
+- Deep links with custom schemes require `setAllowedProtocols(arrayOf("yourscheme"))`
+- EU customers must set `setDataRegion(IterableDataRegion.EU)` — default is US
+- No ProGuard/R8 consumer rules needed
+
+## AI Agent Guides
+
+This repository includes detailed guides for specific SDK features under `docs/ai/`. Each guide is self-contained -- load only the ones relevant to your current task to avoid unnecessary context. You can treat them as skills to pull in on demand.
+
+- [Integration Guide](docs/ai/integration-guide.md): Complete step-by-step setup from zero to working SDK. Covers dependencies, initialization, user identification, push, in-app, inbox, deep links, embedded messaging, JWT auth. Includes critical gotchas and traps. **Start here for new integrations.**
+
+## Project Structure
+
+- `iterableapi/` — Core SDK module
+- `iterableapi-ui/` — UI module (in-app, inbox, embedded views)
+- `sample-apps/` — Sample integrations
+- `docs/ai/` — AI agent guides
+
+## Official Documentation
+
+- [Android SDK Setup](https://support.iterable.com/hc/articles/360035019712)
+- [Push Notifications](https://support.iterable.com/hc/articles/115000331943)
+- [In-App Messages](https://support.iterable.com/hc/articles/360035537231)
+- [Mobile Inbox](https://support.iterable.com/hc/articles/360038744152)
+- [Embedded Messages](https://support.iterable.com/hc/articles/23061877893652)
+- [Deep Links](https://support.iterable.com/hc/articles/360035127392)
+- [Event Tracking](https://support.iterable.com/hc/articles/360035395671)
+- [User Identification](https://support.iterable.com/hc/articles/360035402531)
+- [Unknown User Activation](https://support.iterable.com/hc/sections/40078809116180)
+- [Testing and Troubleshooting](https://support.iterable.com/hc/articles/360035392251)
+- [FAQ](https://support.iterable.com/hc/articles/360035624191)

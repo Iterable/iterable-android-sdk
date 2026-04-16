@@ -104,17 +104,17 @@ class IterableEmbeddedView() : Fragment() {
         val view = when (viewType) {
             IterableEmbeddedViewType.BANNER -> {
                 val bannerView = inflater.inflate(R.layout.banner_view, container, false)
-                bind(viewType, bannerView, message)
+                bind(viewType, bannerView, message, config)
                 bannerView
             }
             IterableEmbeddedViewType.CARD -> {
                 val cardView = inflater.inflate(R.layout.card_view, container, false)
-                bind(viewType, cardView, message)
+                bind(viewType, cardView, message, config)
                 cardView
             }
             IterableEmbeddedViewType.NOTIFICATION -> {
                 val notificationView = inflater.inflate(R.layout.notification_view, container, false)
-                bind(viewType, notificationView, message)
+                bind(viewType, notificationView, message, config)
                 notificationView
             }
         }
@@ -167,7 +167,7 @@ class IterableEmbeddedView() : Fragment() {
         bodyText.setTextColor(bodyTextColor)
     }
 
-    private fun bind(viewType: IterableEmbeddedViewType, view: View, message: IterableEmbeddedMessage): View  {
+    private fun bind(viewType: IterableEmbeddedViewType, view: View, message: IterableEmbeddedMessage, config: IterableEmbeddedViewConfig?): View  {
         val embeddedMessageViewTitle: TextView = view.findViewById(R.id.embedded_message_title)
         val embeddedMessageViewBody: TextView = view.findViewById(R.id.embedded_message_body)
         val embeddedMessageViewButton: Button = view.findViewById(R.id.embedded_message_first_button)
@@ -179,6 +179,7 @@ class IterableEmbeddedView() : Fragment() {
             if(message.elements?.mediaURL?.isEmpty() == true) {
                 embeddedMessageImageView.visibility = View.GONE
             } else {
+                config?.let { embeddedMessageImageView.scaleType = it.imageScaleType }
                 Glide.with(view.context).load(message.elements?.mediaURL).into(embeddedMessageImageView)
                 embeddedMessageImageView.contentDescription = message.elements?.mediaUrlCaption
             }
