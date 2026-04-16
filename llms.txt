@@ -20,9 +20,20 @@ Other Iterable SDKs: [iOS/Swift](https://github.com/Iterable/swift-sdk) | [React
 
 ## AI Agent Guides
 
-This repository includes detailed guides for specific SDK features under `docs/ai/`. Each guide is self-contained -- load only the ones relevant to your current task to avoid unnecessary context. You can treat them as skills to pull in on demand.
+This repository includes detailed guides for specific SDK features under `docs/ai/`. Each guide is self-contained — load only the ones relevant to your current task to avoid unnecessary context. You can treat them as skills to pull in on demand.
 
-- [Integration Guide](docs/ai/integration-guide.md): Complete step-by-step setup from zero to working SDK. Covers dependencies, initialization, user identification, push, in-app, inbox, deep links, embedded messaging, JWT auth. Includes critical gotchas and traps. **Start here for new integrations.**
+Each guide uses a decision tier system (🔴 Critical / 🟠 Important / 🟡 Relevant / 🟢 Optional) to help agents know what to ask the developer vs. what to default.
+
+- [Integration Guide](docs/ai/integration-guide.md): **Start here.** Core setup from zero to working SDK. Dependencies, initialization, user identification, setup mode choice (Quick/Guided/Full control). Links to per-feature guides.
+- [Push Notifications](docs/ai/push-notifications.md): Firebase setup, messaging service, runtime permissions (Android 13+), notification channels, dashboard config.
+- [In-App Messages](docs/ai/in-app-messages.md): InAppHandler, show/skip logic, display interval, auto-display pausing.
+- [Mobile Inbox](docs/ai/mobile-inbox.md): Fragment setup, customization — layouts, filtering, sorting, date formatting, multiple row types, empty state.
+- [Deep Linking](docs/ai/deep-linking.md): UrlHandler, custom URI schemes, App Links, intent filters, custom actions.
+- [Embedded Messaging](docs/ai/embedded-messaging.md): Placements, update handlers, OOTB views (Banner/Card/Notification) vs custom UI, click tracking.
+- [JWT Authentication](docs/ai/jwt-authentication.md): AuthHandler, server-side token generation, refresh, retry policy, failure handling.
+- [Event Tracking](docs/ai/event-tracking.md): Custom events, purchases, cart updates, CommerceItem fields, data fields.
+- [User Profiles](docs/ai/user-profiles.md): updateUser, updateEmail, subscriptions, merge behavior, data field semantics.
+- [Unknown User Activation](docs/ai/unknown-user-activation.md): Visitor→unknown→known lifecycle, consent, criteria (marketing-defined), merge/replay, identity resolution.
 
 ## Project Structure
 
