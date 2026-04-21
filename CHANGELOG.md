@@ -3,14 +3,38 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- New `IterableInAppDisplayMode` enum to control how in-app messages interact with system bars. Configure via `IterableConfig.Builder.setInAppDisplayMode()`:
+  - `FORCE_EDGE_TO_EDGE` (default) — draws in-app content behind system bars with transparent status and navigation bars. This preserves the previous SDK behavior.
+  - `FOLLOW_APP_LAYOUT` — matches the host app's system bar configuration automatically.
+  - `FORCE_FULLSCREEN` — hides the status bar entirely for all in-app messages.
+  - `FORCE_RESPECT_BOUNDS` — ensures in-app content never overlaps system bars, keeping UI elements like the close button always accessible.
+- Added `imageScaleType` to `IterableEmbeddedViewConfig` to allow configuring how the image is scaled within the 16:9 container for embedded message views.
+- Added default values to all `IterableEmbeddedViewConfig` constructor parameters for easier configuration.
+
 ### Fixed
 - Fixed `IterableEmbeddedView` card layout rendering issues: image now displays at a 16:9 aspect ratio instead of collapsing to zero height, card container no longer expands to fill the parent, missing end margin on the card is now applied, bottom spacing on buttons is no longer cut off, and the image properly clips to the card's rounded corners.
 - Fixed `ConcurrentModificationException` crash during device token registration caused by concurrent access to `deviceAttributes`.
 - Fixed possible `NoSuchMethodException` crash on Android 5-10 caused by using `Map.of()` which is unavailable on those versions
 
-### Added
-- Added `imageScaleType` to `IterableEmbeddedViewConfig` to allow configuring how the image is scaled within the 16:9 container for embedded message views.
-- Added default values to all `IterableEmbeddedViewConfig` constructor parameters for easier configuration.
+### Migration guide
+**No action required for most apps.** The default `FORCE_EDGE_TO_EDGE` preserves the existing behavior where in-app content draws behind system bars.
+
+If the close button in your fullscreen in-app messages is obscured by the status bar, you can fix it by choosing one of these modes:
+
+```java
+// Automatically match the host app's system bar configuration
+IterableConfig config = new IterableConfig.Builder()
+    .setInAppDisplayMode(IterableInAppDisplayMode.FOLLOW_APP_LAYOUT)
+    .build();
+```
+
+```java
+// Ensure in-app content never goes behind system bars
+IterableConfig config = new IterableConfig.Builder()
+    .setInAppDisplayMode(IterableInAppDisplayMode.FORCE_RESPECT_BOUNDS)
+    .build();
+```
 
 ### Removed
 - Removed insecure `AES/CBC/PKCS5Padding` encryption from `IterableDataEncryptor`. The SDK now exclusively uses `AES/GCM/NoPadding`. The legacy CBC algorithm was only used on Android versions below KitKat (API 19), which have been unsupported since `minSdkVersion` was raised to 21.
