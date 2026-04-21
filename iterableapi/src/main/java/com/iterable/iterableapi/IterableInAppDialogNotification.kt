@@ -79,10 +79,17 @@ class IterableInAppDialogNotification internal constructor(
             inAppBgColor: IterableInAppMessage.InAppBgColor =
                 IterableInAppMessage.InAppBgColor(null, 0.0),
         ): IterableInAppDialogNotification {
-            clickCallback = urlCallback
-            location = inAppLocation
-            
-            notification = IterableInAppDialogNotification(
+            val existing = notification
+            if (existing != null) {
+                IterableLogger.w(
+                    TAG,
+                    "createInstance called while another dialog is showing; " +
+                        "returning existing instance without overwriting callbacks"
+                )
+                return existing
+            }
+
+            val newInstance = IterableInAppDialogNotification(
                 activity,
                 htmlString,
                 callbackOnCancel,
@@ -98,8 +105,12 @@ class IterableInAppDialogNotification internal constructor(
                 InAppServices.webView,
                 InAppServices.orientation
             )
-            
-            return notification!!
+
+            clickCallback = urlCallback
+            location = inAppLocation
+            notification = newInstance
+
+            return newInstance
         }
 
         /**
