@@ -51,7 +51,6 @@ class IterableInAppDialogNotification internal constructor(
         private const val TAG = "IterableInAppDialog"
         private const val BACK_BUTTON = "itbl://backButton"
         private const val DELAY_THRESHOLD_MS = 500L
-        private const val IN_APP_OPEN_TRACKED = "InAppOpenTracked"
 
         @Volatile
         @JvmStatic
@@ -126,10 +125,6 @@ class IterableInAppDialogNotification internal constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (savedInstanceState != null) {
-            inAppOpenTracked = savedInstanceState.getBoolean(IN_APP_OPEN_TRACKED, false)
-        }
-
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
@@ -159,12 +154,6 @@ class IterableInAppDialogNotification internal constructor(
         }
 
         prepareToShowWebView()
-    }
-
-    override fun onSaveInstanceState(): Bundle {
-        val bundle = super.onSaveInstanceState()
-        bundle.putBoolean(IN_APP_OPEN_TRACKED, inAppOpenTracked)
-        return bundle
     }
 
     override fun dismiss() {
