@@ -230,17 +230,6 @@ public class InAppTrackingServiceTest {
         nullApiService.removeMessage(messageId);
     }
 
-    @Test
-    public void removeMessage_shouldNotCrash_whenInAppManagerIsNull() {
-        // Arrange
-        String messageId = "test-message-123";
-
-        when(mockIterableApi.getInAppManager()).thenReturn(null);
-
-        // Act & Assert - should not throw exception
-        trackingService.removeMessage(messageId);
-    }
-
     // Track Screen View Tests
 
     @Test

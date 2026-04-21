@@ -56,23 +56,8 @@ internal class InAppTrackingService internal constructor(
             return
         }
 
-        val inAppManager = try {
-            iterableApi.inAppManager
-        } catch (e: Exception) {
-            null
-        }
-
-        if (inAppManager == null) {
-            IterableLogger.w(TAG, "Cannot remove message: InAppManager not initialized")
-            return
-        }
-
-        val message: IterableInAppMessage? = try {
-            inAppManager.getMessageById(messageId)
-        } catch (e: Exception) {
-            null
-        }
-
+        val inAppManager = iterableApi.inAppManager
+        val message = inAppManager.getMessageById(messageId)
         if (message == null) {
             IterableLogger.w(TAG, "Message with id $messageId does not exist")
             return
