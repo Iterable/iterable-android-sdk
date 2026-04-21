@@ -7,6 +7,8 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.TransitionDrawable
 import android.view.View
 import android.view.Window
+import android.view.animation.AnimationUtils
+import androidx.annotation.AnimRes
 import androidx.core.graphics.ColorUtils
 
 internal class InAppAnimationService {
@@ -36,7 +38,7 @@ internal class InAppAnimationService {
             val layers = arrayOf(from, to)
             val transition = TransitionDrawable(layers)
             window.setBackgroundDrawable(transition)
-            transition.startTransition(ANIMATION_DURATION_MS)
+            transition.startTransition(IterableConstants.ITERABLE_IN_APP_BACKGROUND_ANIMATION_DURATION)
         } else {
             window.setBackgroundDrawable(to)
         }
@@ -58,17 +60,78 @@ internal class InAppAnimationService {
         }
     }
 
-    fun showAndAnimateWebView(webView: View, shouldAnimate: Boolean, context: Context?) {
+    /**
+     * Returns the enter animation resource for the given in-app layout, mirroring the
+     * behavior of [IterableInAppFragmentHTMLNotification] so Compose/Dialog hosts get the
+     * same slide/fade animations as Fragment hosts.
+     */
+    @AnimRes
+    fun getEnterAnimationResource(layout: InAppLayoutService.InAppLayout): Int {
+        return when (layout) {
+            InAppLayoutService.InAppLayout.TOP -> R.anim.slide_down_custom
+            InAppLayoutService.InAppLayout.BOTTOM -> R.anim.slide_up_custom
+            InAppLayoutService.InAppLayout.CENTER,
+            InAppLayoutService.InAppLayout.FULLSCREEN -> R.anim.fade_in_custom
+        }
+    }
+
+    /**
+     * Returns the exit animation resource for the given in-app layout, mirroring the
+     * behavior of [IterableInAppFragmentHTMLNotification].
+     */
+    @AnimRes
+    fun getExitAnimationResource(layout: InAppLayoutService.InAppLayout): Int {
+        return when (layout) {
+            InAppLayoutService.InAppLayout.TOP -> R.anim.top_exit
+            InAppLayoutService.InAppLayout.BOTTOM -> R.anim.bottom_exit
+            InAppLayoutService.InAppLayout.CENTER,
+            InAppLayoutService.InAppLayout.FULLSCREEN -> R.anim.fade_out_custom
+        }
+    }
+
+    fun showAndAnimateWebView(
+        webView: View,
+        shouldAnimate: Boolean,
+        context: Context?,
+        layout: InAppLayoutService.InAppLayout
+    ) {
+        webView.alpha = 1.0f
+        webView.visibility = View.VISIBLE
+
         if (shouldAnimate && context != null) {
-            webView.alpha = 0f
-            webView.visibility = View.VISIBLE
-            webView.animate()
-                .alpha(1.0f)
-                .setDuration(ANIMATION_DURATION_MS.toLong())
-                .start()
-        } else {
-            webView.alpha = 1.0f
-            webView.visibility = View.VISIBLE
+            try {
+                val anim = AnimationUtils.loadAnimation(context, getEnterAnimationResource(layout))
+                anim.duration = IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION.toLong()
+                webView.startAnimation(anim)
+            } catch (e: Exception) {
+                IterableLogger.w(TAG, "Failed to start enter animation", e)
+            }
+        }
+    }
+
+    /**
+     * Plays the layout-appropriate exit animation on the given view. Returns `true` when
+     * an animation was started, `false` otherwise (either because [shouldAnimate] was
+     * false or loading the animation failed). Callers should schedule dismissal
+     * accordingly.
+     */
+    fun hideAndAnimateWebView(
+        webView: View,
+        shouldAnimate: Boolean,
+        context: Context?,
+        layout: InAppLayoutService.InAppLayout
+    ): Boolean {
+        if (!shouldAnimate || context == null) {
+            return false
+        }
+        return try {
+            val anim = AnimationUtils.loadAnimation(context, getExitAnimationResource(layout))
+            anim.duration = IterableConstants.ITERABLE_IN_APP_ANIMATION_DURATION.toLong()
+            webView.startAnimation(anim)
+            true
+        } catch (e: Exception) {
+            IterableLogger.w(TAG, "Failed to start exit animation", e)
+            false
         }
     }
 
@@ -91,7 +154,6 @@ internal class InAppAnimationService {
     }
 
     companion object {
-        private const val ANIMATION_DURATION_MS = 300
         private const val TAG = "InAppAnimService"
     }
 }

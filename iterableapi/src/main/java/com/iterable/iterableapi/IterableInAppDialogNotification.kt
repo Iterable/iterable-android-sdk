@@ -48,6 +48,7 @@ class IterableInAppDialogNotification internal constructor(
         private const val TAG = "IterableInAppDialog"
         private const val BACK_BUTTON = "itbl://backButton"
         private const val DELAY_THRESHOLD_MS = 500L
+        private const val DISMISS_DELAY_MS = 400L
 
         @Volatile
         @JvmStatic
@@ -274,7 +275,8 @@ class IterableInAppDialogNotification internal constructor(
 
     private fun showAndAnimateWebView() {
         webView?.let { wv ->
-            animationService.showAndAnimateWebView(wv, shouldAnimate, context)
+            val layout = layoutService.getInAppLayout(insetPadding)
+            animationService.showAndAnimateWebView(wv, shouldAnimate, context, layout)
         }
     }
 
@@ -283,6 +285,12 @@ class IterableInAppDialogNotification internal constructor(
     }
 
     override fun runResizeScript() {
+        // TODO(future PR): port IterableInAppFragmentHTMLNotification.resize(float) so the
+        // dialog window resizes natively to fit WebView content height (incl. debounced
+        // resize, gravity-aware RelativeLayout params, and full-screen fallback).
+        // Until then, Dialog hosts only invoke the JS `window.resize()` hook and rely on
+        // the HTML to self-size; content-sized in-apps that dynamically grow/shrink will
+        // not have the Dialog window follow.
         webViewService.runResizeScript(webView)
     }
 
@@ -305,7 +313,29 @@ class IterableInAppDialogNotification internal constructor(
     }
 
     private fun hideWebView() {
-        dismiss()
+        val wv = webView
+        val win = window
+        val layout = layoutService.getInAppLayout(insetPadding)
+
+        if (shouldAnimate && wv != null) {
+            animationService.hideAndAnimateWebView(wv, true, context, layout)
+
+            if (win != null) {
+                animationService.hideInAppBackground(
+                    win,
+                    inAppBackgroundColor,
+                    inAppBackgroundAlpha,
+                    true
+                )
+            }
+
+            // Mirrors the 400ms post-animation dismiss delay used by
+            // IterableInAppFragmentHTMLNotification.hideWebView() so the exit animation
+            // has time to play before the dialog window is torn down.
+            wv.postDelayed({ dismiss() }, DISMISS_DELAY_MS)
+        } else {
+            dismiss()
+        }
     }
 
     private fun processMessageRemoval() {
