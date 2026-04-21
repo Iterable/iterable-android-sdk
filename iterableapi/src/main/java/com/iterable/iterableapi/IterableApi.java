@@ -686,6 +686,10 @@ public class IterableApi {
      */
     public void updateAuthToken(@Nullable String authToken) {
         if (isInitialized()) {
+            if (authToken == null && config.authHandler != null) {
+                IterableLogger.w(TAG, "updateAuthToken called with null while JWT auth is enabled. " +
+                        "Subsequent authenticated requests will fail until a valid token is provided.");
+            }
             _authToken = authToken;
             storeAuthData();
         }

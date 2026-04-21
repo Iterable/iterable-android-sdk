@@ -13,6 +13,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Deprecated
 - `setAuthToken(String)` is now deprecated. It still triggers login operations (push registration, in-app sync, embedded sync) for backward compatibility, but will be changed to only store the token in a future release. Migrate to `updateAuthToken(String)` to update the token without side effects, or use `setEmail(email, authToken)` / `setUserId(userId, authToken)` to set credentials and trigger login operations.
 
+### Changed
+- `setEmail(email, ...)` and `setUserId(userId, ...)` now complete the login flow (push registration, in-app sync, embedded sync) when called with the same identifier that is already set. Previously, these calls were a no-op unless a new auth token was supplied. This fixes returning-user sessions where the identifier is restored from storage and the app re-calls `setEmail`/`setUserId` on startup — these calls now correctly re-initialize the session rather than silently doing nothing.
+
 ## [3.7.0]
 - Replaced the deprecated `AsyncTask`-based push notification handling with `WorkManager` for improved reliability and compatibility with modern Android versions. No action is required.
 - Fixed lost event tracking and missed API calls with an auto-retry feature for JWT token failures.
