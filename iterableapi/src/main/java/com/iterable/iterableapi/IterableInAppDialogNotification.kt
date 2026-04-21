@@ -12,8 +12,6 @@ import android.view.View
 import android.view.Window
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
-import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -44,7 +42,6 @@ class IterableInAppDialogNotification internal constructor(
     private var webView: IterableWebView? = null
     private var loaded: Boolean = false
     private var orientationListener: OrientationEventListener? = null
-    private var backPressedCallback: OnBackPressedCallback? = null
     private var inAppOpenTracked: Boolean = false
 
     companion object {
@@ -168,9 +165,6 @@ class IterableInAppDialogNotification internal constructor(
     }
 
     override fun dismiss() {
-        backPressedCallback?.remove()
-        backPressedCallback = null
-
         orientationService.disableListener(orientationListener)
         orientationListener = null
 
@@ -188,46 +182,22 @@ class IterableInAppDialogNotification internal constructor(
     }
 
     private fun setupBackPressHandling() {
-        val activity = ownerActivity ?: context as? ComponentActivity
-        
-        if (activity is ComponentActivity) {
-            backPressedCallback = object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    trackingService.trackInAppClick(messageId, BACK_BUTTON, location)
-                    trackingService.trackInAppClose(
-                        messageId,
-                        BACK_BUTTON,
-                        IterableInAppCloseAction.BACK,
-                        location
-                    )
-                    
-                    processMessageRemoval()
-                    
-                    dismiss()
-                }
-            }
-            
-            activity.onBackPressedDispatcher.addCallback(activity, backPressedCallback!!)
-            IterableLogger.d(TAG, "dialog notification back press handler registered")
-        } else {
-            IterableLogger.w(TAG, "Activity is not ComponentActivity, using legacy back press handling")
-            setOnKeyListener { _, keyCode, event ->
-                if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-                    trackingService.trackInAppClick(messageId, BACK_BUTTON, location)
-                    trackingService.trackInAppClose(
-                        messageId,
-                        BACK_BUTTON,
-                        IterableInAppCloseAction.BACK,
-                        location
-                    )
-                    
-                    processMessageRemoval()
-                    
-                    dismiss()
-                    true
-                } else {
-                    false
-                }
+        setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                trackingService.trackInAppClick(messageId, BACK_BUTTON, location)
+                trackingService.trackInAppClose(
+                    messageId,
+                    BACK_BUTTON,
+                    IterableInAppCloseAction.BACK,
+                    location
+                )
+
+                processMessageRemoval()
+
+                dismiss()
+                true
+            } else {
+                false
             }
         }
     }
