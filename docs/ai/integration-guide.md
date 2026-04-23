@@ -173,7 +173,7 @@ class YourApplication : Application() {
             .setCustomActionHandler(AppCustomActionHandler())    // See deep-linking.md (only if using custom actions)
             .setUrlHandler(AppUrlHandler(this))                  // See deep-linking.md
             .setAllowedProtocols(arrayOf("yourscheme"))          // 🟠 Only if using custom deep link schemes
-            .setAuthHandler(AppAuthHandler { generateJwtForEmail(getFreshEmail()) })  // 🔴 Only if JWT required — see jwt-authentication.md
+            .setAuthHandler(AppAuthHandler { generateJwtForEmail(getFreshEmail()) })  // 🔴 JWT only — getFreshEmail() MUST read from source of truth on every call, never a cached var (see Trap #3 / jwt-authentication.md)
             .setEnableEmbeddedMessaging(true)                    // 🟠 Only if using embedded messages
             .build()
 

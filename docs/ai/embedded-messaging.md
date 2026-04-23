@@ -101,7 +101,7 @@ yourContainer.addView(embeddedView)
 
 **Custom styling:**
 
-> **Agent note:** `IterableEmbeddedViewConfig` is a data class with NO default values on its parameters. You must provide ALL 10 fields — use `null` for any you don't want to customize.
+> **Agent note:** `IterableEmbeddedViewConfig` is a data class where every parameter has a default (`null` for colors/borders, `CENTER_CROP` for `imageScaleType`). Use named arguments and only specify the fields you want to override — omitted fields keep their defaults. The class is annotated `@JvmOverloads` so Java callers can also omit trailing fields.
 
 ```kotlin
 val config = IterableEmbeddedViewConfig(
@@ -110,13 +110,12 @@ val config = IterableEmbeddedViewConfig(
     borderWidth = 1,
     borderCornerRadius = 8f,
     primaryBtnBackgroundColor = Color.BLUE,
-    primaryBtnTextColor = Color.WHITE,
-    secondaryBtnBackgroundColor = null,
-    secondaryBtnTextColor = null,
-    titleTextColor = null,
-    bodyTextColor = null
+    primaryBtnTextColor = Color.WHITE
+    // Other fields (secondary button colors, title/body text colors, imageScaleType) keep their defaults
 )
 ```
+
+Available fields: `backgroundColor`, `borderColor`, `borderWidth`, `borderCornerRadius`, `primaryBtnBackgroundColor`, `primaryBtnTextColor`, `secondaryBtnBackgroundColor`, `secondaryBtnTextColor`, `titleTextColor`, `bodyTextColor`, `imageScaleType` (applies to `CARD` and `BANNER` views).
 
 > **Agent note:** OOTB views handle both `handleEmbeddedClick` (navigation) and `trackEmbeddedClick` (analytics) automatically on button and default action taps.
 
