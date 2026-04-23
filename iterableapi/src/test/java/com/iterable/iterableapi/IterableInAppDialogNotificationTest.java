@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowDialog;
@@ -142,7 +143,7 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
         createDialog().show();
 
         boolean result = IterableInAppDisplayer.showIterableDialogNotificationHTML(
-                activity, "<html></html>", "msg-2", uri -> { },
+                activity, "<html></html>", mockMessage("msg-2"), uri -> { },
                 0.5, new Rect(), false,
                 new IterableInAppMessage.InAppBgColor(null, 0.0),
                 true, IterableInAppLocation.IN_APP
@@ -165,11 +166,17 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
                 true,
                 uri -> { },
                 IterableInAppLocation.IN_APP,
-                "test-message",
+                mockMessage("test-message"),
                 0.5,
                 padding,
                 false,
                 new IterableInAppMessage.InAppBgColor(null, 0.0)
         );
+    }
+
+    private IterableInAppMessage mockMessage(String messageId) {
+        IterableInAppMessage message = Mockito.mock(IterableInAppMessage.class);
+        Mockito.when(message.getMessageId()).thenReturn(messageId);
+        return message;
     }
 }

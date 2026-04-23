@@ -34,36 +34,31 @@ public class InAppTrackingServiceTest {
     @Test
     public void trackInAppOpen_shouldCallApi_whenLocationProvided() {
         // Arrange
-        String messageId = "test-message-123";
         IterableInAppLocation location = IterableInAppLocation.IN_APP;
 
         // Act
-        trackingService.trackInAppOpen(messageId, location);
+        trackingService.trackInAppOpen(mockMessage, location);
 
         // Assert
-        verify(mockIterableApi).trackInAppOpen(messageId, location);
+        verify(mockIterableApi).trackInAppOpen(mockMessage, location);
     }
 
     @Test
     public void trackInAppOpen_shouldUseDefaultLocation_whenLocationIsNull() {
-        // Arrange
-        String messageId = "test-message-123";
-
         // Act
-        trackingService.trackInAppOpen(messageId, null);
+        trackingService.trackInAppOpen(mockMessage, null);
 
         // Assert
-        verify(mockIterableApi).trackInAppOpen(messageId, IterableInAppLocation.IN_APP);
+        verify(mockIterableApi).trackInAppOpen(mockMessage, IterableInAppLocation.IN_APP);
     }
 
     @Test
     public void trackInAppOpen_shouldNotCrash_whenApiIsNull() {
         // Arrange
-        String messageId = "test-message-123";
         InAppTrackingService nullApiService = new InAppTrackingService(null);
 
         // Act & Assert - should not throw exception
-        nullApiService.trackInAppOpen(messageId, IterableInAppLocation.IN_APP);
+        nullApiService.trackInAppOpen(mockMessage, IterableInAppLocation.IN_APP);
     }
 
     // Track In-App Click Tests
@@ -71,41 +66,38 @@ public class InAppTrackingServiceTest {
     @Test
     public void trackInAppClick_shouldCallApi_whenAllParametersProvided() {
         // Arrange
-        String messageId = "test-message-123";
         String url = "https://example.com";
         IterableInAppLocation location = IterableInAppLocation.INBOX;
 
         // Act
-        trackingService.trackInAppClick(messageId, url, location);
+        trackingService.trackInAppClick(mockMessage, url, location);
 
         // Assert
-        verify(mockIterableApi).trackInAppClick(messageId, url, location);
+        verify(mockIterableApi).trackInAppClick(mockMessage, url, location);
     }
 
     @Test
     public void trackInAppClick_shouldUseDefaultLocation_whenLocationIsNull() {
         // Arrange
-        String messageId = "test-message-123";
         String url = "https://example.com";
 
         // Act
-        trackingService.trackInAppClick(messageId, url, null);
+        trackingService.trackInAppClick(mockMessage, url, null);
 
         // Assert
-        verify(mockIterableApi).trackInAppClick(messageId, url, IterableInAppLocation.IN_APP);
+        verify(mockIterableApi).trackInAppClick(mockMessage, url, IterableInAppLocation.IN_APP);
     }
 
     @Test
     public void trackInAppClick_shouldHandleBackButton() {
         // Arrange
-        String messageId = "test-message-123";
         String backButton = "itbl://backButton";
 
         // Act
-        trackingService.trackInAppClick(messageId, backButton, IterableInAppLocation.IN_APP);
+        trackingService.trackInAppClick(mockMessage, backButton, IterableInAppLocation.IN_APP);
 
         // Assert
-        verify(mockIterableApi).trackInAppClick(messageId, backButton, IterableInAppLocation.IN_APP);
+        verify(mockIterableApi).trackInAppClick(mockMessage, backButton, IterableInAppLocation.IN_APP);
     }
 
     // Track In-App Close Tests
@@ -113,44 +105,41 @@ public class InAppTrackingServiceTest {
     @Test
     public void trackInAppClose_shouldCallApi_whenAllParametersProvided() {
         // Arrange
-        String messageId = "test-message-123";
         String url = "https://example.com";
         IterableInAppCloseAction action = IterableInAppCloseAction.LINK;
         IterableInAppLocation location = IterableInAppLocation.IN_APP;
 
         // Act
-        trackingService.trackInAppClose(messageId, url, action, location);
+        trackingService.trackInAppClose(mockMessage, url, action, location);
 
         // Assert
-        verify(mockIterableApi).trackInAppClose(messageId, url, action, location);
+        verify(mockIterableApi).trackInAppClose(mockMessage, url, action, location);
     }
 
     @Test
     public void trackInAppClose_shouldUseDefaultLocation_whenLocationIsNull() {
         // Arrange
-        String messageId = "test-message-123";
         String url = "https://example.com";
         IterableInAppCloseAction action = IterableInAppCloseAction.LINK;
 
         // Act
-        trackingService.trackInAppClose(messageId, url, action, null);
+        trackingService.trackInAppClose(mockMessage, url, action, null);
 
         // Assert
-        verify(mockIterableApi).trackInAppClose(messageId, url, action, IterableInAppLocation.IN_APP);
+        verify(mockIterableApi).trackInAppClose(mockMessage, url, action, IterableInAppLocation.IN_APP);
     }
 
     @Test
     public void trackInAppClose_shouldHandleBackAction() {
         // Arrange
-        String messageId = "test-message-123";
         String backButton = "itbl://backButton";
         IterableInAppCloseAction action = IterableInAppCloseAction.BACK;
 
         // Act
-        trackingService.trackInAppClose(messageId, backButton, action, IterableInAppLocation.IN_APP);
+        trackingService.trackInAppClose(mockMessage, backButton, action, IterableInAppLocation.IN_APP);
 
         // Assert
-        verify(mockIterableApi).trackInAppClose(messageId, backButton, action, IterableInAppLocation.IN_APP);
+        verify(mockIterableApi).trackInAppClose(mockMessage, backButton, action, IterableInAppLocation.IN_APP);
     }
 
     // Remove Message Tests
@@ -158,15 +147,12 @@ public class InAppTrackingServiceTest {
     @Test
     public void removeMessage_shouldRemoveMessage_whenMarkedForDeletionAndNotConsumed() {
         // Arrange
-        String messageId = "test-message-123";
         when(mockMessage.isMarkedForDeletion()).thenReturn(true);
         when(mockMessage.isConsumed()).thenReturn(false);
-
         when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessageById(messageId)).thenReturn(mockMessage);
 
         // Act
-        trackingService.removeMessage(messageId);
+        trackingService.removeMessage(mockMessage);
 
         // Assert
         verify(mockInAppManager).removeMessage(mockMessage);
@@ -175,14 +161,10 @@ public class InAppTrackingServiceTest {
     @Test
     public void removeMessage_shouldNotRemove_whenNotMarkedForDeletion() {
         // Arrange
-        String messageId = "test-message-123";
         when(mockMessage.isMarkedForDeletion()).thenReturn(false);
 
-        when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessageById(messageId)).thenReturn(mockMessage);
-
         // Act
-        trackingService.removeMessage(messageId);
+        trackingService.removeMessage(mockMessage);
 
         // Assert
         verify(mockInAppManager, never()).removeMessage(any(IterableInAppMessage.class));
@@ -191,43 +173,23 @@ public class InAppTrackingServiceTest {
     @Test
     public void removeMessage_shouldNotRemove_whenAlreadyConsumed() {
         // Arrange
-        String messageId = "test-message-123";
         when(mockMessage.isMarkedForDeletion()).thenReturn(true);
         when(mockMessage.isConsumed()).thenReturn(true);
 
-        when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessageById(messageId)).thenReturn(mockMessage);
-
         // Act
-        trackingService.removeMessage(messageId);
+        trackingService.removeMessage(mockMessage);
 
         // Assert
         verify(mockInAppManager, never()).removeMessage(any(IterableInAppMessage.class));
     }
 
     @Test
-    public void removeMessage_shouldNotCrash_whenMessageNotFound() {
-        // Arrange
-        String messageId = "test-message-123";
-
-        when(mockIterableApi.getInAppManager()).thenReturn(mockInAppManager);
-        when(mockInAppManager.getMessageById(messageId)).thenReturn(null);
-
-        // Act & Assert - should not throw exception
-        trackingService.removeMessage(messageId);
-
-        // Should not call removeMessage since message wasn't found
-        verify(mockInAppManager, never()).removeMessage(any(IterableInAppMessage.class));
-    }
-
-    @Test
     public void removeMessage_shouldNotCrash_whenApiIsNull() {
         // Arrange
-        String messageId = "test-message-123";
         InAppTrackingService nullApiService = new InAppTrackingService(null);
 
         // Act & Assert - should not throw exception
-        nullApiService.removeMessage(messageId);
+        nullApiService.removeMessage(mockMessage);
     }
 
     // Track Screen View Tests
@@ -236,7 +198,6 @@ public class InAppTrackingServiceTest {
     public void trackScreenView_shouldCallTrackWithScreenNameData() {
         // Arrange
         String screenName = "Main Screen";
-
 
         // Act
         trackingService.trackScreenView(screenName);
@@ -255,4 +216,3 @@ public class InAppTrackingServiceTest {
         nullApiService.trackScreenView(screenName);
     }
 }
-

@@ -26,7 +26,7 @@ class IterableInAppDialogNotification internal constructor(
     activity: Activity,
     private val htmlString: String?,
     private val callbackOnCancel: Boolean,
-    private val messageId: String,
+    private val message: IterableInAppMessage,
     private val backgroundAlpha: Double,
     private val insetPadding: Rect,
     private val shouldAnimate: Boolean,
@@ -70,7 +70,7 @@ class IterableInAppDialogNotification internal constructor(
             callbackOnCancel: Boolean,
             urlCallback: IterableHelper.IterableUrlCallback,
             inAppLocation: IterableInAppLocation,
-            messageId: String,
+            message: IterableInAppMessage,
             backgroundAlpha: Double,
             padding: Rect,
             animate: Boolean = false,
@@ -91,7 +91,7 @@ class IterableInAppDialogNotification internal constructor(
                 activity,
                 htmlString,
                 callbackOnCancel,
-                messageId,
+                message,
                 backgroundAlpha,
                 padding,
                 animate,
@@ -158,7 +158,7 @@ class IterableInAppDialogNotification internal constructor(
         setupOrientationListener()
 
         if (!inAppOpenTracked) {
-            trackingService.trackInAppOpen(messageId, location)
+            trackingService.trackInAppOpen(message, location)
             inAppOpenTracked = true
         }
 
@@ -185,9 +185,9 @@ class IterableInAppDialogNotification internal constructor(
     private fun setupBackPressHandling() {
         setOnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-                trackingService.trackInAppClick(messageId, BACK_BUTTON, location)
+                trackingService.trackInAppClick(message, BACK_BUTTON, location)
                 trackingService.trackInAppClose(
-                    messageId,
+                    message,
                     BACK_BUTTON,
                     IterableInAppCloseAction.BACK,
                     location
@@ -296,9 +296,9 @@ class IterableInAppDialogNotification internal constructor(
 
     override fun onUrlClicked(url: String?) {
         url?.let {
-            trackingService.trackInAppClick(messageId, it, location)
+            trackingService.trackInAppClick(message, it, location)
             trackingService.trackInAppClose(
-                messageId,
+                message,
                 it,
                 IterableInAppCloseAction.LINK,
                 location
@@ -339,7 +339,7 @@ class IterableInAppDialogNotification internal constructor(
     }
 
     private fun processMessageRemoval() {
-        trackingService.removeMessage(messageId)
+        trackingService.removeMessage(message)
     }
 }
 

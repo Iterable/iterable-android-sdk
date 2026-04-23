@@ -6,25 +6,25 @@ import org.json.JSONObject
 internal class InAppTrackingService internal constructor(
     private val iterableApi: IterableApi?
 ){
-    fun trackInAppOpen(messageId: String, location: IterableInAppLocation?) {
+    fun trackInAppOpen(message: IterableInAppMessage, location: IterableInAppLocation?) {
         val loc = location ?: IterableInAppLocation.IN_APP
 
         if (iterableApi != null) {
-            iterableApi.trackInAppOpen(messageId, loc)
-            IterableLogger.d(TAG, "Tracked in-app open: $messageId at location: $loc")
+            iterableApi.trackInAppOpen(message, loc)
+            IterableLogger.d(TAG, "Tracked in-app open: ${message.messageId} at location: $loc")
         } else {
             IterableLogger.w(TAG, "Cannot track in-app open: IterableApi not initialized")
         }
     }
 
-    fun trackInAppClick(messageId: String, url: String, location: IterableInAppLocation?) {
+    fun trackInAppClick(message: IterableInAppMessage, url: String, location: IterableInAppLocation?) {
         val loc = location ?: IterableInAppLocation.IN_APP
 
         if (iterableApi != null) {
-            iterableApi.trackInAppClick(messageId, url, loc)
+            iterableApi.trackInAppClick(message, url, loc)
             IterableLogger.d(
                 TAG,
-                "Tracked in-app click: $messageId url: $url at location: $loc"
+                "Tracked in-app click: ${message.messageId} url: $url at location: $loc"
             )
         } else {
             IterableLogger.w(TAG, "Cannot track in-app click: IterableApi not initialized")
@@ -32,7 +32,7 @@ internal class InAppTrackingService internal constructor(
     }
 
     fun trackInAppClose(
-        messageId: String,
+        message: IterableInAppMessage,
         url: String,
         closeAction: IterableInAppCloseAction,
         location: IterableInAppLocation?
@@ -40,32 +40,25 @@ internal class InAppTrackingService internal constructor(
         val loc = location ?: IterableInAppLocation.IN_APP
 
         if (iterableApi != null) {
-            iterableApi.trackInAppClose(messageId, url, closeAction, loc)
+            iterableApi.trackInAppClose(message, url, closeAction, loc)
             IterableLogger.d(
                 TAG,
-                "Tracked in-app close: $messageId action: $closeAction at location: $loc"
+                "Tracked in-app close: ${message.messageId} action: $closeAction at location: $loc"
             )
         } else {
             IterableLogger.w(TAG, "Cannot track in-app close: IterableApi not initialized")
         }
     }
 
-    fun removeMessage(messageId: String) {
+    fun removeMessage(message: IterableInAppMessage) {
         if (iterableApi == null) {
             IterableLogger.w(TAG, "Cannot remove message: IterableApi not initialized")
             return
         }
 
-        val inAppManager = iterableApi.inAppManager
-        val message = inAppManager.getMessageById(messageId)
-        if (message == null) {
-            IterableLogger.w(TAG, "Message with id $messageId does not exist")
-            return
-        }
-
         if (message.isMarkedForDeletion && !message.isConsumed) {
-            inAppManager.removeMessage(message)
-            IterableLogger.d(TAG, "Removed message: $messageId")
+            iterableApi.inAppManager.removeMessage(message)
+            IterableLogger.d(TAG, "Removed message: ${message.messageId}")
         }
     }
 

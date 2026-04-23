@@ -44,7 +44,7 @@ class IterableInAppDisplayer {
             } else {
                 return showIterableDialogNotificationHTML(currentActivity,
                         message.getContent().html,
-                        message.getMessageId(),
+                        message,
                         clickCallback,
                         message.getContent().backgroundAlpha,
                         message.getContent().padding,
@@ -88,7 +88,7 @@ class IterableInAppDisplayer {
      * Displays an HTML rendered InApp Notification using Dialog (for ComponentActivity/Compose support)
      * @param context
      * @param htmlString
-     * @param messageId
+     * @param message
      * @param clickCallback
      * @param backgroundAlpha
      * @param padding
@@ -97,7 +97,7 @@ class IterableInAppDisplayer {
      * @param callbackOnCancel
      * @param location
      */
-    static boolean showIterableDialogNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull String messageId, @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, @NonNull Rect padding, boolean shouldAnimate, IterableInAppMessage.InAppBgColor bgColor, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
+    static boolean showIterableDialogNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull IterableInAppMessage message, @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, @NonNull Rect padding, boolean shouldAnimate, IterableInAppMessage.InAppBgColor bgColor, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
         if (!(context instanceof Activity)) {
             IterableLogger.w(IterableInAppManager.TAG, "To display in-app notifications, the context must be an Activity");
             return false;
@@ -119,7 +119,7 @@ class IterableInAppDisplayer {
         // Create and show dialog (Kotlin interop)
         IterableInAppDialogNotification dialog = IterableInAppDialogNotification.createInstance(
             activity, htmlString, callbackOnCancel, clickCallback, location,
-            messageId, backgroundAlpha, padding, shouldAnimate, bgColor
+            message, backgroundAlpha, padding, shouldAnimate, bgColor
         );
         dialog.show();
 
