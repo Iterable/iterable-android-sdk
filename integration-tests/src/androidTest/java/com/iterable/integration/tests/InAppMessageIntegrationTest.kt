@@ -55,6 +55,20 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         super.setUp()
         
         Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
+
+        // SDK-170: Pause in-app auto-display and drain the inbox BEFORE launching the
+        // activity. Otherwise messages already staged for the test user will be fetched
+        // by setEmail() during super.setUp() and shown over MainActivity, occluding the
+        // buttons UiAutomator is about to look for. The test calls
+        // inAppManager.showMessage() explicitly later, which still works while paused.
+        // Pattern matches PushNotificationIntegrationTest / EmbeddedMessageIntegrationTest /
+        // DeepLinkIntegrationTest.
+        IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
+        IterableApi.getInstance().inAppManager.messages.forEach {
+            Log.d(TAG, "Clearing pre-existing in-app message before navigation: ${it.messageId}")
+            IterableApi.getInstance().inAppManager.removeMessage(it)
+        }
+
         Log.d(TAG, "🔧 MainActivity will skip initialization due to test mode flag")
         
         // Now launch the app flow with custom handlers already configured
