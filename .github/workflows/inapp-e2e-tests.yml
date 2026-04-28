@@ -88,97 +88,119 @@ jobs:
             adb kill-server >/dev/null 2>&1 || true
             adb start-server
           script: |
+            # SDK-170 OBSERVABILITY: capture diagnostics that survive the action exit.
+            # The android-emulator-runner kills the emulator on its way out, so any
+            # adb-dependent capture MUST happen before this script returns. We write
+            # everything under $GITHUB_WORKSPACE so a later step can upload it.
+            DIAG_DIR="$GITHUB_WORKSPACE/integration-tests/build/diagnostics"
+            mkdir -p "$DIAG_DIR"
+
+            capture_diag() {
+              local label="$1"
+              local prefix="$2"
+              echo "=== diag capture: $label ==="
+              {
+                echo "# label: $label"
+                echo "# t: $(date -u +%FT%TZ)"
+                echo
+                echo "## adb devices"
+                adb devices 2>&1
+                echo
+                echo "## top activities"
+                adb shell dumpsys activity activities 2>&1 | head -200
+                echo
+                echo "## window state (focused app + visible windows)"
+                adb shell dumpsys window 2>&1 | head -200
+                echo
+                echo "## connectivity (active default network, link addresses, dns)"
+                adb shell dumpsys connectivity 2>&1 | head -120
+                echo
+                echo "## meminfo (system_server + integration tests)"
+                adb shell dumpsys meminfo 2>&1 | head -80
+                echo
+                echo "## installed iterable packages"
+                adb shell pm list packages 2>&1 | grep iterable || true
+                echo
+                echo "## boot props"
+                adb shell getprop sys.boot_completed dev.bootcomplete init.svc.netd net.dns1 ro.build.version.release ro.build.version.sdk 2>&1 | head -10
+              } > "$DIAG_DIR/${prefix}-state.txt" 2>&1
+
+              # UiAutomator hierarchy and screenshot — the smoking gun for "button not found"
+              adb shell uiautomator dump /sdcard/hierarchy.xml >/dev/null 2>&1 || true
+              adb pull /sdcard/hierarchy.xml "$DIAG_DIR/${prefix}-hierarchy.xml" >/dev/null 2>&1 || echo "(no hierarchy)"
+              adb shell screencap -p /sdcard/screenshot.png >/dev/null 2>&1 || true
+              adb pull /sdcard/screenshot.png "$DIAG_DIR/${prefix}-screenshot.png" >/dev/null 2>&1 || echo "(no screenshot)"
+            }
+
             echo "Emulator is ready! Running tests..."
             echo "Setting up permissions..."
-            adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS
-            adb shell pm grant com.iterable.integration.tests android.permission.INTERNET
-            adb shell pm grant com.iterable.integration.tests android.permission.ACCESS_NETWORK_STATE
-            adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK
-            
+            adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS || true
+            adb shell pm grant com.iterable.integration.tests android.permission.INTERNET || true
+            adb shell pm grant com.iterable.integration.tests android.permission.ACCESS_NETWORK_STATE || true
+            adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK || true
+
             echo "Running In-App Message MVP test..."
             echo "Debug: Checking if APKs are ready..."
             ls -la integration-tests/build/outputs/apk/ || echo "APK directory not found"
-            
+
             echo "Debug: Verifying API keys are set..."
             echo "ITERABLE_API_KEY length: ${#ITERABLE_API_KEY}"
             echo "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
             echo "ITERABLE_TEST_USER_EMAIL: $ITERABLE_TEST_USER_EMAIL"
-            
-            # Start logcat in background for crash debugging
-            adb logcat > /tmp/test-logcat.log &
+
+            # Snapshot pre-test device state. If tests fail because the activity never
+            # foregrounded, this captures what was on screen *before* we even ran.
+            capture_diag "pre-test" "00-pre-test"
+
+            # Stream full logcat to the workspace so we get an artifact even on success.
+            adb logcat -c >/dev/null 2>&1 || true
+            adb logcat > "$DIAG_DIR/10-logcat-full.txt" &
             LOGCAT_PID=$!
-            
-            # Run the specific test with better error handling
+
+            GRADLE_EXIT=0
             ./gradlew :integration-tests:connectedDebugAndroidTest \
               -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
-              --stacktrace --no-daemon || {
-                echo "Test failed! Collecting crash logs..."
-                kill $LOGCAT_PID 2>/dev/null || true
-                echo "=== CRASH LOGS ==="
-                tail -100 /tmp/test-logcat.log
-                echo "=== END CRASH LOGS ==="
-                exit 1
-              }
-            
-            # Stop logcat
+              --stacktrace --no-daemon || GRADLE_EXIT=$?
+
+            # Stop logcat ASAP so post-test capture isn't entangled with it.
             kill $LOGCAT_PID 2>/dev/null || true
+            wait $LOGCAT_PID 2>/dev/null || true
+
+            # Always capture post-test state — useful on success too (proves the test
+            # really did exercise the SDK and surface campaigns).
+            capture_diag "post-test" "20-post-test"
+
+            # Filtered logcat for fast triage; full logcat is also uploaded.
+            grep -E 'IterableApi|IterableRequest|IterableInApp|IterableEmbedded|IntegrationMainActivity|BaseIntegrationTest|InAppMessageIntegrationTest|PushNotificationIntegrationTest|EmbeddedMessageIntegrationTest|DeepLinkIntegrationTest|FATAL|AndroidRuntime|ANR' \
+              "$DIAG_DIR/10-logcat-full.txt" > "$DIAG_DIR/11-logcat-filtered.txt" 2>/dev/null || true
+
+            echo
+            echo "=== diagnostics summary ==="
+            ls -la "$DIAG_DIR"
+            echo
+            echo "Last 50 logcat lines (full file uploaded as artifact):"
+            tail -50 "$DIAG_DIR/10-logcat-full.txt" || true
+
+            if [ "$GRADLE_EXIT" != "0" ]; then
+              echo "::error::Test gradle task failed with exit code $GRADLE_EXIT — see e2e-diagnostics-api-${{ matrix.api-level }} artifact"
+              exit "$GRADLE_EXIT"
+            fi
         env:
           ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
           ITERABLE_TEST_USER_EMAIL: ${{ secrets.BCIT_ITERABLE_TEST_USER_EMAIL }}
-            
-      # - name: Generate Test Report
-      #   if: always()
-      #   run: |
-      #     echo "Generating E2E test report..."
-      #     ./gradlew :integration-tests:jacocoIntegrationTestReport
-          
-      # - name: Collect Test Logs
-      #   if: always()
-      #   run: |
-      #     echo "Collecting E2E test logs..."
-      #     adb logcat -d > integration-tests/build/e2e-test-logs.txt
-          
-      #     # Also collect specific test logs
-      #     adb logcat -d | grep -E "(InAppMessageIntegrationTest|BaseIntegrationTest|IterableApi)" > integration-tests/build/inapp-specific-logs.txt
-          
-      # - name: Take Screenshots for Debugging
-      #   if: always()
-      #   run: |
-      #     echo "Taking screenshots for debugging..."
-      #     mkdir -p integration-tests/screenshots
-      #     adb shell screencap -p /sdcard/screenshot.png
-      #     adb pull /sdcard/screenshot.png integration-tests/screenshots/final-state-api-${{ matrix.api-level }}.png
-          
-      # - name: Upload Test Results
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: inapp-e2e-test-results-api-${{ matrix.api-level }}
-      #     path: |
-      #       integration-tests/build/reports/
-      #       integration-tests/build/outputs/
-      #       integration-tests/build/e2e-test-logs.txt
-      #       integration-tests/build/inapp-specific-logs.txt
-            
-      # - name: Upload Coverage Report
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: inapp-e2e-coverage-api-${{ matrix.api-level }}
-      #     path: integration-tests/build/reports/jacoco/
-          
-      # - name: Upload Screenshots
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: inapp-e2e-screenshots-api-${{ matrix.api-level }}
-      #     path: integration-tests/screenshots/
-          
-      # - name: Cleanup
-      #   if: always()
-      #   run: |
-      #     echo "Test cleanup completed"
+
+      - name: Upload E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-diagnostics-api-${{ matrix.api-level }}
+          path: |
+            integration-tests/build/diagnostics/
+            integration-tests/build/reports/
+            integration-tests/build/outputs/
+          if-no-files-found: warn
+          retention-days: 7
           
   # test-summary:
   #   name: Test Summary
