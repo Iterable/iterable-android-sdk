@@ -852,7 +852,7 @@ public class IterableApi {
             && sharedInstance.config.enableUnknownUserActivation
             && sharedInstance.getVisitorUsageTracked()) {
             sharedInstance.unknownUserManager.updateUnknownSession();
-            sharedInstance.unknownUserManager.getCriteria();
+            sharedInstance.unknownUserManager.getUnknownCriteria();
         }
 
         if (DeviceInfoUtils.isFireTV(context.getPackageManager())) {
@@ -1768,7 +1768,7 @@ public class IterableApi {
 
         if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
             unknownUserManager.updateUnknownSession();
-            unknownUserManager.getCriteria();
+            unknownUserManager.getUnknownCriteria();
         }
     }
 
