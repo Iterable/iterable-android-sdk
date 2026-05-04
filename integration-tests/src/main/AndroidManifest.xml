@@ -86,9 +86,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Test domain - matches iOS tsetester.com domain -->
+                <!-- Test domain - matches iOS bcittesting.com domain -->
                 <data android:scheme="https"
-                    android:host="tsetester.com"
+                    android:host="bcittesting.com"
                     android:pathPrefix="/update" />
             </intent-filter>
             
@@ -98,7 +98,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <!-- Links domain for wrapped links -->
                 <data android:scheme="https"
-                    android:host="links.tsetester.com"
+                    android:host="links.bcittesting.com"
                     android:pathPrefix="/a/click" />
             </intent-filter>
             

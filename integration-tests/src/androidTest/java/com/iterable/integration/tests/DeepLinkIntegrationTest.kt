@@ -49,13 +49,16 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         // Note: These URLs need to be configured in your Iterable project
         
         // App Link URL - should open the app directly (like iOS Universal Links)
-        const val TEST_APP_LINK_URL = "https://tsetester.com/update/hi"
+        const val TEST_APP_LINK_URL = "https://bcittesting.com/update/hi"
         
         // Wrapped link URL - SDK should unwrap this
-        const val TEST_WRAPPED_LINK_URL = "https://links.tsetester.com/a/click?_t=5cce074b113d48fa9ef346e4333ed8e8&_m=74aKPNrAjTpuZM4vZTDueu64xMdbHDz5Tn&_e=l6cj19GbssUn6h5qtXjRcC5os6azNW1cqdk9lsvmxxRl4ZTAW8mIB4IHJA97wE1i5f0eRDtm-KpgKI7-tM-Cly6umZo4P8HU8krftMYvL3T2sCpm3uFDBF2iJ5vQ-G6sqNMmae4_8jkE1DU9aKRhraZ1zzUZ3j-dFbQJrxdLt4tb0C7jnXSARVFf27FKFhBKnYSO23taBmf_4G5dTTXKmC_1CGnT9bu1nAwP-WMyYShoQhmjoGO9ppDCrVStSYPsimwub0h5XnC11g4u5yML_WZssgC7LSUOX7qCNOIDr9dLhrx2Rc2TY12k0maESyanjNgNZ4Lr8LMClCMJ3d9TMg%3D%3D"
+        // TODO(SDK-325): regenerate this wrapped link against the new Mobile SDK Testing
+        // project (post SDK-36). The _t/_m/_e tokens below are tied to the old project and
+        // will 404 against links.bcittesting.com until the link is regenerated.
+        const val TEST_WRAPPED_LINK_URL = "https://links.bcittesting.com/a/click?_t=TODO_REGENERATE_TOKEN&_m=TODO&_e=TODO"
         
         // Browser link URL - should open browser, not app (like iOS /u/ pattern links)
-        const val TEST_BROWSER_LINK_URL = "https://links.tsetester.com/u/click?url=https://iterable.com"
+        const val TEST_BROWSER_LINK_URL = "https://links.bcittesting.com/u/click?url=https://iterable.com"
         
         // Custom scheme deep links
         const val TEST_CUSTOM_SCHEME_URL = "iterable://deeplink/product/123"
