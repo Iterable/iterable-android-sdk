@@ -87,104 +87,11 @@ jobs:
             # Clean + start adb after platform-tools exist (avoids tcp:5037 noise)
             adb kill-server >/dev/null 2>&1 || true
             adb start-server
-          script: |
-            # SDK-170 OBSERVABILITY: capture diagnostics that survive the action exit.
-            # The android-emulator-runner kills the emulator on its way out, so any
-            # adb-dependent capture MUST happen before this script returns. We write
-            # everything under $GITHUB_WORKSPACE so a later step can upload it.
-            DIAG_DIR="$GITHUB_WORKSPACE/integration-tests/build/diagnostics"
-            mkdir -p "$DIAG_DIR"
-
-            capture_diag() {
-              local label="$1"
-              local prefix="$2"
-              echo "=== diag capture: $label ==="
-              {
-                echo "# label: $label"
-                echo "# t: $(date -u +%FT%TZ)"
-                echo
-                echo "## adb devices"
-                adb devices 2>&1
-                echo
-                echo "## top activities"
-                adb shell dumpsys activity activities 2>&1 | head -200
-                echo
-                echo "## window state (focused app + visible windows)"
-                adb shell dumpsys window 2>&1 | head -200
-                echo
-                echo "## connectivity (active default network, link addresses, dns)"
-                adb shell dumpsys connectivity 2>&1 | head -120
-                echo
-                echo "## meminfo (system_server + integration tests)"
-                adb shell dumpsys meminfo 2>&1 | head -80
-                echo
-                echo "## installed iterable packages"
-                adb shell pm list packages 2>&1 | grep iterable || true
-                echo
-                echo "## boot props"
-                adb shell getprop sys.boot_completed dev.bootcomplete init.svc.netd net.dns1 ro.build.version.release ro.build.version.sdk 2>&1 | head -10
-              } > "$DIAG_DIR/${prefix}-state.txt" 2>&1
-
-              # UiAutomator hierarchy and screenshot — the smoking gun for "button not found"
-              adb shell uiautomator dump /sdcard/hierarchy.xml >/dev/null 2>&1 || true
-              adb pull /sdcard/hierarchy.xml "$DIAG_DIR/${prefix}-hierarchy.xml" >/dev/null 2>&1 || echo "(no hierarchy)"
-              adb shell screencap -p /sdcard/screenshot.png >/dev/null 2>&1 || true
-              adb pull /sdcard/screenshot.png "$DIAG_DIR/${prefix}-screenshot.png" >/dev/null 2>&1 || echo "(no screenshot)"
-            }
-
-            echo "Emulator is ready! Running tests..."
-            echo "Setting up permissions..."
-            adb shell pm grant com.iterable.integration.tests android.permission.POST_NOTIFICATIONS || true
-            adb shell pm grant com.iterable.integration.tests android.permission.INTERNET || true
-            adb shell pm grant com.iterable.integration.tests android.permission.ACCESS_NETWORK_STATE || true
-            adb shell pm grant com.iterable.integration.tests android.permission.WAKE_LOCK || true
-
-            echo "Running In-App Message MVP test..."
-            echo "Debug: Checking if APKs are ready..."
-            ls -la integration-tests/build/outputs/apk/ || echo "APK directory not found"
-
-            echo "Debug: Verifying API keys are set..."
-            echo "ITERABLE_API_KEY length: ${#ITERABLE_API_KEY}"
-            echo "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
-            echo "ITERABLE_TEST_USER_EMAIL: $ITERABLE_TEST_USER_EMAIL"
-
-            # Snapshot pre-test device state. If tests fail because the activity never
-            # foregrounded, this captures what was on screen *before* we even ran.
-            capture_diag "pre-test" "00-pre-test"
-
-            # Stream full logcat to the workspace so we get an artifact even on success.
-            adb logcat -c >/dev/null 2>&1 || true
-            adb logcat > "$DIAG_DIR/10-logcat-full.txt" &
-            LOGCAT_PID=$!
-
-            GRADLE_EXIT=0
-            ./gradlew :integration-tests:connectedDebugAndroidTest \
-              -Pandroid.testInstrumentationRunnerArguments.class=com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP \
-              --stacktrace --no-daemon || GRADLE_EXIT=$?
-
-            # Stop logcat ASAP so post-test capture isn't entangled with it.
-            kill $LOGCAT_PID 2>/dev/null || true
-            wait $LOGCAT_PID 2>/dev/null || true
-
-            # Always capture post-test state — useful on success too (proves the test
-            # really did exercise the SDK and surface campaigns).
-            capture_diag "post-test" "20-post-test"
-
-            # Filtered logcat for fast triage; full logcat is also uploaded.
-            grep -E 'IterableApi|IterableRequest|IterableInApp|IterableEmbedded|IntegrationMainActivity|BaseIntegrationTest|InAppMessageIntegrationTest|PushNotificationIntegrationTest|EmbeddedMessageIntegrationTest|DeepLinkIntegrationTest|FATAL|AndroidRuntime|ANR' \
-              "$DIAG_DIR/10-logcat-full.txt" > "$DIAG_DIR/11-logcat-filtered.txt" 2>/dev/null || true
-
-            echo
-            echo "=== diagnostics summary ==="
-            ls -la "$DIAG_DIR"
-            echo
-            echo "Last 50 logcat lines (full file uploaded as artifact):"
-            tail -50 "$DIAG_DIR/10-logcat-full.txt" || true
-
-            if [ "$GRADLE_EXIT" != "0" ]; then
-              echo "::error::Test gradle task failed with exit code $GRADLE_EXIT — see e2e-diagnostics-api-${{ matrix.api-level }} artifact"
-              exit "$GRADLE_EXIT"
-            fi
+          # The android-emulator-runner action runs each line of an inline `script:`
+          # in a fresh `/bin/sh -c`, so cross-line variables and bash functions don't
+          # survive. Externalise the whole thing to a single bash file that runs in
+          # one process — see .github/scripts/run-e2e.sh for the actual logic.
+          script: bash "$GITHUB_WORKSPACE/.github/scripts/run-e2e.sh"
         env:
           ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
