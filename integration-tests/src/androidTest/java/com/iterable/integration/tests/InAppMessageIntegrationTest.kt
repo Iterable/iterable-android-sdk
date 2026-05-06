@@ -130,10 +130,10 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Assert.assertTrue("User should be signed in", userSignedIn)
         Log.d(TAG, "✅ User signed in successfully: ${TestConstants.TEST_USER_EMAIL}")
 
-        // Step 2: Debug API key configuration
-        Log.d(TAG, "🔍 Debug: ITERABLE_API_KEY = ${BuildConfig.ITERABLE_API_KEY}")
-        Log.d(TAG, "🔍 Debug: ITERABLE_SERVER_API_KEY = ${BuildConfig.ITERABLE_SERVER_API_KEY}")
-        Log.d(TAG, "🔍 Debug: ITERABLE_TEST_USER_EMAIL = ${BuildConfig.ITERABLE_TEST_USER_EMAIL}")
+        // SDK-170: log presence/length only (never values) — these end up in CI logcat artifacts.
+        Log.d(TAG, "API key configured: length=${BuildConfig.ITERABLE_API_KEY.length}")
+        Log.d(TAG, "Server API key configured: length=${BuildConfig.ITERABLE_SERVER_API_KEY.length}")
+        Log.d(TAG, "Test user email configured: length=${BuildConfig.ITERABLE_TEST_USER_EMAIL.length}")
 
         // Step 3: Try to trigger campaign via API (but don't fail if it doesn't work)
         Log.d(TAG, "🎯 Step 3: Attempting to trigger campaign via API...")

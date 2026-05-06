@@ -190,6 +190,10 @@ jobs:
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
           ITERABLE_TEST_USER_EMAIL: ${{ secrets.BCIT_ITERABLE_TEST_USER_EMAIL }}
 
+      # SDK-170: do NOT upload integration-tests/build/outputs/ — that path contains the
+      # built APKs which embed BuildConfig.ITERABLE_API_KEY and BuildConfig.ITERABLE_SERVER_API_KEY
+      # as compile-time string constants. On a public repo, anyone who can download the
+      # artifact could `strings`/`apktool` the APK and recover both keys.
       - name: Upload E2E diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -198,7 +202,6 @@ jobs:
           path: |
             integration-tests/build/diagnostics/
             integration-tests/build/reports/
-            integration-tests/build/outputs/
           if-no-files-found: warn
           retention-days: 7
           
