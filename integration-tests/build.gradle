@@ -119,36 +119,6 @@ dependencies {
     androidTestImplementation 'com.google.code.gson:gson:2.8.9'
 }
 
-// SDK-170 — debug task that surfaces the build-time BuildConfig inputs the test APK was
-// built with. We only print *length* and *first 4 chars* of secrets so they never appear
-// in CI logs verbatim. Used by scripts/trace-bcit.sh.
-tasks.register('printBuildConfig') {
-    group = 'verification'
-    description = 'Print the integration-test BuildConfig inputs as seen by the build (length-only for secrets).'
-    doLast {
-        def localProperties = new Properties()
-        def localPropertiesFile = rootProject.file('local.properties')
-        if (localPropertiesFile.exists()) {
-            localPropertiesFile.withInputStream { localProperties.load(it) }
-        }
-        def showPrefix = System.getenv('TRACE_SHOW_PREFIX') == '1'
-        def report = { String name ->
-            def fromLocal = localProperties.getProperty(name)
-            def fromEnv   = System.getenv(name)
-            def chosen    = fromLocal ?: fromEnv ?: ''
-            def source    = fromLocal ? 'local.properties' : (fromEnv ? 'env' : 'default-fallback')
-            def line = "${name} length=${chosen.length()} source=${source}"
-            if (showPrefix && chosen.length() >= 4) {
-                line += " prefix=${chosen.substring(0, 4)}\u2026"
-            }
-            println line
-        }
-        report('ITERABLE_API_KEY')
-        report('ITERABLE_SERVER_API_KEY')
-        report('ITERABLE_TEST_USER_EMAIL')
-    }
-}
-
 // Jacoco coverage for integration tests
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
