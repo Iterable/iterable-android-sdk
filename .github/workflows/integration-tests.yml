@@ -265,9 +265,15 @@ jobs:
           
       - name: Collect Test Logs
         if: always()
+        # SDK-170: `adb logcat -d` blocks indefinitely when no device is connected
+        # (e.g. when the emulator failed to boot). That hang has been making this
+        # workflow consume the full 6h GitHub Actions job timeout on every run
+        # since the macos-latest flip to Apple Silicon. Cap it at 2 minutes; on a
+        # healthy emulator the command finishes in <1s.
+        timeout-minutes: 2
         run: |
           echo "Collecting test logs..."
-          adb logcat -d > integration-tests/build/test-logs.txt
+          adb logcat -d > integration-tests/build/test-logs.txt || true
           
       - name: Upload Test Results
         if: always()
@@ -295,10 +301,12 @@ jobs:
           
       - name: Stop emulator
         if: always()
+        # SDK-170: `adb emu kill` can hang waiting for a device that never appeared.
+        timeout-minutes: 1
         run: |
           echo "Stopping emulator..."
-          adb emu kill
-          
+          adb emu kill || true
+
   integration-tests-nightly:
     name: Nightly Integration Tests
     runs-on: macos-latest
@@ -444,6 +452,8 @@ jobs:
           
       - name: Stop emulator
         if: always()
+        # SDK-170: see main `Stop emulator` step above.
+        timeout-minutes: 1
         run: |
           echo "Stopping emulator..."
-          adb emu kill 
+          adb emu kill || true
