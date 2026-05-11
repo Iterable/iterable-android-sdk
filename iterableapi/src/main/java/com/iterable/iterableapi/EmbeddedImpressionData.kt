@@ -9,7 +9,7 @@ data class EmbeddedImpressionData(
     val placementId: Long,
     var displayCount: Int = 0,
     var duration: Float = 0.0f,
-    var start: Date? = null
+    @Volatile var start: Date? = null
 ) {
     constructor(
         messageId: String,
