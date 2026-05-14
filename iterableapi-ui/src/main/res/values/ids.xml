@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="iterable_inbox_back_button" type="id" />
+    <item name="iterable_inbox_title" type="id" />
+</resources>

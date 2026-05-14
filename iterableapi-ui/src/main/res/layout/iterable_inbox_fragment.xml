@@ -9,10 +9,20 @@
     android:layout_width="match_parent"
     tools:context=".inbox.IterableInboxFragment">
 
+    <com.iterable.iterableapi.ui.inbox.IterableInboxToolbarView
+        android:id="@+id/iterable_inbox_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/iterable_inbox_toolbar"
+        android:layout_alignParentBottom="true"
         app:layoutManager="LinearLayoutManager"
         tools:listitem="@layout/iterable_inbox_item" />
 

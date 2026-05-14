@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.IntentCompat;
 
 import com.iterable.iterableapi.IterableConstants;
 import com.iterable.iterableapi.IterableLogger;
@@ -11,6 +12,8 @@ import com.iterable.iterableapi.ui.R;
 
 import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.INBOX_MODE;
 import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.ITEM_LAYOUT_ID;
+import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.TOOLBAR_OPTION;
+import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.TOOLBAR_TITLE;
 
 /**
  * An activity wrapping {@link IterableInboxFragment}
@@ -18,6 +21,11 @@ import static com.iterable.iterableapi.ui.inbox.IterableInboxFragment.ITEM_LAYOU
  * Supports optional extras:
  * {@link IterableInboxFragment#INBOX_MODE} - {@link InboxMode} value with the inbox mode
  * {@link IterableInboxFragment#ITEM_LAYOUT_ID} - Layout resource id for inbox items
+ * {@link IterableInboxFragment#TOOLBAR_OPTION} - {@link InboxToolbarOption} variant for the opt-in inbox toolbar
+ * {@link IterableInboxFragment#TOOLBAR_TITLE} - Title shown in the opt-in inbox toolbar
+ * {@link IterableConstants#NO_MESSAGES_TITLE} - Title for the empty-inbox state
+ * {@link IterableConstants#NO_MESSAGES_BODY} - Body for the empty-inbox state
+ * {@link #ACTIVITY_TITLE} - Title set on the activity via {@code setTitle()}
  */
 public class IterableInboxActivity extends AppCompatActivity {
     private static final String TAG = "IterableInboxActivity";
@@ -45,7 +53,14 @@ public class IterableInboxActivity extends AppCompatActivity {
                 noMessageTitle = extraBundle.getString(IterableConstants.NO_MESSAGES_TITLE, null);
                 noMessageBody = extraBundle.getString(IterableConstants.NO_MESSAGES_BODY, null);
             }
-            inboxFragment = IterableInboxFragment.newInstance(inboxMode, itemLayoutId, noMessageTitle, noMessageBody);
+
+            InboxToolbarOption toolbarOption = IntentCompat.getSerializableExtra(intent, TOOLBAR_OPTION, InboxToolbarOption.class);
+            if (toolbarOption == null) {
+                toolbarOption = InboxToolbarOption.None.INSTANCE;
+            }
+            String toolbarTitle = intent.getStringExtra(TOOLBAR_TITLE);
+
+            inboxFragment = IterableInboxFragment.newInstance(inboxMode, itemLayoutId, noMessageTitle, noMessageBody, toolbarOption, toolbarTitle);
 
             if (intent.getStringExtra(ACTIVITY_TITLE) != null) {
                 setTitle(intent.getStringExtra(ACTIVITY_TITLE));

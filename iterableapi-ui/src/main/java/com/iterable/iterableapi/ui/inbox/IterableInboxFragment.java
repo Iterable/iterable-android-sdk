@@ -1,5 +1,6 @@
 package com.iterable.iterableapi.ui.inbox;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Insets;
 import android.os.Build;
@@ -7,6 +8,7 @@ import android.os.Bundle;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.os.BundleCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,19 +37,29 @@ import java.text.DateFormat;
  * The main class for Inbox UI. Renders the list of Inbox messages and handles touch interaction:
  * tap on an item opens the in-app message, swipe left deletes it.
  * <p>
- * To customize the UI, either create the fragment with {@link #newInstance(InboxMode, int)},
- * or subclass {@link IterableInboxFragment} to use {@link #setAdapterExtension(IterableInboxAdapterExtension)},
+ * To customize the UI, create the fragment with one of the {@code newInstance(...)} overloads
+ * (use {@link InboxToolbarOption} to opt into the built-in toolbar), or subclass
+ * {@link IterableInboxFragment} to use {@link #setAdapterExtension(IterableInboxAdapterExtension)},
  * {@link #setComparator(IterableInboxComparator)} and {@link #setFilter(IterableInboxFilter)}.
+ * Implement {@link IterableInboxToolbarBackListener} on the host to handle toolbar back clicks.
+ * <p>
+ * The host activity must use a {@code Theme.AppCompat} (or {@code Theme.MaterialComponents} /
+ * {@code Theme.Material3}) descendant when the opt-in toolbar is enabled.
  */
 public class IterableInboxFragment extends Fragment implements IterableInAppManager.Listener, IterableInboxAdapter.OnListInteractionListener {
     private static final String TAG = "IterableInboxFragment";
     public static final String INBOX_MODE = "inboxMode";
     public static final String ITEM_LAYOUT_ID = "itemLayoutId";
+    public static final String TOOLBAR_OPTION = "toolbarOption";
+    public static final String TOOLBAR_TITLE = "toolbarTitle";
 
     private InboxMode inboxMode = InboxMode.POPUP;
     private @LayoutRes int itemLayoutId = R.layout.iterable_inbox_item;
     private String noMessagesTitle;
     private String noMessagesBody;
+    private InboxToolbarOption toolbarOption = InboxToolbarOption.None.INSTANCE;
+    private @Nullable String toolbarTitle;
+    private @Nullable IterableInboxToolbarBackListener toolbarBackListener;
     TextView noMessagesTitleTextView;
     TextView noMessagesBodyTextView;
     RecyclerView recyclerView;
@@ -88,6 +100,41 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
         bundle.putInt(ITEM_LAYOUT_ID, itemLayoutId);
         bundle.putString(IterableConstants.NO_MESSAGES_TITLE, noMessagesTitle);
         bundle.putString(IterableConstants.NO_MESSAGES_BODY, noMessagesBody);
+        inboxFragment.setArguments(bundle);
+
+        return inboxFragment;
+    }
+
+    /**
+     * Create an Inbox fragment with toolbar customization; all other parameters use their defaults.
+     *
+     * @param toolbarOption Toolbar variant
+     * @param toolbarTitle  Title shown in the toolbar, or null for the default "Inbox" string
+     * @return {@link IterableInboxFragment} instance
+     */
+    @NonNull public static IterableInboxFragment newInstance(
+        @NonNull InboxToolbarOption toolbarOption,
+        @Nullable String toolbarTitle
+    ) {
+        return newInstance(InboxMode.POPUP, 0, null, null, toolbarOption, toolbarTitle);
+    }
+
+    @NonNull public static IterableInboxFragment newInstance(
+        @NonNull InboxMode inboxMode,
+        @LayoutRes int itemLayoutId,
+        @Nullable String noMessagesTitle,
+        @Nullable String noMessagesBody,
+        @NonNull InboxToolbarOption toolbarOption,
+        @Nullable String toolbarTitle
+    ) {
+        IterableInboxFragment inboxFragment = new IterableInboxFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(INBOX_MODE, inboxMode);
+        bundle.putInt(ITEM_LAYOUT_ID, itemLayoutId);
+        bundle.putString(IterableConstants.NO_MESSAGES_TITLE, noMessagesTitle);
+        bundle.putString(IterableConstants.NO_MESSAGES_BODY, noMessagesBody);
+        bundle.putSerializable(TOOLBAR_OPTION, toolbarOption);
+        bundle.putString(TOOLBAR_TITLE, toolbarTitle);
         inboxFragment.setArguments(bundle);
 
         return inboxFragment;
@@ -148,6 +195,23 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
     }
 
     @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        Fragment parent = getParentFragment();
+        if (parent instanceof IterableInboxToolbarBackListener) {
+            toolbarBackListener = (IterableInboxToolbarBackListener) parent;
+        } else if (context instanceof IterableInboxToolbarBackListener) {
+            toolbarBackListener = (IterableInboxToolbarBackListener) context;
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        toolbarBackListener = null;
+        super.onDetach();
+    }
+
+    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         IterableActivityMonitor.getInstance().addCallback(appStateCallback);
@@ -171,9 +235,30 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
             if (arguments.getString(IterableConstants.NO_MESSAGES_BODY) != null) {
                 noMessagesBody = arguments.getString(IterableConstants.NO_MESSAGES_BODY);
             }
+            InboxToolbarOption toolbarOptionArg = BundleCompat.getSerializable(arguments, TOOLBAR_OPTION, InboxToolbarOption.class);
+            if (toolbarOptionArg != null) {
+                toolbarOption = toolbarOptionArg;
+            }
+            if (arguments.getString(TOOLBAR_TITLE) != null) {
+                toolbarTitle = arguments.getString(TOOLBAR_TITLE);
+            }
         }
 
         RelativeLayout relativeLayout = (RelativeLayout) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
+
+        IterableInboxToolbarView toolbar = relativeLayout.findViewById(R.id.iterable_inbox_toolbar);
+        toolbar.apply(toolbarOption, toolbarTitle);
+        // Prefer the host listener if one was discovered in onAttach; otherwise delegate
+        // to the fragment's host activity so we never depend on the view's Context chain
+        // to find a ComponentActivity.
+        if (toolbarBackListener != null) {
+            toolbar.setOnBackClickListener(v -> toolbarBackListener.onInboxToolbarBackClick());
+        } else {
+            toolbar.setOnBackClickListener(v ->
+                requireActivity().getOnBackPressedDispatcher().onBackPressed()
+            );
+        }
+
         recyclerView = relativeLayout.findViewById(R.id.list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter, dateMapper);
