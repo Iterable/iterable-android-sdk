@@ -18,9 +18,9 @@ import com.iterable.iterableapi.ui.R
  * The view is marked `gone` in the fragment layout by default, so `InboxToolbarOption.None`
  * (the SDK default) renders no toolbar and takes no space.
  *
- * **Theme requirement:** the host activity must use a `Theme.AppCompat` (or
- * `Theme.MaterialComponents` / `Theme.Material3`) descendant - `MaterialToolbar` will throw
- * an `InflateException` otherwise. If using the [IterableInboxActivity] this is a non-concern
+ * **Theme requirement:** the host activity must use a `Theme.AppCompat` descendant -
+ * `MaterialToolbar` will throw an `InflateException` otherwise. If using the
+ * [IterableInboxActivity] this is a non-concern.
  */
 class IterableInboxToolbarView @JvmOverloads constructor(
     context: Context,

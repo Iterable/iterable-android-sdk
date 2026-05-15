@@ -23,11 +23,10 @@ class IterableInboxToolbarViewTest {
 
     private fun newToolbar(): IterableInboxToolbarView {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        // The toolbar layout references Material attributes (?attr/colorSurface),
-        // so a Material theme is required - AppCompat alone is not enough.
+        // MaterialToolbar requires an AppCompat-derived theme.
         val themed = ContextThemeWrapper(
             activity,
-            com.google.android.material.R.style.Theme_MaterialComponents_DayNight_NoActionBar
+            androidx.appcompat.R.style.Theme_AppCompat_Light_NoActionBar
         )
         return IterableInboxToolbarView(themed)
     }

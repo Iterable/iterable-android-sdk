@@ -43,8 +43,8 @@ import java.text.DateFormat;
  * {@link #setComparator(IterableInboxComparator)} and {@link #setFilter(IterableInboxFilter)}.
  * Implement {@link IterableInboxToolbarBackListener} on the host to handle toolbar back clicks.
  * <p>
- * The host activity must use a {@code Theme.AppCompat} (or {@code Theme.MaterialComponents} /
- * {@code Theme.Material3}) descendant when the opt-in toolbar is enabled.
+ * The host activity must use a {@code Theme.AppCompat} descendant when the opt-in
+ * toolbar is enabled.
  */
 public class IterableInboxFragment extends Fragment implements IterableInAppManager.Listener, IterableInboxAdapter.OnListInteractionListener {
     private static final String TAG = "IterableInboxFragment";

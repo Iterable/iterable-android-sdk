@@ -7,7 +7,6 @@
         android:id="@+id/iterableInboxMaterialToolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurface"
         app:navigationIconTint="?android:attr/textColorPrimary"
         app:titleTextColor="?android:attr/textColorPrimary"
         tools:title="@string/iterable_inbox_default_title" />
