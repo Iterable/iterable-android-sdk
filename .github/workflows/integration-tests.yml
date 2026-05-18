@@ -171,7 +171,9 @@ jobs:
             echo "Device status:"
             adb devices
             echo "Last 20 logcat entries:"
-            adb logcat -d | tail -20
+            # SDK-170: bound the diagnostic logcat dump so a wedged adb can't make
+            # the wait-failure path itself hang the 6h job timeout.
+            timeout 10 adb logcat -d 2>/dev/null | tail -20 || echo "(logcat dump timed out)"
             exit 1
           fi
           
@@ -227,7 +229,9 @@ jobs:
           echo "Restarting ADB for stable connection..."
           adb kill-server
           adb start-server
-          adb wait-for-device
+          # SDK-170: bare `adb wait-for-device` blocks forever when no emulator comes
+          # back; cap at 60s so the job fails fast instead of consuming the 6h timeout.
+          timeout 60 adb wait-for-device || { echo "ERROR: device did not reattach within 60s"; exit 1; }
           
           # Clear any existing installations
           echo "Clearing existing app installations..."
@@ -280,9 +284,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results-api-${{ matrix.api-level }}
+          # SDK-170: do NOT upload integration-tests/build/outputs/ — that path contains
+          # the debug APK which embeds BuildConfig.ITERABLE_API_KEY and
+          # BuildConfig.ITERABLE_SERVER_API_KEY as compile-time string constants. On a
+          # public repo, anyone who can download the artifact could `strings`/`apktool`
+          # the APK and recover both keys.
           path: |
             integration-tests/build/reports/
-            integration-tests/build/outputs/
             integration-tests/build/test-logs.txt
             
       - name: Upload Coverage Report
@@ -411,7 +419,9 @@ jobs:
       - name: Wait for emulator
         run: |
           echo "Waiting for emulator..."
-          adb wait-for-device
+          # SDK-170: bare `adb wait-for-device` blocks forever when no emulator comes
+          # up; cap at 5min so the nightly job fails fast instead of consuming the 6h timeout.
+          timeout 300 adb wait-for-device || { echo "ERROR: emulator did not boot within 5min"; exit 1; }
           adb shell input keyevent 82
           adb shell input keyevent 82
           
@@ -439,9 +449,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nightly-integration-test-results
+          # SDK-170: do NOT upload integration-tests/build/outputs/ — see main job above.
           path: |
             integration-tests/build/reports/
-            integration-tests/build/outputs/
             
       - name: Upload Coverage Report
         if: always()

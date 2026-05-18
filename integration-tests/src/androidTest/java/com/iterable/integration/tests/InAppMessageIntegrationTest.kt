@@ -39,8 +39,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         private const val TEST_CAMPAIGN_ID = TestConstants.TEST_INAPP_CAMPAIGN_ID
         private const val TEST_EVENT_NAME = "test_inapp_event"
 
-        // SDK-170: ample wait so a slow CI emulator (SurfaceSyncGroup timeouts in logs) can
-        // finish drawing MainActivity before we look for the button. Local cost: 0 (passes fast).
         private const val BTN_IN_APP_TIMEOUT_MS = 30_000L
     }
     
@@ -60,13 +58,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
 
-        // SDK-170: Pause in-app auto-display and drain the inbox BEFORE launching the
-        // activity. Otherwise messages already staged for the test user will be fetched
-        // by setEmail() during super.setUp() and shown over MainActivity, occluding the
-        // buttons UiAutomator is about to look for. The test calls
-        // inAppManager.showMessage() explicitly later, which still works while paused.
-        // Pattern matches PushNotificationIntegrationTest / EmbeddedMessageIntegrationTest /
-        // DeepLinkIntegrationTest.
         IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
         IterableApi.getInstance().inAppManager.messages.forEach {
             Log.d(TAG, "Clearing pre-existing in-app message before navigation: ${it.messageId}")
@@ -105,11 +96,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🔧 MainActivity is ready!")
         
         // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity.
-        // SDK-170: Lifecycle.RESUMED does not guarantee the layout is drawn — under CI load
-        // (SurfaceSyncGroup transaction-ready timeouts), `findObject(...).exists()` ran ~2s
-        // after RESUMED and returned false because the button view was not yet present in the
-        // accessibility tree. `uiDevice.wait(Until.findObject(...))` polls until the node
-        // appears or the timeout elapses.
         Log.d(TAG, "🔧 Step 2: Waiting for and clicking 'In-App Messages' button...")
         val inAppButton = uiDevice.wait(
             Until.findObject(By.res("com.iterable.integration.tests", "btnInAppMessages")),
@@ -140,7 +126,6 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Assert.assertTrue("User should be signed in", userSignedIn)
         Log.d(TAG, "✅ User signed in successfully: ${TestConstants.TEST_USER_EMAIL}")
 
-        // SDK-170: log presence/length only (never values) — these end up in CI logcat artifacts.
         Log.d(TAG, "API key configured: length=${BuildConfig.ITERABLE_API_KEY.length}")
         Log.d(TAG, "Server API key configured: length=${BuildConfig.ITERABLE_SERVER_API_KEY.length}")
         Log.d(TAG, "Test user email configured: length=${BuildConfig.ITERABLE_TEST_USER_EMAIL.length}")

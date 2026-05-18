@@ -58,6 +58,14 @@ LOGCAT_PID=$!
 
 # Capture diagnostics that depend on a live emulator. Called from EXIT trap so
 # we always run, whether tests passed, failed, or the runner timed out.
+#
+# SDK-170: every adb call here is wrapped with `timeout` so an unresponsive
+# emulator (e.g. on test failure) can't make the diagnostic capture itself
+# hang the 6-hour job timeout — which would replace the useful gradle
+# failure output with an opaque cancelled-job. 10s per command is generous
+# (uiautomator dump usually finishes in <2s on a healthy device).
+ADB_TIMEOUT="${ADB_TIMEOUT:-10}"
+
 capture_post_test() {
   log "Capturing post-test diagnostics..."
 
@@ -68,15 +76,19 @@ capture_post_test() {
   fi
 
   # UiAutomator hierarchy — answers "what was UiAutomator looking at?"
-  if adb shell uiautomator dump /sdcard/hierarchy.xml >/dev/null 2>&1; then
-    adb pull /sdcard/hierarchy.xml "$DIAG_DIR/hierarchy.xml" >/dev/null 2>&1 || true
-    adb shell rm -f /sdcard/hierarchy.xml >/dev/null 2>&1 || true
+  if timeout "$ADB_TIMEOUT" adb shell uiautomator dump /sdcard/hierarchy.xml >/dev/null 2>&1; then
+    timeout "$ADB_TIMEOUT" adb pull /sdcard/hierarchy.xml "$DIAG_DIR/hierarchy.xml" >/dev/null 2>&1 || true
+    timeout "$ADB_TIMEOUT" adb shell rm -f /sdcard/hierarchy.xml >/dev/null 2>&1 || true
+  else
+    log "uiautomator dump unavailable (emulator unresponsive or no device)"
   fi
 
   # Screenshot — answers "what was actually on the screen?"
-  if adb shell screencap -p /sdcard/screenshot.png >/dev/null 2>&1; then
-    adb pull /sdcard/screenshot.png "$DIAG_DIR/screenshot.png" >/dev/null 2>&1 || true
-    adb shell rm -f /sdcard/screenshot.png >/dev/null 2>&1 || true
+  if timeout "$ADB_TIMEOUT" adb shell screencap -p /sdcard/screenshot.png >/dev/null 2>&1; then
+    timeout "$ADB_TIMEOUT" adb pull /sdcard/screenshot.png "$DIAG_DIR/screenshot.png" >/dev/null 2>&1 || true
+    timeout "$ADB_TIMEOUT" adb shell rm -f /sdcard/screenshot.png >/dev/null 2>&1 || true
+  else
+    log "screencap unavailable (emulator unresponsive or no device)"
   fi
 
   log "Diagnostics captured:"

@@ -89,9 +89,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupUI() {
-        // SDK-170: never render the full API key into the view hierarchy — the integration
-        // tests CI captures hierarchy.xml and screenshot.png as artifacts on a public repo.
-        // Show only enough to confirm a non-empty key was loaded.
         val apiKey = BuildConfig.ITERABLE_API_KEY
         val keyDisplay = when {
             apiKey.isEmpty() -> "API Key: (empty)"
