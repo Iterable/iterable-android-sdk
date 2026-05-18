@@ -69,11 +69,10 @@ class IterableInboxToolbarView @JvmOverloads constructor(
     /**
      * Override the default back-click behavior. Honored for
      * `InboxToolbarOption.WithBackButton` and for `InboxToolbarOption.Custom` layouts that
-     * include a view with id `@id/iterable_inbox_back_button`. Pass `null` to clear a
-     * previously set override and fall back to the host activity's `OnBackPressedDispatcher`.
+     * include a view with id `@id/iterable_inbox_back_button`.
      *
-     * When this view is hosted by [IterableInboxFragment], the fragment always installs
-     * a default listener, so this fallback path is only reached for standalone XML usage.
+     * Hosting via [IterableInboxFragment] wires this for you. For standalone usage,
+     * pass a listener if the view's `Context` isn't a [ComponentActivity].
      */
     fun setOnBackClickListener(listener: OnClickListener?) {
         backClickListener = listener
