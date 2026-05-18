@@ -15,12 +15,12 @@ import com.iterable.iterableapi.ui.R
  * Opt-in toolbar for [IterableInboxFragment]. Configure via [apply] with an
  * [InboxToolbarOption].
  *
- * The view is marked `gone` in the fragment layout by default, so `InboxToolbarOption.None`
- * (the SDK default) renders no toolbar and takes no space.
+ * The view is empty until [apply] is called with a non-`None` option, so the
+ * `None` default does not inflate any Material widgets.
  *
- * **Theme requirement:** the host activity must use a `Theme.AppCompat` descendant -
- * `MaterialToolbar` will throw an `InflateException` otherwise. If using the
- * [IterableInboxActivity] this is a non-concern.
+ * **Theme requirement:** when a non-`None` option is applied, the host activity must
+ * use a `Theme.AppCompat` descendant - `MaterialToolbar` will throw an
+ * `InflateException` otherwise. If using the [IterableInboxActivity] this is a non-concern.
  */
 class IterableInboxToolbarView @JvmOverloads constructor(
     context: Context,
@@ -28,34 +28,31 @@ class IterableInboxToolbarView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    private var materialToolbar: MaterialToolbar
+    private var materialToolbar: MaterialToolbar? = null
     private var backClickListener: OnClickListener? = null
     private var isCustomLayout = false
-
-    init {
-        LayoutInflater.from(context).inflate(R.layout.iterable_inbox_toolbar, this, true)
-        materialToolbar = findViewById(R.id.iterableInboxMaterialToolbar)
-    }
 
     /** Configure the toolbar. Safe to call multiple times (e.g. on config change). */
     fun apply(option: InboxToolbarOption, title: String?) {
         when (option) {
             InboxToolbarOption.None -> {
                 visibility = View.GONE
+                // Intentionally do not inflate. `None` is the default and must not
+                // require an AppCompat-derived theme on the host.
             }
             InboxToolbarOption.Default -> {
                 showDefaultLayout()
                 visibility = View.VISIBLE
-                materialToolbar.title = resolveTitle(title)
-                materialToolbar.navigationIcon = null
-                materialToolbar.setNavigationOnClickListener(null)
+                materialToolbar?.title = resolveTitle(title)
+                materialToolbar?.navigationIcon = null
+                materialToolbar?.setNavigationOnClickListener(null)
             }
             InboxToolbarOption.WithBackButton -> {
                 showDefaultLayout()
                 visibility = View.VISIBLE
-                materialToolbar.title = resolveTitle(title)
-                materialToolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp)
-                materialToolbar.setNavigationOnClickListener { v -> dispatchBackClick(v) }
+                materialToolbar?.title = resolveTitle(title)
+                materialToolbar?.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp)
+                materialToolbar?.setNavigationOnClickListener { v -> dispatchBackClick(v) }
             }
             is InboxToolbarOption.Custom -> {
                 showCustomLayout(option.layoutRes)
@@ -91,9 +88,9 @@ class IterableInboxToolbarView @JvmOverloads constructor(
         (context as? ComponentActivity)?.onBackPressedDispatcher?.onBackPressed()
     }
 
-    /** Swap in the SDK's default toolbar layout. No-op when it's already showing. */
+    /** Inflate the SDK toolbar layout if it isn't already showing. */
     private fun showDefaultLayout() {
-        if (!isCustomLayout) return
+        if (materialToolbar != null && !isCustomLayout) return
         removeAllViews()
         LayoutInflater.from(context).inflate(R.layout.iterable_inbox_toolbar, this, true)
         materialToolbar = findViewById(R.id.iterableInboxMaterialToolbar)
@@ -104,6 +101,7 @@ class IterableInboxToolbarView @JvmOverloads constructor(
     private fun showCustomLayout(@LayoutRes layoutRes: Int) {
         removeAllViews()
         LayoutInflater.from(context).inflate(layoutRes, this, true)
+        materialToolbar = null
         isCustomLayout = true
     }
 

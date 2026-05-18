@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.iterable.iterableapi.InboxSessionManager;
@@ -244,9 +243,9 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
             }
         }
 
-        RelativeLayout relativeLayout = (RelativeLayout) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
+        ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.iterable_inbox_fragment, container, false);
 
-        IterableInboxToolbarView toolbar = relativeLayout.findViewById(R.id.iterable_inbox_toolbar);
+        IterableInboxToolbarView toolbar = rootView.findViewById(R.id.iterable_inbox_toolbar);
         toolbar.apply(toolbarOption, toolbarTitle);
         // Prefer the host listener if one was discovered in onAttach; otherwise delegate
         // to the fragment's host activity so we never depend on the view's Context chain
@@ -259,17 +258,17 @@ public class IterableInboxFragment extends Fragment implements IterableInAppMana
             );
         }
 
-        recyclerView = relativeLayout.findViewById(R.id.list);
+        recyclerView = rootView.findViewById(R.id.list);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         IterableInboxAdapter adapter = new IterableInboxAdapter(IterableApi.getInstance().getInAppManager().getInboxMessages(), IterableInboxFragment.this, adapterExtension, comparator, filter, dateMapper);
         recyclerView.setAdapter(adapter);
-        noMessagesTitleTextView = relativeLayout.findViewById(R.id.emptyInboxTitle);
-        noMessagesBodyTextView = relativeLayout.findViewById(R.id.emptyInboxMessage);
+        noMessagesTitleTextView = rootView.findViewById(R.id.emptyInboxTitle);
+        noMessagesBodyTextView = rootView.findViewById(R.id.emptyInboxMessage);
         noMessagesTitleTextView.setText(noMessagesTitle);
         noMessagesBodyTextView.setText(noMessagesBody);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new IterableInboxTouchHelper(getContext(), adapter));
         itemTouchHelper.attachToRecyclerView(recyclerView);
-        return relativeLayout;
+        return rootView;
     }
 
     @Override

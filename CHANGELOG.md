@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Migration guide
 **No action required for most apps.** The default `FORCE_EDGE_TO_EDGE` preserves the existing behavior where in-app content draws behind system bars.
 
+The inflated root of `IterableInboxFragment` is now a `LinearLayout` instead of a `RelativeLayout`. Subclasses that override `onCreateView` and cast `super.onCreateView(...)`'s return value to `RelativeLayout` should change the cast to `ViewGroup` (or `LinearLayout`).
+
 If the close button in your fullscreen in-app messages is obscured by the status bar, you can fix it by choosing one of these modes:
 
 ```java
