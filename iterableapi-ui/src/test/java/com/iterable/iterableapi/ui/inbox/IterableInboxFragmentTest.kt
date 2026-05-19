@@ -102,11 +102,19 @@ class IterableInboxFragmentTest {
      */
     @Test
     fun newInstance_default_inflatesUnderPlainAppCompatTheme() {
-        // The act of mounting the fragment is the test: if the toolbar layout inflates
-        // unconditionally, MaterialToolbar fails to resolve Material attributes here
-        // and throws InflateException at view creation.
+        // If the toolbar layout inflates unconditionally, MaterialToolbar fails to
+        // resolve Material attributes under this AppCompat-only theme and throws
+        // InflateException at view creation. Beyond not throwing, also assert the
+        // structural invariants - otherwise a future regression that swallows the
+        // exception or inflates a degraded view would still pass this test.
         val (_, fragment) = mountDefaultFragment()
-        assertNotNull("Fragment view must inflate under plain AppCompat",
-            fragment.view)
+        val root = fragment.requireView()
+
+        val toolbar = root.findViewById<View>(R.id.iterable_inbox_toolbar) as ViewGroup
+        assertEquals("Toolbar must be GONE under None on a plain AppCompat host",
+            View.GONE, toolbar.visibility)
+        assertEquals("Toolbar must inflate no Material children under None - this is " +
+            "the only thing that lets non-Material hosts use the fragment safely",
+            0, toolbar.childCount)
     }
 }

@@ -33,13 +33,15 @@ class InboxToolbarOptionTest {
     }
 
     @Test
-    fun dataObjectsRoundTripThroughJavaSerializationViaEquals() {
-        // Across deserialization the JVM creates a new instance, so reference identity
-        // is intentionally not preserved (we documented `==` is unsafe for callers).
-        // Structural equality must hold so `when` branches still route correctly.
-        assertEquals(InboxToolbarOption.None, roundTrip(InboxToolbarOption.None))
-        assertEquals(InboxToolbarOption.Default, roundTrip(InboxToolbarOption.Default))
-        assertEquals(InboxToolbarOption.WithBackButton, roundTrip(InboxToolbarOption.WithBackButton))
+    fun dataObjectsRoundTripPreserveSingletonIdentity() {
+        // The `readResolve()` overrides on each data object must return the singleton
+        // instance, not the freshly-deserialized copy — otherwise Java consumers
+        // comparing with `==` after a Bundle/Intent round-trip get a surprise null
+        // result. This test fails (assertSame downgrades to a different reference)
+        // if the readResolve()s are ever removed.
+        assertSame(InboxToolbarOption.None, roundTrip(InboxToolbarOption.None))
+        assertSame(InboxToolbarOption.Default, roundTrip(InboxToolbarOption.Default))
+        assertSame(InboxToolbarOption.WithBackButton, roundTrip(InboxToolbarOption.WithBackButton))
     }
 
     @Test
