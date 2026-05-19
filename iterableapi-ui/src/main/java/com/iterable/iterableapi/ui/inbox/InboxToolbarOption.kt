@@ -10,13 +10,19 @@ import java.io.Serializable
 sealed interface InboxToolbarOption : Serializable {
 
     /** No toolbar. The fragment renders identically to prior SDK versions. */
-    data object None : InboxToolbarOption
+    data object None : InboxToolbarOption {
+        private fun readResolve(): Any = None
+    }
 
     /** A title-only toolbar above the inbox list. */
-    data object Default : InboxToolbarOption
+    data object Default : InboxToolbarOption {
+        private fun readResolve(): Any = Default
+    }
 
     /** A toolbar with the configured title plus a back navigation icon. */
-    data object WithBackButton : InboxToolbarOption
+    data object WithBackButton : InboxToolbarOption {
+        private fun readResolve(): Any = WithBackButton
+    }
 
     /**
      * Inflates a fully custom toolbar layout supplied by the integrator. The integrator
