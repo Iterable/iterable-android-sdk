@@ -51,7 +51,7 @@ class IterableInboxToolbarView @JvmOverloads constructor(
                 showDefaultLayout()
                 visibility = View.VISIBLE
                 materialToolbar?.title = resolveTitle(title)
-                materialToolbar?.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp)
+                materialToolbar?.setNavigationIcon(R.drawable.iterable_ic_arrow_back_24dp)
                 materialToolbar?.setNavigationOnClickListener { v -> dispatchBackClick(v) }
             }
             is InboxToolbarOption.Custom -> {
