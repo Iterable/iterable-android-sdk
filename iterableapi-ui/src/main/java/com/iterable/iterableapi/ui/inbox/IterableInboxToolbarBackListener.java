@@ -6,8 +6,9 @@ package com.iterable.iterableapi.ui.inbox;
  *
  * <p>Relevant when toolbar option is {@code InboxToolbarOption.WithBackButton} or a
  * {@code InboxToolbarOption.Custom} layout includes a view with id
- * {@code @id/iterable_inbox_back_button}. If no host implements this interface, the
- * fragment falls back to the host activity's {@code OnBackPressedDispatcher}.
+ * {@code @id/iterable_reserved_inbox_toolbar_action}. If no host implements this
+ * interface, the fragment falls back to the host activity's
+ * {@code OnBackPressedDispatcher}.
  *
  * <p>The listener is discovered during {@code onAttach()}, so it survives process
  * death - recreated fragments re-bind to the restored host automatically.

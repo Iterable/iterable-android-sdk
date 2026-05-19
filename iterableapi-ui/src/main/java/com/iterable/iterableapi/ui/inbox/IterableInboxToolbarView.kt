@@ -57,11 +57,11 @@ class IterableInboxToolbarView @JvmOverloads constructor(
             is InboxToolbarOption.Custom -> {
                 showCustomLayout(option.layoutRes)
                 visibility = View.VISIBLE
-                findViewById<View>(R.id.iterable_inbox_back_button)?.setOnClickListener { v ->
+                findViewById<View>(R.id.iterable_reserved_inbox_toolbar_action)?.setOnClickListener { v ->
                     dispatchBackClick(v)
                 }
                 // `as? TextView` also matches subclasses like Button/EditText - documented behavior.
-                (findViewById<View>(R.id.iterable_inbox_title) as? TextView)?.text = resolveTitle(title)
+                (findViewById<View>(R.id.iterable_reserved_inbox_toolbar_title) as? TextView)?.text = resolveTitle(title)
             }
         }
     }
@@ -69,7 +69,7 @@ class IterableInboxToolbarView @JvmOverloads constructor(
     /**
      * Override the default back-click behavior. Honored for
      * `InboxToolbarOption.WithBackButton` and for `InboxToolbarOption.Custom` layouts that
-     * include a view with id `@id/iterable_inbox_back_button`.
+     * include a view with id `@id/iterable_reserved_inbox_toolbar_action`.
      *
      * Hosting via [IterableInboxFragment] wires this for you. For standalone usage,
      * pass a listener if the view's `Context` isn't a [ComponentActivity].

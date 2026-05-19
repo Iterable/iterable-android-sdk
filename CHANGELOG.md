@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   - `None` (default) — no toolbar; behavior is unchanged from prior SDK versions.
   - `Default` — title-only toolbar above the inbox list.
   - `WithBackButton` — title plus a back navigation icon. The default back action calls `OnBackPressedDispatcher`; override it by having the host Activity or parent Fragment implement `IterableInboxToolbarBackListener`.
-  - `Custom(layoutRes)` — inflates the integrator's own toolbar layout. Views tagged with `@id/iterable_inbox_back_button` and `@id/iterable_inbox_title` are auto-wired to the SDK's back handler and title binding respectively. Both ids are optional.
+  - `Custom(layoutRes)` — inflates the integrator's own toolbar layout. Views tagged with the reserved ids `@id/iterable_reserved_inbox_toolbar_action` and `@id/iterable_reserved_inbox_toolbar_title` are auto-wired to the SDK's back handler and title binding respectively. Both ids are optional.
   - Configure programmatically via `IterableInboxFragment.newInstance(...)` (new 2-arg and 6-arg overloads) or via `IterableInboxActivity` intent extras (`TOOLBAR_OPTION` / `TOOLBAR_TITLE`).
   - Requires the host activity to use a `Theme.AppCompat` descendant when the toolbar is enabled.
 - New `IterableInAppDisplayMode` enum to control how in-app messages interact with system bars. Configure via `IterableConfig.Builder.setInAppDisplayMode()`:
