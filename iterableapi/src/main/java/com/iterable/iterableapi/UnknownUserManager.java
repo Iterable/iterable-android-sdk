@@ -170,7 +170,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         }
     }
 
-    void getCriteria() {
+    void getUnknownCriteria() {
         lastCriteriaFetch = System.currentTimeMillis();
 
         iterableApi.apiClient.getCriteriaList(data -> {
@@ -258,7 +258,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
             try {
                 int statusCode = (int) data.get(IterableConstants.HTTP_STATUS_CODE);
                 if (statusCode == 409) {
-                    getCriteria(); // refetch the criteria
+                    getUnknownCriteria(); // refetch the criteria
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -498,7 +498,7 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
             && currentTime - lastCriteriaFetch >= IterableConstants.CRITERIA_FETCHING_COOLDOWN) {
 
             lastCriteriaFetch = currentTime;
-            this.getCriteria();
+            this.getUnknownCriteria();
             IterableLogger.d(TAG, "Fetching unknown user criteria - Foreground");
         }
     }
