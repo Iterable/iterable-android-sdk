@@ -11,9 +11,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableInAppLocation
@@ -38,6 +38,8 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         private const val TAG = "InAppMessageIntegrationTest"
         private const val TEST_CAMPAIGN_ID = TestConstants.TEST_INAPP_CAMPAIGN_ID
         private const val TEST_EVENT_NAME = "test_inapp_event"
+
+        private const val BTN_IN_APP_TIMEOUT_MS = 30_000L
     }
     
     private lateinit var uiDevice: UiDevice
@@ -55,6 +57,13 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         super.setUp()
         
         Log.d(TAG, "🔧 Base setup complete, SDK initialized with test handlers")
+
+        IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
+        IterableApi.getInstance().inAppManager.messages.forEach {
+            Log.d(TAG, "Clearing pre-existing in-app message before navigation: ${it.messageId}")
+            IterableApi.getInstance().inAppManager.removeMessage(it)
+        }
+
         Log.d(TAG, "🔧 MainActivity will skip initialization due to test mode flag")
         
         // Now launch the app flow with custom handlers already configured
@@ -86,16 +95,17 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         
         Log.d(TAG, "🔧 MainActivity is ready!")
         
-        // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity
-        Log.d(TAG, "🔧 Step 2: Clicking 'In-App Messages' button...")
-        val inAppButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnInAppMessages"))
-        if (inAppButton.exists()) {
+        // Step 2: Click the "In-App Messages" button to navigate to InAppMessageTestActivity.
+        Log.d(TAG, "🔧 Step 2: Waiting for and clicking 'In-App Messages' button...")
+        val inAppButton = uiDevice.wait(
+            Until.findObject(By.res("com.iterable.integration.tests", "btnInAppMessages")),
+            BTN_IN_APP_TIMEOUT_MS
+        )
+        if (inAppButton != null) {
             inAppButton.click()
             Log.d(TAG, "🔧 Clicked In-App Messages button successfully")
         } else {
-            //Take screenshot for debugging
-//            uiDevice.takeScreenshot(File("/sdcard/Download/InAppButtonNotFound.png"))
-            Log.e(TAG, "❌ In-App Messages button not found!")
+            Log.e(TAG, "❌ In-App Messages button not found within ${BTN_IN_APP_TIMEOUT_MS}ms (current package: ${uiDevice.currentPackageName})")
             Assert.fail("In-App Messages button not found in MainActivity")
         }
         
@@ -116,10 +126,9 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         Assert.assertTrue("User should be signed in", userSignedIn)
         Log.d(TAG, "✅ User signed in successfully: ${TestConstants.TEST_USER_EMAIL}")
 
-        // Step 2: Debug API key configuration
-        Log.d(TAG, "🔍 Debug: ITERABLE_API_KEY = ${BuildConfig.ITERABLE_API_KEY}")
-        Log.d(TAG, "🔍 Debug: ITERABLE_SERVER_API_KEY = ${BuildConfig.ITERABLE_SERVER_API_KEY}")
-        Log.d(TAG, "🔍 Debug: ITERABLE_TEST_USER_EMAIL = ${BuildConfig.ITERABLE_TEST_USER_EMAIL}")
+        Log.d(TAG, "API key configured: length=${BuildConfig.ITERABLE_API_KEY.length}")
+        Log.d(TAG, "Server API key configured: length=${BuildConfig.ITERABLE_SERVER_API_KEY.length}")
+        Log.d(TAG, "Test user email configured: length=${BuildConfig.ITERABLE_TEST_USER_EMAIL.length}")
 
         // Step 3: Try to trigger campaign via API (but don't fail if it doesn't work)
         Log.d(TAG, "🎯 Step 3: Attempting to trigger campaign via API...")

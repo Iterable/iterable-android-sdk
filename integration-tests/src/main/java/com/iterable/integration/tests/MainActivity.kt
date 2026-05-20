@@ -89,8 +89,13 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupUI() {
-        // Set API key text
-        findViewById<android.widget.TextView>(R.id.tvApiKey).text = "API Key: ${BuildConfig.ITERABLE_API_KEY}"
+        val apiKey = BuildConfig.ITERABLE_API_KEY
+        val keyDisplay = when {
+            apiKey.isEmpty() -> "API Key: (empty)"
+            apiKey.length < 8 -> "API Key: (length=${apiKey.length})"
+            else -> "API Key: ****${apiKey.takeLast(4)} (length=${apiKey.length})"
+        }
+        findViewById<android.widget.TextView>(R.id.tvApiKey).text = keyDisplay
         
         findViewById<android.widget.Button>(R.id.btnPushNotifications).setOnClickListener {
             startActivity(Intent(this@MainActivity, PushNotificationTestActivity::class.java))
