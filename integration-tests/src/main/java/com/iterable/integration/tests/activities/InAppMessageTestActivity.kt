@@ -202,30 +202,22 @@ class InAppMessageTestActivity : AppCompatActivity() {
     private fun updateUserInfo() {
         try {
             val userEmail = IterableApi.getInstance().getEmail() ?: "Not signed in"
-            val testUserEmail = BuildConfig.ITERABLE_TEST_USER_EMAIL
             val apiKey = BuildConfig.ITERABLE_API_KEY
             val serverApiKey = BuildConfig.ITERABLE_SERVER_API_KEY
-            
-            // Truncate API keys for display (show first 8 and last 4 characters)
-            val displayApiKey = if (apiKey.length > 12) {
-                "${apiKey.take(8)}...${apiKey.takeLast(4)}"
-            } else {
-                apiKey
-            }
-            
-            val displayServerApiKey = if (serverApiKey.length > 12) {
-                "${serverApiKey.take(8)}...${serverApiKey.takeLast(4)}"
-            } else {
-                serverApiKey
-            }
-            
-            val userInfo = "User: $userEmail | Test User: $testUserEmail | API Key: $displayApiKey | Server Key: $displayServerApiKey"
+
+            val userInfo = "User: $userEmail" +
+                " | API Key: ${maskedKey(apiKey)}" +
+                " | Server Key: ${maskedKey(serverApiKey)}"
             userInfoTextView.text = userInfo
-            
-            Log.d(TAG, "User Info: $userInfo")
         } catch (e: Exception) {
             Log.e(TAG, "Error updating user info", e)
             userInfoTextView.text = "Error loading user info: ${e.message}"
         }
+    }
+
+    private fun maskedKey(key: String): String = when {
+        key.isEmpty() -> "(empty)"
+        key.length < 8 -> "(length=${key.length})"
+        else -> "****${key.takeLast(4)} (length=${key.length})"
     }
 } 
