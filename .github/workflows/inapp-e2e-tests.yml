@@ -70,16 +70,21 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-            
-      - name: Pre-download Gradle and Build (Parallel with Emulator)
-        run: |
-          echo "Pre-downloading Gradle and building while emulator boots..."
-          # Download Gradle wrapper in background
-          ./gradlew --version &
-          # Start building APKs in background  
-          ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon &
-          echo "Build started in background..."
-            
+
+      # SDK-170 follow-up: the previous "Pre-download Gradle and Build (Parallel with
+      # Emulator)" step backgrounded `./gradlew :integration-tests:assembleDebug
+      # :integration-tests:assembleDebugAndroidTest --no-daemon &`. On macos-15-intel
+      # the background process was resource-starved during emulator boot and usually
+      # finished or stalled before the action's Gradle started, so the race window
+      # was tiny. After we migrated to ubuntu-latest + KVM (commit 7d4a80ba), both
+      # Gradle processes get real CPU and run in true parallel, racing on
+      # `integration-tests/build/intermediates/merged_res_blame_folder/` and failing
+      # `:integration-tests:mergeDebugAndroidTestResources` with
+      # "Failed to create MD5 hash for file ... values-az.json as it does not exist".
+      #
+      # The action's `script:` invokes `./gradlew :integration-tests:connectedDebugAndroidTest`
+      # which transitively assembles the APKs, so removing the pre-build loses nothing
+      # except the (broken) parallelism. Wall-clock impact: ~30-90s on cold Gradle cache.
       - name: Run UI Tests with Emulator (KVM / x86_64)
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
