@@ -19,8 +19,6 @@ import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import androidx.annotation.RestrictTo
 import androidx.core.graphics.drawable.toDrawable
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -34,7 +32,7 @@ import java.lang.ref.WeakReference
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class IterableInAppDialogNotification internal constructor(
-    hostActivity: Activity,
+    private val hostActivity: Activity,
     private val htmlString: String?,
     private val callbackOnCancel: Boolean,
     private val message: IterableInAppMessage,
@@ -47,14 +45,17 @@ class IterableInAppDialogNotification internal constructor(
     private val animationService: InAppAnimationService = InAppServices.animation,
     private val trackingService: InAppTrackingService = InAppServices.tracking,
     private val webViewService: InAppWebViewService = InAppServices.webView,
-    private val orientationService: InAppOrientationService = InAppServices.orientation
-) : Dialog(hostActivity), IterableWebView.HTMLNotificationCallbacks {
+    private val orientationService: InAppOrientationService = InAppServices.orientation,
+    private val displayModeService: InAppDisplayModeService = InAppServices.displayMode
+) : Dialog(hostActivity, R.style.Iterable_InAppDialog), IterableWebView.HTMLNotificationCallbacks {
 
     private var webView: IterableWebView? = null
     private var loaded: Boolean = false
     private var orientationListener: OrientationEventListener? = null
     private var inAppOpenTracked: Boolean = false
     private var dismissed: Boolean = false
+    private var displayMode: IterableInAppDisplayMode = IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE
+    private var hostIsEdgeToEdge: Boolean = false
 
     private var prepareToShowRunnable: Runnable? = null
     private var dismissRunnable: Runnable? = null
@@ -180,23 +181,30 @@ class IterableInAppDialogNotification internal constructor(
     override fun onStart() {
         super.onStart()
 
-        window?.let { layoutService.setWindowToFullScreen(it) }
-        
         val layout = layoutService.getInAppLayout(insetPadding)
         if (layout != InAppLayoutService.InAppLayout.FULLSCREEN) {
             window?.let { layoutService.applyWindowGravity(it, insetPadding, "onStart") }
         }
     }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
-        val layout = layoutService.getInAppLayout(insetPadding)
-        window?.let { layoutService.configureWindowFlags(it, layout) }
+        val hostActivity = context as? Activity
+        displayMode = displayModeService.resolveDisplayMode()
+        hostIsEdgeToEdge = displayModeService.isHostActivityEdgeToEdge(hostActivity)
+        displayModeService.configureSystemBarsForMode(window, displayMode, hostActivity, hostIsEdgeToEdge)
 
+        // Plain Dialog (unlike Fragment's STYLE_NO_FRAME DialogFragment) inherits the host
+        // activity's theme decoration and defaults its window to WRAP_CONTENT, which lets the
+        // host theme background bleed through around the WebView. Pin the window to match the
+        // viewport so only our transparent background and the WebView content are visible.
+        window?.let { layoutService.setWindowToFullScreen(it) }
+
+        val layout = layoutService.getInAppLayout(insetPadding)
         if (layout != InAppLayoutService.InAppLayout.FULLSCREEN) {
             window?.let { layoutService.applyWindowGravity(it, insetPadding, "onCreate") }
         }
@@ -237,6 +245,12 @@ class IterableInAppDialogNotification internal constructor(
         dismissRunnable = null
         pendingResizeRunnable = null
         resizeHandler = null
+
+        // FORCE_FULLSCREEN hides the host activity's system bars; bring them back so the
+        // app isn't left in an immersive state after the in-app closes.
+        if (displayMode == IterableInAppDisplayMode.FORCE_FULLSCREEN) {
+            displayModeService.restoreHostSystemBars(context as? Activity)
+        }
 
         (context as? LifecycleOwner)?.lifecycle?.removeObserver(hostLifecycleObserver)
 
@@ -294,20 +308,22 @@ class IterableInAppDialogNotification internal constructor(
             frameLayout.addView(webView, params)
         } else {
             val webViewContainer = RelativeLayout(context)
-            
+
             val containerParams = webViewService.createContainerLayoutParams(layout)
-            
+
             val webViewParams = webViewService.createCenteredWebViewParams()
-            
+
             webViewContainer.addView(webView, webViewParams)
             frameLayout.addView(webViewContainer, containerParams)
-            
-            ViewCompat.setOnApplyWindowInsetsListener(frameLayout) { v, insets ->
-                val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(0, sysBars.top, 0, sysBars.bottom)
-                insets
-            }
         }
+
+        displayModeService.applyContentInsetsForMode(
+            frameLayout,
+            displayMode,
+            isFullScreen,
+            hostActivity,
+            hostIsEdgeToEdge
+        )
         
         return frameLayout
     }

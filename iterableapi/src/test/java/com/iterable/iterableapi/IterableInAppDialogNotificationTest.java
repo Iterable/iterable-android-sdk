@@ -442,7 +442,8 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
                 InAppServices.INSTANCE.getAnimation(),
                 trackingService,
                 InAppServices.INSTANCE.getWebView(),
-                InAppServices.INSTANCE.getOrientation()
+                InAppServices.INSTANCE.getOrientation(),
+                InAppServices.INSTANCE.getDisplayMode()
         );
     }
 
