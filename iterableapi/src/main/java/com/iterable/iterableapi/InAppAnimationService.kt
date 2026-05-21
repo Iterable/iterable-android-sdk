@@ -9,8 +9,10 @@ import android.view.View
 import android.view.Window
 import android.view.animation.AnimationUtils
 import androidx.annotation.AnimRes
+import androidx.annotation.RestrictTo
 import androidx.core.graphics.ColorUtils
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class InAppAnimationService {
 
     fun createInAppBackgroundDrawable(hexColor: String?, alpha: Double): ColorDrawable? {

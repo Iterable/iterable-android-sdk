@@ -1,5 +1,8 @@
 package com.iterable.iterableapi
 
+import androidx.annotation.RestrictTo
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal object InAppServices {
     val layout: InAppLayoutService = InAppLayoutService()
     val animation: InAppAnimationService = InAppAnimationService()

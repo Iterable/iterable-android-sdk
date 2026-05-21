@@ -4,7 +4,9 @@ import android.content.Context
 import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
+import androidx.annotation.RestrictTo
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class InAppWebViewService {
 
     fun createConfiguredWebView(

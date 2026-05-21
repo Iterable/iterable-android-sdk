@@ -5,7 +5,9 @@ import android.hardware.SensorManager
 import android.os.Handler
 import android.os.Looper
 import android.view.OrientationEventListener
+import androidx.annotation.RestrictTo
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class InAppOrientationService {
 
     fun interface OrientationChangeCallback {
@@ -25,6 +27,8 @@ internal class InAppOrientationService {
                 if (currentOrientation != lastOrientation && lastOrientation != -1) {
                     lastOrientation = currentOrientation
 
+                    // TODO: this delayed runnable isn't cancelled when the host dismisses —
+                    // This is the same behavior of the fragment path, we have to fix in conjunction
                     Handler(Looper.getMainLooper()).postDelayed({
                         IterableLogger.d(TAG, "Orientation changed, triggering callback")
                         callback.onOrientationChanged()

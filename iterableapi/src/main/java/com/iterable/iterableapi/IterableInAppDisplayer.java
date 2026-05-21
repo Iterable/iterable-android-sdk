@@ -16,6 +16,14 @@ class IterableInAppDisplayer {
     }
 
     boolean isShowingInApp() {
+        return isAnyInAppShowing();
+    }
+
+    // True when either the Fragment-based or Dialog-based in-app is currently displayed.
+    // Used by every "is the slot occupied?" check so the two paths can't stack on top of
+    // each other when the current activity changes mid-show (e.g. FragmentActivity → a
+    // Compose ComponentActivity, or vice versa).
+    private static boolean isAnyInAppShowing() {
         return IterableInAppFragmentHTMLNotification.getInstance() != null ||
                IterableInAppDialogNotification.getInstance() != null;
     }
@@ -69,7 +77,7 @@ class IterableInAppDisplayer {
         if (context instanceof FragmentActivity) {
             FragmentActivity currentActivity = (FragmentActivity) context;
             if (htmlString != null) {
-                if (IterableInAppFragmentHTMLNotification.getInstance() != null) {
+                if (isAnyInAppShowing()) {
                     IterableLogger.w(IterableInAppManager.TAG, "Skipping the in-app notification: another notification is already being displayed");
                     return false;
                 }
@@ -79,7 +87,7 @@ class IterableInAppDisplayer {
                 return true;
             }
         } else {
-            IterableLogger.w(IterableInAppManager.TAG, "Received context that is not FragmentActivity. Attempting dialog-based display.");
+            IterableLogger.w(IterableInAppManager.TAG, "Received context that is not a FragmentActivity; cannot display Fragment-based in-app");
         }
         return false;
     }
@@ -110,17 +118,24 @@ class IterableInAppDisplayer {
             return false;
         }
 
-        // Check if already showing
-        if (IterableInAppDialogNotification.getInstance() != null) {
+        // Check if already showing — covers both Fragment and Dialog hosts so the two
+        // paths can't stack on top of each other when the current activity changes
+        // mid-show.
+        if (isAnyInAppShowing()) {
             IterableLogger.w(IterableInAppManager.TAG, "Skipping the in-app notification: another notification is already being displayed");
             return false;
         }
 
-        // Create and show dialog (Kotlin interop)
+        // Create and show dialog (Kotlin interop). createInstance returns null when it
+        // refuses to publish the singleton (non-LifecycleOwner host or already-DESTROYED
+        // host) — we treat that as "could not display" rather than crashing.
         IterableInAppDialogNotification dialog = IterableInAppDialogNotification.createInstance(
             activity, htmlString, callbackOnCancel, clickCallback, location,
             message, backgroundAlpha, padding, shouldAnimate, bgColor
         );
+        if (dialog == null) {
+            return false;
+        }
         dialog.show();
 
         IterableLogger.d(IterableInAppManager.TAG, "Displaying in-app notification via Dialog for ComponentActivity");

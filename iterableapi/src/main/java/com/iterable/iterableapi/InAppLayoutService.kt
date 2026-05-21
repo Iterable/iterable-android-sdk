@@ -4,7 +4,9 @@ import android.graphics.Rect
 import android.view.Gravity
 import android.view.Window
 import android.view.WindowManager
+import androidx.annotation.RestrictTo
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class InAppLayoutService {
     internal enum class InAppLayout {
         TOP,

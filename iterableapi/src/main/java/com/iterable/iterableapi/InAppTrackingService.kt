@@ -1,8 +1,10 @@
 package com.iterable.iterableapi
 
+import androidx.annotation.RestrictTo
 import org.json.JSONException
 import org.json.JSONObject
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class InAppTrackingService internal constructor(
     private val iterableApi: IterableApi?
 ){
