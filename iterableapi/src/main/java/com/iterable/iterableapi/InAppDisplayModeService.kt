@@ -207,6 +207,8 @@ internal class InAppDisplayModeService {
 
     companion object {
         private const val TAG = "InAppDisplayModeSvc"
-        private val DEFAULT_MODE = IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE
+
+        @JvmField
+        internal val DEFAULT_MODE: IterableInAppDisplayMode = IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE
     }
 }

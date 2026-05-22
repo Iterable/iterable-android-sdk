@@ -54,7 +54,7 @@ class IterableInAppDialogNotification internal constructor(
     private var orientationListener: OrientationEventListener? = null
     private var inAppOpenTracked: Boolean = false
     private var dismissed: Boolean = false
-    private var displayMode: IterableInAppDisplayMode = IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE
+    private var displayMode: IterableInAppDisplayMode = InAppDisplayModeService.DEFAULT_MODE
     private var hostIsEdgeToEdge: Boolean = false
 
     private var prepareToShowRunnable: Runnable? = null
@@ -65,12 +65,20 @@ class IterableInAppDialogNotification internal constructor(
     private var pendingResizeRunnable: Runnable? = null
     private var lastContentHeight: Float = -1f
 
-    // Dismisses the dialog and clears its singleton if the host activity is torn down
-    // before the in-app does it itself (e.g. user backs out of the activity, finish(),
-    // rotation while the dialog is up).
+    // Held so dismiss() can detach the observer immediately on user close.
+    private var hostLifecycle: Lifecycle? = null
+
+    // Tears down the dialog when the host activity is destroyed before the user
+    // closes the in-app (finish(), back-stack pop, process kill).
     private val hostLifecycleObserver = object : DefaultLifecycleObserver {
         override fun onDestroy(owner: LifecycleOwner) {
-            processMessageRemoval()
+            owner.lifecycle.removeObserver(this)
+            hostLifecycle = null
+
+            val isConfigChange = (owner as? Activity)?.isChangingConfigurations == true
+            if (!isConfigChange) {
+                processMessageRemoval()
+            }
             dismiss()
         }
     }
@@ -83,12 +91,6 @@ class IterableInAppDialogNotification internal constructor(
         private const val RESIZE_DEBOUNCE_DELAY_MS = 200L
         private const val RESIZE_HEIGHT_EPSILON = 1.0f
 
-        // WeakReference so a stale singleton can never pin its host Activity in memory.
-        // The lifecycle observer attached in createInstance is the primary teardown path
-        // (clears this field on host destroy); the WeakReference is belt-and-suspenders
-        // against any path that might bypass dismiss() — lint flags any Activity-typed
-        // class held in a static field as a leak vector even when we believe it's
-        // unreachable.
         @Volatile
         @JvmStatic
         private var notificationRef: WeakReference<IterableInAppDialogNotification>? = null
@@ -160,6 +162,7 @@ class IterableInAppDialogNotification internal constructor(
                 InAppServices.orientation
             )
 
+            newInstance.hostLifecycle = lifecycle
             lifecycle.addObserver(newInstance.hostLifecycleObserver)
 
             clickCallback = urlCallback
@@ -192,16 +195,10 @@ class IterableInAppDialogNotification internal constructor(
 
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-
-        val hostActivity = context as? Activity
         displayMode = displayModeService.resolveDisplayMode()
         hostIsEdgeToEdge = displayModeService.isHostActivityEdgeToEdge(hostActivity)
         displayModeService.configureSystemBarsForMode(window, displayMode, hostActivity, hostIsEdgeToEdge)
 
-        // Plain Dialog (unlike Fragment's STYLE_NO_FRAME DialogFragment) inherits the host
-        // activity's theme decoration and defaults its window to WRAP_CONTENT, which lets the
-        // host theme background bleed through around the WebView. Pin the window to match the
-        // viewport so only our transparent background and the WebView content are visible.
         window?.let { layoutService.setWindowToFullScreen(it) }
 
         val layout = layoutService.getInAppLayout(insetPadding)
@@ -249,10 +246,11 @@ class IterableInAppDialogNotification internal constructor(
         // FORCE_FULLSCREEN hides the host activity's system bars; bring them back so the
         // app isn't left in an immersive state after the in-app closes.
         if (displayMode == IterableInAppDisplayMode.FORCE_FULLSCREEN) {
-            displayModeService.restoreHostSystemBars(context as? Activity)
+            displayModeService.restoreHostSystemBars(hostActivity)
         }
 
-        (context as? LifecycleOwner)?.lifecycle?.removeObserver(hostLifecycleObserver)
+        hostLifecycle?.removeObserver(hostLifecycleObserver)
+        hostLifecycle = null
 
         orientationService.disableListener(orientationListener)
         orientationListener = null
@@ -413,7 +411,7 @@ class IterableInAppDialogNotification internal constructor(
      * IterableInAppFragmentHTMLNotification.resize(float).
      */
     private fun resize(height: Float) {
-        (context as? Activity)?.runOnUiThread {
+        hostActivity.runOnUiThread {
             try {
                 if (dismissed || !isShowing) {
                     return@runOnUiThread

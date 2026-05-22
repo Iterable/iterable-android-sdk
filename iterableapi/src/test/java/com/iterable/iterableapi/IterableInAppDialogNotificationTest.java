@@ -183,11 +183,6 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
         dialog.dismiss();
         assertNull(IterableInAppDialogNotification.getInstance());
 
-        // Stand up a fresh in-app on a different host BEFORE destroying the original
-        // host. If dismiss() failed to remove its observer, the original host's
-        // ON_DESTROY would call dismiss() on the (now stale) first dialog reference,
-        // which is a no-op — but more importantly we want to confirm the teardown
-        // doesn't accidentally clear the new singleton.
         ActivityController<ComponentActivity> controller2 =
                 Robolectric.buildActivity(ComponentActivity.class).create().start().resume();
         try {
@@ -358,12 +353,7 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
     // ===== Lifecycle Dismiss Telemetry Tests =====
 
     @Test
-    public void hostDestroy_shouldCallProcessMessageRemoval_beforeDismiss() {
-        // Use createInstance so the real lifecycle observer attaches; pre-publish a
-        // mocked tracking service into the singleton's services slot via a spied
-        // companion. We can't hot-swap InAppServices.tracking after lazy init, so we
-        // instead replace the IterableApi singleton's in-app manager with a mock and
-        // verify removeMessage propagates through the real tracking service.
+    public void hostRealDestroy_shouldCallProcessMessageRemoval_beforeDismiss() {
         IterableInAppManager mockManager = Mockito.mock(IterableInAppManager.class);
         IterableApi originalApi = IterableApi.sharedInstance;
         IterableApi.sharedInstance = new IterableApi(mockManager);
@@ -388,14 +378,94 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
             controller.pause().stop().destroy();
             controller = null;
 
-            // The lifecycle observer's onDestroy calls processMessageRemoval() →
-            // trackingService.removeMessage → inAppManager.removeMessage so the server
-            // consume goes out for the marked-for-deletion message.
             verify(mockManager, times(1)).removeMessage(message);
             assertFalse(dialog.isShowing());
             assertNull(IterableInAppDialogNotification.getInstance());
         } finally {
             IterableApi.sharedInstance = originalApi;
+        }
+    }
+
+    @Test
+    public void hostConfigChangeDestroy_shouldNotConsumeMessage_butStillDismiss() {
+        IterableInAppManager mockManager = Mockito.mock(IterableInAppManager.class);
+        IterableApi originalApi = IterableApi.sharedInstance;
+        IterableApi.sharedInstance = new IterableApi(mockManager);
+
+        IterableInAppMessage message = mockMessage("rotation-msg");
+        Mockito.when(message.isMarkedForDeletion()).thenReturn(true);
+        Mockito.when(message.isConsumed()).thenReturn(false);
+
+        InAppTrackingService trackingService = new InAppTrackingService(IterableApi.sharedInstance);
+
+        try {
+            IterableInAppDialogNotification dialog = createDialogWithTrackingServiceAndAttachLifecycle(
+                    message, trackingService);
+            dialog.show();
+            assertTrue(dialog.isShowing());
+            setChangingConfigurations(activity, true);
+
+            controller.pause().stop().destroy();
+            controller = null;
+
+            Mockito.verify(mockManager, Mockito.never()).removeMessage(message);
+            assertFalse(dialog.isShowing());
+            assertNull(IterableInAppDialogNotification.getInstance());
+        } finally {
+            IterableApi.sharedInstance = originalApi;
+        }
+    }
+
+    @Test
+    public void dismiss_shouldRemoveLifecycleObserver_fromHostLifecycle() {
+        IterableInAppDialogNotification dialog = createDialog();
+        dialog.show();
+
+        androidx.lifecycle.Lifecycle hostLifecycle = activity.getLifecycle();
+        int beforeDismissCount = observerCount(hostLifecycle);
+        assertTrue("test setup: lifecycle should hold at least one observer while shown",
+                beforeDismissCount >= 1);
+
+        dialog.dismiss();
+
+        int afterDismissCount = observerCount(hostLifecycle);
+        assertTrue(
+                "dismiss() must remove the dialog's lifecycle observer (before=" +
+                        beforeDismissCount + ", after=" + afterDismissCount + ")",
+                afterDismissCount < beforeDismissCount
+        );
+    }
+
+    private static int observerCount(androidx.lifecycle.Lifecycle lifecycle) {
+        try {
+            java.lang.reflect.Method m = lifecycle.getClass().getMethod("getObserverCount");
+            return (int) m.invoke(lifecycle);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(
+                    "LifecycleRegistry.getObserverCount() is unavailable; cannot " +
+                            "verify observer removal", e
+            );
+        }
+    }
+
+    private static void setChangingConfigurations(android.app.Activity activity, boolean changing) {
+        try {
+            java.lang.reflect.Field field =
+                    android.app.Activity.class.getDeclaredField("mChangingConfigurations");
+            field.setAccessible(true);
+            Class<?> fieldType = field.getType();
+            if (fieldType == boolean.class) {
+                field.setBoolean(activity, changing);
+            } else if (fieldType == int.class) {
+                field.setInt(activity, changing ? 1 : 0);
+            } else {
+                throw new AssertionError(
+                        "Unexpected Activity.mChangingConfigurations type: " + fieldType);
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(
+                    "Could not set Activity.mChangingConfigurations via reflection", e
+            );
         }
     }
 
@@ -406,8 +476,6 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
         IterableInAppDialogNotification dialog = createDialogWithPadding(new Rect(0, 10, 0, 10));
         dialog.show();
 
-        // Schedules a debounced resize; without removal in dismiss() the runnable could
-        // fire after teardown and touch a destroyed window.
         dialog.runResizeScript();
         dialog.dismiss();
 

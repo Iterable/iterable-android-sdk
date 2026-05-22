@@ -73,7 +73,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
     private double inAppBackgroundAlpha;
     private String inAppBackgroundColor;
     private boolean hostIsEdgeToEdge;
-    private IterableInAppDisplayMode displayMode = IterableInAppDisplayMode.FOLLOW_APP_LAYOUT;
+    private IterableInAppDisplayMode displayMode = InAppDisplayModeService.DEFAULT_MODE;
     private final InAppDisplayModeService displayModeService = InAppServices.INSTANCE.getDisplayMode();
 
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding) {
