@@ -147,6 +147,12 @@ public class IterableConfig {
     final IterableInAppDisplayMode inAppDisplayMode;
 
     /**
+     * Callback to allow the implementor to perform logic following a call to fetch
+     * unknown user creation criteria
+     */
+    final UnknownCriteriaReceivedCallback unknownCriteriaReceivedCallback;
+
+    /**
      * Base URL for Webview content loading. Specifically used to enable CORS for external resources.
      * If null or empty, defaults to empty string (original behavior with about:blank origin).
      * Set this to according to your CORS settings for example (e.g., "https://app.iterable.com") to allow external resource loading.
@@ -190,6 +196,7 @@ public class IterableConfig {
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
         webViewBaseUrl = builder.webViewBaseUrl;
         inAppDisplayMode = builder.inAppDisplayMode;
+        unknownCriteriaReceivedCallback = builder.unknownCriteriaReceivedCallback;
     }
 
     public static class Builder {
@@ -219,6 +226,7 @@ public class IterableConfig {
         private IterableUnknownUserHandler iterableUnknownUserHandler;
         private String webViewBaseUrl;
         private IterableInAppDisplayMode inAppDisplayMode = IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE;
+        private UnknownCriteriaReceivedCallback unknownCriteriaReceivedCallback;
 
         public Builder() {}
 
@@ -458,6 +466,15 @@ public class IterableConfig {
         @NonNull
         public Builder setMobileFrameworkInfo(@NonNull IterableAPIMobileFrameworkInfo mobileFrameworkInfo) {
             this.mobileFrameworkInfo = mobileFrameworkInfo;
+            return this;
+        }
+
+        /**
+         * Set a callback to signal completion of api calls to fetch criteria for unknown user creation.
+         * @param unknownCriteriaReceivedCallback Listener for unknown criteria api calls provided by the app
+         */
+        public Builder setUnknownCriteriaResultCallback(UnknownCriteriaReceivedCallback unknownCriteriaReceivedCallback) {
+            this.unknownCriteriaReceivedCallback = unknownCriteriaReceivedCallback;
             return this;
         }
 

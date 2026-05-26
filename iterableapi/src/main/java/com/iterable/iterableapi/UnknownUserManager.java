@@ -181,7 +181,9 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
                     SharedPreferences.Editor editor = sharedPref.edit();
                     editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
                     editor.apply();
-
+                    if (IterableApi.getInstance().config.unknownCriteriaReceivedCallback != null) {
+                        IterableApi.getInstance().config.unknownCriteriaReceivedCallback.criteriaReceived();
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
