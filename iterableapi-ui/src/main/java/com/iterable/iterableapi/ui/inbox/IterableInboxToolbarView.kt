@@ -8,20 +8,19 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.annotation.LayoutRes
+import androidx.annotation.RestrictTo
 import com.google.android.material.appbar.MaterialToolbar
 import com.iterable.iterableapi.ui.R
 
 /**
- * Opt-in toolbar for [IterableInboxFragment]. Configure via [apply] with an
- * [InboxToolbarOption].
+ * Internal view backing the opt-in inbox toolbar. Inflated by
+ * `iterable_inbox_fragment.xml` and configured by [IterableInboxFragment] from the
+ * [InboxToolbarOption] passed to `newInstance(...)` / intent extras.
  *
- * The view is empty until [apply] is called with a non-`None` option, so the
- * `None` default does not inflate any Material widgets.
- *
- * **Theme requirement:** when a non-`None` option is applied, the host activity must
- * use a `Theme.AppCompat` descendant - `MaterialToolbar` will throw an
- * `InflateException` otherwise. If using the [IterableInboxActivity] this is a non-concern.
+ * Not part of the public SDK surface - integrators should not reference this class
+ * directly. Configure the toolbar through [InboxToolbarOption] instead.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class IterableInboxToolbarView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -67,12 +66,9 @@ class IterableInboxToolbarView @JvmOverloads constructor(
     }
 
     /**
-     * Override the default back-click behavior. Honored for
-     * `InboxToolbarOption.WithBackButton` and for `InboxToolbarOption.Custom` layouts that
-     * include a view with id `@id/iterable_reserved_inbox_toolbar_action`.
-     *
-     * Hosting via [IterableInboxFragment] wires this for you. For standalone usage,
-     * pass a listener if the view's `Context` isn't a [ComponentActivity].
+     * Override the default back-click behavior. Set internally by
+     * [IterableInboxFragment]; integrators wire back-click handling by implementing
+     * [IterableInboxToolbarBackListener] on the host Activity or parent Fragment.
      */
     fun setOnBackClickListener(listener: OnClickListener?) {
         backClickListener = listener

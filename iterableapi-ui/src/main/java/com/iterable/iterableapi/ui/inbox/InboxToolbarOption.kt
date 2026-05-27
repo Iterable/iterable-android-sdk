@@ -4,8 +4,8 @@ import androidx.annotation.LayoutRes
 import java.io.Serializable
 
 /**
- * Controls how [IterableInboxToolbarView] renders. Passed as a fragment argument or
- * intent extra on [IterableInboxFragment] / [IterableInboxActivity].
+ * Configures the opt-in inbox toolbar. Pass as a fragment argument via
+ * [IterableInboxFragment.newInstance] or as an intent extra on [IterableInboxActivity].
  */
 sealed interface InboxToolbarOption : Serializable {
 
