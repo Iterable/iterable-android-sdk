@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.8.0]
 ### Added
 - New `IterableInAppDisplayMode` enum to control how in-app messages interact with system bars. Configure via `IterableConfig.Builder.setInAppDisplayMode()`:
   - `FORCE_EDGE_TO_EDGE` (default) — draws in-app content behind system bars with transparent status and navigation bars. This preserves the previous SDK behavior.
