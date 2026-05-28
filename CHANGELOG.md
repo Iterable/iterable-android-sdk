@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 
 ## [3.8.0]
 ### Added
@@ -13,7 +14,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   - `FORCE_RESPECT_BOUNDS` — ensures in-app content never overlaps system bars, keeping UI elements like the close button always accessible.
 - Added `imageScaleType` to `IterableEmbeddedViewConfig` to allow configuring how the image is scaled within the 16:9 container for embedded message views.
 - Added default values to all `IterableEmbeddedViewConfig` constructor parameters for easier configuration.
-- Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 
 ### Fixed
 - Fixed `IterableEmbeddedView` card layout rendering issues: image now displays at a 16:9 aspect ratio instead of collapsing to zero height, card container no longer expands to fill the parent, missing end margin on the card is now applied, bottom spacing on buttons is no longer cut off, and the image properly clips to the card's rounded corners.
