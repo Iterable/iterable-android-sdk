@@ -16,7 +16,16 @@ class IterableInAppDisplayer {
     }
 
     boolean isShowingInApp() {
-        return IterableInAppFragmentHTMLNotification.getInstance() != null;
+        return isAnyInAppShowing();
+    }
+
+    // True when either the Fragment-based or Dialog-based in-app is currently displayed.
+    // Used by every "is the slot occupied?" check so the two paths can't stack on top of
+    // each other when the current activity changes mid-show (e.g. FragmentActivity → a
+    // Compose ComponentActivity, or vice versa).
+    private static boolean isAnyInAppShowing() {
+        return IterableInAppFragmentHTMLNotification.getInstance() != null ||
+               IterableInAppDialogNotification.getInstance() != null;
     }
 
     boolean showMessage(@NonNull IterableInAppMessage message, IterableInAppLocation location, @NonNull final IterableHelper.IterableUrlCallback clickCallback) {
@@ -26,17 +35,31 @@ class IterableInAppDisplayer {
         }
 
         Activity currentActivity = activityMonitor.getCurrentActivity();
-        // Prevent double display
         if (currentActivity != null) {
-            return IterableInAppDisplayer.showIterableFragmentNotificationHTML(currentActivity,
-                    message.getContent().html,
-                    message.getMessageId(),
-                    clickCallback,
-                    message.getContent().backgroundAlpha,
-                    message.getContent().padding,
-                    message.getContent().inAppDisplaySettings.shouldAnimate,
-                    message.getContent().inAppDisplaySettings.inAppBgColor,
-                    true, location);
+            // Try FragmentActivity path first (backward compatibility)
+            if (currentActivity instanceof FragmentActivity) {
+                return showIterableFragmentNotificationHTML(
+                    currentActivity,
+                        message.getContent().html,
+                        message.getMessageId(),
+                        clickCallback,
+                        message.getContent().backgroundAlpha,
+                        message.getContent().padding,
+                        message.getContent().inAppDisplaySettings.shouldAnimate,
+                        message.getContent().inAppDisplaySettings.inAppBgColor,
+                        true, location
+                );
+            } else {
+                return showIterableDialogNotificationHTML(currentActivity,
+                        message.getContent().html,
+                        message,
+                        clickCallback,
+                        message.getContent().backgroundAlpha,
+                        message.getContent().padding,
+                        message.getContent().inAppDisplaySettings.shouldAnimate,
+                        message.getContent().inAppDisplaySettings.inAppBgColor,
+                        true, location);
+            }
         }
         return false;
     }
@@ -54,7 +77,7 @@ class IterableInAppDisplayer {
         if (context instanceof FragmentActivity) {
             FragmentActivity currentActivity = (FragmentActivity) context;
             if (htmlString != null) {
-                if (IterableInAppFragmentHTMLNotification.getInstance() != null) {
+                if (isAnyInAppShowing()) {
                     IterableLogger.w(IterableInAppManager.TAG, "Skipping the in-app notification: another notification is already being displayed");
                     return false;
                 }
@@ -64,10 +87,60 @@ class IterableInAppDisplayer {
                 return true;
             }
         } else {
-            IterableLogger.w(IterableInAppManager.TAG, "To display in-app notifications, the context must be of an instance of: FragmentActivity");
+            IterableLogger.w(IterableInAppManager.TAG, "Received context that is not a FragmentActivity; cannot display Fragment-based in-app");
         }
         return false;
     }
 
+    /**
+     * Displays an HTML rendered InApp Notification using Dialog (for ComponentActivity/Compose support)
+     * @param context
+     * @param htmlString
+     * @param message
+     * @param clickCallback
+     * @param backgroundAlpha
+     * @param padding
+     * @param shouldAnimate
+     * @param bgColor
+     * @param callbackOnCancel
+     * @param location
+     */
+    static boolean showIterableDialogNotificationHTML(@NonNull Context context, @NonNull String htmlString, @NonNull IterableInAppMessage message, @NonNull final IterableHelper.IterableUrlCallback clickCallback, double backgroundAlpha, @NonNull Rect padding, boolean shouldAnimate, IterableInAppMessage.InAppBgColor bgColor, boolean callbackOnCancel, @NonNull IterableInAppLocation location) {
+        if (!(context instanceof Activity)) {
+            IterableLogger.w(IterableInAppManager.TAG, "To display in-app notifications, the context must be an Activity");
+            return false;
+        }
+
+        Activity activity = (Activity) context;
+
+        if (htmlString == null) {
+            IterableLogger.w(IterableInAppManager.TAG, "HTML string is null");
+            return false;
+        }
+
+        // Check if already showing — covers both Fragment and Dialog hosts so the two
+        // paths can't stack on top of each other when the current activity changes
+        // mid-show.
+        if (isAnyInAppShowing()) {
+            IterableLogger.w(IterableInAppManager.TAG, "Skipping the in-app notification: another notification is already being displayed");
+            return false;
+        }
+
+        // Create and show dialog (Kotlin interop). createInstance returns null when it
+        // refuses to publish the singleton (non-LifecycleOwner host or already-DESTROYED
+        // host) — we treat that as "could not display" rather than crashing.
+        IterableInAppDialogNotification dialog = IterableInAppDialogNotification.createInstance(
+            activity, htmlString, callbackOnCancel, clickCallback, location,
+            message, backgroundAlpha, padding, shouldAnimate, bgColor
+        );
+        if (dialog == null) {
+            return false;
+        }
+        dialog.show();
+
+        IterableLogger.d(IterableInAppManager.TAG, "Displaying in-app notification via Dialog for ComponentActivity");
+
+        return true;
+    }
 
 }

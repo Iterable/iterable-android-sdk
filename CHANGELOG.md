@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 - New `IterableInboxToolbarView` — an opt-in, reusable toolbar component for the inbox UI. Configurable via the new Kotlin sealed interface `InboxToolbarOption`:
     - `None` (default) — no toolbar; behavior is unchanged from prior SDK versions.
     - `Default` — title-only toolbar above the inbox list.

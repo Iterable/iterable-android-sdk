@@ -9,4 +9,22 @@
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimEnabled">false</item>
     </style>
+
+    <!-- Theme for IterableInAppDialogNotification. Mirrors the DialogFragment-side
+         STYLE_NO_FRAME + Theme_AppCompat_NoActionBar combination. windowIsFloating stays
+         true (the Dialog default) so the host activity's status/navigation bars remain
+         visible — RESPECT_BOUNDS depends on this. windowMinWidth*=100% overrides the
+         floating-dialog small-card sizing so the in-app can fill the activity content
+         area when it wants to. Modes that need to cover the bars (FORCE_FULLSCREEN,
+         FORCE_EDGE_TO_EDGE) add FLAG_LAYOUT_NO_LIMITS explicitly at runtime. -->
+    <style name="Iterable.InAppDialog" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+    </style>
 </resources>
