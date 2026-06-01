@@ -5,21 +5,30 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.iterableapi.IterableFirebaseMessagingService
+import java.util.concurrent.atomic.AtomicBoolean
 
 class IntegrationFirebaseMessagingService : FirebaseMessagingService() {
-    
+
     companion object {
         private const val TAG = "IntegrationFCMService"
+
+        // Set true after onNewToken has called IterableApi.registerForPush() at least once
+        // in this process. Process-static so a fresh service instance and the test process
+        // see the same value (the existing flags on IntegrationTestUtils are per-instance
+        // and don't cross the service/test boundary). The push-test gate polls this before
+        // triggering campaigns to avoid the campaign racing the registerDeviceToken call.
+        val tokenRegistered: AtomicBoolean = AtomicBoolean(false)
     }
-    
+
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "New FCM token: $token")
-        
+
         // Register the token with Iterable SDK
         try {
             com.iterable.iterableapi.IterableApi.getInstance().registerForPush()
             Log.d(TAG, "FCM token registered with Iterable SDK")
+            tokenRegistered.set(true)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register FCM token with Iterable SDK", e)
         }

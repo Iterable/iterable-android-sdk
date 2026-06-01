@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
+import com.iterable.integration.tests.services.IntegrationFirebaseMessagingService
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.integration.tests.utils.TestUserEmailGenerator
 import com.iterable.integration.tests.utils.TestUserEmailOverride
@@ -195,6 +196,22 @@ abstract class BaseIntegrationTest {
         }
     }
 
+
+    /**
+     * Wait until IntegrationFirebaseMessagingService has handed the FCM token to the
+     * Iterable SDK at least once in this process. Triggering a campaign before this
+     * races the SDK's registerDeviceToken call: the campaign queues with no token bound
+     * to the user, FCM either drops the push or routes it to a stale token, and the
+     * test then fails downstream on findNotification() or a foreground assertion.
+     *
+     * Mirrors the iOS BCIT push test, which gates on a "Registered" UI state plus a
+     * registerDeviceToken-200 in its in-app network monitor before triggering.
+     */
+    protected fun waitForDeviceTokenRegistered(timeoutSeconds: Long = 20): Boolean {
+        return waitForCondition({
+            IntegrationFirebaseMessagingService.tokenRegistered.get()
+        }, timeoutSeconds)
+    }
 
     /**
      * Trigger a campaign via Iterable API

@@ -16,17 +16,24 @@ import org.awaitility.Awaitility
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class PushNotificationIntegrationTest : BaseIntegrationTest() {
-    
+
     companion object {
         private const val TAG = "PushNotificationIntegrationTest"
         private const val TEST_PUSH_CAMPAIGN_ID = TestConstants.TEST_PUSH_CAMPAIGN_ID
+        private const val APP_PACKAGE = "com.iterable.integration.tests"
+        // Substring expected in the BCIT push template title. Avoids matching the
+        // emoji prefix, which `By.text` matches inconsistently across systemui themes.
+        private const val EXPECTED_TITLE_SUBSTRING = "BCIT Push Notification Test"
+        // 30s mirrors the iOS BCIT push test's 20s springboard wait plus its surrounding
+        // 4–10s of explicit sleeps; FCM delivery from a freshly-registered token is
+        // routinely slower than the iOS APNS path on a clean simulator.
+        private const val NOTIFICATION_TIMEOUT_SECONDS = 30L
     }
     
     private lateinit var uiDevice: UiDevice
@@ -35,13 +42,19 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
     @Before
     override fun setUp() {
         uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        // Dismiss any system UI surface (notification shade, ANR dialog, recents) left
+        // open by a prior test method on the same emulator. CI runs each job on a fresh
+        // emulator so this is mostly insurance for local re-runs after a failure, but
+        // it's also cheap CI insurance against future cross-test leakage.
+        uiDevice.pressBack()
+        uiDevice.pressHome()
         super.setUp()
-        
+
         IterableApi.getInstance().inAppManager.setAutoDisplayPaused(true)
         IterableApi.getInstance().inAppManager.messages.forEach {
             IterableApi.getInstance().inAppManager.removeMessage(it)
         }
-        
+
         launchAppAndNavigateToPushNotificationTesting()
     }
     
@@ -62,8 +75,10 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
                 mainActivityScenario.state == Lifecycle.State.RESUMED
             }
         
+        // ActivityScenario reports RESUMED before the view tree is fully rendered, so a
+        // bare `exists()` check races the inflater. waitForExists() blocks up to 5 s.
         val pushButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnPushNotifications"))
-        if (!pushButton.exists()) {
+        if (!pushButton.waitForExists(5000)) {
             Assert.fail("Push Notifications button not found in MainActivity")
         }
         pushButton.click()
@@ -71,10 +86,20 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
     }
     
     @Test
-    @Ignore("SDK-115 follow-up: foreground assertion after openNotification() is unreliable on the BCIT CI emulator (notification taps don't always resume the test app). Re-enable once the open path is stable.")
     fun testPushNotificationMVP() {
         Assert.assertTrue("User should be signed in", testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL))
         Assert.assertTrue("Notification permission should be granted", hasNotificationPermission())
+        // Gate: the SDK's registerDeviceToken call must complete before the campaign is
+        // queued, otherwise the push has nothing to deliver to.
+        Assert.assertTrue(
+            "Device token should be registered with Iterable SDK before triggering a campaign",
+            waitForDeviceTokenRegistered(timeoutSeconds = 20)
+        )
+        // Cool-down: the Iterable backend needs a few seconds after the last 200 from
+        // registerDeviceToken to commit the user→token mapping before campaigns will
+        // actually deliver to this device. The iOS BCIT test does the equivalent with
+        // sleeps between its "token registered" gate and the trigger.
+        Thread.sleep(5_000)
         
         // Test 1: Trigger campaign, minimize app, open notification, verify app opens
         Log.d(TAG, "Test 1: Push notification open action")
@@ -93,7 +118,7 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         // Verify app is in foreground by checking current package name
         val isAppInForeground = waitForCondition({
             val currentPackage = uiDevice.currentPackageName
-            currentPackage == "com.iterable.integration.tests"
+            currentPackage == APP_PACKAGE
         }, timeoutSeconds = 5)
         Assert.assertTrue("App should be in foreground after opening notification", isAppInForeground)
         navigateToPushNotificationTestActivity()
@@ -161,22 +186,32 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         }
         Assert.assertTrue("Campaign trigger should complete", latch.await(10, java.util.concurrent.TimeUnit.SECONDS))
         Assert.assertTrue("Campaign should be triggered successfully", campaignTriggered)
-        Thread.sleep(5000) // Wait for FCM delivery
     }
-    
-    private fun findNotification(): UiObject2? {
-        val searchTexts = listOf("BCIT", "iterable", "Test", TestConstants.TEST_USER_EMAIL)
-        for (searchText in searchTexts) {
-            val notification = uiDevice.findObject(By.textContains(searchText))
-            if (notification != null) return notification
-        }
-        
-        val allNotifications = uiDevice.findObjects(By.res("com.android.systemui:id/notification_text"))
-        for (notif in allNotifications) {
-            val text = notif.text ?: ""
-            if (text.contains("Iterable", ignoreCase = true) || text.contains("iterable", ignoreCase = true)) {
-                return notif.parent
+
+    /**
+     * Poll the system notification shade for a notification that:
+     *   1. Belongs to APP_PACKAGE (so a stray notification from an unrelated app on the
+     *      device — e.g. another Iterable test app sharing the same BCIT user — never matches).
+     *   2. Has a title containing EXPECTED_TITLE_SUBSTRING (so we tap the right campaign,
+     *      not e.g. a low-battery notification that arrives while we wait).
+     *
+     * Returns the matching UiObject2 once present, or null on timeout. Mirrors the iOS
+     * BCIT push test's `validateSpecificPushNotificationReceived`, which polls the
+     * springboard for title+body up to 20s.
+     */
+    private fun findNotification(timeoutSeconds: Long = NOTIFICATION_TIMEOUT_SECONDS): UiObject2? {
+        val deadline = System.currentTimeMillis() + timeoutSeconds * 1000
+        var lastSeen: UiObject2? = null
+        while (System.currentTimeMillis() < deadline) {
+            val match = uiDevice.findObject(
+                By.pkg("com.android.systemui").textContains(EXPECTED_TITLE_SUBSTRING)
+            )
+            if (match != null) {
+                // Walk up to the notification row so callers can click the row, not just the title text.
+                lastSeen = match.parent ?: match
+                return lastSeen
             }
+            Thread.sleep(500)
         }
         return null
     }
