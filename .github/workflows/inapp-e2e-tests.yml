@@ -1,11 +1,32 @@
-name: In-App Message E2E Tests
+name: Integration Tests (BCIT)
 
+# SDK-115: Consolidated from the previous two workflows (inapp-e2e-tests.yml and
+# integration-tests.yml). The old integration-tests.yml ran on macOS-latest with
+# non-BCIT secrets and targeted a (non-existent) `develop` branch — every run had
+# been failing. This single workflow now owns all BCIT integration-test runs.
 on:
   push:
-    branches: [ InApp-Display-E2E ]
+    branches: [ master ]
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+      - '.github/workflows/inapp-e2e-tests.yml'
+      - '.github/scripts/run-e2e.sh'
   pull_request:
-    branches: [ InApp-Display-E2E, master, develop ]
+    branches: [ master ]
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+      - '.github/workflows/inapp-e2e-tests.yml'
+      - '.github/scripts/run-e2e.sh'
   workflow_dispatch: # Allow manual triggering
+  schedule:
+    # Nightly smoke test at 02:00 UTC against the BCIT Iterable project. Catches
+    # backend-side drift (rotated keys, edited campaign templates, expired test
+    # users) that a code-only PR-triggered run would miss.
+    - cron: '0 2 * * *'
 
 jobs:
   inapp-e2e-tests:
