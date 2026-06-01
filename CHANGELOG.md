@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 
 ## [3.8.0]
 ### Added
