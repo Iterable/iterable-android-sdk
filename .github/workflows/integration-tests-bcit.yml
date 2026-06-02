@@ -12,7 +12,10 @@ on:
       - '.github/workflows/integration-tests-bcit.yml'
       - '.github/scripts/run-e2e.sh'
   pull_request:
-    branches: [ master ]
+    # No `branches:` filter — `branches:` matches the PR's *target*, not its head, so
+    # restricting to [master] silently skips stacked PRs that target SDK-115-* (or any
+    # other long-lived integration branch). Path filters below still gate which PRs
+    # actually trigger the workflow.
     paths:
       - 'integration-tests/**'
       - 'iterableapi/**'
