@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.utils.TestUserEmailGenerator
 import com.iterable.integration.tests.TestConstants
 import org.awaitility.Awaitility
 import org.awaitility.core.ConditionTimeoutException
@@ -25,6 +26,24 @@ abstract class BaseIntegrationTest {
     companion object {
         const val TIMEOUT_SECONDS = TestConstants.TIMEOUT_SECONDS
         const val POLL_INTERVAL_SECONDS = TestConstants.POLL_INTERVAL_SECONDS
+
+        // CI signal routed via instrumentation arg (env vars don't reach the test JVM
+        // through `am instrument`). run-e2e.sh passes `ci=true` in CI.
+        @JvmStatic
+        val isRunningInCI: Boolean by lazy {
+            val arg = InstrumentationRegistry.getArguments().getString("ci")
+                ?: System.getenv("CI")
+            arg?.lowercase().let { it == "true" || it == "1" }
+        }
+
+        // Dated user email in CI, hardcoded BCIT user locally. Mirrors the iOS BCIT
+        // shape (YYYY-MM-DD-integration-test-user@test.com) so a fresh user is created
+        // daily and audience-eligibility transitions fire reliably.
+        @JvmStatic
+        val testUserEmail: String by lazy {
+            if (isRunningInCI) TestUserEmailGenerator.generate()
+            else TestConstants.TEST_USER_EMAIL
+        }
     }
 
     protected lateinit var context: Context
@@ -107,11 +126,8 @@ abstract class BaseIntegrationTest {
 
         IterableApi.initialize(context, BuildConfig.ITERABLE_API_KEY, config)
 
-        // Set the user email for integration testing
-        val userEmail = TestConstants.TEST_USER_EMAIL
-        IterableApi.getInstance().setEmail(userEmail)
-        Log.d("BaseIntegrationTest", "User email set to: $userEmail")
-        Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: $userEmail")
+        IterableApi.getInstance().setEmail(testUserEmail)
+        Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: $testUserEmail")
     }
 
     private fun setupTestEnvironment() {
@@ -169,7 +185,7 @@ abstract class BaseIntegrationTest {
      */
     protected fun triggerCampaignViaAPI(
         campaignId: Int,
-        recipientEmail: String = TestConstants.TEST_USER_EMAIL,
+        recipientEmail: String = testUserEmail,
         dataFields: Map<String, Any>? = null,
         callback: ((Boolean) -> Unit)? = null
     ) {
@@ -181,7 +197,7 @@ abstract class BaseIntegrationTest {
      */
     protected fun triggerPushCampaignViaAPI(
         campaignId: Int,
-        recipientEmail: String = TestConstants.TEST_USER_EMAIL,
+        recipientEmail: String = testUserEmail,
         dataFields: Map<String, Any>? = null,
         callback: ((Boolean) -> Unit)? = null
     ) {

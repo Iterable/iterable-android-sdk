@@ -109,7 +109,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🧪 Testing custom scheme deep link: $TEST_CUSTOM_SCHEME_URL")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
         Log.d(TAG, "✅ User signed in: ${TestConstants.TEST_USER_EMAIL}")
         
@@ -195,7 +195,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🎯 Expected: App opens directly (like iOS Universal Links)")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
         
         // Step 2: Launch MainActivity first
@@ -272,7 +272,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🧪 Testing URL handler invocation")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
         
         // Step 2: Launch MainActivity and navigate to DeepLinkTestActivity
@@ -340,7 +340,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🧪 Testing deep link UI display")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
         
         // Step 2: Launch MainActivity

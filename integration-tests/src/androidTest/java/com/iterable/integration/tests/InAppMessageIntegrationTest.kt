@@ -122,9 +122,9 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
 
         // Step 1: Ensure user is signed in
         Log.d(TAG, "📧 Step 1: Ensuring user is signed in...")
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
-        Log.d(TAG, "✅ User signed in successfully: ${TestConstants.TEST_USER_EMAIL}")
+        Log.d(TAG, "✅ User signed in successfully: $testUserEmail")
 
         Log.d(TAG, "API key configured: length=${BuildConfig.ITERABLE_API_KEY.length}")
         Log.d(TAG, "Server API key configured: length=${BuildConfig.ITERABLE_SERVER_API_KEY.length}")
@@ -133,7 +133,7 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         // Step 3: Try to trigger campaign via API (but don't fail if it doesn't work)
         Log.d(TAG, "🎯 Step 3: Attempting to trigger campaign via API...")
         Log.d(TAG, "Campaign ID: $TEST_CAMPAIGN_ID")
-        Log.d(TAG, "User Email: ${TestConstants.TEST_USER_EMAIL}")
+        Log.d(TAG, "User Email: $testUserEmail")
 
         //TODO: Check if any inapp is being displayed right now and close it if so
 
@@ -153,7 +153,7 @@ class InAppMessageIntegrationTest : BaseIntegrationTest() {
         var campaignTriggered = false
         val latch = java.util.concurrent.CountDownLatch(1)
 
-        triggerCampaignViaAPI(TEST_CAMPAIGN_ID, TestConstants.TEST_USER_EMAIL, null) { success ->
+        triggerCampaignViaAPI(TEST_CAMPAIGN_ID, testUserEmail, null) { success ->
             campaignTriggered = success
             Log.d(TAG, "🎯 Campaign trigger result: $success")
             if (!success) {
