@@ -12,11 +12,9 @@ class IntegrationFirebaseMessagingService : FirebaseMessagingService() {
     companion object {
         private const val TAG = "IntegrationFCMService"
 
-        // Set true after onNewToken has called IterableApi.registerForPush() at least once
-        // in this process. Process-static so a fresh service instance and the test process
-        // see the same value (the existing flags on IntegrationTestUtils are per-instance
-        // and don't cross the service/test boundary). The push-test gate polls this before
-        // triggering campaigns to avoid the campaign racing the registerDeviceToken call.
+        // Set after onNewToken hands the token to the Iterable SDK; the local-mode push
+        // test polls this before triggering a campaign to avoid the registerDeviceToken
+        // race.
         val tokenRegistered: AtomicBoolean = AtomicBoolean(false)
     }
 

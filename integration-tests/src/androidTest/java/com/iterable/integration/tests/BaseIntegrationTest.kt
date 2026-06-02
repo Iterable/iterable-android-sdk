@@ -5,8 +5,10 @@ import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.firebase.messaging.RemoteMessage
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
+import com.iterable.iterableapi.IterableFirebaseMessagingService
 import com.iterable.integration.tests.services.IntegrationFirebaseMessagingService
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.integration.tests.utils.TestUserEmailGenerator
@@ -14,6 +16,7 @@ import com.iterable.integration.tests.utils.TestUserEmailOverride
 import com.iterable.integration.tests.TestConstants
 import org.awaitility.Awaitility
 import org.awaitility.core.ConditionTimeoutException
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
@@ -197,20 +200,29 @@ abstract class BaseIntegrationTest {
     }
 
 
-    /**
-     * Wait until IntegrationFirebaseMessagingService has handed the FCM token to the
-     * Iterable SDK at least once in this process. Triggering a campaign before this
-     * races the SDK's registerDeviceToken call: the campaign queues with no token bound
-     * to the user, FCM either drops the push or routes it to a stale token, and the
-     * test then fails downstream on findNotification() or a foreground assertion.
-     *
-     * Mirrors the iOS BCIT push test, which gates on a "Registered" UI state plus a
-     * registerDeviceToken-200 in its in-app network monitor before triggering.
-     */
+    // Local-mode gate: avoids racing IterableApi.registerForPush(). In CI [injectPushMessage]
+    // bypasses FCM, so this is unused there.
     protected fun waitForDeviceTokenRegistered(timeoutSeconds: Long = 20): Boolean {
         return waitForCondition({
             IntegrationFirebaseMessagingService.tokenRegistered.get()
         }, timeoutSeconds)
+    }
+
+    // CI-mode push injection. Builds a RemoteMessage locally and feeds it to the SDK's
+    // normal handler — same shape as iOS's `xcrun simctl push booted`. itblPayload goes
+    // under the `itbl` data key; title/body/extraData are top-level data fields.
+    protected fun injectPushMessage(
+        itblPayload: JSONObject,
+        title: String? = null,
+        body: String? = null,
+        extraData: Map<String, String> = emptyMap()
+    ): Boolean {
+        val builder = RemoteMessage.Builder("test@gcm.googleapis.com")
+            .addData("itbl", itblPayload.toString())
+        title?.let { builder.addData("title", it) }
+        body?.let { builder.addData("body", it) }
+        extraData.forEach { (k, v) -> builder.addData(k, v) }
+        return IterableFirebaseMessagingService.handleMessageReceived(context, builder.build())
     }
 
     /**
