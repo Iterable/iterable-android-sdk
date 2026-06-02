@@ -110,6 +110,7 @@ trap capture_post_test EXIT
 gradle_exit=0
 ./gradlew :integration-tests:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.package="$TEST_PACKAGE" \
+  -Pandroid.testInstrumentationRunnerArguments.ci=true \
   --stacktrace --no-daemon || gradle_exit=$?
 
 if [[ "$gradle_exit" -ne 0 ]]; then

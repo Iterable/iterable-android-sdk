@@ -109,6 +109,8 @@ abstract class BaseIntegrationTest {
             .setEnableEmbeddedMessaging(true)
             .setLogLevel(Log.VERBOSE)
             .setInAppDisplayInterval(3.0)
+            // Match the iOS BCIT app: BCIT campaigns use `tester://` deep links.
+            .setAllowedProtocols(arrayOf("tester", "https", "http"))
             .setInAppHandler { message ->
                 // Handle in-app messages during tests
                 Log.d("BaseIntegrationTest", "In-app message received: ${message.messageId}")
