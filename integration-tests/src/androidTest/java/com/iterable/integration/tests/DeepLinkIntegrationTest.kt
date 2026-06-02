@@ -287,7 +287,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         
         // Click Deep Linking button to navigate
         val deepLinkButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnDeepLinking"))
-        if (deepLinkButton.exists()) {
+        if (deepLinkButton.waitForExists(5000)) {
             deepLinkButton.click()
             Thread.sleep(2000)
         }
@@ -365,16 +365,16 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         
         // Verify URL is displayed
         val urlText = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/tvDeepLinkUrl"))
-        Assert.assertTrue("URL TextView should exist", urlText.exists())
+        Assert.assertTrue("URL TextView should exist", urlText.waitForExists(5000))
         Assert.assertTrue(
             "URL should contain 'iterable://deeplink'",
             urlText.text.contains("iterable://deeplink")
         )
         Log.d(TAG, "✅ URL displayed: ${urlText.text}")
-        
+
         // Verify path is displayed
         val pathText = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/tvDeepLinkPath"))
-        Assert.assertTrue("Path TextView should exist", pathText.exists())
+        Assert.assertTrue("Path TextView should exist", pathText.waitForExists(5000))
         Assert.assertTrue(
             "Path should contain '/settings/notifications'",
             pathText.text.contains("/settings/notifications")
@@ -439,7 +439,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         // Step 2: Click the "Deep Linking" button
         Log.d(TAG, "🔧 Step 2: Clicking Deep Linking button...")
         val deepLinkButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnDeepLinking"))
-        Assert.assertTrue("Deep Linking button should exist", deepLinkButton.exists())
+        Assert.assertTrue("Deep Linking button should exist", deepLinkButton.waitForExists(5000))
         deepLinkButton.click()
         
         Thread.sleep(2000)

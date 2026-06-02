@@ -94,13 +94,13 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         // Step 2: Click the "Embedded Messages" button to navigate to EmbeddedMessageTestActivity
         Log.d(TAG, "🔧 Step 2: Clicking 'Embedded Messages' button...")
         val embeddedButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnEmbeddedMessages"))
-        if (embeddedButton.exists()) {
-            embeddedButton.click()
-            Log.d(TAG, "🔧 Clicked Embedded Messages button successfully")
-        } else {
+        // RESUMED fires before view inflation; waitForExists handles the race.
+        if (!embeddedButton.waitForExists(5000)) {
             Log.e(TAG, "❌ Embedded Messages button not found!")
             Assert.fail("Embedded Messages button not found in MainActivity")
         }
+        embeddedButton.click()
+        Log.d(TAG, "🔧 Clicked Embedded Messages button successfully")
         
         // Step 3: Wait for EmbeddedMessageTestActivity to load
         Log.d(TAG, "🔧 Step 3: Waiting for EmbeddedMessageTestActivity to load...")

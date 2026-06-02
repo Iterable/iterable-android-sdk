@@ -68,6 +68,17 @@ abstract class BaseIntegrationTest {
 
     @Before
     open fun setUp() {
+        // Dismiss any system UI surface (notification shade, ANR dialog, recents) left
+        // open by a prior test or carried over from emulator boot. CI's Ubuntu+KVM
+        // launcher routinely ANRs during heavy parallel work and steals focus from the
+        // activity-under-test, so findObject().exists() returns false even though the
+        // view is in the tree.
+        val uiDevice = androidx.test.uiautomator.UiDevice.getInstance(
+            InstrumentationRegistry.getInstrumentation()
+        )
+        uiDevice.pressBack()
+        uiDevice.pressHome()
+
         context = ApplicationProvider.getApplicationContext()
         testUtils = IntegrationTestUtils(context)
 
