@@ -9,6 +9,7 @@ import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.integration.tests.utils.TestUserEmailGenerator
+import com.iterable.integration.tests.utils.TestUserEmailOverride
 import com.iterable.integration.tests.TestConstants
 import org.awaitility.Awaitility
 import org.awaitility.core.ConditionTimeoutException
@@ -36,14 +37,16 @@ abstract class BaseIntegrationTest {
             arg?.lowercase().let { it == "true" || it == "1" }
         }
 
-        // Dated user email in CI, hardcoded BCIT user locally. Mirrors the iOS BCIT
-        // shape (YYYY-MM-DD-integration-test-user@test.com) so a fresh user is created
-        // daily and audience-eligibility transitions fire reliably.
+        // Resolution order: local override (set via MainActivity, persisted in
+        // SharedPreferences) → dated email when in CI → BuildConfig fallback.
         @JvmStatic
-        val testUserEmail: String by lazy {
-            if (isRunningInCI) TestUserEmailGenerator.generate()
-            else TestConstants.TEST_USER_EMAIL
-        }
+        val testUserEmail: String
+            get() {
+                val ctx = ApplicationProvider.getApplicationContext<Context>()
+                TestUserEmailOverride.get(ctx)?.let { return it }
+                return if (isRunningInCI) TestUserEmailGenerator.generate()
+                else TestConstants.TEST_USER_EMAIL
+            }
     }
 
     protected lateinit var context: Context
