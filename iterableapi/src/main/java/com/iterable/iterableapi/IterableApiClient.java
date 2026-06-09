@@ -587,13 +587,14 @@ class IterableApiClient {
         }
     }
 
-    protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
+    protected void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, boolean appAlreadyRunning, @Nullable JSONObject dataFields) {
         JSONObject requestJSON = new JSONObject();
 
         try {
             if (dataFields == null) {
                 dataFields = new JSONObject();
             }
+            dataFields.put(IterableConstants.KEY_APP_ALREADY_RUNNING, appAlreadyRunning);
 
             addEmailOrUserIdToJson(requestJSON);
             requestJSON.put(IterableConstants.KEY_CAMPAIGN_ID, campaignId);
