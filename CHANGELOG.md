@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 - Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
+- Added `appAlreadyRunning` field to `trackPushOpen`. New `trackPushOpen(int, int, String, boolean, JSONObject)` overload sends the value through; existing overloads default to `false`.
 
 ## [3.8.0]
 ### Added
