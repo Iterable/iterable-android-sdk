@@ -24,7 +24,7 @@
             android:id="@+id/btnCheckIsPremium"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Check isPremium Status"
+            android:text="Check Membership Level"
             android:layout_marginBottom="8dp" />
 
         <LinearLayout
@@ -38,7 +38,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="isPremium Status:"
+                android:text="Premium Member:"
                 android:textSize="16sp" />
             
             <android.widget.Switch

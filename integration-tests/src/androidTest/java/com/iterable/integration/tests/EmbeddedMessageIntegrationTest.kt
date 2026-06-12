@@ -21,7 +21,6 @@ import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
@@ -110,12 +109,6 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
     }
     
     @Test
-    @Ignore(
-        "BCIT backend returns `placements: []` for our dated test user even with the " +
-        "iOS-shape isPremium false→true transition that works for iOS. Likely a BCIT " +
-        "Iterable-project configuration gap (no Android-targeting embedded campaign). " +
-        "Re-enable once the backend side is set up."
-    )
     fun testEmbeddedMessageMVP() {
         // Step 1: Ensure user is signed in
         Log.d(TAG, "📧 Step 1: Ensuring user is signed in...")
@@ -141,17 +134,17 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         }
         Assert.assertTrue("FragmentContainerView should exist in EmbeddedMessageTestActivity", viewReady)
 
-        // Drive a clean isPremium false→true transition. Mirrors the iOS BCIT embedded
-        // test — the BCIT campaign sends on the eligibility transition, not on a flat
-        // eligibility check.
-        setIsPremium(false)
+        // Drive a clean standard→premium membership transition. Mirrors the iOS BCIT
+        // embedded test — the BCIT campaign's audience predicate is on
+        // `membershipLevel == "premium"`.
+        setMembershipLevel("standard")
         syncMessagesAndWait()
         Assert.assertFalse(
-            "User should not be eligible for placement $TEST_PLACEMENT_ID with isPremium=false",
+            "User should not be eligible for placement $TEST_PLACEMENT_ID with membershipLevel=standard",
             IterableApi.getInstance().embeddedManager.getPlacementIds().contains(TEST_PLACEMENT_ID)
         )
 
-        setIsPremium(true)
+        setMembershipLevel("premium")
         val placementIds = syncAndWaitForPlacement(TEST_PLACEMENT_ID, timeoutSeconds = 30)
         Assert.assertTrue(
             "Placement ID $TEST_PLACEMENT_ID should exist, but found: $placementIds",
@@ -260,8 +253,8 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "✅✅✅ Test completed successfully! All steps passed.")
     }
 
-    private fun setIsPremium(value: Boolean) {
-        IterableApi.getInstance().updateUser(JSONObject().put("isPremium", value))
+    private fun setMembershipLevel(level: String) {
+        IterableApi.getInstance().updateUser(JSONObject().put("membershipLevel", level))
         Thread.sleep(3000)
     }
 

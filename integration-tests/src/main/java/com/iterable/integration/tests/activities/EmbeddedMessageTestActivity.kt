@@ -38,46 +38,45 @@ class EmbeddedMessageTestActivity : AppCompatActivity() {
     
     private fun setupClickListeners() {
         checkIsPremiumButton.setOnClickListener {
-            checkIsPremiumStatus()
+            checkMembershipStatus()
         }
-        
+
         isPremiumSwitch.setOnCheckedChangeListener { _, isChecked ->
-            updateUserIsPremium(isChecked)
+            updateUserMembershipLevel(if (isChecked) "premium" else "standard")
         }
-        
+
         syncMessagesButton.setOnClickListener {
             syncEmbeddedMessages()
         }
     }
-    
-    private fun checkIsPremiumStatus() {
+
+    private fun checkMembershipStatus() {
         AlertDialog.Builder(this)
-            .setTitle("isPremium Status")
+            .setTitle("Membership Level")
             .setMessage("User data fields are stored on the server, not in the SDK.\n\n" +
-                    "To check isPremium status:\n" +
+                    "To check membershipLevel:\n" +
                     "1. Check server logs/dashboard\n" +
                     "2. Call server API to get user profile\n" +
                     "3. Check logcat for updateUser calls")
             .setPositiveButton("OK", null)
             .show()
     }
-    
-    private fun updateUserIsPremium(isPremium: Boolean) {
-        val statusText = if (isPremium) "true" else "false"
-        updateStatus("Updating user (isPremium = $statusText)...")
-        
+
+    private fun updateUserMembershipLevel(level: String) {
+        updateStatus("Updating user (membershipLevel = $level)...")
+
         val dataFields = JSONObject().apply {
-            put("isPremium", isPremium)
+            put("membershipLevel", level)
         }
-        
+
         isPremiumSwitch.isEnabled = false
         IterableApi.getInstance().updateUser(dataFields)
-        
-        Toast.makeText(this, "updateUser called (isPremium = $statusText)\nWait 5 seconds then sync messages", Toast.LENGTH_LONG).show()
-        
+
+        Toast.makeText(this, "updateUser called (membershipLevel = $level)\nWait a few seconds then sync messages", Toast.LENGTH_LONG).show()
+
         isPremiumSwitch.postDelayed({
             isPremiumSwitch.isEnabled = true
-            updateStatus("User updated (isPremium = $statusText) - Sync messages to verify")
+            updateStatus("User updated (membershipLevel = $level) — Sync messages to verify")
         }, 1000)
     }
     
