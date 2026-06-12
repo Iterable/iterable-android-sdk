@@ -17,7 +17,6 @@ import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
@@ -113,7 +112,6 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    @Ignore("SDK-115 follow-up: action buttons aren't laid out in the collapsed notification shade; UiAutomator can't reliably expand it. Re-enable with an expand-on-find helper.")
     fun testPushNotificationActionButtons() {
         Assert.assertTrue("User should be signed in", testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL))
         Assert.assertTrue("Notification permission should be granted", hasNotificationPermission())
@@ -135,7 +133,7 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         Assert.assertNotNull("Notification should be found", findNotification())
 
         resetUrlHandlerTracking()
-        val googleButton = uiDevice.findObject(By.text("Google"))
+        val googleButton = findActionButton("Google")
         Assert.assertNotNull("Google button should be found", googleButton)
         googleButton?.click()
         Thread.sleep(2000)
@@ -155,7 +153,7 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         Assert.assertNotNull("Notification should be found", findNotification())
 
         resetCustomActionHandlerTracking()
-        val deeplinkButton = uiDevice.findObject(By.text("Deeplink"))
+        val deeplinkButton = findActionButton("Deeplink")
         Assert.assertNotNull("Deeplink button should be found", deeplinkButton)
         deeplinkButton?.click()
         Thread.sleep(2000)
@@ -239,6 +237,12 @@ class PushNotificationIntegrationTest : BaseIntegrationTest() {
         return null
     }
     
+    // systemui pre-API-31 applied Material's textAllCaps to action-button labels
+    // ("Google" → "GOOGLE"); API 31+ stopped doing so. Match either rendering.
+    private fun findActionButton(label: String): UiObject2? =
+        uiDevice.findObject(By.text(label))
+            ?: uiDevice.findObject(By.text(label.uppercase()))
+
     private fun navigateToPushNotificationTestActivity() {
         // Wait a bit for the app to fully open
         Thread.sleep(1000)
