@@ -19,6 +19,7 @@ import org.robolectric.shadows.ShadowLooper;
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -54,6 +55,28 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.getInstance();
         notification.dismiss();
         notification.resize(500.0f);
+    }
+
+    // ===== Oversized HTML Payload Tests (SDK-419) =====
+
+    @Test
+    public void testHtmlNotStoredInFragmentArguments() {
+        Rect padding = new Rect(0, -1, 0, -1);
+        IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.createInstance(
+            "<html><body>Test</body></html>", false, uri -> {
+            }, IterableInAppLocation.IN_APP, "msg1", 0.0, padding, false, new IterableInAppMessage.InAppBgColor(null, 0.0f));
+
+        assertNull("HTML should not be persisted in fragment arguments", notification.getArguments().getString("HTML"));
+    }
+
+    @Test
+    public void testEmptyHtmlDismissesWithoutShowing() {
+        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "", "msg1", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
+        shadowOf(getMainLooper()).idle();
+
+        // onCreateView dismisses early when HTML is empty, so the fragment is torn down and
+        // the static instance is cleared in onDestroy — nothing is shown.
+        assertNull("Notification should be dismissed when HTML is empty", IterableInAppFragmentHTMLNotification.getInstance());
     }
 
     // ===== Resize Debouncing Tests =====

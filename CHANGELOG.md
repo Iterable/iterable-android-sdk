@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Fixed a `TransactionTooLargeException` crash when displaying in-app messages with oversized HTML payloads. The HTML is no longer serialized into the fragment's saved instance state; it is reloaded from storage on recreation. In-apps with missing HTML now dismiss gracefully without registering tracking events, and a warning is logged for HTML payloads exceeding the recommended size.
 - Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 
 ## [3.8.0]

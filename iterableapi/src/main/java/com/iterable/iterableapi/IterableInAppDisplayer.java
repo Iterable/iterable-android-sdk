@@ -9,6 +9,9 @@ import androidx.fragment.app.FragmentActivity;
 
 class IterableInAppDisplayer {
 
+    // Large HTML payloads risk a TransactionTooLargeException and other display issues.
+    private static final int IN_APP_HTML_SIZE_WARNING_THRESHOLD = 250 * 1024;
+
     private final IterableActivityMonitor activityMonitor;
 
     IterableInAppDisplayer(IterableActivityMonitor activityMonitor) {
@@ -32,6 +35,12 @@ class IterableInAppDisplayer {
         // Early return for JSON-only messages
         if (message.isJsonOnly()) {
             return false;
+        }
+
+        String html = message.getContent().html;
+        if (html != null && html.length() > IN_APP_HTML_SIZE_WARNING_THRESHOLD) {
+            IterableLogger.w(IterableInAppManager.TAG, "In-App message HTML payload is " + html.length() +
+                " bytes, exceeding the recommended size. This may cause display issues.");
         }
 
         Activity currentActivity = activityMonitor.getCurrentActivity();
