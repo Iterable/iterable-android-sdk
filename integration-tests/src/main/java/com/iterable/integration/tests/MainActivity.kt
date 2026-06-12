@@ -11,6 +11,7 @@ import com.iterable.iterableapi.IterableUrlHandler
 import com.iterable.integration.tests.activities.*
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.integration.tests.utils.TestUserEmailOverride
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.integration.tests.TestConstants
 
 class MainActivity : AppCompatActivity() {
@@ -85,7 +86,7 @@ class MainActivity : AppCompatActivity() {
             val userEmail = TestUserEmailOverride.get(this) ?: TestConstants.TEST_USER_EMAIL
             IterableApi.getInstance().setEmail(userEmail)
 
-            Log.d(TAG, "Iterable SDK initialized successfully with email: $userEmail")
+            Log.d(TAG, "Iterable SDK initialized successfully with email: ${maskEmail(userEmail)}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Iterable SDK", e)
         }
@@ -147,7 +148,7 @@ class MainActivity : AppCompatActivity() {
             val override = TestUserEmailOverride.get(this)
             val effective = override ?: TestConstants.TEST_USER_EMAIL
             val source = if (override != null) "override" else "BuildConfig"
-            currentLabel.text = "Current: $effective ($source)"
+            currentLabel.text = "Current: ${maskEmail(effective)} ($source)"
             editField.setText(override ?: "")
         }
         refresh()

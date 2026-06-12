@@ -13,6 +13,7 @@ import com.iterable.integration.tests.services.IntegrationFirebaseMessagingServi
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.integration.tests.utils.TestUserEmailGenerator
 import com.iterable.integration.tests.utils.TestUserEmailOverride
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.integration.tests.TestConstants
 import org.awaitility.Awaitility
 import org.awaitility.core.ConditionTimeoutException
@@ -147,7 +148,7 @@ abstract class BaseIntegrationTest {
         IterableApi.initialize(context, BuildConfig.ITERABLE_API_KEY, config)
 
         IterableApi.getInstance().setEmail(testUserEmail)
-        Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: $testUserEmail")
+        Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: ${maskEmail(testUserEmail)}")
     }
 
     private fun setupTestEnvironment() {

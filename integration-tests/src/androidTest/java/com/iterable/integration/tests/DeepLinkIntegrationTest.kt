@@ -14,6 +14,7 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.By
 import com.iterable.iterableapi.IterableApi
 import com.iterable.integration.tests.activities.DeepLinkTestActivity
+import com.iterable.integration.tests.utils.maskEmail
 import org.awaitility.Awaitility
 import org.junit.After
 import org.junit.Assert
@@ -111,7 +112,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         // Step 1: Ensure user is signed in
         val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
-        Log.d(TAG, "✅ User signed in: ${TestConstants.TEST_USER_EMAIL}")
+        Log.d(TAG, "✅ User signed in: ${maskEmail(testUserEmail)}")
         
         // Step 2: Launch MainActivity first
         Log.d(TAG, "🚀 Step 2: Launching MainActivity...")

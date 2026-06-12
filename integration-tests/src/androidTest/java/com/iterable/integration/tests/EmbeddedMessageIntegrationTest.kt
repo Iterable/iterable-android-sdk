@@ -14,6 +14,7 @@ import androidx.test.uiautomator.By
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.integration.tests.activities.EmbeddedMessageTestActivity
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.iterableapi.ui.embedded.IterableEmbeddedView
 import com.iterable.iterableapi.ui.embedded.IterableEmbeddedViewType
 import org.awaitility.Awaitility
@@ -114,7 +115,7 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "📧 Step 1: Ensuring user is signed in...")
         val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
-        Log.d(TAG, "✅ User signed in successfully: $testUserEmail")
+        Log.d(TAG, "✅ User signed in successfully: ${maskEmail(testUserEmail)}")
         
         // Step 2: Preliminary check - verify view is ready with placement ID
         Log.d(TAG, "🔍 Step 2: Checking view readiness with placement ID...")
