@@ -10,6 +10,8 @@ import com.iterable.iterableapi.IterableConfig
 import com.iterable.iterableapi.IterableUrlHandler
 import com.iterable.integration.tests.activities.*
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.utils.TestUserEmailOverride
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.integration.tests.TestConstants
 
 class MainActivity : AppCompatActivity() {
@@ -77,12 +79,14 @@ class MainActivity : AppCompatActivity() {
                 .build()
             
             IterableApi.initialize(this, BuildConfig.ITERABLE_API_KEY, config)
-            
-            // Set the user email for integration testing
-            val userEmail = TestConstants.TEST_USER_EMAIL
+
+            // Override (set via the field on this screen) takes precedence over the
+            // BuildConfig email so a developer can validate against any user without
+            // editing local.properties or rebuilding.
+            val userEmail = TestUserEmailOverride.get(this) ?: TestConstants.TEST_USER_EMAIL
             IterableApi.getInstance().setEmail(userEmail)
-            
-            Log.d(TAG, "Iterable SDK initialized successfully with email: $userEmail")
+
+            Log.d(TAG, "Iterable SDK initialized successfully with email: ${maskEmail(userEmail)}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Iterable SDK", e)
         }
@@ -96,7 +100,9 @@ class MainActivity : AppCompatActivity() {
             else -> "API Key: ****${apiKey.takeLast(4)} (length=${apiKey.length})"
         }
         findViewById<android.widget.TextView>(R.id.tvApiKey).text = keyDisplay
-        
+
+        setupTestEmailOverride()
+
         findViewById<android.widget.Button>(R.id.btnPushNotifications).setOnClickListener {
             startActivity(Intent(this@MainActivity, PushNotificationTestActivity::class.java))
         }
@@ -131,4 +137,39 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
-} 
+
+    private fun setupTestEmailOverride() {
+        val currentLabel = findViewById<android.widget.TextView>(R.id.tvCurrentTestEmail)
+        val editField = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etTestEmailOverride)
+        val saveButton = findViewById<android.widget.Button>(R.id.btnSaveTestEmail)
+        val clearButton = findViewById<android.widget.Button>(R.id.btnClearTestEmail)
+
+        fun refresh() {
+            val override = TestUserEmailOverride.get(this)
+            val effective = override ?: TestConstants.TEST_USER_EMAIL
+            val source = if (override != null) "override" else "BuildConfig"
+            currentLabel.text = "Current: ${maskEmail(effective)} ($source)"
+            editField.setText(override ?: "")
+        }
+        refresh()
+
+        saveButton.setOnClickListener {
+            val email = editField.text?.toString()?.trim().orEmpty()
+            if (email.isEmpty()) {
+                android.widget.Toast.makeText(this, "Enter an email first", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            TestUserEmailOverride.set(this, email)
+            IterableApi.getInstance().setEmail(email)
+            refresh()
+            android.widget.Toast.makeText(this, "Test email override saved", android.widget.Toast.LENGTH_SHORT).show()
+        }
+
+        clearButton.setOnClickListener {
+            TestUserEmailOverride.clear(this)
+            IterableApi.getInstance().setEmail(TestConstants.TEST_USER_EMAIL)
+            refresh()
+            android.widget.Toast.makeText(this, "Test email override cleared", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+}

@@ -14,6 +14,7 @@ import androidx.test.uiautomator.By
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
 import com.iterable.integration.tests.activities.EmbeddedMessageTestActivity
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.iterableapi.ui.embedded.IterableEmbeddedView
 import com.iterable.iterableapi.ui.embedded.IterableEmbeddedViewType
 import org.awaitility.Awaitility
@@ -93,13 +94,13 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         // Step 2: Click the "Embedded Messages" button to navigate to EmbeddedMessageTestActivity
         Log.d(TAG, "🔧 Step 2: Clicking 'Embedded Messages' button...")
         val embeddedButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnEmbeddedMessages"))
-        if (embeddedButton.exists()) {
-            embeddedButton.click()
-            Log.d(TAG, "🔧 Clicked Embedded Messages button successfully")
-        } else {
+        // RESUMED fires before view inflation; waitForExists handles the race.
+        if (!embeddedButton.waitForExists(5000)) {
             Log.e(TAG, "❌ Embedded Messages button not found!")
             Assert.fail("Embedded Messages button not found in MainActivity")
         }
+        embeddedButton.click()
+        Log.d(TAG, "🔧 Clicked Embedded Messages button successfully")
         
         // Step 3: Wait for EmbeddedMessageTestActivity to load
         Log.d(TAG, "🔧 Step 3: Waiting for EmbeddedMessageTestActivity to load...")
@@ -112,9 +113,9 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
     fun testEmbeddedMessageMVP() {
         // Step 1: Ensure user is signed in
         Log.d(TAG, "📧 Step 1: Ensuring user is signed in...")
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
-        Log.d(TAG, "✅ User signed in successfully: ${TestConstants.TEST_USER_EMAIL}")
+        Log.d(TAG, "✅ User signed in successfully: ${maskEmail(testUserEmail)}")
         
         // Step 2: Preliminary check - verify view is ready with placement ID
         Log.d(TAG, "🔍 Step 2: Checking view readiness with placement ID...")
@@ -133,69 +134,23 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
             }
         }
         Assert.assertTrue("FragmentContainerView should exist in EmbeddedMessageTestActivity", viewReady)
-        
-        // Step 3: Get initial placement IDs before updating user properties
-        val initialPlacementIds = IterableApi.getInstance().embeddedManager.getPlacementIds().toSet()
-        Log.d(TAG, "📊 Initial placement IDs: $initialPlacementIds")
-        
-        // Reset embedded push tracking to detect UpdateEmbedded push
-        testUtils.setEmbeddedPushProcessed(false)
-        
-        // Step 4: Update user properties to make user eligible
-        Log.d(TAG, "📝 Step 4: Updating user properties (isPremium = true)...")
-        val dataFields = JSONObject().apply {
-            put("isPremium", true)
-        }
-        IterableApi.getInstance().updateUser(dataFields)
-        Log.d(TAG, "✅ User properties updated")
-        
-        // Step 5: Wait for backend to process and make user eligible
-        Log.d(TAG, "⏳ Step 5: Waiting for backend to process user update...")
-        Thread.sleep(3000)
-        
-        // Step 6: Wait for push-triggered sync (primary path)
-        Log.d(TAG, "🔄 Step 6: Waiting for UpdateEmbedded push to trigger automatic sync...")
-        val syncViaPush = waitForEmbeddedSyncViaPush(
-            initialPlacementIds = initialPlacementIds,
-            expectedPlacementId = TEST_PLACEMENT_ID,
-            pushTimeoutSeconds = 10
+
+        // Drive a clean standard→premium membership transition. Mirrors the iOS BCIT
+        // embedded test — the BCIT campaign's audience predicate is on
+        // `membershipLevel == "premium"`.
+        setMembershipLevel("standard")
+        syncMessagesAndWait()
+        Assert.assertFalse(
+            "User should not be eligible for placement $TEST_PLACEMENT_ID with membershipLevel=standard",
+            IterableApi.getInstance().embeddedManager.getPlacementIds().contains(TEST_PLACEMENT_ID)
         )
-        
-        var placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
-        var hasExpectedPlacement = placementIds.contains(TEST_PLACEMENT_ID)
-        
-        // Step 6b: Fallback to manual sync if push didn't work
-        if (!syncViaPush || !hasExpectedPlacement) {
-            Log.d(TAG, "⚠️ Push-triggered sync did not complete, falling back to manual sync...")
-            Log.d(TAG, "🔄 Step 6b: Manually syncing embedded messages...")
-            Thread.sleep(2000) // Give a bit more time in case push is still arriving
-            
-            // Check again before manual sync
-            placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
-            hasExpectedPlacement = placementIds.contains(TEST_PLACEMENT_ID)
-            
-            if (!hasExpectedPlacement) {
-                IterableApi.getInstance().embeddedManager.syncMessages()
-                Thread.sleep(2000) // Wait for sync to complete
-                placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
-                hasExpectedPlacement = placementIds.contains(TEST_PLACEMENT_ID)
-                Log.d(TAG, "🔄 Placement IDs after manual sync: $placementIds")
-            } else {
-                Log.d(TAG, "✅ Messages synced via push (delayed), placement IDs: $placementIds")
-            }
-        } else {
-            Log.d(TAG, "✅ Messages synced via push-triggered automatic sync, placement IDs: $placementIds")
-        }
-        
-        // Step 7: Verify expected placement ID exists
-        Log.d(TAG, "🔍 Step 7: Verifying placement ID exists...")
-        Log.d(TAG, "📋 Found placement IDs: $placementIds")
-        
+
+        setMembershipLevel("premium")
+        val placementIds = syncAndWaitForPlacement(TEST_PLACEMENT_ID, timeoutSeconds = 30)
         Assert.assertTrue(
             "Placement ID $TEST_PLACEMENT_ID should exist, but found: $placementIds",
-            hasExpectedPlacement
+            placementIds.contains(TEST_PLACEMENT_ID)
         )
-        Log.d(TAG, "✅ Placement ID $TEST_PLACEMENT_ID found")
         
         // Step 8: Get messages for the placement ID
         Log.d(TAG, "📨 Step 8: Getting messages for placement ID $TEST_PLACEMENT_ID...")
@@ -297,6 +252,27 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "✅ URL handler was called with URL: $handledUrl")
         
         Log.d(TAG, "✅✅✅ Test completed successfully! All steps passed.")
+    }
+
+    private fun setMembershipLevel(level: String) {
+        IterableApi.getInstance().updateUser(JSONObject().put("membershipLevel", level))
+        Thread.sleep(3000)
+    }
+
+    private fun syncMessagesAndWait() {
+        IterableApi.getInstance().embeddedManager.syncMessages()
+        Thread.sleep(2000)
+    }
+
+    private fun syncAndWaitForPlacement(placementId: Long, timeoutSeconds: Long = 30): List<Long> {
+        val deadline = System.currentTimeMillis() + timeoutSeconds * 1000
+        var placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+        while (System.currentTimeMillis() < deadline && !placementIds.contains(placementId)) {
+            IterableApi.getInstance().embeddedManager.syncMessages()
+            Thread.sleep(2000)
+            placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+        }
+        return placementIds
     }
 }
 
