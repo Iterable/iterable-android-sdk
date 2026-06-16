@@ -109,6 +109,10 @@ class IterableNotificationHelper {
         return bundle;
     }
 
+    static int getIconId(Context context) {
+        return instance.getIconId(context);
+    }
+
     static class IterableNotificationHelperImpl {
 
         public IterableNotificationBuilder createNotification(Context context, Bundle extras) {
@@ -434,6 +438,43 @@ class IterableNotificationHelper {
                         IterableApi.getNotificationIcon(context),
                         IterableConstants.ICON_FOLDER_IDENTIFIER,
                         context.getPackageName());
+            }
+
+            //Check Firebase default notification icon set in the AndroidManifest.xml
+            if (iconId == 0) {
+                try {
+                    ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                    if (info.metaData != null) {
+                        iconId = info.metaData.getInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, 0);
+                        if (iconId != 0) {
+                            IterableLogger.d(IterableNotificationBuilder.TAG, "Using Firebase default notification icon");
+                        }
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            //Check @drawable/notification_icon (Expo / React Native convention)
+            if (iconId == 0) {
+                iconId = context.getResources().getIdentifier(
+                        IterableConstants.NOTIFICATION_ICON_DRAWABLE_NOTIFICATION_ICON,
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (iconId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using @drawable/notification_icon");
+                }
+            }
+
+            //Check @drawable/ic_notification (common Android convention)
+            if (iconId == 0) {
+                iconId = context.getResources().getIdentifier(
+                        IterableConstants.NOTIFICATION_ICON_DRAWABLE_IC_NOTIFICATION,
+                        IterableConstants.ICON_FOLDER_IDENTIFIER,
+                        context.getPackageName());
+                if (iconId != 0) {
+                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using @drawable/ic_notification");
+                }
             }
 
             //Get id from the default app settings
