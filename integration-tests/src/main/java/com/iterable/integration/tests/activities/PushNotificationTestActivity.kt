@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import com.iterable.integration.tests.R
 import com.iterable.integration.tests.TestConstants
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.iterableapi.IterableApi
 
 class PushNotificationTestActivity : AppCompatActivity() {
@@ -82,7 +83,7 @@ class PushNotificationTestActivity : AppCompatActivity() {
     private fun ensureUserSignedIn() {
         val success = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
         if (success) {
-            Log.d(TAG, "User signed in: ${IterableApi.getInstance().getEmail()}")
+            Log.d(TAG, "User signed in: ${maskEmail(IterableApi.getInstance().getEmail())}")
         } else {
             Log.e(TAG, "Failed to sign in user")
             updateStatus("Failed to sign in user")

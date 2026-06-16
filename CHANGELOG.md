@@ -3,8 +3,18 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-- Fixed a `TransactionTooLargeException` crash when displaying in-app messages with oversized HTML payloads. The HTML is no longer serialized into the fragment's saved instance state; it is reloaded from storage on recreation. In-apps with missing HTML now dismiss gracefully without registering tracking events, and a warning is logged for HTML payloads exceeding the recommended size.
+### Added
 - Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
+- New `IterableInboxToolbarView` — an opt-in, reusable toolbar component for the inbox UI. Configurable via the new Kotlin sealed interface `InboxToolbarOption`:
+    - `None` (default) — no toolbar; behavior is unchanged from prior SDK versions.
+    - `Default` — title-only toolbar above the inbox list.
+    - `WithBackButton` — title plus a back navigation icon. The default back action calls `OnBackPressedDispatcher`; override it by having the host Activity or parent Fragment implement `IterableInboxToolbarBackListener`.
+    - `Custom(layoutRes)` — inflates the integrator's own toolbar layout. Views tagged with the reserved ids `@id/iterable_reserved_inbox_toolbar_action` and `@id/iterable_reserved_inbox_toolbar_title` are auto-wired to the SDK's back handler and title binding respectively. Both ids are optional.
+    - Configure programmatically via `IterableInboxFragment.newInstance(...)` (new 2-arg and 6-arg overloads) or via `IterableInboxActivity` intent extras (`TOOLBAR_OPTION` / `TOOLBAR_TITLE`).
+    - Requires the host activity to use a `Theme.AppCompat` descendant when the toolbar is enabled.
+
+### Fixed
+- Fixed a `TransactionTooLargeException` crash when displaying in-app messages with oversized HTML payloads. The HTML is no longer serialized into the fragment's saved instance state; it is reloaded from storage on recreation. In-apps with missing HTML now dismiss gracefully without registering tracking events, and a warning is logged for HTML payloads exceeding the recommended size.
 
 ## [3.8.0]
 ### Added
@@ -23,6 +33,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Migration guide
 **No action required for most apps.** The default `FORCE_EDGE_TO_EDGE` preserves the existing behavior where in-app content draws behind system bars.
+
+The inflated root of `IterableInboxFragment` is now a `LinearLayout` instead of a `RelativeLayout`. Subclasses that override `onCreateView` and cast `super.onCreateView(...)`'s return value to `RelativeLayout` should change the cast to `ViewGroup` (or `LinearLayout`).
 
 If the close button in your fullscreen in-app messages is obscured by the status bar, you can fix it by choosing one of these modes:
 
