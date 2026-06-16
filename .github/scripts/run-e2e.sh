@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # .github/scripts/run-e2e.sh
 #
-# Runs the In-App Message E2E test under ReactiveCircus/android-emulator-runner
+# Runs the BCIT integration-test suite under ReactiveCircus/android-emulator-runner
 # and captures diagnostics that survive the action's emulator-kill on exit.
 #
 # Why this is an external script and not inline YAML:
@@ -28,7 +28,6 @@
 
 set -uo pipefail
 
-readonly TEST_CLASS="${TEST_CLASS:-com.iterable.integration.tests.InAppMessageIntegrationTest#testInAppMessageMVP}"
 readonly DIAG_DIR="${GITHUB_WORKSPACE:?GITHUB_WORKSPACE must be set}/integration-tests/build/diagnostics"
 readonly TEST_PACKAGE="com.iterable.integration.tests"
 
@@ -36,7 +35,7 @@ mkdir -p "$DIAG_DIR"
 
 log()  { printf '\033[1;34m[e2e]\033[0m %s\n' "$*"; }
 
-log "Running E2E test: $TEST_CLASS"
+log "Running BCIT integration-test suite: package=$TEST_PACKAGE"
 log "Diagnostics will be written to: $DIAG_DIR"
 
 # Sanity-check env: don't echo secret values, only their lengths. The workflow's
@@ -44,6 +43,16 @@ log "Diagnostics will be written to: $DIAG_DIR"
 log "ITERABLE_API_KEY length:        ${#ITERABLE_API_KEY}"
 log "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
 log "ITERABLE_TEST_USER_EMAIL length: ${#ITERABLE_TEST_USER_EMAIL}"
+
+# Fail fast if a BCIT_* secret didn't resolve. Without this, an empty secret falls
+# through to the gradle default 'test_api_key' (integration-tests/build.gradle) and
+# the suite fails later with opaque 401s instead of a clear configuration error.
+if [[ "${CI:-false}" == "true" ]]; then
+  if [[ -z "${ITERABLE_API_KEY:-}" || -z "${ITERABLE_SERVER_API_KEY:-}" || -z "${ITERABLE_TEST_USER_EMAIL:-}" ]]; then
+    log "::error::One or more BCIT_* secrets are empty. Configure BCIT_ITERABLE_API_KEY, BCIT_ITERABLE_SERVER_API_KEY, BCIT_ITERABLE_TEST_USER_EMAIL on this branch/repo."
+    exit 1
+  fi
+fi
 
 # Grant permissions; ignore failures (the package may not be installed yet,
 # in which case AGP will install + auto-grant during the test step).
@@ -100,11 +109,12 @@ trap capture_post_test EXIT
 # propagate the original exit code at the end.
 gradle_exit=0
 ./gradlew :integration-tests:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class="$TEST_CLASS" \
+  -Pandroid.testInstrumentationRunnerArguments.package="$TEST_PACKAGE" \
+  -Pandroid.testInstrumentationRunnerArguments.ci=true \
   --stacktrace --no-daemon || gradle_exit=$?
 
 if [[ "$gradle_exit" -ne 0 ]]; then
-  log "::error::Gradle test task failed with exit code $gradle_exit — see e2e-diagnostics-api artifact"
+  log "::error::Gradle test task failed with exit code $gradle_exit — see bcit-integration-diagnostics artifact"
 fi
 
 # capture_post_test runs via EXIT trap; just propagate the exit code.

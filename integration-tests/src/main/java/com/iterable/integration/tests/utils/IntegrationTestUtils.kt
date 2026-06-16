@@ -90,9 +90,9 @@ class IntegrationTestUtils(private val context: Context) {
             val currentEmail = com.iterable.iterableapi.IterableApi.getInstance().getEmail()
             if (currentEmail != email) {
                 com.iterable.iterableapi.IterableApi.getInstance().setEmail(email)
-                Log.d(TAG, "User signed in with email: $email")
+                Log.d(TAG, "User signed in with email: ${maskEmail(email)}")
             } else {
-                Log.d(TAG, "User already signed in with email: $currentEmail")
+                Log.d(TAG, "User already signed in with email: ${maskEmail(currentEmail)}")
             }
             true
         } catch (e: Exception) {

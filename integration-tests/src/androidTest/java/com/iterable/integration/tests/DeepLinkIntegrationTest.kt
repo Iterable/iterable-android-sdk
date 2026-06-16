@@ -14,6 +14,7 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.By
 import com.iterable.iterableapi.IterableApi
 import com.iterable.integration.tests.activities.DeepLinkTestActivity
+import com.iterable.integration.tests.utils.maskEmail
 import org.awaitility.Awaitility
 import org.junit.After
 import org.junit.Assert
@@ -109,9 +110,9 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🧪 Testing custom scheme deep link: $TEST_CUSTOM_SCHEME_URL")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
-        Log.d(TAG, "✅ User signed in: ${TestConstants.TEST_USER_EMAIL}")
+        Log.d(TAG, "✅ User signed in: ${maskEmail(testUserEmail)}")
         
         // Step 2: Launch MainActivity first
         Log.d(TAG, "🚀 Step 2: Launching MainActivity...")
@@ -195,7 +196,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🎯 Expected: App opens directly (like iOS Universal Links)")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
         
         // Step 2: Launch MainActivity first
@@ -272,7 +273,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🧪 Testing URL handler invocation")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
         
         // Step 2: Launch MainActivity and navigate to DeepLinkTestActivity
@@ -287,7 +288,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         
         // Click Deep Linking button to navigate
         val deepLinkButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnDeepLinking"))
-        if (deepLinkButton.exists()) {
+        if (deepLinkButton.waitForExists(5000)) {
             deepLinkButton.click()
             Thread.sleep(2000)
         }
@@ -340,7 +341,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         Log.d(TAG, "🧪 Testing deep link UI display")
         
         // Step 1: Ensure user is signed in
-        val userSignedIn = testUtils.ensureUserSignedIn(TestConstants.TEST_USER_EMAIL)
+        val userSignedIn = testUtils.ensureUserSignedIn(testUserEmail)
         Assert.assertTrue("User should be signed in", userSignedIn)
         
         // Step 2: Launch MainActivity
@@ -365,16 +366,16 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         
         // Verify URL is displayed
         val urlText = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/tvDeepLinkUrl"))
-        Assert.assertTrue("URL TextView should exist", urlText.exists())
+        Assert.assertTrue("URL TextView should exist", urlText.waitForExists(5000))
         Assert.assertTrue(
             "URL should contain 'iterable://deeplink'",
             urlText.text.contains("iterable://deeplink")
         )
         Log.d(TAG, "✅ URL displayed: ${urlText.text}")
-        
+
         // Verify path is displayed
         val pathText = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/tvDeepLinkPath"))
-        Assert.assertTrue("Path TextView should exist", pathText.exists())
+        Assert.assertTrue("Path TextView should exist", pathText.waitForExists(5000))
         Assert.assertTrue(
             "Path should contain '/settings/notifications'",
             pathText.text.contains("/settings/notifications")
@@ -439,7 +440,7 @@ class DeepLinkIntegrationTest : BaseIntegrationTest() {
         // Step 2: Click the "Deep Linking" button
         Log.d(TAG, "🔧 Step 2: Clicking Deep Linking button...")
         val deepLinkButton = uiDevice.findObject(UiSelector().resourceId("com.iterable.integration.tests:id/btnDeepLinking"))
-        Assert.assertTrue("Deep Linking button should exist", deepLinkButton.exists())
+        Assert.assertTrue("Deep Linking button should exist", deepLinkButton.waitForExists(5000))
         deepLinkButton.click()
         
         Thread.sleep(2000)

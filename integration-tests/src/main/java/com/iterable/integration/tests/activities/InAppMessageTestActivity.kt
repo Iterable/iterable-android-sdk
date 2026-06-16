@@ -14,6 +14,7 @@ import com.iterable.integration.tests.R
 import com.iterable.integration.tests.BuildConfig
 import com.iterable.iterableapi.IterableApiHelper
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.integration.tests.TestConstants
 
 class InAppMessageTestActivity : AppCompatActivity() {
@@ -95,7 +96,7 @@ class InAppMessageTestActivity : AppCompatActivity() {
         try {
             val userEmail = IterableApi.getInstance().getEmail() ?: TestConstants.TEST_USER_EMAIL
             
-            Log.d(TAG, "Triggering campaign $TEST_INAPP_CAMPAIGN_ID for user $userEmail")
+            Log.d(TAG, "Triggering campaign $TEST_INAPP_CAMPAIGN_ID for user ${maskEmail(userEmail)}")
             
             // Trigger campaign via server API (like CampaignTriggerTestActivity does)
             testUtils.triggerCampaignViaAPI(TEST_INAPP_CAMPAIGN_ID, userEmail) { success ->

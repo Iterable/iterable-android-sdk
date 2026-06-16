@@ -1,15 +1,47 @@
-name: In-App Message E2E Tests
+name: Integration Tests (BCIT)
 
+# SDK-115: single workflow that owns all BCIT integration-test runs (PR, push to
+# master, manual dispatch, nightly cron).
 on:
   push:
-    branches: [ InApp-Display-E2E ]
+    branches: [ master ]
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+      - '.github/workflows/integration-tests-bcit.yml'
+      - '.github/scripts/run-e2e.sh'
   pull_request:
-    branches: [ InApp-Display-E2E, master, develop ]
+    # No `branches:` filter — `branches:` matches the PR's *target*, not its head, so
+    # restricting to [master] silently skips stacked PRs that target SDK-115-* (or any
+    # other long-lived integration branch). Path filters below still gate which PRs
+    # actually trigger the workflow.
+    paths:
+      - 'integration-tests/**'
+      - 'iterableapi/**'
+      - 'iterableapi-ui/**'
+      - '.github/workflows/integration-tests-bcit.yml'
+      - '.github/scripts/run-e2e.sh'
   workflow_dispatch: # Allow manual triggering
+  schedule:
+    # Nightly smoke test at 02:00 UTC against the BCIT Iterable project. Catches
+    # backend-side drift (rotated keys, edited campaign templates, expired test
+    # users) that a code-only PR-triggered run would miss.
+    - cron: '0 2 * * *'
+
+# SDK-115: serialise across all branches/refs. The whole suite drives a single
+# shared BCIT user (ITERABLE_TEST_USER_EMAIL) for tens of minutes — two PRs, or
+# a PR overlapping the nightly cron, race on backend state (in-app inbox,
+# embedded placements, device tokens). Global scope queues one behind another.
+# `cancel-in-progress: false` so a nightly already running isn't killed mid-suite
+# when a PR opens.
+concurrency:
+  group: bcit-integration-${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
-  inapp-e2e-tests:
-    name: In-App Message E2E Tests
+  integration-tests-bcit:
+    name: Integration Tests (BCIT)
     # SDK-170: macOS Intel runners (2 cores / 3GB AVD on HVF) starved system_server during
     # cold boot and produced cascading ANRs (systemui / nexuslauncher / gms / phone …),
     # leaving a system dialog on top of MainActivity so UiAutomator could not find the
@@ -36,21 +68,21 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v2
-        
+
       - name: Create local.properties
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "ndk.dir=$ANDROID_SDK_ROOT/ndk" >> local.properties
-          
+
       - name: Accept Android SDK Licenses
         run: |
           echo "Accepting Android SDK licenses..."
           yes | sdkmanager --licenses || true
           echo "SDK licenses accepted"
-          
+
       - name: Setup Google Services Configuration
         run: |
           echo "Setting up Google Services configuration for CI..."
@@ -60,7 +92,7 @@ jobs:
             cp integration-tests/google-services.json.template integration-tests/google-services.json
           fi
           echo "Google Services configuration ready"
-          
+
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -70,17 +102,11 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-            
-      - name: Pre-download Gradle and Build (Parallel with Emulator)
-        run: |
-          echo "Pre-downloading Gradle and building while emulator boots..."
-          # Download Gradle wrapper in background
-          ./gradlew --version &
-          # Start building APKs in background  
-          ./gradlew :integration-tests:assembleDebug :integration-tests:assembleDebugAndroidTest --no-daemon &
-          echo "Build started in background..."
-            
-      - name: Run UI Tests with Emulator (KVM / x86_64)
+
+      # SDK-170-followup: KVM-runner Gradle parallelism races on
+      # `integration-tests/build/intermediates/merged_res_blame_folder/`; do not
+      # reintroduce a background `assemble*` step alongside the test invocation.
+      - name: Run BCIT Integration Tests (KVM / x86_64)
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
@@ -112,52 +138,13 @@ jobs:
       # built APKs which embed BuildConfig.ITERABLE_API_KEY and BuildConfig.ITERABLE_SERVER_API_KEY
       # as compile-time string constants. On a public repo, anyone who can download the
       # artifact could `strings`/`apktool` the APK and recover both keys.
-      - name: Upload E2E diagnostics
+      - name: Upload BCIT integration-test diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-diagnostics-api-${{ matrix.api-level }}
+          name: bcit-integration-diagnostics-api-${{ matrix.api-level }}
           path: |
             integration-tests/build/diagnostics/
             integration-tests/build/reports/
           if-no-files-found: warn
           retention-days: 7
-          
-  # test-summary:
-  #   name: Test Summary
-  #   runs-on: ubuntu-latest
-  #   needs: inapp-e2e-tests
-  #   if: always()
-    
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-        
-  #     - name: Download Test Results
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: inapp-e2e-test-results-api-34
-  #         path: test-results/
-          
-  #     - name: Generate Test Summary
-  #       run: |
-  #         echo "## In-App Message E2E Test Results" >> $GITHUB_STEP_SUMMARY
-  #         echo "" >> $GITHUB_STEP_SUMMARY
-  #         echo "### Test Execution Summary" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **Branch**: InApp-Display-E2E" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **API Level Tested**: 34" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **Test Method**: testInAppMessageMVP" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **Test Type**: E2E Integration Test" >> $GITHUB_STEP_SUMMARY
-  #         echo "" >> $GITHUB_STEP_SUMMARY
-  #         echo "### E2E Test Scenarios" >> $GITHUB_STEP_SUMMARY
-  #         echo "- ✅ User Sign-in Verification" >> $GITHUB_STEP_SUMMARY
-  #         echo "- ✅ In-App Message Trigger" >> $GITHUB_STEP_SUMMARY
-  #         echo "- ✅ Message Display Verification" >> $GITHUB_STEP_SUMMARY
-  #         echo "- ✅ Button Click Interaction" >> $GITHUB_STEP_SUMMARY
-  #         echo "- ✅ Message Dismissal" >> $GITHUB_STEP_SUMMARY
-  #         echo "" >> $GITHUB_STEP_SUMMARY
-  #         echo "### Artifacts Available" >> $GITHUB_STEP_SUMMARY
-  #         echo "- Test execution reports" >> $GITHUB_STEP_SUMMARY
-  #         echo "- Code coverage reports" >> $GITHUB_STEP_SUMMARY
-  #         echo "- Debug screenshots" >> $GITHUB_STEP_SUMMARY
-  #         echo "- Detailed test logs" >> $GITHUB_STEP_SUMMARY

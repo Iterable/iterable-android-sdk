@@ -5,12 +5,19 @@ import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.firebase.messaging.RemoteMessage
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
+import com.iterable.iterableapi.IterableFirebaseMessagingService
+import com.iterable.integration.tests.services.IntegrationFirebaseMessagingService
 import com.iterable.integration.tests.utils.IntegrationTestUtils
+import com.iterable.integration.tests.utils.TestUserEmailGenerator
+import com.iterable.integration.tests.utils.TestUserEmailOverride
+import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.integration.tests.TestConstants
 import org.awaitility.Awaitility
 import org.awaitility.core.ConditionTimeoutException
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
@@ -25,6 +32,26 @@ abstract class BaseIntegrationTest {
     companion object {
         const val TIMEOUT_SECONDS = TestConstants.TIMEOUT_SECONDS
         const val POLL_INTERVAL_SECONDS = TestConstants.POLL_INTERVAL_SECONDS
+
+        // CI signal routed via instrumentation arg (env vars don't reach the test JVM
+        // through `am instrument`). run-e2e.sh passes `ci=true` in CI.
+        @JvmStatic
+        val isRunningInCI: Boolean by lazy {
+            val arg = InstrumentationRegistry.getArguments().getString("ci")
+                ?: System.getenv("CI")
+            arg?.lowercase().let { it == "true" || it == "1" }
+        }
+
+        // Resolution order: local override (set via MainActivity, persisted in
+        // SharedPreferences) → dated email when in CI → BuildConfig fallback.
+        @JvmStatic
+        val testUserEmail: String
+            get() {
+                val ctx = ApplicationProvider.getApplicationContext<Context>()
+                TestUserEmailOverride.get(ctx)?.let { return it }
+                return if (isRunningInCI) TestUserEmailGenerator.generate()
+                else TestConstants.TEST_USER_EMAIL
+            }
     }
 
     protected lateinit var context: Context
@@ -46,6 +73,17 @@ abstract class BaseIntegrationTest {
 
     @Before
     open fun setUp() {
+        // Dismiss any system UI surface (notification shade, ANR dialog, recents) left
+        // open by a prior test or carried over from emulator boot. CI's Ubuntu+KVM
+        // launcher routinely ANRs during heavy parallel work and steals focus from the
+        // activity-under-test, so findObject().exists() returns false even though the
+        // view is in the tree.
+        val uiDevice = androidx.test.uiautomator.UiDevice.getInstance(
+            InstrumentationRegistry.getInstrumentation()
+        )
+        uiDevice.pressBack()
+        uiDevice.pressHome()
+
         context = ApplicationProvider.getApplicationContext()
         testUtils = IntegrationTestUtils(context)
 
@@ -76,6 +114,8 @@ abstract class BaseIntegrationTest {
             .setEnableEmbeddedMessaging(true)
             .setLogLevel(Log.VERBOSE)
             .setInAppDisplayInterval(3.0)
+            // Match the iOS BCIT app: BCIT campaigns use `tester://` deep links.
+            .setAllowedProtocols(arrayOf("tester", "https", "http"))
             .setInAppHandler { message ->
                 // Handle in-app messages during tests
                 Log.d("BaseIntegrationTest", "In-app message received: ${message.messageId}")
@@ -107,11 +147,8 @@ abstract class BaseIntegrationTest {
 
         IterableApi.initialize(context, BuildConfig.ITERABLE_API_KEY, config)
 
-        // Set the user email for integration testing
-        val userEmail = TestConstants.TEST_USER_EMAIL
-        IterableApi.getInstance().setEmail(userEmail)
-        Log.d("BaseIntegrationTest", "User email set to: $userEmail")
-        Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: $userEmail")
+        IterableApi.getInstance().setEmail(testUserEmail)
+        Log.d("BaseIntegrationTest", "Iterable SDK initialized with email: ${maskEmail(testUserEmail)}")
     }
 
     private fun setupTestEnvironment() {
@@ -164,12 +201,37 @@ abstract class BaseIntegrationTest {
     }
 
 
+    // Local-mode gate: avoids racing IterableApi.registerForPush(). In CI [injectPushMessage]
+    // bypasses FCM, so this is unused there.
+    protected fun waitForDeviceTokenRegistered(timeoutSeconds: Long = 20): Boolean {
+        return waitForCondition({
+            IntegrationFirebaseMessagingService.tokenRegistered.get()
+        }, timeoutSeconds)
+    }
+
+    // CI-mode push injection. Builds a RemoteMessage locally and feeds it to the SDK's
+    // normal handler — same shape as iOS's `xcrun simctl push booted`. itblPayload goes
+    // under the `itbl` data key; title/body/extraData are top-level data fields.
+    protected fun injectPushMessage(
+        itblPayload: JSONObject,
+        title: String? = null,
+        body: String? = null,
+        extraData: Map<String, String> = emptyMap()
+    ): Boolean {
+        val builder = RemoteMessage.Builder("test@gcm.googleapis.com")
+            .addData("itbl", itblPayload.toString())
+        title?.let { builder.addData("title", it) }
+        body?.let { builder.addData("body", it) }
+        extraData.forEach { (k, v) -> builder.addData(k, v) }
+        return IterableFirebaseMessagingService.handleMessageReceived(context, builder.build())
+    }
+
     /**
      * Trigger a campaign via Iterable API
      */
     protected fun triggerCampaignViaAPI(
         campaignId: Int,
-        recipientEmail: String = TestConstants.TEST_USER_EMAIL,
+        recipientEmail: String = testUserEmail,
         dataFields: Map<String, Any>? = null,
         callback: ((Boolean) -> Unit)? = null
     ) {
@@ -181,7 +243,7 @@ abstract class BaseIntegrationTest {
      */
     protected fun triggerPushCampaignViaAPI(
         campaignId: Int,
-        recipientEmail: String = TestConstants.TEST_USER_EMAIL,
+        recipientEmail: String = testUserEmail,
         dataFields: Map<String, Any>? = null,
         callback: ((Boolean) -> Unit)? = null
     ) {
