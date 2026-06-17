@@ -1274,7 +1274,7 @@ public class IterableApi {
     }
 
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId) {
-        queueOrExecute(() -> trackPushOpen(campaignId, templateId, messageId, null), "trackPushOpen(" + campaignId + ", " + templateId + ", " + maskPII(messageId) + ")");
+        trackPushOpen(campaignId, templateId, messageId, false, null);
     }
 
     /**
@@ -1283,14 +1283,26 @@ public class IterableApi {
      * @param templateId
      */
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, @Nullable JSONObject dataFields) {
+        trackPushOpen(campaignId, templateId, messageId, false, dataFields);
+    }
+
+    /**
+     * Tracks when a push notification is opened on device.
+     * @param campaignId
+     * @param templateId
+     * @param messageId
+     * @param appAlreadyRunning Whether the app was already running when the push was received.
+     * @param dataFields
+     */
+    public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, boolean appAlreadyRunning, @Nullable JSONObject dataFields) {
         queueOrExecute(() -> {
             if (messageId == null) {
                 IterableLogger.e(TAG, "messageId is null");
                 return;
             }
 
-            apiClient.trackPushOpen(campaignId, templateId, messageId, dataFields);
-        }, "trackPushOpen(" + campaignId + ", " + templateId + ", " + maskPII(messageId) + ", dataFields)");
+            apiClient.trackPushOpen(campaignId, templateId, messageId, appAlreadyRunning, dataFields);
+        }, "trackPushOpen(" + campaignId + ", " + templateId + ", " + maskPII(messageId) + ", " + appAlreadyRunning + ", dataFields)");
     }
 
     /**
