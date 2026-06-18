@@ -500,6 +500,43 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
+    public void testTrackPushOpenDefaultsAppAlreadyRunningToFalse() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackPushOpen(1234, 4321, "testMessageId");
+        shadowOf(getMainLooper()).idle();
+
+        RecordedRequest trackPushOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackPushOpenRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, trackPushOpenRequest.getPath());
+        JSONObject requestJson = new JSONObject(trackPushOpenRequest.getBody().readUtf8());
+        assertEquals(1234, requestJson.getInt(IterableConstants.KEY_CAMPAIGN_ID));
+        assertEquals(4321, requestJson.getInt(IterableConstants.KEY_TEMPLATE_ID));
+        assertEquals("testMessageId", requestJson.getString(IterableConstants.KEY_MESSAGE_ID));
+        assertEquals(false, requestJson.getJSONObject(IterableConstants.KEY_DATA_FIELDS).getBoolean(IterableConstants.KEY_APP_ALREADY_RUNNING));
+    }
+
+    @Test
+    public void testTrackPushOpenSendsAppAlreadyRunningAndPreservesDataFields() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().trackPushOpen(1234, 4321, "testMessageId", true, new JSONObject("{\"key\": \"value\"}"));
+        shadowOf(getMainLooper()).idle();
+
+        RecordedRequest trackPushOpenRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(trackPushOpenRequest);
+        assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PUSH_OPEN, trackPushOpenRequest.getPath());
+        JSONObject requestJson = new JSONObject(trackPushOpenRequest.getBody().readUtf8());
+        JSONObject dataFields = requestJson.getJSONObject(IterableConstants.KEY_DATA_FIELDS);
+        assertEquals(true, dataFields.getBoolean(IterableConstants.KEY_APP_ALREADY_RUNNING));
+        assertEquals("value", dataFields.getString("key"));
+    }
+
+    @Test
     public void testInAppOpenExtended() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 

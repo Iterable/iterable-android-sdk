@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - `Custom(layoutRes)` — inflates the integrator's own toolbar layout. Views tagged with the reserved ids `@id/iterable_reserved_inbox_toolbar_action` and `@id/iterable_reserved_inbox_toolbar_title` are auto-wired to the SDK's back handler and title binding respectively. Both ids are optional.
     - Configure programmatically via `IterableInboxFragment.newInstance(...)` (new 2-arg and 6-arg overloads) or via `IterableInboxActivity` intent extras (`TOOLBAR_OPTION` / `TOOLBAR_TITLE`).
     - Requires the host activity to use a `Theme.AppCompat` descendant when the toolbar is enabled.
+- Added `appAlreadyRunning` field to `trackPushOpen`. New `trackPushOpen(int, int, String, boolean, JSONObject)` overload sends the value through; existing overloads default to `false`.
+
+### Fixed
+- Fixed a `TransactionTooLargeException` crash when displaying in-app messages with oversized HTML payloads. The HTML is no longer serialized into the fragment's saved instance state; it is reloaded from storage on recreation. In-apps with missing HTML now dismiss gracefully without registering tracking events, and a warning is logged for HTML payloads exceeding the recommended size.
 
 ## [3.8.0]
 ### Added

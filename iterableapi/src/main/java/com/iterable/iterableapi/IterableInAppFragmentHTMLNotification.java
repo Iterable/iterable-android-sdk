@@ -41,7 +41,6 @@ import androidx.fragment.app.DialogFragment;
 public class IterableInAppFragmentHTMLNotification extends DialogFragment implements IterableWebView.HTMLNotificationCallbacks {
     private static final String BACK_BUTTON = "itbl://backButton";
     private static final String TAG = "IterableInAppFragmentHTMLNotification";
-    private static final String HTML_STRING = "HTML";
     private static final String BACKGROUND_ALPHA = "BackgroundAlpha";
     private static final String INSET_PADDING = "InsetPadding";
     private static final String CALLBACK_ON_CANCEL = "CallbackOnCancel";
@@ -87,8 +86,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
 
     public static IterableInAppFragmentHTMLNotification createInstance(@NonNull String htmlString, boolean callbackOnCancel, @NonNull IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation location, @NonNull String messageId, @NonNull Double backgroundAlpha, @NonNull Rect padding, @NonNull boolean shouldAnimate, IterableInAppMessage.InAppBgColor inAppBgColor) {
         notification = new IterableInAppFragmentHTMLNotification();
+        // HTML is kept in-memory (not in the Bundle) so it isn't serialized into the
+        // FragmentManager's saved state, which would overflow the Binder transaction limit
+        // (TransactionTooLargeException) for large payloads. On process-death recreation it is
+        // reloaded from storage by messageId in onCreate().
+        notification.htmlString = htmlString;
         Bundle args = new Bundle();
-        args.putString(HTML_STRING, htmlString);
         args.putBoolean(CALLBACK_ON_CANCEL, callbackOnCancel);
         args.putString(MESSAGE_ID, messageId);
         args.putDouble(BACKGROUND_ALPHA, backgroundAlpha);
@@ -140,7 +143,6 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         Bundle args = getArguments();
 
         if (args != null) {
-            htmlString = args.getString(HTML_STRING, null);
             callbackOnCancel = args.getBoolean(CALLBACK_ON_CANCEL, false);
             messageId = args.getString(MESSAGE_ID);
             backgroundAlpha = args.getDouble(BACKGROUND_ALPHA);
@@ -148,6 +150,14 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             inAppBackgroundAlpha = args.getDouble(IN_APP_BG_ALPHA);
             inAppBackgroundColor = args.getString(IN_APP_BG_COLOR, null);
             shouldAnimate = args.getBoolean(IN_APP_SHOULD_ANIMATE);
+        }
+
+        // On process-death recreation the HTML is gone from memory; reload it from storage.
+        if (htmlString == null && messageId != null) {
+            IterableInAppMessage message = IterableApi.sharedInstance.getInAppManager().getMessageById(messageId);
+            if (message != null) {
+                htmlString = message.getContent().html;
+            }
         }
 
         notification = this;
@@ -192,6 +202,12 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         // Set initial window gravity based on inset padding (only for non-fullscreen)
         if (getInAppLayout(insetPadding) != InAppLayout.FULLSCREEN) {
             applyWindowGravity(getDialog().getWindow(), "onCreateView");
+        }
+
+        if (htmlString == null || htmlString.isEmpty()) {
+            IterableLogger.e(TAG, "Unable to load in-app HTML for message " + messageId + "; dismissing without tracking");
+            dismissAllowingStateLoss();
+            return null;
         }
 
         webView = createWebViewSafely(getContext());
