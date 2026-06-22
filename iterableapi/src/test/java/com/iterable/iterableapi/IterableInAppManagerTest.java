@@ -92,6 +92,10 @@ public class IterableInAppManagerTest extends BaseTest {
     public void tearDown() throws IOException {
         server.shutdown();
         server = null;
+        // Tests that swap in a spy in-app manager register it on the activity monitor; reset the
+        // monitor so a leaked manager doesn't consume the next test's enqueued response on foreground.
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
     }
 
     @Ignore("Stalls under Robolectric: showIterableFragmentNotificationHTML requires real Activity lifecycle - candidate for androidTest with Espresso")
@@ -273,7 +277,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), null, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
@@ -340,7 +344,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableActivityMonitor.instance = new IterableActivityMonitor();
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
-        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), null, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
         IterableApi.sharedInstance = new IterableApi(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
@@ -396,6 +400,104 @@ public class IterableInAppManagerTest extends BaseTest {
 
         inAppManager.setAutoDisplayPaused(false);
         verify(inAppHandler, times(1)).onNewInApp(inAppMessageCaptor.capture());
+    }
+
+    private IterableInAppManager createManagerWithDisplayDelegate(IterableInAppDisplayer displayer, IterableInAppDisplayDelegate displayDelegate) {
+        IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+        IterableActivityMonitor.instance = new IterableActivityMonitor();
+        IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), displayDelegate, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), displayer));
+        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
+            @Override
+            public IterableConfig.Builder run(IterableConfig.Builder builder) {
+                return builder.setCustomActionHandler(customActionHandler).setUrlHandler(urlHandler);
+            }
+        });
+        shadowOf(getMainLooper()).idle();
+        return inAppManager;
+    }
+
+    @Test
+    public void testDisplayDelegatePausesMessageWithoutConsuming() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+
+        IterableInAppDisplayer displayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppDisplayDelegate displayDelegate = mock(IterableInAppDisplayDelegate.class);
+        doReturn(true).when(displayDelegate).isAutoDisplayPaused(any(IterableInAppMessage.class));
+        IterableInAppManager inAppManager = createManagerWithDisplayDelegate(displayerMock, displayDelegate);
+
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        verify(displayDelegate).isAutoDisplayPaused(any(IterableInAppMessage.class));
+        verify(displayerMock, never()).showMessage(any(IterableInAppMessage.class), any(IterableInAppLocation.class), any(IterableHelper.IterableUrlCallback.class));
+        // Deferred, not consumed: message remains available and unprocessed for a later pass
+        assertEquals(1, inAppManager.getMessages().size());
+        assertFalse(inAppManager.getMessages().get(0).isProcessed());
+        assertFalse(inAppManager.getMessages().get(0).isConsumed());
+    }
+
+    @Test
+    public void testDisplayDelegateOverridesGlobalPause() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+
+        IterableInAppDisplayer displayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppDisplayDelegate displayDelegate = mock(IterableInAppDisplayDelegate.class);
+        doReturn(false).when(displayDelegate).isAutoDisplayPaused(any(IterableInAppMessage.class));
+        IterableInAppManager inAppManager = createManagerWithDisplayDelegate(displayerMock, displayDelegate);
+
+        // Global pause is on, but the delegate (returning false) takes precedence and allows display
+        inAppManager.setAutoDisplayPaused(true);
+
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        verify(displayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class));
+    }
+
+    @Test
+    public void testDisplayDelegateDefersThenDisplaysOnLaterPass() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+
+        IterableInAppDisplayer displayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppDisplayDelegate displayDelegate = mock(IterableInAppDisplayDelegate.class);
+        doReturn(true, false).when(displayDelegate).isAutoDisplayPaused(any(IterableInAppMessage.class));
+        IterableInAppManager inAppManager = createManagerWithDisplayDelegate(displayerMock, displayDelegate);
+
+        // First pass: delegate pauses, nothing shown
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+        verify(displayerMock, never()).showMessage(any(IterableInAppMessage.class), any(IterableInAppLocation.class), any(IterableHelper.IterableUrlCallback.class));
+
+        // Second pass: delegate now allows it, message is displayed
+        inAppManager.scheduleProcessing();
+        shadowOf(getMainLooper()).idle();
+        verify(displayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class));
+    }
+
+    @Test
+    public void testDisplayDelegateReceivesMessageForPerMessageDecision() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+
+        IterableInAppDisplayer displayerMock = mock(IterableInAppDisplayer.class);
+        IterableInAppDisplayDelegate displayDelegate = mock(IterableInAppDisplayDelegate.class);
+        // Allow display only for a specific message id, proving the delegate can decide per-message
+        doAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) {
+                IterableInAppMessage message = invocation.getArgument(0);
+                return !"7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV".equals(message.getMessageId());
+            }
+        }).when(displayDelegate).isAutoDisplayPaused(any(IterableInAppMessage.class));
+        IterableInAppManager inAppManager = createManagerWithDisplayDelegate(displayerMock, displayDelegate);
+
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+
+        ArgumentCaptor<IterableInAppMessage> delegateCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(displayDelegate).isAutoDisplayPaused(delegateCaptor.capture());
+        assertEquals("7kx2MmoGdCpuZao9fDueuQoXVAZuDaVV", delegateCaptor.getValue().getMessageId());
+        verify(displayerMock).showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class));
     }
 
     @Test
@@ -462,6 +564,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,
                 new IterableDefaultInAppHandler(),
+                null,
                 30.0,
                 new IterableInAppMemoryStorage(),
                 IterableActivityMonitor.getInstance(),
@@ -597,6 +700,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,
                 inAppHandler,
+                null,
                 30.0,
                 new IterableInAppMemoryStorage(),
                 IterableActivityMonitor.getInstance(),
@@ -751,6 +855,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,
                 inAppHandler,
+                null,
                 30.0,
                 new IterableInAppMemoryStorage(),
                 IterableActivityMonitor.getInstance(),
@@ -825,6 +930,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableInAppManager inAppManager = new IterableInAppManager(
                 spyApi,
                 new IterableDefaultInAppHandler(),
+                null,
                 30.0,
                 new IterableInAppMemoryStorage(),
                 IterableActivityMonitor.getInstance(),

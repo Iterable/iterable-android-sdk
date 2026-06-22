@@ -43,6 +43,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final Context context;
     private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
+    @Nullable
+    private final IterableInAppDisplayDelegate displayDelegate;
     private final IterableInAppDisplayer displayer;
     private final IterableActivityMonitor activityMonitor;
     private final double inAppDisplayInterval;
@@ -51,9 +53,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastInAppShown = 0;
     private boolean autoDisplayPaused = false;
 
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, boolean useInMemoryStorageForInApps) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, @Nullable IterableInAppDisplayDelegate displayDelegate, double inAppDisplayInterval, boolean useInMemoryStorageForInApps) {
         this(iterableApi,
                 handler,
+                displayDelegate,
                 inAppDisplayInterval,
                 IterableInAppManager.getInAppStorageModel(iterableApi, useInMemoryStorageForInApps),
                 IterableActivityMonitor.getInstance(),
@@ -63,6 +66,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     @VisibleForTesting
     IterableInAppManager(IterableApi iterableApi,
                          IterableInAppHandler handler,
+                         @Nullable IterableInAppDisplayDelegate displayDelegate,
                          double inAppDisplayInterval,
                          IterableInAppStorage storage,
                          IterableActivityMonitor activityMonitor,
@@ -70,6 +74,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         this.api = iterableApi;
         this.context = iterableApi.getMainActivityContext();
         this.handler = handler;
+        this.displayDelegate = displayDelegate;
         this.inAppDisplayInterval = inAppDisplayInterval;
         this.storage = storage;
         this.displayer = displayer;
@@ -398,7 +403,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void processMessages() {
-        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
+        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious()) {
             return;
         }
 
@@ -409,6 +414,9 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
         for (IterableInAppMessage message : messagesByPriorityLevel) {
             if (!message.isProcessed() && !message.isConsumed() && message.getTriggerType() == TriggerType.IMMEDIATE && !message.isRead()) {
+                if (isAutoDisplayPaused(message)) {
+                    return;
+                }
                 IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
@@ -460,6 +468,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private boolean canShowInAppAfterPrevious() {
         return getSecondsSinceLastInApp() >= inAppDisplayInterval;
+    }
+
+    private boolean isAutoDisplayPaused(IterableInAppMessage message) {
+        return displayDelegate != null ? displayDelegate.isAutoDisplayPaused(message) : autoDisplayPaused;
     }
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {

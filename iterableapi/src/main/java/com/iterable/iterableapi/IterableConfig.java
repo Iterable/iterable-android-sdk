@@ -51,6 +51,13 @@ public class IterableConfig {
     final IterableInAppHandler inAppHandler;
 
     /**
+     * Optional delegate that gives the app real-time, per-message control over whether an in-app
+     * message should be displayed automatically. Takes precedence over the global auto-display pause.
+     */
+    @Nullable
+    final IterableInAppDisplayDelegate inAppDisplayDelegate;
+
+    /**
      * The number of seconds to wait before showing the next in-app message, if there are multiple
      * messages in the queue
      */
@@ -171,6 +178,7 @@ public class IterableConfig {
         checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
         logLevel = builder.logLevel;
         inAppHandler = builder.inAppHandler;
+        inAppDisplayDelegate = builder.inAppDisplayDelegate;
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
@@ -200,6 +208,7 @@ public class IterableConfig {
         private boolean checkForDeferredDeeplink;
         private int logLevel = Log.ERROR;
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
+        private IterableInAppDisplayDelegate inAppDisplayDelegate = null;
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
@@ -306,6 +315,20 @@ public class IterableConfig {
         @NonNull
         public Builder setInAppHandler(@NonNull IterableInAppHandler inAppHandler) {
             this.inAppHandler = inAppHandler;
+            return this;
+        }
+
+        /**
+         * Set an in-app display delegate for real-time, per-message control over whether an in-app
+         * message should be displayed automatically. Returning {@code true} from
+         * {@link IterableInAppDisplayDelegate#isAutoDisplayPaused(IterableInAppMessage)} defers the
+         * message so it is reconsidered on a later display pass. Takes precedence over
+         * {@link IterableInAppManager#setAutoDisplayPaused(boolean)}.
+         * @param inAppDisplayDelegate In-app display delegate provided by the app
+         */
+        @NonNull
+        public Builder setInAppDisplayDelegate(@NonNull IterableInAppDisplayDelegate inAppDisplayDelegate) {
+            this.inAppDisplayDelegate = inAppDisplayDelegate;
             return this;
         }
 
