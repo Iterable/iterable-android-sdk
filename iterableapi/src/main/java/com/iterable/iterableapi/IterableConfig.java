@@ -51,13 +51,6 @@ public class IterableConfig {
     final IterableInAppHandler inAppHandler;
 
     /**
-     * Optional handler that gives the app real-time, per-message control over whether an in-app
-     * message should be displayed automatically. Takes precedence over the global auto-display pause.
-     */
-    @Nullable
-    final IterableInAppDisplayHandler inAppDisplayHandler;
-
-    /**
      * The number of seconds to wait before showing the next in-app message, if there are multiple
      * messages in the queue
      */
@@ -178,7 +171,6 @@ public class IterableConfig {
         checkForDeferredDeeplink = builder.checkForDeferredDeeplink;
         logLevel = builder.logLevel;
         inAppHandler = builder.inAppHandler;
-        inAppDisplayHandler = builder.inAppDisplayHandler;
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
@@ -208,7 +200,6 @@ public class IterableConfig {
         private boolean checkForDeferredDeeplink;
         private int logLevel = Log.ERROR;
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
-        private IterableInAppDisplayHandler inAppDisplayHandler = null;
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriod = 60000L;
@@ -315,20 +306,6 @@ public class IterableConfig {
         @NonNull
         public Builder setInAppHandler(@NonNull IterableInAppHandler inAppHandler) {
             this.inAppHandler = inAppHandler;
-            return this;
-        }
-
-        /**
-         * Set an in-app display handler for real-time, per-message control over whether an in-app
-         * message should be displayed automatically. Returning {@code true} from
-         * {@link IterableInAppDisplayHandler#isAutoDisplayPaused(IterableInAppMessage)} defers the
-         * message so it is reconsidered on a later display pass. Takes precedence over
-         * {@link IterableInAppManager#setAutoDisplayPaused(boolean)}.
-         * @param inAppDisplayHandler In-app display handler provided by the app
-         */
-        @NonNull
-        public Builder setInAppDisplayHandler(@NonNull IterableInAppDisplayHandler inAppDisplayHandler) {
-            this.inAppDisplayHandler = inAppDisplayHandler;
             return this;
         }
 

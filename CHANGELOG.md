@@ -3,11 +3,29 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Added a `DEFER` response to `IterableInAppHandler.InAppResponse`, returned from `onNewInApp(message)`. Unlike `SKIP` (which permanently drops the message), `DEFER` leaves the message pending so the SDK reconsiders it on a later display pass (next foreground, sync, or newly arrived message). Use it for temporary, per-message suppression — for example while a splash screen is showing. Existing handlers returning `SHOW`/`SKIP` are unaffected.
+- Added `IterableInAppManager.resumeInAppDisplay()` so apps can prompt the SDK to re-evaluate pending in-app messages once they become ready to display (e.g. after a splash screen is dismissed), without waiting for the next foreground/sync trigger.
+
+### Migration guide
+**No action required.** Existing `IterableInAppHandler` implementations returning `SHOW`/`SKIP` are unaffected.
+
+To suppress an in-app temporarily (e.g. during a splash screen), return the new `DEFER` instead of `SKIP` — the message stays pending and is re-offered on a later display pass:
+
+```java
+new IterableConfig.Builder().setInAppHandler(message ->
+    appIsShowingSplashScreen()
+        ? IterableInAppHandler.InAppResponse.DEFER
+        : IterableInAppHandler.InAppResponse.SHOW
+).build();
+```
+
+Once ready, call `IterableApi.getInstance().getInAppManager().resumeInAppDisplay()` to re-check pending messages immediately instead of waiting for the next foreground/sync.
+
+> **Kotlin:** add a `DEFER` branch to any exhaustive `when` over `InAppResponse`.
 
 ## [3.9.0]
 ### Added
-- Added `IterableInAppDisplayHandler` for real-time, per-message control over whether the SDK automatically displays an in-app message. Set it via `IterableConfig.Builder.setInAppDisplayHandler()`. Returning `true` from `isAutoDisplayPaused(message)` defers that message so it is reconsidered on a later display pass (rather than being permanently skipped). The handler takes precedence over the global `IterableInAppManager.setAutoDisplayPaused(boolean)` flag.
-- Added `IterableInAppManager.resumeInAppDisplay()` so apps can prompt the SDK to re-evaluate pending in-app messages once they become ready to display (e.g. after a splash screen is dismissed), without waiting for the next foreground/sync trigger.
 - Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 - New `IterableInboxToolbarView` — an opt-in, reusable toolbar component for the inbox UI. Configurable via the new Kotlin sealed interface `InboxToolbarOption`:
     - `None` (default) — no toolbar; behavior is unchanged from prior SDK versions.
