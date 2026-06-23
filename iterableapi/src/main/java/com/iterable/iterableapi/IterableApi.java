@@ -828,7 +828,7 @@ public class IterableApi {
             sharedInstance.inAppManager = new IterableInAppManager(
                     sharedInstance,
                     sharedInstance.config.inAppHandler,
-                    sharedInstance.config.inAppDisplayDelegate,
+                    sharedInstance.config.inAppDisplayHandler,
                     sharedInstance.config.inAppDisplayInterval,
                     sharedInstance.config.useInMemoryStorageForInApps);
         }

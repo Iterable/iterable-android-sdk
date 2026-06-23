@@ -44,7 +44,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private final IterableInAppStorage storage;
     private final IterableInAppHandler handler;
     @Nullable
-    private final IterableInAppDisplayDelegate displayDelegate;
+    private final IterableInAppDisplayHandler displayHandler;
     private final IterableInAppDisplayer displayer;
     private final IterableActivityMonitor activityMonitor;
     private final double inAppDisplayInterval;
@@ -53,10 +53,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastInAppShown = 0;
     private boolean autoDisplayPaused = false;
 
-    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, @Nullable IterableInAppDisplayDelegate displayDelegate, double inAppDisplayInterval, boolean useInMemoryStorageForInApps) {
+    IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, @Nullable IterableInAppDisplayHandler displayHandler, double inAppDisplayInterval, boolean useInMemoryStorageForInApps) {
         this(iterableApi,
                 handler,
-                displayDelegate,
+                displayHandler,
                 inAppDisplayInterval,
                 IterableInAppManager.getInAppStorageModel(iterableApi, useInMemoryStorageForInApps),
                 IterableActivityMonitor.getInstance(),
@@ -66,7 +66,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     @VisibleForTesting
     IterableInAppManager(IterableApi iterableApi,
                          IterableInAppHandler handler,
-                         @Nullable IterableInAppDisplayDelegate displayDelegate,
+                         @Nullable IterableInAppDisplayHandler displayHandler,
                          double inAppDisplayInterval,
                          IterableInAppStorage storage,
                          IterableActivityMonitor activityMonitor,
@@ -74,7 +74,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         this.api = iterableApi;
         this.context = iterableApi.getMainActivityContext();
         this.handler = handler;
-        this.displayDelegate = displayDelegate;
+        this.displayHandler = displayHandler;
         this.inAppDisplayInterval = inAppDisplayInterval;
         this.storage = storage;
         this.displayer = displayer;
@@ -150,10 +150,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         notifyOnChange();
     }
 
-    boolean isAutoDisplayPaused() {
-        return autoDisplayPaused;
-    }
-
     /**
      * Set a pause to prevent showing in-app messages automatically. By default the value is set to false.
      * @param paused Whether to pause showing in-app messages.
@@ -163,6 +159,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         if (!paused) {
             scheduleProcessing();
         }
+    }
+
+    /**
+     * Ask the SDK to re-evaluate whether a pending in-app message can be displayed now.
+     * <p>
+     * Use this when display was deferred via {@link IterableInAppDisplayHandler} (or
+     * {@link #setAutoDisplayPaused(boolean)}) and your app has since become ready to show in-apps —
+     * for example once a splash screen is dismissed and the main UI is visible. The SDK only
+     * re-checks pending messages on its own triggers (foreground, sync, new message); calling this
+     * lets the app prompt a re-check without one of those occurring. This does not change any stored
+     * state; it triggers a single display attempt.
+     */
+    public void resumeInAppDisplay() {
+        scheduleProcessing();
     }
 
     /**
@@ -471,7 +481,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private boolean isAutoDisplayPaused(IterableInAppMessage message) {
-        return displayDelegate != null ? displayDelegate.isAutoDisplayPaused(message) : autoDisplayPaused;
+        return displayHandler != null ? displayHandler.isAutoDisplayPaused(message) : autoDisplayPaused;
     }
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {

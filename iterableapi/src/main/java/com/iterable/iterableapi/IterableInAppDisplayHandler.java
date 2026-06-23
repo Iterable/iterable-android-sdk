@@ -3,13 +3,13 @@ package com.iterable.iterableapi;
 import androidx.annotation.NonNull;
 
 /**
- * Delegate that gives the app real-time, per-message control over whether the SDK is allowed to
+ * Handler that gives the app real-time, per-message control over whether the SDK is allowed to
  * automatically display a given in-app message at the moment it is about to be shown.
  *
- * When set via {@link IterableConfig.Builder#setInAppDisplayDelegate(IterableInAppDisplayDelegate)},
+ * When set via {@link IterableConfig.Builder#setInAppDisplayHandler(IterableInAppDisplayHandler)},
  * this takes precedence over the global {@link IterableInAppManager#setAutoDisplayPaused(boolean)} flag.
  */
-public interface IterableInAppDisplayDelegate {
+public interface IterableInAppDisplayHandler {
     /**
      * Called right before the SDK attempts to automatically display an in-app message.
      * @param message The in-app message about to be displayed.
