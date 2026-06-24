@@ -411,83 +411,65 @@ class IterableNotificationHelper {
         }
 
         /**
-         * Returns the iconId from potential resource locations
-         *
-         * @param context
-         * @return
+         * Resolves the notification small-icon by checking each supported source in priority order,
+         * falling back to the app launcher icon. Returns 0 if no icon is available.
          */
         private int getIconId(Context context) {
-            int iconId = 0;
+            Bundle metaData = getApplicationMetaData(context);
 
-            //Get the iconId set in the AndroidManifest.xml
+            // iterable_notification_icon meta-data in AndroidManifest.xml
+            int iconId = metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
+
+            // Icon name set in code via IterableApi.setNotificationIcon()
             if (iconId == 0) {
-                try {
-                    ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-                    if (info.metaData != null) {
-                        iconId = info.metaData.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0);
-                        IterableLogger.d(IterableNotificationBuilder.TAG, "iconID: " + info.metaData.get(IterableConstants.NOTIFICATION_ICON_NAME));
-                    }
-                } catch (PackageManager.NameNotFoundException e) {
-                    e.printStackTrace();
-                }
+                iconId = resolveDrawable(context, IterableApi.getNotificationIcon(context));
             }
 
-            //Get the iconId set in code
+            // Firebase default_notification_icon meta-data in AndroidManifest.xml
             if (iconId == 0) {
-                iconId = context.getResources().getIdentifier(
-                        IterableApi.getNotificationIcon(context),
-                        IterableConstants.ICON_FOLDER_IDENTIFIER,
-                        context.getPackageName());
+                iconId = metaData.getInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, 0);
             }
 
-            //Check Firebase default notification icon set in the AndroidManifest.xml
+            // @drawable/notification_icon (Expo / React Native convention)
             if (iconId == 0) {
-                try {
-                    ApplicationInfo info = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-                    if (info.metaData != null) {
-                        iconId = info.metaData.getInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, 0);
-                        if (iconId != 0) {
-                            IterableLogger.d(IterableNotificationBuilder.TAG, "Using Firebase default notification icon");
-                        }
-                    }
-                } catch (PackageManager.NameNotFoundException e) {
-                    e.printStackTrace();
-                }
+                iconId = resolveDrawable(context, IterableConstants.NOTIFICATION_ICON_DRAWABLE_NOTIFICATION_ICON);
             }
 
-            //Check @drawable/notification_icon (Expo / React Native convention)
+            // @drawable/ic_notification (common Android convention)
             if (iconId == 0) {
-                iconId = context.getResources().getIdentifier(
-                        IterableConstants.NOTIFICATION_ICON_DRAWABLE_NOTIFICATION_ICON,
-                        IterableConstants.ICON_FOLDER_IDENTIFIER,
-                        context.getPackageName());
-                if (iconId != 0) {
-                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using @drawable/notification_icon");
-                }
+                iconId = resolveDrawable(context, IterableConstants.NOTIFICATION_ICON_DRAWABLE_IC_NOTIFICATION);
             }
 
-            //Check @drawable/ic_notification (common Android convention)
+            // App launcher icon
             if (iconId == 0) {
-                iconId = context.getResources().getIdentifier(
-                        IterableConstants.NOTIFICATION_ICON_DRAWABLE_IC_NOTIFICATION,
-                        IterableConstants.ICON_FOLDER_IDENTIFIER,
-                        context.getPackageName());
-                if (iconId != 0) {
-                    IterableLogger.d(IterableNotificationBuilder.TAG, "Using @drawable/ic_notification");
-                }
-            }
-
-            //Get id from the default app settings
-            if (iconId == 0) {
-                if (context.getApplicationInfo().icon != 0) {
-                    IterableLogger.d(IterableNotificationBuilder.TAG, "No Notification Icon defined - defaulting to app icon");
-                    iconId = context.getApplicationInfo().icon;
-                } else {
-                    IterableLogger.w(IterableNotificationBuilder.TAG, "No Notification Icon defined - push notifications will not be displayed");
+                iconId = context.getApplicationInfo().icon;
+                if (iconId == 0) {
+                    IterableLogger.w(IterableNotificationBuilder.TAG, "No notification icon defined - push notifications will not be displayed");
                 }
             }
 
             return iconId;
+        }
+
+        private Bundle getApplicationMetaData(Context context) {
+            try {
+                ApplicationInfo info = context.getPackageManager()
+                        .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                if (info.metaData != null) {
+                    return info.metaData;
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+                IterableLogger.w(IterableNotificationBuilder.TAG, "Could not read application metadata for notification icon");
+            }
+            return new Bundle();
+        }
+
+        private int resolveDrawable(Context context, String name) {
+            if (name == null || name.isEmpty()) {
+                return 0;
+            }
+            return context.getResources().getIdentifier(
+                    name, IterableConstants.ICON_FOLDER_IDENTIFIER, context.getPackageName());
         }
 
         boolean isIterablePush(Bundle extras) {
