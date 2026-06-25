@@ -11,6 +11,7 @@ import com.iterable.iterableapi.unit.PathBasedQueueDispatcher;
 
 import junit.framework.Assert;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,6 +19,8 @@ import org.robolectric.Robolectric;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -190,5 +193,77 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
         // Clean up
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
+
+    @Test
+    public void testCriteriaCallbackOnSuccess() throws Exception {
+        // Flush the criteria fetch triggered by setUp() while no callback is installed,
+        // then reset tracking so the only callback-observed fetch is the one below.
+        shadowOf(getMainLooper()).idle();
+        IterableApi.getInstance().setVisitorUsageTracked(false);
+
+        String criteriaJson = "{\"criteriaSets\":[{\"criteriaId\":\"1\"}]}";
+        dispatcher.enqueueResponse("/" + IterableConstants.ENDPOINT_CRITERIA_LIST,
+            new MockResponse().setResponseCode(200).setBody(criteriaJson));
+
+        AtomicReference<JSONObject> received = new AtomicReference<>(null);
+        AtomicBoolean failed = new AtomicBoolean(false);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setUnknownUserHandler(new IterableUnknownUserHandler() {
+                @Override
+                public void onUnknownUserCreated(String userId) {}
+                @Override
+                public void onCriteriaReceived(JSONObject criteria) {
+                    received.set(criteria);
+                }
+                @Override
+                public void onCriteriaFetchFailed(String reason) {
+                    failed.set(true);
+                }
+            })
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        shadowOf(getMainLooper()).idle();
+
+        Assert.assertNotNull("onCriteriaReceived should be called with criteria", received.get());
+        assertTrue("Criteria should contain the fetched data", received.get().has("criteriaSets"));
+        assertFalse("onCriteriaFetchFailed should not be called on a successful fetch", failed.get());
+    }
+
+    @Test
+    public void testCriteriaCallbackOnFailure() throws Exception {
+        shadowOf(getMainLooper()).idle();
+        IterableApi.getInstance().setVisitorUsageTracked(false);
+
+        dispatcher.enqueueResponse("/" + IterableConstants.ENDPOINT_CRITERIA_LIST,
+            new MockResponse().setResponseCode(400).setBody("{}"));
+
+        AtomicBoolean succeeded = new AtomicBoolean(false);
+        AtomicBoolean failed = new AtomicBoolean(false);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setUnknownUserHandler(new IterableUnknownUserHandler() {
+                @Override
+                public void onUnknownUserCreated(String userId) {}
+                @Override
+                public void onCriteriaReceived(JSONObject criteria) {
+                    succeeded.set(true);
+                }
+                @Override
+                public void onCriteriaFetchFailed(String reason) {
+                    failed.set(true);
+                }
+            })
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        shadowOf(getMainLooper()).idle();
+
+        assertTrue("onCriteriaFetchFailed should be called when the criteria fetch fails", failed.get());
+        assertFalse("onCriteriaReceived should not be called on a failed fetch", succeeded.get());
     }
 }

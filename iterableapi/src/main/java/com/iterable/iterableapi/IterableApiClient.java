@@ -808,8 +808,8 @@ class IterableApiClient {
         }
     }
 
-    void getCriteriaList(@Nullable IterableHelper.IterableActionHandler actionHandler) {
-        sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), actionHandler);
+    void getCriteriaList(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
+        sendGetRequest(IterableConstants.ENDPOINT_CRITERIA_LIST, new JSONObject(), onSuccess, onFailure);
     }
 
     void trackUnknownUserSession(long createdAt, String userId, @NonNull JSONObject requestJson, JSONObject updateUserTrack, @NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
