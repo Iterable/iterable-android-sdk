@@ -3,10 +3,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Notification small-icon resolution now falls back through standard conventions — the Firebase `com.google.firebase.messaging.default_notification_icon` meta-data, `@drawable/notification_icon` (Expo / React Native), and `@drawable/ic_notification` — before defaulting to the app launcher icon. This fixes white-square notification icons on Android 5.0+ for apps that configure their icon through these conventions but don't set `iterable_notification_icon`.
 
 ## [3.9.0]
 ### Added
-- Notification small-icon resolution now falls back through standard conventions — the Firebase `com.google.firebase.messaging.default_notification_icon` meta-data, `@drawable/notification_icon` (Expo / React Native), and `@drawable/ic_notification` — before defaulting to the app launcher icon. This fixes white-square notification icons on Android 5.0+ for apps that configure their icon through these conventions but don't set `iterable_notification_icon`.
 - Added support for in-app messages in fully Jetpack Compose apps using a Dialog-based renderer (`IterableInAppDialogNotification`), removing the requirement for a `FragmentActivity`.
 - New `IterableInboxToolbarView` — an opt-in, reusable toolbar component for the inbox UI. Configurable via the new Kotlin sealed interface `InboxToolbarOption`:
     - `None` (default) — no toolbar; behavior is unchanged from prior SDK versions.
