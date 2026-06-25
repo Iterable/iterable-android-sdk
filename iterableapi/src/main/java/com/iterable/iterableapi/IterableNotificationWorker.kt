@@ -58,39 +58,12 @@ internal class IterableNotificationWorker(
         }
 
         val notification = NotificationCompat.Builder(applicationContext, channelId)
-            .setSmallIcon(getSmallIconId())
+            .setSmallIcon(IterableNotificationHelper.getIconId(applicationContext))
             .setContentTitle(getAppName())
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
         return ForegroundInfo(FOREGROUND_NOTIFICATION_ID, notification)
-    }
-
-    private fun getSmallIconId(): Int {
-        var iconId = 0
-
-        try {
-            val info = applicationContext.packageManager.getApplicationInfo(
-                applicationContext.packageName, PackageManager.GET_META_DATA
-            )
-            iconId = info.metaData?.getInt(IterableConstants.NOTIFICATION_ICON_NAME, 0) ?: 0
-        } catch (e: PackageManager.NameNotFoundException) {
-            IterableLogger.w(TAG, "Could not read application metadata for icon")
-        }
-
-        if (iconId == 0) {
-            iconId = applicationContext.resources.getIdentifier(
-                IterableApi.getNotificationIcon(applicationContext),
-                IterableConstants.ICON_FOLDER_IDENTIFIER,
-                applicationContext.packageName
-            )
-        }
-
-        if (iconId == 0) {
-            iconId = applicationContext.applicationInfo.icon
-        }
-
-        return iconId
     }
 
     private fun getAppName(): String {
