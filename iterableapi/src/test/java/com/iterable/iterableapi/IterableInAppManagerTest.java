@@ -460,6 +460,32 @@ public class IterableInAppManagerTest extends BaseTest {
     }
 
     @Test
+    public void testResumeInAppDisplayIsNoOpWhilePaused() throws Exception {
+        dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(IterableTestUtils.getResourceString("inapp_payload_single.json")));
+        IterableInAppManager inAppManager = IterableApi.getInstance().getInAppManager();
+
+        inAppManager.syncInApp();
+        shadowOf(getMainLooper()).idle();
+        assertEquals(1, inAppManager.getMessages().size());
+
+        inAppManager.setAutoDisplayPaused(true);
+        Robolectric.buildActivity(Activity.class).create().start().resume();
+        shadowOf(getMainLooper()).idle();
+        ArgumentCaptor<IterableInAppMessage> inAppMessageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
+        verify(inAppHandler, times(0)).onNewInApp(inAppMessageCaptor.capture());
+
+        // resumeInAppDisplay() does not unpause: the message is still not offered while paused
+        inAppManager.resumeInAppDisplay();
+        shadowOf(getMainLooper()).idle();
+        verify(inAppHandler, times(0)).onNewInApp(inAppMessageCaptor.capture());
+
+        // Unpausing resumes display
+        inAppManager.setAutoDisplayPaused(false);
+        shadowOf(getMainLooper()).idle();
+        verify(inAppHandler, times(1)).onNewInApp(inAppMessageCaptor.capture());
+    }
+
+    @Test
     public void testDeferDoesNotBlockLowerPriorityMessage() throws Exception {
         JSONObject payload = new JSONObject(IterableTestUtils.getResourceString("inapp_payload_single.json"));
         JSONArray jsonArray = payload.optJSONArray(IterableConstants.ITERABLE_IN_APP_MESSAGE);

@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Added a `DEFER` response to `IterableInAppHandler.InAppResponse`, returned from `onNewInApp(message)`. Unlike `SKIP` (which permanently drops the message), `DEFER` leaves the message pending so the SDK reconsiders it on a later display pass (next foreground, sync, or newly arrived message). Use it for temporary, per-message suppression — for example while a splash screen is showing. Existing handlers returning `SHOW`/`SKIP` are unaffected.
-- Added `IterableInAppManager.resumeInAppDisplay()` so apps can prompt the SDK to re-evaluate pending in-app messages once they become ready to display (e.g. after a splash screen is dismissed), without waiting for the next foreground/sync trigger.
+- Added `IterableInAppManager.resumeInAppDisplay()` so apps can prompt the SDK to re-evaluate pending in-app messages once they become ready to display (e.g. after a splash screen is dismissed), without waiting for the next foreground/sync trigger. This is independent of `setAutoDisplayPaused(boolean)`: if auto display is paused, `resumeInAppDisplay()` will not show anything (and logs a warning) until you also call `setAutoDisplayPaused(false)`.
 
 ### Migration guide
 **No action required.** Existing `IterableInAppHandler` implementations returning `SHOW`/`SKIP` are unaffected.
@@ -20,7 +20,7 @@ new IterableConfig.Builder().setInAppHandler(message ->
 ).build();
 ```
 
-Once ready, call `IterableApi.getInstance().getInAppManager().resumeInAppDisplay()` to re-check pending messages immediately instead of waiting for the next foreground/sync.
+Once ready, call `IterableApi.getInstance().getInAppManager().resumeInAppDisplay()` to re-check pending messages immediately instead of waiting for the next foreground/sync. Note that `resumeInAppDisplay()` does not unpause auto display — if you previously called `setAutoDisplayPaused(true)`, call `setAutoDisplayPaused(false)` to resume.
 
 > **Kotlin:** add a `DEFER` branch to any exhaustive `when` over `InAppResponse`.
 

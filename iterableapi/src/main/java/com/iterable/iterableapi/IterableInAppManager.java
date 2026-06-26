@@ -166,8 +166,14 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * only re-checks pending messages on its own triggers (foreground, sync, new message); calling
      * this prompts a re-check without one of those occurring. This does not change any stored state;
      * it triggers a single display attempt.
+     * <p>
+     * This is independent of {@link #setAutoDisplayPaused(boolean)}: if auto display is paused, this
+     * call will not show anything until you also call {@code setAutoDisplayPaused(false)}.
      */
     public void resumeInAppDisplay() {
+        if (isAutoDisplayPaused()) {
+            IterableLogger.w(TAG, "resumeInAppDisplay() ignored: auto display is paused. Call setAutoDisplayPaused(false) to resume.");
+        }
         scheduleProcessing();
     }
 
@@ -409,7 +415,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void processMessages() {
-        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
+        if (!activityMonitor.isInForeground()) {
+            IterableLogger.d(TAG, "processMessages skipped: app is not in foreground");
+            return;
+        }
+        if (isShowingInApp()) {
+            IterableLogger.d(TAG, "processMessages skipped: an in-app is already showing");
+            return;
+        }
+        if (!canShowInAppAfterPrevious()) {
+            IterableLogger.d(TAG, "processMessages skipped: within the in-app display interval");
+            return;
+        }
+        if (isAutoDisplayPaused()) {
+            IterableLogger.d(TAG, "processMessages skipped: auto display is paused");
             return;
         }
 
