@@ -145,10 +145,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         notifyOnChange();
     }
 
-    boolean isAutoDisplayPaused() {
-        return autoDisplayPaused;
-    }
-
     /**
      * Set a pause to prevent showing in-app messages automatically. By default the value is set to false.
      * @param paused Whether to pause showing in-app messages.
@@ -158,6 +154,27 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         if (!paused) {
             scheduleProcessing();
         }
+    }
+
+    /**
+     * Ask the SDK to re-evaluate whether a pending in-app message can be displayed now.
+     * <p>
+     * Use this when display was deferred — by returning {@link IterableInAppHandler.InAppResponse#DEFER}
+     * from {@link IterableInAppHandler#onNewInApp(IterableInAppMessage)}, or via
+     * {@link #setAutoDisplayPaused(boolean)} — and your app has since become ready to show in-apps,
+     * for example once a splash screen is dismissed and the main UI is visible. The SDK otherwise
+     * only re-checks pending messages on its own triggers (foreground, sync, new message); calling
+     * this prompts a re-check without one of those occurring. This does not change any stored state;
+     * it triggers a single display attempt.
+     * <p>
+     * This is independent of {@link #setAutoDisplayPaused(boolean)}: if auto display is paused, this
+     * call will not show anything until you also call {@code setAutoDisplayPaused(false)}.
+     */
+    public void resumeInAppDisplay() {
+        if (isAutoDisplayPaused()) {
+            IterableLogger.w(TAG, "resumeInAppDisplay() ignored: auto display is paused. Call setAutoDisplayPaused(false) to resume.");
+        }
+        scheduleProcessing();
     }
 
     /**
@@ -398,7 +415,20 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     private void processMessages() {
-        if (!activityMonitor.isInForeground() || isShowingInApp() || !canShowInAppAfterPrevious() || isAutoDisplayPaused()) {
+        if (!activityMonitor.isInForeground()) {
+            IterableLogger.d(TAG, "processMessages skipped: app is not in foreground");
+            return;
+        }
+        if (isShowingInApp()) {
+            IterableLogger.d(TAG, "processMessages skipped: an in-app is already showing");
+            return;
+        }
+        if (!canShowInAppAfterPrevious()) {
+            IterableLogger.d(TAG, "processMessages skipped: within the in-app display interval");
+            return;
+        }
+        if (isAutoDisplayPaused()) {
+            IterableLogger.d(TAG, "processMessages skipped: auto display is paused");
             return;
         }
 
@@ -412,6 +442,12 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 IterableLogger.d(TAG, "Calling onNewInApp on " + message.getMessageId());
                 InAppResponse response = handler.onNewInApp(message);
                 IterableLogger.d(TAG, "Response: " + response);
+
+                if (response == InAppResponse.DEFER) {
+                    // Leave the message unprocessed so it is reconsidered on a later display pass.
+                    continue;
+                }
+
                 message.setProcessed(true);
 
                 if (message.isJsonOnly()) {
@@ -460,6 +496,10 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
 
     private boolean canShowInAppAfterPrevious() {
         return getSecondsSinceLastInApp() >= inAppDisplayInterval;
+    }
+
+    boolean isAutoDisplayPaused() {
+        return autoDisplayPaused;
     }
 
     private void handleIterableCustomAction(String actionName, IterableInAppMessage message) {
