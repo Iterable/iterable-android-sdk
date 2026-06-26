@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -20,6 +21,7 @@ import org.robolectric.Robolectric;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -243,6 +245,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
 
         AtomicBoolean succeeded = new AtomicBoolean(false);
         AtomicBoolean failed = new AtomicBoolean(false);
+        AtomicReference<String> failureReason = new AtomicReference<>(null);
         IterableConfig config = new IterableConfig.Builder()
             .setEnableUnknownUserActivation(true)
             .setUnknownUserHandler(new IterableUnknownUserHandler() {
@@ -255,6 +258,7 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
                 @Override
                 public void onCriteriaFetchFailed(String reason) {
                     failed.set(true);
+                    failureReason.set(reason);
                 }
             })
             .build();
@@ -265,5 +269,46 @@ public class IterableApiCriteriaFetchTests extends BaseTest {
 
         assertTrue("onCriteriaFetchFailed should be called when the criteria fetch fails", failed.get());
         assertFalse("onCriteriaReceived should not be called on a failed fetch", succeeded.get());
+        assertNotNull("onCriteriaFetchFailed should receive a failure reason", failureReason.get());
+        assertFalse("Failure reason should not be empty", failureReason.get().isEmpty());
+    }
+
+    @Test
+    public void testCriteriaCallbackFiresOnEveryFetch() throws Exception {
+        // Flush the criteria fetch triggered by setUp() while no callback is installed,
+        // then reset tracking so only the callback-observed fetches below are counted.
+        shadowOf(getMainLooper()).idle();
+        IterableApi.getInstance().setVisitorUsageTracked(false);
+
+        String criteriaJson = "{\"criteriaSets\":[{\"criteriaId\":\"1\"}]}";
+        // One response per fetch.
+        dispatcher.enqueueResponse("/" + IterableConstants.ENDPOINT_CRITERIA_LIST,
+            new MockResponse().setResponseCode(200).setBody(criteriaJson));
+        dispatcher.enqueueResponse("/" + IterableConstants.ENDPOINT_CRITERIA_LIST,
+            new MockResponse().setResponseCode(200).setBody(criteriaJson));
+
+        AtomicInteger receivedCount = new AtomicInteger(0);
+        IterableConfig config = new IterableConfig.Builder()
+            .setEnableUnknownUserActivation(true)
+            .setUnknownUserHandler(new IterableUnknownUserHandler() {
+                @Override
+                public void onUnknownUserCreated(String userId) {}
+                @Override
+                public void onCriteriaReceived(JSONObject criteria) {
+                    receivedCount.incrementAndGet();
+                }
+            })
+            .build();
+
+        IterableApi.initialize(getContext(), "apiKey", config);
+
+        // Each enable of visitor usage tracking triggers a criteria fetch; the callback
+        // should fire once per fetch, matching the documented "fires on every fetch" contract.
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        shadowOf(getMainLooper()).idle();
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        shadowOf(getMainLooper()).idle();
+
+        Assert.assertEquals("onCriteriaReceived should fire once per fetch", 2, receivedCount.get());
     }
 }

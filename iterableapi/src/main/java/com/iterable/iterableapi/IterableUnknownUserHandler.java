@@ -14,6 +14,10 @@ public interface IterableUnknownUserHandler {
     /**
      * Called when the SDK fetches unknown user activation criteria successfully.
      * <p>
+     * Fires after the criteria response has been persisted to local storage, so it is safe to call
+     * {@code track}, {@code trackPurchase}, etc. from this callback and have those events evaluated
+     * against the just-arrived criteria set.
+     * <p>
      * Fires on every criteria fetch, implementation should take that into consideration.
      * @param criteria the criteria returned by the server
      */
