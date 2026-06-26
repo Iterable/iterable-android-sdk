@@ -4,6 +4,9 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
@@ -28,6 +31,9 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 
 import static org.robolectric.Shadows.shadowOf;
+
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -240,5 +246,99 @@ public class IterableNotificationTest {
         int textInputFlags = shadowOf(notification.actions[2].actionIntent).getFlags();
         assertTrue((textInputFlags & PendingIntent.FLAG_UPDATE_CURRENT) != 0);
         assertTrue((textInputFlags & PendingIntent.FLAG_MUTABLE) != 0);  // Should be mutable for text input
+    }
+
+    @Test
+    public void testIconFallbackToAppIcon() throws Exception {
+        Context context = iconTestContext(new Bundle(), null, 0, android.R.drawable.sym_def_app_icon);
+
+        assertEquals(android.R.drawable.sym_def_app_icon, IterableNotificationHelper.getIconId(context));
+    }
+
+    @Test
+    public void testIconUsesIterableMetadata() throws Exception {
+        Bundle metaData = new Bundle();
+        metaData.putInt(IterableConstants.NOTIFICATION_ICON_NAME, android.R.drawable.ic_dialog_email);
+        Context context = iconTestContext(metaData, null, 0, android.R.drawable.sym_def_app_icon);
+
+        assertEquals(android.R.drawable.ic_dialog_email, IterableNotificationHelper.getIconId(context));
+    }
+
+    @Test
+    public void testIconFallbackToFirebaseMetadata() throws Exception {
+        Bundle metaData = new Bundle();
+        metaData.putInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, android.R.drawable.ic_dialog_info);
+        Context context = iconTestContext(metaData, null, 0, android.R.drawable.sym_def_app_icon);
+
+        assertEquals(android.R.drawable.ic_dialog_info, IterableNotificationHelper.getIconId(context));
+    }
+
+    @Test
+    public void testIconIterableMetadataTakesPriorityOverFirebase() throws Exception {
+        Bundle metaData = new Bundle();
+        metaData.putInt(IterableConstants.NOTIFICATION_ICON_NAME, android.R.drawable.ic_dialog_alert);
+        metaData.putInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, android.R.drawable.ic_dialog_info);
+        Context context = iconTestContext(metaData, null, 0, android.R.drawable.sym_def_app_icon);
+
+        assertEquals(android.R.drawable.ic_dialog_alert, IterableNotificationHelper.getIconId(context));
+    }
+
+    @Test
+    public void testIconFallbackToNotificationIconDrawable() throws Exception {
+        Context context = iconTestContext(new Bundle(),
+                IterableConstants.NOTIFICATION_ICON_DRAWABLE_NOTIFICATION_ICON, android.R.drawable.ic_menu_info_details,
+                android.R.drawable.sym_def_app_icon);
+
+        assertEquals(android.R.drawable.ic_menu_info_details, IterableNotificationHelper.getIconId(context));
+    }
+
+    @Test
+    public void testIconFallbackToIcNotificationDrawable() throws Exception {
+        Context context = iconTestContext(new Bundle(),
+                IterableConstants.NOTIFICATION_ICON_DRAWABLE_IC_NOTIFICATION, android.R.drawable.ic_menu_help,
+                android.R.drawable.sym_def_app_icon);
+
+        assertEquals(android.R.drawable.ic_menu_help, IterableNotificationHelper.getIconId(context));
+    }
+
+    @Test
+    public void testIconFirebaseMetadataTakesPriorityOverDrawable() throws Exception {
+        Bundle metaData = new Bundle();
+        metaData.putInt(IterableConstants.FIREBASE_NOTIFICATION_ICON_KEY, android.R.drawable.ic_dialog_info);
+        Context context = iconTestContext(metaData,
+                IterableConstants.NOTIFICATION_ICON_DRAWABLE_NOTIFICATION_ICON, android.R.drawable.ic_menu_info_details,
+                android.R.drawable.sym_def_app_icon);
+
+        assertEquals(android.R.drawable.ic_dialog_info, IterableNotificationHelper.getIconId(context));
+    }
+
+    /**
+     * Builds a context spy with fully controlled icon inputs: the application meta-data bundle, an
+     * optional drawable name resolvable via {@link Resources#getIdentifier}, and the launcher icon.
+     * Lets each fallback tier of {@link IterableNotificationHelper#getIconId} be exercised in
+     * isolation without mutating shared Robolectric state.
+     */
+    private Context iconTestContext(Bundle metaData, String drawableName, int drawableResId, int appIcon) throws Exception {
+        Context context = spy(getContext());
+
+        ApplicationInfo appInfo = new ApplicationInfo();
+        appInfo.packageName = getContext().getPackageName();
+        appInfo.metaData = metaData;
+        appInfo.icon = appIcon;
+
+        PackageManager packageManager = spy(getContext().getPackageManager());
+        when(packageManager.getApplicationInfo(getContext().getPackageName(), PackageManager.GET_META_DATA))
+                .thenReturn(appInfo);
+        when(context.getPackageManager()).thenReturn(packageManager);
+        when(context.getApplicationInfo()).thenReturn(appInfo);
+
+        if (drawableName != null) {
+            Resources resources = spy(getContext().getResources());
+            when(resources.getIdentifier(drawableName, IterableConstants.ICON_FOLDER_IDENTIFIER, getContext().getPackageName()))
+                    .thenReturn(drawableResId);
+            when(context.getResources()).thenReturn(resources);
+        }
+
+        return context;
     }
 }
