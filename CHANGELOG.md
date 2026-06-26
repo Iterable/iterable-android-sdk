@@ -5,6 +5,26 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - `IterableUnknownUserHandler` now reports unknown user criteria fetch results via two optional methods: `onCriteriaReceived(JSONObject criteria)` on a successful fetch and `onCriteriaFetchFailed(String reason)` on failure. This lets apps act (e.g. track an event or update the user) as soon as criteria are available, without racing the asynchronous criteria fetch. Both have default no-op implementations, so existing handlers are unaffected. Callbacks are delivered on the main thread and may fire on every fetch (initialization, foregrounding, and when visitor usage tracking is enabled), so implementations should be idempotent.
+- Notification small-icon resolution now falls back through standard conventions — the Firebase `com.google.firebase.messaging.default_notification_icon` meta-data, `@drawable/notification_icon` (Expo / React Native), and `@drawable/ic_notification` — before defaulting to the app launcher icon. This fixes white-square notification icons on Android 5.0+ for apps that configure their icon through these conventions but don't set `iterable_notification_icon`.
+- Added a `DEFER` response to `IterableInAppHandler.InAppResponse`, returned from `onNewInApp(message)`. Unlike `SKIP` (which permanently drops the message), `DEFER` leaves the message pending so the SDK reconsiders it on a later display pass (next foreground, sync, or newly arrived message). Use it for temporary, per-message suppression — for example while a splash screen is showing. Existing handlers returning `SHOW`/`SKIP` are unaffected.
+- Added `IterableInAppManager.resumeInAppDisplay()` so apps can prompt the SDK to re-evaluate pending in-app messages once they become ready to display (e.g. after a splash screen is dismissed), without waiting for the next foreground/sync trigger. This is independent of `setAutoDisplayPaused(boolean)`: if auto display is paused, `resumeInAppDisplay()` will not show anything (and logs a warning) until you also call `setAutoDisplayPaused(false)`.
+
+### Migration guide
+**No action required.** Existing `IterableInAppHandler` implementations returning `SHOW`/`SKIP` are unaffected.
+
+To suppress an in-app temporarily (e.g. during a splash screen), return the new `DEFER` instead of `SKIP` — the message stays pending and is re-offered on a later display pass:
+
+```java
+new IterableConfig.Builder().setInAppHandler(message ->
+    appIsShowingSplashScreen()
+        ? IterableInAppHandler.InAppResponse.DEFER
+        : IterableInAppHandler.InAppResponse.SHOW
+).build();
+```
+
+Once ready, call `IterableApi.getInstance().getInAppManager().resumeInAppDisplay()` to re-check pending messages immediately instead of waiting for the next foreground/sync. Note that `resumeInAppDisplay()` does not unpause auto display — if you previously called `setAutoDisplayPaused(true)`, call `setAutoDisplayPaused(false)` to resume.
+
+> **Kotlin:** add a `DEFER` branch to any exhaustive `when` over `InAppResponse`.
 
 ## [3.9.0]
 ### Added
