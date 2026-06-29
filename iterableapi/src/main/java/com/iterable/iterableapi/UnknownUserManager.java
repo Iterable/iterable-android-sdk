@@ -3,7 +3,6 @@ package com.iterable.iterableapi;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -173,18 +172,20 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
     void getUnknownCriteria() {
         lastCriteriaFetch = System.currentTimeMillis();
 
-        iterableApi.apiClient.getCriteriaList(data -> {
-            if (data != null) {
-                try {
-                    JSONObject mockDataObject = new JSONObject(data);
-                    SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, mockDataObject.toString());
-                    editor.apply();
+        iterableApi.apiClient.getCriteriaList(criteria -> {
+            SharedPreferences sharedPref = IterableApi.getInstance().getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString(IterableConstants.SHARED_PREFS_CRITERIA, criteria.toString());
+            editor.apply();
 
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            IterableUnknownUserHandler handler = IterableApi.getInstance().config.iterableUnknownUserHandler;
+            if (handler != null) {
+                handler.onCriteriaReceived(criteria);
+            }
+        }, (reason, data) -> {
+            IterableUnknownUserHandler handler = IterableApi.getInstance().config.iterableUnknownUserHandler;
+            if (handler != null) {
+                handler.onCriteriaFetchFailed(reason);
             }
         });
     }
@@ -364,13 +365,10 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         saveEventListToLocalStorage(eventList);
 
         String criteriaId = checkCriteriaCompletion();
-        Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
-
         if (criteriaId != null && !isCriteriaMatched) {
             setCriteriaMatched(true);
             createUnknownUser(criteriaId);
         }
-        Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
 
     void setCriteriaMatched(boolean isCriteriaMatched) {
@@ -388,12 +386,9 @@ public class UnknownUserManager implements IterableActivityMonitor.AppStateCallb
         saveUserUpdateObjectToLocalStorage(userUpdateObject);
 
         String criteriaId = checkCriteriaCompletion();
-        Log.i("TEST_USER", "criteriaId::" + String.valueOf(criteriaId));
-
         if (criteriaId != null) {
             createUnknownUser(criteriaId);
         }
-        Log.i("criteriaId::", String.valueOf(criteriaId != null));
     }
 
     private void mergeUpdateUserObjects(JSONObject target, JSONObject source) throws JSONException {
