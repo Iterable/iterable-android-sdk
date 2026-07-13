@@ -10,7 +10,7 @@ internal class EmptyEmbeddedManager : IterableEmbeddedManager() {
     private val emptySessionManager = EmbeddedSessionManager()
 
     private fun logNotInitialized(method: String) {
-        IterableLogger.e(TAG, "$method called before IterableApi was initialized; no-op. " +
+        IterableLogger.e(LOG_TAG, "$method called before IterableApi was initialized; no-op. " +
                 "Call IterableApi.initialize() in Application#onCreate.")
     }
 
@@ -58,5 +58,9 @@ internal class EmptyEmbeddedManager : IterableEmbeddedManager() {
     }
 
     override fun onSwitchToBackground() {
+    }
+
+    private companion object {
+        private const val LOG_TAG = "EmptyEmbeddedManager"
     }
 }
