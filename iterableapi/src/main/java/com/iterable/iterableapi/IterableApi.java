@@ -54,6 +54,8 @@ public class IterableApi {
     private @Nullable UnknownUserManager unknownUserManager;
     private @Nullable IterableInAppManager inAppManager;
     private @Nullable IterableEmbeddedManager embeddedManager;
+    private final IterableInAppManager emptyInAppManager = new EmptyInAppManager();
+    private final IterableEmbeddedManager emptyEmbeddedManager = new EmptyEmbeddedManager();
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
@@ -994,25 +996,42 @@ public class IterableApi {
 
 //region SDK public functions
     /**
-     * Returns an {@link IterableInAppManager} that can be used to manage in-app messages.
-     * Make sure the Iterable API is initialized before calling this method.
-     * @return {@link IterableInAppManager} instance
+     * Returns an {@link IterableInAppManager} for managing in-app messages. If the SDK is not initialized,
+     * logs an error and returns a no-op manager instead of throwing; use {@link #getInAppManagerOrNull()} to detect that.
      */
     @NonNull
     public IterableInAppManager getInAppManager() {
         if (inAppManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getInAppManager(). " +
-                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+            IterableLogger.e(TAG, "getInAppManager() called before IterableApi was initialized; " +
+                    "returning a no-op manager. Call IterableApi.initialize() in Application#onCreate.");
+            return emptyInAppManager;
         }
         return inAppManager;
     }
 
+    /** Like {@link #getInAppManager()} but returns {@code null} (never a no-op instance) if not initialized. */
+    @Nullable
+    public IterableInAppManager getInAppManagerOrNull() {
+        return inAppManager;
+    }
+
+    /**
+     * Returns an {@link IterableEmbeddedManager} for managing embedded messages. If the SDK is not initialized,
+     * logs an error and returns a no-op manager instead of throwing; use {@link #getEmbeddedManagerOrNull()} to detect that.
+     */
     @NonNull
     public IterableEmbeddedManager getEmbeddedManager() {
         if (embeddedManager == null) {
-            throw new RuntimeException("IterableApi must be initialized before calling getEmbeddedManager(). " +
-                    "Make sure you call IterableApi#initialize() in Application#onCreate");
+            IterableLogger.e(TAG, "getEmbeddedManager() called before IterableApi was initialized; " +
+                    "returning a no-op manager. Call IterableApi.initialize() in Application#onCreate.");
+            return emptyEmbeddedManager;
         }
+        return embeddedManager;
+    }
+
+    /** Like {@link #getEmbeddedManager()} but returns {@code null} (never a no-op instance) if not initialized. */
+    @Nullable
+    public IterableEmbeddedManager getEmbeddedManagerOrNull() {
         return embeddedManager;
     }
 

@@ -79,6 +79,19 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         syncInApp();
     }
 
+    // No-op constructor for the pre-initialization stub (see EmptyInAppManager). Leaves
+    // collaborators null and does no wiring; EmptyInAppManager overrides every method that
+    // would otherwise touch them.
+    IterableInAppManager() {
+        this.api = null;
+        this.context = null;
+        this.storage = null;
+        this.handler = null;
+        this.displayer = null;
+        this.activityMonitor = null;
+        this.inAppDisplayInterval = 0;
+    }
+
     /**
      * Get the list of available in-app messages
      * This list is synchronized with the server by the SDK

@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Notification small-icon resolution now falls back through standard conventions — the Firebase `com.google.firebase.messaging.default_notification_icon` meta-data, `@drawable/notification_icon` (Expo / React Native), and `@drawable/ic_notification` — before defaulting to the app launcher icon. This fixes white-square notification icons on Android 5.0+ for apps that configure their icon through these conventions but don't set `iterable_notification_icon`.
 - Added a `DEFER` response to `IterableInAppHandler.InAppResponse`, returned from `onNewInApp(message)`. Unlike `SKIP` (which permanently drops the message), `DEFER` leaves the message pending so the SDK reconsiders it on a later display pass (next foreground, sync, or newly arrived message). Use it for temporary, per-message suppression — for example while a splash screen is showing. Existing handlers returning `SHOW`/`SKIP` are unaffected.
 - Added `IterableInAppManager.resumeInAppDisplay()` so apps can prompt the SDK to re-evaluate pending in-app messages once they become ready to display (e.g. after a splash screen is dismissed), without waiting for the next foreground/sync trigger. This is independent of `setAutoDisplayPaused(boolean)`: if auto display is paused, `resumeInAppDisplay()` will not show anything (and logs a warning) until you also call `setAutoDisplayPaused(false)`.
+- Added `IterableApi.getInAppManagerOrNull()` and `IterableApi.getEmbeddedManagerOrNull()`, which return `null` when the SDK has not been initialized instead of a no-op manager. Use these when you need to detect the uninitialized state explicitly.
+
+### Changed
+- `IterableApi.getInAppManager()` and `IterableApi.getEmbeddedManager()` no longer throw a `RuntimeException` when called before `IterableApi.initialize()`. They now log an error and return a no-op manager (empty lists, ignored commands). To detect the uninitialized state explicitly, use the new `getInAppManagerOrNull()` / `getEmbeddedManagerOrNull()`.
 
 ### Migration guide
 **No action required.** Existing `IterableInAppHandler` implementations returning `SHOW`/`SKIP` are unaffected.

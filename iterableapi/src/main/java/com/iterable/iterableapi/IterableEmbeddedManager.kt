@@ -4,7 +4,7 @@ import android.content.Context
 import org.json.JSONException
 import org.json.JSONObject
 
-public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback {
+public open class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback {
 
     // region constants
     val TAG = "IterableEmbeddedManager"
@@ -15,8 +15,8 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     private var localPlacementIds = mutableListOf<Long>()
 
     private var updateHandleListeners = mutableListOf<IterableEmbeddedUpdateHandler>()
-    private var iterableApi: IterableApi
-    private var context: Context
+    private lateinit var iterableApi: IterableApi
+    private lateinit var context: Context
 
     private var embeddedSessionManager = EmbeddedSessionManager()
 
@@ -38,27 +38,32 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
+    // No-op constructor for the pre-initialization stub (see EmptyEmbeddedManager). Leaves
+    // iterableApi/context uninitialized; EmptyEmbeddedManager overrides every method that
+    // would otherwise touch them.
+    internal constructor()
+
     // endregion
 
     // region getters and setters
 
     //Add updateHandler to the list
-    public fun addUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
+    public open fun addUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.add(updateHandler)
     }
 
     //Remove updateHandler from the list
-    public fun removeUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
+    public open fun removeUpdateListener(updateHandler: IterableEmbeddedUpdateHandler) {
         updateHandleListeners.remove(updateHandler)
         embeddedSessionManager.endSession()
     }
 
     //Get the list of updateHandlers
-    public fun getUpdateHandlers(): List<IterableEmbeddedUpdateHandler> {
+    public open fun getUpdateHandlers(): List<IterableEmbeddedUpdateHandler> {
         return updateHandleListeners
     }
 
-    public fun getEmbeddedSessionManager(): EmbeddedSessionManager {
+    public open fun getEmbeddedSessionManager(): EmbeddedSessionManager {
         return embeddedSessionManager
     }
 
@@ -67,20 +72,20 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
     // region public methods
 
     //Gets the list of embedded messages in memory without syncing
-    fun getMessages(placementId: Long): List<IterableEmbeddedMessage>? {
+    open fun getMessages(placementId: Long): List<IterableEmbeddedMessage>? {
         return localPlacementMessagesMap[placementId]
     }
 
-    fun reset() {
+    open fun reset() {
         localPlacementMessagesMap = mutableMapOf()
     }
 
-    fun getPlacementIds(): List<Long> {
+    open fun getPlacementIds(): List<Long> {
         return localPlacementIds
     }
 
     @JvmOverloads
-    fun syncMessages(placementIds: Array<Long> = emptyArray()) {
+    open fun syncMessages(placementIds: Array<Long> = emptyArray()) {
         if (iterableApi.config.enableEmbeddedMessaging) {
             IterableLogger.v(TAG, "Syncing messages...")
 
@@ -159,7 +164,7 @@ public class IterableEmbeddedManager : IterableActivityMonitor.AppStateCallback 
         }
     }
 
-    fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
+    open fun handleEmbeddedClick(message: IterableEmbeddedMessage, buttonIdentifier: String?, clickedUrl: String?) {
         if ((clickedUrl != null) && clickedUrl.toString().isNotEmpty()) {
             if (clickedUrl.startsWith(IterableConstants.URL_SCHEME_ACTION)) {
                 // This is an action:// URL, pass that to the custom action handler
