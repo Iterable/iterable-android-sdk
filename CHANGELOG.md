@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.10.0]
 ### Added
 - `IterableUnknownUserHandler` now reports unknown user criteria fetch results via two optional methods: `onCriteriaReceived(JSONObject criteria)` on a successful fetch and `onCriteriaFetchFailed(String reason)` on failure. This lets apps act (e.g. track an event or update the user) as soon as criteria are available, without racing the asynchronous criteria fetch. Both have default no-op implementations, so existing handlers are unaffected. Callbacks are delivered on the main thread and may fire on every fetch (initialization, foregrounding, and when visitor usage tracking is enabled), so implementations should handle being called repeatedly.
 - Notification small-icon resolution now falls back through standard conventions — the Firebase `com.google.firebase.messaging.default_notification_icon` meta-data, `@drawable/notification_icon` (Expo / React Native), and `@drawable/ic_notification` — before defaulting to the app launcher icon. This fixes white-square notification icons on Android 5.0+ for apps that configure their icon through these conventions but don't set `iterable_notification_icon`.
