@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Fixed a race in JWT auth token refresh scheduling that could leave multiple overlapping refresh timers running. When the refresh timer, an app foreground, and a 401 retry raced to schedule a refresh, the non-atomic timer guard let each create its own timer; the orphaned timers could not be cancelled and each kept requesting new auth tokens, inflating the number of `IterableAuthHandler.onAuthTokenRequested()` calls (and backend JWT generation) over time. Scheduling and clearing of the refresh timer are now synchronized so only one refresh timer is ever active.
 
 ## [3.10.0]
 ### Added

@@ -291,7 +291,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         return nextRetryInterval;
     }
 
-    void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
+    synchronized void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
         if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
             // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
             return;
@@ -301,6 +301,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         }
 
         try {
+            // Set the flag before scheduling so concurrent callers can't pass the guard above and
+            // orphan a second timer (SDK-547).
+            isTimerScheduled = true;
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -309,11 +312,13 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
                     } else {
                         IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
                     }
-                    isTimerScheduled = false;
+                    synchronized (IterableAuthManager.this) {
+                        isTimerScheduled = false;
+                    }
                 }
             }, timeDuration);
-            isTimerScheduled = true;
         } catch (Exception e) {
+            isTimerScheduled = false;
             IterableLogger.e(TAG, "timer exception: " + timer, e);
         }
     }
@@ -362,7 +367,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         }
     }
 
-    void clearRefreshTimer() {
+    synchronized void clearRefreshTimer() {
         if (timer != null) {
             timer.cancel();
             timer = null;
