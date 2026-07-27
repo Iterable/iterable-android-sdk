@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.TimeUnit
 
 class IterableKeychain {
@@ -120,6 +121,13 @@ class IterableKeychain {
         val encryptedValue = sharedPrefs.getString(key, null) ?: return null
         return try {
             encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } }
+        } catch (e: TimeoutException) {
+            // A crypto operation that times out is transient (slow/contended AndroidKeyStore), not a
+            // corrupt key. Don't wipe stored credentials or disable encryption over it — that would
+            // force a re-login (and a new auth-token request) on every slow launch. Return null for
+            // this read; the encrypted value stays intact for the next attempt. (SDK-547)
+            IterableLogger.w(TAG, "Crypto operation timed out; keeping encrypted data for retry.")
+            null
         } catch (e: Exception) {
             handleDecryptionError(e)
             null
@@ -145,6 +153,14 @@ class IterableKeychain {
                     .remove(key + PLAINTEXT_SUFFIX)
                     .apply()
             }
+        } catch (e: TimeoutException) {
+            // Transient slow crypto: store this value as plaintext so it isn't lost, but don't wipe
+            // other credentials or disable encryption globally. Encryption stays on for future
+            // writes. (SDK-547)
+            IterableLogger.w(TAG, "Crypto operation timed out on save; storing this value as plaintext.")
+            editor.putString(key, value)
+                .putBoolean(key + PLAINTEXT_SUFFIX, true)
+                .apply()
         } catch (e: Exception) {
             handleDecryptionError(e)
             editor.putString(key, value)
