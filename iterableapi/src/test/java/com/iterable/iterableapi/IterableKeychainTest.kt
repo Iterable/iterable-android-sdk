@@ -179,6 +179,30 @@ class IterableKeychainTest {
     }
 
     @Test
+    fun testDecryptionTimeoutDoesNotWipeCredentials() {
+        // SDK-547: a transient crypto timeout (slow AndroidKeyStore) must NOT wipe stored
+        // credentials or disable encryption — otherwise the app re-logs-in (and requests a new
+        // auth token) on every slow launch. Simulate a slow decrypt that exceeds the 500ms timeout.
+        `when`(mockEncryptor.decrypt(any())).thenAnswer {
+            Thread.sleep(700)
+            "should_not_be_returned"
+        }
+        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull()))
+            .thenReturn("any_encrypted_value")
+
+        val result = keychain.getAuthToken()
+
+        // Read returns null for this attempt...
+        assertNull(result)
+        // ...but nothing is wiped and the failure handler is NOT invoked (it's transient).
+        verify(mockEditor, never()).remove("iterable-email")
+        verify(mockEditor, never()).remove("iterable-user-id")
+        verify(mockEditor, never()).remove("iterable-auth-token")
+        verify(mockEditor, never()).putBoolean(eq("iterable-encryption-enabled"), eq(false))
+        verify(mockDecryptionFailureHandler, never()).onDecryptionFailed(any())
+    }
+
+    @Test
     fun testDecryptionFailureForAllOperations() {
         // Setup mock to throw runtime exception
         `when`(mockEncryptor.decrypt(any())).thenAnswer { 

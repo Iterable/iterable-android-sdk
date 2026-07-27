@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Fixed
 - Fixed a race in JWT auth token refresh scheduling that could leave multiple overlapping refresh timers running. When the refresh timer, an app foreground, and a 401 retry raced to schedule a refresh, the non-atomic timer guard let each create its own timer; the orphaned timers could not be cancelled and each kept requesting new auth tokens, inflating the number of `IterableAuthHandler.onAuthTokenRequested()` calls (and backend JWT generation) over time. Scheduling and clearing of the refresh timer are now synchronized so only one refresh timer is ever active.
+- Fixed the keychain treating a transient crypto timeout as a permanent decryption failure. A slow AndroidKeyStore operation that exceeded the 500 ms timeout would wipe the stored email, userId, and auth token and disable encryption, forcing the user to re-authenticate (and request a new auth token) on the next launch. Crypto timeouts are now handled as transient: the encrypted data is preserved and only the current read/write falls back, without wiping credentials or disabling encryption.
 
 ## [3.10.0]
 ### Added
