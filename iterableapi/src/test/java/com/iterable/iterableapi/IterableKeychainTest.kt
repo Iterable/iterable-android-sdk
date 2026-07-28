@@ -203,6 +203,33 @@ class IterableKeychainTest {
     }
 
     @Test
+    fun testCryptoTimeoutDoesNotBlockSubsequentReads() {
+        // SDK-547: crypto runs on a single-thread executor. A slow op that times out must be
+        // cancelled so it frees the thread and doesn't clog the next read. Here the first decrypt
+        // is interruptible-sleeping past the 500ms timeout; the second is fast. Without cancelling
+        // the timed-out task, the second read would queue behind the still-running first one and
+        // also time out (null). With cancellation it completes normally.
+        val firstCall = java.util.concurrent.atomic.AtomicBoolean(true)
+        `when`(mockEncryptor.decrypt(any())).thenAnswer {
+            if (firstCall.getAndSet(false)) {
+                Thread.sleep(5000)   // slow/hung; will be interrupted by cancel(true)
+                "slow_value"
+            } else {
+                "encrypted_fast".substring("encrypted_".length) // -> "fast"
+            }
+        }
+        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull()))
+            .thenReturn("any_encrypted_value")
+        `when`(mockSharedPrefs.getString(eq("iterable-email"), isNull()))
+            .thenReturn("encrypted_fast")
+
+        // First read times out -> null (task gets cancelled/interrupted, freeing the thread).
+        assertNull(keychain.getAuthToken())
+        // Second read must NOT be blocked behind the first; it decrypts promptly.
+        assertEquals("fast", keychain.getEmail())
+    }
+
+    @Test
     fun testDecryptionFailureForAllOperations() {
         // Setup mock to throw runtime exception
         `when`(mockEncryptor.decrypt(any())).thenAnswer { 
