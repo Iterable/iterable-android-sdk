@@ -72,7 +72,15 @@ class IterableKeychain {
     }
 
     private fun <T> runWithTimeout(callable: Callable<T>): T {
-        return cryptoExecutor.submit(callable).get(CRYPTO_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        val future = cryptoExecutor.submit(callable)
+        try {
+            return future.get(CRYPTO_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {
+            // Free the single crypto thread so a slow/hung operation doesn't block every subsequent
+            // read/write behind it. cancel(true) interrupts the task if it's interruptible. (SDK-547)
+            future.cancel(true)
+            throw e
+        }
     }
 
     private fun handleDecryptionError(e: Exception? = null) {
