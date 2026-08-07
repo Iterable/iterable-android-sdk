@@ -8,6 +8,16 @@ import android.util.Log;
  *
  */
 public class IterableConfig {
+    private static final String TAG = "IterableConfig";
+
+    static final long DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS = 60L;
+
+    /**
+     * Ceiling for {@link Builder#setExpiringAuthTokenRefreshPeriod(Long)}, in seconds (~10 years).
+     * Keeps the seconds-to-milliseconds conversion from overflowing into a negative value, which
+     * would schedule refreshes after the token has already expired.
+     */
+    static final long MAX_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS = 315_360_000L;
 
     /**
      * Push integration name - used for token registration.
@@ -67,9 +77,9 @@ public class IterableConfig {
     final IterableUnknownUserHandler iterableUnknownUserHandler;
 
     /**
-     * Duration prior to an auth expiration that a new auth token should be requested.
+     * Duration in milliseconds prior to an auth expiration that a new auth token should be requested.
      */
-    final long expiringAuthTokenRefreshPeriod;
+    final long expiringAuthTokenRefreshPeriodMillis;
 
     /**
      * Retry policy for JWT Refresh.
@@ -173,7 +183,7 @@ public class IterableConfig {
         inAppHandler = builder.inAppHandler;
         inAppDisplayInterval = builder.inAppDisplayInterval;
         authHandler = builder.authHandler;
-        expiringAuthTokenRefreshPeriod = builder.expiringAuthTokenRefreshPeriod;
+        expiringAuthTokenRefreshPeriodMillis = builder.expiringAuthTokenRefreshPeriodMillis;
         retryPolicy = builder.retryPolicy;
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
@@ -202,7 +212,7 @@ public class IterableConfig {
         private IterableInAppHandler inAppHandler = new IterableDefaultInAppHandler();
         private double inAppDisplayInterval = 30.0;
         private IterableAuthHandler authHandler;
-        private long expiringAuthTokenRefreshPeriod = 60000L;
+        private long expiringAuthTokenRefreshPeriodMillis = DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS * 1000L;
         private RetryPolicy retryPolicy = new RetryPolicy(10, 6L, RetryPolicy.Type.LINEAR);
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
@@ -341,13 +351,60 @@ public class IterableConfig {
         }
 
         /**
-         * Set a custom period before an auth token expires to automatically retrieve a new token
+         * Set a custom period before an auth token expires to automatically retrieve a new token.
+         * <p>
+         * Defaults to 60 seconds. Fractional seconds are supported, matching the iOS, React Native
+         * and Flutter SDKs.
+         * <p>
+         * A token handed to the SDK with less remaining lifetime than this period is already inside
+         * its refresh window, which causes the SDK to request another token right away. Keep the
+         * period comfortably below the lifetime of the tokens the auth handler returns.
+         * <p>
+         * Invalid values are logged rather than throwing. Meaningless values fall back to the 60
+         * second default ({@code null}, {@code NaN}, negatives); values above ~10 years are clamped
+         * to that ceiling, since an excessive period still expresses an intent. Zero is valid and
+         * means the token is refreshed only once it has expired.
+         *
          * @param period in seconds
          */
         @NonNull
-        public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
-            this.expiringAuthTokenRefreshPeriod = period * 1000L;
+        public Builder setExpiringAuthTokenRefreshPeriod(double period) {
+            if (Double.isNaN(period)) {
+                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be NaN, using default of "
+                        + DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS + "s");
+                return this;
+            }
+            if (period < 0) {
+                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be negative (was " + period
+                        + "s), using default of " + DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS + "s");
+                return this;
+            }
+            if (period > MAX_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS) {
+                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod of " + period + "s exceeds the maximum, clamping to "
+                        + MAX_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS + "s");
+                this.expiringAuthTokenRefreshPeriodMillis = MAX_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS * 1000L;
+                return this;
+            }
+            this.expiringAuthTokenRefreshPeriodMillis = Math.round(period * 1000d);
             return this;
+        }
+
+        /**
+         * Set a custom period before an auth token expires to automatically retrieve a new token.
+         *
+         * @param period in seconds
+         * @deprecated use {@link #setExpiringAuthTokenRefreshPeriod(double)}, which accepts
+         * fractional seconds like the iOS, React Native and Flutter SDKs.
+         */
+        @Deprecated
+        @NonNull
+        public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
+            if (period == null) {
+                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be null, using default of "
+                        + DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS + "s");
+                return this;
+            }
+            return setExpiringAuthTokenRefreshPeriod((double) period);
         }
 
         /**
