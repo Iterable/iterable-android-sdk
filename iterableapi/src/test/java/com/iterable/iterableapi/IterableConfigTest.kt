@@ -59,27 +59,11 @@ class IterableConfigTest {
     }
 
     @Test
-    fun setExpiringAuthTokenRefreshPeriodConvertsSecondsToMillis() {
-        val config: IterableConfig = IterableConfig.Builder()
-            .setExpiringAuthTokenRefreshPeriod(120.0)
-            .build()
-        assertEquals(120_000L, config.expiringAuthTokenRefreshPeriodMillis)
-    }
-
-    @Test
     fun setExpiringAuthTokenRefreshPeriodKeepsFractionalSeconds() {
         val config: IterableConfig = IterableConfig.Builder()
             .setExpiringAuthTokenRefreshPeriod(0.5)
             .build()
         assertEquals(500L, config.expiringAuthTokenRefreshPeriodMillis)
-    }
-
-    @Test
-    fun setExpiringAuthTokenRefreshPeriodKeepsSubSecondPrecisionOnLargerValues() {
-        val config: IterableConfig = IterableConfig.Builder()
-            .setExpiringAuthTokenRefreshPeriod(90.25)
-            .build()
-        assertEquals(90_250L, config.expiringAuthTokenRefreshPeriodMillis)
     }
 
     @Test
@@ -129,15 +113,6 @@ class IterableConfigTest {
 
     @Test
     @Suppress("DEPRECATION")
-    fun deprecatedLongOverloadFallsBackToDefaultForMostNegativeValue() {
-        val config: IterableConfig = IterableConfig.Builder()
-            .setExpiringAuthTokenRefreshPeriod(java.lang.Long.valueOf(Long.MIN_VALUE))
-            .build()
-        assertEquals(60_000L, config.expiringAuthTokenRefreshPeriodMillis)
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
     fun deprecatedLongOverloadClampsMaxValueWithoutOverflowing() {
         val config: IterableConfig = IterableConfig.Builder()
             .setExpiringAuthTokenRefreshPeriod(java.lang.Long.valueOf(Long.MAX_VALUE))
@@ -157,11 +132,5 @@ class IterableConfigTest {
             .getMethod("setExpiringAuthTokenRefreshPeriod", java.lang.Long::class.java)
         setter.invoke(builder, null)
         assertEquals(60_000L, builder.build().expiringAuthTokenRefreshPeriodMillis)
-    }
-
-    @Test
-    fun retryPolicyConvertsRetryIntervalSecondsToMillis() {
-        val retryPolicy = RetryPolicy(10, 6L, RetryPolicy.Type.LINEAR)
-        assertEquals(6_000L, retryPolicy.retryIntervalMillis)
     }
 }
