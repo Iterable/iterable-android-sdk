@@ -21,6 +21,16 @@ class IterableConfigTest {
         val config: IterableConfig = configBuilder.build()
         assertThat(config.dataRegion, `is`(IterableDataRegion.EU))
     }
+
+    /** Only reachable from Java, where the `@NonNull` parameter can still be passed null. */
+    @Test
+    fun nullDataRegionFallsBackToUs() {
+        val builder = IterableConfig.Builder()
+        val setter = IterableConfig.Builder::class.java
+            .getMethod("setDataRegion", IterableDataRegion::class.java)
+        setter.invoke(builder, null)
+        assertThat(builder.build().dataRegion, `is`(IterableDataRegion.US))
+    }
     
     @Test
     fun defaultWebViewBaseUrl() {

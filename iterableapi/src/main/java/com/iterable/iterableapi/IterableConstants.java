@@ -11,7 +11,16 @@ public final class IterableConstants {
     public static final String ACTION_PUSH_REGISTRATION = "com.iterable.push.ACTION_PUSH_REGISTRATION";
 
     //Hosts
+    /**
+     * @deprecated These constants are hardcoded to the US data region and are unused by the SDK.
+     * Use {@link IterableDataRegion#getEndpoint()} instead, which respects the configured region.
+     */
+    @Deprecated
     public static final String BASE_URL_API = "https://api.iterable.com/api/";
+    /**
+     * @deprecated Unused by the SDK and hardcoded to the US data region.
+     */
+    @Deprecated
     public static final String BASE_URL_LINKS = "https://links.iterable.com/";
 
     //API Fields

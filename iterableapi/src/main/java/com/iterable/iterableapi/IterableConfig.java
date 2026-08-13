@@ -362,10 +362,21 @@ public class IterableConfig {
 
         /**
          * Set the data region used by the SDK
+         * <p>
+         * To resolve a region from a string or numeric identifier (for example when bridging from a
+         * cross-platform wrapper), use {@link IterableDataRegion#from(String)} or
+         * {@link IterableDataRegion#from(int)}, which fall back to
+         * {@link IterableDataRegion#US} and log on unrecognised values.
+         *
          * @param dataRegion enum value that determines which endpoint to use, defaults to IterableDataRegion.US
          */
         @NonNull
         public Builder setDataRegion(@NonNull IterableDataRegion dataRegion) {
+            if (dataRegion == null) {
+                IterableLogger.w("IterableConfig", "setDataRegion received null, defaulting to " + IterableDataRegion.US.getRegionCode());
+                this.dataRegion = IterableDataRegion.US;
+                return this;
+            }
             this.dataRegion = dataRegion;
             return this;
         }
