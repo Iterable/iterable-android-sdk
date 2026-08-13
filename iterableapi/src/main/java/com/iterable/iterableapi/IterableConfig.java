@@ -360,23 +360,24 @@ public class IterableConfig {
          * its refresh window, which causes the SDK to request another token right away. Keep the
          * period comfortably below the lifetime of the tokens the auth handler returns.
          * <p>
-         * Invalid values are logged rather than throwing. Meaningless values fall back to the 60
-         * second default ({@code null}, {@code NaN}, negatives); values above ~10 years are clamped
-         * to that ceiling, since an excessive period still expresses an intent. Zero is valid and
-         * means the token is refreshed only once it has expired.
+         * Invalid values are logged and ignored rather than throwing, leaving the period at whatever
+         * it was before the call — the 60 second default unless an earlier call set something else
+         * ({@code null}, {@code NaN}, negatives). Values above ~10 years are clamped to that ceiling
+         * instead of being ignored, since an excessive period still expresses an intent. Zero is
+         * valid and means the token is refreshed only once it has expired.
          *
          * @param period in seconds
          */
         @NonNull
         public Builder setExpiringAuthTokenRefreshPeriod(double period) {
             if (Double.isNaN(period)) {
-                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be NaN, using default of "
-                        + DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS + "s");
+                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be NaN, ignoring it and keeping "
+                        + expiringAuthTokenRefreshPeriodMillis / 1000d + "s");
                 return this;
             }
             if (period < 0) {
                 IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be negative (was " + period
-                        + "s), using default of " + DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS + "s");
+                        + "s), ignoring it and keeping " + expiringAuthTokenRefreshPeriodMillis / 1000d + "s");
                 return this;
             }
             if (period > MAX_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS) {
@@ -400,8 +401,8 @@ public class IterableConfig {
         @NonNull
         public Builder setExpiringAuthTokenRefreshPeriod(@NonNull Long period) {
             if (period == null) {
-                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be null, using default of "
-                        + DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS + "s");
+                IterableLogger.w(TAG, "expiringAuthTokenRefreshPeriod cannot be null, ignoring it and keeping "
+                        + expiringAuthTokenRefreshPeriodMillis / 1000d + "s");
                 return this;
             }
             return setExpiringAuthTokenRefreshPeriod((double) period);

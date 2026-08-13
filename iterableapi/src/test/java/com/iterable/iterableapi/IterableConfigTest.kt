@@ -83,6 +83,16 @@ class IterableConfigTest {
     }
 
     @Test
+    fun invalidExpiringAuthTokenRefreshPeriodKeepsThePreviouslySetValue() {
+        val config: IterableConfig = IterableConfig.Builder()
+            .setExpiringAuthTokenRefreshPeriod(30.0)
+            .setExpiringAuthTokenRefreshPeriod(-60.0)
+            .setExpiringAuthTokenRefreshPeriod(Double.NaN)
+            .build()
+        assertEquals(30_000L, config.expiringAuthTokenRefreshPeriodMillis)
+    }
+
+    @Test
     fun oversizedExpiringAuthTokenRefreshPeriodIsClampedWithoutOverflowing() {
         val config: IterableConfig = IterableConfig.Builder()
             .setExpiringAuthTokenRefreshPeriod(Double.MAX_VALUE)
