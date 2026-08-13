@@ -13,7 +13,7 @@ public class IterableConfig {
     static final long DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS = 60L;
 
     /**
-     * Ceiling for {@link Builder#setExpiringAuthTokenRefreshPeriod(Long)}, in seconds (~10 years).
+     * Ceiling for {@link Builder#setExpiringAuthTokenRefreshPeriod(double)}, in seconds (~10 years).
      * Keeps the seconds-to-milliseconds conversion from overflowing into a negative value, which
      * would schedule refreshes after the token has already expired.
      */
