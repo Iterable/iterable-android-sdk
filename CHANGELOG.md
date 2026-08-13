@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - An unrecognised data region no longer resolves silently. `IterableDataRegion.from(...)` and `setDataRegion(...)` log a warning naming the supported values before falling back to `US`, so a misconfigured region surfaces in the logs instead of quietly routing EU-destined data to the US data center. `setDataRegion(null)` now falls back to `US` with a warning instead of leaving the region unset.
 
 ### Deprecated
-- `IterableConstants.BASE_URL_API` and `IterableConstants.BASE_URL_LINKS` — both are hardcoded to the US data region and are unused by the SDK, which resolves its endpoint from the configured `IterableDataRegion`. Use `IterableDataRegion.getEndpoint()` instead. They still resolve to the same values, so no action is required; a removal version will be announced before they are removed.
+- `IterableConstants.BASE_URL_API` and `IterableConstants.BASE_URL_LINKS` — both are hardcoded to the US data region and are unused by the SDK, which resolves its endpoint from the configured `IterableDataRegion`. Use `IterableDataRegion.getEndpoint()` instead. They still resolve to the same values, so no action is required in this release. **They will be removed in 3.12.0** — if you reference either constant, switch to `IterableDataRegion.getEndpoint()` before upgrading to that version.
 
 ## [3.10.0]
 ### Added
