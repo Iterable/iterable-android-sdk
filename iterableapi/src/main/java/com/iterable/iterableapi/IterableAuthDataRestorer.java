@@ -21,11 +21,13 @@ class IterableAuthDataRestorer {
     static final long RETRY_DELAY_MS = 1000L;
 
     private static final ScheduledExecutorService RETRY_EXECUTOR =
-            Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "IterableAuthRestore");
-                thread.setDaemon(true);
-                return thread;
-            });
+            Executors.newSingleThreadScheduledExecutor(
+                    runnable -> {
+                        Thread thread = new Thread(runnable, "IterableAuthRestore");
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+            );
 
     interface Callback {
         void onAuthTokenRestored(@Nullable String authToken);
@@ -53,7 +55,8 @@ class IterableAuthDataRestorer {
     @VisibleForTesting
     IterableAuthDataRestorer(
             IterableKeychain keychain,
-            ScheduledExecutorService retryExecutor) {
+            ScheduledExecutorService retryExecutor
+    ) {
         this.keychain = keychain;
         this.retryExecutor = retryExecutor;
     }
@@ -81,7 +84,8 @@ class IterableAuthDataRestorer {
         if (restoring) {
             IterableLogger.d(
                     TAG,
-                    "auth_restore action=resume outcome=already_running source=foreground");
+                    "auth_restore action=resume outcome=already_running source=foreground"
+            );
             return true;
         }
         if (!unavailable || callback == null) {
@@ -93,7 +97,8 @@ class IterableAuthDataRestorer {
         unavailable = false;
         IterableLogger.d(
                 TAG,
-                "auth_restore action=resume outcome=scheduled source=foreground");
+                "auth_restore action=resume outcome=scheduled source=foreground"
+        );
         scheduleRead(generation, 0, 0);
         return true;
     }
@@ -113,7 +118,8 @@ class IterableAuthDataRestorer {
     private void handleRead(
             int currentGeneration,
             int timeoutRetries,
-            KeychainReadResult result) {
+            KeychainReadResult result
+    ) {
         if (!isCurrent(currentGeneration)) {
             return;
         }
@@ -129,7 +135,8 @@ class IterableAuthDataRestorer {
                 TAG,
                 "auth_restore action=read attempt="
                         + attempt
-                        + " outcome=timeout");
+                        + " outcome=timeout"
+        );
         if (timeoutRetries >= MAX_TIMEOUT_RETRIES) {
             markUnavailable(currentGeneration, attempt);
         } else {
@@ -140,29 +147,36 @@ class IterableAuthDataRestorer {
     private synchronized void scheduleRead(
             int currentGeneration,
             int timeoutRetries,
-            long delayMs) {
+            long delayMs
+    ) {
         if (!isCurrent(currentGeneration)) {
             return;
         }
 
-        pendingRetry = retryExecutor.schedule(() -> {
-            synchronized (IterableAuthDataRestorer.this) {
-                if (!isCurrent(currentGeneration)) {
-                    IterableLogger.d(
-                            TAG,
-                            "auth_restore action=ignore reason=stale_generation");
-                    return;
-                }
-                pendingRetry = null;
-            }
-            handleRead(currentGeneration, timeoutRetries, keychain.readAuthToken());
-        }, delayMs, TimeUnit.MILLISECONDS);
+        pendingRetry = retryExecutor.schedule(
+                () -> {
+                    synchronized (IterableAuthDataRestorer.this) {
+                        if (!isCurrent(currentGeneration)) {
+                            IterableLogger.d(
+                                    TAG,
+                                    "auth_restore action=ignore reason=stale_generation"
+                            );
+                            return;
+                        }
+                        pendingRetry = null;
+                    }
+                    handleRead(currentGeneration, timeoutRetries, keychain.readAuthToken());
+                },
+                delayMs,
+                TimeUnit.MILLISECONDS
+        );
     }
 
     private synchronized void complete(
             int currentGeneration,
             @Nullable String authToken,
-            int attempt) {
+            int attempt
+    ) {
         if (!isCurrent(currentGeneration)) {
             return;
         }
@@ -175,7 +189,8 @@ class IterableAuthDataRestorer {
                 "auth_restore action=read attempt="
                         + attempt
                         + " outcome="
-                        + (authToken == null ? "token_missing" : "token_found"));
+                        + (authToken == null ? "token_missing" : "token_found")
+        );
 
         Callback currentCallback = callback;
         callback = null;
@@ -197,7 +212,8 @@ class IterableAuthDataRestorer {
                 TAG,
                 "auth_restore action=complete attempts="
                         + attempts
-                        + " outcome=unavailable");
+                        + " outcome=unavailable"
+        );
         if (callback != null) {
             callback.onAuthTokenUnavailable();
         }

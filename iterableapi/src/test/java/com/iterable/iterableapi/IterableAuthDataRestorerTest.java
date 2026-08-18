@@ -34,14 +34,18 @@ public class IterableAuthDataRestorerTest {
         keychain = mock(IterableKeychain.class);
         retryExecutor = mock(ScheduledExecutorService.class);
         scheduledTasks = new ArrayDeque<>();
-        when(retryExecutor.schedule(
-                any(Runnable.class),
-                anyLong(),
-                eq(TimeUnit.MILLISECONDS)))
-                .thenAnswer(invocation -> {
+        when(
+                retryExecutor.schedule(
+                        any(Runnable.class),
+                        anyLong(),
+                        eq(TimeUnit.MILLISECONDS)
+                )
+        ).thenAnswer(
+                invocation -> {
                     scheduledTasks.add(invocation.getArgument(0));
                     return mock(ScheduledFuture.class);
-                });
+                }
+        );
 
         callback = new RecordingCallback();
         restorer = new IterableAuthDataRestorer(keychain, retryExecutor);
@@ -83,7 +87,8 @@ public class IterableAuthDataRestorerTest {
         doReturn(
                 KeychainReadResult.TimedOut.INSTANCE,
                 KeychainReadResult.TimedOut.INSTANCE,
-                new KeychainReadResult.Value("stored-token"))
+                new KeychainReadResult.Value("stored-token")
+        )
                 .when(keychain)
                 .readAuthToken();
 

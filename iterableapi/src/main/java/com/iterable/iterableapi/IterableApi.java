@@ -433,7 +433,7 @@ public class IterableApi {
 
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
-            setAuthToken(authToken);
+            getAuthManager().useExplicitAuthToken(authToken);
             attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
         } else {
             getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler));

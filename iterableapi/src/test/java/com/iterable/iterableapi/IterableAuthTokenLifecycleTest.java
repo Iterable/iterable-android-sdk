@@ -235,7 +235,8 @@ public class IterableAuthTokenLifecycleTest extends BaseTest {
         assertNull("backgrounding must cancel the refresh timer", authManager.timer);
         assertNull(
                 "backgrounding must release refresh ownership",
-                authManager.scheduledRefreshTask);
+                authManager.scheduledRefreshTask
+        );
     }
 
     @Test
@@ -277,7 +278,9 @@ public class IterableAuthTokenLifecycleTest extends BaseTest {
                 () -> authManager.scheduleAuthTokenRefresh(
                         60_000,
                         IterableAuthRefreshReason.TOKEN_EXPIRING,
-                        null));
+                        null
+                )
+        );
 
         assertEquals(1, timer.liveTaskCount());
     }
@@ -368,7 +371,8 @@ public class IterableAuthTokenLifecycleTest extends BaseTest {
         authManager.scheduleAuthTokenRefresh(
                 60_000,
                 IterableAuthRefreshReason.TOKEN_EXPIRING,
-                null);
+                null
+        );
         assertEquals(1, timer.liveTaskCount());
         return timer;
     }

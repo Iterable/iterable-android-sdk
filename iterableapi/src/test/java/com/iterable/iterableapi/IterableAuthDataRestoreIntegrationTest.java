@@ -8,6 +8,7 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -43,14 +44,18 @@ public class IterableAuthDataRestoreIntegrationTest extends BaseTest {
 
         retryExecutor = mock(ScheduledExecutorService.class);
         scheduledTasks = new ArrayDeque<>();
-        when(retryExecutor.schedule(
-                any(Runnable.class),
-                anyLong(),
-                eq(TimeUnit.MILLISECONDS)))
-                .thenAnswer(invocation -> {
+        when(
+                retryExecutor.schedule(
+                        any(Runnable.class),
+                        anyLong(),
+                        eq(TimeUnit.MILLISECONDS)
+                )
+        ).thenAnswer(
+                invocation -> {
                     scheduledTasks.add(invocation.getArgument(0));
                     return mock(ScheduledFuture.class);
-                });
+                }
+        );
 
         IterableApi.sharedInstance.keychain = keychain;
         IterableApi.sharedInstance.authDataRestoreExecutor = retryExecutor;
@@ -81,7 +86,8 @@ public class IterableAuthDataRestoreIntegrationTest extends BaseTest {
     public void timeoutThenSuccessRestoresTokenWithoutCallingClientHandler() {
         doReturn(
                 KeychainReadResult.TimedOut.INSTANCE,
-                new KeychainReadResult.Value(VALID_JWT))
+                new KeychainReadResult.Value(VALID_JWT)
+        )
                 .when(keychain)
                 .readAuthToken();
 
@@ -94,7 +100,8 @@ public class IterableAuthDataRestoreIntegrationTest extends BaseTest {
         assertTrue(authManager.isAuthTokenReady());
         assertEquals(
                 IterableAuthRefreshReason.TOKEN_EXPIRING,
-                authManager.scheduledRefreshReason);
+                authManager.scheduledRefreshReason
+        );
         verify(authHandler, never()).onAuthTokenRequested();
     }
 
@@ -111,7 +118,8 @@ public class IterableAuthDataRestoreIntegrationTest extends BaseTest {
         assertFalse(authManager.isAuthTokenReady());
         assertEquals(
                 IterableAuthRefreshReason.STORED_TOKEN_MISSING,
-                authManager.scheduledRefreshReason);
+                authManager.scheduledRefreshReason
+        );
         verify(authHandler, never()).onAuthTokenRequested();
     }
 
@@ -129,7 +137,8 @@ public class IterableAuthDataRestoreIntegrationTest extends BaseTest {
         assertTrue(authManager.isAuthTokenReady());
         assertEquals(
                 IterableAuthRefreshReason.TOKEN_EXPIRING,
-                authManager.scheduledRefreshReason);
+                authManager.scheduledRefreshReason
+        );
         verify(authHandler, never()).onAuthTokenRequested();
     }
 
@@ -137,16 +146,24 @@ public class IterableAuthDataRestoreIntegrationTest extends BaseTest {
     public void explicitLoginWinsOverAQueuedRestoreRetry() {
         doReturn(
                 KeychainReadResult.TimedOut.INSTANCE,
-                new KeychainReadResult.Value("old-token"))
+                new KeychainReadResult.Value("old-token")
+        )
                 .when(keychain)
                 .readAuthToken();
 
         initialize();
+        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
+        AtomicReference<String> tokenWhenAuthBecameReady = new AtomicReference<>();
+        authManager.addAuthTokenReadyListener(
+                () -> tokenWhenAuthBecameReady.set(IterableApi.getInstance().getAuthToken())
+        );
+
         IterableApi.getInstance().setEmail(NEW_EMAIL, VALID_JWT);
         runNext();
 
         assertEquals(NEW_EMAIL, IterableApi.getInstance().getEmail());
         assertEquals(VALID_JWT, IterableApi.getInstance().getAuthToken());
+        assertEquals(VALID_JWT, tokenWhenAuthBecameReady.get());
     }
 
     private void initialize() {
@@ -156,7 +173,8 @@ public class IterableAuthDataRestoreIntegrationTest extends BaseTest {
                 new IterableConfig.Builder()
                         .setAutoPushRegistration(false)
                         .setAuthHandler(authHandler)
-                        .build());
+                        .build()
+        );
     }
 
     private void runNext() {

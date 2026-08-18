@@ -578,7 +578,8 @@ public class IterableApiAuthTests extends BaseTest {
                     authManager.scheduleAuthTokenRefresh(
                             60000,
                             IterableAuthRefreshReason.TOKEN_EXPIRING,
-                            null);
+                            null
+                    );
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
