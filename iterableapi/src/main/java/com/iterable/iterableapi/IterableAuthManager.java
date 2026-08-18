@@ -57,7 +57,8 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     private volatile AuthState authState = AuthState.UNKNOWN;
     private final ArrayList<AuthTokenReadyListener> authTokenReadyListeners = new ArrayList<>();
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    @VisibleForTesting
+    ExecutorService executor = Executors.newSingleThreadExecutor();
 
     IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, RetryPolicy authRetryPolicy, long expiringAuthTokenRefreshPeriod) {
         this.api = api;
