@@ -14,6 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class IterableAuthManager implements IterableActivityMonitor.AppStateCallback {
     private static final String TAG = "IterableAuth";
@@ -24,11 +25,13 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
      * VALID: Last request succeeded with this token.
      * INVALID: A 401 JWT error was received; processing should pause.
      * UNKNOWN: A new token was obtained but not yet verified by a request.
+     * RESTORING: Startup auth is unresolved, so JWT-required work must wait.
      */
     enum AuthState {
         VALID,
         INVALID,
-        UNKNOWN
+        UNKNOWN,
+        RESTORING
     }
 
     /**
@@ -44,6 +47,12 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     private final IterableActivityMonitor activityMonitor;
     @VisibleForTesting
     Timer timer;
+    @VisibleForTesting
+    volatile TimerTask scheduledRefreshTask;
+    @VisibleForTesting
+    volatile IterableAuthRefreshReason scheduledRefreshReason;
+    @Nullable
+    private volatile IterableAuthDataRestorer authDataRestorer;
     private boolean hasFailedPriorAuth;
     private boolean pendingAuth;
     private boolean requiresAuthRefresh;
@@ -51,7 +60,6 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     boolean pauseAuthRetry;
     int retryCount;
     private boolean isLastAuthTokenValid;
-    private volatile boolean isTimerScheduled;
     private volatile boolean isInForeground = true; // Assume foreground initially
 
     private volatile AuthState authState = AuthState.UNKNOWN;
@@ -86,7 +94,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         if (authHandler == null) {
             return true;
         }
-        return authState != AuthState.INVALID;
+        return isReadyState(authState);
     }
 
     /**
@@ -101,17 +109,75 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     /**
-     * Centralized auth state setter. Notifies AuthTokenReadyListeners only when
-     * transitioning from INVALID to a ready state (UNKNOWN or VALID), which means
-     * a new token has been obtained after a prior auth failure.
+     * Centralized auth state setter. Listeners are notified whenever auth moves from a blocked
+     * state to a ready state.
      */
     private void setAuthState(AuthState newState) {
         AuthState previousState = this.authState;
         this.authState = newState;
 
-        if (previousState == AuthState.INVALID && newState != AuthState.INVALID) {
+        if (!isReadyState(previousState) && isReadyState(newState)) {
             notifyAuthTokenReadyListeners();
         }
+    }
+
+    private boolean isReadyState(AuthState state) {
+        return state == AuthState.VALID || state == AuthState.UNKNOWN;
+    }
+
+    @Nullable
+    String restoreAuthToken(
+            IterableKeychain keychain,
+            @Nullable ScheduledExecutorService retryExecutor) {
+        KeychainReadResult initialRead = keychain.readAuthToken();
+        setAuthState(AuthState.RESTORING);
+        authDataRestorer = retryExecutor == null
+                ? new IterableAuthDataRestorer(keychain)
+                : new IterableAuthDataRestorer(keychain, retryExecutor);
+        authDataRestorer.restore(initialRead, new IterableAuthDataRestorer.Callback() {
+            @Override
+            public void onAuthTokenRestored(@Nullable String authToken) {
+                api.setRestoredAuthToken(authToken);
+                authDataRestorer = null;
+                handleRestoredAuthToken(authToken);
+            }
+
+            @Override
+            public void onAuthTokenUnavailable() {
+                IterableLogger.w(
+                        TAG,
+                        "auth_restore action=block reason=storage_unavailable");
+            }
+        });
+        return initialRead.valueOrNull();
+    }
+
+    private void handleRestoredAuthToken(@Nullable String authToken) {
+        if (authToken != null) {
+            setAuthState(AuthState.UNKNOWN);
+            queueExpirationRefresh(authToken);
+        } else {
+            scheduleAuthTokenRefresh(
+                    getNextRetryInterval(),
+                    IterableAuthRefreshReason.STORED_TOKEN_MISSING,
+                    null);
+        }
+    }
+
+    void cancelAuthTokenRestore(String reason) {
+        if (authDataRestorer != null) {
+            authDataRestorer.cancel(reason);
+            authDataRestorer = null;
+        }
+        if (authState == AuthState.RESTORING) {
+            setAuthState(AuthState.UNKNOWN);
+        }
+    }
+
+    void useExplicitAuthToken(String authToken) {
+        cancelAuthTokenRestore("explicit_token");
+        api.setAuthToken(authToken);
+        queueExpirationRefresh(authToken);
     }
 
     private void notifyAuthTokenReadyListeners() {
@@ -131,8 +197,13 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     void reset() {
-        clearRefreshTimer();
+        clearRefreshTimer("auth_reset");
         setIsLastAuthTokenValid(false);
+    }
+
+    void resetForIdentityChange() {
+        cancelAuthTokenRestore("identity_changed");
+        reset();
     }
 
     void setIsLastAuthTokenValid(boolean isValid) {
@@ -223,7 +294,10 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         } else {
             handleAuthFailure(authToken, AuthFailureReason.AUTH_TOKEN_NULL);
             IterableApi.getInstance().setAuthToken(authToken);
-            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
+            scheduleAuthTokenRefresh(
+                    getNextRetryInterval(),
+                    IterableAuthRefreshReason.AUTH_HANDLER_RETRY,
+                    null);
             return;
         }
         reSyncAuth();
@@ -235,32 +309,45 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
         handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_GENERATION_ERROR);
         pendingAuth = false;
-        scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
+        scheduleAuthTokenRefresh(
+                getNextRetryInterval(),
+                IterableAuthRefreshReason.AUTH_HANDLER_RETRY,
+                null);
     }
 
     public void queueExpirationRefresh(@Nullable String encodedJWT) {
-        clearRefreshTimer();
+        clearRefreshTimer("token_replaced");
         try {
             if (encodedJWT == null) {
                 IterableLogger.d(TAG, "JWT is null. Scheduling token refresh");
-                if (!isTimerScheduled) {
-                    scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
-                }
+                scheduleAuthTokenRefresh(
+                        getNextRetryInterval(),
+                        IterableAuthRefreshReason.TOKEN_MISSING,
+                        null);
                 return;
             }
 
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
             long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
             if (triggerExpirationRefreshTime > 0) {
-                scheduleAuthTokenRefresh(triggerExpirationRefreshTime, true, null);
+                scheduleAuthTokenRefresh(
+                        triggerExpirationRefreshTime,
+                        IterableAuthRefreshReason.TOKEN_EXPIRING,
+                        null);
             } else {
-                scheduleAuthTokenRefresh(getNextRetryInterval(), true, null);
+                scheduleAuthTokenRefresh(
+                        getNextRetryInterval(),
+                        IterableAuthRefreshReason.TOKEN_EXPIRED,
+                        null);
             }
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while parsing JWT for the expiration", e);
             isLastAuthTokenValid = false;
             handleAuthFailure(encodedJWT, AuthFailureReason.AUTH_TOKEN_PAYLOAD_INVALID);
-            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
+            scheduleAuthTokenRefresh(
+                    getNextRetryInterval(),
+                    IterableAuthRefreshReason.TOKEN_INVALID,
+                    null);
         }
     }
 
@@ -271,7 +358,10 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     void reSyncAuth() {
         if (requiresAuthRefresh) {
             requiresAuthRefresh = false;
-            scheduleAuthTokenRefresh(getNextRetryInterval(), false, null);
+            scheduleAuthTokenRefresh(
+                    getNextRetryInterval(),
+                    IterableAuthRefreshReason.DEFERRED_REFRESH,
+                    null);
         }
     }
 
@@ -292,35 +382,100 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         return nextRetryInterval;
     }
 
-    synchronized void scheduleAuthTokenRefresh(long timeDuration, boolean isScheduledRefresh, final IterableHelper.SuccessHandler successCallback) {
-        if ((pauseAuthRetry && !isScheduledRefresh) || isTimerScheduled) {
-            // we only stop schedule token refresh if it is called from retry (in case of failure). The normal auth token refresh schedule would work
+    synchronized void scheduleAuthTokenRefresh(
+            long timeDuration,
+            IterableAuthRefreshReason reason,
+            final IterableHelper.SuccessHandler successCallback) {
+        if (pauseAuthRetry && !reason.ignoresRetryPolicy()) {
+            IterableLogger.d(
+                    TAG,
+                    "auth_refresh action=skip reason="
+                            + reason
+                            + " cause=retry_paused");
+            return;
+        }
+        if (scheduledRefreshTask != null) {
+            IterableLogger.d(
+                    TAG,
+                    "auth_refresh action=skip reason="
+                            + reason
+                            + " cause=already_scheduled pending_reason="
+                            + scheduledRefreshReason);
             return;
         }
         if (timer == null) {
             timer = new Timer(true);
         }
 
-        try {
-            // Set the flag before scheduling so concurrent callers can't pass the guard above and
-            // orphan a second timer (SDK-547).
-            isTimerScheduled = true;
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if (api.getEmail() != null || api.getUserId() != null) {
-                        api.getAuthManager().requestNewAuthToken(false, successCallback, isScheduledRefresh);
-                    } else {
-                        IterableLogger.w(TAG, "Email or userId is not available. Skipping token refresh");
-                    }
-                    synchronized (IterableAuthManager.this) {
-                        isTimerScheduled = false;
-                    }
+        final TimerTask refreshTask = new TimerTask() {
+            @Override
+            public void run() {
+                if (!claimRefreshTask(this, reason)) {
+                    return;
                 }
-            }, timeDuration);
+
+                IterableLogger.d(TAG, "auth_refresh action=fire reason=" + reason);
+                if (api.getEmail() != null || api.getUserId() != null) {
+                    requestNewAuthToken(
+                            false,
+                            successCallback,
+                            reason.ignoresRetryPolicy());
+                } else {
+                    IterableLogger.w(
+                            TAG,
+                            "auth_refresh action=skip reason="
+                                    + reason
+                                    + " cause=identity_missing");
+                }
+            }
+        };
+
+        try {
+            scheduledRefreshTask = refreshTask;
+            scheduledRefreshReason = reason;
+            timer.schedule(refreshTask, timeDuration);
+            IterableLogger.d(
+                    TAG,
+                    "auth_refresh action=schedule reason="
+                            + reason
+                            + " delay_ms="
+                            + timeDuration);
         } catch (Exception e) {
-            isTimerScheduled = false;
-            IterableLogger.e(TAG, "timer exception: " + timer, e);
+            releaseRefreshTask(refreshTask);
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
+            }
+            IterableLogger.e(
+                    TAG,
+                    "auth_refresh action=error reason="
+                            + reason
+                            + " cause=schedule_failed",
+                    e);
+        }
+    }
+
+    private synchronized boolean claimRefreshTask(
+            TimerTask task,
+            IterableAuthRefreshReason reason) {
+        if (scheduledRefreshTask != task) {
+            IterableLogger.d(
+                    TAG,
+                    "auth_refresh action=ignore reason="
+                            + reason
+                            + " cause=stale_task");
+            return false;
+        }
+
+        scheduledRefreshTask = null;
+        scheduledRefreshReason = null;
+        return true;
+    }
+
+    private synchronized void releaseRefreshTask(TimerTask task) {
+        if (scheduledRefreshTask == task) {
+            scheduledRefreshTask = null;
+            scheduledRefreshReason = null;
         }
     }
 
@@ -368,11 +523,28 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         }
     }
 
-    synchronized void clearRefreshTimer() {
+    void clearRefreshTimer() {
+        clearRefreshTimer("explicit_clear");
+    }
+
+    private synchronized void clearRefreshTimer(String reason) {
+        IterableAuthRefreshReason cancelledReason = scheduledRefreshReason;
+        if (scheduledRefreshTask != null) {
+            scheduledRefreshTask.cancel();
+        }
         if (timer != null) {
             timer.cancel();
             timer = null;
-            isTimerScheduled = false;
+        }
+        scheduledRefreshTask = null;
+        scheduledRefreshReason = null;
+        if (cancelledReason != null) {
+            IterableLogger.d(
+                    TAG,
+                    "auth_refresh action=cancel reason="
+                            + cancelledReason
+                            + " cause="
+                            + reason);
         }
     }
 
@@ -381,6 +553,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         try {
             IterableLogger.d(TAG, "App switched to foreground - enabling auth token requests");
             isInForeground = true;
+            if (authDataRestorer != null && authDataRestorer.resumeIfUnresolved()) {
+                return;
+            }
             checkAndHandleAuthRefresh();
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error occurred in handling auth token refresh", e);
@@ -392,10 +567,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         try {
             IterableLogger.d(TAG, "App switched to background - disabling auth token requests");
             isInForeground = false;
-            clearRefreshTimer();
+            clearRefreshTimer("app_backgrounded");
         } catch (Exception e) {
             IterableLogger.e(TAG, "Error while switching to background", e);
         }
     }
 }
-

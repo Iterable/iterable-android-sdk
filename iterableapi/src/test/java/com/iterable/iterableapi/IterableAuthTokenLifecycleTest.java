@@ -233,6 +233,9 @@ public class IterableAuthTokenLifecycleTest extends BaseTest {
         authManager.onSwitchToBackground();
 
         assertNull("backgrounding must cancel the refresh timer", authManager.timer);
+        assertNull(
+                "backgrounding must release refresh ownership",
+                authManager.scheduledRefreshTask);
     }
 
     @Test
@@ -269,7 +272,12 @@ public class IterableAuthTokenLifecycleTest extends BaseTest {
     public void concurrentSchedulingArmsOnlyOneRefresh() throws Exception {
         CountingTimer timer = installCountingTimer();
 
-        runConcurrently(8, () -> authManager.scheduleAuthTokenRefresh(60_000, true, null));
+        runConcurrently(
+                8,
+                () -> authManager.scheduleAuthTokenRefresh(
+                        60_000,
+                        IterableAuthRefreshReason.TOKEN_EXPIRING,
+                        null));
 
         assertEquals(1, timer.liveTaskCount());
     }
@@ -344,7 +352,7 @@ public class IterableAuthTokenLifecycleTest extends BaseTest {
     }
 
     private boolean isRefreshScheduled() {
-        return authManager.timer != null;
+        return authManager.scheduledRefreshTask != null;
     }
 
     private CountingTimer installCountingTimer() {
@@ -357,7 +365,10 @@ public class IterableAuthTokenLifecycleTest extends BaseTest {
     private CountingTimer armObservableRefresh() {
         authManager.clearRefreshTimer();
         CountingTimer timer = installCountingTimer();
-        authManager.scheduleAuthTokenRefresh(60_000, true, null);
+        authManager.scheduleAuthTokenRefresh(
+                60_000,
+                IterableAuthRefreshReason.TOKEN_EXPIRING,
+                null);
         assertEquals(1, timer.liveTaskCount());
         return timer;
     }

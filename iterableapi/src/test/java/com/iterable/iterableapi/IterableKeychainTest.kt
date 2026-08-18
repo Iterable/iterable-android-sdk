@@ -203,6 +203,30 @@ class IterableKeychainTest {
     }
 
     @Test
+    fun testReadAuthTokenDistinguishesAStoredValue() {
+        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull()))
+            .thenReturn("encrypted_stored-token")
+
+        val result = keychain.readAuthToken()
+
+        assertEquals(KeychainReadResult.Value("stored-token"), result)
+    }
+
+    @Test
+    fun testReadAuthTokenDistinguishesATimeoutFromAMissingValue() {
+        `when`(mockSharedPrefs.getString(eq("iterable-auth-token"), isNull()))
+            .thenReturn("slow_token")
+        `when`(mockEncryptor.decrypt(eq("slow_token"))).thenAnswer {
+            Thread.sleep(700)
+            "stored-token"
+        }
+
+        val result = keychain.readAuthToken()
+
+        assertEquals(KeychainReadResult.TimedOut, result)
+    }
+
+    @Test
     fun testCryptoTimeoutDoesNotBlockSubsequentReads() {
         // SDK-547: crypto runs on a single-thread executor. A slow op that times out must be
         // cancelled so it frees the thread and doesn't clog the next read. Here the first decrypt
@@ -473,4 +497,4 @@ class IterableKeychainTest {
         // - Existing encrypted data that can't be decrypted returns null (graceful degradation)
         // - No crashes occur during the failure scenario
     }
-} 
+}

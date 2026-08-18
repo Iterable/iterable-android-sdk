@@ -541,11 +541,9 @@ public class IterableApiAuthTests extends BaseTest {
         verify(authHandler, never()).onAuthTokenRequested();
     }
 
-    // SDK-547: scheduleAuthTokenRefresh reads isTimerScheduled, schedules a TimerTask, then sets
-    // isTimerScheduled=true only AFTER the schedule call returns. The read/set isn't atomic, so
-    // concurrent callers (foreground refresh, 401 retry, an already-firing timer) all observe
-    // false and each schedule their own timer off a single guard. Overlapping timers each fire
-    // onAuthTokenRequested and each success reschedules, so JWT request volume compounds.
+    // SDK-547: concurrent callers (foreground refresh, 401 retry, an already-firing timer) must all
+    // contend for one scheduler-owned task. The pending task, rather than a separate boolean, is the
+    // source of truth.
     //
     // We drive scheduleAuthTokenRefresh directly rather than requestNewAuthToken: the executor is
     // not injectable (see @Ignore'd tests above) and its pendingAuth guard serializes calls,
@@ -556,8 +554,7 @@ public class IterableApiAuthTests extends BaseTest {
         IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
 
         final AtomicInteger scheduleCount = new AtomicInteger(0);
-        // Fake timer that counts schedule() calls and holds briefly, so every racing thread has
-        // passed the guard before the winner writes isTimerScheduled=true.
+        // Fake timer that counts schedule() calls and holds briefly to maximize contention.
         Timer countingTimer = new Timer(true) {
             @Override
             public void schedule(TimerTask task, long delay) {
@@ -578,7 +575,10 @@ public class IterableApiAuthTests extends BaseTest {
             threads[i] = new Thread(() -> {
                 try {
                     barrier.await();
-                    authManager.scheduleAuthTokenRefresh(60000, true, null);
+                    authManager.scheduleAuthTokenRefresh(
+                            60000,
+                            IterableAuthRefreshReason.TOKEN_EXPIRING,
+                            null);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
