@@ -15,6 +15,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class IterableAuthManager implements IterableActivityMonitor.AppStateCallback {
     private static final String TAG = "IterableAuth";
@@ -42,6 +43,25 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     /**
+     * A snapshot of "who was signed in" when async auth work began. Auth results arrive from a
+     * developer callback and from encrypted storage, both of which can outlive the identity that
+     * asked for them; a result carrying a superseded identity must be dropped rather than stored.
+     * Comparison is by reference — {@code version} only exists to make log lines readable.
+     */
+    private static final class AuthIdentity {
+        private final int version;
+
+        AuthIdentity(int version) {
+            this.version = version;
+        }
+
+        @Override
+        public String toString() {
+            return "identity#" + version;
+        }
+    }
+
+    /**
      * Listener interface for components that need to react when a new auth token is ready.
      */
     interface AuthTokenReadyListener {
@@ -58,8 +78,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     volatile TimerTask scheduledRefreshTask;
     @VisibleForTesting
     volatile IterableAuthRefreshReason scheduledRefreshReason;
-    @Nullable
-    private volatile IterableAuthDataRestorer authDataRestorer;
+    private final AtomicReference<IterableAuthDataRestorer> authDataRestorer = new AtomicReference<>();
+    private final AtomicReference<AuthIdentity> currentIdentity =
+            new AtomicReference<>(new AuthIdentity(0));
     private boolean hasFailedPriorAuth;
     private boolean pendingAuth;
     private boolean requiresAuthRefresh;
@@ -101,6 +122,10 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         if (authHandler == null) {
             return true;
         }
+        // A signed-out user has no token to restore, so RESTORING would block work indefinitely.
+        if (authState == AuthState.RESTORING && !hasIdentity()) {
+            return true;
+        }
         return isReadyState(authState);
     }
 
@@ -132,6 +157,51 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         return state == AuthState.VALID || state == AuthState.UNKNOWN;
     }
 
+    private boolean hasIdentity() {
+        return getEmailOrUserId() != null;
+    }
+
+    /**
+     * Supersedes every auth result already in flight; returns the identity that replaces them.
+     * Only call this where a replacement token or refresh is about to be armed — superseding
+     * without a successor leaves auth with nothing pending.
+     */
+    private AuthIdentity startNewIdentity() {
+        AuthIdentity previous;
+        AuthIdentity next;
+        do {
+            previous = currentIdentity.get();
+            next = new AuthIdentity(previous.version + 1);
+        } while (!currentIdentity.compareAndSet(previous, next));
+        return next;
+    }
+
+    private boolean isStillCurrent(AuthIdentity identity) {
+        return currentIdentity.get() == identity;
+    }
+
+    /**
+     * A discarded result must release everything the stored result would have released:
+     * {@code pendingAuth}, because {@link #requestNewAuthToken} refuses every future request while
+     * it is set, and any refresh deferred while this request was in flight, which otherwise leaves
+     * the new identity with no token and nothing scheduled.
+     */
+    private boolean wasSupersededSince(AuthIdentity identity) {
+        if (isStillCurrent(identity)) {
+            return false;
+        }
+        IterableLogger.d(
+                TAG,
+                "auth_token action=discard started_as="
+                        + identity
+                        + " now="
+                        + currentIdentity.get()
+        );
+        pendingAuth = false;
+        reSyncAuth();
+        return true;
+    }
+
     @Nullable
     String restoreAuthToken(
             IterableKeychain keychain,
@@ -139,16 +209,29 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     ) {
         KeychainReadResult initialRead = keychain.readAuthToken();
         setAuthState(AuthState.RESTORING);
-        authDataRestorer = retryExecutor == null
+        final AuthIdentity identity = startNewIdentity();
+        final IterableAuthDataRestorer restorer = retryExecutor == null
                 ? new IterableAuthDataRestorer(keychain)
                 : new IterableAuthDataRestorer(keychain, retryExecutor);
-        authDataRestorer.restore(
+        // Published before restore() because a successful initial read completes inline.
+        authDataRestorer.set(restorer);
+        restorer.restore(
                 initialRead,
                 new IterableAuthDataRestorer.Callback() {
                     @Override
                     public void onAuthTokenRestored(@Nullable String authToken) {
+                        authDataRestorer.compareAndSet(restorer, null);
+                        if (!isStillCurrent(identity)) {
+                            IterableLogger.d(
+                                    TAG,
+                                    "auth_restore action=discard started_as="
+                                            + identity
+                                            + " now="
+                                            + currentIdentity.get()
+                            );
+                            return;
+                        }
                         api.setRestoredAuthToken(authToken);
-                        authDataRestorer = null;
                         handleRestoredAuthToken(authToken);
                     }
 
@@ -178,16 +261,22 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     void cancelAuthTokenRestore(String reason) {
-        if (authDataRestorer != null) {
-            authDataRestorer.cancel(reason);
-            authDataRestorer = null;
+        IterableAuthDataRestorer restorer = authDataRestorer.getAndSet(null);
+        if (restorer != null) {
+            restorer.cancel(reason);
         }
     }
 
     void useExplicitAuthToken(String authToken) {
         cancelAuthTokenRestore("explicit_token");
+        boolean tokenChanged = authToken == null
+                ? api.getAuthToken() != null
+                : !authToken.equalsIgnoreCase(api.getAuthToken());
         api.setAuthToken(authToken);
-        if (authHandler != null) {
+        // Re-arming on an unchanged token would postpone an expiry refresh indefinitely and
+        // downgrade INVALID to UNKNOWN, marking a token ready that a 401 just rejected.
+        if (authHandler != null && tokenChanged) {
+            startNewIdentity();
             setAuthState(AuthState.UNKNOWN);
             queueExpirationRefresh(authToken);
         }
@@ -216,6 +305,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     void resetForIdentityChange() {
         cancelAuthTokenRestore("identity_changed");
+        startNewIdentity();
         if (authHandler != null) {
             setAuthState(AuthState.RESTORING);
         }
@@ -260,6 +350,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
                     executor.submit(new Runnable() {
                         @Override
                         public void run() {
+                            AuthIdentity identity = null;
                             try {
                                 if (isLastAuthTokenValid && !shouldIgnoreRetryPolicy) {
                                     // if some JWT retry had valid token it will not fetch the auth token again from developer function
@@ -275,12 +366,22 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
                                     return;
                                 }
 
+                                // Snapshot here, not at submit time: an identity change before the
+                                // handler runs is served by this very request, because pendingAuth
+                                // makes the new login reuse it instead of starting its own.
+                                identity = currentIdentity.get();
                                 final String authToken = authHandler.onAuthTokenRequested();
                                 pendingAuth = false;
                                 retryCount++;
+                                if (wasSupersededSince(identity)) {
+                                    return;
+                                }
                                 handleAuthTokenSuccess(authToken, successCallback);
                             } catch (final Exception e) {
                                 retryCount++;
+                                if (identity != null && wasSupersededSince(identity)) {
+                                    return;
+                                }
                                 handleAuthTokenFailure(e);
                             }
                         }
@@ -441,7 +542,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
                 }
 
                 IterableLogger.d(TAG, "auth_refresh action=fire reason=" + reason);
-                if (api.getEmail() != null || api.getUserId() != null) {
+                if (hasIdentity()) {
                     requestNewAuthToken(
                             false,
                             successCallback,
@@ -547,7 +648,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
      */
     private void checkAndHandleAuthRefresh() {
         // First, check if current auth token needs refresh based on expiration
-        if (api.getEmail() != null || api.getUserId() != null) {
+        if (hasIdentity()) {
             String currentAuthToken = api.getAuthToken();
             queueExpirationRefresh(currentAuthToken);
         } else {
@@ -586,7 +687,8 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         try {
             IterableLogger.d(TAG, "App switched to foreground - enabling auth token requests");
             isInForeground = true;
-            if (authDataRestorer != null && authDataRestorer.resumeIfUnresolved()) {
+            IterableAuthDataRestorer restorer = authDataRestorer.get();
+            if (restorer != null && restorer.resumeIfUnresolved()) {
                 return;
             }
             checkAndHandleAuthRefresh();
