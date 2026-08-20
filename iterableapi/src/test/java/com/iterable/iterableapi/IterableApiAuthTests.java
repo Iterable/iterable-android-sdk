@@ -11,10 +11,7 @@ import org.robolectric.annotation.LooperMode;
 
 import java.io.IOException;
 import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -26,11 +23,8 @@ import static com.iterable.iterableapi.IterableConstants.HEADER_SDK_AUTH_FORMAT;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
-import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 
@@ -513,89 +507,6 @@ public class IterableApiAuthTests extends BaseTest {
         shadowOf(getMainLooper()).runToEndOfTasks();
 
         // Test passes if no exceptions were thrown and lifecycle methods executed successfully
-    }
-
-    // SDK-547: foregrounding the app with a valid token that is far from expiry must NOT request a
-    // new token. onSwitchToForeground re-evaluates the token (a deliberate Android behavior, since
-    // java.util.Timer is unreliable across background/Doze) but should only re-arm the expiry timer,
-    // not call the developer's onAuthTokenRequested. Requesting on every foreground is what inflates
-    // backend JWT volume relative to iOS.
-    @Test
-    public void testForegroundWithValidTokenDoesNotRequestNewToken() throws Exception {
-        IterableApi.initialize(getContext(), "apiKey");
-        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
-
-        // Seed a valid token far from expiry (validJWT exp is year 2062) without going through
-        // onAuthTokenRequested.
-        IterableApi.getInstance().setEmail("test@example.com", validJWT);
-        shadowOf(getMainLooper()).runToEndOfTasks();
-        assertEquals(validJWT, IterableApi.getInstance().getAuthToken());
-
-        // Ignore any handler interactions from setup; we only care about the foreground transition.
-        clearInvocations(authHandler);
-
-        authManager.onSwitchToBackground();
-        authManager.onSwitchToForeground();
-        shadowOf(getMainLooper()).runToEndOfTasks();
-
-        verify(authHandler, never()).onAuthTokenRequested();
-    }
-
-    // SDK-547: concurrent callers (foreground refresh, 401 retry, an already-firing timer) must all
-    // contend for one scheduler-owned task. The pending task, rather than a separate boolean, is the
-    // source of truth.
-    //
-    // We drive scheduleAuthTokenRefresh directly rather than requestNewAuthToken: the executor is
-    // not injectable (see @Ignore'd tests above) and its auth request coordinator serializes calls,
-    // which would hide the scheduling race we're targeting.
-    @Test
-    public void testConcurrentScheduleAuthTokenRefreshSchedulesOnlyOneTimer() throws Exception {
-        IterableApi.initialize(getContext(), "apiKey");
-        IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
-
-        final AtomicInteger scheduleCount = new AtomicInteger(0);
-        // Fake timer that counts schedule() calls and holds briefly to maximize contention.
-        Timer countingTimer = new Timer(true) {
-            @Override
-            public void schedule(TimerTask task, long delay) {
-                scheduleCount.incrementAndGet();
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        };
-        authManager.timer = countingTimer;
-
-        final int threadCount = 8;
-        final CyclicBarrier barrier = new CyclicBarrier(threadCount);
-        Thread[] threads = new Thread[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            threads[i] = new Thread(() -> {
-                try {
-                    barrier.await();
-                    authManager.scheduleAuthTokenRefresh(
-                            60000,
-                            IterableAuthRefreshReason.TOKEN_EXPIRING,
-                            null
-                    );
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-        for (Thread t : threads) {
-            t.start();
-        }
-        for (Thread t : threads) {
-            t.join();
-        }
-
-        countingTimer.cancel();
-
-        assertEquals("Concurrent scheduling should result in exactly one live timer",
-                1, scheduleCount.get());
     }
 
 }

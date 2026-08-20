@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -39,7 +38,7 @@ public class IterableApi {
     private String _email;
     private String _userId;
     String _userIdUnknown;
-    private volatile String _authToken;
+    private String _authToken;
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
@@ -60,8 +59,9 @@ public class IterableApi {
     private String inboxSessionId;
     private IterableAuthManager authManager;
     private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
-    @VisibleForTesting IterableKeychain keychain;
-    @VisibleForTesting ScheduledExecutorService authDataRestoreExecutor;
+    private IterableKeychain keychain;
+
+
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
 
@@ -138,8 +138,9 @@ public class IterableApi {
     }
 
     private void checkAndUpdateAuthToken(@Nullable String authToken) {
+        // If authHandler exists and if authToken is new, it will be considered as a call to update the authToken.
         if (config.authHandler != null && authToken != null && authToken != _authToken) {
-            getAuthManager().useExplicitAuthToken(authToken);
+            setAuthToken(authToken);
         }
     }
 
@@ -409,7 +410,7 @@ public class IterableApi {
             embeddedManager.reset();
         }
         if (authManager != null) {
-            authManager.resetForIdentityChange();
+            authManager.reset();
         }
 
         if (apiClient != null) {
@@ -433,7 +434,7 @@ public class IterableApi {
 
         getAuthManager().pauseAuthRetries(false);
         if (authToken != null) {
-            getAuthManager().useExplicitAuthToken(authToken);
+            setAuthToken(authToken);
             attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler);
         } else {
             getAuthManager().requestNewAuthToken(false, data -> attemptMergeAndEventReplay(userIdOrEmail, isEmail, merge, replay, isUnknown, failureHandler));
@@ -611,21 +612,24 @@ public class IterableApi {
         if (_applicationContext == null) {
             return;
         }
-
         IterableKeychain iterableKeychain = getKeychain();
-        if (iterableKeychain == null) {
-            IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
-            return;
-        }
-        _email = iterableKeychain.getEmail();
-        _userId = iterableKeychain.getUserId();
-        _userIdUnknown = iterableKeychain.getUserIdUnknown();
-
-        if (config.authHandler == null || !checkSDKInitialization()) {
+        if (iterableKeychain != null) {
+            _email = iterableKeychain.getEmail();
+            _userId = iterableKeychain.getUserId();
+            _userIdUnknown = iterableKeychain.getUserIdUnknown();
             _authToken = iterableKeychain.getAuthToken();
-            return;
+        } else {
+            IterableLogger.e(TAG, "retrieveEmailAndUserId: Shared preference creation failed. Could not retrieve email/userId");
         }
-        _authToken = getAuthManager().restoreAuthToken(iterableKeychain, authDataRestoreExecutor);
+
+        if (config.authHandler != null && checkSDKInitialization()) {
+            if (_authToken != null) {
+                getAuthManager().queueExpirationRefresh(_authToken);
+            } else {
+                IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
+                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), IterableAuthRefreshReason.STORED_TOKEN_MISSING, null);
+            }
+        }
     }
 
     private class IterableApiAuthProvider implements IterableApiClient.AuthProvider {
@@ -692,10 +696,6 @@ public class IterableApi {
                 completeUserLogin(_email, _userId, _authToken);
             }
         }
-    }
-
-    void setRestoredAuthToken(@Nullable String authToken) {
-        _authToken = authToken;
     }
 
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes) {

@@ -2,19 +2,9 @@ package com.iterable.iterableapi
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.annotation.RestrictTo
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeoutException
 import java.util.concurrent.TimeUnit
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-sealed interface KeychainReadResult {
-    data class Value(val value: String?) : KeychainReadResult
-    data object TimedOut : KeychainReadResult
-
-    fun valueOrNull(): String? = (this as? Value)?.value
-}
 
 class IterableKeychain {
     companion object {
@@ -26,7 +16,7 @@ class IterableKeychain {
         private const val PLAINTEXT_SUFFIX = "_plaintext"
         private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
         private const val KEY_ENCRYPTION_ENABLED = "iterable-encryption-enabled"
-        
+
         private val cryptoExecutor = Executors.newSingleThreadExecutor()
     }
 
@@ -81,15 +71,7 @@ class IterableKeychain {
     }
 
     private fun <T> runWithTimeout(callable: Callable<T>): T {
-        val future = cryptoExecutor.submit(callable)
-        try {
-            return future.get(CRYPTO_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-        } catch (e: Exception) {
-            // Free the single crypto thread so a slow/hung operation doesn't block every subsequent
-            // read/write behind it. cancel(true) interrupts the task if it's interruptible. (SDK-547)
-            future.cancel(true)
-            throw e
-        }
+        return cryptoExecutor.submit(callable).get(CRYPTO_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
     }
 
     private fun handleDecryptionError(e: Exception? = null) {
@@ -123,35 +105,24 @@ class IterableKeychain {
         }
     }
 
-    private fun secureGet(key: String): String? =
-        when (val result = readValue(key)) {
-            is KeychainReadResult.Value -> result.value
-            KeychainReadResult.TimedOut -> null
-        }
-
-    private fun readValue(key: String): KeychainReadResult {
+    private fun secureGet(key: String): String? {
         val hasPlainText = sharedPrefs.getBoolean(key + PLAINTEXT_SUFFIX, false)
         if (!encryption) {
-            val value = if (hasPlainText) sharedPrefs.getString(key, null) else null
-            return KeychainReadResult.Value(value)
+            if (hasPlainText) {
+                return sharedPrefs.getString(key, null)
+            } else {
+                return null
+            }
         } else if (hasPlainText) {
-            return KeychainReadResult.Value(sharedPrefs.getString(key, null))
+            return sharedPrefs.getString(key, null)
         }
 
-        val encryptedValue = sharedPrefs.getString(key, null)
-            ?: return KeychainReadResult.Value(null)
+        val encryptedValue = sharedPrefs.getString(key, null) ?: return null
         return try {
-            KeychainReadResult.Value(encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } })
-        } catch (e: TimeoutException) {
-            // A crypto operation that times out is transient (slow/contended AndroidKeyStore), not a
-            // corrupt key. Don't wipe stored credentials or disable encryption over it — that would
-            // force a re-login (and a new auth-token request) on every slow launch. Keep the timeout
-            // distinct so auth restoration cannot mistake it for a missing value. (SDK-547)
-            IterableLogger.w(TAG, "Crypto operation timed out; keeping encrypted data for retry.")
-            KeychainReadResult.TimedOut
+            encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } }
         } catch (e: Exception) {
             handleDecryptionError(e)
-            KeychainReadResult.Value(null)
+            null
         }
     }
 
@@ -174,14 +145,6 @@ class IterableKeychain {
                     .remove(key + PLAINTEXT_SUFFIX)
                     .apply()
             }
-        } catch (e: TimeoutException) {
-            // Transient slow crypto: store this value as plaintext so it isn't lost, but don't wipe
-            // other credentials or disable encryption globally. Encryption stays on for future
-            // writes. (SDK-547)
-            IterableLogger.w(TAG, "Crypto operation timed out on save; storing this value as plaintext.")
-            editor.putString(key, value)
-                .putBoolean(key + PLAINTEXT_SUFFIX, true)
-                .apply()
         } catch (e: Exception) {
             handleDecryptionError(e)
             editor.putString(key, value)
@@ -197,8 +160,6 @@ class IterableKeychain {
     fun saveUserId(userId: String?) = secureSave(KEY_USER_ID, userId)
 
     fun getAuthToken() = secureGet(KEY_AUTH_TOKEN)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun readAuthToken() = readValue(KEY_AUTH_TOKEN)
     fun saveAuthToken(authToken: String?) = secureSave(KEY_AUTH_TOKEN, authToken)
 
     fun getUserIdUnknown() = secureGet(KEY_UNKNOWN_USER_ID)

@@ -4,11 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Fixed
-- Fixed a race in JWT auth token refresh scheduling that could leave multiple overlapping refresh timers running. The pending refresh task is now the single source of ownership, and cancelled or replaced tasks cannot execute or clear their replacement. Refresh scheduling also records an explicit reason, such as token expiration, a 401 retry, or a missing stored token.
-- Fixed the keychain treating a transient crypto timeout as a permanent decryption failure. A slow AndroidKeyStore operation that exceeded the 500 ms timeout would wipe the stored email, userId, and auth token and disable encryption, forcing the user to re-authenticate on the next launch. Crypto timeouts now preserve stored data and encryption state; timed-out operations are cancelled so they do not block later reads or writes.
-- Fixed a JWT auth token belonging to a previous user being installed on the current session. A token fetched from `IterableAuthHandler.onAuthTokenRequested()`, or read back from encrypted storage, can arrive after the app has signed in a different user or called `initialize()` again; such a result is now discarded instead of stored. A login that happens *before* the handler is invoked still reuses the request already in flight, so no additional `onAuthTokenRequested()` call is introduced.
-- Fixed `setEmail(email, authToken)` / `setUserId(userId, authToken)` replacing the refresh timer and clearing the invalid-token state when called repeatedly with an equal token value. A repeated login could postpone an expiration refresh indefinitely and mark a token ready that a 401 had just rejected.
-- Fixed a timed-out stored-token read being mistaken for a confirmed missing JWT. Transient token-read timeouts are retried off the caller thread, and `IterableAuthHandler.onAuthTokenRequested()` is invoked only after a completed read confirms that the stored token is absent. If storage remains unavailable, JWT-required work stays blocked and restoration is retried when the app returns to the foreground.
+- Fixed a race in JWT auth refresh scheduling that could leave overlapping timers active and repeatedly call `IterableAuthHandler.onAuthTokenRequested()`. Refresh scheduling now has a single task owner, rejects stale or duplicate tasks, and logs each schedule, skip, fire, cancellation, and error with its refresh reason.
 
 ## [3.10.0]
 ### Added

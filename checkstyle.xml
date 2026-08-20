@@ -6,11 +6,6 @@
 <module name="Checker">
     <!--module name="NewlineAtEndOfFile"/-->
     <module name="FileLength"/>
-    <!-- IterableApi is the SDK's public entry point; it grows with the API surface. -->
-    <module name="SuppressionSingleFilter">
-        <property name="checks" value="FileLength"/>
-        <property name="files" value="IterableApi\.java$"/>
-    </module>
     <module name="FileTabCharacter"/>
 
     <!-- Trailing spaces -->
