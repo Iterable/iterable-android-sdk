@@ -81,8 +81,9 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     private final AtomicReference<IterableAuthDataRestorer> authDataRestorer = new AtomicReference<>();
     private final AtomicReference<AuthIdentity> currentIdentity =
             new AtomicReference<>(new AuthIdentity(0));
+    private final IterableAuthRequestCoordinator<AuthIdentity> authRequestCoordinator =
+            new IterableAuthRequestCoordinator<>();
     private boolean hasFailedPriorAuth;
-    private boolean pendingAuth;
     private boolean requiresAuthRefresh;
     RetryPolicy authRetryPolicy;
     boolean pauseAuthRetry;
@@ -167,6 +168,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
      * without a successor leaves auth with nothing pending.
      */
     private AuthIdentity startNewIdentity() {
+        authRequestCoordinator.clearQueued();
         AuthIdentity previous;
         AuthIdentity next;
         do {
@@ -180,16 +182,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         return currentIdentity.get() == identity;
     }
 
-    /**
-     * A discarded result must release everything the stored result would have released:
-     * {@code pendingAuth}, because {@link #requestNewAuthToken} refuses every future request while
-     * it is set, and any refresh deferred while this request was in flight, which otherwise leaves
-     * the new identity with no token and nothing scheduled.
-     */
-    private boolean wasSupersededSince(AuthIdentity identity) {
-        if (isStillCurrent(identity)) {
-            return false;
-        }
+    private void logSupersededRequest(AuthIdentity identity) {
         IterableLogger.d(
                 TAG,
                 "auth_token action=discard started_as="
@@ -197,9 +190,6 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
                         + " now="
                         + currentIdentity.get()
         );
-        pendingAuth = false;
-        reSyncAuth();
-        return true;
     }
 
     @Nullable
@@ -342,58 +332,137 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         }
 
         if (authHandler != null) {
-            if (!pendingAuth) {
-                if (!(this.hasFailedPriorAuth && hasFailedPriorAuth)) {
-                    this.hasFailedPriorAuth = hasFailedPriorAuth;
-                    pendingAuth = true;
-
-                    executor.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            AuthIdentity identity = null;
-                            try {
-                                if (isLastAuthTokenValid && !shouldIgnoreRetryPolicy) {
-                                    // if some JWT retry had valid token it will not fetch the auth token again from developer function
-                                    handleAuthTokenSuccess(api.getAuthToken(), successCallback);
-                                    pendingAuth = false;
-                                    return;
-                                }
-
-                                // Only request new auth token if app is in foreground
-                                if (!isInForeground) {
-                                    IterableLogger.w(TAG, "Auth token request skipped - app is in background");
-                                    pendingAuth = false;
-                                    return;
-                                }
-
-                                // Snapshot here, not at submit time: an identity change before the
-                                // handler runs is served by this very request, because pendingAuth
-                                // makes the new login reuse it instead of starting its own.
-                                identity = currentIdentity.get();
-                                final String authToken = authHandler.onAuthTokenRequested();
-                                pendingAuth = false;
-                                retryCount++;
-                                if (wasSupersededSince(identity)) {
-                                    return;
-                                }
-                                handleAuthTokenSuccess(authToken, successCallback);
-                            } catch (final Exception e) {
-                                retryCount++;
-                                if (identity != null && wasSupersededSince(identity)) {
-                                    return;
-                                }
-                                handleAuthTokenFailure(e);
-                            }
-                        }
-                    });
-                }
-            } else if (!hasFailedPriorAuth) {
-                //setFlag to resync auth after current auth returns
-                requiresAuthRefresh = true;
+            if (this.hasFailedPriorAuth && hasFailedPriorAuth) {
+                return;
             }
 
+            IterableAuthRequestCoordinator.EnqueueResult<AuthIdentity> enqueueResult =
+                    authRequestCoordinator.enqueue(
+                            currentIdentity.get(),
+                            successCallback,
+                            hasFailedPriorAuth,
+                            shouldIgnoreRetryPolicy
+                    );
+            if (enqueueResult.getStatus()
+                    == IterableAuthRequestCoordinator.EnqueueStatus.STARTED) {
+                submitAuthRequest(enqueueResult.getRequestToStart());
+            } else if (enqueueResult.getStatus()
+                    == IterableAuthRequestCoordinator.EnqueueStatus
+                    .ALREADY_ACTIVE_FOR_IDENTITY && !hasFailedPriorAuth) {
+                requiresAuthRefresh = true;
+            }
         } else {
             api.setAuthToken(null, true);
+        }
+    }
+
+    private void submitAuthRequest(
+            IterableAuthRequestCoordinator.Request<AuthIdentity> request
+    ) {
+        hasFailedPriorAuth = request.hasFailedPriorAuth();
+        executor.submit(() -> executeAuthRequest(request));
+    }
+
+    private void executeAuthRequest(
+            IterableAuthRequestCoordinator.Request<AuthIdentity> request
+    ) {
+        if (!authRequestCoordinator.isCurrent(request, currentIdentity.get())) {
+            finishSupersededRequest(request);
+            return;
+        }
+
+        if (isLastAuthTokenValid && !request.shouldIgnoreRetryPolicy()) {
+            completeAuthRequestWithToken(request, api.getAuthToken());
+            return;
+        }
+
+        if (!isInForeground) {
+            IterableLogger.w(TAG, "Auth token request skipped - app is in background");
+            IterableAuthRequestCoordinator.Completion<AuthIdentity> completion =
+                    authRequestCoordinator.complete(request, currentIdentity.get());
+            if (!completion.isResultAccepted()) {
+                finishSupersededRequest(request, completion);
+                return;
+            }
+            submitNextAuthRequest(completion);
+            return;
+        }
+
+        String authToken;
+        try {
+            authToken = authHandler.onAuthTokenRequested();
+            retryCount++;
+        } catch (Exception e) {
+            retryCount++;
+            completeAuthRequestWithFailure(request, e);
+            return;
+        }
+        completeAuthRequestWithToken(request, authToken);
+    }
+
+    private void completeAuthRequestWithToken(
+            IterableAuthRequestCoordinator.Request<AuthIdentity> request,
+            String authToken
+    ) {
+        IterableAuthRequestCoordinator.Completion<AuthIdentity> completion =
+                authRequestCoordinator.complete(request, currentIdentity.get());
+        if (!completion.isResultAccepted()) {
+            finishSupersededRequest(request, completion);
+            return;
+        }
+
+        try {
+            handleAuthTokenSuccess(authToken, request.getSuccessCallback());
+        } catch (Exception e) {
+            retryCount++;
+            handleAuthTokenFailure(e);
+        } finally {
+            submitNextAuthRequest(completion);
+        }
+    }
+
+    private void completeAuthRequestWithFailure(
+            IterableAuthRequestCoordinator.Request<AuthIdentity> request,
+            Exception exception
+    ) {
+        IterableAuthRequestCoordinator.Completion<AuthIdentity> completion =
+                authRequestCoordinator.complete(request, currentIdentity.get());
+        if (!completion.isResultAccepted()) {
+            finishSupersededRequest(request, completion);
+            return;
+        }
+
+        try {
+            handleAuthTokenFailure(exception);
+        } finally {
+            submitNextAuthRequest(completion);
+        }
+    }
+
+    private void finishSupersededRequest(
+            IterableAuthRequestCoordinator.Request<AuthIdentity> request
+    ) {
+        IterableAuthRequestCoordinator.Completion<AuthIdentity> completion =
+                authRequestCoordinator.complete(request, currentIdentity.get());
+        finishSupersededRequest(request, completion);
+    }
+
+    private void finishSupersededRequest(
+            IterableAuthRequestCoordinator.Request<AuthIdentity> request,
+            IterableAuthRequestCoordinator.Completion<AuthIdentity> completion
+    ) {
+        logSupersededRequest(request.getIdentity());
+        reSyncAuth();
+        submitNextAuthRequest(completion);
+    }
+
+    private void submitNextAuthRequest(
+            IterableAuthRequestCoordinator.Completion<AuthIdentity> completion
+    ) {
+        IterableAuthRequestCoordinator.Request<AuthIdentity> nextRequest =
+                completion.getNextRequest();
+        if (nextRequest != null) {
+            submitAuthRequest(nextRequest);
         }
     }
 
@@ -426,7 +495,6 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     private void handleAuthTokenFailure(Throwable throwable) {
         IterableLogger.e(TAG, "Error while requesting Auth Token", throwable);
         handleAuthFailure(null, AuthFailureReason.AUTH_TOKEN_GENERATION_ERROR);
-        pendingAuth = false;
         scheduleAuthTokenRefresh(
                 getNextRetryInterval(),
                 IterableAuthRefreshReason.AUTH_HANDLER_RETRY,

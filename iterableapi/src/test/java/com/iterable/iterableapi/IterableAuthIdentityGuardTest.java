@@ -158,27 +158,33 @@ public class IterableAuthIdentityGuardTest extends BaseTest {
         );
     }
 
-    /**
-     * The mirror of the test above: an identity change before the handler is called must not discard
-     * anything, because {@code pendingAuth} makes the new login reuse this request rather than start
-     * its own — discarding here would leave the new user with no token and nothing in flight.
-     */
+    /** A queued login must keep its own callback when it replaces a superseded request. */
     @Test
-    public void anIdentityChangeBeforeTheHandlerRunsIsServedByTheRequestInFlight() {
-        when(authHandler.onAuthTokenRequested()).thenReturn(TOKEN_A);
-        authManager.requestNewAuthToken(false, null);
+    public void anIdentityChangeBeforeTheHandlerRunsUsesTheNewIdentityCallback() {
+        IterableHelper.SuccessHandler callbackA =
+                mock(IterableHelper.SuccessHandler.class);
+        IterableHelper.SuccessHandler callbackB =
+                mock(IterableHelper.SuccessHandler.class);
+        when(authHandler.onAuthTokenRequested()).thenReturn(TOKEN_B);
+        authManager.requestNewAuthToken(false, callbackA);
 
         authManager.resetForIdentityChange();
         when(api.getEmail()).thenReturn("user-b@example.com");
-        submittedAuthWork.get(0).run();
+        authManager.requestNewAuthToken(false, callbackB);
+        assertEquals(1, submittedAuthWork.size());
 
-        verify(api).setAuthToken(TOKEN_A);
+        submittedAuthWork.get(0).run();
+        assertEquals(2, submittedAuthWork.size());
+        submittedAuthWork.get(1).run();
+
+        verify(api).setAuthToken(TOKEN_B);
+        verify(callbackA, never()).onSuccess(any());
+        verify(callbackB).onSuccess(any());
     }
 
     /**
-     * A discarded result must still release {@code pendingAuth}, or every later request is refused
-     * for the life of the process. The throwing handler matters: on the success path the flag is
-     * already cleared before the discard, so only the failure path can leak it.
+     * A discarded result must still release coordinator ownership, or every later request is
+     * refused for the life of the process.
      */
     @Test
     public void discardingAStaleFailureLeavesAuthAbleToRequestAgain() {

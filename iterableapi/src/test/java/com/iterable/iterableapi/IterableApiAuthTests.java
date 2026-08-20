@@ -546,7 +546,7 @@ public class IterableApiAuthTests extends BaseTest {
     // source of truth.
     //
     // We drive scheduleAuthTokenRefresh directly rather than requestNewAuthToken: the executor is
-    // not injectable (see @Ignore'd tests above) and its pendingAuth guard serializes calls,
+    // not injectable (see @Ignore'd tests above) and its auth request coordinator serializes calls,
     // which would hide the scheduling race we're targeting.
     @Test
     public void testConcurrentScheduleAuthTokenRefreshSchedulesOnlyOneTimer() throws Exception {
