@@ -358,18 +358,14 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         final TimerTask refreshTask = new TimerTask() {
             @Override
             public void run() {
-                if (!claimRefreshTask(this, reason)) {
+                if (!isCurrentRefreshTask(this, reason)) {
                     return;
                 }
 
-                IterableLogger.d(TAG, "auth_refresh action=fire reason=" + reason);
                 if (api.getEmail() != null || api.getUserId() != null) {
-                    api.getAuthManager().requestNewAuthToken(
-                            false,
-                            successCallback,
-                            reason.ignoresRetryPolicy()
-                    );
+                    dispatchRefreshTask(this, reason, successCallback);
                 } else {
+                    releaseRefreshTask(this);
                     IterableLogger.w(
                             TAG,
                             "auth_refresh action=skip reason="
@@ -407,7 +403,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
         }
     }
 
-    private synchronized boolean claimRefreshTask(
+    private synchronized boolean isCurrentRefreshTask(
             TimerTask task,
             IterableAuthRefreshReason reason
     ) {
@@ -420,10 +416,25 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             );
             return false;
         }
+        return true;
+    }
 
+    private synchronized void dispatchRefreshTask(
+            TimerTask task,
+            IterableAuthRefreshReason reason,
+            IterableHelper.SuccessHandler successCallback
+    ) {
+        if (!isCurrentRefreshTask(task, reason)) {
+            return;
+        }
         scheduledRefreshTask = null;
         scheduledRefreshReason = null;
-        return true;
+        IterableLogger.d(TAG, "auth_refresh action=fire reason=" + reason);
+        api.getAuthManager().requestNewAuthToken(
+                false,
+                successCallback,
+                reason.ignoresRetryPolicy()
+        );
     }
 
     private synchronized void releaseRefreshTask(TimerTask task) {

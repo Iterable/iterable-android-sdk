@@ -9,10 +9,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -114,6 +116,48 @@ public class IterableAuthRefreshOwnershipTest extends BaseTest {
     }
 
     @Test
+    public void replacingTokenWhileRefreshChecksIdentityCancelsOldRefresh() throws Exception {
+        CountDownLatch identityCheckStarted = new CountDownLatch(1);
+        CountDownLatch allowOldTokenRefreshToContinue = new CountDownLatch(1);
+        pauseFirstIdentityCheckUntil(
+                identityCheckStarted,
+                allowOldTokenRefreshToContinue
+        );
+
+        // The old token's expiration refresh starts checking for an identified user.
+        TimerTask oldTokenRefresh = scheduleRefresh(
+                1000,
+                IterableAuthRefreshReason.TOKEN_EXPIRING
+        );
+        ExecutorService taskRunner = Executors.newSingleThreadExecutor();
+        Future<?> oldTokenRefreshRun = taskRunner.submit(oldTokenRefresh::run);
+        try {
+            assertTrue(identityCheckStarted.await(5, TimeUnit.SECONDS));
+
+            // The app receives a new token and schedules its expiration refresh.
+            TimerTask newTokenRefresh = replaceRefreshForNewToken(2000);
+
+            // The old token's refresh resumes after the new token has replaced it.
+            allowOldTokenRefreshToContinue.countDown();
+            oldTokenRefreshRun.get(5, TimeUnit.SECONDS);
+
+            // The old refresh must not request another token or disturb the new refresh.
+            assertEquals(0, authManager.requestCount.get());
+            assertSame(newTokenRefresh, authManager.scheduledRefreshTask);
+
+            // The new token's refresh can still dispatch normally.
+            newTokenRefresh.run();
+
+            assertEquals(1, authManager.requestCount.get());
+            assertNull(authManager.scheduledRefreshTask);
+            assertNull(authManager.scheduledRefreshReason);
+        } finally {
+            allowOldTokenRefreshToContinue.countDown();
+            taskRunner.shutdownNow();
+        }
+    }
+
+    @Test
     public void duplicateScheduleKeepsOriginalCallbackAndPolicy() {
         RetainingTimer timer = new RetainingTimer();
         authManager.timer = timer;
@@ -187,6 +231,39 @@ public class IterableAuthRefreshOwnershipTest extends BaseTest {
         assertEquals(1, timer.taskCount());
         assertTrue(
                 IterableAuthRefreshReason.TOKEN_EXPIRING.ignoresRetryPolicy()
+        );
+    }
+
+    private void pauseFirstIdentityCheckUntil(
+            CountDownLatch identityCheckStarted,
+            CountDownLatch resumeIdentityCheck
+    ) {
+        AtomicInteger identityCheckCount = new AtomicInteger();
+        when(api.getEmail()).thenAnswer(invocation -> {
+            if (identityCheckCount.getAndIncrement() == 0) {
+                identityCheckStarted.countDown();
+                assertTrue(resumeIdentityCheck.await(5, TimeUnit.SECONDS));
+            }
+            return "user@example.com";
+        });
+    }
+
+    private TimerTask scheduleRefresh(
+            long delay,
+            IterableAuthRefreshReason reason
+    ) {
+        RetainingTimer timer = new RetainingTimer();
+        authManager.timer = timer;
+        authManager.scheduleAuthTokenRefresh(delay, reason, null);
+        return timer.lastTask();
+    }
+
+    private TimerTask replaceRefreshForNewToken(long delay) {
+        // Mirrors queueExpirationRefresh() after a new token is stored.
+        authManager.clearRefreshTimer();
+        return scheduleRefresh(
+                delay,
+                IterableAuthRefreshReason.TOKEN_EXPIRING
         );
     }
 
