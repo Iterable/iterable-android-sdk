@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Fixed a race in JWT auth refresh scheduling that could leave overlapping timers active and repeatedly call `IterableAuthHandler.onAuthTokenRequested()`. Refresh scheduling now has a single task owner, rejects stale or duplicate tasks, and logs each schedule, skip, fire, cancellation, and error with its refresh reason.
 
 ## [3.10.0]
 ### Added
