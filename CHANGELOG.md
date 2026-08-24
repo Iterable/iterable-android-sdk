@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Deprecated
 - `IterableConstants.BASE_URL_API` and `IterableConstants.BASE_URL_LINKS` — both are hardcoded to the US data region and are unused by the SDK, which resolves its endpoint from the configured `IterableDataRegion`. Use `IterableDataRegion.getEndpoint()` instead. They still resolve to the same values, so no action is required in this release. **They will be removed in 3.12.0** — if you reference either constant, switch to `IterableDataRegion.getEndpoint()` before upgrading to that version.
 
+## [3.10.1]
+### Fixed
+- Fixed a race in JWT auth refresh scheduling that could leave overlapping timers active and repeatedly call `IterableAuthHandler.onAuthTokenRequested()`. Refresh scheduling now has a single task owner, rejects stale or duplicate tasks, and logs each schedule, skip, fire, cancellation, and error with its refresh reason.
+
 ## [3.10.0]
 ### Added
 - `IterableUnknownUserHandler` now reports unknown user criteria fetch results via two optional methods: `onCriteriaReceived(JSONObject criteria)` on a successful fetch and `onCriteriaFetchFailed(String reason)` on failure. This lets apps act (e.g. track an event or update the user) as soon as criteria are available, without racing the asynchronous criteria fetch. Both have default no-op implementations, so existing handlers are unaffected. Callbacks are delivered on the main thread and may fire on every fetch (initialization, foregrounding, and when visitor usage tracking is enabled), so implementations should handle being called repeatedly.

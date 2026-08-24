@@ -270,7 +270,11 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
             authManager.setIsLastAuthTokenValid(false);
             long retryInterval = authManager.getNextRetryInterval();
-            authManager.scheduleAuthTokenRefresh(retryInterval, false, null);
+            authManager.scheduleAuthTokenRefresh(
+                    retryInterval,
+                    IterableAuthRefreshReason.JWT_401,
+                    null
+            );
         } else {
             requestNewAuthTokenAndRetry(iterableApiRequest);
         }
@@ -424,14 +428,18 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     private static void requestNewAuthTokenAndRetry(IterableApiRequest iterableApiRequest) {
         IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
-        IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(retryInterval, false, data -> {
-            try {
-                String newAuthToken = data.getString("newAuthToken");
-                retryRequestWithNewAuthToken(newAuthToken, iterableApiRequest);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        });
+        IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(
+                retryInterval,
+                IterableAuthRefreshReason.JWT_401,
+                data -> {
+                    try {
+                        String newAuthToken = data.getString("newAuthToken");
+                        retryRequestWithNewAuthToken(newAuthToken, iterableApiRequest);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+        );
     }
 
     protected void setRetryCount(int count) {

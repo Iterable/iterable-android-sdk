@@ -16,7 +16,7 @@ class IterableKeychain {
         private const val PLAINTEXT_SUFFIX = "_plaintext"
         private const val CRYPTO_OPERATION_TIMEOUT_MS = 500L
         private const val KEY_ENCRYPTION_ENABLED = "iterable-encryption-enabled"
-        
+
         private val cryptoExecutor = Executors.newSingleThreadExecutor()
     }
 
@@ -116,7 +116,7 @@ class IterableKeychain {
         } else if (hasPlainText) {
             return sharedPrefs.getString(key, null)
         }
-        
+
         val encryptedValue = sharedPrefs.getString(key, null) ?: return null
         return try {
             encryptor?.let { runWithTimeout { it.decrypt(encryptedValue) } }

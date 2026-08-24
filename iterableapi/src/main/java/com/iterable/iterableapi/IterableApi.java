@@ -627,7 +627,7 @@ public class IterableApi {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
                 IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
-                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
+                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), IterableAuthRefreshReason.STORED_TOKEN_MISSING, null);
             }
         }
     }
