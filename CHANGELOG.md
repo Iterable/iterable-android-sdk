@@ -4,12 +4,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(double)` accepts fractional seconds, matching the iOS, React Native and Flutter SDKs. Previously Android only accepted whole seconds, so a value like `0.5` behaved differently here than on other platforms. The existing `Long` overload is deprecated but still works, so no code changes are required.
 - `IterableDataRegion` now exposes stable cross-SDK identifiers and lookup helpers: `getRegionCode()` (e.g. `"EU"`), `getCode()` (`0` for US, `1` for EU, matching the React Native and Flutter SDKs), and the static `IterableDataRegion.from(String)` / `IterableDataRegion.from(int)` factories. `from(String)` accepts a region code in any case and also accepts a full API endpoint URL, so the iOS SDK's string-based data region values resolve without translation. **No action required** — the existing `setDataRegion(IterableDataRegion.EU)` API is unchanged.
 
 ### Fixed
+- Fixed the keychain treating a transient crypto timeout as a permanent decryption failure. A slow AndroidKeyStore operation that exceeded the 500 ms timeout would wipe the stored email, userId, and auth token and disable encryption, forcing the user to re-authenticate (and request a new auth token) on the next launch. Crypto timeouts are now handled as transient without wiping credentials or disabling encryption for the device: a read that times out returns no value for that call (the stored ciphertext is left intact for the next attempt), and a write that times out stores that one value unencrypted (as the non-encrypted fallback already did) rather than clearing everything. The timed-out crypto operation is also cancelled so it no longer blocks subsequent reads/writes.
+- `setExpiringAuthTokenRefreshPeriod` now validates its input instead of silently producing a broken refresh schedule. Previously a negative value was converted to a negative millisecond period and then *subtracted* when computing the refresh time, scheduling the refresh after the token had already expired; a very large value overflowed to a negative period with the same effect; and `null` threw a `NullPointerException` on unboxing. Invalid values (`null`, `NaN`, negatives) are now logged and ignored, leaving the period at whatever it was before the call — the 60 second default unless an earlier call set something else. Values above ~10 years are clamped to that ceiling rather than ignored. Zero remains valid and means the token is refreshed only once it has expired.
 - An unrecognised data region no longer resolves silently. `IterableDataRegion.from(...)` and `setDataRegion(...)` log a warning naming the supported values before falling back to `US`, so a misconfigured region surfaces in the logs instead of quietly routing EU-destined data to the US data center. `setDataRegion(null)` now falls back to `US` with a warning instead of leaving the region unset.
 
+### Changed
+- Clarified that `setExpiringAuthTokenRefreshPeriod` takes **seconds**, with a default of 60. The unit and default are unchanged and match every other Iterable SDK.
+
 ### Deprecated
+- `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(Long)` — use the `double` overload instead, which accepts fractional seconds. The `Long` overload delegates to it and remains fully supported.
 - `IterableConstants.BASE_URL_API` and `IterableConstants.BASE_URL_LINKS` — both are hardcoded to the US data region and are unused by the SDK, which resolves its endpoint from the configured `IterableDataRegion`. Use `IterableDataRegion.getEndpoint()` instead. They still resolve to the same values, so no action is required in this release. **They will be removed in 3.12.0** — if you reference either constant, switch to `IterableDataRegion.getEndpoint()` before upgrading to that version.
 
 ## [3.10.1]
