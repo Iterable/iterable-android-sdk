@@ -123,7 +123,7 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
-        this.setStyle(DialogFragment.STYLE_NO_FRAME, androidx.appcompat.R.style.Theme_AppCompat_NoActionBar);
+        this.setStyle(DialogFragment.STYLE_NO_FRAME, androidx.appcompat.R.style.Theme_AppCompat_DayNight_NoActionBar);
     }
 
     @Override
@@ -210,7 +210,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
             return null;
         }
 
-        webView = createWebViewSafely(getContext());
+        // The WebView derives the CSS prefers-color-scheme value from its context theme's
+        // isLightTheme, so it needs the dialog's themed context and not the host activity's.
+        webView = createWebViewSafely(getDialog().getContext());
         if (webView == null) {
             dismissAllowingStateLoss();
             return null;

@@ -11,13 +11,15 @@
     </style>
 
     <!-- Theme for IterableInAppDialogNotification. Mirrors the DialogFragment-side
-         STYLE_NO_FRAME + Theme_AppCompat_NoActionBar combination. windowIsFloating stays
-         true (the Dialog default) so the host activity's status/navigation bars remain
-         visible — RESPECT_BOUNDS depends on this. windowMinWidth*=100% overrides the
-         floating-dialog small-card sizing so the in-app can fill the activity content
-         area when it wants to. Modes that need to cover the bars (FORCE_FULLSCREEN,
-         FORCE_EDGE_TO_EDGE) add FLAG_LAYOUT_NO_LIMITS explicitly at runtime. -->
-    <style name="Iterable.InAppDialog" parent="Theme.AppCompat.NoActionBar">
+         STYLE_NO_FRAME + Theme_AppCompat_DayNight_NoActionBar combination. The DayNight
+         parent is what lets the WebView report the right prefers-color-scheme to the
+         in-app HTML. windowIsFloating stays true (the Dialog default) so the host
+         activity's status/navigation bars remain visible — RESPECT_BOUNDS depends on
+         this. windowMinWidth*=100% overrides the floating-dialog small-card sizing so
+         the in-app can fill the activity content area when it wants to. Modes that need
+         to cover the bars (FORCE_FULLSCREEN, FORCE_EDGE_TO_EDGE) add
+         FLAG_LAYOUT_NO_LIMITS explicitly at runtime. -->
+    <style name="Iterable.InAppDialog" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowNoTitle">true</item>

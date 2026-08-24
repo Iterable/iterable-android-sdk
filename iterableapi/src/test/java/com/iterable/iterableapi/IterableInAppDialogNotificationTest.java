@@ -3,14 +3,18 @@ package com.iterable.iterableapi;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import android.content.Context;
 import android.graphics.Rect;
+import android.util.TypedValue;
 import android.view.KeyEvent;
+import android.view.View;
 
 import androidx.activity.ComponentActivity;
 
@@ -20,6 +24,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowDialog;
 
 public class IterableInAppDialogNotificationTest extends BaseTest {
@@ -545,6 +550,46 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
         return dialog;
     }
 
+
+    // ===== Light/Dark Theme Tests =====
+
+    @Test
+    public void dialogTheme_shouldResolveLight_inLightMode() {
+        IterableInAppDialogNotification dialog = createDialog();
+        dialog.show();
+
+        assertTrue("Dialog theme should resolve isLightTheme=true in light mode",
+                isLightTheme(dialog.getContext()));
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    public void dialogTheme_shouldResolveDark_inNightMode() {
+        IterableInAppDialogNotification dialog = createDialog();
+        dialog.show();
+
+        assertFalse("Dialog theme should resolve isLightTheme=false in night mode",
+                isLightTheme(dialog.getContext()));
+    }
+
+    @Test
+    public void webView_shouldUseDialogThemedContext() {
+        IterableInAppDialogNotification dialog = createDialog();
+        dialog.show();
+
+        View webView = dialog.findViewById(R.id.webView);
+        assertNotNull(webView);
+        assertSame("WebView must be created with the dialog's themed context, otherwise it reports"
+                        + " the host activity's prefers-color-scheme to the in-app HTML",
+                dialog.getContext(), webView.getContext());
+    }
+
+    private boolean isLightTheme(Context context) {
+        TypedValue value = new TypedValue();
+        assertTrue("isLightTheme should be resolvable on the in-app dialog theme",
+                context.getTheme().resolveAttribute(android.R.attr.isLightTheme, value, true));
+        return value.data != 0;
+    }
 
     private IterableInAppDialogNotification createDialog() {
         return createDialogWithPadding(new Rect(0, 0, 0, 0));
