@@ -37,7 +37,9 @@ public enum IterableDataRegion {
 
     /**
      * Stable short identifier for this region (for example {@code "EU"}), matching the values used
-     * by Iterable's other SDKs.
+     * by Iterable's other SDKs. It currently matches {@link #name()}, but is stored separately for
+     * the same reason {@link #getCode()} does not use {@link #ordinal()}: renaming an enum constant
+     * must not change an identifier that wrappers and persisted configuration already rely on.
      */
     @NonNull
     public String getRegionCode() {
