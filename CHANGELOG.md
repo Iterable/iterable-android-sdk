@@ -7,7 +7,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(double)` accepts fractional seconds, matching the iOS, React Native and Flutter SDKs. Previously Android only accepted whole seconds, so a value like `0.5` behaved differently here than on other platforms. The existing `Long` overload is deprecated but still works, so no code changes are required.
 
 ### Fixed
-- Fixed a race in JWT auth token refresh scheduling that could leave multiple overlapping refresh timers running. When the refresh timer, an app foreground, and a 401 retry raced to schedule a refresh, the non-atomic timer guard let each create its own timer; the orphaned timers could not be cancelled and each kept requesting new auth tokens, inflating the number of `IterableAuthHandler.onAuthTokenRequested()` calls (and backend JWT generation) over time. Scheduling and clearing of the refresh timer are now synchronized so only one refresh timer is ever active.
 - Fixed the keychain treating a transient crypto timeout as a permanent decryption failure. A slow AndroidKeyStore operation that exceeded the 500 ms timeout would wipe the stored email, userId, and auth token and disable encryption, forcing the user to re-authenticate (and request a new auth token) on the next launch. Crypto timeouts are now handled as transient without wiping credentials or disabling encryption for the device: a read that times out returns no value for that call (the stored ciphertext is left intact for the next attempt), and a write that times out stores that one value unencrypted (as the non-encrypted fallback already did) rather than clearing everything. The timed-out crypto operation is also cancelled so it no longer blocks subsequent reads/writes.
 - `setExpiringAuthTokenRefreshPeriod` now validates its input instead of silently producing a broken refresh schedule. Previously a negative value was converted to a negative millisecond period and then *subtracted* when computing the refresh time, scheduling the refresh after the token had already expired; a very large value overflowed to a negative period with the same effect; and `null` threw a `NullPointerException` on unboxing. Invalid values (`null`, `NaN`, negatives) are now logged and ignored, leaving the period at whatever it was before the call — the 60 second default unless an earlier call set something else. Values above ~10 years are clamped to that ceiling rather than ignored. Zero remains valid and means the token is refreshed only once it has expired.
 
@@ -16,6 +15,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Deprecated
 - `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(Long)` — use the `double` overload instead, which accepts fractional seconds. The `Long` overload delegates to it and remains fully supported.
+
+## [3.10.1]
+### Fixed
+- Fixed a race in JWT auth refresh scheduling that could leave overlapping timers active and repeatedly call `IterableAuthHandler.onAuthTokenRequested()`. Refresh scheduling now has a single task owner, rejects stale or duplicate tasks, and logs each schedule, skip, fire, cancellation, and error with its refresh reason.
 
 ## [3.10.0]
 ### Added

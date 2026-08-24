@@ -473,4 +473,4 @@ class IterableKeychainTest {
         // - Existing encrypted data that can't be decrypted returns null (graceful degradation)
         // - No crashes occur during the failure scenario
     }
-} 
+}
