@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Fixed
+- Fixed a `NullPointerException` in `EmbeddedSessionManager.updateDisplayCountAndDuration()` that could crash apps calling embedded session methods off the main thread. `EmbeddedSessionManager` is now internally synchronized, which also fixes concurrent modification of its impression map and duplicate session tracking when `endSession()` raced with itself. Thanks to [@Shamyyoun](https://github.com/Shamyyoun) for the report and initial fix.
 - Fixed a race in JWT auth refresh scheduling that could leave overlapping timers active and repeatedly call `IterableAuthHandler.onAuthTokenRequested()`. Refresh scheduling now has a single task owner, rejects stale or duplicate tasks, and logs each schedule, skip, fire, cancellation, and error with its refresh reason.
 
 ## [3.10.0]
