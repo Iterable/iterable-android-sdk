@@ -3,8 +3,19 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(double)` accepts fractional seconds, matching the iOS, React Native and Flutter SDKs. Previously Android only accepted whole seconds, so a value like `0.5` behaved differently here than on other platforms. The existing `Long` overload is deprecated but still works, so no code changes are required.
+
 ### Fixed
+- Fixed the keychain treating a transient crypto timeout as a permanent decryption failure. A slow AndroidKeyStore operation that exceeded the 500 ms timeout would wipe the stored email, userId, and auth token and disable encryption, forcing the user to re-authenticate (and request a new auth token) on the next launch. Crypto timeouts are now handled as transient without wiping credentials or disabling encryption for the device: a read that times out returns no value for that call (the stored ciphertext is left intact for the next attempt), and a write that times out stores that one value unencrypted (as the non-encrypted fallback already did) rather than clearing everything. The timed-out crypto operation is also cancelled so it no longer blocks subsequent reads/writes.
+- `setExpiringAuthTokenRefreshPeriod` now validates its input instead of silently producing a broken refresh schedule. Previously a negative value was converted to a negative millisecond period and then *subtracted* when computing the refresh time, scheduling the refresh after the token had already expired; a very large value overflowed to a negative period with the same effect; and `null` threw a `NullPointerException` on unboxing. Invalid values (`null`, `NaN`, negatives) are now logged and ignored, leaving the period at whatever it was before the call — the 60 second default unless an earlier call set something else. Values above ~10 years are clamped to that ceiling rather than ignored. Zero remains valid and means the token is refreshed only once it has expired.
 - Fixed a `NullPointerException` in `EmbeddedSessionManager.updateDisplayCountAndDuration()` that could crash apps calling embedded session methods off the main thread. `EmbeddedSessionManager` is now internally synchronized, which also fixes concurrent modification of its impression map and duplicate session tracking when `endSession()` raced with itself. Thanks to [@Shamyyoun](https://github.com/Shamyyoun) for the report and initial fix.
+
+### Changed
+- Clarified that `setExpiringAuthTokenRefreshPeriod` takes **seconds**, with a default of 60. The unit and default are unchanged and match every other Iterable SDK.
+
+### Deprecated
+- `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(Long)` — use the `double` overload instead, which accepts fractional seconds. The `Long` overload delegates to it and remains fully supported.
 
 ## [3.10.1]
 ### Fixed

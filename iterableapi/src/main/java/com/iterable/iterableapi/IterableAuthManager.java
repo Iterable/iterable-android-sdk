@@ -47,7 +47,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     private final IterableApi api;
     private final IterableAuthHandler authHandler;
-    private final long expiringAuthTokenRefreshPeriod;
+    private final long expiringAuthTokenRefreshPeriodMillis;
     private final IterableActivityMonitor activityMonitor;
     @VisibleForTesting
     Timer timer;
@@ -69,11 +69,11 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, RetryPolicy authRetryPolicy, long expiringAuthTokenRefreshPeriod) {
+    IterableAuthManager(IterableApi api, IterableAuthHandler authHandler, RetryPolicy authRetryPolicy, long expiringAuthTokenRefreshPeriodMillis) {
         this.api = api;
         this.authHandler = authHandler;
         this.authRetryPolicy = authRetryPolicy;
-        this.expiringAuthTokenRefreshPeriod = expiringAuthTokenRefreshPeriod;
+        this.expiringAuthTokenRefreshPeriodMillis = expiringAuthTokenRefreshPeriodMillis;
         this.activityMonitor = IterableActivityMonitor.getInstance();
         this.activityMonitor.addCallback(this);
     }
@@ -269,7 +269,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
             }
 
             long expirationTimeSeconds = decodedExpiration(encodedJWT);
-            long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriod - IterableUtil.currentTimeMillis();
+            long triggerExpirationRefreshTime = expirationTimeSeconds * 1000L - expiringAuthTokenRefreshPeriodMillis - IterableUtil.currentTimeMillis();
             if (triggerExpirationRefreshTime > 0) {
                 scheduleAuthTokenRefresh(
                         triggerExpirationRefreshTime,
@@ -319,7 +319,7 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
 
 
     long getNextRetryInterval() {
-        long nextRetryInterval = authRetryPolicy.retryInterval;
+        long nextRetryInterval = authRetryPolicy.retryIntervalMillis;
         if (authRetryPolicy.retryBackoff == RetryPolicy.Type.EXPONENTIAL) {
             nextRetryInterval *= Math.pow(IterableConstants.EXPONENTIAL_FACTOR, retryCount - 1); // Exponential backoff
         }
