@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Restored offline support for `disablePush()`. When offline mode is enabled, a `users/disableDevice` request made while the network is unavailable is once again persisted and retried instead of being dropped. This behaviour shipped in 3.5.16 and regressed in 3.7.0, leaving Android as the only SDK that silently lost a device disable when the network was down. A queued `disableDevice` is now also preserved across logout (`setEmail`/`setUserId` to a different user), so the disable still reaches the user it was created for.
+- `users/registerDeviceToken` is now queued in offline mode as well, matching the iOS SDK. Push registration made while the network is unavailable is retried instead of being lost, and because the offline queue drains in `scheduledAt` order, a logout-then-login sequence replays as disable-then-register and leaves the device enabled. Note that the offline queue only drains while the app is in the foreground, so a Firebase token refresh received in the background is now sent on the next foreground rather than immediately.
+- A queued request that is discarded before it can be sent now calls its failure handler instead of never calling back at all. This matters most for the completion handlers passed to `setEmail`/`setUserId`: they travel with the queued `users/registerDeviceToken`, so logging in as a different user used to strand them, and an app that dismisses a login spinner in that callback would wait forever. The failure reason states that the request was discarded because the user logged out.
 
 ## [3.10.0]
 ### Added

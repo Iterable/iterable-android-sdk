@@ -1,6 +1,8 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
@@ -10,9 +12,12 @@ import androidx.annotation.VisibleForTesting;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 class OfflineRequestProcessor implements RequestProcessor {
@@ -34,7 +39,13 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_UPDATE_CART,
             IterableConstants.ENDPOINT_TRACK_EMBEDDED_RECEIVED,
             IterableConstants.ENDPOINT_TRACK_EMBEDDED_CLICK,
-            IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION
+            IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION,
+            IterableConstants.ENDPOINT_DISABLE_DEVICE,
+            // Queued alongside disableDevice so a logout-then-login sequence replays in
+            // scheduledAt order as disable-then-register. Queueing the disable on its own
+            // would let a stale disable land after the new user registered and silently kill
+            // a live push registration, because the backend merge is last-write-wins.
+            IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN
     ));
 
     OfflineRequestProcessor(Context context) {
@@ -103,15 +114,26 @@ class OfflineRequestProcessor implements RequestProcessor {
 
     @Override
     public void onLogout(Context context) {
-        taskStorage.deleteAllTasks();
+        // A queued disableDevice is the logout itself retrying, so it has to outlive the purge.
+        // It carries the identity it was created with, so it still targets the outgoing user.
+        taskScheduler.onTasksPurged(taskStorage.deleteAllTasksExcept(IterableConstants.ENDPOINT_DISABLE_DEVICE));
     }
 
     boolean isRequestOfflineCompatible(String baseUrl) {
         return offlineApiSet.contains(baseUrl);
     }
+
+    @VisibleForTesting
+    static Set<String> getOfflineApiSet() {
+        return Collections.unmodifiableSet(offlineApiSet);
+    }
 }
 
 class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
+    @VisibleForTesting
+    static final String PURGED_ON_LOGOUT_REASON =
+            "Request was discarded before it could be sent because the user logged out";
+
     static HashMap<String, IterableHelper.SuccessHandler> successCallbackMap = new HashMap<>();
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
     private final IterableTaskStorage taskStorage;
@@ -140,6 +162,45 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
         }
         successCallbackMap.put(taskId, onSuccess);
         failureCallbackMap.put(taskId, onFailure);
+    }
+
+    /**
+     * Settles the callbacks parked for tasks that were deleted from the queue before they could run.
+     * {@link #onTaskCompleted} is only ever reached from {@link IterableTaskRunner}, and a deleted
+     * task is never run, so without this the app's handler never fires and the map entries live for
+     * the rest of the process. Most visibly, {@code setEmail}'s completion handlers travel with the
+     * queued {@code registerDeviceToken}, so an app dismissing a login spinner in that callback
+     * would wait forever.
+     *
+     * @param taskIds ids of the tasks the purge removed
+     */
+    void onTasksPurged(@NonNull List<String> taskIds) {
+        // Unparked before anything is notified, so a handler that logs back in cannot see, re-fire
+        // or re-purge an entry this call already owns.
+        final List<IterableHelper.FailureHandler> orphanedHandlers = new ArrayList<>();
+        for (String taskId : taskIds) {
+            IterableHelper.FailureHandler onFailure = failureCallbackMap.remove(taskId);
+            successCallbackMap.remove(taskId);
+            if (onFailure != null) {
+                orphanedHandlers.add(onFailure);
+            }
+        }
+        if (orphanedHandlers.isEmpty()) {
+            return;
+        }
+
+        // Same thread and looper a real failure would arrive on. It also puts the notification after
+        // the purge and after the logout that triggered it, so app code re-entering the SDK from the
+        // handler runs against a settled queue.
+        new Handler(Looper.getMainLooper()).post(() -> {
+            for (IterableHelper.FailureHandler onFailure : orphanedHandlers) {
+                try {
+                    onFailure.onFailure(PURGED_ON_LOGOUT_REASON, null);
+                } catch (Exception e) {
+                    IterableLogger.e("TaskScheduler", "Failed to notify a discarded request's failure handler", e);
+                }
+            }
+        });
     }
 
     @MainThread

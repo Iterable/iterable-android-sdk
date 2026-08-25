@@ -766,12 +766,13 @@ public class IterableApi {
         IterableHelper.SuccessHandler wrappedSuccessHandler = null;
         if (_setUserSuccessCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
             final IterableHelper.SuccessHandler originalSuccessHandler = _setUserSuccessCallbackHandler;
+            final IterableHelper.FailureHandler pairedFailureHandler = _setUserFailureCallbackHandler;
             wrappedSuccessHandler = data -> {
                 trackConsentOnDeviceRegistration();
 
                 if (originalSuccessHandler != null) {
                     originalSuccessHandler.onSuccess(data);
-                    resetCallbackHandlers();
+                    resetCallbackHandlers(originalSuccessHandler, pairedFailureHandler);
                 }
             };
         }
@@ -782,12 +783,13 @@ public class IterableApi {
         IterableHelper.FailureHandler wrappedFailureHandler = null;
         if (_setUserFailureCallbackHandler != null || (config.enableUnknownUserActivation && getVisitorUsageTracked() && config.identityResolution.getReplayOnVisitorToKnown())) {
             final IterableHelper.FailureHandler originalFailureHandler = _setUserFailureCallbackHandler;
+            final IterableHelper.SuccessHandler pairedSuccessHandler = _setUserSuccessCallbackHandler;
             wrappedFailureHandler = (reason, data) -> {
                 trackConsentOnDeviceRegistration();
 
                 if (originalFailureHandler != null) {
                     originalFailureHandler.onFailure(reason, data);
-                    resetCallbackHandlers();
+                    resetCallbackHandlers(pairedSuccessHandler, originalFailureHandler);
                 }
             };
         }
@@ -797,6 +799,23 @@ public class IterableApi {
     private void resetCallbackHandlers() {
         _setUserFailureCallbackHandler = null;
         _setUserSuccessCallbackHandler = null;
+    }
+
+    /**
+     * Clears the handler pair a device registration was started with, and only that pair. A
+     * registration outcome can arrive after the next setEmail/setUserId has installed its own
+     * handlers: it always could if the request was slow, and it does so routinely now that a queued
+     * registration is settled by the logout that discards it. Clearing unconditionally would drop
+     * the incoming login's handlers, so its own callback would never fire.
+     */
+    private void resetCallbackHandlers(@Nullable IterableHelper.SuccessHandler successHandler,
+                                       @Nullable IterableHelper.FailureHandler failureHandler) {
+        if (_setUserSuccessCallbackHandler == successHandler) {
+            _setUserSuccessCallbackHandler = null;
+        }
+        if (_setUserFailureCallbackHandler == failureHandler) {
+            _setUserFailureCallbackHandler = null;
+        }
     }
 //endregion
 
