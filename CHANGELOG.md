@@ -8,6 +8,24 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `users/registerDeviceToken` is now queued in offline mode as well, matching the iOS SDK. Push registration made while the network is unavailable is retried instead of being lost, and because the offline queue drains in `scheduledAt` order, a logout-then-login sequence replays as disable-then-register and leaves the device enabled. Note that the offline queue only drains while the app is in the foreground, so a Firebase token refresh received in the background is now sent on the next foreground rather than immediately.
 - A queued request that is discarded before it can be sent now calls its failure handler instead of never calling back at all. This matters most for the completion handlers passed to `setEmail`/`setUserId`: they travel with the queued `users/registerDeviceToken`, so logging in as a different user used to strand them, and an app that dismisses a login spinner in that callback would wait forever. The failure reason states that the request was discarded because the user logged out.
 
+### Added
+- `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(double)` accepts fractional seconds, matching the iOS, React Native and Flutter SDKs. Previously Android only accepted whole seconds, so a value like `0.5` behaved differently here than on other platforms. The existing `Long` overload is deprecated but still works, so no code changes are required.
+
+### Fixed
+- Fixed the keychain treating a transient crypto timeout as a permanent decryption failure. A slow AndroidKeyStore operation that exceeded the 500 ms timeout would wipe the stored email, userId, and auth token and disable encryption, forcing the user to re-authenticate (and request a new auth token) on the next launch. Crypto timeouts are now handled as transient without wiping credentials or disabling encryption for the device: a read that times out returns no value for that call (the stored ciphertext is left intact for the next attempt), and a write that times out stores that one value unencrypted (as the non-encrypted fallback already did) rather than clearing everything. The timed-out crypto operation is also cancelled so it no longer blocks subsequent reads/writes.
+- `setExpiringAuthTokenRefreshPeriod` now validates its input instead of silently producing a broken refresh schedule. Previously a negative value was converted to a negative millisecond period and then *subtracted* when computing the refresh time, scheduling the refresh after the token had already expired; a very large value overflowed to a negative period with the same effect; and `null` threw a `NullPointerException` on unboxing. Invalid values (`null`, `NaN`, negatives) are now logged and ignored, leaving the period at whatever it was before the call — the 60 second default unless an earlier call set something else. Values above ~10 years are clamped to that ceiling rather than ignored. Zero remains valid and means the token is refreshed only once it has expired.
+- Fixed a `NullPointerException` in `EmbeddedSessionManager.updateDisplayCountAndDuration()` that could crash apps calling embedded session methods off the main thread. `EmbeddedSessionManager` is now internally synchronized, which also fixes concurrent modification of its impression map and duplicate session tracking when `endSession()` raced with itself. Thanks to [@Shamyyoun](https://github.com/Shamyyoun) for the report and initial fix.
+
+### Changed
+- Clarified that `setExpiringAuthTokenRefreshPeriod` takes **seconds**, with a default of 60. The unit and default are unchanged and match every other Iterable SDK.
+
+### Deprecated
+- `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(Long)` — use the `double` overload instead, which accepts fractional seconds. The `Long` overload delegates to it and remains fully supported.
+
+## [3.10.1]
+### Fixed
+- Fixed a race in JWT auth refresh scheduling that could leave overlapping timers active and repeatedly call `IterableAuthHandler.onAuthTokenRequested()`. Refresh scheduling now has a single task owner, rejects stale or duplicate tasks, and logs each schedule, skip, fire, cancellation, and error with its refresh reason.
+
 ## [3.10.0]
 ### Added
 - `IterableUnknownUserHandler` now reports unknown user criteria fetch results via two optional methods: `onCriteriaReceived(JSONObject criteria)` on a successful fetch and `onCriteriaFetchFailed(String reason)` on failure. This lets apps act (e.g. track an event or update the user) as soon as criteria are available, without racing the asynchronous criteria fetch. Both have default no-op implementations, so existing handlers are unaffected. Callbacks are delivered on the main thread and may fire on every fetch (initialization, foregrounding, and when visitor usage tracking is enabled), so implementations should handle being called repeatedly.
