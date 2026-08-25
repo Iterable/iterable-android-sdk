@@ -45,6 +45,10 @@ public class IterableFirebaseMessagingService extends FirebaseMessagingService {
         }
 
         IterableLogger.d(TAG, "Message data payload: " + remoteMessage.getData());
+        if (IterableBackgroundInitializer.isSwitchingProject()) {
+            IterableLogger.w(TAG, "Push received while a project switch is in progress. It may have been " +
+                    "sent by the previous project; any resulting SDK calls run against the new project.");
+        }
         // Check if message contains a notification payload.
         if (remoteMessage.getNotification() != null) {
             IterableLogger.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());

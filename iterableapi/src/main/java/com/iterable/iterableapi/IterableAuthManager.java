@@ -69,6 +69,12 @@ public class IterableAuthManager implements IterableActivityMonitor.AppStateCall
     }
 
     void addAuthTokenReadyListener(AuthTokenReadyListener listener) {
+        // Deduped because a listener can be registered twice for the same auth manager: a project
+        // switch re-binds the task runner after replacing the auth manager, and if the re-init also
+        // flips offline mode on, the new OfflineRequestProcessor has already registered it.
+        if (listener == null || authTokenReadyListeners.contains(listener)) {
+            return;
+        }
         authTokenReadyListeners.add(listener);
     }
 
