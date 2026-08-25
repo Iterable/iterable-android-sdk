@@ -431,6 +431,27 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
     }
 
     @Test
+    public void testDialogThemeUsesExplicitDarkSchemeInLightMode() {
+        configureColorScheme(IterableInAppColorScheme.DARK);
+
+        IterableInAppFragmentHTMLNotification notification = showNotification();
+
+        assertFalse("Explicit DARK should override the host activity's light mode",
+                isLightTheme(notification.getDialog().getContext()));
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    public void testDialogThemeUsesExplicitLightSchemeInNightMode() {
+        configureColorScheme(IterableInAppColorScheme.LIGHT);
+
+        IterableInAppFragmentHTMLNotification notification = showNotification();
+
+        assertTrue("Explicit LIGHT should override the host activity's night mode",
+                isLightTheme(notification.getDialog().getContext()));
+    }
+
+    @Test
     public void testWebViewUsesDialogThemedContext() {
         IterableInAppFragmentHTMLNotification notification = showNotification();
 
@@ -449,6 +470,12 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         assertNotNull(notification);
         assertNotNull(notification.getDialog());
         return notification;
+    }
+
+    private void configureColorScheme(IterableInAppColorScheme colorScheme) {
+        IterableTestUtils.resetIterableApi();
+        IterableTestUtils.createIterableApiNew(
+                builder -> builder.setInAppColorScheme(colorScheme));
     }
 
     private boolean isLightTheme(Context context) {

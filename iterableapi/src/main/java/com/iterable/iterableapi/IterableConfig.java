@@ -157,6 +157,17 @@ public class IterableConfig {
     final IterableInAppDisplayMode inAppDisplayMode;
 
     /**
+     * Controls the color scheme reported to HTML in-app messages.
+     */
+    final IterableInAppColorScheme inAppColorScheme;
+
+    /**
+     * Supplies the current in-app color scheme when an in-app message is created.
+     */
+    @Nullable
+    final IterableInAppColorSchemeProvider inAppColorSchemeProvider;
+
+    /**
      * Base URL for Webview content loading. Specifically used to enable CORS for external resources.
      * If null or empty, defaults to empty string (original behavior with about:blank origin).
      * Set this to according to your CORS settings for example (e.g., "https://app.iterable.com") to allow external resource loading.
@@ -200,6 +211,8 @@ public class IterableConfig {
         mobileFrameworkInfo = builder.mobileFrameworkInfo;
         webViewBaseUrl = builder.webViewBaseUrl;
         inAppDisplayMode = builder.inAppDisplayMode;
+        inAppColorScheme = builder.inAppColorScheme;
+        inAppColorSchemeProvider = builder.inAppColorSchemeProvider;
     }
 
     public static class Builder {
@@ -229,6 +242,8 @@ public class IterableConfig {
         private IterableUnknownUserHandler iterableUnknownUserHandler;
         private String webViewBaseUrl;
         private IterableInAppDisplayMode inAppDisplayMode = IterableInAppDisplayMode.FORCE_EDGE_TO_EDGE;
+        private IterableInAppColorScheme inAppColorScheme = IterableInAppColorScheme.AUTOMATIC;
+        private IterableInAppColorSchemeProvider inAppColorSchemeProvider;
 
         public Builder() {}
 
@@ -527,6 +542,36 @@ public class IterableConfig {
         @NonNull
         public Builder setInAppDisplayMode(@NonNull IterableInAppDisplayMode inAppDisplayMode) {
             this.inAppDisplayMode = inAppDisplayMode;
+            return this;
+        }
+
+        /**
+         * Set the color scheme reported to HTML in-app messages. Defaults to
+         * {@link IterableInAppColorScheme#AUTOMATIC}, which follows the host activity's
+         * Android UI mode. Setting a fixed value clears any color scheme provider.
+         *
+         * @param inAppColorScheme the color scheme for HTML in-app messages
+         */
+        @NonNull
+        public Builder setInAppColorScheme(@NonNull IterableInAppColorScheme inAppColorScheme) {
+            this.inAppColorScheme = inAppColorScheme;
+            this.inAppColorSchemeProvider = null;
+            return this;
+        }
+
+        /**
+         * Set a provider that supplies the current color scheme whenever an HTML in-app
+         * message is created. Use this when the app's theme is held outside Android's
+         * configuration, such as theme state managed in Jetpack Compose. Setting a provider
+         * replaces any fixed color scheme.
+         *
+         * @param provider the provider for the current in-app color scheme
+         */
+        @NonNull
+        public Builder setInAppColorSchemeProvider(
+                @NonNull IterableInAppColorSchemeProvider provider) {
+            this.inAppColorScheme = IterableInAppColorScheme.AUTOMATIC;
+            this.inAppColorSchemeProvider = provider;
             return this;
         }
 

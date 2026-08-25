@@ -123,7 +123,9 @@ public class IterableInAppFragmentHTMLNotification extends DialogFragment implem
         this.backgroundAlpha = 0;
         this.messageId = "";
         insetPadding = new Rect();
-        this.setStyle(DialogFragment.STYLE_NO_FRAME, androidx.appcompat.R.style.Theme_AppCompat_DayNight_NoActionBar);
+        this.setStyle(
+                DialogFragment.STYLE_NO_FRAME,
+                IterableInAppColorSchemeResolver.resolveFragmentTheme());
     }
 
     @Override

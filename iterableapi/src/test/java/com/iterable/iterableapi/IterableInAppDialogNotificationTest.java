@@ -27,6 +27,8 @@ import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowDialog;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class IterableInAppDialogNotificationTest extends BaseTest {
 
     private ActivityController<ComponentActivity> controller;
@@ -573,6 +575,50 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
     }
 
     @Test
+    public void dialogTheme_shouldUseExplicitDarkScheme_inLightMode() {
+        configureColorScheme(IterableInAppColorScheme.DARK);
+
+        IterableInAppDialogNotification dialog = createDialog();
+        dialog.show();
+
+        assertFalse("Explicit DARK should override the host activity's light mode",
+                isLightTheme(dialog.getContext()));
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    public void dialogTheme_shouldUseExplicitLightScheme_inNightMode() {
+        configureColorScheme(IterableInAppColorScheme.LIGHT);
+
+        IterableInAppDialogNotification dialog = createDialog();
+        dialog.show();
+
+        assertTrue("Explicit LIGHT should override the host activity's night mode",
+                isLightTheme(dialog.getContext()));
+    }
+
+    @Test
+    public void dialogTheme_shouldQueryProvider_forEachInApp() {
+        AtomicReference<IterableInAppColorScheme> currentScheme =
+                new AtomicReference<>(IterableInAppColorScheme.DARK);
+        IterableTestUtils.resetIterableApi();
+        IterableTestUtils.createIterableApiNew(
+                builder -> builder.setInAppColorSchemeProvider(currentScheme::get));
+
+        IterableInAppDialogNotification darkDialog = createDialog();
+        darkDialog.show();
+        assertFalse("The first in-app should use the provider's DARK value",
+                isLightTheme(darkDialog.getContext()));
+        darkDialog.dismiss();
+
+        currentScheme.set(IterableInAppColorScheme.LIGHT);
+        IterableInAppDialogNotification lightDialog = createDialog();
+        lightDialog.show();
+        assertTrue("The next in-app should use the provider's updated LIGHT value",
+                isLightTheme(lightDialog.getContext()));
+    }
+
+    @Test
     public void webView_shouldUseDialogThemedContext() {
         IterableInAppDialogNotification dialog = createDialog();
         dialog.show();
@@ -589,6 +635,12 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
         assertTrue("isLightTheme should be resolvable on the in-app dialog theme",
                 context.getTheme().resolveAttribute(android.R.attr.isLightTheme, value, true));
         return value.data != 0;
+    }
+
+    private void configureColorScheme(IterableInAppColorScheme colorScheme) {
+        IterableTestUtils.resetIterableApi();
+        IterableTestUtils.createIterableApiNew(
+                builder -> builder.setInAppColorScheme(colorScheme));
     }
 
     private IterableInAppDialogNotification createDialog() {
