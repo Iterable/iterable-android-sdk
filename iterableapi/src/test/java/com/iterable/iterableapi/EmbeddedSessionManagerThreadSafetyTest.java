@@ -28,6 +28,8 @@ public class EmbeddedSessionManagerThreadSafetyTest extends BaseTest {
         sessionManager = new EmbeddedSessionManager();
     }
 
+    // Pins existing behavior, not intended behavior: with no impressions, endSession() returns
+    // early and leaves the session open. Flip this assertion when SDK-701 is fixed.
     @Test
     public void endSessionWithoutImpressionsLeavesSessionRunning() {
         sessionManager.startSession();

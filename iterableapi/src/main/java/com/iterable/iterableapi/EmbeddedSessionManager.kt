@@ -50,12 +50,12 @@ public class EmbeddedSessionManager {
                 return
             }
 
-            endAllImpressions()
+            endAllImpressionsLocked()
 
             val tracked = IterableEmbeddedSession(
                 session.start,
                 Date(),
-                getImpressionList()
+                getImpressionListLocked()
             )
 
             //reset session for next session start
@@ -101,17 +101,19 @@ public class EmbeddedSessionManager {
                 return
             }
 
-            updateDisplayCountAndDuration(impressionData)
+            updateDisplayCountAndDurationLocked(impressionData)
         }
     }
 
-    private fun endAllImpressions() {
+    // The Locked suffix marks helpers that read or write impressions without taking the lock
+    // themselves: every caller must already hold it.
+    private fun endAllImpressionsLocked() {
         for (impressionData in impressions.values) {
-            updateDisplayCountAndDuration(impressionData)
+            updateDisplayCountAndDurationLocked(impressionData)
         }
     }
 
-    private fun getImpressionList(): List<IterableEmbeddedImpression>? {
+    private fun getImpressionListLocked(): List<IterableEmbeddedImpression>? {
         val impressionList: MutableList<IterableEmbeddedImpression> = ArrayList()
         for (impressionData in impressions.values) {
             impressionList.add(
@@ -126,7 +128,7 @@ public class EmbeddedSessionManager {
         return impressionList
     }
 
-    private fun updateDisplayCountAndDuration(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
+    private fun updateDisplayCountAndDurationLocked(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
         val start = impressionData.start
         if (start != null) {
             impressionData.displayCount = impressionData.displayCount.plus(1)
