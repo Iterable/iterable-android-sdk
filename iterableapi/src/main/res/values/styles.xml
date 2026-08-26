@@ -30,21 +30,13 @@
         <item name="android:windowMinWidthMinor">100%</item>
     </style>
 
-    <style name="Iterable.InAppDialog.Light">
-        <item name="android:isLightTheme">true</item>
-    </style>
+    <style name="Iterable.InAppDialog.Light" />
 
-    <style name="Iterable.InAppDialog.Dark">
-        <item name="android:isLightTheme">false</item>
-    </style>
+    <style name="Iterable.InAppDialog.Dark" />
 
     <style name="Iterable.InAppFragment" parent="Theme.AppCompat.DayNight.NoActionBar" />
 
-    <style name="Iterable.InAppFragment.Light">
-        <item name="android:isLightTheme">true</item>
-    </style>
+    <style name="Iterable.InAppFragment.Light" />
 
-    <style name="Iterable.InAppFragment.Dark">
-        <item name="android:isLightTheme">false</item>
-    </style>
+    <style name="Iterable.InAppFragment.Dark" />
 </resources>
