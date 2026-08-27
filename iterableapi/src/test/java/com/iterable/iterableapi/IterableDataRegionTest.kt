@@ -1,11 +1,23 @@
 package com.iterable.iterableapi
 
+import android.util.Log
+import com.iterable.iterableapi.unit.TestRunner
 import org.hamcrest.Matchers.`is`
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThat
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
 
+@RunWith(TestRunner::class)
 class IterableDataRegionTest {
+
+    @Before
+    fun clearLogs() {
+        ShadowLog.clear()
+    }
 
     @Test
     fun endpointsMatchDataCenters() {
@@ -78,4 +90,41 @@ class IterableDataRegionTest {
             assertThat(IterableDataRegion.from(region.endpoint), `is`(region))
         }
     }
+
+    /**
+     * These factories run while the config is still being built, so IterableLogger is still reading
+     * the pre-init config's ERROR level. Anything below ERROR is dropped before it reaches logcat,
+     * which would leave a misconfigured region silently sending data to the US data center.
+     */
+    @Test
+    fun unsupportedStringIsLoggedAtDefaultLogLevel() {
+        IterableDataRegion.from("APAC")
+
+        val message = errorLogs().single()
+        assertTrue("log should name the rejected value: $message", message.contains("APAC"))
+        assertTrue("log should list supported values: $message", message.contains("US (0), EU (1)"))
+    }
+
+    @Test
+    fun unsupportedCodeIsLoggedAtDefaultLogLevel() {
+        IterableDataRegion.from(7)
+
+        val message = errorLogs().single()
+        assertTrue("log should name the rejected code: $message", message.contains("7"))
+        assertTrue("log should list supported values: $message", message.contains("US (0), EU (1)"))
+    }
+
+    @Test
+    fun recognisedValuesAreNotLoggedAsErrors() {
+        IterableDataRegion.from("EU")
+        IterableDataRegion.from("https://api.eu.iterable.com/api/")
+        IterableDataRegion.from(0)
+
+        assertTrue(errorLogs().toString(), errorLogs().isEmpty())
+    }
+
+    private fun errorLogs(): List<String> =
+        ShadowLog.getLogsForTag("IterableDataRegion")
+            .filter { it.type == Log.ERROR }
+            .map { it.msg }
 }

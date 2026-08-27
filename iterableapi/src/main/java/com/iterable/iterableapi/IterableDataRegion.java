@@ -51,8 +51,9 @@ public enum IterableDataRegion {
      * accepts a full API endpoint URL, so values from the iOS SDK's string-based data region can be
      * passed through unchanged.
      * <p>
-     * Unrecognised or null values fall back to {@link #US} and are logged, matching the behaviour of
-     * Iterable's other SDKs.
+     * Unrecognised values fall back to {@link #US} and are logged as an error, matching the
+     * behaviour of Iterable's other SDKs. A null or blank value also falls back to {@link #US},
+     * which is the documented default rather than a misconfiguration.
      *
      * @param value region identifier, or {@code null}
      * @return the matching region, or {@link #US} if the value is not recognised
@@ -71,7 +72,9 @@ public enum IterableDataRegion {
             }
         }
 
-        IterableLogger.w(TAG, "Unsupported data region \"" + value + "\", defaulting to " + US.regionCode
+        // Error level, not warning: this runs while the config is still being built, and
+        // IterableLogger reads the pre-init config (ERROR) until initialize() swaps it in.
+        IterableLogger.e(TAG, "Unsupported data region \"" + value + "\", defaulting to " + US.regionCode
                 + ". Supported values: " + supportedRegionCodes());
         return US;
     }
@@ -79,8 +82,8 @@ public enum IterableDataRegion {
     /**
      * Resolves a region from its numeric identifier, as used by the React Native and Flutter SDKs.
      * <p>
-     * Unrecognised values fall back to {@link #US} and are logged, matching the behaviour of
-     * Iterable's other SDKs.
+     * Unrecognised values fall back to {@link #US} and are logged as an error, matching the
+     * behaviour of Iterable's other SDKs.
      *
      * @param code region identifier, see {@link #getCode()}
      * @return the matching region, or {@link #US} if the code is not recognised
@@ -93,7 +96,7 @@ public enum IterableDataRegion {
             }
         }
 
-        IterableLogger.w(TAG, "Unsupported data region code " + code + ", defaulting to " + US.regionCode
+        IterableLogger.e(TAG, "Unsupported data region code " + code + ", defaulting to " + US.regionCode
                 + ". Supported values: " + supportedRegionCodes());
         return US;
     }

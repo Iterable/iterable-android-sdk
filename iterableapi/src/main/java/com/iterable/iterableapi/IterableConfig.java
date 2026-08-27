@@ -422,8 +422,8 @@ public class IterableConfig {
          * Set the data region used by the SDK
          * <p>
          * The parameter is annotated {@link NonNull}, but Java callers are not held to that at
-         * compile time: passing {@code null} falls back to {@link IterableDataRegion#US} and logs a
-         * warning rather than throwing.
+         * compile time: passing {@code null} falls back to {@link IterableDataRegion#US} and logs an
+         * error rather than throwing.
          * <p>
          * To resolve a region from a string or numeric identifier (for example when bridging from a
          * cross-platform wrapper), use {@link IterableDataRegion#from(String)} or
@@ -437,7 +437,7 @@ public class IterableConfig {
         @NonNull
         public Builder setDataRegion(@NonNull IterableDataRegion dataRegion) {
             if (dataRegion == null) {
-                IterableLogger.w("IterableConfig", "setDataRegion received null, defaulting to " + IterableDataRegion.US.getRegionCode());
+                IterableLogger.e(TAG, "setDataRegion received null, defaulting to " + IterableDataRegion.US.getRegionCode());
                 this.dataRegion = IterableDataRegion.US;
                 return this;
             }
