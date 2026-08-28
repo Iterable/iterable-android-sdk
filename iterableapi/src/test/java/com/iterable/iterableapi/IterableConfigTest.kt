@@ -174,4 +174,20 @@ class IterableConfigTest {
         setter.invoke(builder, null)
         assertEquals(60_000L, builder.build().expiringAuthTokenRefreshPeriodMillis)
     }
+
+    /**
+     * `encryptionEnforced` was removed in 3.5.5 and then silently reinstated by a merge in 3.6.0,
+     * where it sat unread for four minor versions. Nothing in the build detects a re-added member,
+     * so this asserts its absence directly.
+     */
+    @Test
+    fun encryptionEnforcedIsNotPartOfTheConfiguration() {
+        val members = listOf(IterableConfig::class.java, IterableConfig.Builder::class.java)
+            .flatMap { type ->
+                type.declaredFields.map { it.name } + type.declaredMethods.map { it.name }
+            }
+            .filter { it.contains("encryptionEnforced", ignoreCase = true) }
+
+        assertTrue("encryptionEnforced was reintroduced: $members", members.isEmpty())
+    }
 }
