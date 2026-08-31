@@ -118,7 +118,8 @@ public class IterableSwitchProjectQueueDrainTest extends BaseTest {
 
         CountDownLatch switched = new CountDownLatch(1);
         AtomicReference<Looper> callbackLooper = new AtomicReference<>();
-        Thread caller = new Thread(() -> IterableApi.switchProject(context, API_KEY_B, config(),
+        Thread caller = new Thread(() -> IterableApi.switchProject(context,
+                new IterableProject(API_KEY_B, config()),
                 cleanTeardown -> {
                     callbackLooper.set(Looper.myLooper());
                     switched.countDown();

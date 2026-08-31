@@ -1000,8 +1000,9 @@ public class IterableApi {
      * starting a second teardown.
      *
      * @param context Application context
-     * @param apiKey API key of the project to switch to
-     * @param config Configuration for the new project (can be null, in which case defaults are used)
+     * @param project The project to switch to: its API key together with the config to run it with.
+     *                The two are paired in one object so one project's key cannot be combined with
+     *                another project's region or auth handler. See {@link IterableProject}.
      * @param callback Delivered on the main thread once the SDK is on the new project.
      *                 {@link IterableProjectSwitchCallback#onProjectSwitched(boolean)} receives true
      *                 when every teardown step completed cleanly and false when at least one cleanup
@@ -1025,16 +1026,20 @@ public class IterableApi {
      *                 The JWT auth retry budget does not carry over. It is per auth manager instance,
      *                 the switch rebuilds the auth manager against the new config, and identifying a
      *                 user clears it besides, so the new project starts with a full budget.
-     * @throws IllegalArgumentException if {@code context} or {@code apiKey} is null. Both are
+     * @throws IllegalArgumentException if {@code context} or {@code project} is null. Both are
      *                                  {@link NonNull}, so a null is a programmer error rather than a
      *                                  runtime condition, and reporting it through the callback would
      *                                  overload the same boolean that means "switched, but noisily".
+     *                                  An unusable API key cannot reach here, because
+     *                                  {@link IterableProject} rejects a blank one at construction.
      */
     public static void switchProject(@NonNull Context context,
-                                     @NonNull String apiKey,
-                                     @Nullable IterableConfig config,
+                                     @NonNull IterableProject project,
                                      @Nullable IterableProjectSwitchCallback callback) {
-        IterableProjectSwitcher.switchProject(context, apiKey, config, callback);
+        if (project == null) {
+            throw new IllegalArgumentException("switchProject: project must not be null");
+        }
+        IterableProjectSwitcher.switchProject(context, project.getApiKey(), project.getConfig(), callback);
     }
 
     /**

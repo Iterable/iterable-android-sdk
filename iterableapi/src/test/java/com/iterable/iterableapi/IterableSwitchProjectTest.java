@@ -47,7 +47,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 /**
- * Covers {@link IterableApi#switchProject(Context, String, IterableConfig, IterableProjectSwitchCallback)}:
+ * Covers {@link IterableApi#switchProject(Context, IterableProject, IterableProjectSwitchCallback)}:
  * the guard cases, the teardown steps, the switch window, and the callback contract.
  */
 @RunWith(TestRunner.class)
@@ -106,6 +106,16 @@ public class IterableSwitchProjectTest extends BaseTest {
                 .setAutoPushRegistration(false)
                 .setKeychainEncryption(false)
                 .build();
+    }
+
+    /**
+     * The public API takes a paired {@link IterableProject}. These tests are about switch behaviour
+     * rather than the shape of the call, so they go through this instead of repeating the pairing at
+     * every call site. The tests that are about the API surface itself call it directly.
+     */
+    private static void switchTo(Context context, String apiKey, IterableConfig config,
+                                 IterableProjectSwitchCallback callback) {
+        IterableApi.switchProject(context, new IterableProject(apiKey, config), callback);
     }
 
     /** Real-world default: auto push registration on, so logout actually disables the token. */
@@ -188,7 +198,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Boolean> verdict = new AtomicReference<>();
 
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), clean -> {
+        switchTo(context, API_KEY_B, configWithoutAuth(), clean -> {
             verdict.set(clean);
             latch.countDown();
         });
@@ -213,7 +223,7 @@ public class IterableSwitchProjectTest extends BaseTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean cleanTeardown = new AtomicBoolean(false);
-        IterableApi.switchProject(context, API_KEY_A, configWithoutAuth(), clean -> {
+        switchTo(context, API_KEY_A, configWithoutAuth(), clean -> {
             cleanTeardown.set(clean);
             latch.countDown();
         });
@@ -262,7 +272,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertEquals(EMAIL_A, storedEmail());
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         assertNull("Email must be cleared in memory", IterableApi.getInstance().getEmail());
@@ -282,7 +292,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         while (server.takeRequest(50, TimeUnit.MILLISECONDS) != null) { /* drain */ }
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         while (server.takeRequest(50, TimeUnit.MILLISECONDS) != null) { /* drain */ }
@@ -323,7 +333,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         clearInvocations(inAppManagerA, embeddedManagerA);
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         // The existing logout path is what clears the previous project's cached content.
@@ -357,7 +367,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         drainMainThread();
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, new IterableConfig.Builder()
+        switchTo(context, API_KEY_B, new IterableConfig.Builder()
                 .setAutoPushRegistration(false)
                 .setKeychainEncryption(false)
                 .setAuthHandler(handlerB)
@@ -410,7 +420,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertTrue(firstForegroundHandled());
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         assertFalse("The new project must get its own first-foreground remote config fetch", firstForegroundHandled());
@@ -427,7 +437,7 @@ public class IterableSwitchProjectTest extends BaseTest {
                 .apply();
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         String deviceIdAfter = context
@@ -450,7 +460,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         String disableTaskId = taskStorage.createTask(IterableConstants.ENDPOINT_DISABLE_DEVICE, IterableTaskType.API, disableRequest.toJSONObject().toString());
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         List<String> remainingTaskIds = taskStorage.getAllTaskIds();
@@ -514,7 +524,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         initializeProjectA();
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
 
         // Asserting on state rather than on wall clock: what matters is that the caller's thread did
         // not run the teardown, and that is observable without timing.
@@ -538,7 +548,7 @@ public class IterableSwitchProjectTest extends BaseTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean onMainThread = new AtomicBoolean(false);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> {
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> {
             onMainThread.set(Looper.myLooper() == Looper.getMainLooper());
             latch.countDown();
         });
@@ -557,7 +567,7 @@ public class IterableSwitchProjectTest extends BaseTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean cleanTeardown = new AtomicBoolean(true);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), clean -> {
+        switchTo(context, API_KEY_B, configWithoutAuth(), clean -> {
             cleanTeardown.set(clean);
             latch.countDown();
         });
@@ -589,8 +599,8 @@ public class IterableSwitchProjectTest extends BaseTest {
         parkOnReset.set(true);
 
         CountDownLatch bothCallbacks = new CountDownLatch(2);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> bothCallbacks.countDown());
-        IterableApi.switchProject(context, "project-c-key", configWithoutAuth(), ignored -> bothCallbacks.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> bothCallbacks.countDown());
+        switchTo(context, "project-c-key", configWithoutAuth(), ignored -> bothCallbacks.countDown());
         secondSwitchIssued.countDown();
 
         assertTrue("Both callbacks should fire", awaitSwitch(bothCallbacks));
@@ -604,7 +614,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         initializeProjectA();
 
         CountDownLatch toB = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> toB.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> toB.countDown());
         assertTrue("Switch to B should complete", awaitSwitch(toB));
 
         IterableApi.getInstance().setEmail(EMAIL_B);
@@ -613,7 +623,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         IterableAuthManager authManagerB = IterableApi.getInstance().getAuthManager();
 
         CountDownLatch backToA = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_A, configWithoutAuth(), ignored -> backToA.countDown());
+        switchTo(context, API_KEY_A, configWithoutAuth(), ignored -> backToA.countDown());
         assertTrue("Switch back to A should complete", awaitSwitch(backToA));
 
         assertEquals(API_KEY_A, IterableApi.getInstance()._apiKey);
@@ -625,14 +635,14 @@ public class IterableSwitchProjectTest extends BaseTest {
     }
 
     @Test
-    public void testSwitchWithNullApiKeyThrowsWithoutTearingDown() {
+    public void testSwitchWithNullProjectThrowsWithoutTearingDown() {
         initializeProjectA();
         IterableInAppManager inAppManagerBefore = IterableApi.getInstance().getInAppManagerOrNull();
 
-        // apiKey is @NonNull, so null is a programmer error. Reporting it through the callback would
+        // project is @NonNull, so null is a programmer error. Reporting it through the callback would
         // mean the same false that means "switched, but noisily" also means "nothing happened".
         assertThrows(IllegalArgumentException.class,
-                () -> IterableApi.switchProject(context, null, configWithoutAuth(), ignored -> { }));
+                () -> IterableApi.switchProject(context, null, ignored -> { }));
 
         assertEquals("The live project must not change", API_KEY_A, IterableApi.getInstance()._apiKey);
         assertSame("Nothing may be torn down", inAppManagerBefore, IterableApi.getInstance().getInAppManagerOrNull());
@@ -645,34 +655,50 @@ public class IterableSwitchProjectTest extends BaseTest {
         initializeProjectA();
 
         assertThrows(IllegalArgumentException.class,
-                () -> IterableApi.switchProject(null, API_KEY_B, configWithoutAuth(), ignored -> { }));
+                () -> IterableApi.switchProject(null, new IterableProject(API_KEY_B, configWithoutAuth()), ignored -> { }));
 
         assertEquals(API_KEY_A, IterableApi.getInstance()._apiKey);
         assertFalse("The gate must not be left raised", IterableBackgroundInitializer.isSwitchingProject());
     }
 
     /**
-     * An empty key is what a failed region lookup or a missing remote config entry produces, so it is
-     * a runtime condition rather than a programmer error. Tearing down for it would delete the
-     * previous project's identity and offline queue and leave the SDK initialized against nothing.
+     * A blank key is what a failed region lookup or a missing remote config entry produces. It cannot
+     * reach the switch any more, because {@link IterableProject} refuses to hold one, which is the
+     * point of pairing the key with its config: the unusable state is not constructible.
      */
     @Test
-    public void testSwitchWithEmptyApiKeyStaysOnTheCurrentProjectAndReportsFalse() throws Exception {
-        assertBlankApiKeyIsRefused("");
-    }
-
-    @Test
-    public void testSwitchWithWhitespaceOnlyApiKeyStaysOnTheCurrentProjectAndReportsFalse() throws Exception {
-        assertBlankApiKeyIsRefused("   ");
-    }
-
-    private void assertBlankApiKeyIsRefused(String blankKey) throws Exception {
+    public void testBlankApiKeyCannotBeMadeIntoAProject() {
         initializeProjectA();
         IterableInAppManager inAppManagerBefore = IterableApi.getInstance().getInAppManagerOrNull();
 
+        for (String blankKey : new String[] {"", "   ", null}) {
+            assertThrows("A blank key must not be constructible: " + blankKey,
+                    IllegalArgumentException.class,
+                    () -> new IterableProject(blankKey, configWithoutAuth()));
+        }
+        assertThrows("A null config must not be constructible", IllegalArgumentException.class,
+                () -> new IterableProject(API_KEY_B, null));
+
+        assertEquals("The live project must not change", API_KEY_A, IterableApi.getInstance()._apiKey);
+        assertEquals("Identity must survive", EMAIL_A, IterableApi.getInstance().getEmail());
+        assertSame("Nothing may be torn down", inAppManagerBefore,
+                IterableApi.getInstance().getInAppManagerOrNull());
+        assertFalse("The gate must not be left raised",
+                IterableBackgroundInitializer.isSwitchingProject());
+    }
+
+    /**
+     * The switcher keeps its own blank-key guard even though IterableProject makes it unreachable from
+     * the public API, because the internal entry point is also used by initialize-time paths and by
+     * Kotlin callers whose platform types can carry a null through.
+     */
+    @Test
+    public void testInternalSwitcherStillRefusesABlankKey() throws Exception {
+        initializeProjectA();
+
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Boolean> verdict = new AtomicReference<>();
-        IterableApi.switchProject(context, blankKey, configWithoutAuth(), clean -> {
+        IterableProjectSwitcher.switchProject(context, "  ", configWithoutAuth(), clean -> {
             verdict.set(clean);
             latch.countDown();
         });
@@ -680,11 +706,18 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertTrue("Callback should fire for a blank key", awaitSwitch(latch));
         assertEquals("A blank key must report false", Boolean.FALSE, verdict.get());
         assertEquals("The live project must not change", API_KEY_A, IterableApi.getInstance()._apiKey);
-        assertEquals("Identity must survive", EMAIL_A, IterableApi.getInstance().getEmail());
-        assertSame("Nothing may be torn down", inAppManagerBefore,
-                IterableApi.getInstance().getInAppManagerOrNull());
         assertFalse("The gate must not be left raised",
                 IterableBackgroundInitializer.isSwitchingProject());
+    }
+
+    @Test
+    public void testProjectExposesItsPairAndMasksTheKeyWhenLogged() {
+        IterableConfig config = configWithoutAuth();
+        IterableProject project = new IterableProject(API_KEY_B, config);
+
+        assertEquals(API_KEY_B, project.getApiKey());
+        assertSame("The config must be the one it was built with", config, project.getConfig());
+        assertFalse("toString must not leak the key", project.toString().contains(API_KEY_B));
     }
 
     // ========================================
@@ -769,7 +802,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         };
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithAutoPushRegistration(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithAutoPushRegistration(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         assertEquals("The key must not be swapped until the disable has been handed off",
@@ -836,7 +869,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     private boolean switchAndAwaitVerdict(String apiKey, IterableConfig config) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Boolean> verdict = new AtomicReference<>();
-        IterableApi.switchProject(context, apiKey, config, cleanTeardown -> {
+        switchTo(context, apiKey, config, cleanTeardown -> {
             verdict.set(cleanTeardown);
             latch.countDown();
         });
@@ -860,9 +893,9 @@ public class IterableSwitchProjectTest extends BaseTest {
 
         CountDownLatch secondSwitchDone = new CountDownLatch(1);
         CountDownLatch firstSwitchDone = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> {
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> {
             firstSwitchDone.countDown();
-            IterableApi.switchProject(context, "project-c-key", configWithoutAuth(), reentrantIgnored -> secondSwitchDone.countDown());
+            switchTo(context, "project-c-key", configWithoutAuth(), reentrantIgnored -> secondSwitchDone.countDown());
         });
 
         assertTrue("The first switch's callback should fire", awaitSwitch(firstSwitchDone));
@@ -940,7 +973,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         IterableBackgroundInitializer.simulateInitializingState();
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
 
         assertFalse("A switch must not start a teardown while initialization is in flight",
                 IterableBackgroundInitializer.isSwitchingProject());
@@ -990,7 +1023,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertNotNull(IterableApi.getInstance().getAuthManager());
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         assertNotNull("The switch must leave a live auth manager built from the new config, not a "
@@ -1092,7 +1125,7 @@ public class IterableSwitchProjectTest extends BaseTest {
                 .apply();
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, unknownUserConfig, ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, unknownUserConfig, ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         while (server.takeRequest(50, TimeUnit.MILLISECONDS) != null) { /* drain switch traffic */ }
@@ -1129,7 +1162,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertNotNull(IterableApi.getInstance().getAttributionInfo());
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         assertNull("campaignId and templateId are namespaced per project, so the previous project's "
@@ -1147,7 +1180,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertNotNull(keychainBefore);
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, new IterableConfig.Builder()
+        switchTo(context, API_KEY_B, new IterableConfig.Builder()
                 .setAutoPushRegistration(false)
                 .setKeychainEncryption(true)
                 .build(), ignored -> latch.countDown());
@@ -1235,7 +1268,7 @@ public class IterableSwitchProjectTest extends BaseTest {
             verdict.set(clean);
             latch.countDown();
         };
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), lambda);
+        switchTo(context, API_KEY_B, configWithoutAuth(), lambda);
 
         assertTrue("A lambda callback must be notified", awaitSwitch(latch));
         assertNotNull("A lambda callback must receive the verdict, not a discarded default",
@@ -1262,7 +1295,7 @@ public class IterableSwitchProjectTest extends BaseTest {
                 IterableApi.getInstance().getDeviceAttributes().isEmpty());
 
         CountDownLatch latch = new CountDownLatch(1);
-        IterableApi.switchProject(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
         assertTrue("Callback should fire", awaitSwitch(latch));
 
         assertNull("An inbox session from the previous project must not be sent to the new one",

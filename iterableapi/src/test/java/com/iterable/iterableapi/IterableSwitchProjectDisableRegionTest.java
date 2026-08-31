@@ -142,10 +142,10 @@ public class IterableSwitchProjectDisableRegionTest extends BaseTest {
 
         CountDownLatch switched = new CountDownLatch(1);
         AtomicBoolean cleanTeardown = new AtomicBoolean(true);
-        IterableApi.switchProject(context, API_KEY_B, new IterableConfig.Builder()
+        IterableApi.switchProject(context, new IterableProject(API_KEY_B, new IterableConfig.Builder()
                 .setKeychainEncryption(false)
                 .setDataRegion(IterableDataRegion.US)
-                .build(), clean -> {
+                .build()), clean -> {
             cleanTeardown.set(clean);
             switched.countDown();
         });
