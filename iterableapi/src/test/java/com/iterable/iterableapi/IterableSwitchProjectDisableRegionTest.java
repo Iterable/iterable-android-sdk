@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -141,17 +141,18 @@ public class IterableSwitchProjectDisableRegionTest extends BaseTest {
         holdDeviceToken.set(true);
 
         CountDownLatch switched = new CountDownLatch(1);
-        AtomicBoolean cleanTeardown = new AtomicBoolean(true);
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
         IterableApi.switchProject(context, new IterableProject(API_KEY_B, new IterableConfig.Builder()
                 .setKeychainEncryption(false)
                 .setDataRegion(IterableDataRegion.US)
-                .build()), clean -> {
-            cleanTeardown.set(clean);
+                .build()), result -> {
+            verdict.set(result);
             switched.countDown();
         });
 
         assertTrue("The switch must not wait for the disable indefinitely", awaitSwitch(switched));
-        assertFalse("A disable that did not dispatch in time is a noisy teardown", cleanTeardown.get());
+        assertEquals("A disable that did not dispatch in time reports warnings",
+                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS, verdict.get());
         assertEquals("The new project is live before the disable has gone anywhere",
                 API_KEY_B, IterableApi.getInstance()._apiKey);
         assertEquals(US_ENDPOINT, IterableApi.getInstance().config.dataRegion.getEndpoint());

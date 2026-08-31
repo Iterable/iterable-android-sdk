@@ -196,10 +196,10 @@ public class IterableSwitchProjectTest extends BaseTest {
     @Test
     public void testSwitchBeforeInitializeBehavesAsInitialize() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Boolean> verdict = new AtomicReference<>();
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
 
-        switchTo(context, API_KEY_B, configWithoutAuth(), clean -> {
-            verdict.set(clean);
+        switchTo(context, API_KEY_B, configWithoutAuth(), result -> {
+            verdict.set(result);
             latch.countDown();
         });
 
@@ -207,10 +207,10 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertEquals("The SDK should end up initialized with the requested key",
                 API_KEY_B, IterableApi.getInstance()._apiKey);
         // initializeInBackground's callback fires even when initialization times out or throws, so
-        // this path cannot honestly claim a clean teardown. It reports false, like every other path
-        // with no confirmed device disable.
-        assertEquals("An initialize dressed up as a switch reports false",
-                Boolean.FALSE, verdict.get());
+        // this path cannot honestly claim a clean teardown. It warns, like every other path with no
+        // confirmed device disable.
+        assertEquals("An initialize dressed up as a switch reports warnings",
+                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS, verdict.get());
     }
 
     @Test
@@ -222,14 +222,15 @@ public class IterableSwitchProjectTest extends BaseTest {
         IterableAuthManager authManagerBefore = IterableApi.getInstance().getAuthManager();
 
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicBoolean cleanTeardown = new AtomicBoolean(false);
-        switchTo(context, API_KEY_A, configWithoutAuth(), clean -> {
-            cleanTeardown.set(clean);
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
+        switchTo(context, API_KEY_A, configWithoutAuth(), result -> {
+            verdict.set(result);
             latch.countDown();
         });
 
         assertTrue("Callback should fire", awaitSwitch(latch));
-        assertTrue("A no-op switch reports a clean teardown", cleanTeardown.get());
+        assertEquals("A no-op switch reports a clean teardown",
+                IterableProjectSwitchResult.SWITCHED_CLEANLY, verdict.get());
         assertSame("In-app manager must not be reset", inAppManagerBefore, IterableApi.getInstance().getInAppManagerOrNull());
         assertSame("Embedded manager must not be reset", embeddedManagerBefore, IterableApi.getInstance().getEmbeddedManagerOrNull());
         assertSame("Auth manager must not be reset", authManagerBefore, IterableApi.getInstance().getAuthManager());
@@ -566,14 +567,15 @@ public class IterableSwitchProjectTest extends BaseTest {
         IterableApi.getInstance().apiClient = throwingApiClient;
 
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicBoolean cleanTeardown = new AtomicBoolean(true);
-        switchTo(context, API_KEY_B, configWithoutAuth(), clean -> {
-            cleanTeardown.set(clean);
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
+        switchTo(context, API_KEY_B, configWithoutAuth(), result -> {
+            verdict.set(result);
             latch.countDown();
         });
 
         assertTrue("Callback should fire", awaitSwitch(latch));
-        assertFalse("A noisy teardown step must report false", cleanTeardown.get());
+        assertEquals("A noisy teardown step must report warnings",
+                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS, verdict.get());
         assertEquals("The swap must still complete", API_KEY_B, IterableApi.getInstance()._apiKey);
         assertNull("Identity must still be cleared", IterableApi.getInstance().getEmail());
         verify(throwingApiClient).onLogout();
@@ -697,14 +699,15 @@ public class IterableSwitchProjectTest extends BaseTest {
         initializeProjectA();
 
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Boolean> verdict = new AtomicReference<>();
-        IterableProjectSwitcher.switchProject(context, "  ", configWithoutAuth(), clean -> {
-            verdict.set(clean);
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
+        IterableProjectSwitcher.switchProject(context, "  ", configWithoutAuth(), result -> {
+            verdict.set(result);
             latch.countDown();
         });
 
         assertTrue("Callback should fire for a blank key", awaitSwitch(latch));
-        assertEquals("A blank key must report false", Boolean.FALSE, verdict.get());
+        assertEquals("A blank key must report warnings",
+                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS, verdict.get());
         assertEquals("The live project must not change", API_KEY_A, IterableApi.getInstance()._apiKey);
         assertFalse("The gate must not be left raised",
                 IterableBackgroundInitializer.isSwitchingProject());
@@ -823,7 +826,8 @@ public class IterableSwitchProjectTest extends BaseTest {
     public void testSwitchReportsFalseWhenNoDeviceDisableCouldBeConfirmed() throws Exception {
         initializeProjectA();
 
-        assertFalse("A switch with no device disable to send reports a noisy teardown",
+        assertEquals("A switch with no device disable to send reports warnings",
+                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS,
                 switchAndAwaitVerdict(API_KEY_B, configWithoutAuth()));
         assertEquals("The switch still completes", API_KEY_B, IterableApi.getInstance()._apiKey);
     }
@@ -835,7 +839,8 @@ public class IterableSwitchProjectTest extends BaseTest {
         drainMainThread();
         stubFirebaseToken("device-token");
 
-        assertTrue("A switch that disabled the previous project's token reports a clean teardown",
+        assertEquals("A switch that disabled the previous project's token reports a clean teardown",
+                IterableProjectSwitchResult.SWITCHED_CLEANLY,
                 switchAndAwaitVerdict(API_KEY_B, configWithAutoPushRegistration()));
     }
 
@@ -846,7 +851,8 @@ public class IterableSwitchProjectTest extends BaseTest {
         drainMainThread();
         stubFirebaseToken(null);
 
-        assertFalse("A disable that could not be built reports a noisy teardown",
+        assertEquals("A disable that could not be built reports warnings",
+                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS,
                 switchAndAwaitVerdict(API_KEY_B, configWithAutoPushRegistration()));
         assertEquals("The switch still completes", API_KEY_B, IterableApi.getInstance()._apiKey);
     }
@@ -865,12 +871,12 @@ public class IterableSwitchProjectTest extends BaseTest {
         };
     }
 
-    /** @return the cleanTeardown the switch reported */
-    private boolean switchAndAwaitVerdict(String apiKey, IterableConfig config) throws Exception {
+    /** @return the result the switch reported */
+    private IterableProjectSwitchResult switchAndAwaitVerdict(String apiKey, IterableConfig config) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Boolean> verdict = new AtomicReference<>();
-        switchTo(context, apiKey, config, cleanTeardown -> {
-            verdict.set(cleanTeardown);
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
+        switchTo(context, apiKey, config, result -> {
+            verdict.set(result);
             latch.countDown();
         });
         assertTrue("Callback should fire", awaitSwitch(latch));
@@ -1263,15 +1269,15 @@ public class IterableSwitchProjectTest extends BaseTest {
         // moves onto a type whose only abstract method takes no arguments, a lambda binds to that
         // one instead and silently discards the boolean, which this stops compiling.
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Boolean> verdict = new AtomicReference<>();
-        IterableProjectSwitchCallback lambda = clean -> {
-            verdict.set(clean);
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
+        IterableProjectSwitchCallback lambda = result -> {
+            verdict.set(result);
             latch.countDown();
         };
         switchTo(context, API_KEY_B, configWithoutAuth(), lambda);
 
         assertTrue("A lambda callback must be notified", awaitSwitch(latch));
-        assertNotNull("A lambda callback must receive the verdict, not a discarded default",
+        assertNotNull("A lambda callback must receive the result, not a discarded default",
                 verdict.get());
     }
 

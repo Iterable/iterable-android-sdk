@@ -1,28 +1,25 @@
 package com.iterable.iterableapi;
 
+import androidx.annotation.NonNull;
+
 /**
  * Callback for {@link IterableApi#switchProject}.
  *
- * This is a single-method interface so that a lambda receives the teardown result.
+ * This is a single-method interface so a lambda receives the result.
  * {@link IterableInitializationCallback} cannot serve this purpose: its only abstract method takes
  * no arguments, so a lambda would bind to that one and silently discard the result.
  */
 public interface IterableProjectSwitchCallback {
     /**
      * Called on the main thread once the SDK is running on the new project. The SDK is on the new
-     * project by the time this runs, whatever the value of {@code cleanTeardown}.
+     * project by the time this runs, whatever the result says.
      *
-     * @param cleanTeardown true when every teardown step completed cleanly. False means at least one
-     *                      cleanup step was noisy, or that no device disable was confirmed for the
-     *                      previous project. False never means the switch failed or was rolled back,
-     *                      so the right response is the same either way: carry on and re-identify
-     *                      the user with {@link IterableApi#setEmail(String)} or
-     *                      {@link IterableApi#setUserId(String)}.
-     *                      <p>
-     *                      False is expected in normal operation and is not an error. An app that
-     *                      does not use push registration, or that has no device token yet, will
-     *                      always see false, because the switch could not confirm a device disable
-     *                      for the previous project.
+     * @param result {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} when every teardown step
+     *               completed cleanly, {@link IterableProjectSwitchResult#SWITCHED_WITH_WARNINGS}
+     *               when a cleanup step was noisy or no device disable was confirmed for the previous
+     *               project. Neither is a failure and neither was rolled back, so the response to
+     *               both is the same: carry on and re-identify the user with
+     *               {@link IterableApi#setEmail(String)} or {@link IterableApi#setUserId(String)}.
      */
-    void onProjectSwitched(boolean cleanTeardown);
+    void onProjectSwitched(@NonNull IterableProjectSwitchResult result);
 }

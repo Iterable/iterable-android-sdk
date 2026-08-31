@@ -1003,21 +1003,22 @@ public class IterableApi {
      * @param project The project to switch to: its API key together with the config to run it with.
      *                The two are paired in one object so one project's key cannot be combined with
      *                another project's region or auth handler. See {@link IterableProject}.
-     * @param callback Delivered on the main thread once the SDK is on the new project.
-     *                 {@link IterableProjectSwitchCallback#onProjectSwitched(boolean)} receives true
-     *                 when every teardown step completed cleanly and false when at least one cleanup
-     *                 step was noisy. False never means the switch was rolled back: the SDK is on the
-     *                 new project either way, and the right response is to carry on and re-identify
-     *                 the user.
+     * @param callback Delivered on the main thread once the SDK is on the new project. Receives
+     *                 {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} when every teardown step
+     *                 completed cleanly, and {@link IterableProjectSwitchResult#SWITCHED_WITH_WARNINGS}
+     *                 when at least one cleanup step was noisy. Neither is a failure and neither was
+     *                 rolled back: the SDK is on the new project either way, and the right response to
+     *                 both is to carry on and re-identify the user.
      *                 <p>
-     *                 False is expected in normal operation and is not an error. In particular it is
-     *                 what an app that does not use push, or that has no device token yet, will
-     *                 always see, because the switch could not confirm a device disable for the
-     *                 previous project. It is also reported when the disable request fails, or fails
-     *                 to reach the request layer in time. A disable that fails after the callback has
-     *                 already been delivered is logged instead.
+     *                 SWITCHED_WITH_WARNINGS is expected in normal operation and is not an error. In
+     *                 particular it is what an app that does not use push, or that has no device token
+     *                 yet, will always see, because the switch could not confirm a device disable for
+     *                 the previous project. It is also reported when the disable request fails, or
+     *                 fails to reach the request layer in time. A disable that fails after the
+     *                 callback has already been delivered is logged instead.
      *                 <p>
-     *                 True means every teardown step completed at the point the callback fired. It is
+     *                 SWITCHED_CLEANLY means every teardown step completed at the point the callback
+     *                 fired. It is
      *                 not a guarantee that the device disable reached the network: the disable is
      *                 handed to the request layer, which may queue it for later delivery, and the
      *                 callback is not held open for the response. An app that needs certainty about
@@ -1029,7 +1030,7 @@ public class IterableApi {
      * @throws IllegalArgumentException if {@code context} or {@code project} is null. Both are
      *                                  {@link NonNull}, so a null is a programmer error rather than a
      *                                  runtime condition, and reporting it through the callback would
-     *                                  overload the same boolean that means "switched, but noisily".
+     *                                  overload the same result that means "switched, but noisily".
      *                                  An unusable API key cannot reach here, because
      *                                  {@link IterableProject} rejects a blank one at construction.
      */

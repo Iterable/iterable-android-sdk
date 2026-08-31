@@ -574,7 +574,7 @@ class IterableBackgroundInitializer {
         new Handler(Looper.getMainLooper()).post(() -> {
             for (IterableProjectSwitchCallback callback : callbacks) {
                 try {
-                    callback.onProjectSwitched(cleanTeardown);
+                    callback.onProjectSwitched(IterableProjectSwitchResult.from(cleanTeardown));
                 } catch (Exception e) {
                     IterableLogger.e(TAG, "Exception in switchProject callback", e);
                 }

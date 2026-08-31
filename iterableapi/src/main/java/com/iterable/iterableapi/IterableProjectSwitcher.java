@@ -86,7 +86,8 @@ class IterableProjectSwitcher {
             // initializeInBackground notifies on the main thread already, so this does not need
             // deliverSwitchCallback.
             IterableApi.initializeInBackground(context, apiKey, config,
-                    callback == null ? null : () -> callback.onProjectSwitched(false));
+                    callback == null ? null
+                            : () -> callback.onProjectSwitched(IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS));
             return;
         }
 
@@ -347,7 +348,7 @@ class IterableProjectSwitcher {
         }
         new Handler(Looper.getMainLooper()).post(() -> {
             try {
-                callback.onProjectSwitched(cleanTeardown);
+                callback.onProjectSwitched(IterableProjectSwitchResult.from(cleanTeardown));
             } catch (Exception e) {
                 IterableLogger.e(TAG, "Exception in switchProject callback", e);
             }
