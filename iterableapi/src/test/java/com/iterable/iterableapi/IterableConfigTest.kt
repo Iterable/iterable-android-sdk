@@ -36,6 +36,37 @@ class IterableConfigTest {
         val config: IterableConfig = configBuilder.build()
         assertThat(config.webViewBaseUrl, `is`("https://app.iterable.com"))
     }
+
+    @Test
+    fun defaultInAppColorSchemeIsAutomatic() {
+        val config = IterableConfig.Builder().build()
+
+        assertEquals(IterableInAppColorScheme.AUTOMATIC, config.inAppColorScheme)
+        assertNull(config.inAppColorSchemeProvider)
+    }
+
+    @Test
+    fun setInAppColorSchemeUsesFixedValue() {
+        val config = IterableConfig.Builder()
+            .setInAppColorSchemeProvider { IterableInAppColorScheme.LIGHT }
+            .setInAppColorScheme(IterableInAppColorScheme.DARK)
+            .build()
+
+        assertEquals(IterableInAppColorScheme.DARK, config.inAppColorScheme)
+        assertNull(config.inAppColorSchemeProvider)
+    }
+
+    @Test
+    fun setInAppColorSchemeProviderUsesProvider() {
+        val provider = IterableInAppColorSchemeProvider { IterableInAppColorScheme.DARK }
+        val config = IterableConfig.Builder()
+            .setInAppColorScheme(IterableInAppColorScheme.LIGHT)
+            .setInAppColorSchemeProvider(provider)
+            .build()
+
+        assertEquals(IterableInAppColorScheme.AUTOMATIC, config.inAppColorScheme)
+        assertSame(provider, config.inAppColorSchemeProvider)
+    }
     
     @Test
     fun defaultDisableKeychainEncryption() {
