@@ -5,12 +5,13 @@ import java.util.Date
 import java.util.UUID
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class IterableEmbeddedSession(
-    val start: Date?,
-    val end: Date?,
-    val impressions: List<IterableEmbeddedImpression>?,
-    val id: String
+data class IterableEmbeddedSession(
+    val start: Date? = null,
+    val end: Date? = null,
+    val impressions: List<IterableEmbeddedImpression>? = null,
+    val id: String = UUID.randomUUID().toString()
 ) {
+    // For java compatibility
     constructor(
         start: Date?,
         end: Date?,
