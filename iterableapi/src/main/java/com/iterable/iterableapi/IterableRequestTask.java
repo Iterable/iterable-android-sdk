@@ -87,9 +87,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             String baseUrl = getBaseUrl();
 
             try {
-                if (overrideUrl != null && !overrideUrl.isEmpty()) {
-                    baseUrl = overrideUrl;
-                }
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
                     Uri.Builder builder = Uri.parse(baseUrl + iterableApiRequest.resourcePath).buildUpon();
 
