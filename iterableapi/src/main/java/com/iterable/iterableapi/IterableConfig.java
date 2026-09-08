@@ -103,8 +103,6 @@ public class IterableConfig {
      */
     final boolean useInMemoryStorageForInApps;
 
-    final boolean encryptionEnforced;
-
     /**
      * Enables unknown user activation
      */
@@ -199,7 +197,6 @@ public class IterableConfig {
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
-        encryptionEnforced = builder.encryptionEnforced;
         enableUnknownUserActivation = builder.enableUnknownUserActivation;
         enableForegroundCriteriaFetch = builder.enableForegroundCriteriaFetch;
         enableEmbeddedMessaging = builder.enableEmbeddedMessaging;
@@ -233,7 +230,6 @@ public class IterableConfig {
         private boolean keychainEncryption = true;
         private IterableAPIMobileFrameworkInfo mobileFrameworkInfo;
         private IterableDecryptionFailureHandler decryptionFailureHandler;
-        private boolean encryptionEnforced = false;
         private boolean enableUnknownUserActivation = false;
         private boolean enableForegroundCriteriaFetch = true;
         private boolean enableEmbeddedMessaging = false;
