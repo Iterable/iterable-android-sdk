@@ -55,6 +55,8 @@ public class IterableSwitchProjectTest extends BaseTest {
 
     private static final String API_KEY_A = "project-a-key";
     private static final String API_KEY_B = "project-b-key";
+    private static final String API_KEY_C = "project-c-key";
+    private static final String API_KEY_D = "project-d-key";
     private static final String EMAIL_A = "user-a@example.com";
     private static final String EMAIL_B = "user-b@example.com";
     private static final String PROJECT_A_EVENT = "projectAOnlyEvent";
@@ -206,11 +208,11 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertTrue("Callback should fire", awaitSwitch(latch));
         assertEquals("The SDK should end up initialized with the requested key",
                 API_KEY_B, IterableApi.getInstance()._apiKey);
-        // initializeInBackground's callback fires even when initialization times out or throws, so
-        // this path cannot honestly claim a clean teardown. It warns, like every other path with no
-        // confirmed device disable.
-        assertEquals("An initialize dressed up as a switch reports warnings",
-                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS, verdict.get());
+        // Matches iOS. With no previous project there is no teardown step that could have been
+        // noisy and no device to disable, so warnings here would point at nothing, and an app that
+        // uses switchProject as its entry point would see them on every cold start.
+        assertEquals("An initialize dressed up as a switch has nothing to warn about",
+                IterableProjectSwitchResult.SWITCHED_CLEANLY, verdict.get());
     }
 
     @Test
@@ -238,7 +240,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     }
 
     @Test
-    public void testSwitchWhileASwitchIsInProgressQueuesTheCallbackInsteadOfTearingDownAgain() throws Exception {
+    public void testSwitchToTheSameProjectWhileASwitchIsInProgressQueuesTheCallbackInsteadOfTearingDownAgain() throws Exception {
         initializeProjectA();
 
         AtomicInteger callbackCount = new AtomicInteger(0);
@@ -252,8 +254,10 @@ public class IterableSwitchProjectTest extends BaseTest {
             bothCallbacks.countDown();
         };
 
-        assertTrue("First caller owns the switch", IterableBackgroundInitializer.beginProjectSwitch(first));
-        assertFalse("Second caller must not start a second teardown", IterableBackgroundInitializer.beginProjectSwitch(second));
+        assertTrue("First caller owns the switch",
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, first));
+        assertFalse("A second caller asking for the same project must not start a second teardown",
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, second));
         assertTrue("Gate should be up", IterableBackgroundInitializer.isSwitchingProject());
 
         IterableBackgroundInitializer.completeProjectSwitch(true);
@@ -489,7 +493,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         initializeProjectA();
 
         // Raise the gate exactly as switchProject does, so the window is deterministic.
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(null));
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
 
         IterableApi.getInstance().setEmail(EMAIL_B);
         IterableApi.getInstance().track("queuedDuringSwitch");
@@ -581,8 +585,14 @@ public class IterableSwitchProjectTest extends BaseTest {
         verify(throwingApiClient).onLogout();
     }
 
+    /**
+     * Two destinations asked for back to back, which is a brand or region picker being tapped
+     * twice. The second request used to be dropped while its callback still reported a completed
+     * switch, so the SDK settled on B with the app convinced it was on C and every later event
+     * going to the wrong project, with nothing in the API to detect that with.
+     */
     @Test
-    public void testRapidSwitchesRunOneTeardownAndFireEveryCallback() throws Exception {
+    public void testRapidSwitchesToDifferentProjectsRunInOrderAndTheLastOneWins() throws Exception {
         // The first switch's teardown is parked inside inAppManager.reset() until the second
         // switchProject call has been made, so the second call is guaranteed to arrive while the
         // first switch is still running rather than racing it.
@@ -602,13 +612,74 @@ public class IterableSwitchProjectTest extends BaseTest {
 
         CountDownLatch bothCallbacks = new CountDownLatch(2);
         switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> bothCallbacks.countDown());
-        switchTo(context, "project-c-key", configWithoutAuth(), ignored -> bothCallbacks.countDown());
+        switchTo(context, API_KEY_C, configWithoutAuth(), ignored -> bothCallbacks.countDown());
         secondSwitchIssued.countDown();
 
         assertTrue("Both callbacks should fire", awaitSwitch(bothCallbacks));
-        assertEquals("Only the first switch tears down; the second only registers its callback",
-                API_KEY_B, IterableApi.getInstance()._apiKey);
+        assertEquals("The SDK must end on the project that was asked for last",
+                API_KEY_C, IterableApi.getInstance()._apiKey);
         assertFalse("No switch should still be in progress", IterableBackgroundInitializer.isSwitchingProject());
+    }
+
+    /**
+     * The other half of the branch: asking again for the destination the switch is already heading
+     * to joins it, so one teardown runs rather than two.
+     */
+    @Test
+    public void testTheGateJoinsASameProjectRequestAndQueuesADifferentOne() throws Exception {
+        initializeProjectA();
+
+        CountDownLatch joinedCallbacks = new CountDownLatch(2);
+        CountDownLatch differentProjectCallback = new CountDownLatch(1);
+
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(
+                API_KEY_B, configWithoutAuth(), ignored -> joinedCallbacks.countDown()));
+        assertFalse("The same destination must join the switch in flight",
+                IterableBackgroundInitializer.beginProjectSwitch(
+                        API_KEY_B, configWithoutAuth(), ignored -> joinedCallbacks.countDown()));
+        assertFalse("A different destination must not start a second teardown either",
+                IterableBackgroundInitializer.beginProjectSwitch(
+                        API_KEY_C, configWithoutAuth(), ignored -> differentProjectCallback.countDown()));
+
+        IterableBackgroundInitializer.completeProjectSwitch(true);
+
+        assertTrue("Both requests for the destination in flight are notified by it",
+                awaitSwitch(joinedCallbacks));
+        assertTrue("The request for a different project runs once the one in flight finishes",
+                awaitSwitch(differentProjectCallback));
+        assertEquals(API_KEY_C, IterableApi.getInstance()._apiKey);
+    }
+
+    /**
+     * The gate is handed to a queued request rather than lowered and raised again. Lowering it in
+     * between leaves a window in which a brand new switchProject takes the gate first and is then
+     * overtaken by the older queued request, so the SDK settles on the project the app asked for
+     * second-to-last while every callback still reports success. The switch callback is exactly
+     * where an app makes that next call from, which puts it in that window.
+     */
+    @Test
+    public void testASwitchAskedForFromTheCallbackIsNotOvertakenByOneQueuedDuringTheSwitch() throws Exception {
+        initializeProjectA();
+
+        CountDownLatch landedOnD = new CountDownLatch(1);
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, configWithoutAuth(),
+                ignored -> switchTo(context, API_KEY_D, configWithoutAuth(), result -> landedOnD.countDown())));
+        assertFalse("a different destination asked for during the switch is queued",
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_C, configWithoutAuth(), null));
+
+        IterableBackgroundInitializer.completeProjectSwitch(true);
+
+        assertTrue("the switch asked for from the callback must run", awaitSwitch(landedOnD));
+        // Let anything still queued behind it finish, so this asserts where the SDK ends up rather
+        // than somewhere it passes through on the way.
+        for (int i = 0; i < 100 && IterableBackgroundInitializer.isSwitchingProject(); i++) {
+            drainMainThread();
+            Thread.sleep(10);
+        }
+        assertFalse("the gate must be down once the whole chain is empty",
+                IterableBackgroundInitializer.isSwitchingProject());
+        assertEquals("the project the app asked for last must be the one the SDK ends on",
+                API_KEY_D, IterableApi.getInstance()._apiKey);
     }
 
     @Test
@@ -1002,7 +1073,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     public void testInitializationCallbackParkedDuringASwitchStillFires() throws Exception {
         initializeProjectA();
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(null));
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
 
         CountDownLatch parkedCallback = new CountDownLatch(1);
         IterableApi.initializeInBackground(context, API_KEY_B, configWithoutAuth(), parkedCallback::countDown);
@@ -1179,6 +1250,45 @@ public class IterableSwitchProjectTest extends BaseTest {
                         .getString(IterableConstants.SHARED_PREFS_CRITERIA, ""));
     }
 
+    /**
+     * Clearing attribution is not enough on its own. A deep link redirect is a network round trip,
+     * so a switch can land in the middle of one, and the campaign it comes back with belongs to the
+     * project that was left. The preferences it writes to are shared with the project that comes
+     * next, so its first attributed event would carry a campaignId that does not exist in it.
+     */
+    @Test
+    public void testAttributionResolvedAfterTheSwitchIsNotWrittenBack() throws Exception {
+        initializeProjectA();
+
+        CountDownLatch latch = new CountDownLatch(1);
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        assertTrue("Callback should fire", awaitSwitch(latch));
+
+        // What IterableDeeplinkManager does when the redirect finally resolves: it hands over the
+        // API key that was live when the link was clicked, not the one live now.
+        IterableApi.getInstance().setAttributionInfo(
+                new IterableAttributionInfo(1234, 5678, "project-a-message"), API_KEY_A);
+
+        assertNull("project A's campaign must not become project B's attribution",
+                IterableApi.getInstance().getAttributionInfo());
+    }
+
+    /**
+     * The window the API key check cannot cover on its own: between clearing the previous project's
+     * storage and the new project coming up, the previous project's key is still the live one.
+     */
+    @Test
+    public void testAttributionIsRefusedWhileThePreviousProjectsStorageHasBeenCleared() throws Exception {
+        initializeProjectA();
+        IterableApi.getInstance().projectScopedStorageCleared = true;
+
+        IterableApi.getInstance().setAttributionInfo(
+                new IterableAttributionInfo(1234, 5678, "project-a-message"), API_KEY_A);
+
+        assertNull("a redirect resolving mid-teardown must not write into the shared store",
+                IterableApi.getInstance().getAttributionInfo());
+    }
+
     @Test
     public void testKeychainIsRebuiltSoTheNewConfigsEncryptionSettingApplies() throws Exception {
         initializeProjectA();
@@ -1209,7 +1319,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     public void testTheLongSetEmailAndSetUserIdOverloadsAreGated() {
         initializeProjectA();
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(null));
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
 
         IterableApi.getInstance().setEmail(EMAIL_B, null, null, null, null);
         IterableApi.getInstance().setUserId("user-b", null, null, null, null, false);
@@ -1233,7 +1343,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         CountDownLatch subscriberCalled = new CountDownLatch(1);
         IterableApi.onSDKInitialized(subscriberCalled::countDown);
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(null));
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
 
         IterableApi.initialize(context, API_KEY_B, configWithoutAuth());
         IterableBackgroundInitializer.completeProjectSwitch(true);
@@ -1321,7 +1431,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     public void testLongestTrackAndUpdateEmailOverloadsAreQueuedLikeTheirShorterSiblings() throws Exception {
         initializeProjectA();
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(null));
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
         try {
             IterableApi.getInstance().track("event", 11, 22, new JSONObject());
             assertEquals("the longest track overload must not bypass the gate",

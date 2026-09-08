@@ -53,6 +53,20 @@ class IterableProjectSwitcher {
                               @NonNull String apiKey,
                               @Nullable IterableConfig config,
                               @Nullable IterableProjectSwitchCallback callback) {
+        switchProject(context, apiKey, config, callback, false);
+    }
+
+    /**
+     * @param resumingGate true when this call is a request that was queued during an earlier switch
+     *                     and has inherited its still-raised gate, so it must not raise one of its
+     *                     own and owns releasing it if it bails out before the teardown starts. Its
+     *                     callbacks already sit with the gate, so {@code callback} is null.
+     */
+    static void switchProject(@NonNull Context context,
+                              @NonNull String apiKey,
+                              @Nullable IterableConfig config,
+                              @Nullable IterableProjectSwitchCallback callback,
+                              boolean resumingGate) {
         // Both parameters are @NonNull, so a null is a programmer error. Reporting it through the
         // callback would mean the same false that documents "we switched, but a cleanup step was
         // noisy" also has to mean "nothing happened at all".
@@ -71,6 +85,7 @@ class IterableProjectSwitcher {
             IterableLogger.e(TAG, "switchProject called with an empty API key. The SDK is left on "
                     + "the project it is already on.");
             deliverSwitchCallback(callback, false);
+            releaseInheritedGate(resumingGate, false);
             return;
         }
 
@@ -79,21 +94,23 @@ class IterableProjectSwitcher {
         // Step 1: guard and validate.
         if (api._apiKey == null || api._applicationContext == null) {
             IterableLogger.w(TAG, "switchProject called before the SDK was initialized; initializing instead");
-            // Reported as false, not true. IterableInitializationCallback carries no success signal
-            // and fires even when initialization times out or throws, so true here would claim a
-            // clean teardown that was never attempted. False is also what every other path with no
-            // confirmed device disable reports, and there is no previous project to disable.
+            // Reported as clean, matching iOS. There is no previous project, so there is no
+            // teardown step that could have been noisy and no device to disable: warnings would
+            // point at a warning that does not exist, and an app that uses switchProject as its
+            // entry point would see one on every cold start.
             // initializeInBackground notifies on the main thread already, so this does not need
             // deliverSwitchCallback.
             IterableApi.initializeInBackground(context, apiKey, config,
                     callback == null ? null
-                            : () -> callback.onProjectSwitched(IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS));
+                            : () -> callback.onProjectSwitched(IterableProjectSwitchResult.SWITCHED_CLEANLY));
+            releaseInheritedGate(resumingGate, true);
             return;
         }
 
         if (apiKey.equals(api._apiKey)) {
             IterableLogger.d(TAG, "switchProject called with the API key already in use; nothing to tear down");
             deliverSwitchCallback(callback, true);
+            releaseInheritedGate(resumingGate, true);
             return;
         }
 
@@ -109,14 +126,28 @@ class IterableProjectSwitcher {
         }
 
         // Step 2: raise the switch gate synchronously, so calls made after this method returns are
-        // queued rather than executed against a half torn-down SDK.
-        if (!IterableBackgroundInitializer.beginProjectSwitch(callback)) {
-            IterableLogger.d(TAG, "switchProject: a switch is already in progress; callback registered with it");
+        // queued rather than executed against a half torn-down SDK. Skipped when the gate was
+        // inherited from the switch that queued this request: it was never lowered, precisely so
+        // nothing could take it in between.
+        if (!resumingGate && !IterableBackgroundInitializer.beginProjectSwitch(apiKey, config, callback)) {
+            IterableLogger.d(TAG, "switchProject: a switch is already in progress; this request "
+                    + "either joins it or runs right after it");
             return;
         }
 
         // Steps 3-8 run off the main thread on the existing background executor.
         IterableBackgroundInitializer.executeOnBackgroundExecutor(() -> runSwitch(api, context, apiKey, config));
+    }
+
+    /**
+     * A bail-out on an inherited gate has to release it, or it stays raised for the life of the
+     * process and every later SDK call is queued and never drained. The callbacks for this request
+     * are already registered with the gate, so completing the switch delivers them.
+     */
+    private static void releaseInheritedGate(boolean resumingGate, boolean cleanTeardown) {
+        if (resumingGate) {
+            IterableBackgroundInitializer.completeProjectSwitch(cleanTeardown);
+        }
     }
 
     private static void runSwitch(IterableApi api, Context context, String apiKey, @Nullable IterableConfig config) {
@@ -167,6 +198,18 @@ class IterableProjectSwitcher {
         } catch (Exception e) {
             cleanTeardown = false;
             IterableLogger.e(TAG, "switchProject: re-initialization failed", e);
+        } finally {
+            // The new project owns the attribution store from here, so attribution writes go back
+            // to being filtered by API key alone. Lowered even when initialize threw, because
+            // leaving it raised would refuse every attribution write for the life of the process.
+            //
+            // Lowered after initialize rather than as soon as it publishes the new API key, on
+            // purpose: initialize runs processPendingAction, and a push that was tapped before the
+            // switch carries no key of its own, so it would write the project it came from into the
+            // new project's attribution through the live key. The flag is what refuses it.
+            synchronized (api.projectStateLock) {
+                api.projectScopedStorageCleared = false;
+            }
         }
 
         // initialize() rebuilds the in-app, embedded and unknown-user managers but never the auth
@@ -325,6 +368,13 @@ class IterableProjectSwitcher {
         }
 
         try {
+            // Raised before the attribution keys go, and under the lock setAttributionInfo takes,
+            // so a deep link redirect or a push open resolving from here until the new project is
+            // up stands down instead of writing the previous project's campaign into the
+            // preferences the new project reads.
+            synchronized (api.projectStateLock) {
+                api.projectScopedStorageCleared = true;
+            }
             SharedPreferences.Editor editor = api.getPreferences().edit();
             editor.remove(IterableConstants.SHARED_PREFS_CRITERIA);
             // matchedCriteriaId is nested inside the unknown-session payload cleared above rather

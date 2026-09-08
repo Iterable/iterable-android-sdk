@@ -23,6 +23,10 @@ import org.junit.runner.RunWith;
 import org.robolectric.shadows.ShadowLooper;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -107,6 +111,43 @@ public class IterableSwitchProjectQueueDrainTest extends BaseTest {
     }
 
     /**
+     * The gate has to stay raised until the drain has emptied the queue. Lowering it first lets a
+     * call arriving as the switch lands run ahead of the calls already waiting behind it, so a
+     * fresh {@code setEmail} could be overwritten by the older one queued during the switch.
+     */
+    @Test
+    public void testACallArrivingDuringTheDrainDoesNotOvertakeTheQueuedCalls() throws Exception {
+        IterableApi.initialize(context, API_KEY_A, config());
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+
+        List<String> order = Collections.synchronizedList(new ArrayList<>());
+        CountDownLatch allThree = new CountDownLatch(3);
+
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        IterableBackgroundInitializer.queueOrExecute(() -> {
+            order.add("first");
+            allThree.countDown();
+            // Stands in for a call arriving from another thread while the drain is running.
+            IterableBackgroundInitializer.queueOrExecute(() -> {
+                order.add("arrivedDuringTheDrain");
+                allThree.countDown();
+            }, "arrivedDuringTheDrain");
+        }, "first");
+        IterableBackgroundInitializer.queueOrExecute(() -> {
+            order.add("second");
+            allThree.countDown();
+        }, "second");
+
+        IterableBackgroundInitializer.completeProjectSwitch(true);
+
+        assertTrue("every queued call must run", allThree.await(5, TimeUnit.SECONDS));
+        assertEquals("the late arrival must go to the back of the queue, not jump the replay",
+                Arrays.asList("first", "second", "arrivedDuringTheDrain"), order);
+        assertFalse("the gate must be down once the drain is finished",
+                IterableBackgroundInitializer.isSwitchingProject());
+    }
+
+    /**
      * switchProject is documented as callable from anywhere. Its callback is always delivered on the
      * main thread, which is the part an app relies on when it re-identifies the user from there.
      */
@@ -146,7 +187,7 @@ public class IterableSwitchProjectQueueDrainTest extends BaseTest {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
         while (server.takeRequest(50, TimeUnit.MILLISECONDS) != null) { /* drain the setup traffic */ }
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(null));
+        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
         try {
             IterableApi.getInstance().trackPushOpen(11, 22, "msg_from_project_a", false, null);
 

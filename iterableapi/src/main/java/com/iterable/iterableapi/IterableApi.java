@@ -60,6 +60,13 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     volatile boolean _firstForegroundHandled; // Package-private for IterableProjectSwitcher
+    /**
+     * Raised by {@link IterableProjectSwitcher} while the previous project's storage has been
+     * cleared but the new project is not up yet. Read by work that can resolve inside that window
+     * and would otherwise write the previous project's data into storage the new one reads.
+     * Guarded by {@link #projectStateLock}.
+     */
+    volatile boolean projectScopedStorageCleared; // Package-private for IterableProjectSwitcher
     private boolean _autoRetryOnJwtFailure;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
@@ -174,17 +181,43 @@ public class IterableApi {
      * @param attributionInfo Attribution information object
      */
     void setAttributionInfo(IterableAttributionInfo attributionInfo) {
+        setAttributionInfo(attributionInfo, _apiKey);
+    }
+
+    /**
+     * Stores attribution information, unless the project it belongs to has been switched away from.
+     *
+     * Campaign, template and message IDs live in the project that sent them, and the preferences
+     * they go to are shared with whatever project comes next. A deep link redirect resolves over
+     * the network, so it can land after {@link #switchProject} has cleared attribution, and writing
+     * it back would attach a campaignId that does not exist in the new project to that project's
+     * first attributed event.
+     *
+     * @param apiKeyItBelongsTo the API key that was live when these identifiers were resolved
+     */
+    void setAttributionInfo(IterableAttributionInfo attributionInfo, @Nullable String apiKeyItBelongsTo) {
         if (_applicationContext == null) {
             IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.");
             return;
         }
 
-        IterableUtil.saveExpirableJsonObject(
-                getPreferences(),
-                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
-                attributionInfo.toJSONObject(),
-                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
-        );
+        // The check and the write go under the lock the switch takes to clear attribution, so a
+        // redirect resolving mid-teardown cannot pass the check and then write in behind the clear.
+        // The API key alone is not enough: between the clear and the re-initialization the previous
+        // project's key is still the live one, which is what projectScopedStorageCleared covers.
+        synchronized (projectStateLock) {
+            if (projectScopedStorageCleared || apiKeyItBelongsTo == null || !apiKeyItBelongsTo.equals(_apiKey)) {
+                IterableLogger.d(TAG, "Not storing attribution, its project has been switched away from");
+                return;
+            }
+
+            IterableUtil.saveExpirableJsonObject(
+                    getPreferences(),
+                    IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
+                    attributionInfo.toJSONObject(),
+                    3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+            );
+        }
     }
 
     Map<String, String> getDeviceAttributes() {
@@ -994,10 +1027,16 @@ public class IterableApi {
      *
      * Called before any initialize, this behaves as
      * {@link #initializeInBackground(Context, String, IterableConfig, IterableInitializationCallback)}
-     * and logs a warning. Called with the API key already in use, it is a no-op. Called while an
-     * initialization is still in flight, it waits for that initialization and then switches. Called
-     * while a switch is already in progress, the callback is registered with that switch instead of
-     * starting a second teardown.
+     * and logs a warning, reporting {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} once it has
+     * started: there is no previous project, so no teardown step could have been noisy. Called with
+     * the API key already in use, it is a no-op. Called while an initialization is still in flight,
+     * it waits for that initialization and then switches.
+     *
+     * Called while a switch is already in progress, what happens depends on where this request is
+     * headed. Asking for the project that switch is already going to registers the callback with it
+     * instead of starting a second teardown. Asking for a different project queues this request and
+     * runs it as soon as that switch finishes, so the SDK ends up on the project asked for last. The
+     * callbacks are not merged: each one fires when the project it asked for is live.
      *
      * @param context Application context
      * @param project The project to switch to: its API key together with the config to run it with.
