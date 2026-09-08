@@ -1,11 +1,22 @@
 package com.iterable.iterableapi
 
+import android.util.Log
+import com.iterable.iterableapi.unit.TestRunner
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.nullValue
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
 
+@RunWith(TestRunner::class)
 class IterableConfigTest {
+
+    @Before
+    fun clearLogs() {
+        ShadowLog.clear()
+    }
 
     @Test
     fun defaultDataRegion() {
@@ -21,6 +32,24 @@ class IterableConfigTest {
         val config: IterableConfig = configBuilder.build()
         assertThat(config.dataRegion, `is`(IterableDataRegion.EU))
     }
+
+    /** Only reachable from Java, where the `@NonNull` parameter can still be passed null. */
+    @Test
+    fun nullDataRegionFallsBackToUs() {
+        val builder = IterableConfig.Builder()
+        val setter = IterableConfig.Builder::class.java
+            .getMethod("setDataRegion", IterableDataRegion::class.java)
+        setter.invoke(builder, null)
+        assertThat(builder.build().dataRegion, `is`(IterableDataRegion.US))
+
+        // Builder methods run before initialize() swaps in this config, so IterableLogger is still
+        // reading the pre-init ERROR level: anything below ERROR never reaches logcat.
+        val errors = ShadowLog.getLogsForTag("IterableConfig")
+            .filter { it.type == Log.ERROR }
+            .map { it.msg }
+        assertEquals(errors.toString(), 1, errors.size)
+        assertTrue(errors.single(), errors.single().contains("setDataRegion received null"))
+    }
     
     @Test
     fun defaultWebViewBaseUrl() {
@@ -35,6 +64,37 @@ class IterableConfigTest {
             .setWebViewBaseUrl("https://app.iterable.com")
         val config: IterableConfig = configBuilder.build()
         assertThat(config.webViewBaseUrl, `is`("https://app.iterable.com"))
+    }
+
+    @Test
+    fun defaultInAppColorSchemeIsAutomatic() {
+        val config = IterableConfig.Builder().build()
+
+        assertEquals(IterableInAppColorScheme.AUTOMATIC, config.inAppColorScheme)
+        assertNull(config.inAppColorSchemeProvider)
+    }
+
+    @Test
+    fun setInAppColorSchemeUsesFixedValue() {
+        val config = IterableConfig.Builder()
+            .setInAppColorSchemeProvider { IterableInAppColorScheme.LIGHT }
+            .setInAppColorScheme(IterableInAppColorScheme.DARK)
+            .build()
+
+        assertEquals(IterableInAppColorScheme.DARK, config.inAppColorScheme)
+        assertNull(config.inAppColorSchemeProvider)
+    }
+
+    @Test
+    fun setInAppColorSchemeProviderUsesProvider() {
+        val provider = IterableInAppColorSchemeProvider { IterableInAppColorScheme.DARK }
+        val config = IterableConfig.Builder()
+            .setInAppColorScheme(IterableInAppColorScheme.LIGHT)
+            .setInAppColorSchemeProvider(provider)
+            .build()
+
+        assertEquals(IterableInAppColorScheme.AUTOMATIC, config.inAppColorScheme)
+        assertSame(provider, config.inAppColorSchemeProvider)
     }
     
     @Test
