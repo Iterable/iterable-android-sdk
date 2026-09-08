@@ -244,7 +244,7 @@ public class IterableApi {
         // requests to the previous project's IterableAuthHandler for the rest of the process.
         synchronized (projectStateLock) {
             if (authManager == null) {
-                authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriod);
+                authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriodMillis);
             }
             return authManager;
         }
@@ -707,7 +707,7 @@ public class IterableApi {
                 getAuthManager().queueExpirationRefresh(_authToken);
             } else {
                 IterableLogger.d(TAG, "Auth token found as null. Rescheduling auth token refresh");
-                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), true, null);
+                getAuthManager().scheduleAuthTokenRefresh(authManager.getNextRetryInterval(), IterableAuthRefreshReason.STORED_TOKEN_MISSING, null);
             }
         }
     }

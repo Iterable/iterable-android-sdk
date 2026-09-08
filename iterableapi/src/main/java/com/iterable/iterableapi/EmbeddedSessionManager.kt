@@ -6,6 +6,10 @@ public class EmbeddedSessionManager {
 
     private val TAG = "EmbeddedSessionManager"
 
+    // Callers reach this class from arbitrary threads (see issue #1052), so every access to
+    // impressions, session, and the impression fields happens under this lock.
+    private val lock = Any()
+
     private var impressions: MutableMap<String, EmbeddedImpressionData> = mutableMapOf()
 
     var session: IterableEmbeddedSession = IterableEmbeddedSession(
@@ -13,40 +17,46 @@ public class EmbeddedSessionManager {
         null,
         null
     )
+        get() = synchronized(lock) { field }
+        set(value) = synchronized(lock) { field = value }
 
     fun isTracking(): Boolean {
-        return session.start != null
+        return synchronized(lock) { session.start != null }
     }
 
     fun startSession() {
-        if (isTracking()) {
-            IterableLogger.e(TAG, "Embedded session started twice")
-            return
-        }
+        synchronized(lock) {
+            if (isTracking()) {
+                IterableLogger.e(TAG, "Embedded session started twice")
+                return
+            }
 
-        session = IterableEmbeddedSession(
-            Date(),
-            null,
-            null
-        )
+            session = IterableEmbeddedSession(
+                Date(),
+                null,
+                null
+            )
+        }
     }
 
     fun endSession() {
-        if (!isTracking()) {
-            IterableLogger.e(TAG, "Embedded session ended without start")
-            return
-        }
+        val sessionToTrack = synchronized(lock) {
+            if (!isTracking()) {
+                IterableLogger.e(TAG, "Embedded session ended without start")
+                return
+            }
 
-        if(impressions.isNotEmpty()) {
-            endAllImpressions()
+            if (impressions.isEmpty()) {
+                return
+            }
 
-            val sessionToTrack = IterableEmbeddedSession(
+            endAllImpressionsLocked()
+
+            val tracked = IterableEmbeddedSession(
                 session.start,
                 Date(),
-                getImpressionList()
+                getImpressionListLocked()
             )
-
-            IterableApi.getInstance().trackEmbeddedSession(sessionToTrack)
 
             //reset session for next session start
             session = IterableEmbeddedSession(
@@ -56,43 +66,54 @@ public class EmbeddedSessionManager {
             )
 
             impressions = mutableMapOf()
+
+            tracked
         }
+
+        // Tracking calls into IterableApi, so it runs after the lock is released.
+        IterableApi.getInstance().trackEmbeddedSession(sessionToTrack)
     }
 
     fun startImpression(messageId: String, placementId: Long) {
-        var impressionData: EmbeddedImpressionData? = impressions[messageId]
+        synchronized(lock) {
+            var impressionData: EmbeddedImpressionData? = impressions[messageId]
 
-        if (impressionData == null) {
-            impressionData = EmbeddedImpressionData(messageId, placementId)
-            impressions[messageId] = impressionData
+            if (impressionData == null) {
+                impressionData = EmbeddedImpressionData(messageId, placementId)
+                impressions[messageId] = impressionData
+            }
+
+            impressionData.start = Date()
         }
-
-        impressionData.start = Date()
     }
 
     fun pauseImpression(messageId: String) {
-        val impressionData: EmbeddedImpressionData? = impressions[messageId]
+        synchronized(lock) {
+            val impressionData: EmbeddedImpressionData? = impressions[messageId]
 
-        if (impressionData == null) {
-            IterableLogger.e(TAG, "onMessageImpressionEnded: impressionData not found")
-            return
+            if (impressionData == null) {
+                IterableLogger.e(TAG, "onMessageImpressionEnded: impressionData not found")
+                return
+            }
+
+            if (impressionData.start == null) {
+                IterableLogger.e(TAG, "onMessageImpressionEnded: impressionStarted is null")
+                return
+            }
+
+            updateDisplayCountAndDurationLocked(impressionData)
         }
-
-        if (impressionData.start == null) {
-            IterableLogger.e(TAG, "onMessageImpressionEnded: impressionStarted is null")
-            return
-        }
-
-        updateDisplayCountAndDuration(impressionData)
     }
 
-    private fun endAllImpressions() {
+    // The Locked suffix marks helpers that read or write impressions without taking the lock
+    // themselves: every caller must already hold it.
+    private fun endAllImpressionsLocked() {
         for (impressionData in impressions.values) {
-            updateDisplayCountAndDuration(impressionData)
+            updateDisplayCountAndDurationLocked(impressionData)
         }
     }
 
-    private fun getImpressionList(): List<IterableEmbeddedImpression>? {
+    private fun getImpressionListLocked(): List<IterableEmbeddedImpression>? {
         val impressionList: MutableList<IterableEmbeddedImpression> = ArrayList()
         for (impressionData in impressions.values) {
             impressionList.add(
@@ -107,11 +128,12 @@ public class EmbeddedSessionManager {
         return impressionList
     }
 
-    private fun updateDisplayCountAndDuration(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
-        if (impressionData.start != null) {
+    private fun updateDisplayCountAndDurationLocked(impressionData: EmbeddedImpressionData): EmbeddedImpressionData {
+        val start = impressionData.start
+        if (start != null) {
             impressionData.displayCount = impressionData.displayCount.plus(1)
             impressionData.duration =
-                impressionData.duration.plus((Date().time - impressionData.start!!.time) / 1000.0)
+                impressionData.duration.plus((Date().time - start.time) / 1000.0)
                     .toFloat()
             impressionData.start = null
         }
