@@ -22,6 +22,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(Long)` — use the `double` overload instead, which accepts fractional seconds. The `Long` overload delegates to it and remains fully supported.
 - `IterableConstants.BASE_URL_API` and `IterableConstants.BASE_URL_LINKS` — both are hardcoded to the US data region and are unused by the SDK, which resolves its endpoint from the configured `IterableDataRegion`. Use `IterableDataRegion.getEndpoint()` instead. They still resolve to the same values, so no action is required in this release. **They will be removed in 3.12.0** — if you reference either constant, switch to `IterableDataRegion.getEndpoint()` before upgrading to that version.
 
+### Removed
+- Removed the `encryptionEnforced` field from `IterableConfig`. **No action required.** 3.5.5 announced this option as removed and deleted its public setter, but a merge reinstated the field — without the setter — in 3.6.0, where it has sat unsettable and unread ever since. There has been no way to set it and no effect on SDK behaviour since 3.5.5, so no app can be affected. Storage behaviour is unchanged: use `setKeychainEncryption(boolean)` to control whether stored user data is encrypted, and `setDecryptionFailureHandler(...)` to be notified when the SDK cannot decrypt it.
+
 ## [3.10.1]
 ### Fixed
 - Fixed a race in JWT auth refresh scheduling that could leave overlapping timers active and repeatedly call `IterableAuthHandler.onAuthTokenRequested()`. Refresh scheduling now has a single task owner, rejects stale or duplicate tasks, and logs each schedule, skip, fire, cancellation, and error with its refresh reason.
