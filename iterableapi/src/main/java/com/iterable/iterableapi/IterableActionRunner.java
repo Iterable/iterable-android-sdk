@@ -105,22 +105,15 @@ class IterableActionRunner {
          * Handle custom actions passed from push notifications
          *
          * @param action {@link IterableAction} object that contains action payload
-         * @return `true` if the handler was invoked (action consumed), `false` if the handler was
-         * null (action should be retried once the SDK is fully initialized)
+         * @return `true` if the action is valid and was handled by the handler
+         * `false` if the action is invalid or the handler returned `false`
          */
         private boolean callCustomActionIfSpecified(@NonNull IterableAction action, @NonNull IterableActionContext actionContext) {
             if (action.getType() != null && !action.getType().isEmpty()) {
+                // Call custom action handler
                 if (IterableApi.sharedInstance.config.customActionHandler != null) {
-                    // Invoke the handler. The interface's boolean return value is documented as
-                    // "Reserved for future use" so clients commonly return false. We treat
-                    // invocation itself as consumed — returning the client's value would leave
-                    // pendingAction alive and cause the action to replay on every foreground /
-                    // re-init (SDK-717).
-                    IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action, actionContext);
-                    return true;
+                    return IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action, actionContext);
                 }
-                // Handler is null — SDK not fully initialized yet. Return false so the caller
-                // keeps pendingAction alive for retry once initialize() is called.
             }
             return false;
         }

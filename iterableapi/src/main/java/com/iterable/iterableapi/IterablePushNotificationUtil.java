@@ -21,11 +21,20 @@ class IterablePushNotificationUtil {
     static boolean processPendingAction(Context context) {
         boolean handled = false;
         if (pendingAction != null) {
+            // Capture whether a custom action handler is configured before dispatching.
+            // Used below to decide whether to clear pendingAction (SDK-717).
+            boolean customHandlerPresent = IterableApi.sharedInstance.config != null
+                    && IterableApi.sharedInstance.config.customActionHandler != null;
             handled = executeAction(context, pendingAction);
-            // Only clear pending action if it was handled.
-            // This allows the action to be processed later when SDK is fully initialized
-            // (e.g., when customActionHandler becomes available after initialize() is called).
-            if (handled) {
+            // Clear pendingAction when the action was dispatched to a handler.
+            // The IterableCustomActionHandler interface documents its boolean return value as
+            // "Reserved for future use", so clients commonly return false — we cannot use the
+            // return value to determine whether the action was consumed. Instead, we clear
+            // whenever the handler was present (invocation itself = consumed). The only case
+            // where we keep pendingAction alive is when customActionHandler was null at
+            // dispatch time, meaning the SDK was not yet initialized and the action should be
+            // retried once initialize() is called (SDK-307).
+            if (handled || customHandlerPresent) {
                 pendingAction = null;
             }
         }
