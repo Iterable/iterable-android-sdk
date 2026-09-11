@@ -14,32 +14,70 @@ class IterablePushNotificationUtil {
     private static PendingAction pendingAction = null;
     private static final String TAG = "IterablePushNotificationUtil";
 
+    /**
+     * Result of attempting to dispatch a pending push action.
+     *
+     * Used to cleanly separate two concerns that a single boolean cannot express:
+     * (1) whether pendingAction should be cleared, and
+     * (2) whether the openApp launcher fallback in handlePushAction should fire.
+     */
+    enum ActionDispatchResult {
+        /** customActionHandler was null — SDK not yet initialized. Keep pendingAction for retry
+         *  once initialize() is called (SDK-307). */
+        NOT_DISPATCHED,
+        /** Handler was invoked but returned false, or URL action failed to open.
+         *  Clear pendingAction (action consumed by invocation); allow openApp fallback. */
+        DISPATCHED_WITH_FALLBACK,
+        /** Handler returned true, or URL was opened successfully.
+         *  Clear pendingAction; suppress openApp fallback. */
+        HANDLED
+    }
+
     static void clearPendingAction() {
         pendingAction = null;
     }
 
     static boolean processPendingAction(Context context) {
-        boolean handled = false;
-        if (pendingAction != null) {
-            handled = executeAction(context, pendingAction);
-            // Only clear pending action if it was handled.
-            // This allows the action to be processed later when SDK is fully initialized
-            // (e.g., when customActionHandler becomes available after initialize() is called).
-            if (handled) {
-                pendingAction = null;
-            }
+        if (pendingAction == null) {
+            return false;
         }
-        return handled;
+        ActionDispatchResult result = dispatchPendingAction(context, pendingAction);
+        if (result != ActionDispatchResult.NOT_DISPATCHED) {
+            pendingAction = null;
+        }
+        return result == ActionDispatchResult.HANDLED;
     }
 
-    static boolean executeAction(Context context, PendingAction action) {
+    /**
+     * Dispatch a pending action and return a typed result that distinguishes
+     * "not dispatched" (retry later) from "dispatched but returned false" (consumed, allow fallback)
+     * from "fully handled" (consumed, suppress fallback).
+     */
+    private static ActionDispatchResult dispatchPendingAction(Context context, PendingAction action) {
         // Automatic tracking
         IterableApi.sharedInstance.setPayloadData(action.intent);
         IterableApi.sharedInstance.setNotificationData(action.notificationData);
         IterableApi.sharedInstance.trackPushOpen(action.notificationData.getCampaignId(), action.notificationData.getTemplateId(),
                 action.notificationData.getMessageId(), action.dataFields);
 
-        return IterableActionRunner.executeAction(context, action.iterableAction, IterableActionSource.PUSH);
+        // For custom actions, check handler presence BEFORE dispatching so we can tell
+        // NOT_DISPATCHED (null handler, retry later) from DISPATCHED_WITH_FALLBACK
+        // (handler ran but returned false — documented as "Reserved for future use").
+        if (action.iterableAction != null
+                && !action.iterableAction.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
+            boolean handlerPresent = IterableApi.sharedInstance.config != null
+                    && IterableApi.sharedInstance.config.customActionHandler != null;
+            if (!handlerPresent) {
+                return ActionDispatchResult.NOT_DISPATCHED;
+            }
+        }
+
+        boolean handled = IterableActionRunner.executeAction(context, action.iterableAction, IterableActionSource.PUSH);
+        return handled ? ActionDispatchResult.HANDLED : ActionDispatchResult.DISPATCHED_WITH_FALLBACK;
+    }
+
+    static boolean executeAction(Context context, PendingAction action) {
+        return dispatchPendingAction(context, action) == ActionDispatchResult.HANDLED;
     }
 
     static void handlePushAction(Context context, Intent intent) {

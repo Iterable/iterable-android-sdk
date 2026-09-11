@@ -252,6 +252,46 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertEquals(originalContext, IterableApi.sharedInstance._applicationContext);
     }
 
+    /**
+     * Regression test for SDK-717.
+     *
+     * The interface javadoc says the boolean return value is "Reserved for future use", so clients
+     * commonly return false. Before the fix, a false return left pendingAction alive and caused the
+     * handler to fire again on every foreground / re-init after the first push.
+     *
+     * The fix is in processPendingAction: pendingAction is cleared whenever the handler was
+     * present at dispatch time, regardless of what it returned. The handler's return value is
+     * preserved so the openApp fallback in handlePushAction still fires correctly when needed.
+     */
+    @Test
+    public void testCustomActionHandlerReturnFalseDoesNotReplayOnForeground() throws Exception {
+        // Use real runner so the handler is actually invoked
+        IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+
+        final int[] callCount = {0};
+        IterableTestUtils.createIterableApiNew(builder ->
+            builder.setCustomActionHandler((action, actionContext) -> {
+                callCount[0]++;
+                return false; // Clients commonly return false per the interface javadoc
+            })
+        );
+
+        IterablePushActionReceiver receiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "remindMeButton");
+        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_custom_action.json"));
+
+        receiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
+        assertEquals("Handler should be called exactly once on push receipt", 1, callCount[0]);
+
+        // Simulate foreground (onForeground -> processPendingAction).
+        // pendingAction must be null at this point — cleared because handler was present,
+        // regardless of the false return value.
+        IterablePushNotificationUtil.processPendingAction(ApplicationProvider.getApplicationContext());
+        assertEquals("Handler must not fire again — pendingAction cleared once handler was invoked", 1, callCount[0]);
+    }
+
     @Test
     public void testPreviousPendingActionClearedOnNewPush() throws Exception {
         // Reset to simulate SDK not being initialized
