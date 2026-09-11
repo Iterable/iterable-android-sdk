@@ -47,6 +47,8 @@ public class IterableSwitchProjectQueueDrainTest extends BaseTest {
 
     private static final String API_KEY_A = "project-a-key";
     private static final String API_KEY_B = "project-b-key";
+    /** A stand-in for the live project: these tests drive the chain directly. */
+    private static final String LIVE_API_KEY = "gate-test-live-key";
 
     private Context context;
     private MockWebServer server;
@@ -123,7 +125,8 @@ public class IterableSwitchProjectQueueDrainTest extends BaseTest {
         List<String> order = Collections.synchronizedList(new ArrayList<>());
         CountDownLatch allThree = new CountDownLatch(3);
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.RUN,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null, LIVE_API_KEY));
         IterableBackgroundInitializer.queueOrExecute(() -> {
             order.add("first");
             allThree.countDown();
@@ -187,7 +190,8 @@ public class IterableSwitchProjectQueueDrainTest extends BaseTest {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
         while (server.takeRequest(50, TimeUnit.MILLISECONDS) != null) { /* drain the setup traffic */ }
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.RUN,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null, LIVE_API_KEY));
         try {
             IterableApi.getInstance().trackPushOpen(11, 22, "msg_from_project_a", false, null);
 

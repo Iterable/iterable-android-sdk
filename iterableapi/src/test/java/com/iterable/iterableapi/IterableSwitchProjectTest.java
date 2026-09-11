@@ -57,6 +57,8 @@ public class IterableSwitchProjectTest extends BaseTest {
     private static final String API_KEY_B = "project-b-key";
     private static final String API_KEY_C = "project-c-key";
     private static final String API_KEY_D = "project-d-key";
+    /** A stand-in for the live project, for the tests whose routing turns on the chain alone. */
+    private static final String LIVE_API_KEY = "gate-test-live-key";
     private static final String EMAIL_A = "user-a@example.com";
     private static final String EMAIL_B = "user-b@example.com";
     private static final String PROJECT_A_EVENT = "projectAOnlyEvent";
@@ -135,6 +137,20 @@ public class IterableSwitchProjectTest extends BaseTest {
 
     private void drainMainThread() {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
+    }
+
+    /**
+     * Raises the gate exactly as switchProject does, for the tests that need a deterministic
+     * switch window. The live key is a stand-in none of them ask for, so routing turns on the
+     * chain alone; the tests that care about the live project call beginProjectSwitch directly.
+     *
+     * @return true if this call owns the switch
+     */
+    private static boolean beginSwitch(String apiKey,
+                                       @Nullable IterableConfig config,
+                                       @Nullable IterableProjectSwitchCallback callback) {
+        return IterableBackgroundInitializer.beginProjectSwitch(apiKey, config, callback, LIVE_API_KEY)
+                == IterableBackgroundInitializer.BeginSwitchOutcome.RUN;
     }
 
     /** Waits for a switch callback, pumping the main looper so the posted callback can run. */
@@ -255,9 +271,9 @@ public class IterableSwitchProjectTest extends BaseTest {
         };
 
         assertTrue("First caller owns the switch",
-                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, first));
+                beginSwitch(API_KEY_B, null, first));
         assertFalse("A second caller asking for the same project must not start a second teardown",
-                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, second));
+                beginSwitch(API_KEY_B, null, second));
         assertTrue("Gate should be up", IterableBackgroundInitializer.isSwitchingProject());
 
         IterableBackgroundInitializer.completeProjectSwitch(true);
@@ -493,7 +509,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         initializeProjectA();
 
         // Raise the gate exactly as switchProject does, so the window is deterministic.
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        assertTrue(beginSwitch(API_KEY_B, null, null));
 
         IterableApi.getInstance().setEmail(EMAIL_B);
         IterableApi.getInstance().track("queuedDuringSwitch");
@@ -632,13 +648,13 @@ public class IterableSwitchProjectTest extends BaseTest {
         CountDownLatch joinedCallbacks = new CountDownLatch(2);
         CountDownLatch differentProjectCallback = new CountDownLatch(1);
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(
+        assertTrue(beginSwitch(
                 API_KEY_B, configWithoutAuth(), ignored -> joinedCallbacks.countDown()));
         assertFalse("The same destination must join the switch in flight",
-                IterableBackgroundInitializer.beginProjectSwitch(
+                beginSwitch(
                         API_KEY_B, configWithoutAuth(), ignored -> joinedCallbacks.countDown()));
         assertFalse("A different destination must not start a second teardown either",
-                IterableBackgroundInitializer.beginProjectSwitch(
+                beginSwitch(
                         API_KEY_C, configWithoutAuth(), ignored -> differentProjectCallback.countDown()));
 
         IterableBackgroundInitializer.completeProjectSwitch(true);
@@ -662,10 +678,10 @@ public class IterableSwitchProjectTest extends BaseTest {
         initializeProjectA();
 
         CountDownLatch landedOnD = new CountDownLatch(1);
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, configWithoutAuth(),
+        assertTrue(beginSwitch(API_KEY_B, configWithoutAuth(),
                 ignored -> switchTo(context, API_KEY_D, configWithoutAuth(), result -> landedOnD.countDown())));
         assertFalse("a different destination asked for during the switch is queued",
-                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_C, configWithoutAuth(), null));
+                beginSwitch(API_KEY_C, configWithoutAuth(), null));
 
         IterableBackgroundInitializer.completeProjectSwitch(true);
 
@@ -1073,7 +1089,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     public void testInitializationCallbackParkedDuringASwitchStillFires() throws Exception {
         initializeProjectA();
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        assertTrue(beginSwitch(API_KEY_B, null, null));
 
         CountDownLatch parkedCallback = new CountDownLatch(1);
         IterableApi.initializeInBackground(context, API_KEY_B, configWithoutAuth(), parkedCallback::countDown);
@@ -1319,7 +1335,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     public void testTheLongSetEmailAndSetUserIdOverloadsAreGated() {
         initializeProjectA();
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        assertTrue(beginSwitch(API_KEY_B, null, null));
 
         IterableApi.getInstance().setEmail(EMAIL_B, null, null, null, null);
         IterableApi.getInstance().setUserId("user-b", null, null, null, null, false);
@@ -1343,7 +1359,7 @@ public class IterableSwitchProjectTest extends BaseTest {
         CountDownLatch subscriberCalled = new CountDownLatch(1);
         IterableApi.onSDKInitialized(subscriberCalled::countDown);
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        assertTrue(beginSwitch(API_KEY_B, null, null));
 
         IterableApi.initialize(context, API_KEY_B, configWithoutAuth());
         IterableBackgroundInitializer.completeProjectSwitch(true);
@@ -1431,7 +1447,7 @@ public class IterableSwitchProjectTest extends BaseTest {
     public void testLongestTrackAndUpdateEmailOverloadsAreQueuedLikeTheirShorterSiblings() throws Exception {
         initializeProjectA();
 
-        assertTrue(IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, null, null));
+        assertTrue(beginSwitch(API_KEY_B, null, null));
         try {
             IterableApi.getInstance().track("event", 11, 22, new JSONObject());
             assertEquals("the longest track overload must not bypass the gate",

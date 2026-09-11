@@ -58,8 +58,9 @@ class IterableProjectSwitcher {
 
     /**
      * @param resumingGate true when this call is a request that was queued during an earlier switch
-     *                     and has inherited its still-raised gate, so it must not raise one of its
-     *                     own and owns releasing it if it bails out before the teardown starts. Its
+     *                     and has inherited the chain, so its destination is already decided, it
+     *                     raises the call-queueing gate rather than claiming a new chain, and it
+     *                     owns releasing the chain if it bails out before the teardown starts. Its
      *                     callbacks already sit with the gate, so {@code callback} is null.
      */
     static void switchProject(@NonNull Context context,
@@ -107,13 +108,6 @@ class IterableProjectSwitcher {
             return;
         }
 
-        if (apiKey.equals(api._apiKey)) {
-            IterableLogger.d(TAG, "switchProject called with the API key already in use; nothing to tear down");
-            deliverSwitchCallback(callback, true);
-            releaseInheritedGate(resumingGate, true);
-            return;
-        }
-
         // initializeInBackground publishes _apiKey synchronously but finishes its init task later,
         // and that task marks initialization complete, which would lower this switch's gate while
         // the teardown was still running. Wait for it instead of tearing down underneath it.
@@ -125,14 +119,36 @@ class IterableProjectSwitcher {
             }
         }
 
-        // Step 2: raise the switch gate synchronously, so calls made after this method returns are
-        // queued rather than executed against a half torn-down SDK. Skipped when the gate was
-        // inherited from the switch that queued this request: it was never lowered, precisely so
-        // nothing could take it in between.
-        if (!resumingGate && !IterableBackgroundInitializer.beginProjectSwitch(apiKey, config, callback)) {
-            IterableLogger.d(TAG, "switchProject: a switch is already in progress; this request "
-                    + "either joins it or runs right after it");
-            return;
+        // Step 2: route the request, then raise the switch gate synchronously so calls made after
+        // this method returns are queued rather than executed against a half torn-down SDK. The
+        // "already on this key" case is decided by the gate rather than by _apiKey, because during
+        // a teardown _apiKey is still the project being left, so a request to go back to it would
+        // look like a no-op and report a clean switch while the switch in flight carried on
+        // somewhere else.
+        if (resumingGate) {
+            // The destination was decided when this was queued. Only the call-queueing gate has to
+            // go back up: lowerGate dropped it at the handover so the project that landed could
+            // serve its own callback, and the chain itself was never released.
+            if (apiKey.equals(api._apiKey)) {
+                IterableLogger.d(TAG, "switchProject: the queued request is for the project that is "
+                        + "now live; nothing to tear down");
+                releaseInheritedGate(true, true);
+                return;
+            }
+            IterableBackgroundInitializer.resumeProjectSwitch();
+        } else {
+            IterableBackgroundInitializer.BeginSwitchOutcome outcome =
+                    IterableBackgroundInitializer.beginProjectSwitch(apiKey, config, callback, api._apiKey);
+            if (outcome == IterableBackgroundInitializer.BeginSwitchOutcome.ALREADY_THERE) {
+                IterableLogger.d(TAG, "switchProject called with the API key already in use; nothing to tear down");
+                deliverSwitchCallback(callback, true);
+                return;
+            }
+            if (outcome == IterableBackgroundInitializer.BeginSwitchOutcome.JOINED_OR_QUEUED) {
+                IterableLogger.d(TAG, "switchProject: a switch is already in progress; this request "
+                        + "either joins it or runs right after it");
+                return;
+            }
         }
 
         // Steps 3-8 run off the main thread on the existing background executor.
@@ -140,9 +156,10 @@ class IterableProjectSwitcher {
     }
 
     /**
-     * A bail-out on an inherited gate has to release it, or it stays raised for the life of the
-     * process and every later SDK call is queued and never drained. The callbacks for this request
-     * are already registered with the gate, so completing the switch delivers them.
+     * A bail-out on an inherited chain has to release it, or the gate stays held for the life of
+     * the process and every later request is queued behind a switch that will never run. The
+     * callbacks for this request are already registered with the gate, so completing the switch
+     * delivers them.
      */
     private static void releaseInheritedGate(boolean resumingGate, boolean cleanTeardown) {
         if (resumingGate) {

@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -520,9 +521,12 @@ class IterableBackgroundInitializer {
 
     /**
      * Switches asked for while another was in flight, targeting a project that one will not land
-     * on. Run in the order they were asked for once the gate drops.
+     * on. Run in the order they were asked for once the switch ahead of them finishes.
+     *
+     * A deque rather than a queue so the tail is reachable: routing a request needs to compare it
+     * against the last destination asked for. Only ever touched under {@link #initLock}.
      */
-    private static final ConcurrentLinkedQueue<PendingProjectSwitch> pendingSwitches = new ConcurrentLinkedQueue<>();
+    private static final ArrayDeque<PendingProjectSwitch> pendingSwitches = new ArrayDeque<>();
 
     /** A switch request parked until the one in flight finishes. */
     static final class PendingProjectSwitch {
@@ -537,84 +541,122 @@ class IterableBackgroundInitializer {
     }
 
     /**
-     * @return true while {@link IterableApi#switchProject} is tearing down and re-initializing
+     * @return true from the start of a switch until the last switch queued behind it is done.
+     *         This is not the same as "calls are being queued": a chain hands over from one
+     *         switch to the next, and in the moment between them the SDK is fully live on the
+     *         project that just landed, so calls run rather than queue while this is still true.
      */
     static boolean isSwitchingProject() {
         return isSwitchingProject;
     }
 
+    /** How {@link IterableProjectSwitcher#switchProject} should treat a request. */
+    enum BeginSwitchOutcome {
+        /** The SDK is already on the requested project and no switch is running. Nothing to do. */
+        ALREADY_THERE,
+        /**
+         * Registered with the switch that is going to deliver this project, or queued behind the
+         * chain. Either way this call does not run a teardown of its own.
+         */
+        JOINED_OR_QUEUED,
+        /** This call owns a new switch and the gate is raised for it. */
+        RUN
+    }
+
     /**
-     * Raises the switch gate so every SDK call made from now until
-     * {@link #completeProjectSwitch(boolean)} is queued instead of running against a half
-     * torn-down SDK, and registers {@code callback} with the switch.
+     * Routes a request by comparing it against the project the app has most recently <i>asked</i>
+     * to be on, rather than the one that is live, and raises the switch gate when the request
+     * owns a new switch, so every SDK call made until {@link #completeProjectSwitch(boolean)} is
+     * queued instead of running against a half torn-down SDK.
      *
-     * A request arriving while a switch is running is handled by where it is headed. One asking
-     * for the project the in-flight switch is already going to joins it, so a picker tapped twice
-     * on the same destination runs one teardown. One asking for a different project is parked and
-     * run as soon as that switch finishes: dropping it would leave the SDK on a project the app
-     * has already asked to leave, with its callback reporting a completed switch, and nothing in
-     * the API for the app to detect that with.
+     * Those two projects differ for the whole length of a teardown, and using the live one is
+     * wrong in three ways. A request to go back to the project being left looks like "already
+     * there", so it reports a clean switch and tears nothing down while the switch in flight
+     * carries on somewhere else. A repeat of the destination already in flight looks joinable even
+     * when another destination is queued behind it, so the chain settles past it. And merging a
+     * repeat into an earlier queued entry reorders the chain, so C, D, C runs C then D.
      *
-     * @return true if this call owns the switch, false if a switch was already in progress (the
-     *         callback is either registered with the in-flight switch or parked with the request
-     *         that will follow it)
+     * The requested project is the tail of the queue, or the switch in flight when the queue is
+     * empty, or {@code liveApiKey} when nothing is running. A request for it is absorbed by
+     * whatever is going to deliver it, so a picker tapped twice on one destination runs a single
+     * teardown; anything else goes on the tail.
+     *
+     * @param liveApiKey the API key the SDK is running on right now
      */
-    static boolean beginProjectSwitch(@NonNull String apiKey,
-                                      @Nullable IterableConfig config,
-                                      @Nullable IterableProjectSwitchCallback callback) {
+    static BeginSwitchOutcome beginProjectSwitch(@NonNull String apiKey,
+                                                 @Nullable IterableConfig config,
+                                                 @Nullable IterableProjectSwitchCallback callback,
+                                                 @NonNull String liveApiKey) {
         synchronized (initLock) {
-            if (isSwitchingProject) {
-                if (apiKey.equals(inFlightSwitchApiKey)) {
+            PendingProjectSwitch tail = pendingSwitches.peekLast();
+            String requested = tail != null ? tail.apiKey
+                    : inFlightSwitchApiKey != null ? inFlightSwitchApiKey : liveApiKey;
+
+            if (apiKey.equals(requested)) {
+                if (tail != null) {
+                    if (callback != null) {
+                        tail.callbacks.add(callback);
+                    }
+                } else if (inFlightSwitchApiKey != null) {
                     if (callback != null) {
                         switchCallbacks.offer(callback);
                     }
                 } else {
-                    parkPendingSwitchLocked(apiKey, config, callback);
+                    return BeginSwitchOutcome.ALREADY_THERE;
                 }
-                return false;
+                return BeginSwitchOutcome.JOINED_OR_QUEUED;
             }
+
+            if (inFlightSwitchApiKey != null) {
+                // Appended, never merged into an earlier entry for the same project. Merging
+                // across another destination reorders the chain: C, D, C would run C then D and
+                // settle on D, and the second C's callback would fire when the first C landed.
+                PendingProjectSwitch parked = new PendingProjectSwitch(apiKey, config);
+                if (callback != null) {
+                    parked.callbacks.add(callback);
+                }
+                pendingSwitches.addLast(parked);
+                return BeginSwitchOutcome.JOINED_OR_QUEUED;
+            }
+
             if (callback != null) {
                 switchCallbacks.offer(callback);
             }
             isSwitchingProject = true;
             inFlightSwitchApiKey = apiKey;
-            isInitializing = true;
-            isBackgroundInitialized = false;
-            // The new project runs through initialize() again, and notifyInitializationComplete()
-            // only fires once per initialized flag, so the flag has to be cleared for the second
-            // initialize() to notify. Subscribers themselves are kept: clearing them would drop a
-            // subscriber registered while the first initialization was still in flight.
-            callbackManager.clearInitializedFlag();
-            return true;
+            raiseCallGateLocked();
+            return BeginSwitchOutcome.RUN;
         }
     }
 
-    /** Repeated requests for one destination share a single parked entry, so B, C, C runs B then C. */
-    private static void parkPendingSwitchLocked(@NonNull String apiKey,
-                                                @Nullable IterableConfig config,
-                                                @Nullable IterableProjectSwitchCallback callback) {
-        PendingProjectSwitch parked = null;
-        for (PendingProjectSwitch candidate : pendingSwitches) {
-            if (candidate.apiKey.equals(apiKey)) {
-                parked = candidate;
-                break;
-            }
+    /**
+     * Raises the call-queueing gate again for a switch that inherited the chain.
+     *
+     * {@code lowerGate} drops that gate at the handover so the project that just landed can serve
+     * the calls its own callback makes, and this puts it back for the teardown that follows.
+     */
+    static void resumeProjectSwitch() {
+        synchronized (initLock) {
+            raiseCallGateLocked();
         }
-        if (parked == null) {
-            parked = new PendingProjectSwitch(apiKey, config);
-            pendingSwitches.offer(parked);
-        }
-        if (callback != null) {
-            parked.callbacks.add(callback);
-        }
+    }
+
+    private static void raiseCallGateLocked() {
+        isInitializing = true;
+        isBackgroundInitialized = false;
+        // The new project runs through initialize() again, and notifyInitializationComplete()
+        // only fires once per initialized flag, so the flag has to be cleared for the second
+        // initialize() to notify. Subscribers themselves are kept: clearing them would drop a
+        // subscriber registered while the first initialization was still in flight.
+        callbackManager.clearInitializedFlag();
     }
 
     /**
      * Lowers the switch gate, drains the calls queued during the switch window FIFO against the new
      * project, then delivers every callback registered with this switch on the main thread.
      *
-     * When a switch was requested while this one ran, the gate is handed straight to it rather than
-     * lowered, and {@link #startPendingSwitch} runs it on the gate it inherited.
+     * When a switch was requested while this one ran, the chain passes straight to it rather than
+     * ending, and {@link #startPendingSwitch} runs it on the chain it inherited.
      *
      * @param cleanTeardown false when a teardown step was noisy. The SDK is on the new project
      *                      either way; this never means the switch failed.
@@ -646,19 +688,26 @@ class IterableBackgroundInitializer {
 
             PendingProjectSwitch next = pendingSwitches.poll();
             nextSwitch.set(next);
+            // The call-queueing gate drops either way. At this point the SDK is fully live on the
+            // project that just landed, and the contract tells apps to re-identify from the
+            // callback, so a setEmail made there has to run against that project. Holding the gate
+            // across the handover queues it and then replays it into the next switch in the chain,
+            // sending this project's identity to the next one.
+            isInitializing = false;
+            isBackgroundInitialized = true;
             if (next != null) {
-                // Handed to the queued request rather than lowered and raised again. Lowering it in
-                // between leaves a window in which a brand new switchProject takes the gate first
-                // and is then overtaken by this older queued request, so the SDK settles on the
-                // project the app asked for second-to-last while both callbacks report success.
+                // The chain passes to the queued request rather than ending and being claimed
+                // again. Ending it in between leaves a window in which a brand new switchProject
+                // claims it first and is then overtaken by this older queued request, so the SDK
+                // settles on the project the app asked for second-to-last while both callbacks
+                // report success. isSwitchingProject stays raised because that is what
+                // beginProjectSwitch routes on.
                 inFlightSwitchApiKey = next.apiKey;
                 switchCallbacks.addAll(next.callbacks);
                 return;
             }
             isSwitchingProject = false;
             inFlightSwitchApiKey = null;
-            isInitializing = false;
-            isBackgroundInitialized = true;
         };
 
         Runnable notifyCallbacks = () -> {
@@ -691,10 +740,11 @@ class IterableBackgroundInitializer {
      * Runs a switch that was asked for while another was in flight, so the SDK ends up on the
      * project the app last asked for rather than the one it happened to be heading to.
      *
-     * The gate it runs on is the one {@code lowerGate} handed over, still raised, so it does not
-     * raise one of its own. Its callbacks moved into {@link #switchCallbacks} with the handover and
-     * are delivered from there when it lands, together with any later request for the same project
-     * that joined it in the meantime.
+     * The chain it runs on is the one {@code lowerGate} handed over, so it does not claim one of
+     * its own; it raises only the call-queueing gate, which {@code lowerGate} dropped so the
+     * project that just landed could serve its own callback. Its callbacks moved into
+     * {@link #switchCallbacks} with the handover and are delivered from there when it lands,
+     * together with any later request for the same project that joined it in the meantime.
      */
     private static void startPendingSwitch(@Nullable PendingProjectSwitch pending) {
         if (pending == null) {
@@ -702,7 +752,7 @@ class IterableBackgroundInitializer {
         }
         Context context = IterableApi.sharedInstance._applicationContext;
         if (context == null) {
-            // Nothing can run this switch, and the gate it inherited would stay raised for the life
+            // Nothing can run this switch, and the chain it inherited would stay held for the life
             // of the process. Release it instead, which reports a noisy switch to everyone waiting
             // on this request rather than leaving them with no result at all.
             IterableLogger.e(TAG, "switchProject: cannot run the switch that was requested during "
