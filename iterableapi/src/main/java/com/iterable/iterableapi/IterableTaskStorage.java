@@ -332,9 +332,10 @@ class IterableTaskStorage {
 
     /**
      * Deletes all the entries from the OfflineTask table except those with the given name.
-     * Task names are the request's resource path, set when the task is scheduled.
+     * Task names are the request's resource path, set when the task is scheduled. This is how a
+     * queued device disable survives a logout or a project switch.
      *
-     * @param name name of the tasks to preserve
+     * @param name name of the tasks to preserve, e.g. {@link IterableConstants#ENDPOINT_DISABLE_DEVICE}
      * @return ids of the deleted tasks, so their parked callbacks can be settled
      */
     @NonNull

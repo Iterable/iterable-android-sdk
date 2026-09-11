@@ -32,18 +32,41 @@ public class IterableApi {
     static volatile IterableApi sharedInstance = new IterableApi();
 
     private static final String TAG = "IterableApi";
+
+    /**
+     * Serializes {@link #authManager} between {@link #getAuthManager()}, which builds it lazily from
+     * {@link #config}, and {@link IterableProjectSwitcher}, which discards and rebuilds it once the
+     * new project's config is in place. That is the whole guarantee.
+     *
+     * It is deliberately not held across the {@link #config} and {@link #_apiKey} swap, which
+     * {@link #initialize} performs without it, and it does not need to be: an auth manager another
+     * thread builds from the previous project's config part-way through the swap is thrown away by
+     * the rebuild, which runs under this lock after the swap has finished. The project-scoped fields
+     * are volatile instead, so the SDK's own threads ({@code NetworkThread}, the push-registration
+     * and request {@code AsyncTask}s, the auth manager's executor), none of which the switch gate
+     * covers, cannot observe a stale value indefinitely.
+     */
+    final Object projectStateLock = new Object();
+
     Context _applicationContext; // Package-private for background initializer access
-    IterableConfig config;
-    String _apiKey; // Package-private for background initializer access
-    private String _email;
-    private String _userId;
-    String _userIdUnknown;
-    private String _authToken;
+    volatile IterableConfig config;
+    volatile String _apiKey; // Package-private for background initializer access
+    volatile String _email; // Package-private for IterableProjectSwitcher
+    volatile String _userId; // Package-private for IterableProjectSwitcher
+    volatile String _userIdUnknown;
+    volatile String _authToken; // Package-private for IterableProjectSwitcher
     private boolean _debugMode;
     private Bundle _payloadData;
     private IterableNotificationData _notificationData;
     private String _deviceId;
-    private boolean _firstForegroundHandled;
+    volatile boolean _firstForegroundHandled; // Package-private for IterableProjectSwitcher
+    /**
+     * Raised by {@link IterableProjectSwitcher} while the previous project's storage has been
+     * cleared but the new project is not up yet. Read by work that can resolve inside that window
+     * and would otherwise write the previous project's data into storage the new one reads.
+     * Guarded by {@link #projectStateLock}.
+     */
+    volatile boolean projectScopedStorageCleared; // Package-private for IterableProjectSwitcher
     private boolean _autoRetryOnJwtFailure;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
@@ -51,15 +74,15 @@ public class IterableApi {
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
     final ApiEndpointClassification apiEndpointClassification = new ApiEndpointClassification();
     private static final UnknownUserMerge unknownUserMerge = new UnknownUserMerge();
-    private @Nullable UnknownUserManager unknownUserManager;
-    private @Nullable IterableInAppManager inAppManager;
-    private @Nullable IterableEmbeddedManager embeddedManager;
+    volatile @Nullable UnknownUserManager unknownUserManager; // Package-private for IterableProjectSwitcher
+    private volatile @Nullable IterableInAppManager inAppManager;
+    private volatile @Nullable IterableEmbeddedManager embeddedManager;
     private final IterableInAppManager emptyInAppManager = new EmptyInAppManager();
     private final IterableEmbeddedManager emptyEmbeddedManager = new EmptyEmbeddedManager();
     private String inboxSessionId;
-    private IterableAuthManager authManager;
+    volatile IterableAuthManager authManager; // Package-private for IterableProjectSwitcher
     private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
-    private IterableKeychain keychain;
+    volatile IterableKeychain keychain; // Package-private for IterableProjectSwitcher
 
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
@@ -82,16 +105,25 @@ public class IterableApi {
 
     /**
      * Helper method to queue operations if background initialization is in progress,
-     * otherwise execute immediately for backward compatibility
+     * otherwise execute immediately for backward compatibility.
+     *
+     * There is deliberately no gate check here. Reading the gate and then acting on the result is
+     * check-then-act: a call could pass the check just before {@link IterableApi#switchProject}
+     * raises the gate and then run against a half torn-down SDK.
+     * {@link IterableBackgroundInitializer#queueOrExecute} makes the check and the enqueue atomic,
+     * and still runs the operation outside the lock when the gate is down.
      */
     private void queueOrExecute(Runnable operation, String description) {
-        // Only queue if background initialization is actively running
-        if (IterableBackgroundInitializer.isInitializingInBackground()) {
-            IterableBackgroundInitializer.queueOrExecute(operation, description);
-        } else {
-            // Execute immediately for backward compatibility when not using background init
-            operation.run();
-        }
+        IterableBackgroundInitializer.queueOrExecute(operation, description);
+    }
+
+    /**
+     * As {@link #queueOrExecute}, but runs inline rather than queueing when a project switch is in
+     * progress. For calls carrying identifiers that only exist on the project that produced them,
+     * which cannot be replayed against a different project.
+     */
+    private void queueOrExecuteUnlessSwitching(Runnable operation, String description) {
+        IterableBackgroundInitializer.queueOrExecuteUnlessSwitching(operation, description);
     }
 
     void fetchRemoteConfiguration() {
@@ -149,17 +181,43 @@ public class IterableApi {
      * @param attributionInfo Attribution information object
      */
     void setAttributionInfo(IterableAttributionInfo attributionInfo) {
+        setAttributionInfo(attributionInfo, _apiKey);
+    }
+
+    /**
+     * Stores attribution information, unless the project it belongs to has been switched away from.
+     *
+     * Campaign, template and message IDs live in the project that sent them, and the preferences
+     * they go to are shared with whatever project comes next. A deep link redirect resolves over
+     * the network, so it can land after {@link #switchProject} has cleared attribution, and writing
+     * it back would attach a campaignId that does not exist in the new project to that project's
+     * first attributed event.
+     *
+     * @param apiKeyItBelongsTo the API key that was live when these identifiers were resolved
+     */
+    void setAttributionInfo(IterableAttributionInfo attributionInfo, @Nullable String apiKeyItBelongsTo) {
         if (_applicationContext == null) {
             IterableLogger.e(TAG, "setAttributionInfo: Iterable SDK is not initialized with a context.");
             return;
         }
 
-        IterableUtil.saveExpirableJsonObject(
-                getPreferences(),
-                IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
-                attributionInfo.toJSONObject(),
-                3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
-        );
+        // The check and the write go under the lock the switch takes to clear attribution, so a
+        // redirect resolving mid-teardown cannot pass the check and then write in behind the clear.
+        // The API key alone is not enough: between the clear and the re-initialization the previous
+        // project's key is still the live one, which is what projectScopedStorageCleared covers.
+        synchronized (projectStateLock) {
+            if (projectScopedStorageCleared || apiKeyItBelongsTo == null || !apiKeyItBelongsTo.equals(_apiKey)) {
+                IterableLogger.d(TAG, "Not storing attribution, its project has been switched away from");
+                return;
+            }
+
+            IterableUtil.saveExpirableJsonObject(
+                    getPreferences(),
+                    IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_KEY,
+                    attributionInfo.toJSONObject(),
+                    3600 * IterableConstants.SHARED_PREFS_ATTRIBUTION_INFO_EXPIRATION_HOURS * 1000
+            );
+        }
     }
 
     Map<String, String> getDeviceAttributes() {
@@ -181,10 +239,15 @@ public class IterableApi {
      */
     @NonNull
     IterableAuthManager getAuthManager() {
-        if (authManager == null) {
-            authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriodMillis);
+        // Locked so a background thread cannot lazily build an auth manager from a config that
+        // IterableProjectSwitcher is halfway through replacing, which would bind the new project's
+        // requests to the previous project's IterableAuthHandler for the rest of the process.
+        synchronized (projectStateLock) {
+            if (authManager == null) {
+                authManager = new IterableAuthManager(this, config.authHandler, config.retryPolicy, config.expiringAuthTokenRefreshPeriodMillis);
+            }
+            return authManager;
         }
-        return authManager;
     }
 
     @Nullable
@@ -398,8 +461,24 @@ public class IterableApi {
     }
 
     private void logoutPreviousUser() {
+        logoutPreviousUser(null, null);
+    }
+
+    /**
+     * @param disableListener notified once the device disable has been handed off to the request
+     *                        layer, i.e. after the FCM token lookup has resolved and the request has
+     *                        been built with the API key and region endpoint captured now, or with
+     *                        false when there was nothing to send. Only used by
+     *                        {@link IterableProjectSwitcher}, which prefers not to swap the project
+     *                        until that has happened.
+     * @param onDisableFailure notified if the disable request itself comes back as a failure
+     * @return true when a device disable was started, so {@code disableListener} will be notified
+     */
+    boolean logoutPreviousUser(@Nullable IterablePushRegistrationData.DispatchListener disableListener,
+                               @Nullable IterableHelper.FailureHandler onDisableFailure) {
+        boolean disableStarted = false;
         if (config.autoPushRegistration && isInitialized()) {
-            disablePush();
+            disableStarted = disablePush(disableListener, onDisableFailure);
         }
 
         // Only reset managers if they're initialized
@@ -416,6 +495,7 @@ public class IterableApi {
         if (apiClient != null) {
             apiClient.onLogout();
         }
+        return disableStarted;
     }
 
     private void onLogin(
@@ -538,7 +618,7 @@ public class IterableApi {
         return true;
     }
 
-    private SharedPreferences getPreferences() {
+    SharedPreferences getPreferences() {
         return _applicationContext.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE);
     }
 
@@ -716,7 +796,7 @@ public class IterableApi {
     }
 
     protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
-        disableToken(email, userId, null, token, null, null);
+        disableToken(email, userId, null, null, null, token, null, null);
     }
 
     /**
@@ -725,14 +805,19 @@ public class IterableApi {
      * @param email User email for whom to disable the device.
      * @param userId User ID for whom to disable the device.
      * @param authToken
+     * @param apiKey API key captured when the disable was initiated, so the request reaches the
+     *               project the token was registered against even if the live key has since been
+     *               replaced by {@link IterableProjectSwitcher}. Null falls back to the live key.
+     * @param baseUrl Region endpoint captured with {@code apiKey}, so the two cannot be paired across
+     *                projects. Null falls back to the live region.
      * @param deviceToken The device token
      */
-    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @Nullable String apiKey, @Nullable String baseUrl, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         if (deviceToken == null) {
             IterableLogger.d(TAG, "device token not available");
             return;
         }
-        apiClient.disableToken(email, userId, authToken, deviceToken, onSuccess, onFailure);
+        apiClient.disableToken(email, userId, authToken, apiKey, baseUrl, deviceToken, onSuccess, onFailure);
     }
 
     /**
@@ -925,6 +1010,79 @@ public class IterableApi {
     }
 
     /**
+     * Moves a running app from one Iterable project to another in place, with no app restart and no
+     * state from the previous project leaking into the new one.
+     *
+     * This returns immediately; teardown and re-initialization run on the SDK's background executor.
+     * SDK calls made between this call and the callback are queued and drained in FIFO order against
+     * the new project.
+     *
+     * The switch disables the push token on the previous project (with that project's API key and
+     * region endpoint, even though the FCM token lookup is asynchronous), clears its identity from
+     * memory and from storage,
+     * drops its cached in-app / embedded / unknown-user state, its activation criteria and its push
+     * attribution, and purges its offline queue apart from queued device disables, which are kept so
+     * they still reach the previous project. It does not re-identify the user: call
+     * {@link #setEmail(String)} or {@link #setUserId(String)} from the callback.
+     *
+     * Called before any initialize, this behaves as
+     * {@link #initializeInBackground(Context, String, IterableConfig, IterableInitializationCallback)}
+     * and logs a warning, reporting {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} once it has
+     * started: there is no previous project, so no teardown step could have been noisy. Called with
+     * the API key already in use, it is a no-op. Called while an initialization is still in flight,
+     * it waits for that initialization and then switches.
+     *
+     * Called while a switch is already in progress, what happens depends on where this request is
+     * headed. Asking for the project that switch is already going to registers the callback with it
+     * instead of starting a second teardown. Asking for a different project queues this request and
+     * runs it as soon as that switch finishes, so the SDK ends up on the project asked for last. The
+     * callbacks are not merged: each one fires when the project it asked for is live.
+     *
+     * @param context Application context
+     * @param project The project to switch to: its API key together with the config to run it with.
+     *                The two are paired in one object so one project's key cannot be combined with
+     *                another project's region or auth handler. See {@link IterableProject}.
+     * @param callback Delivered on the main thread once the SDK is on the new project. Receives
+     *                 {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} when every teardown step
+     *                 completed cleanly, and {@link IterableProjectSwitchResult#SWITCHED_WITH_WARNINGS}
+     *                 when at least one cleanup step was noisy. Neither is a failure and neither was
+     *                 rolled back: the SDK is on the new project either way, and the right response to
+     *                 both is to carry on and re-identify the user.
+     *                 <p>
+     *                 SWITCHED_WITH_WARNINGS is expected in normal operation and is not an error. In
+     *                 particular it is what an app that does not use push, or that has no device token
+     *                 yet, will always see, because the switch could not confirm a device disable for
+     *                 the previous project. It is also reported when the disable request fails, or
+     *                 fails to reach the request layer in time. A disable that fails after the
+     *                 callback has already been delivered is logged instead.
+     *                 <p>
+     *                 SWITCHED_CLEANLY means every teardown step completed at the point the callback
+     *                 fired. It is
+     *                 not a guarantee that the device disable reached the network: the disable is
+     *                 handed to the request layer, which may queue it for later delivery, and the
+     *                 callback is not held open for the response. An app that needs certainty about
+     *                 the outgoing project's device state should not infer it from this callback.
+     *                 <p>
+     *                 The JWT auth retry budget does not carry over. It is per auth manager instance,
+     *                 the switch rebuilds the auth manager against the new config, and identifying a
+     *                 user clears it besides, so the new project starts with a full budget.
+     * @throws IllegalArgumentException if {@code context} or {@code project} is null. Both are
+     *                                  {@link NonNull}, so a null is a programmer error rather than a
+     *                                  runtime condition, and reporting it through the callback would
+     *                                  overload the same result that means "switched, but noisily".
+     *                                  An unusable API key cannot reach here, because
+     *                                  {@link IterableProject} rejects a blank one at construction.
+     */
+    public static void switchProject(@NonNull Context context,
+                                     @NonNull IterableProject project,
+                                     @Nullable IterableProjectSwitchCallback callback) {
+        if (project == null) {
+            throw new IllegalArgumentException("switchProject: project must not be null");
+        }
+        IterableProjectSwitcher.switchProject(context, project.getApiKey(), project.getConfig(), callback);
+    }
+
+    /**
      * Check if SDK initialization is in progress (covers both normal and background initialization)
      * @return true if initialization is currently running
      */
@@ -1055,6 +1213,36 @@ public class IterableApi {
     }
 
     /**
+     * Drops the in-app and embedded managers so {@link #initialize} rebuilds them against the new
+     * project's config. Used by {@link IterableProjectSwitcher}; the fields stay private because
+     * Kotlin call sites in this package resolve {@code iterableApi.inAppManager} to the non-null
+     * {@link #getInAppManager()} accessor, and a package-private field would shadow it.
+     */
+    void clearMessagingManagers() {
+        inAppManager = null;
+        embeddedManager = null;
+    }
+
+    /**
+     * Clears the per-project state that lives on the shared instance rather than in storage. iOS gets
+     * this for free because it replaces its SDK instance; Android reuses {@link #sharedInstance}, so
+     * anything held in a field survives a switch unless it is cleared here.
+     *
+     * inboxSessionId is the one that produces cross-project data: a session ID minted under the
+     * previous project would otherwise be attached to the new project's first in-app tracking call.
+     * deviceAttributes is app-set rather than project-set, but it is cleared for parity, because iOS
+     * discards it with the instance and would otherwise report different device attributes than
+     * Android for the same app after the same switch. Set them again from the callback if they still
+     * apply to the new project.
+     */
+    void clearProjectScopedInstanceState() {
+        inboxSessionId = null;
+        _payloadData = null;
+        _notificationData = null;
+        deviceAttributes.clear();
+    }
+
+    /**
      * Returns the attribution information ({@link IterableAttributionInfo}) for last push open
      * or app link click from an email.
      * @return {@link IterableAttributionInfo} Object containing
@@ -1109,6 +1297,15 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        // Wrapped here too, not just in the shorter overloads: an app calling this overload directly
+        // would otherwise bypass the initialization and project-switch gate entirely. The shorter
+        // overloads still delegate here, so a call through them passes the gate twice; the second
+        // pass runs inline because the gate is down by the time the queue drains.
+        queueOrExecute(() -> setEmailInternal(email, authToken, iterableIdentityResolution, successHandler, failureHandler),
+                "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", identityResolution, callbacks)");
+    }
+
+    private void setEmailInternal(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
@@ -1179,6 +1376,14 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
+        // Wrapped here too, not just in the shorter overloads: an app calling this overload directly
+        // would otherwise bypass the initialization and project-switch gate entirely. See setEmail
+        // for why passing through the gate twice is harmless.
+        queueOrExecute(() -> setUserIdInternal(userId, authToken, iterableIdentityResolution, successHandler, failureHandler, isUnknown),
+                "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", identityResolution, callbacks)");
+    }
+
+    private void setUserIdInternal(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
         boolean replay = isReplay(iterableIdentityResolution);
         boolean merge = isMerge(iterableIdentityResolution);
 
@@ -1333,7 +1538,9 @@ public class IterableApi {
      * @param dataFields
      */
     public void trackPushOpen(int campaignId, int templateId, @NonNull String messageId, boolean appAlreadyRunning, @Nullable JSONObject dataFields) {
-        queueOrExecute(() -> {
+        // Not queued behind a project switch: campaignId, templateId and messageId only exist on the
+        // project that sent the push, so replaying this against the new project misattributes it.
+        queueOrExecuteUnlessSwitching(() -> {
             if (messageId == null) {
                 IterableLogger.e(TAG, "messageId is null");
                 return;
@@ -1538,6 +1745,11 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
+        queueOrExecute(() -> trackInternal(eventName, campaignId, templateId, dataFields),
+                "track(" + eventName + ", " + campaignId + ", " + templateId + ", dataFields)");
+    }
+
+    private void trackInternal(@NonNull String eventName, int campaignId, int templateId, @Nullable JSONObject dataFields) {
         IterableLogger.printInfo();
         if (!checkSDKInitialization() && _userIdUnknown == null) {
             if (sharedInstance.config.enableUnknownUserActivation) {
@@ -1631,6 +1843,11 @@ public class IterableApi {
      * @param failureHandler Failure handler. Called when the server call failed.
      */
     public void updateEmail(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
+        queueOrExecute(() -> updateEmailInternal(newEmail, authToken, successHandler, failureHandler),
+                "updateEmail(" + maskPII(newEmail) + ", " + maskPII(authToken) + ", callbacks)");
+    }
+
+    private void updateEmailInternal(final @NonNull String newEmail, final @Nullable String authToken, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         if (!checkSDKInitialization()) {
             IterableLogger.e(TAG, "The Iterable SDK must be initialized with email or userId before " +
                     "calling updateEmail");
@@ -1700,10 +1917,34 @@ public class IterableApi {
      * Disables the device from push notifications
      */
     public void disablePush() {
-        if (checkSDKInitialization()) {
-            IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-            IterablePushRegistration.executePushRegistrationTask(data);
+        disablePush(null, null);
+    }
+
+    /**
+     * @param dispatchListener notified once the disable request has been built and handed to the
+     *                         request layer, or with false if there turned out to be nothing to send
+     * @param onFailure notified if the disable request comes back as a failure
+     * @return true when a disable was started, so {@code dispatchListener} will be notified
+     */
+    boolean disablePush(@Nullable IterablePushRegistrationData.DispatchListener dispatchListener,
+                        @Nullable IterableHelper.FailureHandler onFailure) {
+        if (!checkSDKInitialization()) {
+            return false;
         }
+        IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        // Captured here rather than resolved when the request is sent: the FCM token lookup that
+        // runs first is network-bound, and a project switch can swap _apiKey while it is in flight.
+        // users/disableDevice is project-scoped on the backend, so a disable that goes out with the
+        // new project's key leaves the previous project still delivering push to this device.
+        // The endpoint is captured with the key and never separately: the two only mean anything as a
+        // pair, and the new project can be in a different data region, in which case a captured key
+        // sent to the live endpoint is rejected outright.
+        data.apiKey = _apiKey;
+        data.baseUrl = IterableRequestTask.getRegionBaseUrl();
+        data.dispatchListener = dispatchListener;
+        data.onFailure = onFailure;
+        IterablePushRegistration.executePushRegistrationTask(data);
+        return true;
     }
 
     /**
