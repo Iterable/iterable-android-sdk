@@ -1,0 +1,20 @@
+{
+  "campaignId": 9001,
+  "templateId": 9002,
+  "messageId": "backgroundUrl123",
+  "isGhostPush": false,
+  "actionButtons": [
+    {
+      "identifier": "openLinkButton",
+      "title": "View Details",
+      "openApp": false,
+      "action": {
+        "type": "openUrl",
+        "data": "https://example.com/details"
+      }
+    }
+  ],
+  "defaultAction": {
+    "type": null
+  }
+}

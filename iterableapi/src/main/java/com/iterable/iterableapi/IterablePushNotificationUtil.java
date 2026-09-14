@@ -22,9 +22,10 @@ class IterablePushNotificationUtil {
      * (2) whether the openApp launcher fallback in handlePushAction should fire.
      */
     enum ActionDispatchResult {
-        /** customActionHandler was null — SDK not yet initialized. Keep pendingAction for retry
-         *  once initialize() is called (SDK-307). */
-        NOT_DISPATCHED,
+        /** SDK not yet fully initialized (only initializeForPush ran, not initialize()).
+         *  Keep pendingAction alive so it is retried once initialize() is called with the
+         *  full config (SDK-307). */
+        RETRY_LATER,
         /** Handler was invoked but returned false, or URL action failed to open.
          *  Clear pendingAction (action consumed by invocation); allow openApp fallback. */
         DISPATCHED_WITH_FALLBACK,
@@ -42,7 +43,7 @@ class IterablePushNotificationUtil {
             return false;
         }
         ActionDispatchResult result = dispatchPendingAction(context, pendingAction);
-        if (result != ActionDispatchResult.NOT_DISPATCHED) {
+        if (result != ActionDispatchResult.RETRY_LATER) {
             pendingAction = null;
         }
         return result == ActionDispatchResult.HANDLED;
@@ -50,8 +51,8 @@ class IterablePushNotificationUtil {
 
     /**
      * Dispatch a pending action and return a typed result that distinguishes
-     * "not dispatched" (retry later) from "dispatched but returned false" (consumed, allow fallback)
-     * from "fully handled" (consumed, suppress fallback).
+     * "retry later" (SDK not initialized) from "dispatched with fallback" (consumed, allow
+     * openApp launcher) from "fully handled" (consumed, suppress openApp launcher).
      */
     private static ActionDispatchResult dispatchPendingAction(Context context, PendingAction action) {
         // Automatic tracking
@@ -60,15 +61,21 @@ class IterablePushNotificationUtil {
         IterableApi.sharedInstance.trackPushOpen(action.notificationData.getCampaignId(), action.notificationData.getTemplateId(),
                 action.notificationData.getMessageId(), action.dataFields);
 
-        // For custom actions, check handler presence BEFORE dispatching so we can tell
-        // NOT_DISPATCHED (null handler, retry later) from DISPATCHED_WITH_FALLBACK
-        // (handler ran but returned false — documented as "Reserved for future use").
         if (action.iterableAction != null
-                && !action.iterableAction.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
+                && action.iterableAction.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
+            // URL actions require the full SDK config (urlHandler for deep links). If only
+            // initializeForPush ran (_apiKey is null), defer until initialize() is called.
+            if (IterableApi.sharedInstance._apiKey == null) {
+                return ActionDispatchResult.RETRY_LATER;
+            }
+        } else {
+            // For custom actions, check handler presence BEFORE dispatching so we can tell
+            // RETRY_LATER (null handler, SDK not initialized) from DISPATCHED_WITH_FALLBACK
+            // (handler ran but returned false — documented as "Reserved for future use").
             boolean handlerPresent = IterableApi.sharedInstance.config != null
                     && IterableApi.sharedInstance.config.customActionHandler != null;
             if (!handlerPresent) {
-                return ActionDispatchResult.NOT_DISPATCHED;
+                return ActionDispatchResult.RETRY_LATER;
             }
         }
 

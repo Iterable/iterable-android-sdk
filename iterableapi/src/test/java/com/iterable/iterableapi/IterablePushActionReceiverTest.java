@@ -24,6 +24,7 @@ import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturning
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -218,6 +219,45 @@ public class IterablePushActionReceiverTest extends BaseTest {
         // Verify that the custom action handler was called during initialization
         // (processPendingAction is called in initialize())
         assertEquals(true, handlerCalled[0]);
+    }
+
+    /**
+     * Regression test for the URL + pre-init scenario.
+     *
+     * When a URL push action arrives before initialize() (only initializeForPush ran),
+     * the SDK does not yet have the full config (urlHandler, etc.). The action must be
+     * deferred (RETRY_LATER) so it is dispatched once initialize() runs with the real
+     * config, not silently dropped via DISPATCHED_WITH_FALLBACK.
+     */
+    @Test
+    public void testBackgroundUrlActionDeferredUntilSDKInit() throws Exception {
+        // Reset to simulate SDK not being initialized
+        IterableTestUtils.resetIterableApi();
+
+        // Use real runner so URL handler is actually invoked
+        IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
+
+        IterablePushActionReceiver receiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "openLinkButton");
+        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_url_action.json"));
+
+        // Push arrives before SDK is initialized — URL action must not be dropped
+        receiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
+
+        // Now initialize SDK with a URL handler
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        final boolean[] urlHandlerCalled = {false};
+        IterableTestUtils.createIterableApiNew(builder ->
+            builder.setUrlHandler((uri, actionContext) -> {
+                urlHandlerCalled[0] = true;
+                assertEquals("https://example.com/details", uri.toString());
+                return true;
+            })
+        );
+
+        // URL handler should have been called during initialization via processPendingAction
+        assertTrue("URL handler must be called after initialize() — action was deferred, not dropped", urlHandlerCalled[0]);
     }
 
     @Test
