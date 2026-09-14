@@ -48,7 +48,8 @@ class InboxWithAdditionalFieldsFragment : IterableInboxFragment(),
         holderExtension: ViewHolder?,
         message: IterableInAppMessage
     ) {
-        holderExtension?.discountText?.text = message.customPayload.optString("discount")
+        holderExtension?.discountText?.text =
+            message.customPayload?.optString("discount").orEmpty()
     }
 
     class ViewHolder(view: View) {

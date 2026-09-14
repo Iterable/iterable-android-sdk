@@ -35,7 +35,7 @@ class MultipleCellTypesInboxFragment : IterableInboxFragment(),
     }
 
     override fun getItemViewType(message: IterableInAppMessage): Int {
-        return when (message.customPayload.optString("messageType")) {
+        return when (message.customPayload?.optString("messageType")) {
             "light" -> ITEM_TYPE_LIGHT
             "dark" -> ITEM_TYPE_DARK
             else -> ITEM_TYPE_DEFAULT

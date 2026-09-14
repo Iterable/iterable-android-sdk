@@ -1,0 +1,20 @@
+---
+description: Keeps ticket-sized work explicit and resumable through a root TASK.md contract
+alwaysApply: true
+---
+
+# TASK.md working contract
+
+For ticket-sized work, multi-session work, or any task delegated to subagents,
+use a root `TASK.md` as the current contract.
+
+- Read it before planning or editing.
+- Keep the goal, in-scope/out-of-scope boundaries, acceptance criteria,
+  decisions, current status, and verification commands concise and current.
+- Record blockers and command evidence, not raw Gradle logs.
+- Update it before context summarization, delegation, or handoff.
+- Do not silently broaden the task beyond it. Update the contract first when
+  the user changes scope.
+- Treat it as branch working state. Commit it only when the task explicitly
+  requires a durable handoff artifact; otherwise remove it before the final
+  product commit.

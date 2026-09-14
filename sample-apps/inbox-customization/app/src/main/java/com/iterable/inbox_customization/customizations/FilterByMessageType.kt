@@ -20,7 +20,10 @@ class FilterByMessageTypeInboxFragment : IterableInboxFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setFilter { message ->
-            message.customPayload.optString("messageType") in setOf("transactional", "promotional")
+            message.customPayload
+                ?.optString("messageType")
+                ?.let { it in setOf("transactional", "promotional") }
+                ?: false
         }
     }
 }
