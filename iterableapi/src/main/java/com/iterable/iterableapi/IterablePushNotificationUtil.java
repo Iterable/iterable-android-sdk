@@ -19,27 +19,28 @@ class IterablePushNotificationUtil {
     }
 
     static boolean processPendingAction(Context context) {
-        boolean handled = false;
-        if (pendingAction != null) {
-            handled = executeAction(context, pendingAction);
-            // Only clear pending action if it was handled.
-            // This allows the action to be processed later when SDK is fully initialized
-            // (e.g., when customActionHandler becomes available after initialize() is called).
-            if (handled) {
-                pendingAction = null;
-            }
+        if (pendingAction == null) {
+            return false;
         }
-        return handled;
+        IterableActionRunner.ActionDispatchResult result = dispatchPendingAction(context, pendingAction);
+        if (result != IterableActionRunner.ActionDispatchResult.NOT_HANDLED) {
+            pendingAction = null;
+        }
+        return result == IterableActionRunner.ActionDispatchResult.HANDLED;
     }
 
-    static boolean executeAction(Context context, PendingAction action) {
+    private static IterableActionRunner.ActionDispatchResult dispatchPendingAction(Context context, PendingAction action) {
         // Automatic tracking
         IterableApi.sharedInstance.setPayloadData(action.intent);
         IterableApi.sharedInstance.setNotificationData(action.notificationData);
         IterableApi.sharedInstance.trackPushOpen(action.notificationData.getCampaignId(), action.notificationData.getTemplateId(),
                 action.notificationData.getMessageId(), action.dataFields);
 
-        return IterableActionRunner.executeAction(context, action.iterableAction, IterableActionSource.PUSH);
+        return IterableActionRunner.dispatchAction(context, action.iterableAction, IterableActionSource.PUSH);
+    }
+
+    static boolean executeAction(Context context, PendingAction action) {
+        return dispatchPendingAction(context, action) == IterableActionRunner.ActionDispatchResult.HANDLED;
     }
 
     static void handlePushAction(Context context, Intent intent) {

@@ -24,10 +24,13 @@ import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturning
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 public class IterablePushActionReceiverTest extends BaseTest {
@@ -44,6 +47,8 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         actionRunnerMock = mock(IterableActionRunner.IterableActionRunnerImpl.class);
         IterableActionRunner.instance = actionRunnerMock;
+        when(actionRunnerMock.dispatchAction(any(Context.class), any(IterableAction.class), any(IterableActionSource.class)))
+                .thenReturn(IterableActionRunner.ActionDispatchResult.NOT_HANDLED);
     }
 
     @After
@@ -82,7 +87,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).dispatchAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("customAction", capturedAction.getValue().getType());
 
         // Verify that the main app activity was launched
@@ -140,7 +145,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).dispatchAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
         IterableAction capturedAction = actionCaptor.getValue();
         assertEquals("handleTextInput", capturedAction.getType());
         assertEquals("input text", capturedAction.userInput);
@@ -158,7 +163,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with openUrl action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).dispatchAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("openUrl", capturedAction.getValue().getType());
         assertEquals("https://example.com", capturedAction.getValue().getData());
     }
@@ -250,6 +255,53 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify context was not changed
         assertEquals(originalContext, IterableApi.sharedInstance._applicationContext);
+    }
+
+    @Test
+    public void testCustomActionHandlerReturnFalseDoesNotReplayOnForeground() throws Exception {
+        IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+
+        final int[] callCount = {0};
+        IterableTestUtils.createIterableApiNew(builder ->
+            builder.setCustomActionHandler((action, actionContext) -> {
+                callCount[0]++;
+                return false;
+            })
+        );
+
+        IterablePushActionReceiver receiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "remindMeButton");
+        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_custom_action.json"));
+
+        receiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
+        assertEquals(1, callCount[0]);
+
+        IterablePushNotificationUtil.processPendingAction(ApplicationProvider.getApplicationContext());
+        assertEquals("A dispatched custom action must not replay when its handler returns false", 1, callCount[0]);
+    }
+
+    @Test
+    public void testCustomActionHandlerDoesNotConsumeFailedUrlAction() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        IterableApi.sharedInstance.config = new IterableConfig.Builder()
+                .setCustomActionHandler((action, actionContext) -> true)
+                .build();
+
+        IterablePushActionReceiver receiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtras(IterableTestUtils.getBundleFromJsonResource("push_payload_legacy_deep_link.json"));
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+
+        receiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
+        IterablePushNotificationUtil.processPendingAction(ApplicationProvider.getApplicationContext());
+
+        verify(actionRunnerMock, times(2)).dispatchAction(
+                any(Context.class),
+                any(IterableAction.class),
+                eq(IterableActionSource.PUSH)
+        );
     }
 
     @Test

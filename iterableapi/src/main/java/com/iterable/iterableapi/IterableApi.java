@@ -822,7 +822,6 @@ public class IterableApi {
 
         sharedInstance.retrieveEmailAndUserId();
 
-        IterablePushNotificationUtil.processPendingAction(context);
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
