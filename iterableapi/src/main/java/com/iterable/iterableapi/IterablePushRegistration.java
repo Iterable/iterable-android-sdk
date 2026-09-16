@@ -1,19 +1,19 @@
 package com.iterable.iterableapi;
 
-import androidx.annotation.VisibleForTesting;
+import java.util.concurrent.Executor;
 
-class IterablePushRegistration {
+final class IterablePushRegistration {
+    private final Executor executor;
 
-    @VisibleForTesting
-    static IterablePushRegistrationImpl instance = new IterablePushRegistrationImpl();
-
-    static void executePushRegistrationTask(IterablePushRegistrationData data) {
-        instance.executePushRegistrationTask(data);
+    IterablePushRegistration() {
+        this(IterableExecutors.serial());
     }
 
-    static class IterablePushRegistrationImpl {
-        void executePushRegistrationTask(IterablePushRegistrationData data) {
-            new IterablePushRegistrationTask().execute(data);
-        }
+    IterablePushRegistration(Executor executor) {
+        this.executor = executor;
+    }
+
+    void executePushRegistrationTask(IterablePushRegistrationData data) {
+        executor.execute(new IterablePushRegistrationTask(data));
     }
 }
