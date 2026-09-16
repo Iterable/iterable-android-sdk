@@ -5,14 +5,19 @@ import android.content.Context;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.robolectric.shadows.ShadowLog;
 
 import java.util.HashMap;
+import java.util.concurrent.Executor;
 
 import okhttp3.mockwebserver.MockWebServer;
 
 import static android.os.Looper.getMainLooper;
 import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -52,6 +57,7 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         IterablePushRegistrationTask.Util.instance = pushRegistrationUtilMock;
 
         when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
+        ShadowLog.clear();
     }
 
     @After
@@ -69,7 +75,7 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         IterableApi.getInstance().setDeviceAttribute(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
-        new IterablePushRegistrationTask().execute(data);
+        new IterablePushRegistrationTask(data).run();
         deviceAttributes.put(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
 
         shadowOf(getMainLooper()).idle();
@@ -84,9 +90,43 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn("testToken");
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-        new IterablePushRegistrationTask().execute(data);
+        new IterablePushRegistrationTask(data).run();
         shadowOf(getMainLooper()).idle();
 
         verify(apiMock).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
+    }
+
+    @Test
+    public void testDispatcherUsesConfiguredExecutor() {
+        Executor executor = mock(Executor.class);
+        IterablePushRegistration pushRegistration = new IterablePushRegistration(executor);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+
+        pushRegistration.executePushRegistrationTask(data);
+
+        ArgumentCaptor<Runnable> taskCaptor = ArgumentCaptor.forClass(Runnable.class);
+        verify(executor).execute(taskCaptor.capture());
+        assertTrue(taskCaptor.getValue() instanceof IterablePushRegistrationTask);
+    }
+
+    @Test
+    public void testFirebaseTokenFailureIsLoggedAndContained() {
+        RuntimeException tokenException = new RuntimeException("Unable to fetch token");
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenThrow(tokenException);
+
+        IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
+        new IterablePushRegistrationTask(data).run();
+
+        verify(apiMock, never()).registerDeviceToken(
+                any(String.class),
+                nullable(String.class),
+                nullable(String.class),
+                any(String.class),
+                any(String.class),
+                anyMap()
+        );
+        assertTrue(ShadowLog.getLogsForTag(IterablePushRegistrationTask.TAG).stream()
+                .anyMatch(item -> item.msg.contains("Exception while retrieving the device token")
+                        && item.throwable == tokenException));
     }
 }
