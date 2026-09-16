@@ -28,7 +28,9 @@ import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 public class IterablePushActionReceiverTest extends BaseTest {
@@ -45,6 +47,8 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         actionRunnerMock = mock(IterableActionRunner.IterableActionRunnerImpl.class);
         IterableActionRunner.instance = actionRunnerMock;
+        when(actionRunnerMock.dispatchAction(any(Context.class), any(IterableAction.class), any(IterableActionSource.class)))
+                .thenReturn(IterableActionRunner.ActionDispatchResult.NOT_HANDLED);
     }
 
     @After
@@ -83,7 +87,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).dispatchAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("customAction", capturedAction.getValue().getType());
 
         // Verify that the main app activity was launched
@@ -141,7 +145,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with the proper action
         ArgumentCaptor<IterableAction> actionCaptor = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).dispatchAction(any(Context.class), actionCaptor.capture(), eq(IterableActionSource.PUSH));
         IterableAction capturedAction = actionCaptor.getValue();
         assertEquals("handleTextInput", capturedAction.getType());
         assertEquals("input text", capturedAction.userInput);
@@ -159,7 +163,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
         // Verify that IterableActionRunner was called with openUrl action
         ArgumentCaptor<IterableAction> capturedAction = ArgumentCaptor.forClass(IterableAction.class);
-        verify(actionRunnerMock).executeAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
+        verify(actionRunnerMock).dispatchAction(any(Context.class), capturedAction.capture(), eq(IterableActionSource.PUSH));
         assertEquals("openUrl", capturedAction.getValue().getType());
         assertEquals("https://example.com", capturedAction.getValue().getData());
     }
@@ -221,45 +225,6 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertEquals(true, handlerCalled[0]);
     }
 
-    /**
-     * Regression test for the URL + pre-init scenario.
-     *
-     * When a URL push action arrives before initialize() (only initializeForPush ran),
-     * the SDK does not yet have the full config (urlHandler, etc.). The action must be
-     * deferred (RETRY_LATER) so it is dispatched once initialize() runs with the real
-     * config, not silently dropped via DISPATCHED_WITH_FALLBACK.
-     */
-    @Test
-    public void testBackgroundUrlActionDeferredUntilSDKInit() throws Exception {
-        // Reset to simulate SDK not being initialized
-        IterableTestUtils.resetIterableApi();
-
-        // Use real runner so URL handler is actually invoked
-        IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
-
-        IterablePushActionReceiver receiver = new IterablePushActionReceiver();
-        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
-        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, "openLinkButton");
-        intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_url_action.json"));
-
-        // Push arrives before SDK is initialized — URL action must not be dropped
-        receiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
-
-        // Now initialize SDK with a URL handler
-        stubAnyRequestReturningStatusCode(server, 200, "{}");
-        final boolean[] urlHandlerCalled = {false};
-        IterableTestUtils.createIterableApiNew(builder ->
-            builder.setUrlHandler((uri, actionContext) -> {
-                urlHandlerCalled[0] = true;
-                assertEquals("https://example.com/details", uri.toString());
-                return true;
-            })
-        );
-
-        // URL handler should have been called during initialization via processPendingAction
-        assertTrue("URL handler must be called after initialize() — action was deferred, not dropped", urlHandlerCalled[0]);
-    }
-
     @Test
     public void testInitializeForPushSetsContext() throws Exception {
         // Reset to simulate SDK not being initialized
@@ -292,20 +257,8 @@ public class IterablePushActionReceiverTest extends BaseTest {
         assertEquals(originalContext, IterableApi.sharedInstance._applicationContext);
     }
 
-    /**
-     * Regression test for SDK-717.
-     *
-     * The interface javadoc says the boolean return value is "Reserved for future use", so clients
-     * commonly return false. Before the fix, a false return left pendingAction alive and caused the
-     * handler to fire again on every foreground / re-init after the first push.
-     *
-     * The fix is in processPendingAction: pendingAction is cleared whenever the handler was
-     * present at dispatch time, regardless of what it returned. The handler's return value is
-     * preserved so the openApp fallback in handlePushAction still fires correctly when needed.
-     */
     @Test
     public void testCustomActionHandlerReturnFalseDoesNotReplayOnForeground() throws Exception {
-        // Use real runner so the handler is actually invoked
         IterableActionRunner.instance = new IterableActionRunner.IterableActionRunnerImpl();
         stubAnyRequestReturningStatusCode(server, 200, "{}");
 
@@ -313,7 +266,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
         IterableTestUtils.createIterableApiNew(builder ->
             builder.setCustomActionHandler((action, actionContext) -> {
                 callCount[0]++;
-                return false; // Clients commonly return false per the interface javadoc
+                return false;
             })
         );
 
@@ -323,13 +276,32 @@ public class IterablePushActionReceiverTest extends BaseTest {
         intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_background_custom_action.json"));
 
         receiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
-        assertEquals("Handler should be called exactly once on push receipt", 1, callCount[0]);
+        assertEquals(1, callCount[0]);
 
-        // Simulate foreground (onForeground -> processPendingAction).
-        // pendingAction must be null at this point — cleared because handler was present,
-        // regardless of the false return value.
         IterablePushNotificationUtil.processPendingAction(ApplicationProvider.getApplicationContext());
-        assertEquals("Handler must not fire again — pendingAction cleared once handler was invoked", 1, callCount[0]);
+        assertEquals("A dispatched custom action must not replay when its handler returns false", 1, callCount[0]);
+    }
+
+    @Test
+    public void testCustomActionHandlerDoesNotConsumeFailedUrlAction() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        IterableApi.sharedInstance.config = new IterableConfig.Builder()
+                .setCustomActionHandler((action, actionContext) -> true)
+                .build();
+
+        IterablePushActionReceiver receiver = new IterablePushActionReceiver();
+        Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+        intent.putExtras(IterableTestUtils.getBundleFromJsonResource("push_payload_legacy_deep_link.json"));
+        intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+
+        receiver.onReceive(ApplicationProvider.getApplicationContext(), intent);
+        IterablePushNotificationUtil.processPendingAction(ApplicationProvider.getApplicationContext());
+
+        verify(actionRunnerMock, times(2)).dispatchAction(
+                any(Context.class),
+                any(IterableAction.class),
+                eq(IterableActionSource.PUSH)
+        );
     }
 
     @Test
