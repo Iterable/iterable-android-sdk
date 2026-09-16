@@ -19,10 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: master
 
       - name: Verify release is ready
         run: |
-          if ! grep -qF "## [$VERSION]" CHANGELOG.md; then
+          if ! grep -qE "^## \[$VERSION\]" CHANGELOG.md; then
             echo "::error::CHANGELOG.md has no entry for [$VERSION]. Merge the prepare-release PR to master before running this workflow."
             exit 1
           fi
