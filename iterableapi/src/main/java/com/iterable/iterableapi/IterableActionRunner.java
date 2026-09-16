@@ -15,11 +15,30 @@ import java.util.List;
 
 class IterableActionRunner {
 
+    /**
+     * Internal action execution outcome. Existing callers continue to use the boolean adapter.
+     */
+    enum ActionDispatchResult {
+        /** The action was not handled; preserve the caller's existing retry behavior. */
+        NOT_HANDLED,
+        /** A custom action handler was invoked and returned false. */
+        DISPATCHED_UNHANDLED,
+        /** The action was handled successfully. */
+        HANDLED
+    }
+
     @VisibleForTesting
     static IterableActionRunnerImpl instance = new IterableActionRunnerImpl();
 
     static boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
         return instance.executeAction(context, action, source);
+    }
+
+    /**
+     * Dispatch an action while preserving whether a custom handler was actually invoked.
+     */
+    static ActionDispatchResult dispatchAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
+        return instance.dispatchAction(context, action, source);
     }
 
     static class IterableActionRunnerImpl {
@@ -33,14 +52,20 @@ class IterableActionRunner {
          * @return `true` if the action was handled, `false` if it was not
          */
         boolean executeAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
+            return dispatchAction(context, action, source) == ActionDispatchResult.HANDLED;
+        }
+
+        ActionDispatchResult dispatchAction(@NonNull Context context, @Nullable IterableAction action, @NonNull IterableActionSource source) {
             if (action == null) {
-                return false;
+                return ActionDispatchResult.NOT_HANDLED;
             }
 
             IterableActionContext actionContext = new IterableActionContext(action, source);
 
             if (action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
-                return openUri(context, Uri.parse(action.getData()), actionContext);
+                return openUri(context, Uri.parse(action.getData()), actionContext)
+                        ? ActionDispatchResult.HANDLED
+                        : ActionDispatchResult.NOT_HANDLED;
             } else {
                 return callCustomActionIfSpecified(action, actionContext);
             }
@@ -105,17 +130,17 @@ class IterableActionRunner {
          * Handle custom actions passed from push notifications
          *
          * @param action {@link IterableAction} object that contains action payload
-         * @return `true` if the action is valid and was handled by the handler
-         * `false` if the action is invalid or the handler returned `false`
+         * @return The result of attempting to dispatch the custom action
          */
-        private boolean callCustomActionIfSpecified(@NonNull IterableAction action, @NonNull IterableActionContext actionContext) {
+        private ActionDispatchResult callCustomActionIfSpecified(@NonNull IterableAction action, @NonNull IterableActionContext actionContext) {
             if (action.getType() != null && !action.getType().isEmpty()) {
                 // Call custom action handler
                 if (IterableApi.sharedInstance.config.customActionHandler != null) {
-                    return IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action, actionContext);
+                    boolean handled = IterableApi.sharedInstance.config.customActionHandler.handleIterableCustomAction(action, actionContext);
+                    return handled ? ActionDispatchResult.HANDLED : ActionDispatchResult.DISPATCHED_UNHANDLED;
                 }
             }
-            return false;
+            return ActionDispatchResult.NOT_HANDLED;
         }
     }
 }
