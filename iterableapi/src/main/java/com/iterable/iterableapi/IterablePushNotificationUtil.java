@@ -55,29 +55,22 @@ class IterablePushNotificationUtil {
      * openApp launcher) from "fully handled" (consumed, suppress openApp launcher).
      */
     private static ActionDispatchResult dispatchPendingAction(Context context, PendingAction action) {
-        // Automatic tracking
+        // Defer until initialize() is called with the full SDK config. initializeForPush only
+        // sets _applicationContext; _apiKey is only set by initialize(). Checking _apiKey covers
+        // both URL actions (need urlHandler / deep link config) and custom actions (need
+        // customActionHandler). When the SDK is fully initialized, always dispatch and let
+        // IterableActionRunner return false naturally if no handler is configured — that
+        // correctly allows the openApp fallback to fire without keeping pendingAction alive.
+        if (IterableApi.sharedInstance._apiKey == null) {
+            return ActionDispatchResult.RETRY_LATER;
+        }
+
+        // Automatic tracking — done after the RETRY_LATER guard to avoid double-tracking
+        // on subsequent retries.
         IterableApi.sharedInstance.setPayloadData(action.intent);
         IterableApi.sharedInstance.setNotificationData(action.notificationData);
         IterableApi.sharedInstance.trackPushOpen(action.notificationData.getCampaignId(), action.notificationData.getTemplateId(),
                 action.notificationData.getMessageId(), action.dataFields);
-
-        if (action.iterableAction != null
-                && action.iterableAction.isOfType(IterableAction.ACTION_TYPE_OPEN_URL)) {
-            // URL actions require the full SDK config (urlHandler for deep links). If only
-            // initializeForPush ran (_apiKey is null), defer until initialize() is called.
-            if (IterableApi.sharedInstance._apiKey == null) {
-                return ActionDispatchResult.RETRY_LATER;
-            }
-        } else {
-            // For custom actions, check handler presence BEFORE dispatching so we can tell
-            // RETRY_LATER (null handler, SDK not initialized) from DISPATCHED_WITH_FALLBACK
-            // (handler ran but returned false — documented as "Reserved for future use").
-            boolean handlerPresent = IterableApi.sharedInstance.config != null
-                    && IterableApi.sharedInstance.config.customActionHandler != null;
-            if (!handlerPresent) {
-                return ActionDispatchResult.RETRY_LATER;
-            }
-        }
 
         boolean handled = IterableActionRunner.executeAction(context, action.iterableAction, IterableActionSource.PUSH);
         return handled ? ActionDispatchResult.HANDLED : ActionDispatchResult.DISPATCHED_WITH_FALLBACK;
