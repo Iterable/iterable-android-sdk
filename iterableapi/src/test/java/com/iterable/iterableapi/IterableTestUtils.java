@@ -1,5 +1,7 @@
 package com.iterable.iterableapi;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Bundle;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -23,6 +25,13 @@ import static org.mockito.Mockito.mock;
 public class IterableTestUtils {
     public static final String apiKey = "fake_key";
     public static final String userEmail = "test_email";
+    private static final IterableRequestDispatcher INLINE_REQUEST_DISPATCHER =
+            new IterableRequestDispatcher(
+                    Runnable::run,
+                    IterableExecutors.main(),
+                    (runnable, delayMs) ->
+                            new Handler(Looper.getMainLooper()).postDelayed(runnable, delayMs)
+            );
 
     public interface ConfigBuilderExtender {
         IterableConfig.Builder run(IterableConfig.Builder builder);
@@ -53,8 +62,34 @@ public class IterableTestUtils {
         IterableApi.getInstance().setEmail(email);
     }
 
+    /**
+     * Creates an API whose request work runs inline while callbacks and retries
+     * still use the main looper, matching the production delivery contract.
+     */
+    static IterableApi newApiWithInlineRequests() {
+        IterableApi api = new IterableApi();
+        api.setRequestDispatcher(INLINE_REQUEST_DISPATCHER);
+        return api;
+    }
+
+    static IterableApi newApiWithInlineRequests(IterableInAppManager inAppManager) {
+        IterableApi api = new IterableApi(inAppManager);
+        api.setRequestDispatcher(INLINE_REQUEST_DISPATCHER);
+        return api;
+    }
+
+    static IterableApi newApiWithInlineRequests(
+            IterableInAppManager inAppManager,
+            IterableEmbeddedManager embeddedManager,
+            IterablePushRegistration pushRegistration
+    ) {
+        IterableApi api = new IterableApi(inAppManager, embeddedManager, pushRegistration);
+        api.setRequestDispatcher(INLINE_REQUEST_DISPATCHER);
+        return api;
+    }
+
     public static void resetIterableApi() {
-        IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class));
+        IterableApi.sharedInstance = newApiWithInlineRequests(mock(IterableInAppManager.class));
 
         // Use the new dedicated method for resetting background initialization state
         IterableBackgroundInitializer.resetBackgroundInitializationState();

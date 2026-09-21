@@ -71,7 +71,7 @@ public class IterableInAppManagerTest extends BaseTest {
         customActionHandler = mock(IterableCustomActionHandler.class);
         urlHandler = mock(IterableUrlHandler.class);
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -278,7 +278,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
-        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -345,7 +345,7 @@ public class IterableInAppManagerTest extends BaseTest {
 
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableSkipInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
-        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -406,7 +406,7 @@ public class IterableInAppManagerTest extends BaseTest {
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, handler, 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), displayer));
-        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -582,7 +582,7 @@ public class IterableInAppManagerTest extends BaseTest {
                 new IterableInAppMemoryStorage(),
                 IterableActivityMonitor.getInstance(),
                 mockDisplayer));
-        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
 
@@ -717,7 +717,7 @@ public class IterableInAppManagerTest extends BaseTest {
                 new IterableInAppMemoryStorage(),
                 IterableActivityMonitor.getInstance(),
                 mock(IterableInAppDisplayer.class)));
-        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
 
         // Flush constructor sync callback so messages are loaded
         shadowOf(getMainLooper()).idle();
@@ -871,7 +871,7 @@ public class IterableInAppManagerTest extends BaseTest {
                 new IterableInAppMemoryStorage(),
                 IterableActivityMonitor.getInstance(),
                 mockDisplayer));
-        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
 
         // First sync to get messages
         inAppManager.syncInApp();

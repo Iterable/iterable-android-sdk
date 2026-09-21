@@ -66,7 +66,7 @@ public class IterableApiAuthTests extends BaseTest {
     }
 
     private void reInitIterableApi() {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         authHandler = mock(IterableAuthHandler.class);
     }
 

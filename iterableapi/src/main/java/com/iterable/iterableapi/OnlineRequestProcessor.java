@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
-import android.os.AsyncTask;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -10,19 +9,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
-import java.util.concurrent.Executor;
 
 class OnlineRequestProcessor implements RequestProcessor {
 
     private static final String TAG = "OnlineRequestProcessor";
-    private final @Nullable Executor executor;
+    private final IterableRequestDispatcher requestDispatcher;
 
     OnlineRequestProcessor() {
-        this(null);
+        this(IterableRequestDispatcher.online());
     }
 
-    OnlineRequestProcessor(@Nullable Executor executor) {
-        this.executor = executor;
+    OnlineRequestProcessor(IterableRequestDispatcher requestDispatcher) {
+        this.requestDispatcher = requestDispatcher;
     }
 
     @Override
@@ -48,12 +46,8 @@ class OnlineRequestProcessor implements RequestProcessor {
     }
 
     private void executeRequest(@NonNull IterableApiRequest request, @Nullable IterableRequestRetryState retryState) {
-        request.setExecutionContext(executor, retryState);
-        new IterableRequestTask().executeOnExecutor(getExecutor(), request);
-    }
-
-    private @NonNull Executor getExecutor() {
-        return executor != null ? executor : AsyncTask.THREAD_POOL_EXECUTOR;
+        request.setRetryState(retryState);
+        requestDispatcher.execute(request);
     }
 
     @Override

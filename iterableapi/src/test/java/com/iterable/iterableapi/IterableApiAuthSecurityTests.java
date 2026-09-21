@@ -65,7 +65,7 @@ public class IterableApiAuthSecurityTests extends BaseTest {
     }
 
     private void initIterableWithAuth() {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         authHandler = mock(IterableAuthHandler.class);
         IterableConfig iterableConfig = new IterableConfig.Builder()
                 .setAuthHandler(authHandler)
@@ -75,7 +75,7 @@ public class IterableApiAuthSecurityTests extends BaseTest {
     }
 
     private void initIterableWithoutAuth() {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         IterableConfig iterableConfig = new IterableConfig.Builder()
                 .setAutoPushRegistration(false)
                 .build();
@@ -354,4 +354,3 @@ public class IterableApiAuthSecurityTests extends BaseTest {
         verify(mockEmbeddedManager, never()).syncMessages();
     }
 }
-

@@ -38,7 +38,7 @@ public class IterableApiIntegrationTest extends BaseTest {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManagerMock);
 
         originalPushRegistrationUtil = IterablePushRegistrationTask.Util.instance;
         pushRegistrationUtilMock = mock(IterablePushRegistrationTask.Util.UtilImpl.class);

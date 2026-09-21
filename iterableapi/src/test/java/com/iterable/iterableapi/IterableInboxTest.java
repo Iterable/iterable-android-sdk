@@ -52,7 +52,7 @@ public class IterableInboxTest extends BaseTest {
         customActionHandler = mock(IterableCustomActionHandler.class);
         urlHandler = mock(IterableUrlHandler.class);
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {
@@ -214,7 +214,7 @@ public class IterableInboxTest extends BaseTest {
         IterableInAppDisplayer inAppDisplayerMock = mock(IterableInAppDisplayer.class);
         when(inAppDisplayerMock.showMessage(any(IterableInAppMessage.class), eq(IterableInAppLocation.IN_APP), any(IterableHelper.IterableUrlCallback.class))).thenReturn(true);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(IterableApi.sharedInstance, new IterableDefaultInAppHandler(), 30.0, new IterableInAppMemoryStorage(), IterableActivityMonitor.getInstance(), inAppDisplayerMock));
-        IterableApi.sharedInstance = new IterableApi(inAppManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {

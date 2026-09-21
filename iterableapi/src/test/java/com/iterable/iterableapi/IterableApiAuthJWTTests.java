@@ -154,7 +154,7 @@ public class IterableApiAuthJWTTests extends BaseTest {
     }
 
     private void reInitIterableApi() {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         authHandler = mock(IterableAuthHandler.class);
         IterableTestUtils.createIterableApiNew(builder -> builder.setAuthHandler(authHandler), null);
         IterableConfig iterableConfig = new IterableConfig.Builder().setEnableUnknownUserActivation(true).setAuthHandler(authHandler).build();
