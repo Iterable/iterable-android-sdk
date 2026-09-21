@@ -39,7 +39,7 @@ public class IterablePushActionReceiverTest extends BaseTest {
 
     @Before
     public void setUp() throws Exception {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         IterableTestUtils.createIterableApi();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());

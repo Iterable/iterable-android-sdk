@@ -4,9 +4,6 @@ import static com.iterable.iterableapi.IterableConstants.ENDPOINT_DISABLE_DEVICE
 import static com.iterable.iterableapi.IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION;
 
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,10 +26,10 @@ import java.util.Iterator;
 import java.util.Objects;
 
 /**
- * Async task to handle sending data to the Iterable server
+ * Runnable task to handle sending data to the Iterable server
  * Created by David Truong dt@iterable.com
  */
-class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableApiResponse> {
+class IterableRequestTask implements Runnable {
     static final String TAG = "IterableRequest";
 
     static String overrideUrl;
@@ -45,47 +42,75 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
     static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
     static final String ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED = "JwtUserIdentifiersMismatched";
-    int retryCount = 0;
-    IterableApiRequest iterableApiRequest;
+    private final int retryCount;
+    private final IterableApiRequest iterableApiRequest;
+    private final IterableRequestDispatcher requestDispatcher;
+    private final boolean retry;
 
-    /**
-     * Sends the given request to Iterable using a HttpUserConnection
-     * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
-     *
-     * @param params
-     * @return
-     */
-    protected IterableApiResponse doInBackground(IterableApiRequest... params) {
-        if (params != null && params.length > 0) {
-            iterableApiRequest = params[0];
-        }
-        return executeApiRequest(iterableApiRequest);
+    IterableRequestTask(
+            IterableApiRequest iterableApiRequest,
+            int retryCount,
+            IterableRequestDispatcher requestDispatcher
+    ) {
+        this(iterableApiRequest, retryCount, requestDispatcher, false);
     }
 
-    private static void retryRequestWithNewAuthToken(String newAuthToken, IterableApiRequest iterableApiRequest) {
+    IterableRequestTask(
+            IterableApiRequest iterableApiRequest,
+            int retryCount,
+            IterableRequestDispatcher requestDispatcher,
+            boolean retry
+    ) {
+        this.iterableApiRequest = iterableApiRequest;
+        this.retryCount = retryCount;
+        this.requestDispatcher = requestDispatcher;
+        this.retry = retry;
+    }
+
+    @Override
+    public void run() {
+        if (retry && !iterableApiRequest.canRetry()) {
+            return;
+        }
+
+        IterableApiResponse response = executeApiRequest(iterableApiRequest, requestDispatcher);
+        requestDispatcher.deliverResult(() -> {
+            if (response != null && (!retry || iterableApiRequest.canRetry())) {
+                handleResponse(response);
+            }
+        });
+    }
+
+    static void retryRequestWithNewAuthToken(
+            String newAuthToken,
+            IterableApiRequest iterableApiRequest,
+            IterableRequestDispatcher requestDispatcher
+    ) {
         IterableApiRequest request = new IterableApiRequest(
                 iterableApiRequest.apiKey,
                 iterableApiRequest.resourcePath,
                 iterableApiRequest.json,
                 iterableApiRequest.requestType,
                 newAuthToken,
-                iterableApiRequest.legacyCallback);
-        IterableRequestTask requestTask = new IterableRequestTask();
-        requestTask.execute(request);
+                iterableApiRequest.legacyCallback
+        );
+        request.copyRetryStateFrom(iterableApiRequest);
+        requestDispatcher.executeRetry(request, 0);
     }
 
     @WorkerThread
     static IterableApiResponse executeApiRequest(IterableApiRequest iterableApiRequest) {
-        return executeApiRequest(
-                iterableApiRequest,
-                IterableRequestTask::retryRequestWithNewAuthToken
-        );
+        return executeApiRequest(iterableApiRequest, IterableRequestDispatcher.online());
     }
 
+    /**
+     * Sends the given request to Iterable using a HttpURLConnection.
+     * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
+     */
     @WorkerThread
-    static IterableApiResponse executeApiRequest(
+    private static IterableApiResponse executeApiRequest(
             IterableApiRequest iterableApiRequest,
-            IterableRequestAuthRetryHandler authRetryHandler
+            IterableRequestDispatcher requestDispatcher
     ) {
         IterableApiResponse apiResponse = null;
         String requestResult = null;
@@ -215,7 +240,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                         IterableApi.getInstance().getAuthManager().handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse));
 
-                        handleJwtAuthRetry(iterableApiRequest, authRetryHandler);
+                        handleJwtAuthRetry(iterableApiRequest, requestDispatcher);
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -277,7 +302,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
      */
     private static void handleJwtAuthRetry(
             IterableApiRequest iterableApiRequest,
-            IterableRequestAuthRetryHandler authRetryHandler
+            IterableRequestDispatcher requestDispatcher
     ) {
         boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
         if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
@@ -290,7 +315,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     null
             );
         } else {
-            requestNewAuthTokenAndRetry(iterableApiRequest, authRetryHandler);
+            requestNewAuthTokenAndRetry(iterableApiRequest, requestDispatcher);
         }
     }
 
@@ -377,11 +402,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         return (key.equals(IterableConstants.HEADER_API_KEY)) || key.equals(IterableConstants.HEADER_SDK_AUTHORIZATION);
     }
 
-    private static final Handler handler = new Handler(Looper.getMainLooper());
-
-    @Override
-    protected void onPostExecute(IterableApiResponse response) {
-
+    void handleResponse(IterableApiResponse response) {
         if (shouldRetry(response)) {
             retryRequestWithDelay();
             return;
@@ -394,7 +415,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         if (iterableApiRequest.legacyCallback != null) {
             iterableApiRequest.legacyCallback.execute(response.responseBody);
         }
-        super.onPostExecute(response);
     }
 
     private boolean shouldRetry(IterableApiResponse response) {
@@ -402,17 +422,8 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     }
 
     private void retryRequestWithDelay() {
-        final IterableRequestTask requestTask = new IterableRequestTask();
-        requestTask.setRetryCount(retryCount + 1);
-
         long delay = (retryCount > 2) ? RETRY_DELAY_MS * retryCount : 0;
-
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                requestTask.execute(iterableApiRequest);
-            }
-        }, delay);
+        requestDispatcher.retry(iterableApiRequest, retryCount + 1, delay);
     }
 
     private void handleSuccessResponse(IterableApiResponse response) {
@@ -441,7 +452,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     private static void requestNewAuthTokenAndRetry(
             IterableApiRequest iterableApiRequest,
-            IterableRequestAuthRetryHandler authRetryHandler
+            IterableRequestDispatcher requestDispatcher
     ) {
         IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
@@ -451,9 +462,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 data -> {
                     try {
                         String newAuthToken = data.getString("newAuthToken");
-                        authRetryHandler.retryWithNewAuthToken(
+                        retryRequestWithNewAuthToken(
                                 newAuthToken,
-                                iterableApiRequest
+                                iterableApiRequest,
+                                requestDispatcher
                         );
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -461,14 +473,6 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 }
         );
     }
-
-    protected void setRetryCount(int count) {
-        retryCount = count;
-    }
-}
-
-interface IterableRequestAuthRetryHandler {
-    void retryWithNewAuthToken(String newAuthToken, IterableApiRequest request);
 }
 
 /**
@@ -486,6 +490,7 @@ class IterableApiRequest {
     final JSONObject json;
     final String requestType;
     final String authToken;
+    private @Nullable IterableRequestRetryState retryState;
 
     private ProcessorType processorType = ProcessorType.ONLINE;
     IterableHelper.IterableActionHandler legacyCallback;
@@ -515,6 +520,18 @@ class IterableApiRequest {
 
     void setProcessorType(ProcessorType processorType) {
         this.processorType = processorType;
+    }
+
+    void setRetryState(@Nullable IterableRequestRetryState retryState) {
+        this.retryState = retryState;
+    }
+
+    void copyRetryStateFrom(@NonNull IterableApiRequest request) {
+        setRetryState(request.retryState);
+    }
+
+    boolean canRetry() {
+        return retryState == null || retryState.canRetry();
     }
 
     IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {

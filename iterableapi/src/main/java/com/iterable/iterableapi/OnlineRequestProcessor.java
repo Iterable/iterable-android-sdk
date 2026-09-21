@@ -1,7 +1,6 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
-import android.os.AsyncTask;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,23 +13,41 @@ import java.util.Date;
 class OnlineRequestProcessor implements RequestProcessor {
 
     private static final String TAG = "OnlineRequestProcessor";
+    private final IterableRequestDispatcher requestDispatcher;
+
+    OnlineRequestProcessor() {
+        this(IterableRequestDispatcher.online());
+    }
+
+    OnlineRequestProcessor(IterableRequestDispatcher requestDispatcher) {
+        this.requestDispatcher = requestDispatcher;
+    }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onCallback);
-        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
+        executeRequest(request, null);
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onSuccess, onFailure);
-        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
+        executeRequest(request, null);
     }
 
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        processPostRequest(apiKey, resourcePath, json, authToken, onSuccess, onFailure, null);
+    }
+
+    void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure, @Nullable IterableRequestRetryState retryState) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
+        executeRequest(request, retryState);
+    }
+
+    private void executeRequest(@NonNull IterableApiRequest request, @Nullable IterableRequestRetryState retryState) {
+        request.setRetryState(retryState);
+        requestDispatcher.execute(request);
     }
 
     @Override
@@ -47,7 +64,7 @@ class OnlineRequestProcessor implements RequestProcessor {
                 createdAt = new Date().getTime() / 1000;
             }
             jsonObject.put(IterableConstants.KEY_CREATED_AT, createdAt);
-        } catch (JSONException e) {
+        } catch (JSONException | NumberFormatException e) {
             IterableLogger.e(TAG, "Could not add createdAt timestamp to json object");
         }
         return jsonObject;

@@ -101,7 +101,7 @@ public class IterableApiCustomEventTests extends BaseTest {
 
 
     private void reInitIterableApi() {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
     }
 
     @After

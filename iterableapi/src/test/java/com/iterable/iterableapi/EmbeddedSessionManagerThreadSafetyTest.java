@@ -24,7 +24,7 @@ public class EmbeddedSessionManagerThreadSafetyTest extends BaseTest {
 
     @Before
     public void setUp() {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         sessionManager = new EmbeddedSessionManager();
     }
 

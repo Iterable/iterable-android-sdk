@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -23,12 +24,17 @@ public abstract class BaseTest {
     @Rule
     public AsyncTaskRule asyncTaskRule = new AsyncTaskRule();
 
+    @Before
+    public void baseTestSetUp() {
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
+    }
+
     @After
     public void baseTestTearDown() {
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterablePushNotificationUtil.clearPendingAction();
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
     }
 
     protected IterableUtilImpl getIterableUtilSpy() {

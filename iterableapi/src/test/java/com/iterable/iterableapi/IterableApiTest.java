@@ -83,7 +83,7 @@ public class IterableApiTest extends BaseTest {
         IterablePushRegistration pushRegistration =
                 new IterablePushRegistration(pushRegistrationExecutor);
 
-        IterableApi.sharedInstance = new IterableApi(
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(
                 inAppManagerMock, embeddedManagerMock, pushRegistration);
 
         originalApiClient = IterableApi.sharedInstance.apiClient;

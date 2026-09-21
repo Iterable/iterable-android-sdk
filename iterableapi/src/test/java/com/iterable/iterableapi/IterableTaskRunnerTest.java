@@ -182,7 +182,7 @@ public class IterableTaskRunnerTest extends BaseTest {
     }
 
     private IterableAuthHandler initApiWithAutoRetry(boolean autoRetryEnabled) {
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         final IterableAuthHandler mockAuthHandler = mock(IterableAuthHandler.class);
         doReturn(null).when(mockAuthHandler).onAuthTokenRequested();
 

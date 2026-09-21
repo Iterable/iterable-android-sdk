@@ -363,7 +363,7 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
     public void hostRealDestroy_shouldCallProcessMessageRemoval_beforeDismiss() {
         IterableInAppManager mockManager = Mockito.mock(IterableInAppManager.class);
         IterableApi originalApi = IterableApi.sharedInstance;
-        IterableApi.sharedInstance = new IterableApi(mockManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(mockManager);
 
         IterableInAppMessage message = mockMessage("destroy-msg");
         Mockito.when(message.isMarkedForDeletion()).thenReturn(true);
@@ -397,7 +397,7 @@ public class IterableInAppDialogNotificationTest extends BaseTest {
     public void hostConfigChangeDestroy_shouldNotConsumeMessage_butStillDismiss() {
         IterableInAppManager mockManager = Mockito.mock(IterableInAppManager.class);
         IterableApi originalApi = IterableApi.sharedInstance;
-        IterableApi.sharedInstance = new IterableApi(mockManager);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(mockManager);
 
         IterableInAppMessage message = mockMessage("rotation-msg");
         Mockito.when(message.isMarkedForDeletion()).thenReturn(true);
