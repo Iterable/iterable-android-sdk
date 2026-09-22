@@ -39,10 +39,6 @@ class IterablePushNotificationUtil {
         return IterableActionRunner.dispatchAction(context, action.iterableAction, IterableActionSource.PUSH);
     }
 
-    static boolean executeAction(Context context, PendingAction action) {
-        return dispatchPendingAction(context, action) == IterableActionRunner.ActionDispatchResult.HANDLED;
-    }
-
     static void handlePushAction(Context context, Intent intent) {
         if (intent.getExtras() == null) {
             IterableLogger.e(TAG, "handlePushAction: extras == null, can't handle push action");
