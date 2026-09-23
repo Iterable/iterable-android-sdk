@@ -47,6 +47,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.junit.Assert.assertNotNull;
@@ -708,31 +709,32 @@ public class IterableInAppManagerTest extends BaseTest {
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
 
-        // Create InAppManager with mock handler
         final IterableInAppHandler inAppHandler = mock(IterableInAppHandler.class);
+        when(inAppHandler.onNewInApp(any()))
+                .thenReturn(IterableInAppHandler.InAppResponse.SHOW);
+        IterableActivityMonitor activityMonitor = mock(IterableActivityMonitor.class);
+        when(activityMonitor.isInForeground()).thenReturn(false);
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,
                 inAppHandler,
-                30.0,
+                0.0,
                 new IterableInAppMemoryStorage(),
-                IterableActivityMonitor.getInstance(),
+                activityMonitor,
                 mock(IterableInAppDisplayer.class)));
         IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
 
-        // Flush constructor sync callback so messages are loaded
+        // Complete the constructor sync while the app is in the background.
         shadowOf(getMainLooper()).idle();
+        assertEquals(2, inAppManager.getMessages().size());
 
-        // Process messages by bringing app to foreground
-        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
-        shadowOf(getMainLooper()).idle();
-
-        // Verify immediate trigger message was processed
+        // The production processing pass handles only the immediate message.
+        when(activityMonitor.isInForeground()).thenReturn(true);
+        inAppManager.scheduleProcessing();
         ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(messageCaptor.capture());
         assertEquals("immediate", messageCaptor.getValue().getCustomPayload().getString("key"));
         assertEquals("message1", messageCaptor.getValue().getMessageId());
 
-        // Verify never trigger message was not processed
         verify(inAppHandler, never()).onNewInApp(argThat(msg ->
             msg.getMessageId().equals("message2")));
     }
@@ -860,39 +862,38 @@ public class IterableInAppManagerTest extends BaseTest {
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
 
-        // Create InAppManager with mock handler and displayer
         IterableInAppDisplayer mockDisplayer = mock(IterableInAppDisplayer.class);
         final IterableInAppHandler inAppHandler = mock(IterableInAppHandler.class);
+        when(inAppHandler.onNewInApp(any()))
+                .thenReturn(IterableInAppHandler.InAppResponse.SHOW);
+        IterableActivityMonitor activityMonitor = mock(IterableActivityMonitor.class);
+        when(activityMonitor.isInForeground()).thenReturn(false);
 
         IterableInAppManager inAppManager = spy(new IterableInAppManager(
                 IterableApi.sharedInstance,
                 inAppHandler,
-                30.0,
+                0.0,
                 new IterableInAppMemoryStorage(),
-                IterableActivityMonitor.getInstance(),
+                activityMonitor,
                 mockDisplayer));
         IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManager);
 
-        // First sync to get messages
-        inAppManager.syncInApp();
+        // Complete the constructor sync before processing the loaded message.
         shadowOf(getMainLooper()).idle();
+        assertEquals(1, inAppManager.getMessages().size());
 
-        // Process messages by bringing app to foreground
-        Robolectric.buildActivity(Activity.class).create().start().resume();
-        shadowOf(getMainLooper()).idle();
+        when(activityMonitor.isInForeground()).thenReturn(true);
+        inAppManager.scheduleProcessing();
 
-        // Verify handler was called with correct message
         ArgumentCaptor<IterableInAppMessage> messageCaptor = ArgumentCaptor.forClass(IterableInAppMessage.class);
         verify(inAppHandler).onNewInApp(messageCaptor.capture());
         assertEquals("value", messageCaptor.getValue().getCustomPayload().getString("key"));
 
-        // Verify displayer was never called
         verify(mockDisplayer, never()).showMessage(
             any(IterableInAppMessage.class),
             any(IterableInAppLocation.class),
             any(IterableHelper.IterableUrlCallback.class));
 
-        // Verify message was consumed (not in queue)
         assertEquals(0, inAppManager.getMessages().size());
     }
 
@@ -936,21 +937,24 @@ public class IterableInAppManagerTest extends BaseTest {
 
         dispatcher.enqueueResponse("/inApp/getMessages", new MockResponse().setBody(payload.toString()));
 
-        // Create InAppManager with spied IterableApi
         IterableApi spyApi = spy(IterableApi.sharedInstance);
+        IterableActivityMonitor activityMonitor = mock(IterableActivityMonitor.class);
+        when(activityMonitor.isInForeground()).thenReturn(false);
         IterableInAppManager inAppManager = new IterableInAppManager(
                 spyApi,
                 new IterableDefaultInAppHandler(),
-                30.0,
+                0.0,
                 new IterableInAppMemoryStorage(),
-                IterableActivityMonitor.getInstance(),
+                activityMonitor,
                 mock(IterableInAppDisplayer.class));
 
-        // Process messages by bringing app to foreground
-        Robolectric.buildActivity(Activity.class).create().start().resume();
+        // Complete the constructor sync before processing the loaded message.
         shadowOf(getMainLooper()).idle();
+        assertEquals(1, inAppManager.getMessages().size());
 
-        // Verify inAppConsume was called with the correct parameters
+        when(activityMonitor.isInForeground()).thenReturn(true);
+        inAppManager.scheduleProcessing();
+
         verify(spyApi).inAppConsume(
             argThat(message -> message.getMessageId().equals("message1")),
             eq(null),

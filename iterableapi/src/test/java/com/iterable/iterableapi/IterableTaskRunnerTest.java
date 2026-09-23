@@ -12,6 +12,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -43,6 +46,7 @@ public class IterableTaskRunnerTest extends BaseTest {
     private IterableActivityMonitor mockActivityMonitor;
     private HealthMonitor mockHealthMonitor;
     private IterableNetworkConnectivityManager mockNetworkConnectivityManager;
+    private IterableRequestDispatcher requestDispatcher;
     private MockWebServer server;
 
     @Before
@@ -51,7 +55,19 @@ public class IterableTaskRunnerTest extends BaseTest {
         mockActivityMonitor = mock(IterableActivityMonitor.class);
         mockNetworkConnectivityManager = mock(IterableNetworkConnectivityManager.class);
         mockHealthMonitor = mock(HealthMonitor.class);
-        taskRunner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor);
+        requestDispatcher = new IterableRequestDispatcher(
+                Runnable::run,
+                Runnable::run,
+                (runnable, delayMs) -> runnable.run()
+        );
+        taskRunner = new IterableTaskRunner(
+                mockTaskStorage,
+                mockActivityMonitor,
+                mockNetworkConnectivityManager,
+                mockHealthMonitor,
+                new ApiEndpointClassification(),
+                requestDispatcher
+        );
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
     }
@@ -170,6 +186,71 @@ public class IterableTaskRunnerTest extends BaseTest {
 
         shadowOf(getMainLooper()).idle();
         verify(mockNetworkConnectivityManager, times(2)).isConnected();
+    }
+
+    @Test
+    public void testStoredAndImmediateRequestsUseTheSameQueueInSubmissionOrder()
+            throws Exception {
+        RecordingExecutor requestExecutor = new RecordingExecutor();
+        IterableRequestDispatcher sharedDispatcher = new IterableRequestDispatcher(
+                requestExecutor,
+                runnable -> { },
+                (runnable, delayMs) -> requestExecutor.execute(runnable)
+        );
+        IterableTaskRunner runner = new IterableTaskRunner(
+                mockTaskStorage,
+                mockActivityMonitor,
+                mockNetworkConnectivityManager,
+                mockHealthMonitor,
+                new ApiEndpointClassification(),
+                sharedDispatcher
+        );
+        IterableApiRequest storedRequest = new IterableApiRequest(
+                "apiKey",
+                "api/stored",
+                new JSONObject(),
+                IterableApiRequest.POST,
+                null,
+                null,
+                null
+        );
+        IterableTask storedTask = new IterableTask(
+                "storedTask",
+                IterableTaskType.API,
+                storedRequest.toJSONObject().toString()
+        );
+        when(mockTaskStorage.getNextScheduledTask()).thenReturn(storedTask).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        sharedDispatcher.execute(new IterableApiRequest(
+                "apiKey",
+                "api/immediate",
+                new JSONObject(),
+                IterableApiRequest.POST,
+                null,
+                null,
+                null
+        ));
+        runner.onTaskCreated(null);
+        runHandlerTasks(runner);
+
+        assertEquals(2, requestExecutor.pendingTaskCount());
+        requestExecutor.runAll();
+
+        RecordedRequest immediateRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(immediateRequest);
+        assertEquals("/api/immediate", immediateRequest.getPath());
+
+        RecordedRequest persistedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(persistedRequest);
+        assertEquals("/api/stored", persistedRequest.getPath());
+
+        runHandlerTasks(runner);
+        verify(mockTaskStorage).deleteTask(storedTask.id);
     }
 
     // region Auto-Retry on JWT Failure Tests
@@ -510,7 +591,14 @@ public class IterableTaskRunnerTest extends BaseTest {
     @Test
     public void testUnauthenticatedTaskExecutesDuringAuthPause() throws Exception {
         ApiEndpointClassification classification = new ApiEndpointClassification();
-        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+        IterableTaskRunner runner = new IterableTaskRunner(
+                mockTaskStorage,
+                mockActivityMonitor,
+                mockNetworkConnectivityManager,
+                mockHealthMonitor,
+                classification,
+                requestDispatcher
+        );
 
         IterableApiRequest request = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_DISABLE_DEVICE, new JSONObject(), "POST", null, null, null);
         IterableTask unauthTask = new IterableTask(IterableConstants.ENDPOINT_DISABLE_DEVICE, IterableTaskType.API, request.toJSONObject().toString());
@@ -535,7 +623,14 @@ public class IterableTaskRunnerTest extends BaseTest {
     @Test
     public void testAuthRequiredTaskStaysBlockedDuringAuthPause() throws Exception {
         ApiEndpointClassification classification = new ApiEndpointClassification();
-        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+        IterableTaskRunner runner = new IterableTaskRunner(
+                mockTaskStorage,
+                mockActivityMonitor,
+                mockNetworkConnectivityManager,
+                mockHealthMonitor,
+                classification,
+                requestDispatcher
+        );
 
         when(mockTaskStorage.getNextScheduledTaskNotRequiringJwt(classification)).thenReturn(null);
         when(mockActivityMonitor.isInForeground()).thenReturn(true);
@@ -554,7 +649,14 @@ public class IterableTaskRunnerTest extends BaseTest {
     @Test
     public void testQueueIntegrityAfterAuthPausedProcessing() throws Exception {
         ApiEndpointClassification classification = new ApiEndpointClassification();
-        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+        IterableTaskRunner runner = new IterableTaskRunner(
+                mockTaskStorage,
+                mockActivityMonitor,
+                mockNetworkConnectivityManager,
+                mockHealthMonitor,
+                classification,
+                requestDispatcher
+        );
 
         IterableApiRequest trackRequestA = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject("{\"eventName\":\"A\"}"), "POST", null, null, null);
         IterableTask trackTaskA = new IterableTask(IterableConstants.ENDPOINT_TRACK, IterableTaskType.API, trackRequestA.toJSONObject().toString());
@@ -595,7 +697,14 @@ public class IterableTaskRunnerTest extends BaseTest {
     @Test
     public void testAuthRequiredTasksResumeAfterAuthReady() throws Exception {
         ApiEndpointClassification classification = new ApiEndpointClassification();
-        IterableTaskRunner runner = new IterableTaskRunner(mockTaskStorage, mockActivityMonitor, mockNetworkConnectivityManager, mockHealthMonitor, classification);
+        IterableTaskRunner runner = new IterableTaskRunner(
+                mockTaskStorage,
+                mockActivityMonitor,
+                mockNetworkConnectivityManager,
+                mockHealthMonitor,
+                classification,
+                requestDispatcher
+        );
 
         IterableApiRequest trackRequest = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject(), "POST", null, null, null);
         IterableTask trackTask = new IterableTask(IterableConstants.ENDPOINT_TRACK, IterableTaskType.API, trackRequest.toJSONObject().toString());
@@ -630,5 +739,24 @@ public class IterableTaskRunnerTest extends BaseTest {
 
     private void runHandlerTasks(IterableTaskRunner taskRunner) throws InterruptedException {
         shadowOf(taskRunner.handler.getLooper()).idle();
+    }
+
+    private static class RecordingExecutor implements Executor {
+        private final List<Runnable> tasks = new ArrayList<>();
+
+        @Override
+        public void execute(Runnable command) {
+            tasks.add(command);
+        }
+
+        int pendingTaskCount() {
+            return tasks.size();
+        }
+
+        void runAll() {
+            while (!tasks.isEmpty()) {
+                tasks.remove(0).run();
+            }
+        }
     }
 }

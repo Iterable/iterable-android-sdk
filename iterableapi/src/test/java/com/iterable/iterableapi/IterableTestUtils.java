@@ -65,6 +65,7 @@ public class IterableTestUtils {
     /**
      * Creates an API whose request work runs inline while callbacks and retries
      * still use the main looper, matching the production delivery contract.
+     * Tests asserting callback-driven follow-up work must idle the main looper.
      */
     static IterableApi newApiWithInlineRequests() {
         IterableApi api = new IterableApi();

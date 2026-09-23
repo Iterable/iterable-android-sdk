@@ -15,10 +15,6 @@ class OnlineRequestProcessor implements RequestProcessor {
     private static final String TAG = "OnlineRequestProcessor";
     private final IterableRequestDispatcher requestDispatcher;
 
-    OnlineRequestProcessor() {
-        this(IterableRequestDispatcher.online());
-    }
-
     OnlineRequestProcessor(IterableRequestDispatcher requestDispatcher) {
         this.requestDispatcher = requestDispatcher;
     }

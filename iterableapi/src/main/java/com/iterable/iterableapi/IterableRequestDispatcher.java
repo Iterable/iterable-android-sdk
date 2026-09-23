@@ -10,6 +10,10 @@ final class IterableRequestDispatcher {
         void schedule(Runnable runnable, long delayMs);
     }
 
+    interface ResponseHandler {
+        void onResponse(IterableApiResponse response);
+    }
+
     private static final RetryScheduler SDK_RETRY_SCHEDULER =
             (runnable, delayMs) ->
                     new Handler(Looper.getMainLooper()).postDelayed(runnable, delayMs);
@@ -48,6 +52,12 @@ final class IterableRequestDispatcher {
 
     void execute(IterableApiRequest request) {
         requestExecutor.execute(new IterableRequestTask(request, 0, this));
+    }
+
+    void executeForResponse(IterableApiRequest request, ResponseHandler responseHandler) {
+        requestExecutor.execute(() -> responseHandler.onResponse(
+                IterableRequestTask.executeApiRequest(request, this)
+        ));
     }
 
     void executeRetry(IterableApiRequest request, int retryCount) {

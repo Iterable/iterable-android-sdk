@@ -98,17 +98,12 @@ class IterableRequestTask implements Runnable {
         requestDispatcher.executeRetry(request, 0);
     }
 
-    @WorkerThread
-    static IterableApiResponse executeApiRequest(IterableApiRequest iterableApiRequest) {
-        return executeApiRequest(iterableApiRequest, IterableRequestDispatcher.online());
-    }
-
     /**
      * Sends the given request to Iterable using a HttpURLConnection.
      * Reference - http://developer.android.com/reference/java/net/HttpURLConnection.html
      */
     @WorkerThread
-    private static IterableApiResponse executeApiRequest(
+    static IterableApiResponse executeApiRequest(
             IterableApiRequest iterableApiRequest,
             IterableRequestDispatcher requestDispatcher
     ) {

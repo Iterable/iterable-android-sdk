@@ -21,6 +21,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     private IterableNetworkConnectivityManager networkConnectivityManager;
     private HealthMonitor healthMonitor;
     private ApiEndpointClassification classification;
+    private final IterableRequestDispatcher requestDispatcher;
 
     private static final int RETRY_INTERVAL_SECONDS = 60;
 
@@ -28,6 +29,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     private final HandlerThread networkThread = new HandlerThread("NetworkThread");
     Handler handler;
+    private boolean requestInFlight;
 
     enum TaskResult {
         SUCCESS, FAILURE, RETRY
@@ -47,25 +49,19 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                        IterableActivityMonitor activityMonitor,
                        IterableNetworkConnectivityManager networkConnectivityManager,
                        HealthMonitor healthMonitor,
-                       ApiEndpointClassification classification) {
+                       ApiEndpointClassification classification,
+                       IterableRequestDispatcher requestDispatcher) {
         this.taskStorage = taskStorage;
         this.activityMonitor = activityMonitor;
         this.networkConnectivityManager = networkConnectivityManager;
         this.healthMonitor = healthMonitor;
         this.classification = classification;
+        this.requestDispatcher = requestDispatcher;
         networkThread.start();
         handler = new Handler(networkThread.getLooper(), this);
         taskStorage.addTaskCreatedListener(this);
         networkConnectivityManager.addNetworkListener(this);
         activityMonitor.addCallback(this);
-    }
-
-    // Preserved for backward compatibility with existing tests
-    IterableTaskRunner(IterableTaskStorage taskStorage,
-                       IterableActivityMonitor activityMonitor,
-                       IterableNetworkConnectivityManager networkConnectivityManager,
-                       HealthMonitor healthMonitor) {
-        this(taskStorage, activityMonitor, networkConnectivityManager, healthMonitor, new ApiEndpointClassification());
     }
 
     void addTaskCompletedListener(TaskCompletedListener listener) {
@@ -129,6 +125,10 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     @WorkerThread
     private void processTasks() {
+        if (requestInFlight) {
+            return;
+        }
+
         if (!activityMonitor.isInForeground()) {
             IterableLogger.d(TAG, "App not in foreground, skipping processing tasks");
             return;
@@ -140,22 +140,13 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
         boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
 
-        while (networkConnectivityManager.isConnected()) {
-            IterableTask task = getNextActionableTask(autoRetry);
+        if (!networkConnectivityManager.isConnected()) {
+            return;
+        }
 
-            if (task == null) {
-                return;
-            }
-
-            boolean proceed = processTask(task, autoRetry);
-            if (!proceed) {
-                // Only schedule timed retry for non-auth failures.
-                // Auth failures will resume via onAuthTokenReady() callback.
-                if (!autoRetry || !isPausedForAuth) {
-                    scheduleRetry();
-                }
-                return;
-            }
+        IterableTask task = getNextActionableTask(autoRetry);
+        if (task != null) {
+            processTask(task, autoRetry);
         }
     }
 
@@ -173,53 +164,69 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     }
 
     @WorkerThread
-    private boolean processTask(@NonNull IterableTask task, boolean autoRetry) {
-        if (task.taskType == IterableTaskType.API) {
-            IterableApiResponse response = null;
-            TaskResult result = TaskResult.FAILURE;
-            try {
-                // Use the current live auth token instead of the stale one stored in the DB.
-                // The token in the DB was captured at queue time and may have since expired.
-                String currentAuthToken = IterableApi.getInstance().getAuthToken();
-                IterableApiRequest request = IterableApiRequest.fromJSON(getTaskDataWithDate(task), currentAuthToken, null, null);
-                request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
-                response = IterableRequestTask.executeApiRequest(request);
-            } catch (Exception e) {
-                IterableLogger.e(TAG, "Error while processing request task", e);
-                healthMonitor.onDBError();
-            }
+    private void processTask(@NonNull IterableTask task, boolean autoRetry) {
+        if (task.taskType != IterableTaskType.API) {
+            return;
+        }
 
-            if (response != null) {
-                if (response.success) {
-                    result = TaskResult.SUCCESS;
-                } else {
-                    // If autoRetry is enabled and response is a 401 JWT error,
-                    // retain the task and pause processing until a valid JWT is obtained.
-                    if (autoRetry && isJwtFailure(response)) {
-                        IterableLogger.d(TAG, "JWT auth failure on task " + task.id + ". Retaining task and pausing processing.");
-                        IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
-                        isPausedForAuth = true;
-                        callTaskCompletedListeners(task.id, TaskResult.RETRY, response);
-                        return false;
-                    }
+        try {
+            // Use the current live auth token instead of the stale one stored in the DB.
+            // The token in the DB was captured at queue time and may have since expired.
+            String currentAuthToken = IterableApi.getInstance().getAuthToken();
+            IterableApiRequest request = IterableApiRequest.fromJSON(
+                    getTaskDataWithDate(task),
+                    currentAuthToken,
+                    null,
+                    null
+            );
+            request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
+            requestInFlight = true;
+            requestDispatcher.executeForResponse(
+                    request,
+                    response -> handler.post(() ->
+                            handleTaskResponse(task, autoRetry, response))
+            );
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Error while processing request task", e);
+            healthMonitor.onDBError();
+            handleTaskResponse(task, autoRetry, null);
+        }
+    }
 
-                    if (isPermanentFailure(response)) {
-                        result = TaskResult.FAILURE;
-                    } else {
-                        result = TaskResult.RETRY;
-                    }
-                }
-            }
-            callTaskCompletedListeners(task.id, result, response);
-            if (result == TaskResult.RETRY) {
-                // Keep the task, stop further processing
-                return false;
-            } else {
-                taskStorage.deleteTask(task.id);
-                return true;
+    @WorkerThread
+    private void handleTaskResponse(
+            @NonNull IterableTask task,
+            boolean autoRetry,
+            IterableApiResponse response
+    ) {
+        requestInFlight = false;
+        TaskResult result = TaskResult.FAILURE;
+
+        if (response != null) {
+            if (response.success) {
+                result = TaskResult.SUCCESS;
+            } else if (autoRetry && isJwtFailure(response)) {
+                IterableLogger.d(
+                        TAG,
+                        "JWT auth failure on task " + task.id
+                                + ". Retaining task and pausing processing."
+                );
+                IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
+                isPausedForAuth = true;
+                callTaskCompletedListeners(task.id, TaskResult.RETRY, response);
+                return;
+            } else if (!isPermanentFailure(response)) {
+                result = TaskResult.RETRY;
             }
         }
-        return false;
+
+        callTaskCompletedListeners(task.id, result, response);
+        if (result == TaskResult.RETRY) {
+            scheduleRetry();
+        } else {
+            taskStorage.deleteTask(task.id);
+            runNow();
+        }
     }
 
     JSONObject getTaskDataWithDate(IterableTask task) {
