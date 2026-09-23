@@ -1,21 +1,23 @@
 package com.iterable.iterableapi;
 
 import android.content.Context;
-import android.os.AsyncTask;
 
 /**
  * Created by David Truong dt@iterable.com
  */
-class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationData, Void, Void> {
+class IterablePushRegistrationTask implements Runnable {
     static final String TAG = "IterablePushRegistration";
-    IterablePushRegistrationData iterablePushRegistrationData;
+    final IterablePushRegistrationData iterablePushRegistrationData;
+
+    IterablePushRegistrationTask(IterablePushRegistrationData iterablePushRegistrationData) {
+        this.iterablePushRegistrationData = iterablePushRegistrationData;
+    }
 
     /**
      * Registers or disables the device
-     * @param params Push registration request data
      */
-    protected Void doInBackground(IterablePushRegistrationData... params) {
-        iterablePushRegistrationData = params[0];
+    @Override
+    public void run() {
         if (iterablePushRegistrationData.pushIntegrationName != null) {
             PushRegistrationObject pushRegistrationObject = getDeviceToken();
             if (pushRegistrationObject != null) {
@@ -26,7 +28,8 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
                             iterablePushRegistrationData.authToken,
                             iterablePushRegistrationData.pushIntegrationName,
                             pushRegistrationObject.token,
-                            IterableApi.getInstance().getDeviceAttributes());
+                            IterableApi.getInstance().getDeviceAttributes(),
+                            Runnable::run);
 
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                     IterableApi.sharedInstance.disableToken(
@@ -42,7 +45,6 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
         } else {
             IterableLogger.e("IterablePush", "iterablePushRegistrationData has not been specified");
         }
-        return null;
     }
 
     /**
@@ -108,5 +110,3 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
         }
     }
 }
-
-

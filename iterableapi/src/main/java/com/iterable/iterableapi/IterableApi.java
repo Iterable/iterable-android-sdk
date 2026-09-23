@@ -8,7 +8,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationManagerCompat;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 import org.json.JSONException;
@@ -18,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 /**
  * Created by David Truong dt@iterable.com
@@ -56,6 +56,7 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
     private IterableKeychain keychain;
+    private final IterablePushRegistration pushRegistration;
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
@@ -694,22 +695,26 @@ public class IterableApi {
     }
 
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes) {
-        if (deviceToken != null) {
-            if (!checkSDKInitialization() && _userIdUnknown == null) {
-                if (sharedInstance.config.enableUnknownUserActivation) {
-                    unknownUserManager.trackUnknownTokenRegistration(deviceToken);
-                }
-                return;
-            }
-            final Thread registrationThread = new Thread(new Runnable() {
-                public void run() {
-                    registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes);
-                }
-            });
-            registrationThread.start();
-        }
+        registerDeviceToken(email, userId, authToken, applicationName, deviceToken, deviceAttributes, runnable -> new Thread(runnable).start());
     }
 
+    void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes, Executor executor) {
+        if (shouldSubmitDeviceTokenRegistration(deviceToken)) {
+            executor.execute(() -> registerDeviceToken(email, userId, authToken, applicationName, deviceToken, null, deviceAttributes));
+        }
+    }
+    private boolean shouldSubmitDeviceTokenRegistration(@Nullable String deviceToken) {
+        if (deviceToken == null) {
+            return false;
+        }
+        if (!checkSDKInitialization() && _userIdUnknown == null) {
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownTokenRegistration(deviceToken);
+            }
+            return false;
+        }
+        return true;
+    }
     protected void disableToken(@Nullable String email, @Nullable String userId, @NonNull String token) {
         disableToken(email, userId, null, token, null, null);
     }
@@ -970,26 +975,22 @@ public class IterableApi {
 
     IterableApi() {
         config = new IterableConfig.Builder().build();
+        pushRegistration = new IterablePushRegistration();
     }
-
-    @VisibleForTesting
     IterableApi(IterableInAppManager inAppManager) {
-        config = new IterableConfig.Builder().build();
+        this();
         this.inAppManager = inAppManager;
     }
-
-    @VisibleForTesting
-    IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager) {
+    IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
+        this(inAppManager);
+        this.apiClient = apiClient;
+    }
+    IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager,
+                IterablePushRegistration pushRegistration) {
         config = new IterableConfig.Builder().build();
         this.inAppManager = inAppManager;
         this.embeddedManager = embeddedManager;
-    }
-
-    @VisibleForTesting
-    IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
-        config = new IterableConfig.Builder().build();
-        this.apiClient = apiClient;
-        this.inAppManager = inAppManager;
+        this.pushRegistration = Objects.requireNonNull(pushRegistration);
     }
 
 //endregion
@@ -1673,7 +1674,7 @@ public class IterableApi {
     public void registerForPush() {
         if (checkSDKInitialization()) {
             IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.ENABLE);
-            IterablePushRegistration.executePushRegistrationTask(data);
+            pushRegistration.executePushRegistrationTask(data);
         }
     }
 
@@ -1683,7 +1684,7 @@ public class IterableApi {
     public void disablePush() {
         if (checkSDKInitialization()) {
             IterablePushRegistrationData data = new IterablePushRegistrationData(_email, _userId, _authToken, getPushIntegrationName(), IterablePushRegistrationData.PushRegistrationAction.DISABLE);
-            IterablePushRegistration.executePushRegistrationTask(data);
+            pushRegistration.executePushRegistrationTask(data);
         }
     }
 
