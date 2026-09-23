@@ -16,31 +16,43 @@ class IterablePushRegistrationTask extends AsyncTask<IterablePushRegistrationDat
      */
     protected Void doInBackground(IterablePushRegistrationData... params) {
         iterablePushRegistrationData = params[0];
-        if (iterablePushRegistrationData.pushIntegrationName != null) {
-            PushRegistrationObject pushRegistrationObject = getDeviceToken();
-            if (pushRegistrationObject != null) {
-                if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
-                    IterableApi.sharedInstance.registerDeviceToken(
-                            iterablePushRegistrationData.email,
-                            iterablePushRegistrationData.userId,
-                            iterablePushRegistrationData.authToken,
-                            iterablePushRegistrationData.pushIntegrationName,
-                            pushRegistrationObject.token,
-                            IterableApi.getInstance().getDeviceAttributes());
+        boolean dispatched = false;
+        try {
+            if (iterablePushRegistrationData.pushIntegrationName != null) {
+                PushRegistrationObject pushRegistrationObject = getDeviceToken();
+                if (pushRegistrationObject != null && pushRegistrationObject.token != null) {
+                    dispatched = true;
+                    if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.ENABLE) {
+                        IterableApi.sharedInstance.registerDeviceToken(
+                                iterablePushRegistrationData.email,
+                                iterablePushRegistrationData.userId,
+                                iterablePushRegistrationData.authToken,
+                                iterablePushRegistrationData.pushIntegrationName,
+                                pushRegistrationObject.token,
+                                IterableApi.getInstance().getDeviceAttributes());
 
-                } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
-                    IterableApi.sharedInstance.disableToken(
-                            iterablePushRegistrationData.email,
-                            iterablePushRegistrationData.userId,
-                            iterablePushRegistrationData.authToken,
-                            pushRegistrationObject.token,
-                            null,
-                            null
-                    );
+                    } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
+                        IterableApi.sharedInstance.disableToken(
+                                iterablePushRegistrationData.email,
+                                iterablePushRegistrationData.userId,
+                                iterablePushRegistrationData.authToken,
+                                iterablePushRegistrationData.apiKey,
+                                iterablePushRegistrationData.baseUrl,
+                                pushRegistrationObject.token,
+                                null,
+                                iterablePushRegistrationData.onFailure
+                        );
+                    }
                 }
+            } else {
+                IterableLogger.e("IterablePush", "iterablePushRegistrationData has not been specified");
             }
-        } else {
-            IterableLogger.e("IterablePush", "iterablePushRegistrationData has not been specified");
+        } finally {
+            // Signalled on every path, including a missing token or integration name, so a caller
+            // waiting on the hand-off (IterableProjectSwitcher) is never left waiting for nothing.
+            if (iterablePushRegistrationData.dispatchListener != null) {
+                iterablePushRegistrationData.dispatchListener.onDispatched(dispatched);
+            }
         }
         return null;
     }
