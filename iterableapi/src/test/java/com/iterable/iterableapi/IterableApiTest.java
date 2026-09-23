@@ -83,7 +83,7 @@ public class IterableApiTest extends BaseTest {
         IterablePushRegistration pushRegistration =
                 new IterablePushRegistration(pushRegistrationExecutor);
 
-        IterableApi.sharedInstance = new IterableApi(
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(
                 inAppManagerMock, embeddedManagerMock, pushRegistration);
 
         originalApiClient = IterableApi.sharedInstance.apiClient;
@@ -273,7 +273,8 @@ public class IterableApiTest extends BaseTest {
     @Test
     public void testSetUserIdWithAutomaticPushRegistration() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
-        // Reset after initialize since it may trigger push registration via background init
+        // Flush any pending looper callbacks from initialize, then reset mock
+        shadowOf(getMainLooper()).idle();
         Mockito.reset(pushRegistrationExecutor);
 
         // Check that setUserId calls registerForPush

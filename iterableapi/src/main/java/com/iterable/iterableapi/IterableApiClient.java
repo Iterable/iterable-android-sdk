@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
+    private final @NonNull IterableRequestDispatchers requestDispatchers;
     private final OnlineRequestProcessor pushRegistrationRequestProcessor;
     // A newer push action invalidates retries from earlier registration or disable requests.
     private final AtomicLong pushRegistrationRequestGeneration = new AtomicLong();
@@ -45,14 +46,22 @@ class IterableApiClient {
     }
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
+        this(authProvider, IterableRequestDispatchers.sdk());
+    }
+
+    IterableApiClient(
+            @NonNull AuthProvider authProvider,
+            @NonNull IterableRequestDispatchers requestDispatchers
+    ) {
         this.authProvider = authProvider;
+        this.requestDispatchers = requestDispatchers;
         pushRegistrationRequestProcessor =
-                new OnlineRequestProcessor(IterableExecutors.push());
+                new OnlineRequestProcessor(requestDispatchers.push());
     }
 
     private RequestProcessor getRequestProcessor() {
         if (requestProcessor == null) {
-            requestProcessor = new OnlineRequestProcessor();
+            requestProcessor = new OnlineRequestProcessor(requestDispatchers.online());
         }
         return requestProcessor;
     }
@@ -70,8 +79,11 @@ class IterableApiClient {
         }
 
         this.requestProcessor = offlineMode
-                ? new OfflineRequestProcessor(authProvider.getContext())
-                : new OnlineRequestProcessor();
+                ? new OfflineRequestProcessor(
+                        authProvider.getContext(),
+                        requestDispatchers.offline()
+                )
+                : new OnlineRequestProcessor(requestDispatchers.online());
     }
 
     void getRemoteConfiguration(IterableHelper.IterableActionHandler actionHandler) {

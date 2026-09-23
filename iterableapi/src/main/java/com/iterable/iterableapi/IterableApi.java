@@ -937,7 +937,6 @@ public class IterableApi {
         return initializationRun && backgroundInitComplete && sdkConfigured;
     }
 
-
     /**
      * Register a callback to be notified when SDK initialization completes.
      * If the SDK is already initialized, the callback is invoked immediately.
@@ -992,7 +991,10 @@ public class IterableApi {
         this.embeddedManager = embeddedManager;
         this.pushRegistration = Objects.requireNonNull(pushRegistration);
     }
-
+    void setRequestDispatcher(IterableRequestDispatcher requestDispatcher) {
+        apiClient = new IterableApiClient(new IterableApiAuthProvider(),
+                IterableRequestDispatchers.same(Objects.requireNonNull(requestDispatcher)));
+    }
 //endregion
 
 //region SDK public functions
@@ -1566,7 +1568,6 @@ public class IterableApi {
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
         queueOrExecute(() -> trackPurchase(total, items, dataFields, null), "trackPurchase(" + total + ", " + items.size() + " items, dataFields)");
     }
-
 
     /**
      * Tracks a purchase.

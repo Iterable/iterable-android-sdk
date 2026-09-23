@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockWebServer;
 
+import static android.os.Looper.getMainLooper;
 import static com.iterable.iterableapi.IterableTestUtils.bundleToMap;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -33,9 +34,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 public class IterableFirebaseMessagingServiceTest extends BaseTest {
 
@@ -51,6 +54,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     public void setUp() throws Exception {
         IterableTestUtils.resetIterableApi();
         IterableTestUtils.createIterableApiNew();
+        shadowOf(getMainLooper()).idle();
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
@@ -106,7 +110,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     @Test
     public void testSilentPushInAppUpdated() throws Exception {
         IterableInAppManager inAppManagerSpy = spy(IterableApi.getInstance().getInAppManager());
-        when(apiMock.getInAppManager()).thenReturn(inAppManagerSpy);
+        doReturn(inAppManagerSpy).when(apiMock).getInAppManager();
         doNothing().when(inAppManagerSpy).syncInApp();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
@@ -118,7 +122,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     @Test
     public void testSilentPushInAppRemoved() throws Exception {
         IterableInAppManager inAppManagerSpy = spy(IterableApi.getInstance().getInAppManager());
-        when(apiMock.getInAppManager()).thenReturn(inAppManagerSpy);
+        doReturn(inAppManagerSpy).when(apiMock).getInAppManager();
         doNothing().when(inAppManagerSpy).syncInApp();
         doNothing().when(inAppManagerSpy).removeMessage(any(String.class));
 
@@ -147,7 +151,7 @@ public class IterableFirebaseMessagingServiceTest extends BaseTest {
     @Test
     public void testUpdateMessagesIsCalled() throws Exception {
         IterableEmbeddedManager embeddedManagerSpy = spy(IterableApi.getInstance().getEmbeddedManager());
-        when(apiMock.getEmbeddedManager()).thenReturn(embeddedManagerSpy);
+        doReturn(embeddedManagerSpy).when(apiMock).getEmbeddedManager();
 
         RemoteMessage.Builder builder = new RemoteMessage.Builder("1234@gcm.googleapis.com");
         builder.setData(IterableTestUtils.getMapFromJsonResource("push_payload_embedded_update.json"));

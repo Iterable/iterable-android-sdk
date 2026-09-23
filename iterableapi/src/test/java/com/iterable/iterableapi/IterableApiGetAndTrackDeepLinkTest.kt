@@ -18,7 +18,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowPausedAsyncTask
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -363,7 +362,6 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
 
     @Suppress("DEPRECATION")
     private fun blockHostAsyncTaskQueue() {
-        ShadowPausedAsyncTask.reset()
         val hostTaskStarted = CountDownLatch(1)
         val releaseTask = CountDownLatch(1)
         val taskFinished = CountDownLatch(1)

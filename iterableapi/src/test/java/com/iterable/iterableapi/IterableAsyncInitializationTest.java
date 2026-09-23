@@ -15,7 +15,6 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLooper;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -158,7 +157,7 @@ public class IterableAsyncInitializationTest {
     @Test
     public void testOperationQueuing_DuringInitialization() throws InterruptedException {
         CountDownLatch initLatch = new CountDownLatch(1);
-        List<String> executedOperations = new ArrayList<>();
+        CountDownLatch operationsProcessed = new CountDownLatch(1);
 
         // Start background initialization
         IterableApi.initializeInBackground(context, TEST_API_KEY, new IterableInitializationCallback() {
@@ -174,12 +173,18 @@ public class IterableAsyncInitializationTest {
         IterableApi.getInstance().setEmail(TEST_EMAIL);
         IterableApi.getInstance().track("testEvent");
         IterableApi.getInstance().setUserId(TEST_USER_ID);
+        IterableBackgroundInitializer.queueOrExecute(
+                operationsProcessed::countDown,
+                "test operation queue sentinel"
+        );
 
         // Verify operations are queued
         assertTrue("Operations should be queued", IterableBackgroundInitializer.getQueuedOperationCount() > 0);
 
         // Wait for initialization to complete
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
+        assertTrue("Queued operations should complete",
+                operationsProcessed.await(5, TimeUnit.SECONDS));
 
         // Process queue
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks();

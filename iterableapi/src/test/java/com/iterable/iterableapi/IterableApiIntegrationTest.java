@@ -7,7 +7,6 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.robolectric.shadows.ShadowPausedAsyncTask;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -43,7 +42,6 @@ public class IterableApiIntegrationTest extends BaseTest {
         originalPushRegistrationUtil = IterablePushRegistrationTask.Util.instance;
         pushRegistrationUtilMock = mock(IterablePushRegistrationTask.Util.UtilImpl.class);
         IterablePushRegistrationTask.Util.instance = pushRegistrationUtilMock;
-        ShadowPausedAsyncTask.reset(); // Enable real threading in AsyncTask so we keep the execution sequence similar to the real one.
     }
 
     @After
