@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
@@ -137,7 +138,7 @@ class IterableRequestTaskTest {
 
     private fun captureDispatchedRequest(): IterableApiRequest {
         val requestCaptor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
-        verify(requestDispatcher).execute(requestCaptor.capture())
+        verify(requestDispatcher).executeRetry(requestCaptor.capture(), eq(0))
         return requestCaptor.value
     }
 

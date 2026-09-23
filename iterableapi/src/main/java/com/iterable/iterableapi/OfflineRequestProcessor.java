@@ -37,10 +37,6 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION
     ));
 
-    OfflineRequestProcessor(Context context) {
-        this(context, IterableRequestDispatcher.offline());
-    }
-
     OfflineRequestProcessor(
             Context context,
             IterableRequestDispatcher requestDispatcher
@@ -54,7 +50,8 @@ class OfflineRequestProcessor implements RequestProcessor {
                 IterableActivityMonitor.getInstance(),
                 networkConnectivityManager,
                 healthMonitor,
-                classification);
+                classification,
+                requestDispatcher);
         taskScheduler = new TaskScheduler(taskStorage, taskRunner, requestDispatcher);
 
         // Register task runner as auth token ready listener for JWT auto-retry support
@@ -76,16 +73,6 @@ class OfflineRequestProcessor implements RequestProcessor {
         } catch (Exception e) {
             IterableLogger.w("OfflineRequestProcessor", "Failed to unregister auth token listener on dispose.");
         }
-    }
-
-    OfflineRequestProcessor(TaskScheduler scheduler, IterableTaskRunner iterableTaskRunner, IterableTaskStorage storage, HealthMonitor mockHealthMonitor) {
-        this(
-                scheduler,
-                iterableTaskRunner,
-                storage,
-                mockHealthMonitor,
-                IterableRequestDispatcher.offline()
-        );
     }
 
     OfflineRequestProcessor(
@@ -141,10 +128,6 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
     private final IterableTaskStorage taskStorage;
     private final IterableTaskRunner taskRunner;
     private final IterableRequestDispatcher requestDispatcher;
-
-    TaskScheduler(IterableTaskStorage taskStorage, IterableTaskRunner taskRunner) {
-        this(taskStorage, taskRunner, IterableRequestDispatcher.offline());
-    }
 
     TaskScheduler(
             IterableTaskStorage taskStorage,
