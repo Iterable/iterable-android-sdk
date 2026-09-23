@@ -38,11 +38,18 @@ import static org.mockito.Mockito.when;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
+
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = {Build.VERSION_CODES.P})
 public class IterableNotificationTest {
     Context appContext;
     NotificationManager mNotificationManager;
+    private MockWebServer imageServer;
 
     //EX: itbl_notif = "{\"itbl\":{\"templateId\":28,\"campaignId\":17,\"messageId\":\"85fbb5663ada4f40b5ae0d437e040fa6\",\"isGhostPush\":false},\"body\":\"Pushy\",\"badge\":2,\"sound\":\"me.wav\"}}";
 
@@ -51,7 +58,7 @@ public class IterableNotificationTest {
     String itbl_ghost = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":true}";
     String itbl1 = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false}";
     String itbl2 = "{\"templateId\":2,\"campaignId\":2,\"messageId\":\"22222222222222222222222222222222\",\"isGhostPush\":false}}";
-    String itbl_image = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false,\"attachment-url\":\"https://assets.iterable.com/assets/images/logos/itbl-logo-full-gray-800x300.png\"}";
+    String itbl_image;
 
     private Context getContext() {
         return getApplicationContext();
@@ -80,17 +87,42 @@ public class IterableNotificationTest {
         return stringBuilder.toString();
     }
 
+    private byte[] getResourceBytes(String fileName) throws IOException {
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
+        Buffer buffer = new Buffer();
+        buffer.readFrom(inputStream);
+        inputStream.close();
+        return buffer.readByteArray();
+    }
+
     @Before
     public void setUp() throws Exception {
         appContext = getContext().getApplicationContext();
         mNotificationManager = (NotificationManager)
                 getContext().getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.cancelAll();
+
+        final byte[] imageBytes = getResourceBytes("350x150.png");
+        imageServer = new MockWebServer();
+        // Every notification build() re-downloads the attachment, so serve the image on
+        // every request instead of enqueuing a fixed number of responses.
+        imageServer.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                return new MockResponse()
+                        .setHeader("Content-Type", "image/png")
+                        .setBody(new Buffer().write(imageBytes));
+            }
+        });
+        imageServer.start();
+
+        itbl_image = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false,\"attachment-url\":\"" + imageServer.url("/push-image.png") + "\"}";
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         mNotificationManager.cancelAll();
+        imageServer.shutdown();
     }
 
     @Test
