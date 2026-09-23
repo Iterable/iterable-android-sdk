@@ -383,7 +383,7 @@ public class IterableApi {
 
         apiClient.trackEmbeddedMessageReceived(message);
     }
-    
+
     private String getPushIntegrationName() {
         if (config.pushIntegrationName != null) {
             return config.pushIntegrationName;
@@ -817,10 +817,12 @@ public class IterableApi {
 
         sharedInstance.retrieveEmailAndUserId();
 
-        // Process a pending push action before registering lifecycle callbacks so that attribution info is set before the first 
-        // onForeground() fires. Without this, onForeground() sees a null attribution and triggers an extra registerForPush call.
-        if (IterablePushNotificationUtil.hasPendingAction()) { IterablePushNotificationUtil.processPendingAction(context); }
-        
+        // Process a pending push action before registering lifecycle callbacks so attribution
+        // is set before the first onForeground(), which otherwise registers for push twice.
+        if (IterablePushNotificationUtil.hasPendingAction()) {
+            IterablePushNotificationUtil.processPendingAction(context);
+        }
+
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
