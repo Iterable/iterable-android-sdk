@@ -5,6 +5,7 @@ import android.os.AsyncTask
 import android.os.Looper
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -123,17 +124,38 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
     }
 
     @Test
-    fun `server error returns original URL without attribution`() {
+    fun `server error returns original URL on main thread without attribution`() {
         val iterableLink = server.url("/a/abc123").toString()
         server.enqueue(MockResponse().setResponseCode(500))
         var callbackUrl: String? = null
+        var callbackLooper: Looper? = null
 
         IterableApi.getInstance().getAndTrackDeepLink(iterableLink) { url ->
             callbackUrl = url
+            callbackLooper = Looper.myLooper()
         }
         awaitDeepLinkResolution()
 
         assertEquals(iterableLink, callbackUrl)
+        assertSame(Looper.getMainLooper(), callbackLooper)
+        assertNull(IterableApi.getInstance().attributionInfo)
+    }
+
+    @Test
+    fun `read timeout returns original URL on main thread without attribution`() {
+        val iterableLink = server.url("/a/abc123").toString()
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+        var callbackUrl: String? = null
+        var callbackLooper: Looper? = null
+
+        IterableApi.getInstance().getAndTrackDeepLink(iterableLink) { url ->
+            callbackUrl = url
+            callbackLooper = Looper.myLooper()
+        }
+        awaitDeepLinkResolution(READ_TIMEOUT_WAIT_SECONDS)
+
+        assertEquals(iterableLink, callbackUrl)
+        assertSame(Looper.getMainLooper(), callbackLooper)
         assertNull(IterableApi.getInstance().attributionInfo)
     }
 
@@ -281,13 +303,15 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
         )
     }
 
-    private fun awaitDeepLinkResolution() {
+    private fun awaitDeepLinkResolution(
+        waitTimeoutSeconds: Long = WAIT_TIMEOUT_SECONDS
+    ) {
         val sdkQueueDrained = CountDownLatch(1)
         IterableExecutors.deepLink().execute(sdkQueueDrained::countDown)
 
         assertTrue(
             "SDK serial executor did not finish",
-            sdkQueueDrained.await(WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            sdkQueueDrained.await(waitTimeoutSeconds, TimeUnit.SECONDS)
         )
         shadowOf(Looper.getMainLooper()).idle()
     }
@@ -320,5 +344,6 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
 
     private companion object {
         const val WAIT_TIMEOUT_SECONDS = 5L
+        const val READ_TIMEOUT_WAIT_SECONDS = 10L
     }
 }
