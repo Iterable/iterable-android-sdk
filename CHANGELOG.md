@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.11.0]
 ### Added
 - `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(double)` accepts fractional seconds, matching the iOS, React Native and Flutter SDKs. Previously Android only accepted whole seconds, so a value like `0.5` behaved differently here than on other platforms. The existing `Long` overload is deprecated but still works, so no code changes are required.
 - `IterableDataRegion` now exposes stable cross-SDK identifiers and lookup helpers: `getRegionCode()` (e.g. `"EU"`), `getCode()` (`0` for US, `1` for EU, matching the React Native and Flutter SDKs), and the static `IterableDataRegion.from(String)` / `IterableDataRegion.from(int)` factories. `from(String)` accepts a region code in any case and also accepts a full API endpoint URL, so the iOS SDK's string-based data region values resolve without translation. **No action required** — the existing `setDataRegion(IterableDataRegion.EU)` API is unchanged.
