@@ -3,8 +3,10 @@ package com.iterable.iterableapi
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Looper
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -24,6 +26,7 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
     private lateinit var server: MockWebServer
     private var releaseHostTask: CountDownLatch? = null
     private var hostTaskFinished: CountDownLatch? = null
+    private var releaseDeepLinkResponse: CountDownLatch? = null
 
     @Before
     fun setUp() {
@@ -37,6 +40,7 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
     @After
     fun tearDown() {
         releaseHostTask?.countDown()
+        releaseDeepLinkResponse?.countDown()
         hostTaskFinished?.let {
             assertTrue(
                 "Host AsyncTask queue did not resume",
@@ -89,6 +93,47 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
         }
         awaitDeepLinkResolution()
 
+        assertEquals(destinationUrl, callbackUrl)
+    }
+
+    @Test
+    fun `slow Iterable link does not block push work`() {
+        val iterableLink = server.url("/a/abc123").toString()
+        val destinationUrl = "https://example.com/destination"
+        val redirectStarted = CountDownLatch(1)
+        val releaseRedirect = CountDownLatch(1)
+        releaseDeepLinkResponse = releaseRedirect
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                redirectStarted.countDown()
+                try {
+                    releaseRedirect.await()
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                }
+                return redirectResponse(destinationUrl)
+            }
+        }
+        var callbackUrl: String? = null
+
+        IterableApi.getInstance().getAndTrackDeepLink(iterableLink) { url ->
+            callbackUrl = url
+        }
+        assertTrue(
+            "Deep-link request did not start",
+            redirectStarted.await(WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        )
+
+        val pushWorkCompleted = CountDownLatch(1)
+        IterableExecutors.push().execute(pushWorkCompleted::countDown)
+
+        assertTrue(
+            "Push work was blocked by the deep-link request",
+            pushWorkCompleted.await(WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        )
+
+        releaseRedirect.countDown()
+        awaitDeepLinkResolution()
         assertEquals(destinationUrl, callbackUrl)
     }
 
