@@ -15,10 +15,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -26,6 +30,7 @@ import okhttp3.mockwebserver.SocketPolicy;
 
 import static com.iterable.iterableapi.IterableTestUtils.createIterableApi;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
@@ -38,21 +43,46 @@ public class IterableApiResponseTest {
 
     private MockWebServer server;
 
+    private final Object scriptLock = new Object();
+    private final Deque<MockResponse> scriptedResponses = new ArrayDeque<>();
+    private MockResponse lastServedResponse;
+
     @Before
     public void setUp() throws IOException {
         server = new MockWebServer();
-        // Explicitly start the server to ensure it's ready
-        try {
-            server.start();
-        } catch (IllegalStateException e) {
-            // Server may already be started by url() call below, which is fine
-        }
+        // Retries re-resolve the static endpoint override, so a stray retry from a previous test can
+        // land here. Repeating the last response once the script is empty stops it blocking forever.
+        server.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                synchronized (scriptLock) {
+                    MockResponse next = scriptedResponses.poll();
+                    if (next != null) {
+                        lastServedResponse = next;
+                    }
+                    return currentFallback();
+                }
+            }
+
+            @Override
+            public MockResponse peek() {
+                synchronized (scriptLock) {
+                    MockResponse next = scriptedResponses.peek();
+                    return next != null ? next : currentFallback();
+                }
+            }
+        });
+        server.start();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         createIterableApi();
     }
 
     @After
     public void tearDown() throws IOException {
+        synchronized (scriptLock) {
+            scriptedResponses.clear();
+            lastServedResponse = null;
+        }
         server.shutdown();
         server = null;
     }
@@ -69,7 +99,20 @@ public class IterableApiResponseTest {
         if (body != null) {
             response.setBody(body);
         }
-        server.enqueue(response);
+        stubResponse(response);
+    }
+
+    private MockResponse currentFallback() {
+        if (lastServedResponse == null) {
+            lastServedResponse = new MockResponse().setResponseCode(200).setBody("{}");
+        }
+        return lastServedResponse;
+    }
+
+    private void stubResponse(MockResponse response) {
+        synchronized (scriptLock) {
+            scriptedResponses.add(response);
+        }
     }
 
     @Test
@@ -308,16 +351,19 @@ public class IterableApiResponseTest {
 
     @Test
     public void testResponseCode500() throws Exception {
-        for (int i = 0; i < 5; i++) {
-            stubAnyRequestReturningStatusCode(500, "{}");
-        }
+        stubAnyRequestReturningStatusCode(500, "{}");
+        stubAnyRequestReturningStatusCode(500, "{}");
+        stubAnyRequestReturningStatusCode(200, "{}");
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, null);
         dispatchRequest(request);
 
-        RecordedRequest request1 = server.takeRequest(1, TimeUnit.SECONDS);
+        RecordedRequest request1 = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull("Initial request", request1);
         RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull("Retries after 500 status code", request2);
+        RecordedRequest request3 = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull("Retry chain ends on the 200", request3);
     }
 
     @Test
@@ -342,13 +388,14 @@ public class IterableApiResponseTest {
     @Test
     public void testConnectionError() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
+        final AtomicReference<String> failureReason = new AtomicReference<>();
 
-        MockResponse response = new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_DURING_REQUEST_BODY);
-        server.enqueue(response);
+        stubResponse(new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_DURING_REQUEST_BODY));
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
             public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
+                failureReason.set(reason);
                 signal.countDown();
             }
         });
@@ -356,6 +403,7 @@ public class IterableApiResponseTest {
 
         server.takeRequest(1, TimeUnit.SECONDS);
         assertTrue("onFailure is called", signal.await(1, TimeUnit.SECONDS));
+        assertFalse("Socket policy is applied", failureReason.get().contains("No data received"));
     }
 
     private void dispatchRequest(IterableApiRequest request) {
