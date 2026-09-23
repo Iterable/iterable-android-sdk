@@ -9,8 +9,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.robolectric.shadows.ShadowPausedAsyncTask;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -47,7 +47,8 @@ public class IterableApiIntegrationTest extends BaseTest {
     }
 
     @After
-    public void tearDown() throws IOException {
+    public void tearDown() throws Exception {
+        waitForRequestWorkToFinish();
         IterablePushRegistrationTask.Util.instance = originalPushRegistrationUtil;
 
         server.shutdown();
@@ -81,7 +82,69 @@ public class IterableApiIntegrationTest extends BaseTest {
     }
 
     @Test
-    public void testPushRegistrationDoesNotWaitForHostAsyncTaskSerialExecutor() throws Exception {
+    public void testRegisterForPushFollowedByDisablePushPreservesRequestOrder() throws Exception {
+        when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        shadowOf(getMainLooper()).idle();
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.getInstance().registerForPush();
+        IterableApi.getInstance().disablePush();
+
+        RecordedRequest registrationRequest = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(registrationRequest);
+        assertEquals(
+                "/" + IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN,
+                registrationRequest.getPath()
+        );
+
+        RecordedRequest disableRequest = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(disableRequest);
+        assertEquals(
+                "/" + IterableConstants.ENDPOINT_DISABLE_DEVICE,
+                disableRequest.getPath()
+        );
+    }
+
+    @Test
+    public void testDisablePushPreventsFailedRegistrationFromRetrying() throws Exception {
+        when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        shadowOf(getMainLooper()).idle();
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("{}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.getInstance().registerForPush();
+        IterableApi.getInstance().disablePush();
+
+        RecordedRequest registrationRequest = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(registrationRequest);
+        assertEquals(
+                "/" + IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN,
+                registrationRequest.getPath()
+        );
+
+        RecordedRequest disableRequest = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(disableRequest);
+        assertEquals(
+                "/" + IterableConstants.ENDPOINT_DISABLE_DEVICE,
+                disableRequest.getPath()
+        );
+
+        waitForRequestWorkToFinish();
+
+        assertEquals(2, server.getRequestCount());
+    }
+
+    @Test
+    public void testPushRegistrationRetryDoesNotWaitForHostAsyncTaskSerialExecutor() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(500).setBody("{}"));
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
         when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
@@ -109,8 +172,32 @@ public class IterableApiIntegrationTest extends BaseTest {
             assertEquals("test@email.com", requestJson.getString(IterableConstants.KEY_EMAIL));
             JSONObject deviceJson = requestJson.getJSONObject(IterableConstants.KEY_DEVICE);
             assertEquals(TEST_TOKEN, deviceJson.getString(IterableConstants.KEY_TOKEN));
+
+            waitForExecutor(IterableExecutors.serial());
+            shadowOf(getMainLooper()).idle();
+
+            RecordedRequest retryRequest = server.takeRequest(5, TimeUnit.SECONDS);
+            assertNotNull(retryRequest);
+            assertEquals(
+                    "/" + IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN,
+                    retryRequest.getPath()
+            );
         } finally {
             releaseHostTask.countDown();
         }
+    }
+
+    private void waitForRequestWorkToFinish() throws InterruptedException {
+        waitForExecutor(IterableExecutors.serial());
+        shadowOf(getMainLooper()).idle();
+        waitForExecutor(IterableExecutors.serial());
+        waitForExecutor(AsyncTask.SERIAL_EXECUTOR);
+        shadowOf(getMainLooper()).idle();
+    }
+
+    private void waitForExecutor(Executor executor) throws InterruptedException {
+        CountDownLatch executorDrained = new CountDownLatch(1);
+        executor.execute(executorDrained::countDown);
+        assertTrue(executorDrained.await(5, TimeUnit.SECONDS));
     }
 }

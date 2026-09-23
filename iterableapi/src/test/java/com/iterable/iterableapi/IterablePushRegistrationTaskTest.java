@@ -10,17 +10,20 @@ import org.robolectric.shadows.ShadowLog;
 
 import java.util.HashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.mockwebserver.MockWebServer;
 
 import static android.os.Looper.getMainLooper;
 import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -72,14 +75,36 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
     @Test
     public void testEnableDevice() throws Exception {
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
+        AtomicReference<Thread> registrationSubmissionThread = new AtomicReference<>();
+        doAnswer(invocation -> {
+            registrationSubmissionThread.set(Thread.currentThread());
+            return null;
+        }).when(apiMock).registerDeviceToken(
+                nullable(String.class),
+                nullable(String.class),
+                nullable(String.class),
+                any(String.class),
+                any(String.class),
+                anyMap(),
+                any(Executor.class)
+        );
+        Thread taskExecutionThread = Thread.currentThread();
 
         IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.ENABLE);
         IterableApi.getInstance().setDeviceAttribute(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
         new IterablePushRegistrationTask(data).run();
         deviceAttributes.put(DEVICE_ATTRIBUTES_KEY, DEVICE_ATTRIBUTES_VALUE);
 
-        shadowOf(getMainLooper()).idle();
-        verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), isNull(), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(deviceAttributes));
+        assertSame(taskExecutionThread, registrationSubmissionThread.get());
+        verify(apiMock).registerDeviceToken(
+                eq(IterableTestUtils.userEmail),
+                nullable(String.class),
+                isNull(),
+                eq(INTEGRATION_NAME),
+                eq(TEST_TOKEN),
+                eq(deviceAttributes),
+                any(Executor.class)
+        );
 
         verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), nullable(String.class), nullable(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }
@@ -123,7 +148,8 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
                 nullable(String.class),
                 any(String.class),
                 any(String.class),
-                anyMap()
+                anyMap(),
+                any(Executor.class)
         );
         assertTrue(ShadowLog.getLogsForTag(IterablePushRegistrationTask.TAG).stream()
                 .anyMatch(item -> item.msg.contains("Exception while retrieving the device token")
