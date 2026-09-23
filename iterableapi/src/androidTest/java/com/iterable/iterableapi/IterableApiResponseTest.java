@@ -15,9 +15,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -36,21 +39,45 @@ public class IterableApiResponseTest {
 
     private MockWebServer server;
 
+    private final Object scriptLock = new Object();
+    private final Deque<MockResponse> scriptedResponses = new ArrayDeque<>();
+    private MockResponse lastServedResponse;
+
     @Before
     public void setUp() throws IOException {
         server = new MockWebServer();
-        // Explicitly start the server to ensure it's ready
-        try {
-            server.start();
-        } catch (IllegalStateException e) {
-            // Server may already be started by url() call below, which is fine
-        }
+        // IterableRequestTask resolves the endpoint from a static override on every attempt,
+        // and schedules retries on a static main-looper Handler up to
+        // RETRY_DELAY_MS * MAX_RETRY_COUNT in the future. A retry left pending when a test
+        // finishes therefore re-resolves to the *next* test's server. With the default queue
+        // dispatcher that stray request consumed the response the next test was waiting for,
+        // leaving it blocked until its latch timed out. Serving from a dispatcher that repeats
+        // the last scripted response makes a stray request harmless instead of destructive.
+        server.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                synchronized (scriptLock) {
+                    MockResponse next = scriptedResponses.poll();
+                    if (next != null) {
+                        lastServedResponse = next;
+                    } else if (lastServedResponse == null) {
+                        lastServedResponse = new MockResponse().setResponseCode(200).setBody("{}");
+                    }
+                    return lastServedResponse;
+                }
+            }
+        });
+        server.start();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
         createIterableApi();
     }
 
     @After
     public void tearDown() throws IOException {
+        synchronized (scriptLock) {
+            scriptedResponses.clear();
+            lastServedResponse = null;
+        }
         server.shutdown();
         server = null;
     }
@@ -67,7 +94,13 @@ public class IterableApiResponseTest {
         if (body != null) {
             response.setBody(body);
         }
-        server.enqueue(response);
+        stubResponse(response);
+    }
+
+    private void stubResponse(MockResponse response) {
+        synchronized (scriptLock) {
+            scriptedResponses.add(response);
+        }
     }
 
     @Test
@@ -274,9 +307,11 @@ public class IterableApiResponseTest {
 
     @Test
     public void testResponseCode500() throws Exception {
-        for (int i = 0; i < 5; i++) {
-            stubAnyRequestReturningStatusCode(500, "{}");
-        }
+        // Ends the retry chain with a success so it cannot outlive the test and fire against
+        // the next test's server.
+        stubAnyRequestReturningStatusCode(500, "{}");
+        stubAnyRequestReturningStatusCode(500, "{}");
+        stubAnyRequestReturningStatusCode(200, "{}");
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, null);
         IterableRequestTask task = new IterableRequestTask();
@@ -310,8 +345,7 @@ public class IterableApiResponseTest {
     public void testConnectionError() throws Exception {
         final CountDownLatch signal = new CountDownLatch(1);
 
-        MockResponse response = new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_DURING_REQUEST_BODY);
-        server.enqueue(response);
+        stubResponse(new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_DURING_REQUEST_BODY));
 
         IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
             @Override
