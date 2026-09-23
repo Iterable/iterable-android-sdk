@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
-    private final OnlineRequestProcessor pushRegistrationRequestProcessor;
+    private final IterablePushRegistrationRequestProcessor pushRegistrationRequestProcessor;
     // A newer push action invalidates retries from earlier registration or disable requests.
     private final AtomicLong pushRegistrationRequestGeneration = new AtomicLong();
     private RequestProcessor requestProcessor;
@@ -47,7 +47,7 @@ class IterableApiClient {
     IterableApiClient(@NonNull AuthProvider authProvider) {
         this.authProvider = authProvider;
         pushRegistrationRequestProcessor =
-                new OnlineRequestProcessor(IterableExecutors.push());
+                new IterablePushRegistrationRequestProcessor();
     }
 
     private RequestProcessor getRequestProcessor() {
