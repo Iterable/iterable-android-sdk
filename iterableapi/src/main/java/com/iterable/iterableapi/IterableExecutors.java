@@ -4,8 +4,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 final class IterableExecutors {
-    private static final Executor SERIAL_EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "IterableSerialExecutor");
+    private static final Executor PUSH_EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "IterablePushExecutor");
         thread.setDaemon(true);
         thread.setPriority(Thread.NORM_PRIORITY);
         return thread;
@@ -14,7 +14,7 @@ final class IterableExecutors {
     private IterableExecutors() {
     }
 
-    static Executor serial() {
-        return SERIAL_EXECUTOR;
+    static Executor push() {
+        return PUSH_EXECUTOR;
     }
 }

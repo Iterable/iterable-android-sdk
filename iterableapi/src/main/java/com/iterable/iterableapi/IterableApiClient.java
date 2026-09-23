@@ -47,7 +47,7 @@ class IterableApiClient {
     IterableApiClient(@NonNull AuthProvider authProvider) {
         this.authProvider = authProvider;
         pushRegistrationRequestProcessor =
-                new OnlineRequestProcessor(IterableExecutors.serial());
+                new OnlineRequestProcessor(IterableExecutors.push());
     }
 
     private RequestProcessor getRequestProcessor() {
