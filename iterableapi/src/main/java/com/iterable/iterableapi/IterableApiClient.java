@@ -16,10 +16,14 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
+    private final OnlineRequestProcessor pushRegistrationRequestProcessor;
+    // A newer push action invalidates retries from earlier registration or disable requests.
+    private final AtomicLong pushRegistrationRequestGeneration = new AtomicLong();
     private RequestProcessor requestProcessor;
 
     interface AuthProvider {
@@ -42,6 +46,8 @@ class IterableApiClient {
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
         this.authProvider = authProvider;
+        pushRegistrationRequestProcessor =
+                new OnlineRequestProcessor(IterableExecutors.serial());
     }
 
     private RequestProcessor getRequestProcessor() {
@@ -618,7 +624,13 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_USER_ID, userId);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, authToken, onSuccess, onFailure);
+            sendPushRegistrationPostRequest(
+                    IterableConstants.ENDPOINT_DISABLE_DEVICE,
+                    requestJSON,
+                    authToken,
+                    onSuccess,
+                    onFailure
+            );
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -669,7 +681,13 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON, authToken, successHandler, failureHandler);
+            sendPushRegistrationPostRequest(
+                    IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN,
+                    requestJSON,
+                    authToken,
+                    successHandler,
+                    failureHandler
+            );
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }
@@ -766,6 +784,25 @@ class IterableApiClient {
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         getRequestProcessor().processPostRequest(authProvider.getApiKey(), resourcePath, json, authToken, onSuccess, onFailure);
+    }
+
+    private void sendPushRegistrationPostRequest(
+            @NonNull String resourcePath,
+            @NonNull JSONObject json,
+            @Nullable String authToken,
+            @Nullable IterableHelper.SuccessHandler onSuccess,
+            @Nullable IterableHelper.FailureHandler onFailure
+    ) {
+        long requestGeneration = pushRegistrationRequestGeneration.incrementAndGet();
+        pushRegistrationRequestProcessor.processPostRequest(
+                authProvider.getApiKey(),
+                resourcePath,
+                json,
+                authToken,
+                onSuccess,
+                onFailure,
+                () -> requestGeneration == pushRegistrationRequestGeneration.get()
+        );
     }
 
     /**

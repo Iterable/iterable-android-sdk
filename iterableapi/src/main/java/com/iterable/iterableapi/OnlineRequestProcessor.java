@@ -10,27 +10,50 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
+import java.util.concurrent.Executor;
 
 class OnlineRequestProcessor implements RequestProcessor {
 
     private static final String TAG = "OnlineRequestProcessor";
+    private final @Nullable Executor executor;
+
+    OnlineRequestProcessor() {
+        this(null);
+    }
+
+    OnlineRequestProcessor(@Nullable Executor executor) {
+        this.executor = executor;
+    }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onCallback);
-        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
+        executeRequest(request, null);
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.GET, authToken, onSuccess, onFailure);
-        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
+        executeRequest(request, null);
     }
 
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        processPostRequest(apiKey, resourcePath, json, authToken, onSuccess, onFailure, null);
+    }
+
+    void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure, @Nullable IterableRequestRetryState retryState) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.POST, authToken, onSuccess, onFailure);
-        new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
+        executeRequest(request, retryState);
+    }
+
+    private void executeRequest(@NonNull IterableApiRequest request, @Nullable IterableRequestRetryState retryState) {
+        request.setExecutionContext(executor, retryState);
+        new IterableRequestTask().executeOnExecutor(getExecutor(), request);
+    }
+
+    private @NonNull Executor getExecutor() {
+        return executor != null ? executor : AsyncTask.THREAD_POOL_EXECUTOR;
     }
 
     @Override

@@ -28,7 +28,8 @@ class IterablePushRegistrationTask implements Runnable {
                             iterablePushRegistrationData.authToken,
                             iterablePushRegistrationData.pushIntegrationName,
                             pushRegistrationObject.token,
-                            IterableApi.getInstance().getDeviceAttributes());
+                            IterableApi.getInstance().getDeviceAttributes(),
+                            Runnable::run);
 
                 } else if (iterablePushRegistrationData.pushRegistrationAction == IterablePushRegistrationData.PushRegistrationAction.DISABLE) {
                     IterableApi.sharedInstance.disableToken(
