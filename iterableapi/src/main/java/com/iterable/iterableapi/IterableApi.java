@@ -992,10 +992,8 @@ public class IterableApi {
         this.pushRegistration = Objects.requireNonNull(pushRegistration);
     }
     void setRequestDispatcher(IterableRequestDispatcher requestDispatcher) {
-        apiClient = new IterableApiClient(
-                new IterableApiAuthProvider(),
-                IterableRequestDispatchers.same(Objects.requireNonNull(requestDispatcher))
-        );
+        apiClient = new IterableApiClient(new IterableApiAuthProvider(),
+                IterableRequestDispatchers.same(Objects.requireNonNull(requestDispatcher)));
     }
 //endregion
 
