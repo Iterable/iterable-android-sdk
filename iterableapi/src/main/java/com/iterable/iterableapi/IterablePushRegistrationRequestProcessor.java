@@ -127,7 +127,7 @@ final class IterablePushRegistrationRequestProcessor {
                 createdAt = new Date().getTime() / 1000;
             }
             json.put(IterableConstants.KEY_CREATED_AT, createdAt);
-        } catch (JSONException e) {
+        } catch (JSONException | NumberFormatException e) {
             IterableLogger.e(
                     TAG,
                     "Could not add createdAt timestamp to json object"
