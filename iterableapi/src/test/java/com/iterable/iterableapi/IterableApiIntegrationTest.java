@@ -173,7 +173,7 @@ public class IterableApiIntegrationTest extends BaseTest {
             JSONObject deviceJson = requestJson.getJSONObject(IterableConstants.KEY_DEVICE);
             assertEquals(TEST_TOKEN, deviceJson.getString(IterableConstants.KEY_TOKEN));
 
-            waitForExecutor(IterableExecutors.serial());
+            waitForExecutor(IterableExecutors.push());
             shadowOf(getMainLooper()).idle();
 
             RecordedRequest retryRequest = server.takeRequest(5, TimeUnit.SECONDS);
@@ -188,9 +188,9 @@ public class IterableApiIntegrationTest extends BaseTest {
     }
 
     private void waitForRequestWorkToFinish() throws InterruptedException {
-        waitForExecutor(IterableExecutors.serial());
+        waitForExecutor(IterableExecutors.push());
         shadowOf(getMainLooper()).idle();
-        waitForExecutor(IterableExecutors.serial());
+        waitForExecutor(IterableExecutors.push());
         waitForExecutor(AsyncTask.SERIAL_EXECUTOR);
         shadowOf(getMainLooper()).idle();
     }

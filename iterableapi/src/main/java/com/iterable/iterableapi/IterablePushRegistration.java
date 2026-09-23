@@ -6,7 +6,7 @@ final class IterablePushRegistration {
     private final Executor executor;
 
     IterablePushRegistration() {
-        this(IterableExecutors.serial());
+        this(IterableExecutors.push());
     }
 
     IterablePushRegistration(Executor executor) {
