@@ -5,18 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationManagerCompat;
-
 import com.iterable.iterableapi.util.DeviceInfoUtils;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,7 +56,6 @@ public class IterableApi {
     private IterableAuthManager authManager;
     private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
     private IterableKeychain keychain;
-
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
@@ -388,7 +383,7 @@ public class IterableApi {
 
         apiClient.trackEmbeddedMessageReceived(message);
     }
-
+    
     private String getPushIntegrationName() {
         if (config.pushIntegrationName != null) {
             return config.pushIntegrationName;
@@ -822,12 +817,10 @@ public class IterableApi {
 
         sharedInstance.retrieveEmailAndUserId();
 
-        // Process a pending push action before registering lifecycle callbacks so that
-        // attribution info is set before the first onForeground() fires. Without this,
-        // onForeground() sees a null attribution and triggers an extra registerForPush call.
-        if (IterablePushNotificationUtil.hasPendingAction()) {
-            IterablePushNotificationUtil.processPendingAction(context);
-        }
+        // Process a pending push action before registering lifecycle callbacks so that attribution info is set before the first 
+        // onForeground() fires. Without this, onForeground() sees a null attribution and triggers an extra registerForPush call.
+        if (IterablePushNotificationUtil.hasPendingAction()) { IterablePushNotificationUtil.processPendingAction(context); }
+        
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
@@ -1999,7 +1992,5 @@ public class IterableApi {
 
         apiClient.trackEmbeddedSession(session);
     }
-
 //endregion
-
 }
