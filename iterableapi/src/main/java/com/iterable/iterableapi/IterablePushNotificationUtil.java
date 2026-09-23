@@ -18,6 +18,10 @@ class IterablePushNotificationUtil {
         pendingAction = null;
     }
 
+    static boolean hasPendingAction() {
+        return pendingAction != null;
+    }
+
     static boolean processPendingAction(Context context) {
         if (pendingAction == null) {
             return false;

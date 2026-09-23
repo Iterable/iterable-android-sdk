@@ -822,6 +822,12 @@ public class IterableApi {
 
         sharedInstance.retrieveEmailAndUserId();
 
+        // Process a pending push action before registering lifecycle callbacks so that
+        // attribution info is set before the first onForeground() fires. Without this,
+        // onForeground() sees a null attribution and triggers an extra registerForPush call.
+        if (IterablePushNotificationUtil.hasPendingAction()) {
+            IterablePushNotificationUtil.processPendingAction(context);
+        }
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
