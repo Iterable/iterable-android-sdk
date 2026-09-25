@@ -113,6 +113,34 @@ public class IterableApiIntegrationTest extends BaseTest {
     }
 
     @Test
+    public void testManualDeviceTokenRegistrationFollowedByDisablePushPreservesRequestOrder() throws Exception {
+        when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        shadowOf(getMainLooper()).idle();
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        IterableApi.getInstance().registerDeviceToken(TEST_TOKEN);
+        IterableApi.getInstance().disablePush();
+
+        RecordedRequest registrationRequest = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(registrationRequest);
+        assertEquals(
+                "/" + IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN,
+                registrationRequest.getPath()
+        );
+
+        RecordedRequest disableRequest = server.takeRequest(5, TimeUnit.SECONDS);
+        assertNotNull(disableRequest);
+        assertEquals(
+                "/" + IterableConstants.ENDPOINT_DISABLE_DEVICE,
+                disableRequest.getPath()
+        );
+    }
+
+    @Test
     public void testDisablePushPreventsFailedRegistrationFromRetrying() throws Exception {
         when(pushRegistrationUtilMock.getSenderId(any(Context.class))).thenReturn("12345");
         when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);

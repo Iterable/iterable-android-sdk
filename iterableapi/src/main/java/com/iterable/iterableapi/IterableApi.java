@@ -695,7 +695,7 @@ public class IterableApi {
     }
 
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes) {
-        registerDeviceToken(email, userId, authToken, applicationName, deviceToken, deviceAttributes, runnable -> new Thread(runnable).start());
+        registerDeviceToken(email, userId, authToken, applicationName, deviceToken, deviceAttributes, IterableExecutors.push());
     }
 
     void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes, Executor executor) {
