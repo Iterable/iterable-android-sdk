@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- Push token registration and disable operations, including their API requests and retries, now run on a dedicated SDK-owned serial executor instead of Android's process-wide `AsyncTask` queue. This prevents host app background work from delaying device registration, preserves operation order, and keeps client callbacks on the main thread.
+
 ## [3.11.0]
 ### Added
 - `IterableConfig.Builder.setExpiringAuthTokenRefreshPeriod(double)` accepts fractional seconds, matching the iOS, React Native and Flutter SDKs. Previously Android only accepted whole seconds, so a value like `0.5` behaved differently here than on other platforms. The existing `Long` overload is deprecated but still works, so no code changes are required.
