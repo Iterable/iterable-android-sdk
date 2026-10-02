@@ -603,6 +603,10 @@ class IterableApiRequest {
     }
 }
 
+interface IterableRequestRetryState {
+    boolean canRetry();
+}
+
 class IterableApiResponse {
     final boolean success;
     final int responseCode;

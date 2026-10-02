@@ -8,18 +8,18 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class IterablePushRegistrationRequestProcessorTest extends BaseTest {
+public class OnlineRequestProcessorTest extends BaseTest {
 
     @Test
     public void testMalformedCreatedAtDoesNotPreventPushRequestSubmission() throws JSONException {
         AtomicReference<Runnable> submittedRequest = new AtomicReference<>();
-        IterablePushRegistrationRequestProcessor processor =
-                new IterablePushRegistrationRequestProcessor(
-                        submittedRequest::set,
-                        Runnable::run,
-                        (runnable, delayMs) -> {
-                        }
-                );
+        IterableRequestDispatcher dispatcher = new IterableRequestDispatcher(
+                submittedRequest::set,
+                Runnable::run,
+                (runnable, delayMs) -> {
+                }
+        );
+        OnlineRequestProcessor processor = new OnlineRequestProcessor(dispatcher);
         JSONObject requestJson = new JSONObject()
                 .put(IterableConstants.KEY_CREATED_AT, "not-a-timestamp");
 
