@@ -154,6 +154,25 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
     }
 
     @Test
+    fun `redirect without location returns original URL on main thread without attribution`() {
+        assertInvalidRedirectReturnsOriginalUrl(
+            MockResponse()
+                .setResponseCode(302)
+                .addHeader("Set-Cookie", "iterableEmailCampaignId=123")
+        )
+    }
+
+    @Test
+    fun `redirect with blank location returns original URL on main thread without attribution`() {
+        assertInvalidRedirectReturnsOriginalUrl(
+            MockResponse()
+                .setResponseCode(302)
+                .addHeader(IterableConstants.LOCATION_HEADER_FIELD, "")
+                .addHeader("Set-Cookie", "iterableEmailCampaignId=123")
+        )
+    }
+
+    @Test
     fun `successful response without redirect returns original URL`() {
         val iterableLink = server.url("/a/abc123").toString()
         server.enqueue(MockResponse().setResponseCode(200))
@@ -320,6 +339,23 @@ class IterableApiGetAndTrackDeepLinkTest : BaseTest() {
 
     private fun enqueueRedirect(destinationUrl: String) {
         server.enqueue(redirectResponse(destinationUrl))
+    }
+
+    private fun assertInvalidRedirectReturnsOriginalUrl(response: MockResponse) {
+        val iterableLink = server.url("/a/abc123").toString()
+        server.enqueue(response)
+        var callbackUrl: String? = null
+        var callbackLooper: Looper? = null
+
+        IterableApi.getInstance().getAndTrackDeepLink(iterableLink) { url ->
+            callbackUrl = url
+            callbackLooper = Looper.myLooper()
+        }
+        awaitDeepLinkResolution()
+
+        assertEquals(iterableLink, callbackUrl)
+        assertSame(Looper.getMainLooper(), callbackLooper)
+        assertNull(IterableApi.getInstance().attributionInfo)
     }
 
     private fun redirectResponse(destinationUrl: String): MockResponse {

@@ -41,17 +41,19 @@ internal class IterableDeeplinkRedirectResolver {
                 )
                 IterableDeeplinkRedirectResult(originalUrl)
             }
-            responseCode >= 300 -> resolveRedirectResponse(connection)
+            responseCode >= 300 -> resolveRedirectResponse(originalUrl, connection)
             else -> IterableDeeplinkRedirectResult(originalUrl)
         }
     }
 
     private fun resolveRedirectResponse(
+        originalUrl: String,
         connection: HttpURLConnection
     ): IterableDeeplinkRedirectResult {
         val redirectUrl = connection.getHeaderField(
             IterableConstants.LOCATION_HEADER_FIELD
-        )
+        )?.takeIf(String::isNotBlank)
+            ?: return IterableDeeplinkRedirectResult(originalUrl)
         val attribution = parseAttributionCookies(connection)
 
         return IterableDeeplinkRedirectResult(
