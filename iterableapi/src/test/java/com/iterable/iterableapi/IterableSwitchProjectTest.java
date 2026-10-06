@@ -231,6 +231,30 @@ public class IterableSwitchProjectTest extends BaseTest {
                 IterableProjectSwitchResult.SWITCHED_CLEANLY, verdict.get());
     }
 
+    /**
+     * The failure half of the pre-init contract. iOS reports switchedWithWarnings when start()
+     * fails, and Android has to report the same result when background initialization fails.
+     * A successful cold start stays SWITCHED_CLEANLY, covered above.
+     */
+    @Test
+    public void testSwitchBeforeInitializeReportsWarningsWhenInitializationFails() throws Exception {
+        IterableBackgroundInitializer.failNextInitialization = true;
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<IterableProjectSwitchResult> verdict = new AtomicReference<>();
+        switchTo(context, API_KEY_B, configWithoutAuth(), result -> {
+            verdict.set(result);
+            latch.countDown();
+        });
+
+        assertTrue("Callback should fire", awaitSwitch(latch));
+        assertEquals("A failed cold start is a noisy switch, matching iOS",
+                IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS, verdict.get());
+        assertEquals("The SDK is still pointed at the requested project",
+                API_KEY_B, IterableApi.getInstance()._apiKey);
+        assertFalse(IterableBackgroundInitializer.failNextInitialization);
+    }
+
     @Test
     public void testSwitchWithUnchangedApiKeyIsANoOp() throws Exception {
         initializeProjectA();
