@@ -80,7 +80,7 @@ jobs:
           # gh release edit does not move an existing tag; align tag to the merged release commit.
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -fa "$VERSION" "$target"
+          git tag -f "$VERSION" "$target"
           git push origin "refs/tags/$VERSION" --force
 
       - name: Set up JDK
