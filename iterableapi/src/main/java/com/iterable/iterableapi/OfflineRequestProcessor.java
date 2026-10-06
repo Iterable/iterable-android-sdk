@@ -19,7 +19,7 @@ class OfflineRequestProcessor implements RequestProcessor {
     private IterableTaskRunner taskRunner;
     private IterableTaskStorage taskStorage;
     private HealthMonitor healthMonitor;
-    private final IterableRequestDispatcher requestDispatcher;
+    private final IterableRequestDispatcher immediateRequestDispatcher;
 
     private static final Set<String> offlineApiSet = new HashSet<>(Arrays.asList(
             IterableConstants.ENDPOINT_TRACK,
@@ -39,9 +39,10 @@ class OfflineRequestProcessor implements RequestProcessor {
 
     OfflineRequestProcessor(
             Context context,
-            IterableRequestDispatcher requestDispatcher
+            IterableRequestDispatcher immediateRequestDispatcher,
+            IterableRequestDispatcher offlineRequestDispatcher
     ) {
-        this.requestDispatcher = requestDispatcher;
+        this.immediateRequestDispatcher = immediateRequestDispatcher;
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
         taskStorage = IterableTaskStorage.sharedInstance(context);
         healthMonitor = new HealthMonitor(taskStorage);
@@ -51,8 +52,12 @@ class OfflineRequestProcessor implements RequestProcessor {
                 networkConnectivityManager,
                 healthMonitor,
                 classification,
-                requestDispatcher);
-        taskScheduler = new TaskScheduler(taskStorage, taskRunner, requestDispatcher);
+                offlineRequestDispatcher);
+        taskScheduler = new TaskScheduler(
+                taskStorage,
+                taskRunner,
+                immediateRequestDispatcher
+        );
 
         // Register task runner as auth token ready listener for JWT auto-retry support
         try {
@@ -73,6 +78,7 @@ class OfflineRequestProcessor implements RequestProcessor {
         } catch (Exception e) {
             IterableLogger.w("OfflineRequestProcessor", "Failed to unregister auth token listener on dispose.");
         }
+        taskRunner.dispose();
     }
 
     OfflineRequestProcessor(
@@ -80,25 +86,25 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableTaskRunner iterableTaskRunner,
             IterableTaskStorage storage,
             HealthMonitor mockHealthMonitor,
-            IterableRequestDispatcher requestDispatcher
+            IterableRequestDispatcher immediateRequestDispatcher
     ) {
         taskRunner = iterableTaskRunner;
         taskScheduler = scheduler;
         taskStorage = storage;
         healthMonitor = mockHealthMonitor;
-        this.requestDispatcher = requestDispatcher;
+        this.immediateRequestDispatcher = immediateRequestDispatcher;
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback);
-        requestDispatcher.execute(request);
+        immediateRequestDispatcher.execute(request);
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken,  @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onSuccess, onFailure);
-        requestDispatcher.execute(request);
+        immediateRequestDispatcher.execute(request);
     }
 
     @Override
@@ -108,7 +114,7 @@ class OfflineRequestProcessor implements RequestProcessor {
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
             taskScheduler.scheduleTask(request, onSuccess, onFailure);
         } else {
-            requestDispatcher.execute(request);
+            immediateRequestDispatcher.execute(request);
         }
     }
 

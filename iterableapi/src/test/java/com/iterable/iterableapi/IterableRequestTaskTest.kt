@@ -3,6 +3,7 @@ package com.iterable.iterableapi
 import com.iterable.iterableapi.unit.TestRunner
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Before
@@ -134,6 +135,21 @@ class IterableRequestTaskTest {
         val retriedRequest = captureDispatchedRequest()
         assertEquals("fresh-token", retriedRequest.authToken)
         assertSame(callback, retriedRequest.legacyCallback)
+    }
+
+    @Test
+    fun `auth retry preserves a stale request guard`() {
+        val request = request().apply {
+            setRetryState { false }
+        }
+
+        IterableRequestTask.retryRequestWithNewAuthToken(
+            "fresh-token",
+            request,
+            requestDispatcher
+        )
+
+        assertFalse(captureDispatchedRequest().canRetry())
     }
 
     private fun captureDispatchedRequest(): IterableApiRequest {

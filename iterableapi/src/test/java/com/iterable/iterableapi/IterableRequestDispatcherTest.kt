@@ -8,6 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.Executor
+import java.util.concurrent.RejectedExecutionException
 
 @RunWith(TestRunner::class)
 class IterableRequestDispatcherTest {
@@ -50,7 +51,57 @@ class IterableRequestDispatcherTest {
         assertTrue(requestExecutor.tasks.single() is IterableRequestTask)
     }
 
-    private fun request(): IterableApiRequest {
+    @Test
+    fun `stale retry is not submitted`() {
+        val staleRequest = request().apply {
+            setRetryState { false }
+        }
+
+        dispatcher.executeRetry(staleRequest, 0)
+
+        assertTrue(requestExecutor.tasks.isEmpty())
+    }
+
+    @Test
+    fun `a saturated executor fails asynchronously without running network work on caller`() {
+        val failure = RecordingFailureHandler()
+        val rejectingDispatcher = IterableRequestDispatcher(
+            Executor { throw RejectedExecutionException("full") },
+            callbackExecutor,
+            retryScheduler
+        )
+
+        rejectingDispatcher.execute(request(failure))
+
+        assertEquals(1, callbackExecutor.tasks.size)
+        assertEquals(null, failure.message)
+
+        callbackExecutor.tasks.single().run()
+
+        assertEquals("Iterable request queue is full", failure.message)
+    }
+
+    @Test
+    fun `a saturated response request receives a transient failure`() {
+        var response: IterableApiResponse? = null
+        val rejectingDispatcher = IterableRequestDispatcher(
+            Executor { throw RejectedExecutionException("full") },
+            callbackExecutor,
+            retryScheduler
+        )
+
+        rejectingDispatcher.executeForResponse(request()) {
+            response = it
+        }
+        callbackExecutor.tasks.single().run()
+
+        assertEquals(0, response?.responseCode)
+        assertEquals(false, response?.success)
+    }
+
+    private fun request(
+        failure: IterableHelper.FailureHandler? = null
+    ): IterableApiRequest {
         return IterableApiRequest(
             "api-key",
             "api/test",
@@ -58,7 +109,7 @@ class IterableRequestDispatcherTest {
             IterableApiRequest.POST,
             null,
             null,
-            null
+            failure
         )
     }
 
@@ -77,6 +128,14 @@ class IterableRequestDispatcherTest {
         override fun schedule(runnable: Runnable, delayMs: Long) {
             task = runnable
             this.delayMs = delayMs
+        }
+    }
+
+    private class RecordingFailureHandler : IterableHelper.FailureHandler {
+        var message: String? = null
+
+        override fun onFailure(reason: String, data: JSONObject?) {
+            message = reason
         }
     }
 }

@@ -16,19 +16,19 @@ class OfflineRequestProcessorTest : BaseTest() {
     private lateinit var requestProcessor: OfflineRequestProcessor
     private lateinit var taskScheduler: TaskScheduler
     private lateinit var healthMonitor: HealthMonitor
-    private lateinit var requestDispatcher: IterableRequestDispatcher
+    private lateinit var immediateRequestDispatcher: IterableRequestDispatcher
 
     @Before
     fun setUp() {
         taskScheduler = mock(TaskScheduler::class.java)
         healthMonitor = mock(HealthMonitor::class.java)
-        requestDispatcher = mock(IterableRequestDispatcher::class.java)
+        immediateRequestDispatcher = mock(IterableRequestDispatcher::class.java)
         requestProcessor = OfflineRequestProcessor(
             taskScheduler,
             mock(IterableTaskRunner::class.java),
             mock(IterableTaskStorage::class.java),
             healthMonitor,
-            requestDispatcher
+            immediateRequestDispatcher
         )
     }
 
@@ -55,7 +55,7 @@ class OfflineRequestProcessorTest : BaseTest() {
             IterableApiRequest.ProcessorType.OFFLINE,
             requestCaptor.value.processorType
         )
-        verifyNoInteractions(requestDispatcher)
+        verifyNoInteractions(immediateRequestDispatcher)
     }
 
     @Test
@@ -126,7 +126,7 @@ class OfflineRequestProcessorTest : BaseTest() {
 
     private fun captureDispatchedRequest(): IterableApiRequest {
         val requestCaptor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
-        verify(requestDispatcher).execute(requestCaptor.capture())
+        verify(immediateRequestDispatcher).execute(requestCaptor.capture())
         return requestCaptor.value
     }
 }

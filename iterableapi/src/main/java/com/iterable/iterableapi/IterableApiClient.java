@@ -81,6 +81,7 @@ class IterableApiClient {
         this.requestProcessor = offlineMode
                 ? new OfflineRequestProcessor(
                         authProvider.getContext(),
+                        requestDispatchers.online(),
                         requestDispatchers.offline()
                 )
                 : new OnlineRequestProcessor(requestDispatchers.online());

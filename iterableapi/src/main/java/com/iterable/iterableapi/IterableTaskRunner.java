@@ -29,7 +29,8 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     private final HandlerThread networkThread = new HandlerThread("NetworkThread");
     Handler handler;
-    private boolean requestInFlight;
+    private volatile boolean requestInFlight;
+    private volatile boolean disposed;
 
     enum TaskResult {
         SUCCESS, FAILURE, RETRY
@@ -72,6 +73,22 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         taskCompletedListeners.remove(listener);
     }
 
+    void dispose() {
+        if (disposed) {
+            return;
+        }
+        disposed = true;
+        taskStorage.removeTaskCreatedListener(this);
+        networkConnectivityManager.removeNetworkListener(this);
+        activityMonitor.removeCallback(this);
+        handler.post(() -> {
+            handler.removeCallbacksAndMessages(null);
+            if (!requestInFlight) {
+                finishDispose();
+            }
+        });
+    }
+
     @Override
     public void onTaskCreated(IterableTask iterableTask) {
         runNow();
@@ -104,11 +121,17 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     }
 
     private synchronized void runNow() {
+        if (disposed) {
+            return;
+        }
         handler.removeMessages(OPERATION_PROCESS_TASKS);
         handler.sendEmptyMessage(OPERATION_PROCESS_TASKS);
     }
 
     private void scheduleRetry() {
+        if (disposed) {
+            return;
+        }
         handler.removeCallbacksAndMessages(OPERATION_PROCESS_TASKS);
         handler.sendEmptyMessageDelayed(OPERATION_PROCESS_TASKS, RETRY_INTERVAL_SECONDS * 1000);
     }
@@ -125,7 +148,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     @WorkerThread
     private void processTasks() {
-        if (requestInFlight) {
+        if (disposed || requestInFlight) {
             return;
         }
 
@@ -165,7 +188,12 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     @WorkerThread
     private void processTask(@NonNull IterableTask task, boolean autoRetry) {
-        if (task.taskType != IterableTaskType.API) {
+        if (disposed || task.taskType != IterableTaskType.API) {
+            return;
+        }
+
+        if (!taskStorage.markTaskProcessingIfAvailable(task.id)) {
+            runNow();
             return;
         }
 
@@ -213,7 +241,9 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 );
                 IterableApi.getInstance().getAuthManager().setAuthTokenInvalid();
                 isPausedForAuth = true;
+                taskStorage.updateIsProcessing(task.id, false);
                 callTaskCompletedListeners(task.id, TaskResult.RETRY, response);
+                finishDisposeIfNeeded();
                 return;
             } else if (!isPermanentFailure(response)) {
                 result = TaskResult.RETRY;
@@ -222,11 +252,13 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
         callTaskCompletedListeners(task.id, result, response);
         if (result == TaskResult.RETRY) {
+            taskStorage.updateIsProcessing(task.id, false);
             scheduleRetry();
         } else {
             taskStorage.deleteTask(task.id);
             runNow();
         }
+        finishDisposeIfNeeded();
     }
 
     JSONObject getTaskDataWithDate(IterableTask task) {
@@ -269,7 +301,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
 
     @WorkerThread
     private void callTaskCompletedListeners(final String taskId, final TaskResult result, final IterableApiResponse response) {
-        for (final TaskCompletedListener listener : taskCompletedListeners) {
+        for (final TaskCompletedListener listener : new ArrayList<>(taskCompletedListeners)) {
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
@@ -277,5 +309,19 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                 }
             });
         }
+    }
+
+    @WorkerThread
+    private void finishDisposeIfNeeded() {
+        if (disposed && !requestInFlight) {
+            finishDispose();
+        }
+    }
+
+    @WorkerThread
+    private void finishDispose() {
+        handler.removeCallbacksAndMessages(null);
+        taskCompletedListeners.clear();
+        networkThread.quitSafely();
     }
 }

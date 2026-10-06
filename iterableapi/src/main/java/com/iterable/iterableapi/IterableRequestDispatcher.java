@@ -4,8 +4,13 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 final class IterableRequestDispatcher {
+    private static final String TAG = "RequestDispatcher";
+    private static final String QUEUE_FULL_ERROR =
+            "Iterable request queue is full";
+
     interface RetryScheduler {
         void schedule(Runnable runnable, long delayMs);
     }
@@ -51,18 +56,40 @@ final class IterableRequestDispatcher {
     }
 
     void execute(IterableApiRequest request) {
-        requestExecutor.execute(new IterableRequestTask(request, 0, this));
+        IterableRequestTask requestTask = new IterableRequestTask(request, 0, this);
+        try {
+            requestExecutor.execute(requestTask);
+        } catch (RejectedExecutionException e) {
+            IterableLogger.e(TAG, QUEUE_FULL_ERROR, e);
+            deliverResult(() -> requestTask.handleResponse(queueFullResponse()));
+        }
     }
 
     void executeForResponse(IterableApiRequest request, ResponseHandler responseHandler) {
-        requestExecutor.execute(() -> responseHandler.onResponse(
-                IterableRequestTask.executeApiRequest(request, this)
-        ));
+        try {
+            requestExecutor.execute(() -> responseHandler.onResponse(
+                    IterableRequestTask.executeApiRequest(request, this)
+            ));
+        } catch (RejectedExecutionException e) {
+            IterableLogger.e(TAG, QUEUE_FULL_ERROR, e);
+            deliverResult(() -> responseHandler.onResponse(queueFullResponse()));
+        }
     }
 
     void executeRetry(IterableApiRequest request, int retryCount) {
         if (request.canRetry()) {
-            requestExecutor.execute(new IterableRequestTask(request, retryCount, this, true));
+            IterableRequestTask requestTask =
+                    new IterableRequestTask(request, retryCount, this, true);
+            try {
+                requestExecutor.execute(requestTask);
+            } catch (RejectedExecutionException e) {
+                IterableLogger.e(TAG, QUEUE_FULL_ERROR, e);
+                deliverResult(() -> {
+                    if (request.canRetry()) {
+                        requestTask.handleResponse(queueFullResponse());
+                    }
+                });
+            }
         }
     }
 
@@ -80,6 +107,10 @@ final class IterableRequestDispatcher {
                 IterableExecutors.main(),
                 SDK_RETRY_SCHEDULER
         );
+    }
+
+    private static IterableApiResponse queueFullResponse() {
+        return IterableApiResponse.failure(0, null, null, QUEUE_FULL_ERROR);
     }
 }
 

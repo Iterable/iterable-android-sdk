@@ -12,9 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -28,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
@@ -60,6 +58,7 @@ public class IterableTaskRunnerTest extends BaseTest {
                 Runnable::run,
                 (runnable, delayMs) -> runnable.run()
         );
+        when(mockTaskStorage.markTaskProcessingIfAvailable(anyString())).thenReturn(true);
         taskRunner = new IterableTaskRunner(
                 mockTaskStorage,
                 mockActivityMonitor,
@@ -74,6 +73,7 @@ public class IterableTaskRunnerTest extends BaseTest {
 
     @After
     public void tearDown() throws Exception {
+        taskRunner.dispose();
         server.shutdown();
         IterableTestUtils.resetIterableApi();
     }
@@ -189,68 +189,13 @@ public class IterableTaskRunnerTest extends BaseTest {
     }
 
     @Test
-    public void testStoredAndImmediateRequestsUseTheSameQueueInSubmissionOrder()
-            throws Exception {
-        RecordingExecutor requestExecutor = new RecordingExecutor();
-        IterableRequestDispatcher sharedDispatcher = new IterableRequestDispatcher(
-                requestExecutor,
-                runnable -> { },
-                (runnable, delayMs) -> requestExecutor.execute(runnable)
-        );
-        IterableTaskRunner runner = new IterableTaskRunner(
-                mockTaskStorage,
-                mockActivityMonitor,
-                mockNetworkConnectivityManager,
-                mockHealthMonitor,
-                new ApiEndpointClassification(),
-                sharedDispatcher
-        );
-        IterableApiRequest storedRequest = new IterableApiRequest(
-                "apiKey",
-                "api/stored",
-                new JSONObject(),
-                IterableApiRequest.POST,
-                null,
-                null,
-                null
-        );
-        IterableTask storedTask = new IterableTask(
-                "storedTask",
-                IterableTaskType.API,
-                storedRequest.toJSONObject().toString()
-        );
-        when(mockTaskStorage.getNextScheduledTask()).thenReturn(storedTask).thenReturn(null);
-        when(mockActivityMonitor.isInForeground()).thenReturn(true);
-        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
-        when(mockHealthMonitor.canProcess()).thenReturn(true);
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+    public void testDisposeUnregistersEventListeners() throws Exception {
+        taskRunner.dispose();
+        runHandlerTasks(taskRunner);
 
-        sharedDispatcher.execute(new IterableApiRequest(
-                "apiKey",
-                "api/immediate",
-                new JSONObject(),
-                IterableApiRequest.POST,
-                null,
-                null,
-                null
-        ));
-        runner.onTaskCreated(null);
-        runHandlerTasks(runner);
-
-        assertEquals(2, requestExecutor.pendingTaskCount());
-        requestExecutor.runAll();
-
-        RecordedRequest immediateRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(immediateRequest);
-        assertEquals("/api/immediate", immediateRequest.getPath());
-
-        RecordedRequest persistedRequest = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull(persistedRequest);
-        assertEquals("/api/stored", persistedRequest.getPath());
-
-        runHandlerTasks(runner);
-        verify(mockTaskStorage).deleteTask(storedTask.id);
+        verify(mockTaskStorage).removeTaskCreatedListener(taskRunner);
+        verify(mockNetworkConnectivityManager).removeNetworkListener(taskRunner);
+        verify(mockActivityMonitor).removeCallback(taskRunner);
     }
 
     // region Auto-Retry on JWT Failure Tests
@@ -741,22 +686,4 @@ public class IterableTaskRunnerTest extends BaseTest {
         shadowOf(taskRunner.handler.getLooper()).idle();
     }
 
-    private static class RecordingExecutor implements Executor {
-        private final List<Runnable> tasks = new ArrayList<>();
-
-        @Override
-        public void execute(Runnable command) {
-            tasks.add(command);
-        }
-
-        int pendingTaskCount() {
-            return tasks.size();
-        }
-
-        void runAll() {
-            while (!tasks.isEmpty()) {
-                tasks.remove(0).run();
-            }
-        }
-    }
 }
