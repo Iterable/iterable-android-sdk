@@ -8,24 +8,32 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(TestRunner.class)
 public class IterableExecutorsTest {
     @Test
-    public void requestExecutorIsBoundedAndNeverRunsRejectedWorkOnCaller()
+    public void requestExecutorSpillsExcessWorkToBackgroundOverflowWithoutDroppingIt()
             throws Exception {
-        ThreadPoolExecutor executor = IterableExecutors.newRequestExecutor(2, 1);
+        ThreadPoolExecutor overflowExecutor =
+                IterableExecutors.newRequestOverflowExecutor(1);
+        ThreadPoolExecutor executor =
+                IterableExecutors.newRequestExecutor(2, 1, overflowExecutor);
         CountDownLatch workersStarted = new CountDownLatch(2);
         CountDownLatch releaseWorkers = new CountDownLatch(1);
-        AtomicInteger callerRuns = new AtomicInteger();
+        CountDownLatch queuedWorkCompleted = new CountDownLatch(1);
+        CountDownLatch overflowWorkCompleted = new CountDownLatch(1);
+        AtomicLong overflowThreadId = new AtomicLong();
+        AtomicInteger overflowPriority = new AtomicInteger(Integer.MIN_VALUE);
+        AtomicInteger overflowRuns = new AtomicInteger();
+        long callerThreadId = Thread.currentThread().getId();
 
         try {
             Runnable blockingWork = () -> {
@@ -40,16 +48,28 @@ public class IterableExecutorsTest {
             executor.execute(blockingWork);
             assertTrue(workersStarted.await(5, TimeUnit.SECONDS));
 
-            executor.execute(() -> { });
-            try {
-                executor.execute(callerRuns::incrementAndGet);
-                fail("Expected the bounded executor to reject excess work");
-            } catch (RejectedExecutionException expected) {
-                assertEquals(0, callerRuns.get());
-            }
+            executor.execute(queuedWorkCompleted::countDown);
+            executor.execute(() -> {
+                overflowRuns.incrementAndGet();
+                overflowThreadId.set(Thread.currentThread().getId());
+                overflowPriority.set(
+                        Process.getThreadPriority(Process.myTid())
+                );
+                overflowWorkCompleted.countDown();
+            });
+
+            assertTrue(overflowWorkCompleted.await(5, TimeUnit.SECONDS));
+            assertEquals(1, overflowRuns.get());
+            assertNotEquals(callerThreadId, overflowThreadId.get());
+            assertEquals(
+                    Process.THREAD_PRIORITY_BACKGROUND,
+                    overflowPriority.get()
+            );
         } finally {
             releaseWorkers.countDown();
+            assertTrue(queuedWorkCompleted.await(5, TimeUnit.SECONDS));
             executor.shutdownNow();
+            overflowExecutor.shutdownNow();
         }
     }
 

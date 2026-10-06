@@ -8,8 +8,8 @@ import java.util.concurrent.RejectedExecutionException;
 
 final class IterableRequestDispatcher {
     private static final String TAG = "RequestDispatcher";
-    private static final String QUEUE_FULL_ERROR =
-            "Iterable request queue is full";
+    private static final String REQUEST_REJECTED_ERROR =
+            "Iterable request executor rejected work";
 
     interface RetryScheduler {
         void schedule(Runnable runnable, long delayMs);
@@ -23,13 +23,19 @@ final class IterableRequestDispatcher {
             (runnable, delayMs) ->
                     new Handler(Looper.getMainLooper()).postDelayed(runnable, delayMs);
     private static final IterableRequestDispatcher ONLINE_DISPATCHER =
-            sdkDispatcher(IterableExecutors.request());
+            sdkDispatcher(
+                    IterableExecutors.request(),
+                    IterableExecutors.requestRetry()
+            );
     private static final IterableRequestDispatcher PUSH_DISPATCHER =
             sdkDispatcher(IterableExecutors.push());
-    private static final IterableRequestDispatcher OFFLINE_DISPATCHER =
-            sdkDispatcher(IterableExecutors.offline());
+    private static final IterableRequestDispatcher OFFLINE_IMMEDIATE_DISPATCHER =
+            sdkDispatcher(IterableExecutors.offlineImmediate());
+    private static final IterableRequestDispatcher OFFLINE_STORED_DISPATCHER =
+            sdkDispatcher(IterableExecutors.offlineStored());
 
     private final Executor requestExecutor;
+    private final Executor retryExecutor;
     private final Executor callbackExecutor;
     private final RetryScheduler retryScheduler;
 
@@ -41,8 +47,12 @@ final class IterableRequestDispatcher {
         return PUSH_DISPATCHER;
     }
 
-    static IterableRequestDispatcher offline() {
-        return OFFLINE_DISPATCHER;
+    static IterableRequestDispatcher offlineImmediate() {
+        return OFFLINE_IMMEDIATE_DISPATCHER;
+    }
+
+    static IterableRequestDispatcher offlineStored() {
+        return OFFLINE_STORED_DISPATCHER;
     }
 
     IterableRequestDispatcher(
@@ -50,7 +60,17 @@ final class IterableRequestDispatcher {
             Executor callbackExecutor,
             RetryScheduler retryScheduler
     ) {
+        this(requestExecutor, requestExecutor, callbackExecutor, retryScheduler);
+    }
+
+    IterableRequestDispatcher(
+            Executor requestExecutor,
+            Executor retryExecutor,
+            Executor callbackExecutor,
+            RetryScheduler retryScheduler
+    ) {
         this.requestExecutor = requestExecutor;
+        this.retryExecutor = retryExecutor;
         this.callbackExecutor = callbackExecutor;
         this.retryScheduler = retryScheduler;
     }
@@ -60,8 +80,8 @@ final class IterableRequestDispatcher {
         try {
             requestExecutor.execute(requestTask);
         } catch (RejectedExecutionException e) {
-            IterableLogger.e(TAG, QUEUE_FULL_ERROR, e);
-            deliverResult(() -> requestTask.handleResponse(queueFullResponse()));
+            IterableLogger.e(TAG, REQUEST_REJECTED_ERROR, e);
+            deliverResult(() -> requestTask.handleResponse(rejectedRequestResponse()));
         }
     }
 
@@ -71,8 +91,8 @@ final class IterableRequestDispatcher {
                     IterableRequestTask.executeApiRequest(request, this)
             ));
         } catch (RejectedExecutionException e) {
-            IterableLogger.e(TAG, QUEUE_FULL_ERROR, e);
-            deliverResult(() -> responseHandler.onResponse(queueFullResponse()));
+            IterableLogger.e(TAG, REQUEST_REJECTED_ERROR, e);
+            deliverResult(() -> responseHandler.onResponse(rejectedRequestResponse()));
         }
     }
 
@@ -81,12 +101,12 @@ final class IterableRequestDispatcher {
             IterableRequestTask requestTask =
                     new IterableRequestTask(request, retryCount, this, true);
             try {
-                requestExecutor.execute(requestTask);
+                retryExecutor.execute(requestTask);
             } catch (RejectedExecutionException e) {
-                IterableLogger.e(TAG, QUEUE_FULL_ERROR, e);
+                IterableLogger.e(TAG, REQUEST_REJECTED_ERROR, e);
                 deliverResult(() -> {
                     if (request.canRetry()) {
-                        requestTask.handleResponse(queueFullResponse());
+                        requestTask.handleResponse(rejectedRequestResponse());
                     }
                 });
             }
@@ -102,15 +122,23 @@ final class IterableRequestDispatcher {
     }
 
     private static IterableRequestDispatcher sdkDispatcher(Executor requestExecutor) {
+        return sdkDispatcher(requestExecutor, requestExecutor);
+    }
+
+    private static IterableRequestDispatcher sdkDispatcher(
+            Executor requestExecutor,
+            Executor retryExecutor
+    ) {
         return new IterableRequestDispatcher(
                 requestExecutor,
+                retryExecutor,
                 IterableExecutors.main(),
                 SDK_RETRY_SCHEDULER
         );
     }
 
-    private static IterableApiResponse queueFullResponse() {
-        return IterableApiResponse.failure(0, null, null, QUEUE_FULL_ERROR);
+    private static IterableApiResponse rejectedRequestResponse() {
+        return IterableApiResponse.failure(0, null, null, REQUEST_REJECTED_ERROR);
     }
 }
 
@@ -119,29 +147,38 @@ final class IterableRequestDispatchers {
             new IterableRequestDispatchers(
                     IterableRequestDispatcher.online(),
                     IterableRequestDispatcher.push(),
-                    IterableRequestDispatcher.offline()
+                    IterableRequestDispatcher.offlineImmediate(),
+                    IterableRequestDispatcher.offlineStored()
             );
 
     private final IterableRequestDispatcher online;
     private final IterableRequestDispatcher push;
-    private final IterableRequestDispatcher offline;
+    private final IterableRequestDispatcher offlineImmediate;
+    private final IterableRequestDispatcher offlineStored;
 
     static IterableRequestDispatchers sdk() {
         return SDK_DISPATCHERS;
     }
 
     static IterableRequestDispatchers same(IterableRequestDispatcher dispatcher) {
-        return new IterableRequestDispatchers(dispatcher, dispatcher, dispatcher);
+        return new IterableRequestDispatchers(
+                dispatcher,
+                dispatcher,
+                dispatcher,
+                dispatcher
+        );
     }
 
     IterableRequestDispatchers(
             IterableRequestDispatcher online,
             IterableRequestDispatcher push,
-            IterableRequestDispatcher offline
+            IterableRequestDispatcher offlineImmediate,
+            IterableRequestDispatcher offlineStored
     ) {
         this.online = online;
         this.push = push;
-        this.offline = offline;
+        this.offlineImmediate = offlineImmediate;
+        this.offlineStored = offlineStored;
     }
 
     IterableRequestDispatcher online() {
@@ -152,7 +189,11 @@ final class IterableRequestDispatchers {
         return push;
     }
 
-    IterableRequestDispatcher offline() {
-        return offline;
+    IterableRequestDispatcher offlineImmediate() {
+        return offlineImmediate;
+    }
+
+    IterableRequestDispatcher offlineStored() {
+        return offlineStored;
     }
 }

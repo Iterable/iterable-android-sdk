@@ -69,6 +69,10 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
         taskCompletedListeners.add(listener);
     }
 
+    void start() {
+        runNow();
+    }
+
     void removeTaskCompletedListener(TaskCompletedListener listener) {
         taskCompletedListeners.remove(listener);
     }

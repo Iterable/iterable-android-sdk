@@ -66,11 +66,11 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableLogger.w("OfflineRequestProcessor", "Failed to register auth token listener. " +
                     "Auto-retry on JWT failure will not work until AuthManager is available.");
         }
+        taskRunner.start();
     }
 
     /**
-     * Unregisters the auth token listener to prevent stale listener accumulation
-     * when the processor is replaced (e.g., when offline mode is toggled).
+     * Releases the persisted-task runner when the owning API client is disposed.
      */
     void dispose() {
         try {

@@ -99,6 +99,37 @@ public class IterableTaskRunnerTest extends BaseTest {
     }
 
     @Test
+    public void testStartProcessesTaskPersistedBeforeRunnerWasCreated() throws Exception {
+        IterableApiRequest request = new IterableApiRequest(
+                "apiKey",
+                "api/test",
+                new JSONObject(),
+                "POST",
+                null,
+                null,
+                null
+        );
+        IterableTask task = new IterableTask(
+                "testTask",
+                IterableTaskType.API,
+                request.toJSONObject().toString()
+        );
+        when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
+        when(mockActivityMonitor.isInForeground()).thenReturn(true);
+        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
+        when(mockHealthMonitor.canProcess()).thenReturn(true);
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        taskRunner.start();
+        runHandlerTasks(taskRunner);
+
+        RecordedRequest recordedRequest = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(recordedRequest);
+        assertEquals("/api/test", recordedRequest.getPath());
+        verify(mockTaskStorage).deleteTask(task.id);
+    }
+
+    @Test
     public void testRunOnTaskCreatedCallsCompletionListener() throws Exception {
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", null, null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());

@@ -13,10 +13,12 @@ import java.util.concurrent.RejectedExecutionException
 @RunWith(TestRunner::class)
 class IterableRequestDispatcherTest {
     private val requestExecutor = RecordingExecutor()
+    private val retryExecutor = RecordingExecutor()
     private val callbackExecutor = RecordingExecutor()
     private val retryScheduler = RecordingRetryScheduler()
     private val dispatcher = IterableRequestDispatcher(
         requestExecutor,
+        retryExecutor,
         callbackExecutor,
         retryScheduler
     )
@@ -42,13 +44,14 @@ class IterableRequestDispatcherTest {
     fun `retry waits for the scheduler before submitting request work`() {
         dispatcher.retry(request(), 4, 6_000)
 
-        assertTrue(requestExecutor.tasks.isEmpty())
+        assertTrue(retryExecutor.tasks.isEmpty())
         assertEquals(6_000L, retryScheduler.delayMs)
 
         retryScheduler.task?.run()
 
-        assertEquals(1, requestExecutor.tasks.size)
-        assertTrue(requestExecutor.tasks.single() is IterableRequestTask)
+        assertTrue(requestExecutor.tasks.isEmpty())
+        assertEquals(1, retryExecutor.tasks.size)
+        assertTrue(retryExecutor.tasks.single() is IterableRequestTask)
     }
 
     @Test
@@ -59,11 +62,11 @@ class IterableRequestDispatcherTest {
 
         dispatcher.executeRetry(staleRequest, 0)
 
-        assertTrue(requestExecutor.tasks.isEmpty())
+        assertTrue(retryExecutor.tasks.isEmpty())
     }
 
     @Test
-    fun `a saturated executor fails asynchronously without running network work on caller`() {
+    fun `a rejecting executor fails asynchronously without running network work on caller`() {
         val failure = RecordingFailureHandler()
         val rejectingDispatcher = IterableRequestDispatcher(
             Executor { throw RejectedExecutionException("full") },
@@ -78,11 +81,11 @@ class IterableRequestDispatcherTest {
 
         callbackExecutor.tasks.single().run()
 
-        assertEquals("Iterable request queue is full", failure.message)
+        assertEquals("Iterable request executor rejected work", failure.message)
     }
 
     @Test
-    fun `a saturated response request receives a transient failure`() {
+    fun `a rejected response request receives a transient failure`() {
         var response: IterableApiResponse? = null
         val rejectingDispatcher = IterableRequestDispatcher(
             Executor { throw RejectedExecutionException("full") },

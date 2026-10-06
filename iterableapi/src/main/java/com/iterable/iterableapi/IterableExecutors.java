@@ -7,6 +7,7 @@ import android.os.Process;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,19 +16,32 @@ final class IterableExecutors {
     // HttpURLConnection is blocking I/O, so ordinary API work uses a bounded
     // multi-thread pool rather than the serial executors used for ordered work.
     static final int REQUEST_THREAD_COUNT = 8;
-    // Matches the historical AsyncTask queue bound without inheriting its
+    // Bounds the primary pool without inheriting AsyncTask's
     // platform-version-dependent thread-pool behavior.
     static final int REQUEST_QUEUE_CAPACITY = 128;
     private static final long REQUEST_THREAD_KEEP_ALIVE_SECONDS = 30;
+    private static final int REQUEST_OVERFLOW_THREAD_COUNT = 5;
+    private static final long REQUEST_OVERFLOW_KEEP_ALIVE_SECONDS = 3;
     private static final AtomicInteger REQUEST_THREAD_ID = new AtomicInteger();
+    private static final AtomicInteger REQUEST_OVERFLOW_THREAD_ID = new AtomicInteger();
     private static final Executor PUSH_EXECUTOR =
             newSingleThreadExecutor("IterablePushExecutor");
     private static final Executor DEEP_LINK_EXECUTOR =
             newSingleThreadExecutor("IterableDeepLinkExecutor");
-    private static final Executor OFFLINE_EXECUTOR =
-            newSingleThreadExecutor("IterableOfflineExecutor");
+    private static final Executor SERIAL_REQUEST_EXECUTOR =
+            newSingleThreadExecutor("IterableSerialRequestExecutor");
+    private static final Executor OFFLINE_STORED_EXECUTOR =
+            newSingleThreadExecutor("IterableOfflineStoredExecutor");
+    // AsyncTask's concurrent executor used a backup queue instead of dropping
+    // work when its primary pool was saturated. Preserve that delivery behavior.
+    private static final Executor REQUEST_OVERFLOW_EXECUTOR =
+            newRequestOverflowExecutor(REQUEST_OVERFLOW_THREAD_COUNT);
     private static final Executor REQUEST_EXECUTOR =
-            newRequestExecutor(REQUEST_THREAD_COUNT, REQUEST_QUEUE_CAPACITY);
+            newRequestExecutor(
+                    REQUEST_THREAD_COUNT,
+                    REQUEST_QUEUE_CAPACITY,
+                    REQUEST_OVERFLOW_EXECUTOR
+            );
     private static final Executor MAIN_EXECUTOR =
             runnable -> new Handler(Looper.getMainLooper()).post(runnable);
 
@@ -46,8 +60,16 @@ final class IterableExecutors {
         return REQUEST_EXECUTOR;
     }
 
-    static Executor offline() {
-        return OFFLINE_EXECUTOR;
+    static Executor offlineImmediate() {
+        return SERIAL_REQUEST_EXECUTOR;
+    }
+
+    static Executor requestRetry() {
+        return SERIAL_REQUEST_EXECUTOR;
+    }
+
+    static Executor offlineStored() {
+        return OFFLINE_STORED_EXECUTOR;
     }
 
     static Executor main() {
@@ -61,6 +83,14 @@ final class IterableExecutors {
     }
 
     static ThreadPoolExecutor newRequestExecutor(int threadCount, int queueCapacity) {
+        return newRequestExecutor(threadCount, queueCapacity, REQUEST_OVERFLOW_EXECUTOR);
+    }
+
+    static ThreadPoolExecutor newRequestExecutor(
+            int threadCount,
+            int queueCapacity,
+            Executor overflowExecutor
+    ) {
         ThreadPoolExecutor executor = new ThreadPoolExecutor(
                 threadCount,
                 threadCount,
@@ -71,7 +101,24 @@ final class IterableExecutors {
                         runnable,
                         "IterableRequestExecutor-" + REQUEST_THREAD_ID.incrementAndGet()
                 ),
-                new ThreadPoolExecutor.AbortPolicy()
+                (runnable, ignored) -> overflowExecutor.execute(runnable)
+        );
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
+    }
+
+    static ThreadPoolExecutor newRequestOverflowExecutor(int threadCount) {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                threadCount,
+                threadCount,
+                REQUEST_OVERFLOW_KEEP_ALIVE_SECONDS,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                runnable -> newThread(
+                        runnable,
+                        "IterableRequestOverflowExecutor-"
+                                + REQUEST_OVERFLOW_THREAD_ID.incrementAndGet()
+                )
         );
         executor.allowCoreThreadTimeOut(true);
         return executor;

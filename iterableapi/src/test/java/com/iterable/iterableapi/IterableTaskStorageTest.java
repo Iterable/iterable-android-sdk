@@ -43,10 +43,13 @@ public class IterableTaskStorageTest extends BaseTest {
 
     @Test
     public void equalScheduledTimesUseInsertionOrderAndClaimedTasksAreSkipped() {
+        assertFalse(storage.hasPendingTasks());
+
         String firstId = storage.createTask("first", IterableTaskType.API, "{}");
         String secondId = storage.createTask("second", IterableTaskType.API, "{}");
         assertNotNull(firstId);
         assertNotNull(secondId);
+        assertTrue(storage.hasPendingTasks());
 
         SQLiteDatabase database = ReflectionHelpers.getField(storage, "database");
         ContentValues scheduled = new ContentValues();

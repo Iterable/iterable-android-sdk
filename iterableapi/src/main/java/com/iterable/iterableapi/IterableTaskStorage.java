@@ -91,6 +91,14 @@ class IterableTaskStorage {
         return sharedInstance;
     }
 
+    boolean hasPendingTasks() {
+        return database != null
+                && DatabaseUtils.queryNumEntries(
+                        database,
+                        ITERABLE_TASK_TABLE_NAME
+                ) > 0;
+    }
+
     void addTaskCreatedListener(TaskCreatedListener listener) {
         taskCreatedListeners.add(listener);
     }
