@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.shadows.ShadowLooper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -190,6 +191,74 @@ public class IterableSwitchProjectRoutingTest extends BaseTest {
         assertEquals(API_KEY_C, IterableApi.getInstance()._apiKey);
         assertEquals("C starts with no identity: B's email must not have been replayed into it",
                 null, IterableApi.getInstance().getEmail());
+    }
+
+    /**
+     * A to B, then C, then setEmail, all before B lands. The email was asked for after C, so it
+     * belongs to C. Draining the whole queue when B lands would identify C's user on B and then
+     * drop the call, because C's teardown clears identity.
+     */
+    @Test
+    public void testACallMadeAfterALaterDestinationWasRequestedReplaysAgainstThatDestination() throws Exception {
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.RUN,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, configWithoutAuth(), null, API_KEY_A));
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.JOINED_OR_QUEUED,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_C, configWithoutAuth(), null, API_KEY_A));
+        IterableApi.getInstance().setEmail(EMAIL_B);
+
+        // Land on B without running C yet, which is what completeProjectSwitch does before it
+        // hands the chain on. The email must still be queued.
+        IterableApi.initialize(context, API_KEY_B, configWithoutAuth());
+        IterableBackgroundInitializer.completeProjectSwitch(true);
+        for (int i = 0; i < 100 && IterableBackgroundInitializer.getQueuedOperationCount() != 1; i++) {
+            Thread.sleep(20);
+        }
+
+        assertEquals("the call must not have been drained into B",
+                1, IterableBackgroundInitializer.getQueuedOperationCount());
+        assertEquals("B must not have received an identity that was requested for C",
+                null, IterableApi.getInstance().getEmail());
+
+        settle();
+        assertEquals(API_KEY_C, IterableApi.getInstance()._apiKey);
+        assertEquals("the queued identity must replay once C is the project that landed",
+                EMAIL_B, IterableApi.getInstance().getEmail());
+    }
+
+    /**
+     * Three destinations, then the middle one asked for again. Each leg keeps its own calls, in
+     * the order they were made, and the second ask for C does not take the calls from the first.
+     */
+    @Test
+    public void testFifoIsPreservedWithinEachDestinationAcrossAChain() throws Exception {
+        List<String> ran = Collections.synchronizedList(new ArrayList<>());
+
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.RUN,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_B, configWithoutAuth(), null, API_KEY_A));
+        IterableBackgroundInitializer.queueOrExecute(() -> ran.add("b1"), "b1");
+        IterableBackgroundInitializer.queueOrExecute(() -> ran.add("b2"), "b2");
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.JOINED_OR_QUEUED,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_C, configWithoutAuth(), null, API_KEY_A));
+        IterableBackgroundInitializer.queueOrExecute(() -> ran.add("c1"), "c1");
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.JOINED_OR_QUEUED,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_D, configWithoutAuth(), null, API_KEY_A));
+        IterableBackgroundInitializer.queueOrExecute(() -> ran.add("d1"), "d1");
+        IterableBackgroundInitializer.queueOrExecute(() -> ran.add("d2"), "d2");
+        assertEquals(IterableBackgroundInitializer.BeginSwitchOutcome.JOINED_OR_QUEUED,
+                IterableBackgroundInitializer.beginProjectSwitch(API_KEY_C, configWithoutAuth(), null, API_KEY_A));
+        IterableBackgroundInitializer.queueOrExecute(() -> ran.add("c2"), "c2");
+
+        IterableApi.initialize(context, API_KEY_B, configWithoutAuth());
+        IterableBackgroundInitializer.completeProjectSwitch(true);
+        for (int i = 0; i < 100 && ran.size() < 2; i++) {
+            Thread.sleep(20);
+        }
+        assertEquals("B replays only the calls enqueued for B", List.of("b1", "b2"), ran);
+        assertEquals(4, IterableBackgroundInitializer.getQueuedOperationCount());
+
+        settle();
+        assertEquals(List.of("b1", "b2", "c1", "d1", "d2", "c2"), ran);
+        assertEquals(API_KEY_C, IterableApi.getInstance()._apiKey);
     }
 
     // region Helpers

@@ -10,6 +10,7 @@ import androidx.annotation.VisibleForTesting;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -65,33 +66,53 @@ class IterableBackgroundInitializer {
      * Queue for operations called before initialization completes
      */
     private static class OperationQueue {
-        private final ConcurrentLinkedQueue<QueuedOperation> operations = new ConcurrentLinkedQueue<>();
+        /**
+         * An operation plus the switch leg it was requested under. {@code destination == null}
+         * means it was queued for initialization, which has no leg. A drain for one leg leaves
+         * every other leg where it is, so a call made after a later destination was requested is
+         * not replayed into the switch that happens to land first.
+         */
+        private static final class TaggedOperation {
+            @Nullable final Object destination;
+            final QueuedOperation operation;
+
+            TaggedOperation(@Nullable Object destination, QueuedOperation operation) {
+                this.destination = destination;
+                this.operation = operation;
+            }
+        }
+
+        private final ConcurrentLinkedQueue<TaggedOperation> operations = new ConcurrentLinkedQueue<>();
         private volatile boolean isProcessing = false;
 
-        void enqueue(QueuedOperation operation) {
-            operations.offer(operation);
+        void enqueue(QueuedOperation operation, @Nullable Object destination) {
+            operations.offer(new TaggedOperation(destination, operation));
             IterableLogger.d(TAG, "Queued operation: " + operation.getDescription());
         }
 
         void processAll(ExecutorService executor) {
-            processAll(executor, null, null);
+            processAll(executor, null, null, null);
         }
 
         /**
-         * @param onDrained run on the executor thread once every queued operation has executed. Not
-         *                  run unless the result is {@link DrainResult#STARTED}.
-         * @param lowerGateWhenDrained run under {@code initLock} the first time the queue is
-         *                             observed empty. Until it runs, callers still see the gate
-         *                             raised and keep enqueueing, so a call made during the drain
-         *                             cannot overtake the calls already queued behind the gate.
+         * @param onDrained run on the executor thread once every operation for {@code destination}
+         *                  has executed. Not run unless the result is {@link DrainResult#STARTED}.
+         * @param lowerGateWhenDrained run under {@code initLock} the first time that destination's
+         *                             queue is observed empty. Until it runs, callers still see the
+         *                             gate raised and keep enqueueing, so a call made during the
+         *                             drain cannot overtake the calls already queued for the same
+         *                             destination.
+         * @param destination the switch leg to replay, or null to replay calls queued for
+         *                    initialization. Other legs stay queued.
          */
         DrainResult processAll(ExecutorService executor,
                                @Nullable Runnable onDrained,
-                               @Nullable Runnable lowerGateWhenDrained) {
+                               @Nullable Runnable lowerGateWhenDrained,
+                               @Nullable Object destination) {
             if (isProcessing) return DrainResult.ALREADY_DRAINING;
             isProcessing = true;
 
-            if (submitDrain(executor, onDrained, lowerGateWhenDrained)) {
+            if (submitDrain(executor, onDrained, lowerGateWhenDrained, destination)) {
                 return DrainResult.STARTED;
             }
 
@@ -99,7 +120,7 @@ class IterableBackgroundInitializer {
             // real: the drain task shuts its own executor down as its last act, so a switch started
             // from inside a switch callback can land in exactly this window.
             IterableLogger.w(TAG, "Background executor rejected the queue drain, retrying on a fresh executor");
-            if (submitDrain(replaceIfCurrent(executor), onDrained, lowerGateWhenDrained)) {
+            if (submitDrain(replaceIfCurrent(executor), onDrained, lowerGateWhenDrained, destination)) {
                 return DrainResult.STARTED;
             }
 
@@ -113,12 +134,13 @@ class IterableBackgroundInitializer {
         /** @return false if {@code executor} rejected the drain */
         private boolean submitDrain(ExecutorService executor,
                                     @Nullable Runnable onDrained,
-                                    @Nullable Runnable lowerGateWhenDrained) {
+                                    @Nullable Runnable lowerGateWhenDrained,
+                                    @Nullable Object destination) {
             try {
                 executor.execute(() -> {
                     while (true) {
                         QueuedOperation operation;
-                        while ((operation = operations.poll()) != null) {
+                        while ((operation = pollDestination(destination)) != null) {
                             try {
                                 IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
                                 operation.execute();
@@ -129,13 +151,13 @@ class IterableBackgroundInitializer {
                         if (lowerGateWhenDrained == null) {
                             break;
                         }
-                        // Emptiness is decided under the lock enqueue takes, so a call landing
-                        // right now either goes on the queue and is picked up by another pass, or
-                        // arrives after the gate is down and runs itself. It can never slip in
-                        // between and jump ahead of what is already queued.
+                        // Emptiness is decided under the lock enqueue takes, and only for this
+                        // destination. A call for a later one stays queued. A call for this one
+                        // either goes on the queue and is picked up by another pass, or arrives
+                        // after the gate is down and runs itself.
                         boolean drained;
                         synchronized (initLock) {
-                            drained = operations.isEmpty();
+                            drained = !containsDestination(destination);
                             if (drained) {
                                 lowerGateWhenDrained.run();
                             }
@@ -170,6 +192,35 @@ class IterableBackgroundInitializer {
         void clear() {
             operations.clear();
             isProcessing = false;
+        }
+
+        /**
+         * Removes the oldest operation enqueued for {@code destination}. Identity, not equality:
+         * two requests for the same API key are different legs when another destination sits
+         * between them.
+         */
+        @Nullable
+        private QueuedOperation pollDestination(@Nullable Object destination) {
+            synchronized (initLock) {
+                Iterator<TaggedOperation> it = operations.iterator();
+                while (it.hasNext()) {
+                    TaggedOperation tagged = it.next();
+                    if (tagged.destination == destination) {
+                        it.remove();
+                        return tagged.operation;
+                    }
+                }
+                return null;
+            }
+        }
+
+        private boolean containsDestination(@Nullable Object destination) {
+            for (TaggedOperation tagged : operations) {
+                if (tagged.destination == destination) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -422,6 +473,20 @@ class IterableBackgroundInitializer {
     }
 
     /**
+     * The leg a call belongs to when it is queued. Null during initialization. While a switch is
+     * in flight this is the project the app has most recently asked for: the tail of the chain, or
+     * the leg in flight when nothing is queued behind it. Caller holds {@link #initLock}.
+     */
+    @Nullable
+    private static Object destinationForQueuedCallLocked() {
+        if (!isSwitchingProject) {
+            return null;
+        }
+        PendingProjectSwitch tail = pendingSwitches.peekLast();
+        return tail != null ? tail.leg : inFlightLeg;
+    }
+
+    /**
      * Queue an operation if initialization is in progress, otherwise execute immediately
      * @param operation The operation to queue or execute
      * @return true if operation was queued, false if executed immediately
@@ -429,7 +494,7 @@ class IterableBackgroundInitializer {
     static boolean queueOrExecute(QueuedOperation operation) {
         synchronized (initLock) {
             if (isInitializing && !isBackgroundInitialized) {
-                operationQueue.enqueue(operation);
+                operationQueue.enqueue(operation, destinationForQueuedCallLocked());
                 return true;
             }
         }
@@ -476,7 +541,7 @@ class IterableBackgroundInitializer {
         boolean switching;
         synchronized (initLock) {
             if (isInitializing && !isBackgroundInitialized && !isSwitchingProject) {
-                operationQueue.enqueue(operation);
+                operationQueue.enqueue(operation, null);
                 return true;
             }
             // Read under the same lock that raises the gate, so the branch cannot be decided on a
@@ -520,6 +585,13 @@ class IterableBackgroundInitializer {
     private static volatile String inFlightSwitchApiKey;
 
     /**
+     * Identity of the switch leg that is in flight. Distinct from {@link #inFlightSwitchApiKey}:
+     * asking for the same project again after a different one is a new leg, and a queued call
+     * belongs to the leg that was the latest ask when the call was made.
+     */
+    private static Object inFlightLeg;
+
+    /**
      * Switches asked for while another was in flight, targeting a project that one will not land
      * on. Run in the order they were asked for once the switch ahead of them finishes.
      *
@@ -533,6 +605,8 @@ class IterableBackgroundInitializer {
         final String apiKey;
         @Nullable final IterableConfig config;
         final List<IterableProjectSwitchCallback> callbacks = new ArrayList<>();
+        /** See {@link #inFlightLeg}. One per queued request, never reused across a different destination. */
+        final Object leg = new Object();
 
         PendingProjectSwitch(@NonNull String apiKey, @Nullable IterableConfig config) {
             this.apiKey = apiKey;
@@ -624,6 +698,7 @@ class IterableBackgroundInitializer {
             }
             isSwitchingProject = true;
             inFlightSwitchApiKey = apiKey;
+            inFlightLeg = new Object();
             raiseCallGateLocked();
             return BeginSwitchOutcome.RUN;
         }
@@ -652,8 +727,9 @@ class IterableBackgroundInitializer {
     }
 
     /**
-     * Lowers the switch gate, drains the calls queued during the switch window FIFO against the new
-     * project, then delivers every callback registered with this switch on the main thread.
+     * Lowers the switch gate, drains the calls queued for this switch leg FIFO against the project
+     * that just landed, then delivers every callback registered with this switch on the main thread.
+     * Calls queued for a later leg stay queued until that leg lands.
      *
      * When a switch was requested while this one ran, the chain passes straight to it rather than
      * ending, and {@link #startPendingSwitch} runs it on the chain it inherited.
@@ -666,8 +742,12 @@ class IterableBackgroundInitializer {
         final List<IterableInitializationCallback> initCallbacksToNotify = new ArrayList<>();
         final AtomicReference<PendingProjectSwitch> nextSwitch = new AtomicReference<>();
         final ExecutorService executor;
+        final Object drainingLeg;
         synchronized (initLock) {
             executor = ensureBackgroundExecutor();
+            // Captured before the drain. lowerGate moves inFlightLeg to the next request, and the
+            // drain has to keep replaying the leg that is landing, not whichever one that becomes.
+            drainingLeg = inFlightLeg;
         }
 
         // Run under initLock once the drain has emptied the queue, not before it starts. Lowering
@@ -703,11 +783,13 @@ class IterableBackgroundInitializer {
                 // report success. isSwitchingProject stays raised because that is what
                 // beginProjectSwitch routes on.
                 inFlightSwitchApiKey = next.apiKey;
+                inFlightLeg = next.leg;
                 switchCallbacks.addAll(next.callbacks);
                 return;
             }
             isSwitchingProject = false;
             inFlightSwitchApiKey = null;
+            inFlightLeg = null;
         };
 
         Runnable notifyCallbacks = () -> {
@@ -716,7 +798,7 @@ class IterableBackgroundInitializer {
             startPendingSwitch(nextSwitch.get());
         };
 
-        DrainResult drainResult = operationQueue.processAll(executor, notifyCallbacks, lowerGate);
+        DrainResult drainResult = operationQueue.processAll(executor, notifyCallbacks, lowerGate, drainingLeg);
         if (drainResult == DrainResult.STARTED) {
             return;
         }
@@ -975,6 +1057,7 @@ class IterableBackgroundInitializer {
             isBackgroundInitialized = false;
             isSwitchingProject = false;
             inFlightSwitchApiKey = null;
+            inFlightLeg = null;
             operationQueue.clear();
             pendingCallbacks.clear();
             pendingInitActions.clear();
@@ -1004,7 +1087,7 @@ class IterableBackgroundInitializer {
      */
     @VisibleForTesting
     static DrainResult processQueuedOperationsOn(ExecutorService executor) {
-        return operationQueue.processAll(executor, null, null);
+        return operationQueue.processAll(executor, null, null, null);
     }
 
     /**
@@ -1021,8 +1104,8 @@ class IterableBackgroundInitializer {
     @VisibleForTesting
     static List<String> getQueuedOperationDescriptions() {
         List<String> descriptions = new ArrayList<>();
-        for (QueuedOperation op : operationQueue.operations) {
-            descriptions.add(op.getDescription());
+        for (OperationQueue.TaggedOperation op : operationQueue.operations) {
+            descriptions.add(op.operation.getDescription());
         }
         return descriptions;
     }
