@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * The eight steps are: guard and validate, raise the switch gate, run the existing logout path,
  * purge the persisted offline queue, clear the previous project's identity and project-scoped
  * storage, release its managers, re-initialize against the new key and config, then lower the gate,
- * drain the calls queued during the window and fire the callbacks.
+ * drain the calls queued for this destination and fire the callbacks. Calls queued for a later
+ * destination stay queued until that destination lands.
  *
  * Kept out of {@link IterableApi} so the switch reads as one sequence, mirroring how the iOS SDK
  * organises it in {@code IterableAPI+SwitchProject.swift}.

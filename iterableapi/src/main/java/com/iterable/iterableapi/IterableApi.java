@@ -1015,7 +1015,9 @@ public class IterableApi {
      *
      * This returns immediately; teardown and re-initialization run on the SDK's background executor.
      * SDK calls made between this call and the callback are queued and drained in FIFO order against
-     * the new project.
+     * the project that was requested when the call was made. A call made after a later destination
+     * has been requested waits for that destination. Calls made from a switch callback run against
+     * the project that just landed.
      *
      * The switch disables the push token on the previous project (with that project's API key and
      * region endpoint, even though the FCM token lookup is asynchronous), clears its identity from
