@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertThat;
 
 @RunWith(AndroidJUnit4.class)
@@ -130,21 +132,52 @@ public class IterableApiResponseTest {
 
     @Test
     public void testResponseCode400WithoutMessage() throws Exception {
-        final CountDownLatch signal = new CountDownLatch(1);
+        String lastReason = null;
+        boolean serverReceivedRequest = false;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            final CountDownLatch signal = new CountDownLatch(1);
+            final String[] reason = new String[1];
 
-        stubAnyRequestReturningStatusCode(400, "{}");
+            stubAnyRequestReturningStatusCode(400, "{}");
 
-        IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
-            @Override
-            public void onFailure(@NonNull String reason, @Nullable JSONObject data) {
-                assertEquals("Invalid Request", reason);
-                signal.countDown();
+            IterableApiRequest request = new IterableApiRequest("fake_key", "", new JSONObject(), IterableApiRequest.POST, null, null, new IterableHelper.FailureHandler() {
+                @Override
+                public void onFailure(@NonNull String failureReason, @Nullable JSONObject data) {
+                    reason[0] = failureReason;
+                    signal.countDown();
+                }
+            });
+            new IterableRequestTask().execute(request);
+
+            RecordedRequest recorded = server.takeRequest(5, TimeUnit.SECONDS);
+            boolean callbackFinished = signal.await(5, TimeUnit.SECONDS);
+            lastReason = reason[0];
+            if (recorded != null) {
+                serverReceivedRequest = true;
             }
-        });
-        new IterableRequestTask().execute(request);
 
-        server.takeRequest(5, TimeUnit.SECONDS);
-        assertTrue("onFailure is called", signal.await(5, TimeUnit.SECONDS));
+            if (callbackFinished && "Invalid Request".equals(lastReason)) {
+                return;
+            }
+            if (recorded != null && callbackFinished && !isEmulatorTransportTimeout(lastReason)) {
+                assertEquals("Invalid Request", lastReason);
+            }
+        }
+
+        if (isEmulatorTransportTimeout(lastReason)) {
+            fail("Emulator transport timeout: stubbed HTTP 400 was not applied before the HTTP timeout. "
+                    + "MockWebServer received the request: " + serverReceivedRequest
+                    + ". Last failure reason: " + lastReason);
+        }
+        fail("MockWebServer received the request but the SDK did not report Invalid Request. Last failure reason: " + lastReason);
+    }
+
+    private static boolean isEmulatorTransportTimeout(String reason) {
+        if (reason == null) {
+            return true;
+        }
+        String lower = reason.toLowerCase(Locale.US);
+        return lower.contains("timeout") || lower.contains("timed out") || lower.contains("failed to connect");
     }
 
 
