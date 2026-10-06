@@ -194,6 +194,31 @@ class IterableBackgroundInitializer {
     private static volatile boolean isInitializing = false;
     private static volatile boolean isBackgroundInitialized = false;
     private static final ConcurrentLinkedQueue<IterableInitializationCallback> pendingCallbacks = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<InitializationResultListener> pendingInitResults = new ConcurrentLinkedQueue<>();
+
+    /**
+     * Test-only. The next {@link #initializeInBackground} run fails the way a timed-out or thrown
+     * initialization does, so {@code switchProject} before init can be asserted against that result.
+     * Cleared as soon as it is consumed.
+     */
+    @VisibleForTesting
+    static volatile boolean failNextInitialization;
+
+    /** Receives whether background initialization finished without a timeout or an exception. */
+    interface InitializationResultListener {
+        void onInitializationFinished(boolean succeeded);
+    }
+
+    private static void deliverInitResult(@Nullable InitializationResultListener listener, boolean succeeded) {
+        if (listener == null) {
+            return;
+        }
+        try {
+            listener.onInitializationFinished(succeeded);
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Exception in initialization result listener", e);
+        }
+    }
 
     /**
      * Work that must not run until the in-flight background initialization has finished. Currently
@@ -216,11 +241,32 @@ class IterableBackgroundInitializer {
                                      @NonNull String apiKey,
                                      @Nullable IterableConfig config,
                                      @Nullable IterableInitializationCallback callback) {
+        initializeInBackground(context, apiKey, config, callback, null);
+    }
+
+    /**
+     * Same as {@link #initializeInBackground(Context, String, IterableConfig, IterableInitializationCallback)},
+     * plus a result the public callback cannot carry. {@code IterableInitializationCallback} has no
+     * success argument, and giving it one would change every app that implements it.
+     * {@code switchProject} before initialization needs the result so a failed start is
+     * {@code SWITCHED_WITH_WARNINGS} on Android the way a failed {@code start()} is
+     * {@code .switchedWithWarnings} on iOS. The public callback still fires either way.
+     */
+    static void initializeInBackground(@NonNull Context context,
+                                     @NonNull String apiKey,
+                                     @Nullable IterableConfig config,
+                                     @Nullable IterableInitializationCallback callback,
+                                     @Nullable InitializationResultListener resultListener) {
         // Handle null context early - still report success but log error
         if (context == null) {
             IterableLogger.e(TAG, "Context cannot be null, but reporting success");
-            if (callback != null) {
-                new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
+            if (callback != null || resultListener != null) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (callback != null) {
+                        callback.onSDKInitialized();
+                    }
+                    deliverInitResult(resultListener, true);
+                });
             }
             return;
         }
@@ -228,13 +274,21 @@ class IterableBackgroundInitializer {
         synchronized (initLock) {
             if (isInitializing || isBackgroundInitialized) {
                 IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
-                if (callback != null) {
-                    if (isBackgroundInitialized) {
-                        // Initialization already complete, call callback immediately
-                        new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
-                    } else {
-                        // Initialization in progress, queue callback for later
+                if (isBackgroundInitialized) {
+                    if (callback != null || resultListener != null) {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            if (callback != null) {
+                                callback.onSDKInitialized();
+                            }
+                            deliverInitResult(resultListener, true);
+                        });
+                    }
+                } else {
+                    if (callback != null) {
                         pendingCallbacks.offer(callback);
+                    }
+                    if (resultListener != null) {
+                        pendingInitResults.offer(resultListener);
                     }
                 }
                 return;
@@ -263,6 +317,11 @@ class IterableBackgroundInitializer {
 
             try {
                 IterableLogger.d(TAG, "Starting initialization with " + INITIALIZATION_TIMEOUT_SECONDS + " second timeout");
+
+                if (failNextInitialization) {
+                    failNextInitialization = false;
+                    throw new IllegalStateException("background initialization failed");
+                }
 
                 // Submit the actual initialization task
                 Future<?> initFuture = initExecutor.submit(() -> {
@@ -302,7 +361,7 @@ class IterableBackgroundInitializer {
                         IterableLogger.w(TAG, "Initialization timed out or failed, but notifying callbacks anyway after " + totalTime + "ms");
                     }
 
-                    // Call the original callback directly
+                    // Call the original callback directly. It still means "finished", not "succeeded".
                     if (callback != null) {
                         try {
                             callback.onSDKInitialized();
@@ -310,6 +369,7 @@ class IterableBackgroundInitializer {
                             IterableLogger.e(TAG, "Exception in initialization callback", e);
                         }
                     }
+                    deliverInitResult(resultListener, finalInitSucceeded);
 
                     // Call all pending callbacks from concurrent initialization attempts
                     IterableInitializationCallback pendingCallback;
@@ -319,6 +379,10 @@ class IterableBackgroundInitializer {
                         } catch (Exception e) {
                             IterableLogger.e(TAG, "Exception in pending initialization callback", e);
                         }
+                    }
+                    InitializationResultListener pendingResult;
+                    while ((pendingResult = pendingInitResults.poll()) != null) {
+                        deliverInitResult(pendingResult, finalInitSucceeded);
                     }
 
                 } catch (Exception e) {
@@ -977,7 +1041,9 @@ class IterableBackgroundInitializer {
             inFlightSwitchApiKey = null;
             operationQueue.clear();
             pendingCallbacks.clear();
+            pendingInitResults.clear();
             pendingInitActions.clear();
+            failNextInitialization = false;
             switchCallbacks.clear();
             pendingSwitches.clear();
             callbackManager.reset();

@@ -95,16 +95,20 @@ class IterableProjectSwitcher {
         // Step 1: guard and validate.
         if (api._apiKey == null || api._applicationContext == null) {
             IterableLogger.w(TAG, "switchProject called before the SDK was initialized; initializing instead");
-            // Reported as clean, matching iOS. There is no previous project, so there is no
-            // teardown step that could have been noisy and no device to disable: warnings would
-            // point at a warning that does not exist, and an app that uses switchProject as its
-            // entry point would see one on every cold start.
-            // initializeInBackground notifies on the main thread already, so this does not need
-            // deliverSwitchCallback.
-            IterableApi.initializeInBackground(context, apiKey, config,
-                    callback == null ? null
-                            : () -> callback.onProjectSwitched(IterableProjectSwitchResult.SWITCHED_CLEANLY));
-            releaseInheritedGate(resumingGate, true);
+            // No previous project, so a clean start has nothing to warn about. A start that fails
+            // is the one case that does: iOS forwards start()'s result, and this does the same
+            // with initializeInBackground's. The public init callback cannot carry that, so the
+            // result listener is what switchProject reads. It runs on the main thread already.
+            IterableBackgroundInitializer.initializeInBackground(context, apiKey, config, null, succeeded -> {
+                if (callback != null) {
+                    try {
+                        callback.onProjectSwitched(IterableProjectSwitchResult.from(succeeded));
+                    } catch (Exception e) {
+                        IterableLogger.e(TAG, "Exception in switchProject callback", e);
+                    }
+                }
+                releaseInheritedGate(resumingGate, succeeded);
+            });
             return;
         }
 
