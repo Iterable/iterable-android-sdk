@@ -30,13 +30,15 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Verify release is ready
+        id: verify_changelog
         run: |
           if ! grep -qE "^## \[$VERSION\]" CHANGELOG.md; then
             echo "::error::CHANGELOG.md has no entry for [$VERSION]. Merge the prepare-release PR to master before running this workflow."
             exit 1
           fi
 
-      - name: Verify draft GitHub release exists
+      - name: Ensure GitHub release exists
+        id: release_state
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -45,12 +47,16 @@ jobs:
             exit 1
           fi
           is_draft=$(gh release view "$VERSION" --json isDraft -q .isDraft)
-          if [ "$is_draft" != "true" ]; then
-            echo "::error::Release $VERSION is not a draft. Refusing to publish artifacts for an already-published release."
-            exit 1
+          echo "is_draft=$is_draft" >> "$GITHUB_OUTPUT"
+          if [ "$is_draft" = "true" ]; then
+            echo "Release $VERSION is a draft; will publish on GitHub before Maven Central."
+          else
+            echo "Release $VERSION is already published; retrying tag alignment and Maven Central upload."
           fi
 
-      - name: Publish draft GitHub release and tag master
+      - name: Publish draft GitHub release
+        if: steps.release_state.outputs.is_draft == 'true'
+        id: publish_github
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -67,6 +73,16 @@ jobs:
               --latest
           fi
 
+      - name: Point release tag at master HEAD
+        id: align_tag
+        run: |
+          target="$(git rev-parse HEAD)"
+          # gh release edit does not move an existing tag; align tag to the merged release commit.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa "$VERSION" "$target"
+          git push origin "refs/tags/$VERSION" --force
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -82,6 +98,7 @@ jobs:
           echo "SHORT_GPG_KEY_ID=${GPG_KEY_ID: -8}" >> $GITHUB_ENV
 
       - name: Publish to Sonatype Central
+        id: central
         run: ./gradlew clean :iterableapi:assemble :iterableapi-ui:assemble publishAllPublicationsToCentralPortal
         env:
           ORG_GRADLE_PROJECT_SIGNING_KEY_ID: ${{ env.SHORT_GPG_KEY_ID }}
@@ -91,18 +108,20 @@ jobs:
           ORG_GRADLE_PROJECT_SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
 
       - name: Slack notification
+        if: steps.central.outcome == 'success'
+        continue-on-error: true
         run: |
           release_url="https://github.com/${{ github.repository }}/releases/tag/$VERSION"
           payload=$(jq -n \
             --arg text ":android: *Android SDK ${VERSION}* has been released. <${release_url}|View release notes>." \
             '{"text": $text}')
-          curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_WEBHOOK }}"
+          curl -sS -f -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_WEBHOOK }}"
 
       - name: Slack failure notification
-        if: failure()
+        if: failure() && steps.central.outcome != 'success'
         run: |
           run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
           payload=$(jq -n \
             --arg text ":alert: Android SDK release ${VERSION} failed (attempt ${{ github.run_attempt }}). Run: ${run_url}" \
             '{"text": $text}')
-          curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_WEBHOOK }}"
+          curl -sS -f -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_WEBHOOK }}"

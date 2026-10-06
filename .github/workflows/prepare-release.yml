@@ -83,7 +83,6 @@ jobs:
           version="${{ github.event.inputs.version }}"
 
           sed -i "s/libraryVersion = '.*'/libraryVersion = '$version'/" iterableapi/build.gradle
-          sed -i "s/versionName=\".*\"/versionName=\"$version\"/" iterableapi/build.gradle
 
           temp_gradle=$(mktemp)
           awk -v version="$version" '
@@ -97,9 +96,6 @@ jobs:
           rm "$temp_gradle"
 
           sed -i "s/libraryVersion = '.*'/libraryVersion = '$version'/" iterableapi-ui/build.gradle
-
-          sed -i "s/implementation 'com.iterable:iterableapi:[^']*'/implementation 'com.iterable:iterableapi:$version'/" sample-apps/inbox-customization/app/build.gradle
-          sed -i "s/implementation 'com.iterable:iterableapi-ui:[^']*'/implementation 'com.iterable:iterableapi-ui:$version'/" sample-apps/inbox-customization/app/build.gradle
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5
@@ -116,9 +112,8 @@ jobs:
             ## SDK Release Checklist
             - [ ] CHANGELOG.md updated
             - [ ] Version numbers updated in build.gradle files:
-              - [ ] iterableapi/build.gradle (libraryVersion, versionName, ITERABLE_SDK_VERSION)
+              - [ ] iterableapi/build.gradle (libraryVersion, ITERABLE_SDK_VERSION)
               - [ ] iterableapi-ui/build.gradle (libraryVersion)
-              - [ ] sample-apps/inbox-customization/app/build.gradle (both dependencies)
             - [ ] README.md reviewed (if needed)
             - [ ] Sample apps verified
             - [ ] All tests passing
@@ -141,4 +136,10 @@ jobs:
               --draft \
               --title "$version" \
               --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi
+
+          # gh may create the tag on the default branch when the release is named; keep tag off master until Publish.
+          if git ls-remote --tags origin "refs/tags/$version" | grep -q .; then
+            echo "Removing premature tag $version (draft release must not point at pre-bump master)."
+            git push origin ":refs/tags/$version"
           fi
