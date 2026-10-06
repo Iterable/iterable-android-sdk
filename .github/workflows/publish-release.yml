@@ -36,6 +36,37 @@ jobs:
             exit 1
           fi
 
+      - name: Verify draft GitHub release exists
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if ! gh release view "$VERSION" &>/dev/null; then
+            echo "::error::No GitHub release found for $VERSION. Run Prepare Release before publishing."
+            exit 1
+          fi
+          is_draft=$(gh release view "$VERSION" --json isDraft -q .isDraft)
+          if [ "$is_draft" != "true" ]; then
+            echo "::error::Release $VERSION is not a draft. Refusing to publish artifacts for an already-published release."
+            exit 1
+          fi
+
+      - name: Publish draft GitHub release and tag master
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          target="$(git rev-parse HEAD)"
+          if [[ "$VERSION" == *-* ]]; then
+            gh release edit "$VERSION" \
+              --draft=false \
+              --target "$target" \
+              --prerelease
+          else
+            gh release edit "$VERSION" \
+              --draft=false \
+              --target "$target" \
+              --latest
+          fi
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -58,15 +89,6 @@ jobs:
           ORG_GRADLE_PROJECT_SIGNING_SECRET_KEY_RING_FILE: /home/runner/.gnupg/secring.gpg
           ORG_GRADLE_PROJECT_SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           ORG_GRADLE_PROJECT_SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-
-      - name: Publish draft GitHub release and tag master
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          gh release edit "$VERSION" \
-            --draft=false \
-            --target "$(git rev-parse HEAD)" \
-            --latest
 
       - name: Slack notification
         run: |
