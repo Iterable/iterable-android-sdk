@@ -13,6 +13,7 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.By
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableEmbeddedMessage
+import com.iterable.iterableapi.IterableEmbeddedUpdateHandler
 import com.iterable.integration.tests.activities.EmbeddedMessageTestActivity
 import com.iterable.integration.tests.utils.maskEmail
 import com.iterable.iterableapi.ui.embedded.IterableEmbeddedView
@@ -25,6 +26,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
@@ -36,6 +38,20 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
     
     private lateinit var uiDevice: UiDevice
     private lateinit var mainActivityScenario: ActivityScenario<MainActivity>
+    private var syncHandlerRegistered = false
+    private val syncSuccesses = AtomicInteger(0)
+    private val syncFailures = AtomicInteger(0)
+    private val syncHandler = object : IterableEmbeddedUpdateHandler {
+        override fun onMessagesUpdated() {}
+        override fun onEmbeddedMessagingDisabled() {}
+        override fun onEmbeddedMessagingSyncSucceeded() {
+            syncSuccesses.incrementAndGet()
+        }
+        override fun onEmbeddedMessagingSyncFailed(reason: String?) {
+            Log.d(TAG, "Embedded sync failed: $reason")
+            syncFailures.incrementAndGet()
+        }
+    }
     
     @Before
     override fun setUp() {
@@ -70,6 +86,10 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
     
     @After
     override fun tearDown() {
+        if (syncHandlerRegistered) {
+            IterableApi.getInstance().embeddedManager.removeUpdateListener(syncHandler)
+            syncHandlerRegistered = false
+        }
         super.tearDown()
     }
     
@@ -138,15 +158,13 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         // Drive a clean standard→premium membership transition. Mirrors the iOS BCIT
         // embedded test — the BCIT campaign's audience predicate is on
         // `membershipLevel == "premium"`.
-        setMembershipLevel("standard")
-        syncMessagesAndWait()
+        val standardPlacementIds = waitForMembershipLevel("standard", present = false)
         Assert.assertFalse(
-            "User should not be eligible for placement $TEST_PLACEMENT_ID with membershipLevel=standard",
-            IterableApi.getInstance().embeddedManager.getPlacementIds().contains(TEST_PLACEMENT_ID)
+            "User should not be eligible for placement $TEST_PLACEMENT_ID with membershipLevel=standard, but found: $standardPlacementIds",
+            standardPlacementIds.contains(TEST_PLACEMENT_ID)
         )
 
-        setMembershipLevel("premium")
-        val placementIds = syncAndWaitForPlacement(TEST_PLACEMENT_ID, timeoutSeconds = 30)
+        val placementIds = waitForMembershipLevel("premium", present = true)
         Assert.assertTrue(
             "Placement ID $TEST_PLACEMENT_ID should exist, but found: $placementIds",
             placementIds.contains(TEST_PLACEMENT_ID)
@@ -255,24 +273,71 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     private fun setMembershipLevel(level: String) {
+        Log.d(TAG, "Updating membershipLevel=$level")
         IterableApi.getInstance().updateUser(JSONObject().put("membershipLevel", level))
-        Thread.sleep(3000)
     }
 
-    private fun syncMessagesAndWait() {
-        IterableApi.getInstance().embeddedManager.syncMessages()
-        Thread.sleep(2000)
-    }
-
-    private fun syncAndWaitForPlacement(placementId: Long, timeoutSeconds: Long = 30): List<Long> {
+    private fun waitForMembershipLevel(
+        level: String,
+        present: Boolean,
+        timeoutSeconds: Long = 30
+    ): List<Long> {
         val deadline = System.currentTimeMillis() + timeoutSeconds * 1000
-        var placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
-        while (System.currentTimeMillis() < deadline && !placementIds.contains(placementId)) {
-            IterableApi.getInstance().embeddedManager.syncMessages()
-            Thread.sleep(2000)
-            placementIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+        var lastIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
+        var updateSent = false
+        var consecutiveMatches = 0
+        while (System.currentTimeMillis() < deadline) {
+            val synced = awaitSuccessfulSync()
+            if (synced == null) {
+                consecutiveMatches = 0
+                Thread.sleep(1000)
+                continue
+            }
+            lastIds = synced
+            Log.d(TAG, "Placement IDs while waiting for membershipLevel=$level present=$present: $lastIds")
+            val matches = lastIds.contains(TEST_PLACEMENT_ID) == present
+            if (!matches && !updateSent) {
+                setMembershipLevel(level)
+                updateSent = true
+                consecutiveMatches = 0
+                Thread.sleep(1000)
+                continue
+            }
+            if (matches) {
+                consecutiveMatches += 1
+                if (consecutiveMatches >= 2) {
+                    return lastIds
+                }
+            } else {
+                consecutiveMatches = 0
+            }
+            Thread.sleep(1000)
         }
-        return placementIds
+        return lastIds
+    }
+
+    // removeUpdateListener() ends the embedded session, so the handler stays on until tearDown.
+    // A failed sync does not update placement ids, so only a successful sync counts.
+    private fun awaitSuccessfulSync(): List<Long>? {
+        if (!syncHandlerRegistered) {
+            IterableApi.getInstance().embeddedManager.addUpdateListener(syncHandler)
+            syncHandlerRegistered = true
+        }
+        val successesBefore = syncSuccesses.get()
+        val failuresBefore = syncFailures.get()
+        IterableApi.getInstance().embeddedManager.syncMessages()
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            if (syncSuccesses.get() > successesBefore) {
+                return IterableApi.getInstance().embeddedManager.getPlacementIds()
+            }
+            if (syncFailures.get() > failuresBefore) {
+                return null
+            }
+            Thread.sleep(100)
+        }
+        Log.d(TAG, "Embedded sync did not finish within 10s")
+        return null
     }
 }
 

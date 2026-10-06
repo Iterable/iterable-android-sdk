@@ -22,11 +22,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
 
 import static android.os.Looper.getMainLooper;
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 
@@ -51,7 +53,6 @@ public class IterableNotificationTest {
     String itbl_ghost = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":true}";
     String itbl1 = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false}";
     String itbl2 = "{\"templateId\":2,\"campaignId\":2,\"messageId\":\"22222222222222222222222222222222\",\"isGhostPush\":false}}";
-    String itbl_image = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false,\"attachment-url\":\"https://assets.iterable.com/assets/images/logos/itbl-logo-full-gray-800x300.png\"}";
 
     private Context getContext() {
         return getApplicationContext();
@@ -108,13 +109,19 @@ public class IterableNotificationTest {
     }
 
     /**
-     * Tests loading a notification with an image.
+     * Loads the notification image from a test resource so the assertion does not hit the network.
      * @throws Exception
      */
     @Test
     public void testNotificationImage() throws Exception {
+        URL imageFixture = getClass().getClassLoader().getResource("notification_image.png");
+        assertNotNull("notification_image.png fixture missing from test resources", imageFixture);
+
+        String itblImage = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false,\"attachment-url\":\""
+                + imageFixture.toExternalForm() + "\"}";
+
         Bundle notif = new Bundle();
-        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itbl_image);
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itblImage);
         notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
 
         IterableNotificationBuilder iterableNotification = postNotification(notif);
