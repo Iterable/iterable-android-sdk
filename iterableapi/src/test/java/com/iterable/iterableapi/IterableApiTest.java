@@ -52,7 +52,6 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 public class IterableApiTest extends BaseTest {
@@ -236,27 +235,6 @@ public class IterableApiTest extends BaseTest {
         assertEquals("new@email.com", requestJson.getString(IterableConstants.KEY_NEW_EMAIL));
         assertNull(IterableApi.getInstance().getEmail());
         assertEquals("testUserId", IterableApi.getInstance().getUserId());
-    }
-
-    @Ignore("handleAppLink performs real HTTP redirect - needs MockWebServer to stub the redirect endpoint")
-    @Test
-    public void testHandleUniversalLinkRewrite() throws Exception {
-        IterableUrlHandler urlHandlerMock = mock(IterableUrlHandler.class);
-        when(urlHandlerMock.handleIterableURL(any(Uri.class), any(IterableActionContext.class))).thenReturn(true);
-        IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setUrlHandler(urlHandlerMock).build());
-
-        String url = "https://iterable.com";
-        IterableApi.getInstance().handleAppLink(
-                "https://links.iterable.com/a/60402396fbd5433eb35397b47ab2fb83?_e=joneng%40iterable.com&_m=93125f33ba814b13a882358f8e0852e0");
-
-        ArgumentCaptor<Uri> capturedUri = ArgumentCaptor.forClass(Uri.class);
-        ArgumentCaptor<IterableActionContext> capturedActionContext = ArgumentCaptor.forClass(IterableActionContext.class);
-        shadowOf(getMainLooper()).idle();
-        verify(urlHandlerMock, timeout(5000)).handleIterableURL(capturedUri.capture(), capturedActionContext.capture());
-        assertEquals(url, capturedUri.getValue().toString());
-        assertEquals(IterableActionSource.APP_LINK, capturedActionContext.getValue().source);
-        assertTrue(capturedActionContext.getValue().action.isOfType(IterableAction.ACTION_TYPE_OPEN_URL));
-        assertEquals(url, capturedActionContext.getValue().action.getData());
     }
 
     @Test

@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Fixed
-- Push token registration and disable operations, including their API requests and retries, now run on a dedicated SDK-owned serial executor instead of Android's process-wide `AsyncTask` queue. This prevents host app background work from delaying device registration, preserves operation order, and keeps client callbacks on the main thread.
+- Push token registration and disable operations, including their API requests and retries, now run on a dedicated SDK-owned serial executor, while Iterable deep-link redirects use a separate SDK-owned serial executor. This removes their dependency on Android's process-wide `AsyncTask` queue, preserves ordering within each operation type, prevents slow redirects from delaying push work, and keeps client callbacks and attribution updates on the main thread.
 
 ## [3.11.0]
 ### Added

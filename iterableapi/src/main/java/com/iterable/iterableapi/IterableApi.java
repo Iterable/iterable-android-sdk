@@ -1420,7 +1420,7 @@ public class IterableApi {
      *                   or the original url if it is not an Iterable link.
      */
     public void getAndTrackDeepLink(@NonNull String uri, @NonNull IterableHelper.IterableActionHandler onCallback) {
-        IterableDeeplinkManager.getAndTrackDeeplink(uri, onCallback);
+        IterableDeeplinkManager.getAndTrackDeepLink(uri, onCallback);
     }
 
     /**
@@ -1452,7 +1452,7 @@ public class IterableApi {
         IterableLogger.printInfo();
 
         if (IterableDeeplinkManager.isIterableDeeplink(uri)) {
-            IterableDeeplinkManager.getAndTrackDeeplink(uri, new IterableHelper.IterableActionHandler() {
+            IterableDeeplinkManager.getAndTrackDeepLink(uri, new IterableHelper.IterableActionHandler() {
                 @Override
                 public void execute(String originalUrl) {
                     IterableAction action = IterableAction.actionOpenUrl(originalUrl);

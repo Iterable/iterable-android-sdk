@@ -13,6 +13,13 @@ final class IterableExecutors {
         thread.setPriority(Thread.NORM_PRIORITY);
         return thread;
     });
+    private static final Executor DEEP_LINK_EXECUTOR =
+            Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "IterableDeepLinkExecutor");
+                thread.setDaemon(true);
+                thread.setPriority(Thread.NORM_PRIORITY);
+                return thread;
+            });
     private static final Executor MAIN_EXECUTOR =
             runnable -> new Handler(Looper.getMainLooper()).post(runnable);
 
@@ -21,6 +28,10 @@ final class IterableExecutors {
 
     static Executor push() {
         return PUSH_EXECUTOR;
+    }
+
+    static Executor deepLink() {
+        return DEEP_LINK_EXECUTOR;
     }
 
     static Executor main() {
