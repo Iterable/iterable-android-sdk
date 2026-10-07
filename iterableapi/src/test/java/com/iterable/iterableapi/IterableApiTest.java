@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -60,23 +61,19 @@ public class IterableApiTest extends BaseTest {
     private MockWebServer server;
     private IterableApiClient originalApiClient;
     private IterableApiClient mockApiClient;
-    private IterablePushRegistration.IterablePushRegistrationImpl originalPushRegistrationImpl;
+    private Executor pushRegistrationExecutor;
 
     @Before
     public void setUp() {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
 
+        pushRegistrationExecutor = mock(Executor.class);
         reInitIterableApi();
-
-        originalPushRegistrationImpl = IterablePushRegistration.instance;
-        IterablePushRegistration.instance = mock(IterablePushRegistration.IterablePushRegistrationImpl.class);
     }
 
     @After
     public void tearDown() throws IOException {
-        IterablePushRegistration.instance = originalPushRegistrationImpl;
-
         server.shutdown();
         server = null;
     }
@@ -84,8 +81,11 @@ public class IterableApiTest extends BaseTest {
     private void reInitIterableApi() {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
         IterableEmbeddedManager embeddedManagerMock = mock(IterableEmbeddedManager.class);
+        IterablePushRegistration pushRegistration =
+                new IterablePushRegistration(pushRegistrationExecutor);
 
-        IterableApi.sharedInstance = new IterableApi(inAppManagerMock, embeddedManagerMock);
+        IterableApi.sharedInstance = new IterableApi(
+                inAppManagerMock, embeddedManagerMock, pushRegistration);
 
         originalApiClient = IterableApi.sharedInstance.apiClient;
         mockApiClient = spy(originalApiClient);
@@ -264,20 +264,22 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         // Flush any pending looper callbacks from initialize, then reset mock
         shadowOf(getMainLooper()).idle();
-        Mockito.reset(IterablePushRegistration.instance);
+        Mockito.reset(pushRegistrationExecutor);
 
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setEmail("test@email.com");
-        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
-        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
-        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
-        Mockito.reset(IterablePushRegistration.instance);
+        assertEquals(
+                IterablePushRegistrationData.PushRegistrationAction.ENABLE,
+                captureScheduledPushRegistrationData().pushRegistrationAction
+        );
+        Mockito.reset(pushRegistrationExecutor);
 
         // Check that setEmail(null) disables the device
         IterableApi.getInstance().setEmail(null);
-        capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
-        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
-        assertEquals(IterablePushRegistrationData.PushRegistrationAction.DISABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+        assertEquals(
+                IterablePushRegistrationData.PushRegistrationAction.DISABLE,
+                captureScheduledPushRegistrationData().pushRegistrationAction
+        );
     }
 
     @Test
@@ -287,27 +289,29 @@ public class IterableApiTest extends BaseTest {
         // Check that setEmail doesn't call registerForPush or disablePush
         IterableApi.getInstance().setEmail("test@email.com");
         IterableApi.getInstance().setEmail(null);
-        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+        verify(pushRegistrationExecutor, never()).execute(any(Runnable.class));
     }
 
     @Test
     public void testSetUserIdWithAutomaticPushRegistration() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         // Reset after initialize since it may trigger push registration via background init
-        Mockito.reset(IterablePushRegistration.instance);
+        Mockito.reset(pushRegistrationExecutor);
 
         // Check that setUserId calls registerForPush
         IterableApi.getInstance().setUserId("userId");
-        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
-        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
-        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
-        Mockito.reset(IterablePushRegistration.instance);
+        assertEquals(
+                IterablePushRegistrationData.PushRegistrationAction.ENABLE,
+                captureScheduledPushRegistrationData().pushRegistrationAction
+        );
+        Mockito.reset(pushRegistrationExecutor);
 
         // Check that setUserId(null) disables the device
         IterableApi.getInstance().setUserId(null);
-        capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
-        verify(IterablePushRegistration.instance).executePushRegistrationTask(capturedPushRegistrationData.capture());
-        assertEquals(IterablePushRegistrationData.PushRegistrationAction.DISABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+        assertEquals(
+                IterablePushRegistrationData.PushRegistrationAction.DISABLE,
+                captureScheduledPushRegistrationData().pushRegistrationAction
+        );
     }
 
     @Test
@@ -317,25 +321,25 @@ public class IterableApiTest extends BaseTest {
         // Check that setEmail calls registerForPush
         IterableApi.getInstance().setUserId("userId");
         IterableApi.getInstance().setUserId(null);
-        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+        verify(pushRegistrationExecutor, never()).execute(any(Runnable.class));
     }
 
     @Test
     public void testNoAutomaticPushRegistrationOnInit() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
-        Mockito.reset(IterablePushRegistration.instance);
+        Mockito.reset(pushRegistrationExecutor);
 
         reInitIterableApi();
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
-        verify(IterablePushRegistration.instance, never()).executePushRegistrationTask(any(IterablePushRegistrationData.class));
+        verify(pushRegistrationExecutor, never()).execute(any(Runnable.class));
     }
 
     @Test
     public void testAutomaticPushRegistrationOnInitAndForeground() throws Exception {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         IterableApi.getInstance().setEmail("test@email.com");
-        Mockito.reset(IterablePushRegistration.instance);
+        Mockito.reset(pushRegistrationExecutor);
 
         reInitIterableApi();
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
@@ -343,12 +347,21 @@ public class IterableApiTest extends BaseTest {
         IterableApi.initialize(getContext(), "fake_key", new IterableConfig.Builder().setPushIntegrationName("pushIntegration").setAutoPushRegistration(true).build());
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class).create().start().resume();
 
-        ArgumentCaptor<IterablePushRegistrationData> capturedPushRegistrationData = ArgumentCaptor.forClass(IterablePushRegistrationData.class);
-        verify(IterablePushRegistration.instance, atLeastOnce()).executePushRegistrationTask(capturedPushRegistrationData.capture());
-        assertEquals(IterablePushRegistrationData.PushRegistrationAction.ENABLE, capturedPushRegistrationData.getValue().pushRegistrationAction);
+        ArgumentCaptor<Runnable> capturedTask = ArgumentCaptor.forClass(Runnable.class);
+        verify(pushRegistrationExecutor, atLeastOnce()).execute(capturedTask.capture());
+        assertEquals(
+                IterablePushRegistrationData.PushRegistrationAction.ENABLE,
+                ((IterablePushRegistrationTask) capturedTask.getValue()).iterablePushRegistrationData.pushRegistrationAction
+        );
 
         activityController.pause().stop().destroy();
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
+    }
+
+    private IterablePushRegistrationData captureScheduledPushRegistrationData() {
+        ArgumentCaptor<Runnable> capturedTask = ArgumentCaptor.forClass(Runnable.class);
+        verify(pushRegistrationExecutor).execute(capturedTask.capture());
+        return ((IterablePushRegistrationTask) capturedTask.getValue()).iterablePushRegistrationData;
     }
 
     @Test

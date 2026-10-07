@@ -76,6 +76,17 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
 
     @WorkerThread
     static IterableApiResponse executeApiRequest(IterableApiRequest iterableApiRequest) {
+        return executeApiRequest(
+                iterableApiRequest,
+                IterableRequestTask::retryRequestWithNewAuthToken
+        );
+    }
+
+    @WorkerThread
+    static IterableApiResponse executeApiRequest(
+            IterableApiRequest iterableApiRequest,
+            IterableRequestAuthRetryHandler authRetryHandler
+    ) {
         IterableApiResponse apiResponse = null;
         String requestResult = null;
 
@@ -204,7 +215,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                         IterableApi.getInstance().getAuthManager().handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse));
 
-                        handleJwtAuthRetry(iterableApiRequest);
+                        handleJwtAuthRetry(iterableApiRequest, authRetryHandler);
                     } else {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "Invalid API Key");
                     }
@@ -264,7 +275,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
      * is obtained via the AuthTokenReadyListener callback.
      * For online requests or when autoRetry is disabled, use the existing inline retry.
      */
-    private static void handleJwtAuthRetry(IterableApiRequest iterableApiRequest) {
+    private static void handleJwtAuthRetry(
+            IterableApiRequest iterableApiRequest,
+            IterableRequestAuthRetryHandler authRetryHandler
+    ) {
         boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
         if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
             IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
@@ -276,7 +290,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                     null
             );
         } else {
-            requestNewAuthTokenAndRetry(iterableApiRequest);
+            requestNewAuthTokenAndRetry(iterableApiRequest, authRetryHandler);
         }
     }
 
@@ -425,7 +439,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         }
     }
 
-    private static void requestNewAuthTokenAndRetry(IterableApiRequest iterableApiRequest) {
+    private static void requestNewAuthTokenAndRetry(
+            IterableApiRequest iterableApiRequest,
+            IterableRequestAuthRetryHandler authRetryHandler
+    ) {
         IterableApi.getInstance().getAuthManager().setIsLastAuthTokenValid(false);
         long retryInterval = IterableApi.getInstance().getAuthManager().getNextRetryInterval();
         IterableApi.getInstance().getAuthManager().scheduleAuthTokenRefresh(
@@ -434,7 +451,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
                 data -> {
                     try {
                         String newAuthToken = data.getString("newAuthToken");
-                        retryRequestWithNewAuthToken(newAuthToken, iterableApiRequest);
+                        authRetryHandler.retryWithNewAuthToken(
+                                newAuthToken,
+                                iterableApiRequest
+                        );
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -445,6 +465,10 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     protected void setRetryCount(int count) {
         retryCount = count;
     }
+}
+
+interface IterableRequestAuthRetryHandler {
+    void retryWithNewAuthToken(String newAuthToken, IterableApiRequest request);
 }
 
 /**
