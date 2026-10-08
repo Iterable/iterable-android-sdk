@@ -7,12 +7,9 @@ import androidx.test.core.app.ApplicationProvider;
 import com.iterable.iterableapi.unit.TestRunner;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 import org.junit.runner.RunWith;
-import org.robolectric.android.util.concurrent.InlineExecutorService;
-import org.robolectric.shadows.ShadowPausedAsyncTask;
 
 @RunWith(TestRunner.class)
 public abstract class BaseTest {
@@ -20,15 +17,17 @@ public abstract class BaseTest {
     @Rule
     public IterableUtilRule utilsRule = new IterableUtilRule();
 
-    @Rule
-    public AsyncTaskRule asyncTaskRule = new AsyncTaskRule();
+    @Before
+    public void baseTestSetUp() {
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
+    }
 
     @After
     public void baseTestTearDown() {
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
         IterablePushNotificationUtil.clearPendingAction();
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
     }
 
     protected IterableUtilImpl getIterableUtilSpy() {
@@ -38,12 +37,4 @@ public abstract class BaseTest {
     protected Context getContext() {
         return ApplicationProvider.getApplicationContext();
     }
-
-    private static class AsyncTaskRule extends TestWatcher {
-        @Override
-        protected void starting(Description description) {
-            ShadowPausedAsyncTask.overrideExecutor(new InlineExecutorService());
-        }
-    }
-
 }
