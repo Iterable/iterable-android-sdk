@@ -265,6 +265,16 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         showMessage(message, consume, clickCallback, IterableInAppLocation.IN_APP);
     }
 
+    /**
+     * Display the in-app message on the screen. Safe to call from any thread. Called from the main
+     * thread, the message is displayed before this method returns. Called from any other thread, the
+     * display is posted to the main thread, so the message's read and consumed state are updated after
+     * this method returns. {@code clickCallback} is always invoked on the main thread.
+     * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
+     * @param consume A boolean indicating whether to remove the message from the list after showing
+     * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
+     * @param inAppLocation Where the message is being displayed from
+     */
     public void showMessage(final @NonNull IterableInAppMessage message, final boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, final @NonNull IterableInAppLocation inAppLocation) {
         // Displaying creates dialogs and registers lifecycle observers, which must happen on the main thread.
         if (Looper.myLooper() != Looper.getMainLooper()) {

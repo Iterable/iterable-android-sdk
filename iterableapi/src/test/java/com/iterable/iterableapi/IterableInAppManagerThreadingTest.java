@@ -1,6 +1,7 @@
 package com.iterable.iterableapi;
 
 import static android.os.Looper.getMainLooper;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
@@ -50,7 +51,7 @@ public class IterableInAppManagerThreadingTest extends BaseTest {
 
     @Test
     public void showMessage_fromBackgroundLooperThread_displaysOnMainThreadWithoutCrashing() throws InterruptedException {
-        // A looper thread, like the React Native native-modules thread that crashed in SDK-789.
+        // A looper thread, like the React Native native-modules thread.
         HandlerThread background = new HandlerThread("background");
         background.start();
         final AtomicReference<Throwable> thrown = new AtomicReference<>();
@@ -59,7 +60,7 @@ public class IterableInAppManagerThreadingTest extends BaseTest {
             @Override
             public void run() {
                 try {
-                    inAppManager.showMessage(message, false, null);
+                    inAppManager.showMessage(message, true, null);
                 } catch (Throwable t) {
                     thrown.set(t);
                 } finally {
@@ -72,16 +73,22 @@ public class IterableInAppManagerThreadingTest extends BaseTest {
 
         assertNull(thrown.get());
         assertNull(IterableInAppDialogNotification.getInstance());
+        assertFalse(message.isRead());
+        assertFalse(message.isMarkedForDeletion());
 
         shadowOf(getMainLooper()).idle();
 
         assertNotNull(IterableInAppDialogNotification.getInstance());
+        assertTrue(message.isRead());
+        assertTrue(message.isMarkedForDeletion());
     }
 
     @Test
     public void showMessage_fromMainThread_displaysSynchronously() {
-        inAppManager.showMessage(message, false, null);
+        inAppManager.showMessage(message, true, null);
 
         assertNotNull(IterableInAppDialogNotification.getInstance());
+        assertTrue(message.isRead());
+        assertTrue(message.isMarkedForDeletion());
     }
 }
