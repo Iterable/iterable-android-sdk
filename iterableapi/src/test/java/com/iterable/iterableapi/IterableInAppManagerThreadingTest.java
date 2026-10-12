@@ -7,9 +7,6 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
-import android.os.Handler;
-import android.os.HandlerThread;
-
 import androidx.activity.ComponentActivity;
 
 import org.junit.After;
@@ -18,10 +15,6 @@ import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowDialog;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class IterableInAppManagerThreadingTest extends BaseTest {
 
@@ -51,27 +44,9 @@ public class IterableInAppManagerThreadingTest extends BaseTest {
 
     @Test
     public void showMessage_fromBackgroundLooperThread_displaysOnMainThreadWithoutCrashing() throws InterruptedException {
-        // A looper thread, like the React Native native-modules thread.
-        HandlerThread background = new HandlerThread("background");
-        background.start();
-        final AtomicReference<Throwable> thrown = new AtomicReference<>();
-        final CountDownLatch done = new CountDownLatch(1);
-        new Handler(background.getLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    inAppManager.showMessage(message, true, null);
-                } catch (Throwable t) {
-                    thrown.set(t);
-                } finally {
-                    done.countDown();
-                }
-            }
-        });
-        assertTrue(done.await(5, TimeUnit.SECONDS));
-        background.quitSafely();
+        LooperTestUtils.runOnBackgroundLooperAndWait(
+                () -> inAppManager.showMessage(message, true, null));
 
-        assertNull(thrown.get());
         assertNull(IterableInAppDialogNotification.getInstance());
         assertFalse(message.isRead());
         assertFalse(message.isMarkedForDeletion());
