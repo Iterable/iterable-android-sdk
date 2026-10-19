@@ -70,7 +70,13 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v2
+        run: |
+          # The legacy 'tools' package was removed from the Android SDK remote repository.
+          # Keeping it in the local SDK installation causes sdkmanager to fail when it
+          # tries to check for updates, killing the job at setup. Remove it so sdkmanager
+          # can proceed cleanly. ubuntu-latest runners ship with the full Android SDK at
+          # $ANDROID_SDK_ROOT, so no action is needed beyond clearing the stale entry.
+          rm -rf "$ANDROID_SDK_ROOT/tools"
 
       - name: Create local.properties
         run: |
