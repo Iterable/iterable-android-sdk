@@ -1057,6 +1057,13 @@ public class IterableApi {
      *                 fails to reach the request layer in time. A disable that fails after the
      *                 callback has already been delivered is logged instead.
      *                 <p>
+     *                 Called before the SDK was initialized, there is no previous project and no
+     *                 teardown. SWITCHED_WITH_WARNINGS then means that initialization failed or timed
+     *                 out: the SDK holds the requested API key and config, but its initialization may
+     *                 not have completed, so later SDK calls may not take effect. Calling this again
+     *                 with the same project does not retry it, because that is a no-op reporting
+     *                 SWITCHED_CLEANLY.
+     *                 <p>
      *                 SWITCHED_CLEANLY means every teardown step completed at the point the callback
      *                 fired. It is
      *                 not a guarantee that the device disable reached the network: the disable is
