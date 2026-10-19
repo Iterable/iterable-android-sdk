@@ -146,6 +146,10 @@ public class IterableSwitchProjectQueueDrainTest extends BaseTest {
         assertTrue("every queued call must run", allThree.await(5, TimeUnit.SECONDS));
         assertEquals("the late arrival must go to the back of the queue, not jump the replay",
                 Arrays.asList("first", "second", "arrivedDuringTheDrain"), order);
+        // The latch opens inside the last drained call, and the drain lowers the gate after it.
+        for (int i = 0; i < 100 && IterableBackgroundInitializer.isSwitchingProject(); i++) {
+            Thread.sleep(10);
+        }
         assertFalse("the gate must be down once the drain is finished",
                 IterableBackgroundInitializer.isSwitchingProject());
     }
