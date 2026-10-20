@@ -282,9 +282,11 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
         present: Boolean,
         timeoutSeconds: Long = 30
     ): List<Long> {
+        // Sent before polling so a placement state that already matches cannot pass against an
+        // unset or stale profile.
+        setMembershipLevel(level)
         val deadline = System.currentTimeMillis() + timeoutSeconds * 1000
         var lastIds = IterableApi.getInstance().embeddedManager.getPlacementIds()
-        var updateSent = false
         var consecutiveMatches = 0
         while (System.currentTimeMillis() < deadline) {
             val synced = awaitSuccessfulSync()
@@ -296,13 +298,6 @@ class EmbeddedMessageIntegrationTest : BaseIntegrationTest() {
             lastIds = synced
             Log.d(TAG, "Placement IDs while waiting for membershipLevel=$level present=$present: $lastIds")
             val matches = lastIds.contains(TEST_PLACEMENT_ID) == present
-            if (!matches && !updateSent) {
-                setMembershipLevel(level)
-                updateSent = true
-                consecutiveMatches = 0
-                Thread.sleep(1000)
-                continue
-            }
             if (matches) {
                 consecutiveMatches += 1
                 if (consecutiveMatches >= 2) {

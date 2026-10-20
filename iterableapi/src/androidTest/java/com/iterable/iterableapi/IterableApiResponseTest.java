@@ -159,7 +159,9 @@ public class IterableApiResponseTest {
             if (callbackFinished && "Invalid Request".equals(lastReason)) {
                 return;
             }
-            if (recorded != null && callbackFinished && !isEmulatorTransportTimeout(lastReason)) {
+            // Not gated on takeRequest(): the request can reach MockWebServer after its wait, and a
+            // later attempt passing would then mask an unexpected SDK result.
+            if (callbackFinished && !isEmulatorTransportTimeout(lastReason)) {
                 assertEquals("Invalid Request", lastReason);
             }
         }
