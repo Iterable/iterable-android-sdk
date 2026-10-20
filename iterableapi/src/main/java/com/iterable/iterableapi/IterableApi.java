@@ -1029,10 +1029,11 @@ public class IterableApi {
      *
      * Called before any initialize, this behaves as
      * {@link #initializeInBackground(Context, String, IterableConfig, IterableInitializationCallback)}
-     * and logs a warning, reporting {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} once it has
-     * started: there is no previous project, so no teardown step could have been noisy. Called with
-     * the API key already in use, it is a no-op. Called while an initialization is still in flight,
-     * it waits for that initialization and then switches.
+     * and logs a warning. It reports {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} when that
+     * initialization succeeds, and {@link IterableProjectSwitchResult#SWITCHED_WITH_WARNINGS} when it
+     * fails or times out. There is no previous project, so a clean start has no teardown step that
+     * could have been noisy. Called with the API key already in use, it is a no-op. Called while an
+     * initialization is still in flight, it waits for that initialization and then switches.
      *
      * Called while a switch is already in progress, what happens depends on where this request is
      * headed. Asking for the project that switch is already going to registers the callback with it
@@ -1057,6 +1058,13 @@ public class IterableApi {
      *                 the previous project. It is also reported when the disable request fails, or
      *                 fails to reach the request layer in time. A disable that fails after the
      *                 callback has already been delivered is logged instead.
+     *                 <p>
+     *                 Called before the SDK was initialized, there is no previous project and no
+     *                 teardown. SWITCHED_WITH_WARNINGS then means that initialization failed or timed
+     *                 out: the SDK holds the requested API key and config, but its initialization may
+     *                 not have completed, so later SDK calls may not take effect. Calling this again
+     *                 with the same project does not retry it, because that is a no-op reporting
+     *                 SWITCHED_CLEANLY.
      *                 <p>
      *                 SWITCHED_CLEANLY means every teardown step completed at the point the callback
      *                 fired. It is
