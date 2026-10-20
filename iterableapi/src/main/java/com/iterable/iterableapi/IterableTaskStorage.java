@@ -78,6 +78,7 @@ class IterableTaskStorage {
                 databaseManager = new IterableDatabaseManager(context);
             }
             database = databaseManager.getWritableDatabase();
+            resetProcessingState();
         } catch (SQLException e) {
             IterableLogger.e(TAG, "Database cannot be opened for writing");
         }
@@ -90,11 +91,23 @@ class IterableTaskStorage {
         return sharedInstance;
     }
 
+    boolean hasPendingTasks() {
+        return database != null
+                && DatabaseUtils.queryNumEntries(
+                        database,
+                        ITERABLE_TASK_TABLE_NAME
+                ) > 0;
+    }
+
     void addTaskCreatedListener(TaskCreatedListener listener) {
         taskCreatedListeners.add(listener);
     }
 
     void removeDatabaseStatusListener(TaskCreatedListener listener) {
+        removeTaskCreatedListener(listener);
+    }
+
+    void removeTaskCreatedListener(TaskCreatedListener listener) {
         taskCreatedListeners.remove(listener);
     }
 
@@ -278,7 +291,12 @@ class IterableTaskStorage {
         if (!isDatabaseReady()) {
             return null;
         }
-        Cursor cursor = database.rawQuery("select * from OfflineTask order by scheduled limit 1", null);
+        Cursor cursor = database.rawQuery(
+                "select * from OfflineTask"
+                        + " where processing is null or processing = 0"
+                        + " order by scheduled, rowid limit 1",
+                null
+        );
         IterableTask task = null;
         if (cursor.moveToFirst()) {
             task = createTaskFromCursor(cursor);
@@ -300,7 +318,12 @@ class IterableTaskStorage {
         if (!isDatabaseReady()) {
             return null;
         }
-        Cursor cursor = database.rawQuery("select * from OfflineTask order by scheduled", null);
+        Cursor cursor = database.rawQuery(
+                "select * from OfflineTask"
+                        + " where processing is null or processing = 0"
+                        + " order by scheduled, rowid",
+                null
+        );
         IterableTask task = null;
         if (cursor.moveToFirst()) {
             do {
@@ -411,6 +434,22 @@ class IterableTaskStorage {
     }
 
     /**
+     * Atomically claims a task so two runners cannot dispatch the same stored request.
+     */
+    boolean markTaskProcessingIfAvailable(String id) {
+        if (!isDatabaseReady()) return false;
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(PROCESSING, true);
+        int updatedRows = database.update(
+                ITERABLE_TASK_TABLE_NAME,
+                contentValues,
+                TASK_ID + "=? AND (" + PROCESSING + " IS NULL OR " + PROCESSING + "=0)",
+                new String[]{id}
+        );
+        return updatedRows == 1;
+    }
+
+    /**
      * Updates the failed state of task in OfflineTask table
      *
      * @param id    Unique id for the task
@@ -485,7 +524,26 @@ class IterableTaskStorage {
     }
 
     private boolean updateTaskWithContentValues(String id, ContentValues contentValues) {
-        return (0 > database.update(ITERABLE_TASK_TABLE_NAME, contentValues, TASK_ID + "=?", new String[]{id}));
+        return database.update(
+                ITERABLE_TASK_TABLE_NAME,
+                contentValues,
+                TASK_ID + "=?",
+                new String[]{id}
+        ) > 0;
+    }
+
+    private void resetProcessingState() {
+        if (database == null || !database.isOpen()) {
+            return;
+        }
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(PROCESSING, false);
+        database.update(
+                ITERABLE_TASK_TABLE_NAME,
+                contentValues,
+                PROCESSING + "=1",
+                null
+        );
     }
 
     private boolean isDatabaseReady() {

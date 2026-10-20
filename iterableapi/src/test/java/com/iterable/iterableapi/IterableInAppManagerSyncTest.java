@@ -75,7 +75,7 @@ public class IterableInAppManagerSyncTest extends BaseTest {
     @Test
     public void testSyncOnLogin() throws Exception {
         IterableInAppManager inAppManagerMock = mock(IterableInAppManager.class);
-        IterableApi.sharedInstance = new IterableApi(inAppManagerMock);
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests(inAppManagerMock);
         IterableApi.initialize(getApplicationContext(), "apiKey");
         // Reset after initialize since it may also trigger syncInApp via background init
         reset(inAppManagerMock);

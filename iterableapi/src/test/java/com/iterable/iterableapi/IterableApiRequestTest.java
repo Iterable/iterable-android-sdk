@@ -13,22 +13,25 @@ import com.iterable.iterableapi.unit.TestRunner;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.os.Looper;
 import junit.framework.Assert;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.QueueDispatcher;
 import okhttp3.mockwebserver.RecordedRequest;
 
 @RunWith(TestRunner.class)
@@ -37,10 +40,25 @@ public class IterableApiRequestTest {
     private MockWebServer server;
 
     @Before
-    public void setUp() {
-        createIterableApi();
+    public void setUp() throws Exception {
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
+        server.setDispatcher(new Dispatcher() {
+            @NonNull
+            @Override
+            public MockResponse dispatch(@NonNull RecordedRequest request) {
+                return new MockResponse().setResponseCode(200).setBody("{}");
+            }
+        });
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
+        createIterableApi();
+
+        shadowOf(Looper.getMainLooper()).idle();
+        int bootstrapRequestCount = server.getRequestCount();
+        for (int i = 0; i < bootstrapRequestCount; i++) {
+            assertNotNull(server.takeRequest(5, TimeUnit.SECONDS));
+        }
+        server.setDispatcher(new QueueDispatcher());
     }
 
     @After
@@ -99,20 +117,18 @@ public class IterableApiRequestTest {
         assertNotNull(request);
         Assert.assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_CART, request.getPath());
 
-        String expectedRequest = new StringBuilder(
-            new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
-                .append("\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],")
-                .append("\"createdAt\":").append(new Date().getTime() / 1000)
-                .append("}")).toString();
-
-        String requestBody = request.getBody().readUtf8();
-        Assert.assertEquals(expectedRequest, requestBody);
+        JSONObject requestJson = requestBodyWithoutCreatedAt(request);
+        JSONAssert.assertEquals(
+                "{\"user\":{\"email\":\"test_email\"},"
+                        + "\"items\":[{\"id\":\"sku123\",\"name\":\"Item\","
+                        + "\"price\":50,\"quantity\":2}]}",
+                requestJson,
+                true
+        );
     }
 
     @Test
     public void testTrackPurchase() throws Exception {
-        String expectedRequest = new StringBuilder(new StringBuffer("{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100").append(",\"createdAt\":").append(new Date().getTime() / 1000).append("}")).toString();
-
         CommerceItem item1 = new CommerceItem("sku123", "Item", 50.0, 2);
         List<CommerceItem> items = new ArrayList<CommerceItem>();
         items.add(item1);
@@ -121,13 +137,18 @@ public class IterableApiRequestTest {
 
         RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         Assert.assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
-        Assert.assertEquals(expectedRequest, request.getBody().readUtf8());
+        JSONObject requestJson = requestBodyWithoutCreatedAt(request);
+        JSONAssert.assertEquals(
+                "{\"user\":{\"email\":\"test_email\"},"
+                        + "\"items\":[{\"id\":\"sku123\",\"name\":\"Item\","
+                        + "\"price\":50,\"quantity\":2}],\"total\":100}",
+                requestJson,
+                true
+        );
     }
 
     @Test
     public void testTrackPurchaseWithDataFields() throws Exception {
-        String expectedRequest = new StringBuilder(new StringBuffer("{\"user\":{\"email\":\"test_email\"},\"items\":[{\"id\":\"sku123\",\"name\":\"Item\",\"price\":50,\"quantity\":2}],\"total\":100,\"dataFields\":{\"field\":\"testValue\"}").append(",\"createdAt\":").append(new Date().getTime() / 1000).append("}")).toString();
-
         CommerceItem item1 = new CommerceItem("sku123", "Item", 50.0, 2);
         List<CommerceItem> items = new ArrayList<CommerceItem>();
         items.add(item1);
@@ -139,7 +160,15 @@ public class IterableApiRequestTest {
         RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assertNotNull(request);
         Assert.assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
-        Assert.assertEquals(expectedRequest, request.getBody().readUtf8());
+        JSONObject requestJson = requestBodyWithoutCreatedAt(request);
+        JSONAssert.assertEquals(
+                "{\"user\":{\"email\":\"test_email\"},"
+                        + "\"items\":[{\"id\":\"sku123\",\"name\":\"Item\","
+                        + "\"price\":50,\"quantity\":2}],\"total\":100,"
+                        + "\"dataFields\":{\"field\":\"testValue\"}}",
+                requestJson,
+                true
+        );
     }
 
     @Test
@@ -188,19 +217,24 @@ public class IterableApiRequestTest {
 
         IterableApi.sharedInstance.trackPurchase(42, items);
 
-        long createdAt = new Date().getTime() / 1000;
         RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
         assert request != null;
         Assert.assertEquals("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, request.getPath());
 
-        String expectedRequest = new StringBuilder(
-            new StringBuffer("{\"user\":{\"email\":\"test_email\"},")
-                .append("\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\",\"price\":42,\"quantity\":1,\"sku\":\"DIAMOND-IS-UNBREAKABLE\",\"description\":\"When a living creature is pierced by one of the Arrows, it will catalyze and awaken the individual’s dormant Stand.\",\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\",\"dataFields\":{\"color\":\"yellow\",\"count\":8},\"categories\":[\"bow\",\"arrow\"]}],")
-                .append("\"total\":42,").append("\"createdAt\":").append(createdAt)
-                .append("}")).toString();
-
-        String requestBody = request.getBody().readUtf8();
-        Assert.assertEquals(expectedRequest, requestBody);
+        JSONObject requestJson = requestBodyWithoutCreatedAt(request);
+        JSONAssert.assertEquals(
+                "{\"user\":{\"email\":\"test_email\"},"
+                        + "\"items\":[{\"id\":\"273\",\"name\":\"Bow and Arrow\","
+                        + "\"price\":42,\"quantity\":1,"
+                        + "\"sku\":\"DIAMOND-IS-UNBREAKABLE\","
+                        + "\"description\":\"When a living creature is pierced by one of the "
+                        + "Arrows, it will catalyze and awaken the individual’s dormant Stand.\","
+                        + "\"url\":\"placeholderUrl\",\"imageUrl\":\"placeholderImageUrl\","
+                        + "\"dataFields\":{\"color\":\"yellow\",\"count\":8},"
+                        + "\"categories\":[\"bow\",\"arrow\"]}],\"total\":42}",
+                requestJson,
+                true
+        );
     }
 
     @Test
@@ -223,38 +257,6 @@ public class IterableApiRequestTest {
         Assert.assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
         assertNotNull(request.getHeader(IterableConstants.KEY_SENT_AT));
         Assert.assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
-    }
-
-    @Ignore("Blocked: IterableAuthManager.executor is not injectable - auth token requests run on uncontrollable background thread")
-    @Test
-    public void testUpdateEmailRequest() throws Exception {
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-
-        // Plain request check
-        IterableApi.sharedInstance.updateEmail("test@example.com");
-
-        RecordedRequest request1 = server.takeRequest(5, TimeUnit.SECONDS);
-        assertNotNull(request1);
-        Assert.assertEquals("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL, request1.getPath());
-        Assert.assertEquals("{\"currentEmail\":\"test_email\",\"newEmail\":\"test@example.com\"}", request1.getBody().readUtf8());
-        Thread.sleep(100); // We need the callback to run to verify the internal email field change
-
-        server.enqueue(new MockResponse().setResponseCode(400).setBody("{}"));
-
-        // Check that we handle failures properly
-        IterableApi.sharedInstance.updateEmail("invalid_mail!!123");
-
-        RecordedRequest request2 = server.takeRequest(5, TimeUnit.SECONDS);
-        assertNotNull(request2);
-        Assert.assertEquals("{\"currentEmail\":\"test@example.com\",\"newEmail\":\"invalid_mail!!123\"}", request2.getBody().readUtf8());
-        Thread.sleep(100); // We need the callback to run to verify the internal email field change
-
-        // Check that we still pass a valid (old) email after trying to update to an invalid one
-        IterableApi.sharedInstance.updateEmail("another@email.com");
-
-        RecordedRequest request3 = server.takeRequest(5, TimeUnit.SECONDS);
-        assertNotNull(request3);
-        Assert.assertEquals("{\"currentEmail\":\"test@example.com\",\"newEmail\":\"another@email.com\"}", request3.getBody().readUtf8());
     }
 
     @Test
@@ -345,5 +347,13 @@ public class IterableApiRequestTest {
         Assert.assertEquals(IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER, request.getHeader(IterableConstants.HEADER_SDK_VERSION));
         Assert.assertEquals("fake_key", request.getHeader(IterableConstants.HEADER_API_KEY));
         assertNotNull("sentAt header should be present", request.getHeader(IterableConstants.KEY_SENT_AT));
+    }
+
+    private JSONObject requestBodyWithoutCreatedAt(RecordedRequest request) throws Exception {
+        JSONObject requestJson = new JSONObject(request.getBody().readUtf8());
+        assertTrue(requestJson.has(IterableConstants.KEY_CREATED_AT));
+        assertTrue(requestJson.getLong(IterableConstants.KEY_CREATED_AT) > 0);
+        requestJson.remove(IterableConstants.KEY_CREATED_AT);
+        return requestJson;
     }
 }

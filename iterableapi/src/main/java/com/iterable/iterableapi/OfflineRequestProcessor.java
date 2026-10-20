@@ -5,7 +5,6 @@ import android.content.Context;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,6 +19,7 @@ class OfflineRequestProcessor implements RequestProcessor {
     private IterableTaskRunner taskRunner;
     private IterableTaskStorage taskStorage;
     private HealthMonitor healthMonitor;
+    private final IterableRequestDispatcher immediateRequestDispatcher;
 
     private static final Set<String> offlineApiSet = new HashSet<>(Arrays.asList(
             IterableConstants.ENDPOINT_TRACK,
@@ -37,7 +37,12 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableConstants.ENDPOINT_TRACK_EMBEDDED_SESSION
     ));
 
-    OfflineRequestProcessor(Context context) {
+    OfflineRequestProcessor(
+            Context context,
+            IterableRequestDispatcher immediateRequestDispatcher,
+            IterableRequestDispatcher offlineRequestDispatcher
+    ) {
+        this.immediateRequestDispatcher = immediateRequestDispatcher;
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
         taskStorage = IterableTaskStorage.sharedInstance(context);
         healthMonitor = new HealthMonitor(taskStorage);
@@ -46,8 +51,13 @@ class OfflineRequestProcessor implements RequestProcessor {
                 IterableActivityMonitor.getInstance(),
                 networkConnectivityManager,
                 healthMonitor,
-                classification);
-        taskScheduler = new TaskScheduler(taskStorage, taskRunner);
+                classification,
+                offlineRequestDispatcher);
+        taskScheduler = new TaskScheduler(
+                taskStorage,
+                taskRunner,
+                immediateRequestDispatcher
+        );
 
         // Register task runner as auth token ready listener for JWT auto-retry support
         try {
@@ -56,11 +66,11 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableLogger.w("OfflineRequestProcessor", "Failed to register auth token listener. " +
                     "Auto-retry on JWT failure will not work until AuthManager is available.");
         }
+        taskRunner.start();
     }
 
     /**
-     * Unregisters the auth token listener to prevent stale listener accumulation
-     * when the processor is replaced (e.g., when offline mode is toggled).
+     * Releases the persisted-task runner when the owning API client is disposed.
      */
     void dispose() {
         try {
@@ -68,26 +78,33 @@ class OfflineRequestProcessor implements RequestProcessor {
         } catch (Exception e) {
             IterableLogger.w("OfflineRequestProcessor", "Failed to unregister auth token listener on dispose.");
         }
+        taskRunner.dispose();
     }
 
-    @VisibleForTesting
-    OfflineRequestProcessor(TaskScheduler scheduler, IterableTaskRunner iterableTaskRunner, IterableTaskStorage storage, HealthMonitor mockHealthMonitor) {
+    OfflineRequestProcessor(
+            TaskScheduler scheduler,
+            IterableTaskRunner iterableTaskRunner,
+            IterableTaskStorage storage,
+            HealthMonitor mockHealthMonitor,
+            IterableRequestDispatcher immediateRequestDispatcher
+    ) {
         taskRunner = iterableTaskRunner;
         taskScheduler = scheduler;
         taskStorage = storage;
         healthMonitor = mockHealthMonitor;
+        this.immediateRequestDispatcher = immediateRequestDispatcher;
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback);
-        new IterableRequestTask().execute(request);
+        immediateRequestDispatcher.execute(request);
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken,  @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onSuccess, onFailure);
-        new IterableRequestTask().execute(request);
+        immediateRequestDispatcher.execute(request);
     }
 
     @Override
@@ -97,7 +114,7 @@ class OfflineRequestProcessor implements RequestProcessor {
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
             taskScheduler.scheduleTask(request, onSuccess, onFailure);
         } else {
-            new IterableRequestTask().execute(request);
+            immediateRequestDispatcher.execute(request);
         }
     }
 
@@ -116,10 +133,16 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
     static HashMap<String, IterableHelper.FailureHandler> failureCallbackMap = new HashMap<>();
     private final IterableTaskStorage taskStorage;
     private final IterableTaskRunner taskRunner;
+    private final IterableRequestDispatcher requestDispatcher;
 
-    TaskScheduler(IterableTaskStorage taskStorage, IterableTaskRunner taskRunner) {
+    TaskScheduler(
+            IterableTaskStorage taskStorage,
+            IterableTaskRunner taskRunner,
+            IterableRequestDispatcher requestDispatcher
+    ) {
         this.taskStorage = taskStorage;
         this.taskRunner = taskRunner;
+        this.requestDispatcher = requestDispatcher;
         taskRunner.addTaskCompletedListener(this);
     }
 
@@ -129,13 +152,13 @@ class TaskScheduler implements IterableTaskRunner.TaskCompletedListener {
             serializedRequest = request.toJSONObject();
         } catch (JSONException e) {
             IterableLogger.e("RequestProcessor", "Failed serializing the request for offline execution. Attempting to request the request now...");
-            new IterableRequestTask().execute(request);
+            requestDispatcher.execute(request);
             return;
         }
 
         String taskId = taskStorage.createTask(request.resourcePath, IterableTaskType.API, serializedRequest.toString());
         if (taskId == null) {
-            new IterableRequestTask().execute(request);
+            requestDispatcher.execute(request);
             return;
         }
         successCallbackMap.put(taskId, onSuccess);

@@ -53,7 +53,6 @@ public class IterableNotificationTest {
     String itbl_ghost = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":true}";
     String itbl1 = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false}";
     String itbl2 = "{\"templateId\":2,\"campaignId\":2,\"messageId\":\"22222222222222222222222222222222\",\"isGhostPush\":false}}";
-
     private Context getContext() {
         return getApplicationContext();
     }
@@ -109,19 +108,20 @@ public class IterableNotificationTest {
     }
 
     /**
-     * Loads the notification image from a test resource so the assertion does not hit the network.
+     * Tests loading a notification with an image.
      * @throws Exception
      */
     @Test
     public void testNotificationImage() throws Exception {
-        URL imageFixture = getClass().getClassLoader().getResource("notification_image.png");
-        assertNotNull("notification_image.png fixture missing from test resources", imageFixture);
-
-        String itblImage = "{\"templateId\":1,\"campaignId\":1,\"messageId\":\"11111111111111111111111111111111\",\"isGhostPush\":false,\"attachment-url\":\""
-                + imageFixture.toExternalForm() + "\"}";
-
+        URL imageResource = getClass().getClassLoader().getResource("350x150.png");
+        assertNotNull(imageResource);
+        JSONObject iterableData = new JSONObject(itbl1);
+        iterableData.put(
+                IterableConstants.ITERABLE_DATA_PUSH_IMAGE,
+                imageResource.toString()
+        );
         Bundle notif = new Bundle();
-        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itblImage);
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, iterableData.toString());
         notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
 
         IterableNotificationBuilder iterableNotification = postNotification(notif);

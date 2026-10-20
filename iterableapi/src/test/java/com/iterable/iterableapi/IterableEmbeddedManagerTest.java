@@ -34,7 +34,7 @@ public class IterableEmbeddedManagerTest extends BaseTest {
         server.setDispatcher(dispatcher);
 
         IterableApi.overrideURLEndpointPath(server.url("").toString());
-        IterableApi.sharedInstance = new IterableApi();
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests();
         IterableTestUtils.createIterableApiNew(new IterableTestUtils.ConfigBuilderExtender() {
             @Override
             public IterableConfig.Builder run(IterableConfig.Builder builder) {

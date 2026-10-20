@@ -16,11 +16,17 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
+    private final @NonNull IterableRequestDispatchers requestDispatchers;
+    private final OnlineRequestProcessor pushRegistrationRequestProcessor;
+    // A newer push action invalidates retries from earlier registration or disable requests.
+    private final AtomicLong pushRegistrationRequestGeneration = new AtomicLong();
     private RequestProcessor requestProcessor;
+    private OfflineRequestProcessor offlineRequestProcessor;
 
     interface AuthProvider {
         @Nullable
@@ -41,31 +47,63 @@ class IterableApiClient {
     }
 
     IterableApiClient(@NonNull AuthProvider authProvider) {
-        this.authProvider = authProvider;
+        this(authProvider, IterableRequestDispatchers.sdk());
     }
 
-    private RequestProcessor getRequestProcessor() {
+    IterableApiClient(
+            @NonNull AuthProvider authProvider,
+            @NonNull IterableRequestDispatchers requestDispatchers
+    ) {
+        this.authProvider = authProvider;
+        this.requestDispatchers = requestDispatchers;
+        pushRegistrationRequestProcessor =
+                new OnlineRequestProcessor(requestDispatchers.push());
+    }
+
+    private synchronized RequestProcessor getRequestProcessor() {
         if (requestProcessor == null) {
-            requestProcessor = new OnlineRequestProcessor();
+            requestProcessor = new OnlineRequestProcessor(requestDispatchers.online());
         }
         return requestProcessor;
     }
 
-    void setOfflineProcessingEnabled(boolean offlineMode) {
-        if (offlineMode && this.requestProcessor instanceof OfflineRequestProcessor) {
-            return;
-        }
-        if (!offlineMode && this.requestProcessor instanceof OnlineRequestProcessor) {
+    synchronized void setOfflineProcessingEnabled(boolean offlineMode) {
+        if (!offlineMode
+                && offlineRequestProcessor == null
+                && !hasPendingOfflineRequests()) {
+            if (!(requestProcessor instanceof OnlineRequestProcessor)) {
+                requestProcessor = new OnlineRequestProcessor(requestDispatchers.online());
+            }
             return;
         }
 
-        if (this.requestProcessor instanceof OfflineRequestProcessor) {
-            ((OfflineRequestProcessor) this.requestProcessor).dispose();
+        // Once needed, keep one offline processor alive while new requests use the
+        // online processor. Its runner must finish requests queued before offline
+        // processing was disabled or restored from a previous process.
+        OfflineRequestProcessor persistentOfflineRequestProcessor =
+                getOfflineRequestProcessor();
+        if (offlineMode) {
+            requestProcessor = persistentOfflineRequestProcessor;
+        } else if (!(requestProcessor instanceof OnlineRequestProcessor)) {
+            requestProcessor = new OnlineRequestProcessor(requestDispatchers.online());
         }
+    }
 
-        this.requestProcessor = offlineMode
-                ? new OfflineRequestProcessor(authProvider.getContext())
-                : new OnlineRequestProcessor();
+    private OfflineRequestProcessor getOfflineRequestProcessor() {
+        if (offlineRequestProcessor == null) {
+            offlineRequestProcessor = new OfflineRequestProcessor(
+                        authProvider.getContext(),
+                        requestDispatchers.offlineImmediate(),
+                        requestDispatchers.offlineStored()
+            );
+        }
+        return offlineRequestProcessor;
+    }
+
+    private boolean hasPendingOfflineRequests() {
+        return IterableTaskStorage
+                .sharedInstance(authProvider.getContext())
+                .hasPendingTasks();
     }
 
     void getRemoteConfiguration(IterableHelper.IterableActionHandler actionHandler) {
@@ -618,7 +656,13 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_USER_ID, userId);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, authToken, onSuccess, onFailure);
+            sendPushRegistrationPostRequest(
+                    IterableConstants.ENDPOINT_DISABLE_DEVICE,
+                    requestJSON,
+                    authToken,
+                    onSuccess,
+                    onFailure
+            );
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -669,7 +713,13 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_PREFER_USER_ID, true);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN, requestJSON, authToken, successHandler, failureHandler);
+            sendPushRegistrationPostRequest(
+                    IterableConstants.ENDPOINT_REGISTER_DEVICE_TOKEN,
+                    requestJSON,
+                    authToken,
+                    successHandler,
+                    failureHandler
+            );
         } catch (JSONException e) {
             IterableLogger.e(TAG, "registerDeviceToken: exception", e);
         }
@@ -768,6 +818,25 @@ class IterableApiClient {
         getRequestProcessor().processPostRequest(authProvider.getApiKey(), resourcePath, json, authToken, onSuccess, onFailure);
     }
 
+    private void sendPushRegistrationPostRequest(
+            @NonNull String resourcePath,
+            @NonNull JSONObject json,
+            @Nullable String authToken,
+            @Nullable IterableHelper.SuccessHandler onSuccess,
+            @Nullable IterableHelper.FailureHandler onFailure
+    ) {
+        long requestGeneration = pushRegistrationRequestGeneration.incrementAndGet();
+        pushRegistrationRequestProcessor.processPostRequest(
+                authProvider.getApiKey(),
+                resourcePath,
+                json,
+                authToken,
+                onSuccess,
+                onFailure,
+                () -> requestGeneration == pushRegistrationRequestGeneration.get()
+        );
+    }
+
     /**
      * Sends a GET request to Iterable.
      * Performs network operations on an async thread instead of the main thread.
@@ -782,9 +851,28 @@ class IterableApiClient {
         getRequestProcessor().processGetRequest(authProvider.getApiKey(), resourcePath, json, authProvider.getAuthToken(), onSuccess, onFailure);
     }
 
-    void onLogout() {
-        getRequestProcessor().onLogout(authProvider.getContext());
+    synchronized void onLogout() {
+        Context context = authProvider.getContext();
+        RequestProcessor activeRequestProcessor = getRequestProcessor();
+        if (offlineRequestProcessor != null) {
+            offlineRequestProcessor.onLogout(context);
+        } else {
+            IterableTaskStorage.sharedInstance(context).deleteAllTasks();
+        }
+        if (activeRequestProcessor != offlineRequestProcessor) {
+            activeRequestProcessor.onLogout(context);
+        }
         authProvider.resetAuth();
+    }
+
+    synchronized void dispose() {
+        if (offlineRequestProcessor != null) {
+            if (requestProcessor == offlineRequestProcessor) {
+                requestProcessor = null;
+            }
+            offlineRequestProcessor.dispose();
+            offlineRequestProcessor = null;
+        }
     }
 
     void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
