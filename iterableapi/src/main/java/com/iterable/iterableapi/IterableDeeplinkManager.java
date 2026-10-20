@@ -27,7 +27,10 @@ class IterableDeeplinkManager {
                 return;
             }
             if (isIterableDeeplink(url)) {
-                new RedirectTask(callback).execute(url);
+                // Captured now rather than read in onPostExecute. The redirect is a network round
+                // trip, so switchProject can land in the middle of it, and the campaign it comes
+                // back with belongs to the project that was live when the link was clicked.
+                new RedirectTask(callback, IterableApi.sharedInstance._apiKey).execute(url);
             } else {
                 callback.execute(url);
             }
@@ -56,13 +59,15 @@ class IterableDeeplinkManager {
         static final int DEFAULT_TIMEOUT_MS = 3000;   //3 seconds
 
         private IterableHelper.IterableActionHandler callback;
+        private final String apiKeyAtClick;
 
         public int campaignId;
         public int templateId;
         public String messageId;
 
-        RedirectTask(IterableHelper.IterableActionHandler callback) {
+        RedirectTask(IterableHelper.IterableActionHandler callback, @Nullable String apiKeyAtClick) {
             this.callback = callback;
+            this.apiKeyAtClick = apiKeyAtClick;
         }
 
         @Override
@@ -128,7 +133,7 @@ class IterableDeeplinkManager {
 
             if (campaignId != 0) {
                 IterableAttributionInfo attributionInfo = new IterableAttributionInfo(campaignId, templateId, messageId);
-                IterableApi.sharedInstance.setAttributionInfo(attributionInfo);
+                IterableApi.sharedInstance.setAttributionInfo(attributionInfo, apiKeyAtClick);
             }
         }
     }

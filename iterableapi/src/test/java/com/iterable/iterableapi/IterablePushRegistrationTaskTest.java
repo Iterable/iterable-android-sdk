@@ -7,11 +7,16 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import okhttp3.mockwebserver.MockWebServer;
 
 import static android.os.Looper.getMainLooper;
 import static com.iterable.iterableapi.IterableTestUtils.stubAnyRequestReturningStatusCode;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -75,7 +80,7 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         shadowOf(getMainLooper()).idle();
         verify(apiMock).registerDeviceToken(eq(IterableTestUtils.userEmail), nullable(String.class), isNull(), eq(INTEGRATION_NAME), eq(TEST_TOKEN), eq(deviceAttributes));
 
-        verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), nullable(String.class), nullable(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
+        verify(apiMock, never()).disableToken(eq(IterableTestUtils.userEmail), nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class), any(String.class), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
     }
 
     @Test
@@ -87,6 +92,59 @@ public class IterablePushRegistrationTaskTest extends BaseTest {
         new IterablePushRegistrationTask().execute(data);
         shadowOf(getMainLooper()).idle();
 
-        verify(apiMock).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
+        verify(apiMock).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), isNull(), isNull(), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
+    }
+
+    @Test
+    public void testDisableDeviceCarriesTheCapturedApiKeyAndEndpoint() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
+
+        IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        data.apiKey = "captured_key";
+        data.baseUrl = IterableDataRegion.EU.getEndpoint();
+        new IterablePushRegistrationTask().execute(data);
+        shadowOf(getMainLooper()).idle();
+
+        verify(apiMock).disableToken(eq(IterableTestUtils.userEmail), isNull(), isNull(), eq("captured_key"), eq(IterableDataRegion.EU.getEndpoint()), eq(TEST_TOKEN), nullable(IterableHelper.SuccessHandler.class), nullable(IterableHelper.FailureHandler.class));
+    }
+
+    @Test
+    public void testDispatchListenerReportsFalseWithoutADeviceToken() throws Exception {
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(null);
+
+        CountDownLatch notified = new CountDownLatch(1);
+        AtomicBoolean dispatched = new AtomicBoolean(true);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        data.dispatchListener = wasDispatched -> {
+            dispatched.set(wasDispatched);
+            notified.countDown();
+        };
+        new IterablePushRegistrationTask().execute(data);
+        shadowOf(getMainLooper()).idle();
+
+        assertTrue("A caller waiting on the hand-off must not be left waiting when there is no token",
+                notified.await(5, TimeUnit.SECONDS));
+        assertFalse("No token means nothing was sent, which the switch reports as a noisy teardown",
+                dispatched.get());
+    }
+
+    @Test
+    public void testDispatchListenerReportsTrueWhenTheRequestWasHandedOff() throws Exception {
+        stubAnyRequestReturningStatusCode(server, 200, "{}");
+        when(pushRegistrationUtilMock.getFirebaseToken()).thenReturn(TEST_TOKEN);
+
+        CountDownLatch notified = new CountDownLatch(1);
+        AtomicBoolean dispatched = new AtomicBoolean(false);
+        IterablePushRegistrationData data = new IterablePushRegistrationData(IterableTestUtils.userEmail, null, null, INTEGRATION_NAME, IterablePushRegistrationData.PushRegistrationAction.DISABLE);
+        data.dispatchListener = wasDispatched -> {
+            dispatched.set(wasDispatched);
+            notified.countDown();
+        };
+        new IterablePushRegistrationTask().execute(data);
+        shadowOf(getMainLooper()).idle();
+
+        assertTrue(notified.await(5, TimeUnit.SECONDS));
+        assertTrue("A disable that reached the request layer is a clean teardown", dispatched.get());
     }
 }

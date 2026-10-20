@@ -6,7 +6,7 @@ package com.iterable.iterableapi;
  * performed in the foreground or background.
  *
  * Multiple parties can subscribe to initialization completion using
- * {@link IterableApi#addInitializationCallback(IterableInitializationCallback)}
+ * {@link IterableApi#onSDKInitialized(IterableInitializationCallback)}
  */
 public interface IterableInitializationCallback {
     /**
