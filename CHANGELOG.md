@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.11.1]
+
 ### Fixed
 - Push token registration, disable operations, Iterable deep-link redirects, and API requests now use dedicated SDK-owned executors instead of Android's process-wide `AsyncTask` queues. Push and deep-link work retain isolated serial lanes. Ordinary online API requests remain concurrent, while their automatic retries and offline immediate requests retain serial ordering; stored offline requests retain their own FIFO flow. Slow work in one flow no longer delays unrelated SDK operations, and client callbacks and attribution updates continue on the main thread.
 
