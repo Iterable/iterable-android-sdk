@@ -241,7 +241,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     /**
-     * Display the in-app message on the screen
+     * Display the in-app message on the screen. Safe to call from any thread; the message is always
+     * displayed on the main thread.
      * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
      */
     public void showMessage(@NonNull IterableInAppMessage message) {
@@ -255,6 +256,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     /**
      * Display the in-app message on the screen. This method, by default, assumes the current location of activity as InApp. To pass
      * different inAppLocation as paramter, use showMessage method which takes in IterableAppLocation as a parameter.
+     * Safe to call from any thread; the message is always displayed on the main thread.
      * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
      * @param consume A boolean indicating whether to remove the message from the list after showing
      * @param clickCallback A callback that is called when the user clicks on a link in the in-app message
@@ -263,7 +265,28 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         showMessage(message, consume, clickCallback, IterableInAppLocation.IN_APP);
     }
 
-    public void showMessage(final @NonNull IterableInAppMessage message, boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, @NonNull IterableInAppLocation inAppLocation) {
+    /**
+ * Displays an in-app message on the main thread.
+ *
+ * <p><b>Threading:</b> Main-thread calls are synchronous. Other calls are queued, so the
+ * message's read/consumed state changes after this method returns. The callback runs on main.
+ *
+ * @param message message to display
+ * @param consume whether to consume the message after display
+ * @param clickCallback callback for clicked links, or {@code null}
+ * @param inAppLocation where the message is displayed from
+     */
+    public void showMessage(final @NonNull IterableInAppMessage message, final boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, final @NonNull IterableInAppLocation inAppLocation) {
+        // Displaying creates dialogs and registers lifecycle observers, which must happen on the main thread.
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    showMessage(message, consume, clickCallback, inAppLocation);
+                }
+            });
+            return;
+        }
         if (displayer.showMessage(message, inAppLocation, new IterableHelper.IterableUrlCallback() {
             @Override
             public void execute(Uri url) {
