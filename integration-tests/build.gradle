@@ -35,10 +35,12 @@ android {
         def iterableApiKey = localProperties.getProperty('ITERABLE_API_KEY') ?: System.getenv('ITERABLE_API_KEY') ?: 'test_api_key'
         def iterableServerApiKey = localProperties.getProperty('ITERABLE_SERVER_API_KEY') ?: System.getenv('ITERABLE_SERVER_API_KEY') ?: 'test_server_api_key'
         def iterableTestUserEmail = localProperties.getProperty('ITERABLE_TEST_USER_EMAIL') ?: System.getenv('ITERABLE_TEST_USER_EMAIL') ?: 'test@abc.com'
+        def iterableRequestCapture = localProperties.getProperty('ITERABLE_REQUEST_CAPTURE') ?: System.getenv('ITERABLE_REQUEST_CAPTURE') ?: 'false'
         
         buildConfigField "String", "ITERABLE_API_KEY", "\"$iterableApiKey\""
         buildConfigField "String", "ITERABLE_SERVER_API_KEY", "\"$iterableServerApiKey\""
         buildConfigField "String", "ITERABLE_TEST_USER_EMAIL", "\"$iterableTestUserEmail\""
+        buildConfigField "boolean", "REQUEST_CAPTURE_ENABLED", "${iterableRequestCapture.toBoolean()}"
     }
 
     buildTypes {
