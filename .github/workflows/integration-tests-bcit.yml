@@ -23,6 +23,11 @@ on:
       - '.github/workflows/integration-tests-bcit.yml'
       - '.github/scripts/run-e2e.sh'
   workflow_dispatch: # Allow manual triggering
+    inputs:
+      request_capture:
+        description: 'Record every SDK request (host + masked API key) to diagnostics/request-capture.txt'
+        type: boolean
+        default: false
   schedule:
     # Nightly smoke test at 02:00 UTC against the BCIT Iterable project. Catches
     # backend-side drift (rotated keys, edited campaign templates, expired test
@@ -139,6 +144,8 @@ jobs:
           ITERABLE_API_KEY: ${{ secrets.BCIT_ITERABLE_API_KEY }}
           ITERABLE_SERVER_API_KEY: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY }}
           ITERABLE_TEST_USER_EMAIL: ${{ secrets.BCIT_ITERABLE_TEST_USER_EMAIL }}
+          # Empty outside workflow_dispatch, so PR, push and nightly runs build with capture off.
+          ITERABLE_REQUEST_CAPTURE: ${{ inputs.request_capture || 'false' }}
 
       # SDK-170: do NOT upload integration-tests/build/outputs/ — that path contains the
       # built APKs which embed BuildConfig.ITERABLE_API_KEY and BuildConfig.ITERABLE_SERVER_API_KEY
