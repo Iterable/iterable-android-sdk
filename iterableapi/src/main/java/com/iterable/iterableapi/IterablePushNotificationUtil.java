@@ -18,28 +18,29 @@ class IterablePushNotificationUtil {
         pendingAction = null;
     }
 
-    static boolean processPendingAction(Context context) {
-        boolean handled = false;
-        if (pendingAction != null) {
-            handled = executeAction(context, pendingAction);
-            // Only clear pending action if it was handled.
-            // This allows the action to be processed later when SDK is fully initialized
-            // (e.g., when customActionHandler becomes available after initialize() is called).
-            if (handled) {
-                pendingAction = null;
-            }
-        }
-        return handled;
+    static boolean hasPendingAction() {
+        return pendingAction != null;
     }
 
-    static boolean executeAction(Context context, PendingAction action) {
+    static boolean processPendingAction(Context context) {
+        if (pendingAction == null) {
+            return false;
+        }
+        IterableActionRunner.ActionDispatchResult result = dispatchPendingAction(context, pendingAction);
+        if (result != IterableActionRunner.ActionDispatchResult.NOT_HANDLED) {
+            pendingAction = null;
+        }
+        return result == IterableActionRunner.ActionDispatchResult.HANDLED;
+    }
+
+    private static IterableActionRunner.ActionDispatchResult dispatchPendingAction(Context context, PendingAction action) {
         // Automatic tracking
         IterableApi.sharedInstance.setPayloadData(action.intent);
         IterableApi.sharedInstance.setNotificationData(action.notificationData);
         IterableApi.sharedInstance.trackPushOpen(action.notificationData.getCampaignId(), action.notificationData.getTemplateId(),
                 action.notificationData.getMessageId(), action.dataFields);
 
-        return IterableActionRunner.executeAction(context, action.iterableAction, IterableActionSource.PUSH);
+        return IterableActionRunner.dispatchAction(context, action.iterableAction, IterableActionSource.PUSH);
     }
 
     static void handlePushAction(Context context, Intent intent) {

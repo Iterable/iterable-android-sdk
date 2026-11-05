@@ -12,11 +12,7 @@ public class EmbeddedSessionManager {
 
     private var impressions: MutableMap<String, EmbeddedImpressionData> = mutableMapOf()
 
-    var session: IterableEmbeddedSession = IterableEmbeddedSession(
-        null,
-        null,
-        null
-    )
+    var session: IterableEmbeddedSession = IterableEmbeddedSession()
         get() = synchronized(lock) { field }
         set(value) = synchronized(lock) { field = value }
 
@@ -31,11 +27,7 @@ public class EmbeddedSessionManager {
                 return
             }
 
-            session = IterableEmbeddedSession(
-                Date(),
-                null,
-                null
-            )
+            session = IterableEmbeddedSession(start = Date())
         }
     }
 
@@ -47,6 +39,8 @@ public class EmbeddedSessionManager {
             }
 
             if (impressions.isEmpty()) {
+                IterableLogger.d(TAG, "Embedded session ended without impressions, resetting")
+                session = IterableEmbeddedSession()
                 return
             }
 
@@ -59,11 +53,7 @@ public class EmbeddedSessionManager {
             )
 
             //reset session for next session start
-            session = IterableEmbeddedSession(
-                null,
-                null,
-                null
-            )
+            session = IterableEmbeddedSession()
 
             impressions = mutableMapOf()
 

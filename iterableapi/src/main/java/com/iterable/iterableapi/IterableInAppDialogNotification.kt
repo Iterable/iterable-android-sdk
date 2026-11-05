@@ -47,7 +47,10 @@ class IterableInAppDialogNotification internal constructor(
     private val webViewService: InAppWebViewService = InAppServices.webView,
     private val orientationService: InAppOrientationService = InAppServices.orientation,
     private val displayModeService: InAppDisplayModeService = InAppServices.displayMode
-) : Dialog(hostActivity, R.style.Iterable_InAppDialog), IterableWebView.HTMLNotificationCallbacks {
+) : Dialog(
+    hostActivity,
+    IterableInAppColorSchemeResolver.resolveDialogTheme()
+), IterableWebView.HTMLNotificationCallbacks {
 
     private var webView: IterableWebView? = null
     private var loaded: Boolean = false
@@ -522,4 +525,3 @@ class IterableInAppDialogNotification internal constructor(
         trackingService.removeMessage(message)
     }
 }
-

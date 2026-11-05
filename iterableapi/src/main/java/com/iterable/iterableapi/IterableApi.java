@@ -5,18 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationManagerCompat;
-
 import com.iterable.iterableapi.util.DeviceInfoUtils;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -83,7 +79,6 @@ public class IterableApi {
     volatile IterableAuthManager authManager; // Package-private for IterableProjectSwitcher
     private ConcurrentHashMap<String, String> deviceAttributes = new ConcurrentHashMap<>();
     volatile IterableKeychain keychain; // Package-private for IterableProjectSwitcher
-
 
     //region Background Initialization - Delegated to IterableBackgroundInitializer
     //---------------------------------------------------------------------------------------
@@ -926,7 +921,12 @@ public class IterableApi {
 
         sharedInstance.retrieveEmailAndUserId();
 
-        IterablePushNotificationUtil.processPendingAction(context);
+        // Process a pending push action before registering lifecycle callbacks so attribution
+        // is set before the first onForeground(), which otherwise registers for push twice.
+        if (IterablePushNotificationUtil.hasPendingAction()) {
+            IterablePushNotificationUtil.processPendingAction(context);
+        }
+
         IterableActivityMonitor.getInstance().registerLifecycleCallbacks(context);
         IterableActivityMonitor.getInstance().addCallback(sharedInstance.activityMonitorListener);
 
@@ -2264,7 +2264,5 @@ public class IterableApi {
 
         apiClient.trackEmbeddedSession(session);
     }
-
 //endregion
-
 }

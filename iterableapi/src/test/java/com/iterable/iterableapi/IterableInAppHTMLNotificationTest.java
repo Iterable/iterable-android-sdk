@@ -1,7 +1,10 @@
 package com.iterable.iterableapi;
 
+import android.content.Context;
 import android.graphics.Rect;
+import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
@@ -13,13 +16,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowDialog;
 import org.robolectric.shadows.ShadowLooper;
 
 import static android.os.Looper.getMainLooper;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -403,5 +409,79 @@ public class IterableInAppHTMLNotificationTest extends BaseTest {
         assertEquals(270, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(314));
         assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(315));
         assertEquals(360, IterableInAppFragmentHTMLNotification.roundToNearest90Degrees(359));
+    }
+
+    // ===== Light/Dark Theme Tests =====
+
+    @Test
+    public void testDialogThemeFollowsLightMode() {
+        IterableInAppFragmentHTMLNotification notification = showNotification();
+
+        assertTrue("Dialog theme should resolve isLightTheme=true in light mode",
+                isLightTheme(notification.getDialog().getContext()));
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    public void testDialogThemeFollowsNightMode() {
+        IterableInAppFragmentHTMLNotification notification = showNotification();
+
+        assertFalse("Dialog theme should resolve isLightTheme=false in night mode",
+                isLightTheme(notification.getDialog().getContext()));
+    }
+
+    @Test
+    public void testDialogThemeUsesExplicitDarkSchemeInLightMode() {
+        configureColorScheme(IterableInAppColorScheme.DARK);
+
+        IterableInAppFragmentHTMLNotification notification = showNotification();
+
+        assertFalse("Explicit DARK should override the host activity's light mode",
+                isLightTheme(notification.getDialog().getContext()));
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    public void testDialogThemeUsesExplicitLightSchemeInNightMode() {
+        configureColorScheme(IterableInAppColorScheme.LIGHT);
+
+        IterableInAppFragmentHTMLNotification notification = showNotification();
+
+        assertTrue("Explicit LIGHT should override the host activity's night mode",
+                isLightTheme(notification.getDialog().getContext()));
+    }
+
+    @Test
+    public void testWebViewUsesDialogThemedContext() {
+        IterableInAppFragmentHTMLNotification notification = showNotification();
+
+        View webView = notification.getView().findViewById(R.id.webView);
+        assertNotNull(webView);
+        assertSame("WebView must be created with the dialog's themed context, otherwise it reports"
+                        + " the host activity's prefers-color-scheme to the in-app HTML",
+                notification.getDialog().getContext(), webView.getContext());
+    }
+
+    private IterableInAppFragmentHTMLNotification showNotification() {
+        IterableInAppDisplayer.showIterableFragmentNotificationHTML(activity, "<html><body>Test</body></html>", "", null, 0.0, new Rect(), true, new IterableInAppMessage.InAppBgColor(null, 0.0f), false, IterableInAppLocation.IN_APP);
+        shadowOf(getMainLooper()).idle();
+
+        IterableInAppFragmentHTMLNotification notification = IterableInAppFragmentHTMLNotification.getInstance();
+        assertNotNull(notification);
+        assertNotNull(notification.getDialog());
+        return notification;
+    }
+
+    private void configureColorScheme(IterableInAppColorScheme colorScheme) {
+        IterableTestUtils.resetIterableApi();
+        IterableTestUtils.createIterableApiNew(
+                builder -> builder.setInAppColorScheme(colorScheme));
+    }
+
+    private boolean isLightTheme(Context context) {
+        TypedValue value = new TypedValue();
+        assertTrue("isLightTheme should be resolvable on the in-app dialog theme",
+                context.getTheme().resolveAttribute(android.R.attr.isLightTheme, value, true));
+        return value.data != 0;
     }
 }
