@@ -317,13 +317,64 @@ class IterableTaskStorage {
 
     /**
      * Deletes all the entries from the OfflineTask table.
+     *
+     * @return ids of the deleted tasks, so their parked callbacks can be settled
      */
-    void deleteAllTasks() {
+    @NonNull
+    ArrayList<String> deleteAllTasks() {
         if (!isDatabaseReady()) {
-            return;
+            return new ArrayList<>();
         }
-        int numberOfRowsDeleted = database.delete(ITERABLE_TASK_TABLE_NAME, null, null);
-        IterableLogger.v(TAG, "Deleted " + numberOfRowsDeleted + " offline tasks");
+        ArrayList<String> deletedTaskIds = deleteAndReturnIds(null, null);
+        IterableLogger.v(TAG, "Deleted " + deletedTaskIds.size() + " offline tasks");
+        return deletedTaskIds;
+    }
+
+    /**
+     * Deletes all the entries from the OfflineTask table except those with the given name.
+     * Task names are the request's resource path, set when the task is scheduled.
+     *
+     * @param name name of the tasks to preserve
+     * @return ids of the deleted tasks, so their parked callbacks can be settled
+     */
+    @NonNull
+    ArrayList<String> deleteAllTasksExcept(@NonNull String name) {
+        if (!isDatabaseReady()) {
+            return new ArrayList<>();
+        }
+        // NAME is nullable in the schema, and `NAME != ?` evaluates to NULL rather than true
+        // for a null name, so unnamed rows would survive the purge without the IS NULL branch.
+        ArrayList<String> deletedTaskIds = deleteAndReturnIds(
+                NAME + " IS NULL OR " + NAME + " != ?", new String[]{name});
+        IterableLogger.v(TAG, "Deleted " + deletedTaskIds.size() + " offline tasks, preserved " + name);
+        return deletedTaskIds;
+    }
+
+    /**
+     * Deletes the matching rows and returns their ids. Only the id column is read, so knowing which
+     * rows a bulk delete removed costs one extra query rather than deserializing every queued
+     * request. The query and the delete share a transaction, so a task created in between cannot be
+     * deleted without its parked callback being settled.
+     */
+    @NonNull
+    private ArrayList<String> deleteAndReturnIds(@Nullable String selection, @Nullable String[] selectionArgs) {
+        ArrayList<String> taskIds = new ArrayList<>();
+        database.beginTransaction();
+        try {
+            Cursor cursor = database.query(ITERABLE_TASK_TABLE_NAME, new String[]{TASK_ID},
+                    selection, selectionArgs, null, null, null);
+            if (cursor.moveToFirst()) {
+                do {
+                    taskIds.add(cursor.getString(0));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+            database.delete(ITERABLE_TASK_TABLE_NAME, selection, selectionArgs);
+            database.setTransactionSuccessful();
+        } finally {
+            database.endTransaction();
+        }
+        return taskIds;
     }
 
     /**
