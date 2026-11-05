@@ -8,15 +8,19 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Handles background initialization of the Iterable SDK to prevent ANRs.
@@ -30,6 +34,18 @@ class IterableBackgroundInitializer {
 
     // Callback manager for initialization completion
     private static final IterableInitializationCallbackManager callbackManager = new IterableInitializationCallbackManager();
+
+    /**
+     * Outcome of an attempt to drain the operation queue.
+     */
+    enum DrainResult {
+        /** A drain task is running; the drain completion will run on the executor thread. */
+        STARTED,
+        /** A drain was already in flight, so this call did nothing. */
+        ALREADY_DRAINING,
+        /** No executor would accept the drain. The queue is still full and nobody will run it. */
+        REJECTED
+    }
 
     /**
      * Represents a queued operation that should be executed after initialization
@@ -50,33 +66,123 @@ class IterableBackgroundInitializer {
      * Queue for operations called before initialization completes
      */
     private static class OperationQueue {
-        private final ConcurrentLinkedQueue<QueuedOperation> operations = new ConcurrentLinkedQueue<>();
+        /**
+         * An operation plus the switch leg it was requested under. {@code destination == null}
+         * means it was queued for initialization, which has no leg. A drain for one leg leaves
+         * every other leg where it is, so a call made after a later destination was requested is
+         * not replayed into the switch that happens to land first.
+         */
+        private static final class TaggedOperation {
+            @Nullable final Object destination;
+            final QueuedOperation operation;
+
+            TaggedOperation(@Nullable Object destination, QueuedOperation operation) {
+                this.destination = destination;
+                this.operation = operation;
+            }
+        }
+
+        private final ConcurrentLinkedQueue<TaggedOperation> operations = new ConcurrentLinkedQueue<>();
         private volatile boolean isProcessing = false;
 
-        void enqueue(QueuedOperation operation) {
-            operations.offer(operation);
+        void enqueue(QueuedOperation operation, @Nullable Object destination) {
+            operations.offer(new TaggedOperation(destination, operation));
             IterableLogger.d(TAG, "Queued operation: " + operation.getDescription());
         }
 
         void processAll(ExecutorService executor) {
-            if (isProcessing) return;
+            processAll(executor, null, null, null);
+        }
+
+        /**
+         * @param onDrained run on the executor thread once every operation for {@code destination}
+         *                  has executed. Not run unless the result is {@link DrainResult#STARTED}.
+         * @param lowerGateWhenDrained run under {@code initLock} the first time that destination's
+         *                             queue is observed empty. Until it runs, callers still see the
+         *                             gate raised and keep enqueueing, so a call made during the
+         *                             drain cannot overtake the calls already queued for the same
+         *                             destination.
+         * @param destination the switch leg to replay, or null to replay calls queued for
+         *                    initialization. Other legs stay queued.
+         */
+        DrainResult processAll(ExecutorService executor,
+                               @Nullable Runnable onDrained,
+                               @Nullable Runnable lowerGateWhenDrained,
+                               @Nullable Object destination) {
+            if (isProcessing) return DrainResult.ALREADY_DRAINING;
             isProcessing = true;
 
-            executor.execute(() -> {
-                QueuedOperation operation;
-                while ((operation = operations.poll()) != null) {
-                    try {
-                        IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
-                        operation.execute();
-                    } catch (Exception e) {
-                        IterableLogger.e(TAG, "Failed to execute queued operation", e);
-                    }
-                }
-                isProcessing = false;
+            if (submitDrain(executor, onDrained, lowerGateWhenDrained, destination)) {
+                return DrainResult.STARTED;
+            }
 
-                IterableLogger.d(TAG, "All queued operations processed, shutting down background executor");
-                shutdownBackgroundExecutorAsync(executor);
-            });
+            // The executor was shut down between being handed to us and execute(). That happens for
+            // real: the drain task shuts its own executor down as its last act, so a switch started
+            // from inside a switch callback can land in exactly this window.
+            IterableLogger.w(TAG, "Background executor rejected the queue drain, retrying on a fresh executor");
+            if (submitDrain(replaceIfCurrent(executor), onDrained, lowerGateWhenDrained, destination)) {
+                return DrainResult.STARTED;
+            }
+
+            // Nothing will run the drain, so isProcessing has to be released. Left set, it would jam
+            // the queue for the life of the process and every later drain would be refused.
+            isProcessing = false;
+            IterableLogger.e(TAG, "Could not drain the operation queue: both executors rejected it");
+            return DrainResult.REJECTED;
+        }
+
+        /** @return false if {@code executor} rejected the drain */
+        private boolean submitDrain(ExecutorService executor,
+                                    @Nullable Runnable onDrained,
+                                    @Nullable Runnable lowerGateWhenDrained,
+                                    @Nullable Object destination) {
+            try {
+                executor.execute(() -> {
+                    while (true) {
+                        QueuedOperation operation;
+                        while ((operation = pollDestination(destination)) != null) {
+                            try {
+                                IterableLogger.d(TAG, "Executing queued operation: " + operation.getDescription());
+                                operation.execute();
+                            } catch (Exception e) {
+                                IterableLogger.e(TAG, "Failed to execute queued operation", e);
+                            }
+                        }
+                        if (lowerGateWhenDrained == null) {
+                            break;
+                        }
+                        // Emptiness is decided under the lock enqueue takes, and only for this
+                        // destination. A call for a later one stays queued. A call for this one
+                        // either goes on the queue and is picked up by another pass, or arrives
+                        // after the gate is down and runs itself.
+                        boolean drained;
+                        synchronized (initLock) {
+                            drained = !containsDestination(destination);
+                            if (drained) {
+                                lowerGateWhenDrained.run();
+                            }
+                        }
+                        if (drained) {
+                            break;
+                        }
+                    }
+                    isProcessing = false;
+
+                    if (onDrained != null) {
+                        try {
+                            onDrained.run();
+                        } catch (Exception e) {
+                            IterableLogger.e(TAG, "Failed to run queue drain completion", e);
+                        }
+                    }
+
+                    IterableLogger.d(TAG, "All queued operations processed, shutting down background executor");
+                    shutdownBackgroundExecutorAsync(executor);
+                });
+                return true;
+            } catch (RejectedExecutionException e) {
+                return false;
+            }
         }
 
         int size() {
@@ -86,6 +192,35 @@ class IterableBackgroundInitializer {
         void clear() {
             operations.clear();
             isProcessing = false;
+        }
+
+        /**
+         * Removes the oldest operation enqueued for {@code destination}. Identity, not equality:
+         * two requests for the same API key are different legs when another destination sits
+         * between them.
+         */
+        @Nullable
+        private QueuedOperation pollDestination(@Nullable Object destination) {
+            synchronized (initLock) {
+                Iterator<TaggedOperation> it = operations.iterator();
+                while (it.hasNext()) {
+                    TaggedOperation tagged = it.next();
+                    if (tagged.destination == destination) {
+                        it.remove();
+                        return tagged.operation;
+                    }
+                }
+                return null;
+            }
+        }
+
+        private boolean containsDestination(@Nullable Object destination) {
+            for (TaggedOperation tagged : operations) {
+                if (tagged.destination == destination) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -110,6 +245,38 @@ class IterableBackgroundInitializer {
     private static volatile boolean isInitializing = false;
     private static volatile boolean isBackgroundInitialized = false;
     private static final ConcurrentLinkedQueue<IterableInitializationCallback> pendingCallbacks = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<InitializationResultListener> pendingInitResults = new ConcurrentLinkedQueue<>();
+
+    /**
+     * Test-only. The next {@link #initializeInBackground} run fails the way a timed-out or thrown
+     * initialization does, so {@code switchProject} before init can be asserted against that result.
+     * Cleared as soon as it is consumed.
+     */
+    @VisibleForTesting
+    static volatile boolean failNextInitialization;
+
+    /** Receives whether background initialization finished without a timeout or an exception. */
+    interface InitializationResultListener {
+        void onInitializationFinished(boolean succeeded);
+    }
+
+    private static void deliverInitResult(@Nullable InitializationResultListener listener, boolean succeeded) {
+        if (listener == null) {
+            return;
+        }
+        try {
+            listener.onInitializationFinished(succeeded);
+        } catch (Exception e) {
+            IterableLogger.e(TAG, "Exception in initialization result listener", e);
+        }
+    }
+
+    /**
+     * Work that must not run until the in-flight background initialization has finished. Currently
+     * only {@link IterableApi#switchProject}, which cannot tear the SDK down while an init task is
+     * still going to mark initialization complete underneath it.
+     */
+    private static final ConcurrentLinkedQueue<Runnable> pendingInitActions = new ConcurrentLinkedQueue<>();
 
     /**
      * Initialize the Iterable SDK in the background to avoid ANRs.
@@ -125,11 +292,32 @@ class IterableBackgroundInitializer {
                                      @NonNull String apiKey,
                                      @Nullable IterableConfig config,
                                      @Nullable IterableInitializationCallback callback) {
+        initializeInBackground(context, apiKey, config, callback, null);
+    }
+
+    /**
+     * Same as {@link #initializeInBackground(Context, String, IterableConfig, IterableInitializationCallback)},
+     * plus a result the public callback cannot carry. {@code IterableInitializationCallback} has no
+     * success argument, and giving it one would change every app that implements it.
+     * {@code switchProject} before initialization needs the result so a failed start is
+     * {@code SWITCHED_WITH_WARNINGS} on Android the way a failed {@code start()} is
+     * {@code .switchedWithWarnings} on iOS. The public callback still fires either way.
+     */
+    static void initializeInBackground(@NonNull Context context,
+                                     @NonNull String apiKey,
+                                     @Nullable IterableConfig config,
+                                     @Nullable IterableInitializationCallback callback,
+                                     @Nullable InitializationResultListener resultListener) {
         // Handle null context early - still report success but log error
         if (context == null) {
             IterableLogger.e(TAG, "Context cannot be null, but reporting success");
-            if (callback != null) {
-                new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
+            if (callback != null || resultListener != null) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (callback != null) {
+                        callback.onSDKInitialized();
+                    }
+                    deliverInitResult(resultListener, true);
+                });
             }
             return;
         }
@@ -137,13 +325,21 @@ class IterableBackgroundInitializer {
         synchronized (initLock) {
             if (isInitializing || isBackgroundInitialized) {
                 IterableLogger.w(TAG, "initializeInBackground called but initialization already in progress or completed");
-                if (callback != null) {
-                    if (isBackgroundInitialized) {
-                        // Initialization already complete, call callback immediately
-                        new Handler(Looper.getMainLooper()).post(callback::onSDKInitialized);
-                    } else {
-                        // Initialization in progress, queue callback for later
+                if (isBackgroundInitialized) {
+                    if (callback != null || resultListener != null) {
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            if (callback != null) {
+                                callback.onSDKInitialized();
+                            }
+                            deliverInitResult(resultListener, true);
+                        });
+                    }
+                } else {
+                    if (callback != null) {
                         pendingCallbacks.offer(callback);
+                    }
+                    if (resultListener != null) {
+                        pendingInitResults.offer(resultListener);
                     }
                 }
                 return;
@@ -173,6 +369,11 @@ class IterableBackgroundInitializer {
             try {
                 IterableLogger.d(TAG, "Starting initialization with " + INITIALIZATION_TIMEOUT_SECONDS + " second timeout");
 
+                if (failNextInitialization) {
+                    failNextInitialization = false;
+                    throw new IllegalStateException("background initialization failed");
+                }
+
                 // Submit the actual initialization task
                 Future<?> initFuture = initExecutor.submit(() -> {
                     IterableLogger.d(TAG, "Executing initialization on background thread");
@@ -198,13 +399,7 @@ class IterableBackgroundInitializer {
             }
 
             // Always mark as completed and call callbacks regardless of success/timeout/failure
-            synchronized (initLock) {
-                isBackgroundInitialized = true;
-                isInitializing = false;
-            }
-
-            // Process any queued operations
-            operationQueue.processAll(backgroundExecutor);
+            markInitializationComplete();
 
             // Notify completion on main thread (always success)
             final boolean finalInitSucceeded = initSucceeded;
@@ -217,7 +412,7 @@ class IterableBackgroundInitializer {
                         IterableLogger.w(TAG, "Initialization timed out or failed, but notifying callbacks anyway after " + totalTime + "ms");
                     }
 
-                    // Call the original callback directly
+                    // Call the original callback directly. It still means "finished", not "succeeded".
                     if (callback != null) {
                         try {
                             callback.onSDKInitialized();
@@ -225,6 +420,7 @@ class IterableBackgroundInitializer {
                             IterableLogger.e(TAG, "Exception in initialization callback", e);
                         }
                     }
+                    deliverInitResult(resultListener, finalInitSucceeded);
 
                     // Call all pending callbacks from concurrent initialization attempts
                     IterableInitializationCallback pendingCallback;
@@ -234,6 +430,10 @@ class IterableBackgroundInitializer {
                         } catch (Exception e) {
                             IterableLogger.e(TAG, "Exception in pending initialization callback", e);
                         }
+                    }
+                    InitializationResultListener pendingResult;
+                    while ((pendingResult = pendingInitResults.poll()) != null) {
+                        deliverInitResult(pendingResult, finalInitSucceeded);
                     }
 
                 } catch (Exception e) {
@@ -255,7 +455,69 @@ class IterableBackgroundInitializer {
              }
         };
 
-        backgroundExecutor.execute(initTask);
+        // Via ensureBackgroundExecutor rather than backgroundExecutor directly: the drain task shuts
+        // its own executor down when it finishes, so the field can hold a dead executor by the time
+        // an app initializes again, and a rejection here would throw out of a public API call.
+        ExecutorService executor;
+        synchronized (initLock) {
+            executor = ensureBackgroundExecutor();
+        }
+        executor.execute(initTask);
+    }
+
+    /**
+     * Lowers the initialization gate, drains the calls that were queued behind it, and runs anything
+     * that was waiting for initialization to finish.
+     *
+     * Does nothing to the gate while a project switch owns it: the switch raises the same flags and
+     * {@link #completeProjectSwitch(boolean)} is what lowers them. Without that check an init task
+     * completing mid-switch would open the gate while the teardown was still running, so calls in
+     * that window would execute against a half torn-down SDK.
+     */
+    private static void markInitializationComplete() {
+        boolean switchOwnsGate;
+        synchronized (initLock) {
+            switchOwnsGate = isSwitchingProject;
+            if (!switchOwnsGate) {
+                isBackgroundInitialized = true;
+                isInitializing = false;
+            }
+        }
+
+        if (switchOwnsGate) {
+            IterableLogger.d(TAG, "Initialization finished during a project switch; the switch owns the gate");
+            return;
+        }
+
+        operationQueue.processAll(backgroundExecutor);
+        runPendingInitActions();
+    }
+
+    private static void runPendingInitActions() {
+        Runnable action;
+        while ((action = pendingInitActions.poll()) != null) {
+            try {
+                action.run();
+            } catch (Exception e) {
+                IterableLogger.e(TAG, "Failed to run deferred post-initialization action", e);
+            }
+        }
+    }
+
+    /**
+     * Defers {@code action} until the in-flight background initialization completes.
+     *
+     * @return true if the action was deferred, false if no initialization is in flight and the
+     *         caller should run it itself
+     */
+    static boolean runWhenInitialized(@NonNull Runnable action) {
+        synchronized (initLock) {
+            if (!isInitializing || isBackgroundInitialized) {
+                return false;
+            }
+            pendingInitActions.offer(action);
+            return true;
+        }
     }
 
     /**
@@ -275,6 +537,20 @@ class IterableBackgroundInitializer {
     }
 
     /**
+     * The leg a call belongs to when it is queued. Null during initialization. While a switch is
+     * in flight this is the project the app has most recently asked for: the tail of the chain, or
+     * the leg in flight when nothing is queued behind it. Caller holds {@link #initLock}.
+     */
+    @Nullable
+    private static Object destinationForQueuedCallLocked() {
+        if (!isSwitchingProject) {
+            return null;
+        }
+        PendingProjectSwitch tail = pendingSwitches.peekLast();
+        return tail != null ? tail.leg : inFlightLeg;
+    }
+
+    /**
      * Queue an operation if initialization is in progress, otherwise execute immediately
      * @param operation The operation to queue or execute
      * @return true if operation was queued, false if executed immediately
@@ -282,7 +558,7 @@ class IterableBackgroundInitializer {
     static boolean queueOrExecute(QueuedOperation operation) {
         synchronized (initLock) {
             if (isInitializing && !isBackgroundInitialized) {
-                operationQueue.enqueue(operation);
+                operationQueue.enqueue(operation, destinationForQueuedCallLocked());
                 return true;
             }
         }
@@ -310,6 +586,446 @@ class IterableBackgroundInitializer {
         });
     }
 
+    /**
+     * Queues behind an initialization but never behind a project switch.
+     *
+     * A queued operation is replayed once the new project is live, which is right for a call that
+     * carries no project-scoped identifiers and wrong for one that does. A push open replayed after
+     * a switch reports the previous project's campaignId, templateId and messageId to the new
+     * project, where those IDs do not exist. Running it inline instead sends it to whichever project
+     * is live at the time, which is the previous project for all of the teardown. iOS does not gate
+     * push handling at all, for the same reason.
+     *
+     * Initialization queueing is deliberately left alone: a call made while a background
+     * initialization is still in flight has no previous project to be misattributed to.
+     *
+     * @return true if the operation was queued
+     */
+    static boolean queueOrExecuteUnlessSwitching(QueuedOperation operation) {
+        boolean switching;
+        synchronized (initLock) {
+            if (isInitializing && !isBackgroundInitialized && !isSwitchingProject) {
+                operationQueue.enqueue(operation, null);
+                return true;
+            }
+            // Read under the same lock that raises the gate, so the branch cannot be decided on a
+            // stale value, then log and execute outside it.
+            switching = isSwitchingProject;
+        }
+        if (switching) {
+            IterableLogger.w(TAG, "switchProject is in progress. Running " + operation.getDescription()
+                    + " against the project that is live now instead of queueing it, because it "
+                    + "carries identifiers that only exist on the project that produced it.");
+        }
+        operation.execute();
+        return false;
+    }
+
+    static void queueOrExecuteUnlessSwitching(Runnable runnable, String description) {
+        queueOrExecuteUnlessSwitching(new QueuedOperation() {
+            @Override
+            public void execute() {
+                runnable.run();
+            }
+
+            @Override
+            public String getDescription() {
+                return description;
+            }
+        });
+    }
+
+
+    //region Project switching
+    //---------------------------------------------------------------------------------------
+
+    private static volatile boolean isSwitchingProject = false;
+    private static final ConcurrentLinkedQueue<IterableProjectSwitchCallback> switchCallbacks = new ConcurrentLinkedQueue<>();
+
+    /**
+     * The project the in-flight switch is heading to, so a second request can be told apart by
+     * where it is going rather than only by the fact that a switch is running.
+     */
+    private static volatile String inFlightSwitchApiKey;
+
+    /**
+     * Identity of the switch leg that is in flight. Distinct from {@link #inFlightSwitchApiKey}:
+     * asking for the same project again after a different one is a new leg, and a queued call
+     * belongs to the leg that was the latest ask when the call was made.
+     */
+    private static Object inFlightLeg;
+
+    /**
+     * Switches asked for while another was in flight, targeting a project that one will not land
+     * on. Run in the order they were asked for once the switch ahead of them finishes.
+     *
+     * A deque rather than a queue so the tail is reachable: routing a request needs to compare it
+     * against the last destination asked for. Only ever touched under {@link #initLock}.
+     */
+    private static final ArrayDeque<PendingProjectSwitch> pendingSwitches = new ArrayDeque<>();
+
+    /** A switch request parked until the one in flight finishes. */
+    static final class PendingProjectSwitch {
+        final String apiKey;
+        @Nullable final IterableConfig config;
+        final List<IterableProjectSwitchCallback> callbacks = new ArrayList<>();
+        /** See {@link #inFlightLeg}. One per queued request, never reused across a different destination. */
+        final Object leg = new Object();
+
+        PendingProjectSwitch(@NonNull String apiKey, @Nullable IterableConfig config) {
+            this.apiKey = apiKey;
+            this.config = config;
+        }
+    }
+
+    /**
+     * @return true from the start of a switch until the last switch queued behind it is done.
+     *         This is not the same as "calls are being queued": a chain hands over from one
+     *         switch to the next, and in the moment between them the SDK is fully live on the
+     *         project that just landed, so calls run rather than queue while this is still true.
+     */
+    static boolean isSwitchingProject() {
+        return isSwitchingProject;
+    }
+
+    /** How {@link IterableProjectSwitcher#switchProject} should treat a request. */
+    enum BeginSwitchOutcome {
+        /** The SDK is already on the requested project and no switch is running. Nothing to do. */
+        ALREADY_THERE,
+        /**
+         * Registered with the switch that is going to deliver this project, or queued behind the
+         * chain. Either way this call does not run a teardown of its own.
+         */
+        JOINED_OR_QUEUED,
+        /** This call owns a new switch and the gate is raised for it. */
+        RUN
+    }
+
+    /**
+     * Routes a request by comparing it against the project the app has most recently <i>asked</i>
+     * to be on, rather than the one that is live, and raises the switch gate when the request
+     * owns a new switch, so every SDK call made until {@link #completeProjectSwitch(boolean)} is
+     * queued instead of running against a half torn-down SDK.
+     *
+     * Those two projects differ for the whole length of a teardown, and using the live one is
+     * wrong in three ways. A request to go back to the project being left looks like "already
+     * there", so it reports a clean switch and tears nothing down while the switch in flight
+     * carries on somewhere else. A repeat of the destination already in flight looks joinable even
+     * when another destination is queued behind it, so the chain settles past it. And merging a
+     * repeat into an earlier queued entry reorders the chain, so C, D, C runs C then D.
+     *
+     * The requested project is the tail of the queue, or the switch in flight when the queue is
+     * empty, or {@code liveApiKey} when nothing is running. A request for it is absorbed by
+     * whatever is going to deliver it, so a picker tapped twice on one destination runs a single
+     * teardown; anything else goes on the tail.
+     *
+     * @param liveApiKey the API key the SDK is running on right now
+     */
+    static BeginSwitchOutcome beginProjectSwitch(@NonNull String apiKey,
+                                                 @Nullable IterableConfig config,
+                                                 @Nullable IterableProjectSwitchCallback callback,
+                                                 @NonNull String liveApiKey) {
+        synchronized (initLock) {
+            PendingProjectSwitch tail = pendingSwitches.peekLast();
+            String requested = tail != null ? tail.apiKey
+                    : inFlightSwitchApiKey != null ? inFlightSwitchApiKey : liveApiKey;
+
+            if (apiKey.equals(requested)) {
+                if (tail != null) {
+                    if (callback != null) {
+                        tail.callbacks.add(callback);
+                    }
+                } else if (inFlightSwitchApiKey != null) {
+                    if (callback != null) {
+                        switchCallbacks.offer(callback);
+                    }
+                } else {
+                    return BeginSwitchOutcome.ALREADY_THERE;
+                }
+                return BeginSwitchOutcome.JOINED_OR_QUEUED;
+            }
+
+            if (inFlightSwitchApiKey != null) {
+                // Appended, never merged into an earlier entry for the same project. Merging
+                // across another destination reorders the chain: C, D, C would run C then D and
+                // settle on D, and the second C's callback would fire when the first C landed.
+                PendingProjectSwitch parked = new PendingProjectSwitch(apiKey, config);
+                if (callback != null) {
+                    parked.callbacks.add(callback);
+                }
+                pendingSwitches.addLast(parked);
+                return BeginSwitchOutcome.JOINED_OR_QUEUED;
+            }
+
+            if (callback != null) {
+                switchCallbacks.offer(callback);
+            }
+            isSwitchingProject = true;
+            inFlightSwitchApiKey = apiKey;
+            inFlightLeg = new Object();
+            raiseCallGateLocked();
+            return BeginSwitchOutcome.RUN;
+        }
+    }
+
+    /**
+     * Raises the call-queueing gate again for a switch that inherited the chain.
+     *
+     * {@code lowerGate} drops that gate at the handover so the project that just landed can serve
+     * the calls its own callback makes, and this puts it back for the teardown that follows.
+     */
+    static void resumeProjectSwitch() {
+        synchronized (initLock) {
+            raiseCallGateLocked();
+        }
+    }
+
+    private static void raiseCallGateLocked() {
+        isInitializing = true;
+        isBackgroundInitialized = false;
+        // The new project runs through initialize() again, and notifyInitializationComplete()
+        // only fires once per initialized flag, so the flag has to be cleared for the second
+        // initialize() to notify. Subscribers themselves are kept: clearing them would drop a
+        // subscriber registered while the first initialization was still in flight.
+        callbackManager.clearInitializedFlag();
+    }
+
+    /**
+     * Lowers the switch gate, drains the calls queued for this switch leg FIFO against the project
+     * that just landed, then delivers every callback registered with this switch on the main thread.
+     * Calls queued for a later leg stay queued until that leg lands.
+     *
+     * When a switch was requested while this one ran, the chain passes straight to it rather than
+     * ending, and {@link #startPendingSwitch} runs it on the chain it inherited.
+     *
+     * @param cleanTeardown false when a teardown step was noisy. The SDK is on the new project
+     *                      either way; this never means the switch failed.
+     */
+    static void completeProjectSwitch(boolean cleanTeardown) {
+        final List<IterableProjectSwitchCallback> switchCallbacksToNotify = new ArrayList<>();
+        final List<IterableInitializationCallback> initCallbacksToNotify = new ArrayList<>();
+        final AtomicReference<PendingProjectSwitch> nextSwitch = new AtomicReference<>();
+        final ExecutorService executor;
+        final Object drainingLeg;
+        synchronized (initLock) {
+            executor = ensureBackgroundExecutor();
+            // Captured before the drain. lowerGate moves inFlightLeg to the next request, and the
+            // drain has to keep replaying the leg that is landing, not whichever one that becomes.
+            drainingLeg = inFlightLeg;
+        }
+
+        // Run under initLock once the drain has emptied the queue, not before it starts. Lowering
+        // the gate first lets a call arriving as the switch lands run ahead of the calls already
+        // queued behind it, which is the FIFO order this gate exists to provide.
+        Runnable lowerGate = () -> {
+            IterableProjectSwitchCallback switchCallback;
+            while ((switchCallback = switchCallbacks.poll()) != null) {
+                switchCallbacksToNotify.add(switchCallback);
+            }
+            // initializeInBackground parks its callback whenever initialization looks in flight,
+            // which a switch makes true for its whole window. Nothing else drains them, so without
+            // this they would never fire.
+            IterableInitializationCallback initCallback;
+            while ((initCallback = pendingCallbacks.poll()) != null) {
+                initCallbacksToNotify.add(initCallback);
+            }
+
+            PendingProjectSwitch next = pendingSwitches.poll();
+            nextSwitch.set(next);
+            // The call-queueing gate drops either way. At this point the SDK is fully live on the
+            // project that just landed, and the contract tells apps to re-identify from the
+            // callback, so a setEmail made there has to run against that project. Holding the gate
+            // across the handover queues it and then replays it into the next switch in the chain,
+            // sending this project's identity to the next one.
+            isInitializing = false;
+            isBackgroundInitialized = true;
+            if (next != null) {
+                // The chain passes to the queued request rather than ending and being claimed
+                // again. Ending it in between leaves a window in which a brand new switchProject
+                // claims it first and is then overtaken by this older queued request, so the SDK
+                // settles on the project the app asked for second-to-last while both callbacks
+                // report success. isSwitchingProject stays raised because that is what
+                // beginProjectSwitch routes on.
+                inFlightSwitchApiKey = next.apiKey;
+                inFlightLeg = next.leg;
+                switchCallbacks.addAll(next.callbacks);
+                return;
+            }
+            isSwitchingProject = false;
+            inFlightSwitchApiKey = null;
+            inFlightLeg = null;
+        };
+
+        Runnable notifyCallbacks = () -> {
+            notifySwitchCallbacks(switchCallbacksToNotify, cleanTeardown);
+            notifyInitializationCallbacks(initCallbacksToNotify);
+            startPendingSwitch(nextSwitch.get());
+        };
+
+        DrainResult drainResult = operationQueue.processAll(executor, notifyCallbacks, lowerGate, drainingLeg);
+        if (drainResult == DrainResult.STARTED) {
+            return;
+        }
+
+        // No drain will run, so nothing else is going to lower the gate.
+        synchronized (initLock) {
+            lowerGate.run();
+        }
+        if (drainResult == DrainResult.REJECTED) {
+            // New calls run now that the gate is down, but the calls queued during the switch are
+            // stranded. Report that as a noisy switch rather than silently dropping the callbacks.
+            notifySwitchCallbacks(switchCallbacksToNotify, false);
+            notifyInitializationCallbacks(initCallbacksToNotify);
+            startPendingSwitch(nextSwitch.get());
+            return;
+        }
+        notifyCallbacks.run();
+    }
+
+    /**
+     * Runs a switch that was asked for while another was in flight, so the SDK ends up on the
+     * project the app last asked for rather than the one it happened to be heading to.
+     *
+     * The chain it runs on is the one {@code lowerGate} handed over, so it does not claim one of
+     * its own; it raises only the call-queueing gate, which {@code lowerGate} dropped so the
+     * project that just landed could serve its own callback. Its callbacks moved into
+     * {@link #switchCallbacks} with the handover and are delivered from there when it lands,
+     * together with any later request for the same project that joined it in the meantime.
+     */
+    private static void startPendingSwitch(@Nullable PendingProjectSwitch pending) {
+        if (pending == null) {
+            return;
+        }
+        Context context = IterableApi.sharedInstance._applicationContext;
+        if (context == null) {
+            // Nothing can run this switch, and the chain it inherited would stay held for the life
+            // of the process. Release it instead, which reports a noisy switch to everyone waiting
+            // on this request rather than leaving them with no result at all.
+            IterableLogger.e(TAG, "switchProject: cannot run the switch that was requested during "
+                    + "the previous one, the SDK has no application context");
+            completeProjectSwitch(false);
+            return;
+        }
+        IterableLogger.d(TAG, "switchProject: running the switch that was requested while the "
+                + "previous one was in flight");
+        // Posted rather than run inline, so it lands behind the callbacks for the switch that just
+        // finished, which were posted to the same looper. Whatever the app does in those, in
+        // particular re-identifying the user, then runs against the project it was told it was on
+        // before this teardown starts.
+        new Handler(Looper.getMainLooper()).post(() ->
+                IterableProjectSwitcher.switchProject(context, pending.apiKey, pending.config, null, true));
+    }
+
+    private static void notifySwitchCallbacks(List<IterableProjectSwitchCallback> callbacks, boolean cleanTeardown) {
+        if (callbacks.isEmpty()) {
+            return;
+        }
+        new Handler(Looper.getMainLooper()).post(() -> {
+            for (IterableProjectSwitchCallback callback : callbacks) {
+                try {
+                    callback.onProjectSwitched(IterableProjectSwitchResult.from(cleanTeardown));
+                } catch (Exception e) {
+                    IterableLogger.e(TAG, "Exception in switchProject callback", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Callbacks that asked about initialization, not about the switch, so they get the plain
+     * no-argument notification rather than the switch's teardown verdict.
+     */
+    private static void notifyInitializationCallbacks(List<IterableInitializationCallback> callbacks) {
+        if (callbacks.isEmpty()) {
+            return;
+        }
+        new Handler(Looper.getMainLooper()).post(() -> {
+            for (IterableInitializationCallback callback : callbacks) {
+                try {
+                    callback.onSDKInitialized();
+                } catch (Exception e) {
+                    IterableLogger.e(TAG, "Exception in pending initialization callback", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Runs project switch teardown and re-initialization off the main thread on the existing
+     * background executor.
+     */
+    static void executeOnBackgroundExecutor(Runnable task) {
+        ExecutorService executor;
+        synchronized (initLock) {
+            executor = ensureBackgroundExecutor();
+        }
+        executeOn(executor, task);
+    }
+
+    /**
+     * Split out from {@link #executeOnBackgroundExecutor(Runnable)} so a test can supply an executor
+     * that rejects, which is otherwise only reachable through a race.
+     */
+    @VisibleForTesting
+    static void executeOn(ExecutorService executor, Runnable task) {
+        try {
+            executor.execute(task);
+            return;
+        } catch (RejectedExecutionException e) {
+            // The executor was shut down after we picked it up but before execute(), which the drain
+            // task's own shutdown makes reachable. Retry once on a fresh one.
+            IterableLogger.w(TAG, "Background executor rejected the project switch, retrying on a fresh executor");
+        }
+
+        try {
+            replaceIfCurrent(executor).execute(task);
+        } catch (RejectedExecutionException e) {
+            // Nothing will run the teardown, so the gate would stay raised forever with no callback.
+            // Lower it and report a failed switch instead.
+            IterableLogger.e(TAG, "Could not start the project switch: both executors rejected it", e);
+            completeProjectSwitch(false);
+        }
+    }
+
+    /**
+     * Returns a live executor after {@code rejected} refused a task. Only swaps the shared executor
+     * when {@code rejected} is the shared one, so a caller-supplied executor cannot take a healthy
+     * shared executor down with it.
+     */
+    private static ExecutorService replaceIfCurrent(ExecutorService rejected) {
+        synchronized (initLock) {
+            if (backgroundExecutor == rejected) {
+                swapBackgroundExecutor();
+            }
+            return ensureBackgroundExecutor();
+        }
+    }
+
+    /**
+     * Returns a usable background executor, replacing it first if the previous one was shut down
+     * after draining the initial queue. Caller must hold {@link #initLock}.
+     */
+    private static ExecutorService ensureBackgroundExecutor() {
+        if (backgroundExecutor == null || backgroundExecutor.isShutdown()) {
+            swapBackgroundExecutor();
+        }
+        return backgroundExecutor;
+    }
+
+    /**
+     * Swaps in a fresh executor first, then shuts down the old one. This ordering ensures
+     * shutdownBackgroundExecutorAsync (which may still be pending from the old executor) cannot
+     * kill the new one. Caller must hold {@link #initLock}.
+     */
+    private static void swapBackgroundExecutor() {
+        ExecutorService oldExecutor = backgroundExecutor;
+        backgroundExecutor = createExecutor();
+        if (oldExecutor != null && !oldExecutor.isShutdown()) {
+            oldExecutor.shutdownNow();
+        }
+    }
+
+    //endregion
 
     /**
      * Shutdown the background executor for proper cleanup
@@ -392,11 +1108,7 @@ class IterableBackgroundInitializer {
      */
     @VisibleForTesting
     static void simulateInitializationComplete() {
-        synchronized (initLock) {
-            isBackgroundInitialized = true;
-            isInitializing = false;
-        }
-        operationQueue.processAll(backgroundExecutor);
+        markInitializationComplete();
     }
 
     /**
@@ -407,18 +1119,19 @@ class IterableBackgroundInitializer {
         synchronized (initLock) {
             isInitializing = false;
             isBackgroundInitialized = false;
+            isSwitchingProject = false;
+            inFlightSwitchApiKey = null;
+            inFlightLeg = null;
             operationQueue.clear();
             pendingCallbacks.clear();
+            pendingInitResults.clear();
+            pendingInitActions.clear();
+            failNextInitialization = false;
+            switchCallbacks.clear();
+            pendingSwitches.clear();
             callbackManager.reset();
 
-            // Swap in a fresh executor first, then shut down the old one.
-            // This ensures shutdownBackgroundExecutorAsync (which may still be
-            // pending from the old executor) cannot kill the new one.
-            ExecutorService oldExecutor = backgroundExecutor;
-            backgroundExecutor = createExecutor();
-            if (oldExecutor != null && !oldExecutor.isShutdown()) {
-                oldExecutor.shutdownNow();
-            }
+            swapBackgroundExecutor();
         }
     }
 
@@ -435,6 +1148,15 @@ class IterableBackgroundInitializer {
     }
 
     /**
+     * Drains the operation queue on a caller-supplied executor, so a test can supply one that
+     * rejects. Only reachable through a race otherwise.
+     */
+    @VisibleForTesting
+    static DrainResult processQueuedOperationsOn(ExecutorService executor) {
+        return operationQueue.processAll(executor, null, null, null);
+    }
+
+    /**
      * Clear all queued operations (for testing)
      */
     @VisibleForTesting
@@ -448,8 +1170,8 @@ class IterableBackgroundInitializer {
     @VisibleForTesting
     static List<String> getQueuedOperationDescriptions() {
         List<String> descriptions = new ArrayList<>();
-        for (QueuedOperation op : operationQueue.operations) {
-            descriptions.add(op.getDescription());
+        for (OperationQueue.TaggedOperation op : operationQueue.operations) {
+            descriptions.add(op.operation.getDescription());
         }
         return descriptions;
     }
@@ -553,6 +1275,17 @@ class IterableInitializationCallbackManager {
             isInitialized = false;
             subscribers.clear();
             oneTimeCallbacks.clear();
+        }
+    }
+
+    /**
+     * Allows the next {@link #notifyInitializationComplete()} to fire again, without discarding
+     * anything that is waiting to be notified. Used when the SDK re-runs initialize() for a new
+     * project.
+     */
+    void clearInitializedFlag() {
+        synchronized (initLock) {
+            isInitialized = false;
         }
     }
 
