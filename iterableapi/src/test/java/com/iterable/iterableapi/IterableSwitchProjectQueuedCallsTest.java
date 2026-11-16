@@ -148,6 +148,40 @@ public class IterableSwitchProjectQueuedCallsTest extends BaseTest {
         assertNull("C must not receive an identity requested before it was asked for", IterableApi.getInstance().getEmail());
     }
 
+    /**
+     * With unknown user activation on, updateUser without an identified user goes to the unknown
+     * user manager, which the teardown has released. It must be queued for the new project rather
+     * than dereference the released manager on the caller's thread.
+     */
+    @Test
+    public void testUpdateUserDuringTheTeardownIsQueuedForTheNewProject() throws Exception {
+        IterableConfig unknownUserConfig = new IterableConfig.Builder()
+                .setKeychainEncryption(false)
+                .setEnableUnknownUserActivation(true)
+                .build();
+        SwitchTeardownHold hold = SwitchTeardownHold.install();
+        IterableApi.initialize(context, API_KEY_A, unknownUserConfig);
+        IterableApi.getInstance().setVisitorUsageTracked(true);
+        IterableApi.getInstance().setEmail(EMAIL_A);
+        drainMainThread();
+
+        CountDownLatch landed = new CountDownLatch(1);
+        IterableApi.switchProject(context, new IterableProject(API_KEY_B, unknownUserConfig), ignored -> landed.countDown());
+        hold.awaitTeardown();
+        assertNull("Precondition: the teardown has cleared the identity", IterableApi.getInstance().getEmail());
+
+        IterableApi.getInstance().updateUser(new JSONObject().put("favoriteColor", "blue"));
+        assertTrue("updateUser must be queued while the switch is in flight",
+                IterableBackgroundInitializer.getQueuedOperationDescriptions().contains("updateUser(dataFields)"));
+
+        hold.release();
+        assertTrue("Callback should fire", awaitSwitch(landed));
+        String storedUpdate = context.getSharedPreferences(IterableConstants.SHARED_PREFS_FILE, Context.MODE_PRIVATE)
+                .getString(IterableConstants.SHARED_PREFS_USER_UPDATE_OBJECT_KEY, "");
+        assertTrue("The update must be replayed into the new project's unknown user manager",
+                storedUpdate.contains("favoriteColor"));
+    }
+
     // region Helpers
 
     private IterableConfig configWithoutAuth() {

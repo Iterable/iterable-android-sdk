@@ -776,7 +776,9 @@ public class IterableApi {
     protected void registerDeviceToken(final @Nullable String email, final @Nullable String userId, final @Nullable String authToken, final @NonNull String applicationName, final @NonNull String deviceToken, final Map<String, String> deviceAttributes) {
         if (deviceToken != null) {
             if (!checkSDKInitialization() && _userIdUnknown == null) {
-                if (sharedInstance.config.enableUnknownUserActivation) {
+                // Null while a project switch is between teardown and re-initialization.
+                UnknownUserManager unknownUserManager = this.unknownUserManager;
+                if (sharedInstance.config.enableUnknownUserActivation && unknownUserManager != null) {
                     unknownUserManager.trackUnknownTokenRegistration(deviceToken);
                 }
                 return;
@@ -967,7 +969,9 @@ public class IterableApi {
                 JSONObject deviceDetails = new JSONObject();
                 DeviceInfoUtils.populateDeviceDetails(deviceDetails, context, sharedInstance.getDeviceId(), null);
                 dataFields.put(IterableConstants.KEY_FIRETV, deviceDetails);
-                sharedInstance.updateUser(dataFields, false);
+                // Not the public updateUser: initialize can run under a raised switch gate, and
+                // queueing there would replay this device's details into the project asked for last.
+                sharedInstance.updateUserInternal(dataFields, false);
             } catch (JSONException e) {
                 IterableLogger.e(TAG, "initialize: exception", e);
             }
@@ -1439,12 +1443,15 @@ public class IterableApi {
 
     private void attemptMergeAndEventReplay(@Nullable String emailOrUserId, boolean isEmail, boolean merge, boolean replay, boolean isUnknown, IterableHelper.FailureHandler failureHandler) {
         if (config.enableUnknownUserActivation && getVisitorUsageTracked()) {
+            // Read once: this also runs from the async auth token callback, which can land while a
+            // project switch is between teardown and re-initialization and the manager is null.
+            UnknownUserManager unknownUserManager = this.unknownUserManager;
 
             if (emailOrUserId != null && !emailOrUserId.equals(_userIdUnknown)) {
                 attemptAndProcessMerge(emailOrUserId, isEmail, merge, failureHandler, _userIdUnknown);
             }
 
-            if (replay && (_userId != null || _email != null)) {
+            if (replay && (_userId != null || _email != null) && unknownUserManager != null) {
                 unknownUserManager.syncEventsAndUserUpdate();
             }
 
@@ -1452,7 +1459,9 @@ public class IterableApi {
                 _userIdUnknown = null;
             }
 
-            unknownUserManager.clearVisitorEventsAndUserData();
+            if (unknownUserManager != null) {
+                unknownUserManager.clearVisitorEventsAndUserData();
+            }
         }
     }
 
@@ -1896,7 +1905,7 @@ public class IterableApi {
      * @param dataFields
      */
     public void updateUser(@NonNull JSONObject dataFields) {
-        updateUser(dataFields, false);
+        queueOrExecute(() -> updateUserInternal(dataFields, false), "updateUser(dataFields)");
     }
 
     /**
@@ -1905,6 +1914,11 @@ public class IterableApi {
      * @param mergeNestedObjects
      */
     public void updateUser(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
+        queueOrExecute(() -> updateUserInternal(dataFields, mergeNestedObjects),
+                "updateUser(dataFields, " + mergeNestedObjects + ")");
+    }
+
+    private void updateUserInternal(@NonNull JSONObject dataFields, Boolean mergeNestedObjects) {
         if (!checkSDKInitialization() && _userIdUnknown == null) {
             if (sharedInstance.config.enableUnknownUserActivation) {
                 unknownUserManager.trackUnknownUpdateUser(dataFields);
@@ -2071,7 +2085,10 @@ public class IterableApi {
 
         editor.apply();
 
-        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation) {
+        // Null while a project switch is between teardown and re-initialization, which then
+        // starts the session itself.
+        UnknownUserManager unknownUserManager = this.unknownUserManager;
+        if (isSetVisitorUsageTracked && config.enableUnknownUserActivation && unknownUserManager != null) {
             unknownUserManager.updateUnknownSession();
             unknownUserManager.getUnknownCriteria();
         }
