@@ -199,6 +199,7 @@ class IntegrationTestUtils(private val context: Context) {
      * Blocking, so call it off the main thread.
      */
     fun ensureUserExists(email: String, project: BcitProject): Boolean {
+        lastErrorMessage = null
         if (project.serverApiKey.isBlank()) {
             Log.w(TAG, "No server key for project ${project.label}, cannot ensure ${maskEmail(email)} exists")
             return false
@@ -241,6 +242,7 @@ class IntegrationTestUtils(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error ensuring user exists on project ${project.label}", e)
+            lastErrorMessage = e.toString()
             false
         }
     }

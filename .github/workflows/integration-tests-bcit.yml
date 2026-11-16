@@ -153,6 +153,8 @@ jobs:
           ITERABLE_API_KEY_B: ${{ secrets.BCIT_ITERABLE_API_KEY_B }}
           ITERABLE_SERVER_API_KEY_B: ${{ secrets.BCIT_ITERABLE_SERVER_API_KEY_B }}
           ITERABLE_PROJECT_ID_B: ${{ secrets.BCIT_ITERABLE_PROJECT_ID_B }}
+          # Unset today, so B is US. An EU project B (SDK-849) only needs this secret set to EU.
+          ITERABLE_DATA_REGION_B: ${{ secrets.BCIT_ITERABLE_DATA_REGION_B }}
           ITERABLE_API_KEY_C: ${{ secrets.BCIT_ITERABLE_API_KEY_C }}
           ITERABLE_API_KEY_D: ${{ secrets.BCIT_ITERABLE_API_KEY_D }}
           # Empty outside workflow_dispatch, so PR, push and nightly runs build with capture off.

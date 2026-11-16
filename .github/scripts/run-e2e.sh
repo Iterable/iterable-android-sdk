@@ -55,6 +55,7 @@ for var in ITERABLE_API_KEY_B ITERABLE_SERVER_API_KEY_B ITERABLE_PROJECT_ID_B IT
   value="${!var:-}"
   log "$var length: ${#value}"
 done
+log "ITERABLE_DATA_REGION_B: ${ITERABLE_DATA_REGION_B:-<unset, US>}"
 
 # Fail fast if a BCIT_* secret didn't resolve. Without this, an empty secret falls
 # through to the gradle default 'test_api_key' (integration-tests/build.gradle) and

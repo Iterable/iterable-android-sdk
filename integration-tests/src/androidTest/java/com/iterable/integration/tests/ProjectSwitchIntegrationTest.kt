@@ -50,7 +50,8 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
     override fun setUp() {
         Assume.assumeTrue("Project B is not configured, skipping", BcitProjects.isBConfigured)
         // Installed here rather than through ITERABLE_REQUEST_CAPTURE, so other BCIT runs keep
-        // building with capture off. The factory is process-wide and cannot be removed.
+        // building with capture off. The factory is process-wide and cannot be removed, so test
+        // classes that run after this one in the same process also send through capture.
         RequestCapture.install()
         Assume.assumeTrue("Request capture could not be installed", RequestCapture.isInstalled)
 
@@ -65,7 +66,9 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
 
     @After
     override fun tearDown() {
-        if (ready && apiHelper.currentApiKey() != BcitProjects.A.apiKey) {
+        // Unconditional: mid-teardown the live key is still the project being left, so it cannot
+        // tell whether a switch is in flight. Already on A reports straight away.
+        if (ready) {
             val latch = CountDownLatch(1)
             ProjectSwitchDriver.switchTo(context, BcitProjects.A, testUserEmail) { latch.countDown() }
             if (!latch.await(SWITCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
@@ -98,7 +101,8 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
 
         val callbacks = Collections.synchronizedList(mutableListOf<String>())
         val latch = CountDownLatch(2)
-        ProjectSwitchDriver.switchTo(context, BcitProjects.B, testUserEmail) { result ->
+        // No re-identify on B: traffic from identifying on B could commit after A's callback.
+        ProjectSwitchDriver.switchTo(context, BcitProjects.B, null) { result ->
             Log.d(TAG, "A -> B result=$result")
             callbacks.add(BcitProjects.B.label)
             latch.countDown()
