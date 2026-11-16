@@ -25,6 +25,7 @@ class IntegrationTestUtils(private val context: Context) {
         private const val ITERABLE_INAPP_TARGET_ENDPOINT = "inApp/target"
         private const val ITERABLE_GET_USER_ENDPOINT = "users/getByEmail"
         private const val ITERABLE_UPDATE_USER_ENDPOINT = "users/update"
+        private const val UNKNOWN_EMAIL_ERROR = "UnknownEmailError"
     }
     
     private val httpClient = OkHttpClient()
@@ -213,12 +214,17 @@ class IntegrationTestUtils(private val context: Context) {
                 .get()
                 .build()
             val exists = httpClient.newCall(lookup).execute().use { response ->
-                if (!response.isSuccessful) {
-                    lastErrorMessage = "HTTP ${response.code}: ${response.body?.string()}"
-                    Log.e(TAG, "User lookup failed on project ${project.label}: $lastErrorMessage")
-                    return false
+                val body = response.body?.string().orEmpty()
+                when {
+                    response.isSuccessful -> JSONObject(body.ifBlank { "{}" }).has("user")
+                    // Email-based projects answer an unknown email with {}, hybrid ones with this.
+                    response.code == 400 && errorCodeOf(body) == UNKNOWN_EMAIL_ERROR -> false
+                    else -> {
+                        lastErrorMessage = "HTTP ${response.code}: ${body.replace(email, maskEmail(email))}"
+                        Log.e(TAG, "User lookup failed on project ${project.label}: $lastErrorMessage")
+                        return false
+                    }
                 }
-                JSONObject(response.body?.string().orEmpty().ifBlank { "{}" }).has("user")
             }
             if (exists) {
                 Log.d(TAG, "User ${maskEmail(email)} already exists on project ${project.label}")
@@ -233,7 +239,8 @@ class IntegrationTestUtils(private val context: Context) {
                 .build()
             httpClient.newCall(create).execute().use { response ->
                 if (!response.isSuccessful) {
-                    lastErrorMessage = "HTTP ${response.code}: ${response.body?.string()}"
+                    val body = response.body?.string().orEmpty()
+                    lastErrorMessage = "HTTP ${response.code}: ${body.replace(email, maskEmail(email))}"
                     Log.e(TAG, "User create failed on project ${project.label}: $lastErrorMessage")
                 } else {
                     Log.d(TAG, "Created user ${maskEmail(email)} on project ${project.label}")
@@ -246,6 +253,9 @@ class IntegrationTestUtils(private val context: Context) {
             false
         }
     }
+
+    private fun errorCodeOf(body: String): String? =
+        runCatching { JSONObject(body).optString("code") }.getOrNull()
     
     // Campaign Payload Creation Methods
     private fun createCampaignTriggerPayload(campaignId: Int, recipientEmail: String, dataFields: Map<String, Any>?): String {
