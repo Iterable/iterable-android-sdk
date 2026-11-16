@@ -21,10 +21,6 @@ import com.iterable.iterableapi.IterableApiHelper
 
 class ProjectSwitchTestActivity : AppCompatActivity() {
 
-    companion object {
-        private const val CALL_DURING_SWITCH_EVENT = "bcit_call_during_switch"
-    }
-
     private lateinit var stateTextView: TextView
     private lateinit var resultTextView: TextView
     private lateinit var reidentifySwitch: SwitchCompat
@@ -90,7 +86,7 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
         val target = if (ProjectSwitchDriver.lastRequestedLabel == BcitProjects.B.label) BcitProjects.A else BcitProjects.B
         switchTo(target)
         ProjectSwitchDriver.setEmail(testUserEmail())
-        ProjectSwitchDriver.track(CALL_DURING_SWITCH_EVENT)
+        ProjectSwitchDriver.track()
     }
 
     private fun startRequestCapture() {

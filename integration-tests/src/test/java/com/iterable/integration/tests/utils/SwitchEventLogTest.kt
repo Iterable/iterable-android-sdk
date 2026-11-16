@@ -22,7 +22,7 @@ class SwitchEventLogTest {
         SwitchEventLog.request("B")
         SwitchEventLog.callback("B", IterableProjectSwitchResult.SWITCHED_WITH_WARNINGS)
         SwitchEventLog.callSetEmail("B")
-        SwitchEventLog.callTrack("bcit_event", "B")
+        SwitchEventLog.callTrack("bcit_project_switch", "B")
         SwitchEventLog.net(
             RequestCapture.Entry(0L, "GET", "api.iterable.com", "/api/inApp/getMessages", "785f...16f8", "B")
         )
@@ -35,7 +35,7 @@ class SwitchEventLogTest {
                 "REQUEST switch -> B",
                 "CALLBACK B result=SWITCHED_WITH_WARNINGS",
                 "CALL setEmail project=B",
-                "CALL track name=bcit_event project=B",
+                "CALL track name=bcit_project_switch project=B",
                 "NET GET api.iterable.com/api/inApp/getMessages key=785f...16f8 [B]",
                 "INFO free text"
             ),

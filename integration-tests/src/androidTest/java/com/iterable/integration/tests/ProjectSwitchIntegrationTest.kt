@@ -109,7 +109,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         screen.onActivity { shownResult = it.findViewById<TextView>(R.id.tvSwitchResult).text.toString() }
         assertEquals("The screen should show the result verbatim", ProjectSwitchDriver.lastResult?.name, shownResult)
 
-        assertTrackedAndOnlyOn(BcitProjects.B, "bcit_project_switch_a_to_b")
+        assertTrackedAndOnlyOn(BcitProjects.B)
     }
 
     @Test
@@ -137,7 +137,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         assertEquals("Callbacks should fire in request order", listOf("B", "A"), callbacks.toList())
         assertEquals(BcitProjects.A.apiKey, apiHelper.currentApiKey())
 
-        assertTrackedAndOnlyOn(BcitProjects.A, "bcit_project_switch_a_b_a")
+        assertTrackedAndOnlyOn(BcitProjects.A)
     }
 
     /**
@@ -152,8 +152,8 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         }
     }
 
-    private fun assertTrackedAndOnlyOn(project: BcitProject, eventName: String) {
-        ProjectSwitchDriver.track(eventName)
+    private fun assertTrackedAndOnlyOn(project: BcitProject) {
+        ProjectSwitchDriver.track()
         assertTrue(
             "No track request with ${project.label}'s key was captured: ${describe(RequestCapture.entries())}",
             waitForCondition({
