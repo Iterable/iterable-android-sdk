@@ -19,36 +19,61 @@ object ProjectSwitchDriver {
     @Volatile
     private var lastRequested: String? = null
 
-    private val landedInCallback = ThreadLocal<String?>()
-
     @Volatile
     var lastResult: IterableProjectSwitchResult? = null
         private set
 
+    /** Whether the SDK's switch call gate is raised; queueOrExecute queues calls while it is. */
+    internal var isCallGateRaised: () -> Boolean = { IterableApi.isSDKInitializing() }
+
+    internal var liveLabel: () -> String = { BcitProjects.labelFor(IterableApiHelper().currentApiKey()) }
+
     /** The project asked for most recently, or the live one when nothing has been asked for yet. */
     val lastRequestedLabel: String
-        get() = lastRequested ?: BcitProjects.labelFor(IterableApiHelper().currentApiKey())
+        get() = lastRequested ?: liveLabel()
 
     /**
-     * The project a call made now is logged against. Inside `onProjectSwitched` the SDK runs calls
-     * against the project that just landed, even when a later switch is already queued, so that
-     * project is logged rather than the one asked for last.
+     * The project a call made now is logged against: the one asked for last while the gate queues
+     * it, the live one once the gate is down. Read from the gate rather than from the callback,
+     * because a callback can run with a later switch's gate already raised (SDK-856).
      */
     val callLabel: String
-        get() = landedInCallback.get() ?: lastRequestedLabel
+        get() = if (isCallGateRaised()) lastRequestedLabel else liveLabel()
 
     fun reset() {
         lastRequested = null
         lastResult = null
     }
 
-    internal fun <T> inCallbackOf(label: String, block: () -> T): T {
-        landedInCallback.set(label)
-        try {
-            return block()
-        } finally {
-            landedInCallback.remove()
+    internal fun noteRequest(label: String) {
+        lastRequested = label
+        SwitchEventLog.request(label)
+    }
+
+    /**
+     * Fires [path] back to back without waiting, as iOS rapidFire does. A first step equal to the
+     * project asked for last is dropped, since the SDK would report it as already there.
+     */
+    fun rapid(context: Context, path: List<BcitProject>, reidentifyEmailFor: (BcitProject) -> String?) {
+        SwitchEventLog.info("rapid ${path.joinToString(" -> ") { it.label }}")
+        val steps = if (path.firstOrNull()?.label == lastRequestedLabel) path.drop(1) else path
+        steps.forEach { switchTo(context, it, reidentifyEmailFor(it)) }
+    }
+
+    /**
+     * Repeats the project asked for last, then switches to [target] without waiting. The repeat
+     * reports already there with its callback posted, which then runs behind [target]'s raised
+     * gate, so a re-identify from it is queued for [target] (SDK-856).
+     */
+    fun repeatThenSwitch(context: Context, target: BcitProject, reidentifyEmailFor: (BcitProject) -> String?) {
+        val current = BcitProjects.all.firstOrNull { it.label == lastRequestedLabel && it.isConfigured }
+        if (current == null) {
+            SwitchEventLog.info("repeat then switch needs a known current project, got $lastRequestedLabel")
+            return
         }
+        SwitchEventLog.info("repeat ${current.label} then switch -> ${target.label} (SDK-856)")
+        switchTo(context, current, reidentifyEmailFor(current))
+        switchTo(context, target, reidentifyEmailFor(target))
     }
 
     /**
@@ -61,21 +86,18 @@ object ProjectSwitchDriver {
         reidentifyEmail: String?,
         onSwitched: ((IterableProjectSwitchResult) -> Unit)? = null
     ) {
-        lastRequested = project.label
-        SwitchEventLog.request(project.label)
+        noteRequest(project.label)
         IterableApi.switchProject(
             context.applicationContext,
             BcitProjects.iterableProject(context, project),
             IterableProjectSwitchCallback { result ->
-                inCallbackOf(project.label) {
-                    lastResult = result
-                    SwitchEventLog.callback(project.label, result)
-                    if (Looper.myLooper() != Looper.getMainLooper()) {
-                        SwitchEventLog.info("callback for ${project.label} ran off the main thread")
-                    }
-                    reidentifyEmail?.let { setEmail(it) }
-                    onSwitched?.invoke(result)
+                lastResult = result
+                SwitchEventLog.callback(project.label, result)
+                if (Looper.myLooper() != Looper.getMainLooper()) {
+                    SwitchEventLog.info("callback for ${project.label} ran off the main thread")
                 }
+                reidentifyEmail?.let { setEmail(it) }
+                onSwitched?.invoke(result)
             }
         )
     }

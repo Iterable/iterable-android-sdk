@@ -66,12 +66,15 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
         bind(R.id.btnSwitchToC, BcitProjects.C) { switchTo(BcitProjects.C) }
         bind(R.id.btnSwitchToD, BcitProjects.D) { switchTo(BcitProjects.D) }
         bind(R.id.btnRapidABA, BcitProjects.A, BcitProjects.B) {
-            listOf(BcitProjects.A, BcitProjects.B, BcitProjects.A).forEach { switchTo(it) }
+            rapid(BcitProjects.A, BcitProjects.B, BcitProjects.A)
         }
         bind(R.id.btnRapidBCDC, BcitProjects.B, BcitProjects.C, BcitProjects.D) {
-            listOf(BcitProjects.B, BcitProjects.C, BcitProjects.D, BcitProjects.C).forEach { switchTo(it) }
+            rapid(BcitProjects.B, BcitProjects.C, BcitProjects.D, BcitProjects.C)
         }
         bind(R.id.btnCallDuringSwitch, BcitProjects.A, BcitProjects.B) { callDuringSwitch() }
+        bind(R.id.btnRepeatThenSwitch, BcitProjects.A, BcitProjects.B) {
+            ProjectSwitchDriver.repeatThenSwitch(this, otherBackendProject(), this::reidentifyEmailFor)
+        }
         findViewById<Button>(R.id.btnClearSwitchLog).setOnClickListener { SwitchEventLog.clear() }
     }
 
@@ -92,9 +95,15 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
     private fun testUserEmailFor(project: BcitProject): String =
         BcitProjects.testUserEmailFor(project, testUserEmail())
 
+    private fun reidentifyEmailFor(project: BcitProject): String? =
+        if (reidentifySwitch.isChecked) testUserEmailFor(project) else null
+
     private fun switchTo(project: BcitProject) {
-        val email = if (reidentifySwitch.isChecked) testUserEmailFor(project) else null
-        ProjectSwitchDriver.switchTo(this, project, email)
+        ProjectSwitchDriver.switchTo(this, project, reidentifyEmailFor(project))
+    }
+
+    private fun rapid(vararg path: BcitProject) {
+        ProjectSwitchDriver.rapid(this, path.toList(), this::reidentifyEmailFor)
     }
 
     /**
