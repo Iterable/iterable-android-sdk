@@ -13,8 +13,13 @@ import com.iterable.iterableapi.IterableProjectSwitchResult
  */
 object ProjectSwitchDriver {
 
+    /** Event name shared with the iOS harness. */
+    const val TRACK_EVENT_NAME = "bcit_project_switch"
+
     @Volatile
     private var lastRequested: String? = null
+
+    private val landedInCallback = ThreadLocal<String?>()
 
     @Volatile
     var lastResult: IterableProjectSwitchResult? = null
@@ -24,9 +29,26 @@ object ProjectSwitchDriver {
     val lastRequestedLabel: String
         get() = lastRequested ?: BcitProjects.labelFor(IterableApiHelper().currentApiKey())
 
+    /**
+     * The project a call made now is logged against. Inside `onProjectSwitched` the SDK runs calls
+     * against the project that just landed, even when a later switch is already queued, so that
+     * project is logged rather than the one asked for last.
+     */
+    val callLabel: String
+        get() = landedInCallback.get() ?: lastRequestedLabel
+
     fun reset() {
         lastRequested = null
         lastResult = null
+    }
+
+    internal fun <T> inCallbackOf(label: String, block: () -> T): T {
+        landedInCallback.set(label)
+        try {
+            return block()
+        } finally {
+            landedInCallback.remove()
+        }
     }
 
     /**
@@ -45,24 +67,26 @@ object ProjectSwitchDriver {
             context.applicationContext,
             BcitProjects.iterableProject(project),
             IterableProjectSwitchCallback { result ->
-                lastResult = result
-                SwitchEventLog.callback(project.label, result)
-                if (Looper.myLooper() != Looper.getMainLooper()) {
-                    SwitchEventLog.info("callback for ${project.label} ran off the main thread")
+                inCallbackOf(project.label) {
+                    lastResult = result
+                    SwitchEventLog.callback(project.label, result)
+                    if (Looper.myLooper() != Looper.getMainLooper()) {
+                        SwitchEventLog.info("callback for ${project.label} ran off the main thread")
+                    }
+                    reidentifyEmail?.let { setEmail(it) }
+                    onSwitched?.invoke(result)
                 }
-                reidentifyEmail?.let { setEmail(it) }
-                onSwitched?.invoke(result)
             }
         )
     }
 
     fun setEmail(email: String) {
-        SwitchEventLog.callSetEmail(lastRequestedLabel)
+        SwitchEventLog.callSetEmail(callLabel)
         IterableApi.getInstance().setEmail(email)
     }
 
-    fun track(name: String) {
-        SwitchEventLog.callTrack(name, lastRequestedLabel)
+    fun track(name: String = TRACK_EVENT_NAME) {
+        SwitchEventLog.callTrack(name, callLabel)
         IterableApi.getInstance().track(name)
     }
 }
