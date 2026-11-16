@@ -45,7 +45,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         private const val TRACK_PATH = "/api/events/track"
 
         // Leaving a project sends its disableDevice with that project's key, and the callback does
-        // not wait for it, so it can be captured after the callback.
+        // not wait for it, so it can be captured after the callback. Only that one is exempt.
         private const val DISABLE_DEVICE_PATH = "/api/users/disableDevice"
     }
 
@@ -96,7 +96,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun switchFromAToBSendsLaterRequestsWithBKey() {
-        assertEquals(BcitProjects.A.apiKey, apiHelper.currentApiKey())
+        assertLiveProject(BcitProjects.A)
         waitForQuietCapture()
 
         val latch = CountDownLatch(1)
@@ -105,7 +105,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
             latch.countDown()
         }
         assertTrue("A -> B callback did not fire", latch.await(SWITCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
-        assertEquals(BcitProjects.B.apiKey, apiHelper.currentApiKey())
+        assertLiveProject(BcitProjects.B)
         assertTrue(
             "B should carry its own test user",
             waitForCondition({ IterableApi.getInstance().email == emailFor(BcitProjects.B) }, 5)
@@ -115,12 +115,12 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         screen.onActivity { shownResult = it.findViewById<TextView>(R.id.tvSwitchResult).text.toString() }
         assertEquals("The screen should show the result verbatim", ProjectSwitchDriver.lastResult?.name, shownResult)
 
-        assertTrackedAndOnlyOn(BcitProjects.B)
+        assertTrackedAndOnlyOn(BcitProjects.B, leaving = BcitProjects.A)
     }
 
     @Test
     fun rapidSwitchFromAToBAndBackSettlesOnA() {
-        assertEquals(BcitProjects.A.apiKey, apiHelper.currentApiKey())
+        assertLiveProject(BcitProjects.A)
         waitForQuietCapture()
 
         val callbacks = Collections.synchronizedList(mutableListOf<String>())
@@ -141,9 +141,9 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
             latch.await(SWITCH_TIMEOUT_SECONDS * 2, TimeUnit.SECONDS)
         )
         assertEquals("Callbacks should fire in request order", listOf("B", "A"), callbacks.toList())
-        assertEquals(BcitProjects.A.apiKey, apiHelper.currentApiKey())
+        assertLiveProject(BcitProjects.A)
 
-        assertTrackedAndOnlyOn(BcitProjects.A)
+        assertTrackedAndOnlyOn(BcitProjects.A, leaving = BcitProjects.B)
     }
 
     /**
@@ -160,7 +160,12 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
 
     private fun emailFor(project: BcitProject): String = BcitProjects.testUserEmailFor(project, testUserEmail)
 
-    private fun assertTrackedAndOnlyOn(project: BcitProject) {
+    /** Compares labels, so a failure never prints an API key into the uploaded reports. */
+    private fun assertLiveProject(project: BcitProject) {
+        assertEquals(project.label, BcitProjects.labelFor(apiHelper.currentApiKey()))
+    }
+
+    private fun assertTrackedAndOnlyOn(project: BcitProject, leaving: BcitProject) {
         ProjectSwitchDriver.track()
         assertTrue(
             "No track request with ${project.label}'s key was captured: ${describe(RequestCapture.entries())}",
@@ -172,7 +177,9 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
 
         val captured = RequestCapture.entries()
         Log.d(TAG, "Captured after the ${project.label} callback: ${describe(captured)}")
-        val offProject = captured.filter { it.path != DISABLE_DEVICE_PATH && it.projectLabel != project.label }
+        val offProject = captured.filter {
+            it.projectLabel != project.label && !(it.path == DISABLE_DEVICE_PATH && it.projectLabel == leaving.label)
+        }
         assertTrue(
             "Requests after the ${project.label} callback carried another key: ${describe(offProject)}",
             offProject.isEmpty()
