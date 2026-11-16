@@ -49,6 +49,10 @@ object BcitProjects {
     fun labelFor(apiKey: String?, projects: List<BcitProject> = all): String =
         projects.firstOrNull { it.isConfigured && it.apiKey == apiKey }?.label ?: UNKNOWN_LABEL
 
+    /** B and D share project B's user; A and C use project A's, matching the iOS harness. */
+    fun testUserEmailFor(project: BcitProject, emailA: String): String =
+        if (project == B || project == D) TestUserEmailGenerator.forProjectB(emailA) else emailA
+
     fun defaultConfig(project: BcitProject): IterableConfig = IterableConfig.Builder()
         .setAutoPushRegistration(true)
         .setEnableEmbeddedMessaging(true)

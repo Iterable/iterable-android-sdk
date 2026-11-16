@@ -10,6 +10,7 @@ import com.iterable.integration.tests.capture.RequestCapture
 import com.iterable.integration.tests.utils.BcitProject
 import com.iterable.integration.tests.utils.BcitProjects
 import com.iterable.integration.tests.utils.ProjectSwitchDriver
+import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableApiHelper
 import com.iterable.iterableapi.IterableProjectSwitchResult
 import org.junit.After
@@ -65,7 +66,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         ProjectSwitchDriver.reset()
         assertTrue(
             "Could not create the test user on project B: ${testUtils.getLastErrorMessage()}",
-            testUtils.ensureUserExists(testUserEmail, BcitProjects.B)
+            testUtils.ensureUserExists(emailFor(BcitProjects.B), BcitProjects.B)
         )
 
         // The SDK only sends its offline task queue, which carries track, while the app is in the
@@ -105,6 +106,10 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         }
         assertTrue("A -> B callback did not fire", latch.await(SWITCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
         assertEquals(BcitProjects.B.apiKey, apiHelper.currentApiKey())
+        assertTrue(
+            "B should carry its own test user",
+            waitForCondition({ IterableApi.getInstance().email == emailFor(BcitProjects.B) }, 5)
+        )
 
         var shownResult: String? = null
         screen.onActivity { shownResult = it.findViewById<TextView>(R.id.tvSwitchResult).text.toString() }
@@ -148,10 +153,12 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
     private fun switchClearingCaptureFirst(project: BcitProject, onSwitched: (IterableProjectSwitchResult) -> Unit) {
         ProjectSwitchDriver.switchTo(context, project, null) { result ->
             RequestCapture.clear()
-            ProjectSwitchDriver.setEmail(testUserEmail)
+            ProjectSwitchDriver.setEmail(emailFor(project))
             onSwitched(result)
         }
     }
+
+    private fun emailFor(project: BcitProject): String = BcitProjects.testUserEmailFor(project, testUserEmail)
 
     private fun assertTrackedAndOnlyOn(project: BcitProject) {
         ProjectSwitchDriver.track()

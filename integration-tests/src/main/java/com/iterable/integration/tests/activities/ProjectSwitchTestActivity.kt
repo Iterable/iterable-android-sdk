@@ -77,15 +77,18 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
 
     private fun testUserEmail(): String = TestUserEmailOverride.get(this) ?: TestConstants.TEST_USER_EMAIL
 
+    private fun testUserEmailFor(project: BcitProject): String =
+        BcitProjects.testUserEmailFor(project, testUserEmail())
+
     private fun switchTo(project: BcitProject) {
-        val email = if (reidentifySwitch.isChecked) testUserEmail() else null
+        val email = if (reidentifySwitch.isChecked) testUserEmailFor(project) else null
         ProjectSwitchDriver.switchTo(this, project, email)
     }
 
     private fun callDuringSwitch() {
         val target = if (ProjectSwitchDriver.lastRequestedLabel == BcitProjects.B.label) BcitProjects.A else BcitProjects.B
         switchTo(target)
-        ProjectSwitchDriver.setEmail(testUserEmail())
+        ProjectSwitchDriver.setEmail(testUserEmailFor(target))
         ProjectSwitchDriver.track()
     }
 
@@ -102,7 +105,7 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
 
     private fun ensureTestUserOnB() {
         if (!BcitProjects.isBConfigured) return
-        val email = testUserEmail()
+        val email = testUserEmailFor(BcitProjects.B)
         val testUtils = IntegrationTestUtils(applicationContext)
         Thread {
             val ready = testUtils.ensureUserExists(email, BcitProjects.B)
@@ -118,11 +121,19 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
             "Project: ${BcitProjects.labelFor(apiKey)}",
             "Key: ${maskApiKey(apiKey)}",
             "Base URL: ${apiHelper.currentBaseUrl() ?: "<none>"}",
-            "Email: ${maskEmail(api.email)}",
+            "Email: ${maskEmail(api.email)} (${userLabel(api.email)})",
             "UserId: ${api.userId?.let { "${it.take(1)}***" } ?: "<none>"}",
             "Last requested: ${ProjectSwitchDriver.lastRequestedLabel}"
         ).joinToString("\n")
         resultTextView.text = ProjectSwitchDriver.lastResult?.name ?: "none"
         logTextView.text = SwitchEventLog.lines().joinToString("\n")
+    }
+
+    /** The mask hides the `-b` suffix, so name whose test user is live. */
+    private fun userLabel(email: String?): String = when (email) {
+        null -> "none"
+        testUserEmailFor(BcitProjects.A) -> "A user"
+        testUserEmailFor(BcitProjects.B) -> "B user"
+        else -> "other user"
     }
 }
