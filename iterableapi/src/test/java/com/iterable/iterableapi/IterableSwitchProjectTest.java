@@ -176,11 +176,6 @@ public class IterableSwitchProjectTest extends BaseTest {
         return keychain != null ? keychain.getEmail() : null;
     }
 
-    private String storedUserIdUnknown() {
-        IterableKeychain keychain = IterableApi.getInstance().getKeychain();
-        return keychain != null ? keychain.getUserIdUnknown() : null;
-    }
-
     private void waitForQueueToDrain() throws InterruptedException {
         for (int i = 0; i < 100 && IterableBackgroundInitializer.getQueuedOperationCount() > 0; i++) {
             drainMainThread();
@@ -328,21 +323,46 @@ public class IterableSwitchProjectTest extends BaseTest {
 
     @Test
     public void testSwitchClearsIdentityInMemoryAndInTheKeychain() throws Exception {
-        initializeProjectA();
-        assertEquals(EMAIL_A, storedEmail());
+        SwitchTeardownHold hold = SwitchTeardownHold.install();
+        IterableApi.initialize(context, API_KEY_A, configWithAutoPushRegistration());
+        // Seeded directly: the public API never sets an email and a userId at the same time, and
+        // each field has its own clear.
+        IterableApi api = IterableApi.getInstance();
+        api._email = EMAIL_A;
+        api._userId = "user-id-a";
+        api._userIdUnknown = "unknown-user-id-a";
+        api._authToken = "auth-token-a";
+        IterableKeychain keychain = api.getKeychain();
+        keychain.saveEmail(EMAIL_A);
+        keychain.saveUserId("user-id-a");
+        keychain.saveUserIdUnknown("unknown-user-id-a");
+        keychain.saveAuthToken("auth-token-a");
 
         CountDownLatch latch = new CountDownLatch(1);
-        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        switchTo(context, API_KEY_B, configWithAutoPushRegistration(), ignored -> latch.countDown());
+
+        // Checked before re-initialization too, which reloads memory from the keychain and would
+        // hide a missed in-memory clear.
+        hold.awaitTeardown();
+        assertIdentityCleared("during the teardown");
+        hold.release();
         assertTrue("Callback should fire", awaitSwitch(latch));
 
-        assertNull("Email must be cleared in memory", IterableApi.getInstance().getEmail());
-        assertNull("UserId must be cleared in memory", IterableApi.getInstance().getUserId());
-        assertNull("Auth token must be cleared in memory", IterableApi.getInstance().getAuthToken());
-        assertNull("Unknown user id must be cleared in memory", IterableApi.getInstance()._userIdUnknown);
-        assertNull("Email must be cleared in storage so re-init cannot repopulate it", storedEmail());
-        assertNull("The stored unknown user id must be cleared too, since storeAuthData writes it",
-                storedUserIdUnknown());
+        assertIdentityCleared("after the switch");
         assertEquals(API_KEY_B, IterableApi.getInstance()._apiKey);
+    }
+
+    private void assertIdentityCleared(String when) {
+        IterableApi api = IterableApi.getInstance();
+        assertNull("Email must be cleared in memory " + when, api._email);
+        assertNull("UserId must be cleared in memory " + when, api._userId);
+        assertNull("Unknown user id must be cleared in memory " + when, api._userIdUnknown);
+        assertNull("Auth token must be cleared in memory " + when, api._authToken);
+        IterableKeychain keychain = api.getKeychain();
+        assertNull("Email must be cleared in storage " + when, keychain.getEmail());
+        assertNull("UserId must be cleared in storage " + when, keychain.getUserId());
+        assertNull("Unknown user id must be cleared in storage " + when, keychain.getUserIdUnknown());
+        assertNull("Auth token must be cleared in storage " + when, keychain.getAuthToken());
     }
 
     @Test
@@ -441,6 +461,49 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertTrue("The new project's auth handler must be the one invoked", handlerBCalled.await(5, TimeUnit.SECONDS));
         assertEquals("The previous project's auth handler must not be invoked again",
                 callsToHandlerABeforeRequest, handlerACalls.get());
+    }
+
+    /**
+     * The offline request processor and its task runner survive the switch, but the auth manager
+     * the runner listens on is rebuilt. A JWT 401 pauses the runner until that listener fires, so
+     * if it stayed on the discarded manager, offline JWT recovery would never resume.
+     */
+    @Test
+    public void testOfflineTaskRunnerResumesWhenTheRebuiltAuthManagerRecovers() throws Exception {
+        // Saved configuration rather than setOfflineProcessingEnabled: initialize re-applies it,
+        // which keeps the same processor across the switch instead of replacing it.
+        context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .edit().putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, true).commit();
+        initializeProjectA();
+        IterableTaskRunner taskRunner = offlineTaskRunner();
+        IterableAuthManager authManagerA = IterableApi.getInstance().getAuthManager();
+
+        CountDownLatch latch = new CountDownLatch(1);
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+        assertTrue("Callback should fire", awaitSwitch(latch));
+
+        IterableAuthManager authManagerB = IterableApi.getInstance().getAuthManager();
+        assertNotSame(authManagerA, authManagerB);
+        assertSame("Precondition: the task runner is reused across the switch", taskRunner, offlineTaskRunner());
+
+        taskRunner.setIsPausedForAuth(true);
+        authManagerB.setAuthTokenInvalid();
+        authManagerB.setIsLastAuthTokenValid(true);
+
+        Field paused = IterableTaskRunner.class.getDeclaredField("isPausedForAuth");
+        paused.setAccessible(true);
+        assertFalse("The new auth manager recovering must resume the offline task runner",
+                (boolean) paused.get(taskRunner));
+    }
+
+    private IterableTaskRunner offlineTaskRunner() throws Exception {
+        Field processorField = IterableApiClient.class.getDeclaredField("requestProcessor");
+        processorField.setAccessible(true);
+        Object processor = processorField.get(IterableApi.getInstance().apiClient);
+        assertTrue("Precondition: offline mode is on", processor instanceof OfflineRequestProcessor);
+        Field runnerField = OfflineRequestProcessor.class.getDeclaredField("taskRunner");
+        runnerField.setAccessible(true);
+        return (IterableTaskRunner) runnerField.get(processor);
     }
 
     /** {@link IterableAuthHandler} is not a functional interface, so tests need a small stub. */
@@ -617,9 +680,23 @@ public class IterableSwitchProjectTest extends BaseTest {
         assertTrue("The switch callback must be delivered on the main thread", onMainThread.get());
     }
 
+    /**
+     * Push registration is on and the device disable confirms, so the logout step's own report is
+     * the only thing that can turn this switch into warnings.
+     */
     @Test
     public void testThrowingTeardownStepStillCompletesTheSwapAndReportsFalse() throws Exception {
-        initializeProjectA();
+        IterablePushRegistration.instance = new IterablePushRegistration.IterablePushRegistrationImpl() {
+            @Override
+            void executePushRegistrationTask(IterablePushRegistrationData data) {
+                if (data.dispatchListener != null) {
+                    data.dispatchListener.onDispatched(true);
+                }
+            }
+        };
+        IterableApi.initialize(context, API_KEY_A, configWithAutoPushRegistration());
+        IterableApi.getInstance().setEmail(EMAIL_A);
+        drainMainThread();
 
         IterableApiClient throwingApiClient = mock(IterableApiClient.class);
         doThrow(new RuntimeException("logout blew up")).when(throwingApiClient).onLogout();

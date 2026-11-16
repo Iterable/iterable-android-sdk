@@ -179,8 +179,12 @@ class IterableProjectSwitcher {
         // noisy teardown rather than a clean one.
         final CountDownLatch disableDispatched = new CountDownLatch(1);
         final AtomicBoolean disableConfirmed = new AtomicBoolean(false);
+        // Only ever raises the flag: when logout throws after the disable was handed off, tearDown
+        // still reports "nothing dispatched", and that must not erase the real confirmation.
         IterablePushRegistrationData.DispatchListener disableListener = dispatched -> {
-            disableConfirmed.set(dispatched);
+            if (dispatched) {
+                disableConfirmed.set(true);
+            }
             disableDispatched.countDown();
         };
         IterableHelper.FailureHandler onDisableFailure = (reason, data) -> {
