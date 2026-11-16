@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit
  * The result enum is logged, not asserted. CI has no FCM token, so there is no device disable to
  * confirm and SWITCHED_WITH_WARNINGS is the expected result there.
  *
- * Skips when project B is not configured, so forks without the BCIT_*_B secrets stay green.
+ * Skips when project B is not configured, for local runs without the keys. CI never reaches the
+ * skip: run-e2e.sh fails the run first when B's secrets are empty.
  */
 @RunWith(AndroidJUnit4::class)
 class ProjectSwitchIntegrationTest : BaseIntegrationTest() {

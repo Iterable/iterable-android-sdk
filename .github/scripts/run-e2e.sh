@@ -17,7 +17,8 @@
 #                                 and fails the run if no requests were captured.
 #   ITERABLE_API_KEY_B, ITERABLE_SERVER_API_KEY_B, ITERABLE_PROJECT_ID_B,
 #   ITERABLE_API_KEY_C, ITERABLE_API_KEY_D
-#                               optional project switch config; not echoed (length only).
+#                               project switch config; not echoed (length only). The two B keys
+#                                 are required in CI, the rest are optional.
 #   GITHUB_WORKSPACE            — set by the runner; root for diagnostics output.
 #
 # Outputs:
@@ -50,7 +51,7 @@ log "ITERABLE_API_KEY length:        ${#ITERABLE_API_KEY}"
 log "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
 log "ITERABLE_TEST_USER_EMAIL length: ${#ITERABLE_TEST_USER_EMAIL}"
 log "ITERABLE_REQUEST_CAPTURE:        ${ITERABLE_REQUEST_CAPTURE:-false}"
-# Optional project switch config; ProjectSwitchIntegrationTest skips when B is empty.
+# Project switch config. B's keys are required in CI (checked below); the rest only feed the switch screen.
 for var in ITERABLE_API_KEY_B ITERABLE_SERVER_API_KEY_B ITERABLE_PROJECT_ID_B ITERABLE_API_KEY_C ITERABLE_API_KEY_D; do
   value="${!var:-}"
   log "$var length: ${#value}"
@@ -65,6 +66,15 @@ if [[ "${CI:-false}" == "true" ]]; then
     log "::error::One or more BCIT_* secrets are empty. Configure BCIT_ITERABLE_API_KEY, BCIT_ITERABLE_SERVER_API_KEY, BCIT_ITERABLE_TEST_USER_EMAIL on this branch/repo."
     exit 1
   fi
+  # ProjectSwitchIntegrationTest skips through Assume when B is empty, which is right locally
+  # but would turn a dropped or rotated secret into a green check here.
+  if [[ -z "${ITERABLE_API_KEY_B:-}" || -z "${ITERABLE_SERVER_API_KEY_B:-}" ]]; then
+    log "::error::Project B secrets are empty. Configure BCIT_ITERABLE_API_KEY_B and BCIT_ITERABLE_SERVER_API_KEY_B on this branch/repo."
+    exit 1
+  fi
+  for var in ITERABLE_PROJECT_ID_B ITERABLE_API_KEY_C ITERABLE_API_KEY_D; do
+    [[ -z "${!var:-}" ]] && log "::warning::BCIT_$var is empty. Only the switch screen uses it, no CI test depends on it."
+  done
 fi
 
 # Grant permissions; ignore failures (the package may not be installed yet,
