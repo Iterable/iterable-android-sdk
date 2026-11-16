@@ -36,11 +36,19 @@ android {
         def iterableServerApiKey = localProperties.getProperty('ITERABLE_SERVER_API_KEY') ?: System.getenv('ITERABLE_SERVER_API_KEY') ?: 'test_server_api_key'
         def iterableTestUserEmail = localProperties.getProperty('ITERABLE_TEST_USER_EMAIL') ?: System.getenv('ITERABLE_TEST_USER_EMAIL') ?: 'test@abc.com'
         def iterableRequestCapture = localProperties.getProperty('ITERABLE_REQUEST_CAPTURE') ?: System.getenv('ITERABLE_REQUEST_CAPTURE') ?: 'false'
+
+        // Project switch (SDK-760). Empty when unset, so the switch screen and test can detect absence.
+        def projectSwitchFields = ['ITERABLE_API_KEY_B', 'ITERABLE_SERVER_API_KEY_B', 'ITERABLE_PROJECT_ID_B',
+                                   'ITERABLE_DATA_REGION_B', 'ITERABLE_API_KEY_C', 'ITERABLE_API_KEY_D']
         
         buildConfigField "String", "ITERABLE_API_KEY", "\"$iterableApiKey\""
         buildConfigField "String", "ITERABLE_SERVER_API_KEY", "\"$iterableServerApiKey\""
         buildConfigField "String", "ITERABLE_TEST_USER_EMAIL", "\"$iterableTestUserEmail\""
         buildConfigField "boolean", "REQUEST_CAPTURE_ENABLED", "${iterableRequestCapture.toBoolean()}"
+        projectSwitchFields.each { name ->
+            def value = localProperties.getProperty(name) ?: System.getenv(name) ?: ''
+            buildConfigField "String", name, "\"$value\""
+        }
     }
 
     buildTypes {

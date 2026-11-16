@@ -15,6 +15,9 @@
 #   ITERABLE_TEST_USER_EMAIL    — used by tests; not echoed (length only).
 #   ITERABLE_REQUEST_CAPTURE    optional; "true" builds the app with request capture on
 #                                 and fails the run if no requests were captured.
+#   ITERABLE_API_KEY_B, ITERABLE_SERVER_API_KEY_B, ITERABLE_PROJECT_ID_B,
+#   ITERABLE_API_KEY_C, ITERABLE_API_KEY_D
+#                               optional project switch config; not echoed (length only).
 #   GITHUB_WORKSPACE            — set by the runner; root for diagnostics output.
 #
 # Outputs:
@@ -47,6 +50,11 @@ log "ITERABLE_API_KEY length:        ${#ITERABLE_API_KEY}"
 log "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
 log "ITERABLE_TEST_USER_EMAIL length: ${#ITERABLE_TEST_USER_EMAIL}"
 log "ITERABLE_REQUEST_CAPTURE:        ${ITERABLE_REQUEST_CAPTURE:-false}"
+# Optional project switch config; ProjectSwitchIntegrationTest skips when B is empty.
+for var in ITERABLE_API_KEY_B ITERABLE_SERVER_API_KEY_B ITERABLE_PROJECT_ID_B ITERABLE_API_KEY_C ITERABLE_API_KEY_D; do
+  value="${!var:-}"
+  log "$var length: ${#value}"
+done
 
 # Fail fast if a BCIT_* secret didn't resolve. Without this, an empty secret falls
 # through to the gradle default 'test_api_key' (integration-tests/build.gradle) and
@@ -131,6 +139,9 @@ if [[ "${ITERABLE_REQUEST_CAPTURE:-false}" == "true" ]]; then
   log "Request capture: installed=$installed_count requests=$request_count"
   grep -oE "BCIT-Capture: [A-Z]+ api\.[a-z.]*iterable\.com" "$DIAG_DIR/request-capture.txt" \
     | sed 's/BCIT-Capture: //' | sort | uniq -c || true
+  log "Requests per project label:"
+  grep -oE "BCIT-Capture: [A-Z]+ api\..* \[[A-D?]\]$" "$DIAG_DIR/request-capture.txt" \
+    | grep -oE "\[[A-D?]\]$" | sort | uniq -c || true
   if [[ "$installed_count" -eq 0 || "$request_count" -eq 0 ]]; then
     log "::error::ITERABLE_REQUEST_CAPTURE=true but no requests were captured, see request-capture.txt and logcat.txt"
     [[ "$gradle_exit" -eq 0 ]] && gradle_exit=1
