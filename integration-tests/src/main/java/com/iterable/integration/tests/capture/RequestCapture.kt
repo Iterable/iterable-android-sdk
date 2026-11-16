@@ -1,6 +1,7 @@
 package com.iterable.integration.tests.capture
 
 import android.util.Log
+import com.iterable.integration.tests.utils.BcitProjects
 import java.net.URL
 import java.util.ArrayDeque
 
@@ -18,7 +19,8 @@ object RequestCapture {
         val method: String,
         val host: String,
         val path: String,
-        val maskedApiKey: String
+        val maskedApiKey: String,
+        val projectLabel: String
     )
 
     private const val TAG = "BCIT-Capture"
@@ -29,6 +31,10 @@ object RequestCapture {
     @Volatile
     var isInstalled = false
         private set
+
+    /** Called on the thread that sends the request, after the entry is buffered. */
+    @Volatile
+    var onRecord: ((Entry) -> Unit)? = null
 
     /**
      * Must run before the SDK opens its first connection. The factory can be set once per process
@@ -53,21 +59,24 @@ object RequestCapture {
     fun clear() = synchronized(buffer) { buffer.clear() }
 
     internal fun record(method: String, url: URL, apiKey: String?) {
-        val entry = Entry(System.currentTimeMillis(), method, url.host, url.path, maskApiKey(apiKey))
+        val entry = Entry(
+            System.currentTimeMillis(), method, url.host, url.path, maskApiKey(apiKey), BcitProjects.labelFor(apiKey)
+        )
         synchronized(buffer) {
             buffer.addLast(entry)
             if (buffer.size > MAX_ENTRIES) buffer.removeFirst()
         }
-        Log.d(TAG, "${entry.method} ${entry.host}${entry.path} key=${entry.maskedApiKey}")
+        Log.d(TAG, "${entry.method} ${entry.host}${entry.path} key=${entry.maskedApiKey} [${entry.projectLabel}]")
+        onRecord?.invoke(entry)
     }
 }
 
 internal fun isIterableApiHost(host: String?): Boolean =
     host == "api.iterable.com" || (host != null && host.startsWith("api.") && host.endsWith(".iterable.com"))
 
-/** Last four characters only, enough to tell projects apart without leaking the key. */
+/** First and last four characters, `785f...16f8`, the format shared with the iOS harness. */
 internal fun maskApiKey(apiKey: String?): String = when {
     apiKey.isNullOrBlank() -> "<none>"
     apiKey.length < 8 -> "****"
-    else -> "****${apiKey.takeLast(4)}"
+    else -> "${apiKey.take(4)}...${apiKey.takeLast(4)}"
 }

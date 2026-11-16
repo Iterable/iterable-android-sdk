@@ -14,8 +14,8 @@ class RequestCaptureTest {
     private fun open(spec: String) = URL(null, spec, factory.createURLStreamHandler("https")).openConnection()
 
     @Test
-    fun `masks key keeping last four characters`() {
-        assertEquals("****wxyz", maskApiKey("abcdefghwxyz"))
+    fun `masks key keeping first and last four characters`() {
+        assertEquals("abcd...wxyz", maskApiKey("abcdefghwxyz"))
     }
 
     @Test

@@ -43,7 +43,8 @@ class ForwardingHttpsConnectionTest {
             assertEquals("POST", method)
             assertEquals("api.eu.iterable.com", host)
             assertEquals("/api/users/registerDeviceToken", path)
-            assertEquals("****wxyz", maskedApiKey)
+            assertEquals("abcd...wxyz", maskedApiKey)
+            assertEquals("?", projectLabel)
         }
     }
 
