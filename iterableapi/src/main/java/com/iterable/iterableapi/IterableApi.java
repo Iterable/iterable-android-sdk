@@ -1279,38 +1279,39 @@ public class IterableApi {
     }
 
     public void setEmail(@Nullable String email) {
-        queueOrExecute(() -> setEmail(email, null, null, null, null), "setEmail(" + maskPII(email) + ")");
+        queueOrExecute(() -> setEmailInternal(email, null, null, null, null), "setEmail(" + maskPII(email) + ")");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution) {
-        queueOrExecute(() -> setEmail(email, null, identityResolution, null, null), "setEmail(" + maskPII(email) + ", identityResolution)");
+        queueOrExecute(() -> setEmailInternal(email, null, identityResolution, null, null), "setEmail(" + maskPII(email) + ", identityResolution)");
     }
 
     public void setEmail(@Nullable String email, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        queueOrExecute(() -> setEmail(email, null, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", callbacks)");
+        queueOrExecute(() -> setEmailInternal(email, null, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", callbacks)");
     }
 
     public void setEmail(@Nullable String email, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        queueOrExecute(() -> setEmail(email, null, identityResolution, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", identityResolution, callbacks)");
+        queueOrExecute(() -> setEmailInternal(email, null, identityResolution, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", identityResolution, callbacks)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken) {
-        queueOrExecute(() -> setEmail(email, authToken, null, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ")");
+        queueOrExecute(() -> setEmailInternal(email, authToken, null, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ")");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, IterableIdentityResolution identityResolution) {
-        queueOrExecute(() -> setEmail(email, authToken, identityResolution, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", identityResolution)");
+        queueOrExecute(() -> setEmailInternal(email, authToken, identityResolution, null, null), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", identityResolution)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        queueOrExecute(() -> setEmail(email, authToken, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", callbacks)");
+        queueOrExecute(() -> setEmailInternal(email, authToken, null, successHandler, failureHandler), "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
     public void setEmail(@Nullable String email, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
         // Wrapped here too, not just in the shorter overloads: an app calling this overload directly
         // would otherwise bypass the initialization and project-switch gate entirely. The shorter
-        // overloads still delegate here, so a call through them passes the gate twice; the second
-        // pass runs inline because the gate is down by the time the queue drains.
+        // overloads queue setEmailInternal rather than this method, so a call passes the gate once.
+        // The gate stays raised while a switch drains its queue, so a second pass would re-queue
+        // the call at the tail, behind calls made after it and under the latest requested project.
         queueOrExecute(() -> setEmailInternal(email, authToken, iterableIdentityResolution, successHandler, failureHandler),
                 "setEmail(" + maskPII(email) + ", " + maskPII(authToken) + ", identityResolution, callbacks)");
     }
@@ -1357,38 +1358,38 @@ public class IterableApi {
     }
 
     public void setUserId(@Nullable String userId) {
-        queueOrExecute(() -> setUserId(userId, null, null, null, null, false), "setUserId(" + maskPII(userId) + ")");
+        queueOrExecute(() -> setUserIdInternal(userId, null, null, null, null, false), "setUserId(" + maskPII(userId) + ")");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution) {
-        queueOrExecute(() -> setUserId(userId, null, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", identityResolution)");
+        queueOrExecute(() -> setUserIdInternal(userId, null, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", identityResolution)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        queueOrExecute(() -> setUserId(userId, null, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", callbacks)");
+        queueOrExecute(() -> setUserIdInternal(userId, null, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", callbacks)");
     }
 
     public void setUserId(@Nullable String userId, IterableIdentityResolution identityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        queueOrExecute(() -> setUserId(userId, null, identityResolution, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", identityResolution, callbacks)");
+        queueOrExecute(() -> setUserIdInternal(userId, null, identityResolution, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", identityResolution, callbacks)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken) {
-        queueOrExecute(() -> setUserId(userId, authToken, null, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ")");
+        queueOrExecute(() -> setUserIdInternal(userId, authToken, null, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ")");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, IterableIdentityResolution identityResolution) {
-        queueOrExecute(() -> setUserId(userId, authToken, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", identityResolution)");
+        queueOrExecute(() -> setUserIdInternal(userId, authToken, identityResolution, null, null, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", identityResolution)");
 
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        queueOrExecute(() -> setUserId(userId, authToken, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", callbacks)");
+        queueOrExecute(() -> setUserIdInternal(userId, authToken, null, successHandler, failureHandler, false), "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", callbacks)");
     }
 
     public void setUserId(@Nullable String userId, @Nullable String authToken, @Nullable IterableIdentityResolution iterableIdentityResolution, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler, boolean isUnknown) {
         // Wrapped here too, not just in the shorter overloads: an app calling this overload directly
         // would otherwise bypass the initialization and project-switch gate entirely. See setEmail
-        // for why passing through the gate twice is harmless.
+        // for why the shorter overloads queue setUserIdInternal instead of this method.
         queueOrExecute(() -> setUserIdInternal(userId, authToken, iterableIdentityResolution, successHandler, failureHandler, isUnknown),
                 "setUserId(" + maskPII(userId) + ", " + maskPII(authToken) + ", identityResolution, callbacks)");
     }
@@ -1725,7 +1726,7 @@ public class IterableApi {
      * @param eventName
      */
     public void track(@NonNull String eventName) {
-        queueOrExecute(() -> track(eventName, 0, 0, null), "track(" + eventName + ")");
+        queueOrExecute(() -> trackInternal(eventName, 0, 0, null), "track(" + eventName + ")");
     }
 
     /**
@@ -1734,7 +1735,7 @@ public class IterableApi {
      * @param dataFields
      */
     public void track(@NonNull String eventName, @Nullable JSONObject dataFields) {
-        queueOrExecute(() -> track(eventName, 0, 0, dataFields), "track(" + eventName + ", dataFields)");
+        queueOrExecute(() -> trackInternal(eventName, 0, 0, dataFields), "track(" + eventName + ", dataFields)");
     }
 
     /**
@@ -1744,7 +1745,7 @@ public class IterableApi {
      * @param templateId
      */
     public void track(@NonNull String eventName, int campaignId, int templateId) {
-        queueOrExecute(() -> track(eventName, campaignId, templateId, null), "track(" + eventName + ", " + campaignId + ", " + templateId + ")");
+        queueOrExecute(() -> trackInternal(eventName, campaignId, templateId, null), "track(" + eventName + ", " + campaignId + ", " + templateId + ")");
     }
 
     /**
@@ -1794,7 +1795,7 @@ public class IterableApi {
      * @param items list of purchased items
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items) {
-        queueOrExecute(() -> trackPurchase(total, items, null, null), "trackPurchase(" + total + ", " + items.size() + " items)");
+        queueOrExecute(() -> trackPurchaseInternal(total, items, null, null), "trackPurchase(" + total + ", " + items.size() + " items)");
     }
 
     /**
@@ -1804,7 +1805,7 @@ public class IterableApi {
      * @param dataFields a `JSONObject` containing any additional information to save along with the event
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields) {
-        queueOrExecute(() -> trackPurchase(total, items, dataFields, null), "trackPurchase(" + total + ", " + items.size() + " items, dataFields)");
+        queueOrExecute(() -> trackPurchaseInternal(total, items, dataFields, null), "trackPurchase(" + total + ", " + items.size() + " items, dataFields)");
     }
 
 
@@ -1816,16 +1817,19 @@ public class IterableApi {
      * @param attributionInfo a `JSONObject` containing information about what the purchase was attributed to
      */
     public void trackPurchase(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
-        queueOrExecute(() -> {
-            if (!checkSDKInitialization() && _userIdUnknown == null) {
-                if (sharedInstance.config.enableUnknownUserActivation) {
-                    unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
-                }
-                return;
-            }
+        queueOrExecute(() -> trackPurchaseInternal(total, items, dataFields, attributionInfo),
+                "trackPurchase(" + total + ", " + items.size() + " items, dataFields, attributionInfo)");
+    }
 
-            apiClient.trackPurchase(total, items, dataFields, attributionInfo);
-        }, "trackPurchase(" + total + ", " + items.size() + " items, dataFields, attributionInfo)");
+    private void trackPurchaseInternal(double total, @NonNull List<CommerceItem> items, @Nullable JSONObject dataFields, @Nullable IterableAttributionInfo attributionInfo) {
+        if (!checkSDKInitialization() && _userIdUnknown == null) {
+            if (sharedInstance.config.enableUnknownUserActivation) {
+                unknownUserManager.trackUnknownPurchaseEvent(total, items, dataFields);
+            }
+            return;
+        }
+
+        apiClient.trackPurchase(total, items, dataFields, attributionInfo);
     }
 
     /**
@@ -1834,15 +1838,15 @@ public class IterableApi {
      * @param newEmail New email
      */
     public void updateEmail(final @NonNull String newEmail) {
-        queueOrExecute(() -> updateEmail(newEmail, null, null, null), "updateEmail(" + maskPII(newEmail) + ")");
+        queueOrExecute(() -> updateEmailInternal(newEmail, null, null, null), "updateEmail(" + maskPII(newEmail) + ")");
     }
 
     public void updateEmail(final @NonNull String newEmail, final @NonNull String authToken) {
-        queueOrExecute(() -> updateEmail(newEmail, authToken, null, null), "updateEmail(" + maskPII(newEmail) + ", " + maskPII(authToken) + ")");
+        queueOrExecute(() -> updateEmailInternal(newEmail, authToken, null, null), "updateEmail(" + maskPII(newEmail) + ", " + maskPII(authToken) + ")");
     }
 
     public void updateEmail(final @NonNull String newEmail, final @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {
-        queueOrExecute(() -> updateEmail(newEmail, null, successHandler, failureHandler), "updateEmail(" + maskPII(newEmail) + ", callbacks)");
+        queueOrExecute(() -> updateEmailInternal(newEmail, null, successHandler, failureHandler), "updateEmail(" + maskPII(newEmail) + ", callbacks)");
     }
 
     /**
