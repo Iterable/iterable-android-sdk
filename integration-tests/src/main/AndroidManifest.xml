@@ -127,6 +127,11 @@
             android:exported="false"
             android:label="Campaign Trigger Tests" />
 
+        <activity
+            android:name=".activities.ProjectSwitchTestActivity"
+            android:exported="false"
+            android:label="Project Switch Tests" />
+
         <!-- Firebase Messaging Service -->
         <service
             android:name=".services.IntegrationFirebaseMessagingService"

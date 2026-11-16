@@ -9,6 +9,7 @@ import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
 import com.iterable.iterableapi.IterableUrlHandler
 import com.iterable.integration.tests.activities.*
+import com.iterable.integration.tests.utils.BcitProjects
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.integration.tests.utils.TestUserEmailOverride
 import com.iterable.integration.tests.utils.maskEmail
@@ -121,6 +122,14 @@ class MainActivity : AppCompatActivity() {
         
         findViewById<android.widget.Button>(R.id.btnCampaignTrigger).setOnClickListener {
             startActivity(Intent(this@MainActivity, CampaignTriggerTestActivity::class.java))
+        }
+
+        findViewById<android.widget.Button>(R.id.btnProjectSwitch).apply {
+            isEnabled = BcitProjects.isBConfigured
+            if (!isEnabled) setText(R.string.project_switch_test_unconfigured)
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, ProjectSwitchTestActivity::class.java))
+            }
         }
         
         findViewById<android.widget.Button>(R.id.btnRunAllTests).setOnClickListener {
