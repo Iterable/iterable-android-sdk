@@ -114,6 +114,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      # Runs to completion before the emulator step starts, so it does not overlap the
+      # instrumentation build (see the SDK-170-followup note below).
+      - name: Run BCIT unit tests
+        run: ./gradlew :integration-tests:testDebugUnitTest --stacktrace --no-daemon
+
       # SDK-170-followup: KVM-runner Gradle parallelism races on
       # `integration-tests/build/intermediates/merged_res_blame_folder/`; do not
       # reintroduce a background `assemble*` step alongside the test invocation.
