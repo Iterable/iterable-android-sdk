@@ -1,6 +1,8 @@
 package com.iterable.integration.tests.utils
 
+import android.content.Context
 import android.util.Log
+import com.iterable.integration.tests.BcitHandlers
 import com.iterable.integration.tests.BuildConfig
 import com.iterable.iterableapi.IterableConfig
 import com.iterable.iterableapi.IterableDataRegion
@@ -53,13 +55,21 @@ object BcitProjects {
     fun testUserEmailFor(project: BcitProject, emailA: String): String =
         if (project == B || project == D) TestUserEmailGenerator.forProjectB(emailA) else emailA
 
-    fun defaultConfig(project: BcitProject): IterableConfig = IterableConfig.Builder()
+    /** MainActivity's project A config, in [project]'s region. */
+    fun defaultConfig(context: Context, project: BcitProject): IterableConfig = IterableConfig.Builder()
         .setAutoPushRegistration(true)
         .setEnableEmbeddedMessaging(true)
+        .setInAppDisplayInterval(BcitHandlers.IN_APP_DISPLAY_INTERVAL_SECONDS)
+        .setAllowedProtocols(BcitHandlers.ALLOWED_PROTOCOLS)
+        .setUrlHandler(BcitHandlers.urlHandler(context))
+        .setCustomActionHandler(BcitHandlers.customActionHandler)
         .setLogLevel(Log.VERBOSE)
         .setDataRegion(project.dataRegion)
         .build()
 
-    fun iterableProject(project: BcitProject, config: IterableConfig = defaultConfig(project)): IterableProject =
-        IterableProject(project.apiKey, config)
+    fun iterableProject(
+        context: Context,
+        project: BcitProject,
+        config: IterableConfig = defaultConfig(context, project)
+    ): IterableProject = IterableProject(project.apiKey, config)
 }

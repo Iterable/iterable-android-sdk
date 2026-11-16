@@ -65,7 +65,7 @@ object ProjectSwitchDriver {
         SwitchEventLog.request(project.label)
         IterableApi.switchProject(
             context.applicationContext,
-            BcitProjects.iterableProject(project),
+            BcitProjects.iterableProject(context, project),
             IterableProjectSwitchCallback { result ->
                 inCallbackOf(project.label) {
                     lastResult = result
