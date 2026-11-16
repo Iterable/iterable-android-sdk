@@ -97,12 +97,20 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
         ProjectSwitchDriver.switchTo(this, project, email)
     }
 
+    /**
+     * Always crosses backend projects, as on iOS: D is on project B, so from D it goes to A. Never
+     * re-identifies, so a dropped immediate setEmail is not covered by the callback's.
+     */
     private fun callDuringSwitch() {
-        val target = if (ProjectSwitchDriver.lastRequestedLabel == BcitProjects.B.label) BcitProjects.A else BcitProjects.B
-        switchTo(target)
+        val target = otherBackendProject()
+        ProjectSwitchDriver.switchTo(this, target, null)
         ProjectSwitchDriver.setEmail(testUserEmailFor(target))
         ProjectSwitchDriver.track()
     }
+
+    private fun otherBackendProject(): BcitProject =
+        if (ProjectSwitchDriver.lastRequestedLabel in setOf(BcitProjects.A.label, BcitProjects.C.label)) BcitProjects.B
+        else BcitProjects.A
 
     private fun startRequestCapture() {
         SwitchEventLog.attachToRequestCapture()
