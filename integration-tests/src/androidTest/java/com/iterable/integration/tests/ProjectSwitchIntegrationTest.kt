@@ -1,7 +1,11 @@
 package com.iterable.integration.tests
 
 import android.util.Log
+import android.widget.TextView
+import androidx.lifecycle.Lifecycle
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.iterable.integration.tests.activities.ProjectSwitchTestActivity
 import com.iterable.integration.tests.capture.RequestCapture
 import com.iterable.integration.tests.utils.BcitProject
 import com.iterable.integration.tests.utils.BcitProjects
@@ -44,6 +48,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
     }
 
     private val apiHelper = IterableApiHelper()
+    private lateinit var screen: ActivityScenario<ProjectSwitchTestActivity>
     private var ready = false
 
     @Before
@@ -61,6 +66,14 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
             "Could not create the test user on project B: ${testUtils.getLastErrorMessage()}",
             testUtils.ensureUserExists(testUserEmail, BcitProjects.B)
         )
+
+        // The SDK only sends its offline task queue, which carries track, while the app is in the
+        // foreground, and BaseIntegrationTest.setUp sends it to the home screen.
+        screen = ActivityScenario.launch(ProjectSwitchTestActivity::class.java)
+        assertTrue(
+            "Project switch screen did not resume",
+            waitForCondition({ screen.state == Lifecycle.State.RESUMED }, 10)
+        )
         ready = true
     }
 
@@ -75,6 +88,7 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
                 Log.e(TAG, "Switching back to A did not complete during tearDown")
             }
         }
+        if (::screen.isInitialized) screen.close()
         super.tearDown()
     }
 
@@ -90,6 +104,10 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
         }
         assertTrue("A -> B callback did not fire", latch.await(SWITCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
         assertEquals(BcitProjects.B.apiKey, apiHelper.currentApiKey())
+
+        var shownResult: String? = null
+        screen.onActivity { shownResult = it.findViewById<TextView>(R.id.tvSwitchResult).text.toString() }
+        assertEquals("The screen should show the result verbatim", ProjectSwitchDriver.lastResult?.name, shownResult)
 
         assertTrackedAndOnlyOn(BcitProjects.B, "bcit_project_switch_a_to_b")
     }
