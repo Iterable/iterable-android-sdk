@@ -1229,11 +1229,10 @@ public class IterableAsyncInitializationTest {
             }
         });
 
-        // Call an overloaded method that internally calls another overloaded method
-        // For example: setEmail(email) calls setEmail(email, null, null, null, null)
-        // The outer call should queue, and when executed, should call the inner overload
+        // A short overload queues the implementation directly rather than the full public overload,
+        // which is gated too and would queue the call a second time
         String testEmail = "nested@test.com";
-        spyInstance.setEmail(testEmail); // This queues and calls the full overload
+        spyInstance.setEmail(testEmail);
 
         // Verify that operations are queued
         int queuedOps = IterableBackgroundInitializer.getQueuedOperationCount();
@@ -1242,17 +1241,17 @@ public class IterableAsyncInitializationTest {
         // Wait for initialization to complete
         assertTrue("Initialization should complete", waitForAsyncInitialization(initLatch, 5));
 
-        // After init, queue should be processed and inner method should have been called
+        // After init, queue should be processed and the implementation should have run
         Thread.sleep(200);
 
-        // Verify the full overload was called (with all parameters)
-        Mockito.verify(spyInstance, Mockito.atLeastOnce()).setEmail(
+        Mockito.verify(spyInstance, Mockito.never()).setEmail(
             Mockito.eq(testEmail),
             Mockito.isNull(),
             Mockito.isNull(),
             Mockito.isNull(),
             Mockito.isNull()
         );
+        assertEquals("The queued setEmail should have run", testEmail, spyInstance.getEmail());
 
         assertEquals("Queue should be empty after processing", 0, IterableBackgroundInitializer.getQueuedOperationCount());
     }
@@ -1329,9 +1328,8 @@ public class IterableAsyncInitializationTest {
             }
         });
 
-        // Call a simple overload that delegates to the full method
-        // setEmail(email) -> queueOrExecute -> setEmail(email, null, null, null, null)
-        // The inner call should NOT queue again because it's already in the queued operation
+        // setEmail(email) -> queueOrExecute -> the implementation, not the full public overload,
+        // so the call is queued once
         String testEmail = "test@example.com";
         spyInstance.setEmail(testEmail);
 
@@ -1346,15 +1344,15 @@ public class IterableAsyncInitializationTest {
         // Wait for queue processing
         Thread.sleep(200);
 
-        // Verify that the full overload method was called exactly once
-        // This proves the inner method was invoked WITHOUT queuing again
-        Mockito.verify(spyInstance, Mockito.times(1)).setEmail(
+        // The full overload is gated too, so going through it would queue the call a second time
+        Mockito.verify(spyInstance, Mockito.never()).setEmail(
             Mockito.eq(testEmail),
             Mockito.isNull(),
             Mockito.isNull(),
             Mockito.isNull(),
             Mockito.isNull()
         );
+        assertEquals("The queued setEmail should have run", testEmail, spyInstance.getEmail());
 
         // Verify the simple overload wrapper was called once
         Mockito.verify(spyInstance, Mockito.times(1)).setEmail(Mockito.eq(testEmail));
@@ -1394,7 +1392,7 @@ public class IterableAsyncInitializationTest {
         });
 
         // Call the simple overload
-        // This should queue ONE operation that when executed calls the full overload
+        // This should queue ONE operation that when executed runs the implementation directly
         spyInstance.setEmail("test@example.com");
 
         // Only 1 operation should be queued (the outer wrapper)
@@ -1409,20 +1407,12 @@ public class IterableAsyncInitializationTest {
         // Wait for queue to process
         Thread.sleep(300);
 
-        // Now the full overload SHOULD have been called (as part of queue processing)
-        assertEquals("Full overload should be called once during queue processing", 1, fullOverloadCallCount.get());
+        // The full overload is gated too, so the queued operation must not go through it
+        assertEquals("Full overload should not be called during queue processing", 0, fullOverloadCallCount.get());
+        assertEquals("The queued setEmail should have run", "test@example.com", spyInstance.getEmail());
 
         // And queue should be empty
         assertEquals("Queue should be empty", 0, IterableBackgroundInitializer.getQueuedOperationCount());
-
-        // Verify the call pattern: simple overload → queued → executed → calls full overload directly
-        Mockito.verify(spyInstance, Mockito.times(1)).setEmail(
-            Mockito.eq("test@example.com"),
-            Mockito.isNull(),
-            Mockito.isNull(),
-            Mockito.isNull(),
-            Mockito.isNull()
-        );
     }
 
     @Test
