@@ -29,10 +29,11 @@ import java.util.concurrent.TimeUnit
  * callback has fired, SDK requests must carry the destination project's key.
  *
  * The result enum is logged, not asserted. CI has no FCM token, so there is no device disable to
- * confirm and SWITCHED_WITH_WARNINGS is the expected result there.
+ * confirm and SWITCHED_WITH_WARNINGS is the expected result there. The clean path (A's disable
+ * with A's key, a register on B, SWITCHED_CLEANLY) needs a mock token and is SDK-858.
  *
- * Skips when project B is not configured, for local runs without the keys. CI never reaches the
- * skip: run-e2e.sh fails the run first when B's secrets are empty.
+ * Without project B or request capture it skips locally and fails in CI, so a dropped secret or a
+ * failed capture install cannot pass as a green skip there.
  */
 @RunWith(AndroidJUnit4::class)
 class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
@@ -55,12 +56,12 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
 
     @Before
     override fun setUp() {
-        Assume.assumeTrue("Project B is not configured, skipping", BcitProjects.isBConfigured)
+        requireInCiOrSkip("Project B is not configured", BcitProjects.isBConfigured)
         // Installed here rather than through ITERABLE_REQUEST_CAPTURE, so other BCIT runs keep
         // building with capture off. The factory is process-wide and cannot be removed, so test
         // classes that run after this one in the same process also send through capture.
         RequestCapture.install()
-        Assume.assumeTrue("Request capture could not be installed", RequestCapture.isInstalled)
+        requireInCiOrSkip("Request capture could not be installed", RequestCapture.isInstalled)
 
         super.setUp()
         ProjectSwitchDriver.reset()
@@ -159,6 +160,10 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
     }
 
     private fun emailFor(project: BcitProject): String = BcitProjects.testUserEmailFor(project, testUserEmail)
+
+    private fun requireInCiOrSkip(message: String, condition: Boolean) {
+        if (isRunningInCI) assertTrue(message, condition) else Assume.assumeTrue(message, condition)
+    }
 
     /** Compares labels, so a failure never prints an API key into the uploaded reports. */
     private fun assertLiveProject(project: BcitProject) {
