@@ -28,7 +28,7 @@
             android:padding="8dp"
             android:background="#E3F2FD"
             android:layout_marginBottom="8dp"
-            tools:text="Project: A\nKey: 785f...16f8" />
+            tools:text="Project: A\nKey: a1b2...c3d4" />
 
         <LinearLayout
             android:layout_width="match_parent"

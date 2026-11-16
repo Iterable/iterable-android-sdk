@@ -96,7 +96,10 @@ object ProjectSwitchDriver {
                 if (Looper.myLooper() != Looper.getMainLooper()) {
                     SwitchEventLog.info("callback for ${project.label} ran off the main thread")
                 }
-                reidentifyEmail?.let { setEmail(it) }
+                reidentifyEmail?.let {
+                    SwitchEventLog.info("re-identify from callback ${project.label}")
+                    setEmail(it)
+                }
                 onSwitched?.invoke(result)
             }
         )

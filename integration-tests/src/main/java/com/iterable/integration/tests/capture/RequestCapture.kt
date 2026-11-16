@@ -74,7 +74,7 @@ object RequestCapture {
 internal fun isIterableApiHost(host: String?): Boolean =
     host == "api.iterable.com" || (host != null && host.startsWith("api.") && host.endsWith(".iterable.com"))
 
-/** First and last four characters, `785f...16f8`, the format shared with the iOS harness. */
+/** First and last four characters, `a1b2...c3d4`, the format shared with the iOS harness. */
 internal fun maskApiKey(apiKey: String?): String = when {
     apiKey.isNullOrBlank() -> "<none>"
     apiKey.length < 8 -> "****"
