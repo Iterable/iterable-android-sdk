@@ -21,11 +21,17 @@ import com.iterable.iterableapi.IterableApiHelper
 
 class ProjectSwitchTestActivity : AppCompatActivity() {
 
+    companion object {
+        /** Project A's test user email, so the CI test can run the screen against its dated users. */
+        const val EXTRA_TEST_USER_EMAIL = "test_user_email"
+    }
+
     private lateinit var stateTextView: TextView
     private lateinit var resultTextView: TextView
     private lateinit var reidentifySwitch: SwitchCompat
     private lateinit var logTextView: TextView
     private val apiHelper = IterableApiHelper()
+    private val buttonsNeedingBUser = mutableListOf<Button>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,8 +45,8 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
         setupButtons()
         if (savedInstanceState == null) {
             startRequestCapture()
-            ensureTestUserOnB()
         }
+        ensureTestUserOnB()
     }
 
     override fun onResume() {
@@ -69,13 +75,19 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnClearSwitchLog).setOnClickListener { SwitchEventLog.clear() }
     }
 
+    /** Buttons that reach B or D stay disabled until B's test user is known to exist. */
     private fun bind(id: Int, vararg required: BcitProject, action: () -> Unit) {
         val button = findViewById<Button>(id)
-        button.isEnabled = required.all { it.isConfigured }
+        val configured = required.all { it.isConfigured }
+        val needsBUser = required.any { it == BcitProjects.B || it == BcitProjects.D }
+        button.isEnabled = configured && !needsBUser
+        if (configured && needsBUser) buttonsNeedingBUser.add(button)
         button.setOnClickListener { action() }
     }
 
-    private fun testUserEmail(): String = TestUserEmailOverride.get(this) ?: TestConstants.TEST_USER_EMAIL
+    private fun testUserEmail(): String = intent.getStringExtra(EXTRA_TEST_USER_EMAIL)
+        ?: TestUserEmailOverride.get(this)
+        ?: TestConstants.TEST_USER_EMAIL
 
     private fun testUserEmailFor(project: BcitProject): String =
         BcitProjects.testUserEmailFor(project, testUserEmail())
@@ -111,6 +123,11 @@ class ProjectSwitchTestActivity : AppCompatActivity() {
             val ready = testUtils.ensureUserExists(email, BcitProjects.B)
             val detail = if (ready) "ready" else "not ready, ${testUtils.getLastErrorMessage() ?: "see logcat"}"
             SwitchEventLog.info("test user ${maskEmail(email)} on B $detail")
+            if (ready) {
+                runOnUiThread {
+                    if (!isDestroyed) buttonsNeedingBUser.forEach { it.isEnabled = true }
+                }
+            }
         }.start()
     }
 

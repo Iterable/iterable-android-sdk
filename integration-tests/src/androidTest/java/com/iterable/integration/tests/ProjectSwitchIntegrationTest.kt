@@ -1,5 +1,6 @@
 package com.iterable.integration.tests
 
+import android.content.Intent
 import android.util.Log
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
@@ -72,7 +73,10 @@ class ProjectSwitchIntegrationTest : BaseIntegrationTest() {
 
         // The SDK only sends its offline task queue, which carries track, while the app is in the
         // foreground, and BaseIntegrationTest.setUp sends it to the home screen.
-        screen = ActivityScenario.launch(ProjectSwitchTestActivity::class.java)
+        screen = ActivityScenario.launch(
+            Intent(context, ProjectSwitchTestActivity::class.java)
+                .putExtra(ProjectSwitchTestActivity.EXTRA_TEST_USER_EMAIL, testUserEmail)
+        )
         assertTrue(
             "Project switch screen did not resume",
             waitForCondition({ screen.state == Lifecycle.State.RESUMED }, 10)
