@@ -70,8 +70,8 @@ class IterableProjectSwitcher {
                               @Nullable IterableProjectSwitchCallback callback,
                               boolean resumingGate) {
         // Both parameters are @NonNull, so a null is a programmer error. Reporting it through the
-        // callback would mean the same false that documents "we switched, but a cleanup step was
-        // noisy" also has to mean "nothing happened at all".
+        // callback would mean the same SWITCHED_WITH_WARNINGS that documents "we switched, but a
+        // cleanup step was noisy" also has to mean "nothing happened at all".
         if (context == null) {
             throw new IllegalArgumentException("switchProject: context must not be null");
         }
@@ -79,10 +79,12 @@ class IterableProjectSwitcher {
             throw new IllegalArgumentException("switchProject: apiKey must not be null");
         }
 
-        // An empty key is a runtime condition rather than a programmer error: a region lookup or a
-        // remote config can legitimately return one. Tearing down for it would delete the previous
-        // project's identity and offline queue and leave the SDK initialized against nothing, so
-        // refuse it and stay put. iOS does the same.
+        // Defensive only: the public API cannot get a blank key this far, because IterableProject
+        // rejects one at construction. It is kept for the paths that re-enter this method
+        // internally, the queued switch requests and the switch deferred behind an in-flight
+        // initialization, so they do not rely on a check made somewhere else.
+        // Tearing down for a blank key would delete the previous project's identity and offline
+        // queue and leave the SDK initialized against nothing, so refuse it and stay put.
         if (apiKey.trim().isEmpty()) {
             IterableLogger.e(TAG, "switchProject called with an empty API key. The SDK is left on "
                     + "the project it is already on.");
