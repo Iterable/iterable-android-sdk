@@ -1036,8 +1036,10 @@ public class IterableApi {
      * and logs a warning. It reports {@link IterableProjectSwitchResult#SWITCHED_CLEANLY} when that
      * initialization succeeds, and {@link IterableProjectSwitchResult#SWITCHED_WITH_WARNINGS} when it
      * fails or times out. There is no previous project, so a clean start has no teardown step that
-     * could have been noisy. Called with the API key already in use, it is a no-op. Called while an
-     * initialization is still in flight, it waits for that initialization and then switches.
+     * could have been noisy. Called with the API key already in use, it tears nothing down. Either way
+     * the request is ordered like any other switch: one asked for after it runs after its callback.
+     * Called while an initialization is still in flight, it waits for that initialization and then
+     * switches.
      *
      * Called while a switch is already in progress, what happens depends on where this request is
      * headed. Asking for the project that switch is already going to registers the callback with it

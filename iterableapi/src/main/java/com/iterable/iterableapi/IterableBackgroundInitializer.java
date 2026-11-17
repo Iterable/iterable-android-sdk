@@ -605,8 +605,9 @@ class IterableBackgroundInitializer {
     static boolean queueOrExecuteUnlessSwitching(QueuedOperation operation) {
         boolean switching;
         synchronized (initLock) {
-            if (isInitializing && !isBackgroundInitialized && !isSwitchingProject) {
-                operationQueue.enqueue(operation, null);
+            boolean initializingFirstProject = isSwitchingProject && inFlightLeg == initializationLeg;
+            if (isInitializing && !isBackgroundInitialized && (!isSwitchingProject || initializingFirstProject)) {
+                operationQueue.enqueue(operation, isSwitchingProject ? inFlightLeg : null);
                 return true;
             }
             // Read under the same lock that raises the gate, so the branch cannot be decided on a
@@ -672,6 +673,12 @@ class IterableBackgroundInitializer {
     private static Object inFlightLeg;
 
     /**
+     * The leg of a switchProject made before the SDK was initialized, while it is in flight. It has
+     * no previous project, so push opens queue behind it as they do behind any initialization.
+     */
+    private static Object initializationLeg;
+
+    /**
      * Switches asked for while another was in flight, targeting a project that one will not land
      * on. Run in the order they were asked for once the switch ahead of them finishes.
      *
@@ -707,7 +714,11 @@ class IterableBackgroundInitializer {
 
     /** How {@link IterableProjectSwitcher#switchProject} should treat a request. */
     enum BeginSwitchOutcome {
-        /** The SDK is already on the requested project and no switch is running. Nothing to do. */
+        /**
+         * The SDK is already on the requested project and no switch is running. Nothing is torn down,
+         * but the request holds the chain until {@link #completeProjectSwitch(boolean)} delivers its
+         * callback, so a switch asked for after it is ordered behind it like any other.
+         */
         ALREADY_THERE,
         /**
          * Registered with the switch that is going to deliver this project, or queued behind the
@@ -757,6 +768,12 @@ class IterableBackgroundInitializer {
                         switchCallbacks.offer(callback);
                     }
                 } else {
+                    if (callback != null) {
+                        switchCallbacks.offer(callback);
+                    }
+                    isSwitchingProject = true;
+                    inFlightSwitchApiKey = apiKey;
+                    inFlightLeg = new Object();
                     return BeginSwitchOutcome.ALREADY_THERE;
                 }
                 return BeginSwitchOutcome.JOINED_OR_QUEUED;
@@ -771,6 +788,9 @@ class IterableBackgroundInitializer {
                     parked.callbacks.add(callback);
                 }
                 pendingSwitches.addLast(parked);
+                // A leg with no teardown leaves the call gate down, and calls made from here on
+                // belong to the request just queued.
+                holdCallsForNextSwitch = true;
                 return BeginSwitchOutcome.JOINED_OR_QUEUED;
             }
 
@@ -782,6 +802,24 @@ class IterableBackgroundInitializer {
             inFlightLeg = new Object();
             raiseCallGateLocked();
             return BeginSwitchOutcome.RUN;
+        }
+    }
+
+    /**
+     * Holds the chain for a switchProject made before the SDK was initialized, as a leg with no
+     * teardown that {@link #completeProjectSwitch(boolean)} releases once initialization finishes.
+     *
+     * @return false when the request joined or queued behind a chain already in flight instead
+     */
+    static boolean beginInitializationLeg(@NonNull String apiKey,
+                                          @Nullable IterableConfig config,
+                                          @Nullable IterableProjectSwitchCallback callback) {
+        synchronized (initLock) {
+            if (beginProjectSwitch(apiKey, config, callback, apiKey) != BeginSwitchOutcome.ALREADY_THERE) {
+                return false;
+            }
+            initializationLeg = inFlightLeg;
+            return true;
         }
     }
 
@@ -1147,6 +1185,7 @@ class IterableBackgroundInitializer {
             deliveringLandedCallbacks = false;
             inFlightSwitchApiKey = null;
             inFlightLeg = null;
+            initializationLeg = null;
             operationQueue.clear();
             pendingCallbacks.clear();
             pendingInitResults.clear();

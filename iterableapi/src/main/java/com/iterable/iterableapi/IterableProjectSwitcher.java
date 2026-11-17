@@ -102,16 +102,13 @@ class IterableProjectSwitcher {
             // is the one case that does: iOS forwards start()'s result, and this does the same
             // with initializeInBackground's. The public init callback cannot carry that, so the
             // result listener is what switchProject reads. It runs on the main thread already.
-            IterableBackgroundInitializer.initializeInBackground(context, apiKey, config, null, succeeded -> {
-                if (callback != null) {
-                    try {
-                        callback.onProjectSwitched(IterableProjectSwitchResult.from(succeeded));
-                    } catch (Exception e) {
-                        IterableLogger.e(TAG, "Exception in switchProject callback", e);
-                    }
-                }
-                releaseInheritedGate(resumingGate, succeeded);
-            });
+            // The initialization is a leg of the chain like any switch, so a switch asked for before
+            // it finishes is queued behind it and runs after this callback.
+            if (!resumingGate && !IterableBackgroundInitializer.beginInitializationLeg(apiKey, config, callback)) {
+                return;
+            }
+            IterableBackgroundInitializer.initializeInBackground(context, apiKey, config, null,
+                    IterableBackgroundInitializer::completeProjectSwitch);
             return;
         }
 
@@ -148,7 +145,9 @@ class IterableProjectSwitcher {
                     IterableBackgroundInitializer.beginProjectSwitch(apiKey, config, callback, api._apiKey);
             if (outcome == IterableBackgroundInitializer.BeginSwitchOutcome.ALREADY_THERE) {
                 IterableLogger.d(TAG, "switchProject called with the API key already in use; nothing to tear down");
-                deliverSwitchCallback(callback, true);
+                // Completed from a later main-thread turn, so a switch asked for straight after this
+                // one is queued behind it and runs after this callback.
+                new Handler(Looper.getMainLooper()).post(() -> IterableBackgroundInitializer.completeProjectSwitch(true));
                 return;
             }
             if (outcome == IterableBackgroundInitializer.BeginSwitchOutcome.JOINED_OR_QUEUED) {
