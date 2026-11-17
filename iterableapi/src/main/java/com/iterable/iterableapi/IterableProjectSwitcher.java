@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Implements {@link IterableApi#switchProject(Context, String, IterableConfig, IterableInitializationCallback)}:
+ * Implements {@link IterableApi#switchProject(Context, IterableProject, IterableProjectSwitchCallback)}:
  * moving a running app from one Iterable project to another in place.
  *
  * The eight steps are: guard and validate, raise the switch gate, run the existing logout path,
