@@ -557,7 +557,8 @@ class IterableBackgroundInitializer {
      */
     static boolean queueOrExecute(QueuedOperation operation) {
         synchronized (initLock) {
-            if (isInitializing && !isBackgroundInitialized) {
+            if ((isInitializing && !isBackgroundInitialized)
+                    || (holdCallsForNextSwitch && !isDeliveringLandedCallbacks())) {
                 operationQueue.enqueue(operation, destinationForQueuedCallLocked());
                 return true;
             }
@@ -643,6 +644,21 @@ class IterableBackgroundInitializer {
     private static final ConcurrentLinkedQueue<IterableProjectSwitchCallback> switchCallbacks = new ConcurrentLinkedQueue<>();
 
     /**
+     * Keeps calls queueing for the next switch in a chain while the project that just landed
+     * delivers its callbacks. Separate from {@link #isInitializing} because that project is live, and
+     * {@link IterableApi#isSDKInitialized()} has to say so inside its callbacks. Only touched under
+     * {@link #initLock}.
+     */
+    private static boolean holdCallsForNextSwitch = false;
+
+    /** Main thread only. True while a landed project's callbacks run, so their calls reach it. */
+    private static boolean deliveringLandedCallbacks = false;
+
+    private static boolean isDeliveringLandedCallbacks() {
+        return deliveringLandedCallbacks && Looper.myLooper() == Looper.getMainLooper();
+    }
+
+    /**
      * The project the in-flight switch is heading to, so a second request can be told apart by
      * where it is going rather than only by the fact that a switch is running.
      */
@@ -682,7 +698,8 @@ class IterableBackgroundInitializer {
      * @return true from the start of a switch until the last switch queued behind it is done.
      *         This is not the same as "calls are being queued": a chain hands over from one
      *         switch to the next, and in the moment between them the SDK is fully live on the
-     *         project that just landed, so calls run rather than queue while this is still true.
+     *         project that just landed, so calls from its callbacks run against it while this is
+     *         still true.
      */
     static boolean isSwitchingProject() {
         return isSwitchingProject;
@@ -776,6 +793,7 @@ class IterableBackgroundInitializer {
      */
     static void resumeProjectSwitch() {
         synchronized (initLock) {
+            holdCallsForNextSwitch = false;
             raiseCallGateLocked();
         }
     }
@@ -832,13 +850,14 @@ class IterableBackgroundInitializer {
 
             PendingProjectSwitch next = pendingSwitches.poll();
             nextSwitch.set(next);
-            // The call-queueing gate drops either way. At this point the SDK is fully live on the
+            // The initialization gate drops either way. At this point the SDK is fully live on the
             // project that just landed, and the contract tells apps to re-identify from the
-            // callback, so a setEmail made there has to run against that project. Holding the gate
-            // across the handover queues it and then replays it into the next switch in the chain,
-            // sending this project's identity to the next one.
+            // callback, so a setEmail made there has to run against that project. Every other call
+            // made before the next switch raises the gate again belongs to that switch, so with
+            // one queued, calls keep queueing for it and only the callbacks bypass.
             isInitializing = false;
             isBackgroundInitialized = true;
+            holdCallsForNextSwitch = next != null;
             if (next != null) {
                 // The chain passes to the queued request rather than ending and being claimed
                 // again. Ending it in between leaves a window in which a brand new switchProject
@@ -921,6 +940,7 @@ class IterableBackgroundInitializer {
             return;
         }
         new Handler(Looper.getMainLooper()).post(() -> {
+            deliveringLandedCallbacks = true;
             for (IterableProjectSwitchCallback callback : callbacks) {
                 try {
                     callback.onProjectSwitched(IterableProjectSwitchResult.from(cleanTeardown));
@@ -928,6 +948,7 @@ class IterableBackgroundInitializer {
                     IterableLogger.e(TAG, "Exception in switchProject callback", e);
                 }
             }
+            deliveringLandedCallbacks = false;
         });
     }
 
@@ -940,6 +961,7 @@ class IterableBackgroundInitializer {
             return;
         }
         new Handler(Looper.getMainLooper()).post(() -> {
+            deliveringLandedCallbacks = true;
             for (IterableInitializationCallback callback : callbacks) {
                 try {
                     callback.onSDKInitialized();
@@ -947,6 +969,7 @@ class IterableBackgroundInitializer {
                     IterableLogger.e(TAG, "Exception in pending initialization callback", e);
                 }
             }
+            deliveringLandedCallbacks = false;
         });
     }
 
@@ -1120,6 +1143,8 @@ class IterableBackgroundInitializer {
             isInitializing = false;
             isBackgroundInitialized = false;
             isSwitchingProject = false;
+            holdCallsForNextSwitch = false;
+            deliveringLandedCallbacks = false;
             inFlightSwitchApiKey = null;
             inFlightLeg = null;
             operationQueue.clear();
