@@ -318,7 +318,7 @@ class IterableProjectSwitcher {
             IterableInAppManager inAppManager = api.getInAppManagerOrNull();
             if (inAppManager != null) {
                 activityMonitor.removeCallback(inAppManager);
-                inAppManager.flushStorage();
+                inAppManager.retire();
             }
             IterableEmbeddedManager embeddedManager = api.getEmbeddedManagerOrNull();
             if (embeddedManager != null) {

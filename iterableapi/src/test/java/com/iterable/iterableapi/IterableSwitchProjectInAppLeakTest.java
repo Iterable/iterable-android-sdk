@@ -115,6 +115,32 @@ public class IterableSwitchProjectInAppLeakTest extends BaseTest {
         assertEquals("A's late sync must not reach the file B reads", 0, messagesOnDisk());
     }
 
+    /**
+     * The teardown resets A's manager several steps before it releases it, and a foreground sync
+     * can start in between while A's user is still identified. Retiring the manager at release has
+     * to refuse that sync too.
+     */
+    @Test
+    public void testASyncStartedAfterTheResetIsNotAppliedOnceTheManagerIsRetired() throws Exception {
+        initializeProjectA();
+        letScheduledSavesRun();
+        IterableInAppManager inAppManagerA = IterableApi.getInstance().getInAppManager();
+        inAppManagerA.reset();
+
+        inAppPayload = IterableTestUtils.getResourceString("inapp_payload_inbox_multiple.json");
+        inAppDelayMs = 400;
+        inAppManagerA.syncInApp();
+        inAppManagerA.retire();
+        for (int i = 0; i < 20; i++) {
+            drainMainThread();
+            Thread.sleep(50);
+        }
+        letScheduledSavesRun();
+
+        assertEquals("a retired manager must not apply a sync", 0, inAppManagerA.getMessages().size());
+        assertEquals(0, messagesOnDisk());
+    }
+
     // region Helpers
 
     private void initializeProjectA() {

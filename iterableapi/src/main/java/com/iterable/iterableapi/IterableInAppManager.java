@@ -216,11 +216,17 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                                 }
                             }
 
+                            boolean applied = false;
                             synchronized (IterableInAppManager.this) {
                                 if (epoch == syncEpoch) {
                                     syncWithRemoteQueue(messages);
                                     lastSyncTime = IterableUtil.currentTimeMillis();
+                                    applied = true;
                                 }
+                            }
+                            // Outside the lock: processing calls the app's in-app handler.
+                            if (applied) {
+                                scheduleProcessing();
                             }
                         }
                     } catch (JSONException e) {
@@ -249,11 +255,12 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     /**
-     * Writes the stored messages now rather than after the storage's usual delay. A switch drops
-     * this manager and builds the next project's storage straight away, and that storage reads the
-     * same file.
+     * Refuses any sync still in flight and writes the stored messages now rather than after the
+     * storage's usual delay. A switch drops this manager and builds the next project's storage
+     * straight away, and that storage reads the same file.
      */
-    void flushStorage() {
+    synchronized void retire() {
+        syncEpoch++;
         if (storage instanceof IterableInAppFileStorage) {
             ((IterableInAppFileStorage) storage).saveNow();
         }
@@ -419,8 +426,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 changed = true;
             }
         }
-
-        scheduleProcessing();
 
         if (changed) {
             notifyOnChange();
