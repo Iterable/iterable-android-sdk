@@ -50,6 +50,8 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     private long lastSyncTime = 0;
     private long lastInAppShown = 0;
     private boolean autoDisplayPaused = false;
+    /** Bumped by {@link #reset()} under this manager's lock, so a sync requested before a reset is not applied after it. */
+    private volatile int syncEpoch = 0;
 
     IterableInAppManager(IterableApi iterableApi, IterableInAppHandler handler, double inAppDisplayInterval, boolean useInMemoryStorageForInApps) {
         this(iterableApi,
@@ -196,6 +198,7 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      */
     void syncInApp() {
         IterableLogger.printInfo();
+        final int epoch = syncEpoch;
         this.api.getInAppMessages(MESSAGES_TO_FETCH, new IterableHelper.IterableActionHandler() {
             @Override
             public void execute(String payload) {
@@ -213,8 +216,18 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                                 }
                             }
 
-                            syncWithRemoteQueue(messages);
-                            lastSyncTime = IterableUtil.currentTimeMillis();
+                            boolean applied = false;
+                            synchronized (IterableInAppManager.this) {
+                                if (epoch == syncEpoch) {
+                                    syncWithRemoteQueue(messages);
+                                    lastSyncTime = IterableUtil.currentTimeMillis();
+                                    applied = true;
+                                }
+                            }
+                            // Outside the lock: processing calls the app's in-app handler.
+                            if (applied) {
+                                scheduleProcessing();
+                            }
                         }
                     } catch (JSONException e) {
                         IterableLogger.e(TAG, e.toString());
@@ -230,14 +243,27 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
      * Clear all in-app messages.
      * Should be called on user logout.
      */
-    void reset() {
+    synchronized void reset() {
         IterableLogger.printInfo();
+        syncEpoch++;
 
         for (IterableInAppMessage message : storage.getMessages()) {
             storage.removeMessage(message);
         }
 
         notifyOnChange();
+    }
+
+    /**
+     * Refuses any sync still in flight and writes the stored messages now rather than after the
+     * storage's usual delay. A switch drops this manager and builds the next project's storage
+     * straight away, and that storage reads the same file.
+     */
+    synchronized void retire() {
+        syncEpoch++;
+        if (storage instanceof IterableInAppFileStorage) {
+            ((IterableInAppFileStorage) storage).saveNow();
+        }
     }
 
     /**
@@ -400,8 +426,6 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
                 changed = true;
             }
         }
-
-        scheduleProcessing();
 
         if (changed) {
             notifyOnChange();

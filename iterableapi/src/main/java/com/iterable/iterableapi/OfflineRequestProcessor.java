@@ -60,7 +60,15 @@ class OfflineRequestProcessor implements RequestProcessor {
                 classification);
         taskScheduler = new TaskScheduler(taskStorage, taskRunner);
 
-        // Register task runner as auth token ready listener for JWT auto-retry support
+        registerAuthTokenListener();
+    }
+
+    /**
+     * Registers the task runner as an auth token ready listener for JWT auto-retry support.
+     * Called again after {@link IterableApi#switchProject} replaces the auth manager, since the
+     * request processor itself is reused across the switch.
+     */
+    void registerAuthTokenListener() {
         try {
             IterableApi.getInstance().getAuthManager().addAuthTokenReadyListener(taskRunner);
         } catch (Exception e) {
@@ -103,7 +111,17 @@ class OfflineRequestProcessor implements RequestProcessor {
 
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
+        processPostRequest(apiKey, null, resourcePath, json, authToken, onSuccess, onFailure);
+    }
+
+    @Override
+    public void processPostRequest(@Nullable String apiKey, @Nullable String baseUrl, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        // Bind the region endpoint alongside the API key so a task that gets persisted here is
+        // replayed against the project and region it was created for, not the one live at flush time.
+        // A caller that captured its key ahead of time supplies the endpoint captured with it; the
+        // live region is only used for requests created here and now.
+        String requestBaseUrl = (baseUrl != null) ? baseUrl : IterableRequestTask.getRegionBaseUrl();
+        IterableApiRequest request = new IterableApiRequest(apiKey, requestBaseUrl, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
         if (isRequestOfflineCompatible(request.resourcePath) && healthMonitor.canSchedule()) {
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
             taskScheduler.scheduleTask(request, onSuccess, onFailure);
@@ -114,8 +132,9 @@ class OfflineRequestProcessor implements RequestProcessor {
 
     @Override
     public void onLogout(Context context) {
-        // A queued disableDevice is the logout itself retrying, so it has to outlive the purge.
-        // It carries the identity it was created with, so it still targets the outgoing user.
+        // A queued disableDevice is the logout itself retrying, so it has to outlive the purge. It
+        // carries the identity and the project it was created with, so it still targets the outgoing
+        // user, and still reaches the project being left when the purge comes from a project switch.
         taskScheduler.onTasksPurged(taskStorage.deleteAllTasksExcept(IterableConstants.ENDPOINT_DISABLE_DEVICE));
     }
 
