@@ -846,8 +846,9 @@ class IterableBackgroundInitializer {
     /**
      * Raises the call-queueing gate again for a switch that inherited the chain.
      *
-     * {@code lowerGate} drops that gate at the handover so the project that just landed can serve
-     * the calls its own callback makes, and this puts it back for the teardown that follows.
+     * {@code lowerGate} drops the initialization gate at the handover, because the project that just
+     * landed is live, and holds calls for this switch instead. This puts the gate back for the
+     * teardown that follows.
      */
     static void resumeProjectSwitch() {
         synchronized (initLock) {
@@ -916,6 +917,7 @@ class IterableBackgroundInitializer {
             isInitializing = false;
             isBackgroundInitialized = true;
             holdCallsForNextSwitch = next != null;
+            initializationLeg = null;
             if (next != null) {
                 // The chain passes to the queued request rather than ending and being claimed
                 // again. Ending it in between leaves a window in which a brand new switchProject
@@ -964,9 +966,9 @@ class IterableBackgroundInitializer {
      * project the app last asked for rather than the one it happened to be heading to.
      *
      * The chain it runs on is the one {@code lowerGate} handed over, so it does not claim one of
-     * its own; it raises only the call-queueing gate, which {@code lowerGate} dropped so the
-     * project that just landed could serve its own callback. Its callbacks moved into
-     * {@link #switchCallbacks} with the handover and are delivered from there when it lands,
+     * its own; it raises only the call-queueing gate, which {@code lowerGate} dropped because the
+     * project that just landed is live, holding calls for this switch meanwhile. Its callbacks moved
+     * into {@link #switchCallbacks} with the handover and are delivered from there when it lands,
      * together with any later request for the same project that joined it in the meantime.
      */
     private static void startPendingSwitch(@Nullable PendingProjectSwitch pending) {

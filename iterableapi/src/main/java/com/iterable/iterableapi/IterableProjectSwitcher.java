@@ -131,8 +131,8 @@ class IterableProjectSwitcher {
         // somewhere else.
         if (resumingGate) {
             // The destination was decided when this was queued. Only the call-queueing gate has to
-            // go back up: lowerGate dropped it at the handover so the project that landed could
-            // serve its own callback, and the chain itself was never released.
+            // go back up: lowerGate dropped it at the handover because the project that landed is
+            // live, holding calls for this switch meanwhile, and the chain itself was never released.
             if (apiKey.equals(api._apiKey)) {
                 IterableLogger.d(TAG, "switchProject: the queued request is for the project that is "
                         + "now live; nothing to tear down");
