@@ -242,8 +242,16 @@ class IterableProjectSwitcher {
         // initialize() rebuilds the in-app, embedded and unknown-user managers but never the auth
         // manager, so it is replaced here: in one place, after config has been swapped, and holding
         // the lock getAuthManager() takes, so no other thread can win the race and build one bound
-        // to the previous project's IterableAuthHandler.
+        // to the previous project's IterableAuthHandler. The outgoing one is reset first: logout
+        // normally does that, but a logout that threw before reaching it would leave its refresh
+        // timer running, and that timer calls the previous project's IterableAuthHandler. Reset
+        // outside the lock, because the auth manager's own synchronized methods can call back into
+        // getAuthManager().
         try {
+            IterableAuthManager outgoingAuthManager = api.authManager;
+            if (outgoingAuthManager != null) {
+                outgoingAuthManager.reset();
+            }
             synchronized (api.projectStateLock) {
                 api.authManager = null;
                 api.getAuthManager();
@@ -294,7 +302,8 @@ class IterableProjectSwitcher {
 
         // Step 4: logout above already purges the queue, so this is a repeat. It is kept because a
         // logout that threw before reaching apiClient.onLogout() would otherwise carry the previous
-        // project's queued work into the new project. Queued device disables survive both purges.
+        // project's queued work into the new project. Queued device disables survive both purges. The
+        // auth manager reset such a logout also skips is done where the auth manager is replaced.
         try {
             api.apiClient.purgeOfflineQueue();
         } catch (Exception e) {

@@ -718,6 +718,35 @@ public class IterableSwitchProjectTest extends BaseTest {
     }
 
     /**
+     * A logout that throws before it reaches the auth manager skips its reset, so the previous
+     * project's refresh timer would stay live and keep calling that project's IterableAuthHandler.
+     */
+    @Test
+    public void testOutgoingAuthManagerIsResetWhenLogoutThrowsBeforeReachingIt() throws Exception {
+        IterableInAppManager throwingInAppManager = mock(IterableInAppManager.class);
+        AtomicBoolean throwOnReset = new AtomicBoolean(false);
+        doAnswer(invocation -> {
+            if (throwOnReset.get()) {
+                throw new RuntimeException("in-app reset blew up");
+            }
+            return null;
+        }).when(throwingInAppManager).reset();
+        IterableApi.sharedInstance = new IterableApi(throwingInAppManager, mock(IterableEmbeddedManager.class));
+        initializeProjectA();
+
+        IterableAuthManager outgoingAuthManager = mock(IterableAuthManager.class);
+        IterableApi.getInstance().authManager = outgoingAuthManager;
+        throwOnReset.set(true);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        switchTo(context, API_KEY_B, configWithoutAuth(), ignored -> latch.countDown());
+
+        assertTrue("Callback should fire", awaitSwitch(latch));
+        verify(outgoingAuthManager).reset();
+        assertNotSame("The auth manager must still be replaced", outgoingAuthManager, IterableApi.getInstance().getAuthManager());
+    }
+
+    /**
      * Two destinations asked for back to back, which is a brand or region picker being tapped
      * twice. The second request used to be dropped while its callback still reported a completed
      * switch, so the SDK settled on B with the app convinced it was on C and every later event
