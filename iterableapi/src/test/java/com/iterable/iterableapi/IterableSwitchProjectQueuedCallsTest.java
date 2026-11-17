@@ -44,6 +44,7 @@ public class IterableSwitchProjectQueuedCallsTest extends BaseTest {
     private static final String API_KEY_C = "project-c-key";
     private static final String EMAIL_A = "user-a@example.com";
     private static final String EMAIL_B = "user-b@example.com";
+    private static final String USER_ID_B = "user-id-b";
 
     private Context context;
     private MockWebServer server;
@@ -76,26 +77,55 @@ public class IterableSwitchProjectQueuedCallsTest extends BaseTest {
     /** A 4-argument track queued after a short setEmail must not run before the identity is set. */
     @Test
     public void testIdentityQueuedFirstIsSetBeforeALongOverloadQueuedAfterIt() throws Exception {
-        SwitchTeardownHold hold = SwitchTeardownHold.install();
-        IterableApi.initialize(context, API_KEY_A, configWithAutoPushRegistration());
-        IterableApi.getInstance().setEmail(EMAIL_A);
-        drainMainThread();
-        while (server.takeRequest(50, TimeUnit.MILLISECONDS) != null) { /* drain setup traffic */ }
-
-        CountDownLatch landed = new CountDownLatch(1);
-        IterableApi.switchProject(context, new IterableProject(API_KEY_B, configWithAutoPushRegistration()),
-                ignored -> landed.countDown());
-        IterableApi.getInstance().setEmail(EMAIL_B);
-        IterableApi.getInstance().track("afterIdentity", 0, 0, null);
-        hold.awaitTeardown();
-        hold.release();
-        assertTrue("Callback should fire", awaitSwitch(landed));
+        queueDuringHeldSwitch(() -> {
+            IterableApi.getInstance().setEmail(EMAIL_B);
+            IterableApi.getInstance().track("afterIdentity", 0, 0, null);
+        });
 
         List<RecordedRequest> tracks = takeTrackRequests(1);
         assertEquals("The track must be sent, not dropped for running before the identity", 1, tracks.size());
         JSONObject body = new JSONObject(tracks.get(0).getBody().readUtf8());
         assertEquals(API_KEY_B, tracks.get(0).getHeader(IterableConstants.HEADER_API_KEY));
         assertEquals("The track must carry the identity queued before it", EMAIL_B, body.getString(IterableConstants.KEY_EMAIL));
+    }
+
+    @Test
+    public void testShortSetUserIdIsSetBeforeALongOverloadQueuedAfterIt() throws Exception {
+        queueDuringHeldSwitch(() -> {
+            IterableApi.getInstance().setUserId(USER_ID_B);
+            IterableApi.getInstance().track("afterUserId", 0, 0, null);
+        });
+
+        List<RecordedRequest> tracks = takeTrackRequests(1);
+        assertEquals("The track must be sent, not dropped for running before the identity", 1, tracks.size());
+        JSONObject body = new JSONObject(tracks.get(0).getBody().readUtf8());
+        assertEquals("The track must carry the identity queued before it", USER_ID_B, body.getString(IterableConstants.KEY_USER_ID));
+    }
+
+    @Test
+    public void testShortUpdateEmailReplaysBeforeALongOverloadQueuedAfterIt() throws Exception {
+        queueDuringHeldSwitch(() -> {
+            IterableApi.getInstance().setEmail(EMAIL_B);
+            IterableApi.getInstance().updateEmail("updated-" + EMAIL_B);
+            IterableApi.getInstance().track("afterUpdateEmail", 0, 0, null);
+        });
+
+        assertEquals("Calls replay in the order they were made",
+                List.of("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL, "/" + IterableConstants.ENDPOINT_TRACK),
+                takeRequestPaths(2, IterableConstants.ENDPOINT_UPDATE_EMAIL, IterableConstants.ENDPOINT_TRACK));
+    }
+
+    @Test
+    public void testShortTrackPurchaseReplaysBeforeALongOverloadQueuedAfterIt() throws Exception {
+        queueDuringHeldSwitch(() -> {
+            IterableApi.getInstance().setEmail(EMAIL_B);
+            IterableApi.getInstance().trackPurchase(10.0, List.of(new CommerceItem("sku-1", "Item", 10.0, 1)));
+            IterableApi.getInstance().track("afterPurchase", 0, 0, null);
+        });
+
+        assertEquals("Calls replay in the order they were made",
+                List.of("/" + IterableConstants.ENDPOINT_TRACK_PURCHASE, "/" + IterableConstants.ENDPOINT_TRACK),
+                takeRequestPaths(2, IterableConstants.ENDPOINT_TRACK_PURCHASE, IterableConstants.ENDPOINT_TRACK));
     }
 
     @Test
@@ -195,6 +225,43 @@ public class IterableSwitchProjectQueuedCallsTest extends BaseTest {
         return new IterableConfig.Builder()
                 .setKeychainEncryption(false)
                 .build();
+    }
+
+    /**
+     * Makes {@code calls} while a real switch from A to B is held in its teardown, so every one of
+     * them is queued for B, then lets the switch land.
+     */
+    private void queueDuringHeldSwitch(Runnable calls) throws Exception {
+        SwitchTeardownHold hold = SwitchTeardownHold.install();
+        IterableApi.initialize(context, API_KEY_A, configWithAutoPushRegistration());
+        IterableApi.getInstance().setEmail(EMAIL_A);
+        drainMainThread();
+        while (server.takeRequest(50, TimeUnit.MILLISECONDS) != null) { /* drain setup traffic */ }
+
+        CountDownLatch landed = new CountDownLatch(1);
+        IterableApi.switchProject(context, new IterableProject(API_KEY_B, configWithAutoPushRegistration()),
+                ignored -> landed.countDown());
+        calls.run();
+        hold.awaitTeardown();
+        hold.release();
+        assertTrue("Callback should fire", awaitSwitch(landed));
+    }
+
+    /** Returns the paths of requests to {@code endpoints}, in arrival order, up to {@code expected}. */
+    private List<String> takeRequestPaths(int expected, String... endpoints) throws InterruptedException {
+        List<String> wanted = new ArrayList<>();
+        for (String endpoint : endpoints) {
+            wanted.add("/" + endpoint);
+        }
+        List<String> paths = new ArrayList<>();
+        for (int i = 0; i < 30 && paths.size() < expected; i++) {
+            drainMainThread();
+            RecordedRequest recorded = server.takeRequest(100, TimeUnit.MILLISECONDS);
+            if (recorded != null && wanted.contains(recorded.getPath())) {
+                paths.add(recorded.getPath());
+            }
+        }
+        return paths;
     }
 
     /** Returns the events/track requests that reach the server, in arrival order, up to {@code expected}. */
