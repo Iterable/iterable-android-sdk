@@ -1048,6 +1048,12 @@ public class IterableApi {
      * runs it as soon as that switch finishes, so the SDK ends up on the project asked for last. The
      * callbacks are not merged: each one fires when the project it asked for is live.
      *
+     * Requests are matched by API key alone. A request for the project most recently asked for,
+     * whether it is a no-op or joins the switch already heading there, ignores its config: the
+     * project keeps the config it was started or requested with, so the same key with a different
+     * data region or auth handler has no effect. To run a project under a different config, switch
+     * to it with a different API key.
+     *
      * @param context Application context
      * @param project The project to switch to: its API key together with the config to run it with.
      *                The two are paired in one object so one project's key cannot be combined with
