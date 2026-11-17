@@ -652,11 +652,31 @@ class IterableBackgroundInitializer {
      */
     private static boolean holdCallsForNextSwitch = false;
 
-    /** Main thread only. True while a landed project's callbacks run, so their calls reach it. */
-    private static boolean deliveringLandedCallbacks = false;
+    /** True while a landed project's callbacks run on the main thread, so their calls reach it. */
+    private static volatile boolean deliveringLandedCallbacks = false;
 
+    /**
+     * The most recently requested leg when that delivery started. A call made from a callback after
+     * it requested another switch belongs to that switch. Only touched under {@link #initLock}.
+     */
+    private static Object landedCallbacksTail;
+
+    /** Caller holds {@link #initLock}. */
     private static boolean isDeliveringLandedCallbacks() {
-        return deliveringLandedCallbacks && Looper.myLooper() == Looper.getMainLooper();
+        return deliveringLandedCallbacks && Looper.myLooper() == Looper.getMainLooper()
+                && destinationForQueuedCallLocked() == landedCallbacksTail;
+    }
+
+    /**
+     * A switch claimed after the chain was released is already tearing down, and a call made after
+     * a later request belongs to that request, so the bypass only covers the chain exactly as it
+     * was handed over.
+     */
+    private static void beginLandedCallbackDelivery(@Nullable Object handedOverTo) {
+        synchronized (initLock) {
+            deliveringLandedCallbacks = inFlightLeg == handedOverTo;
+            landedCallbacksTail = destinationForQueuedCallLocked();
+        }
     }
 
     /**
@@ -914,8 +934,8 @@ class IterableBackgroundInitializer {
         };
 
         Runnable notifyCallbacks = () -> {
-            notifySwitchCallbacks(switchCallbacksToNotify, cleanTeardown);
-            notifyInitializationCallbacks(initCallbacksToNotify);
+            notifySwitchCallbacks(switchCallbacksToNotify, cleanTeardown, legOf(nextSwitch.get()));
+            notifyInitializationCallbacks(initCallbacksToNotify, legOf(nextSwitch.get()));
             startPendingSwitch(nextSwitch.get());
         };
 
@@ -931,8 +951,8 @@ class IterableBackgroundInitializer {
         if (drainResult == DrainResult.REJECTED) {
             // New calls run now that the gate is down, but the calls queued during the switch are
             // stranded. Report that as a noisy switch rather than silently dropping the callbacks.
-            notifySwitchCallbacks(switchCallbacksToNotify, false);
-            notifyInitializationCallbacks(initCallbacksToNotify);
+            notifySwitchCallbacks(switchCallbacksToNotify, false, legOf(nextSwitch.get()));
+            notifyInitializationCallbacks(initCallbacksToNotify, legOf(nextSwitch.get()));
             startPendingSwitch(nextSwitch.get());
             return;
         }
@@ -973,20 +993,29 @@ class IterableBackgroundInitializer {
                 IterableProjectSwitcher.switchProject(context, pending.apiKey, pending.config, null, true));
     }
 
-    private static void notifySwitchCallbacks(List<IterableProjectSwitchCallback> callbacks, boolean cleanTeardown) {
+    @Nullable
+    private static Object legOf(@Nullable PendingProjectSwitch pending) {
+        return pending != null ? pending.leg : null;
+    }
+
+    private static void notifySwitchCallbacks(List<IterableProjectSwitchCallback> callbacks, boolean cleanTeardown,
+                                              @Nullable Object handedOverTo) {
         if (callbacks.isEmpty()) {
             return;
         }
         new Handler(Looper.getMainLooper()).post(() -> {
-            deliveringLandedCallbacks = true;
-            for (IterableProjectSwitchCallback callback : callbacks) {
-                try {
-                    callback.onProjectSwitched(IterableProjectSwitchResult.from(cleanTeardown));
-                } catch (Exception e) {
-                    IterableLogger.e(TAG, "Exception in switchProject callback", e);
+            beginLandedCallbackDelivery(handedOverTo);
+            try {
+                for (IterableProjectSwitchCallback callback : callbacks) {
+                    try {
+                        callback.onProjectSwitched(IterableProjectSwitchResult.from(cleanTeardown));
+                    } catch (Exception e) {
+                        IterableLogger.e(TAG, "Exception in switchProject callback", e);
+                    }
                 }
+            } finally {
+                deliveringLandedCallbacks = false;
             }
-            deliveringLandedCallbacks = false;
         });
     }
 
@@ -994,20 +1023,24 @@ class IterableBackgroundInitializer {
      * Callbacks that asked about initialization, not about the switch, so they get the plain
      * no-argument notification rather than the switch's teardown verdict.
      */
-    private static void notifyInitializationCallbacks(List<IterableInitializationCallback> callbacks) {
+    private static void notifyInitializationCallbacks(List<IterableInitializationCallback> callbacks,
+                                                      @Nullable Object handedOverTo) {
         if (callbacks.isEmpty()) {
             return;
         }
         new Handler(Looper.getMainLooper()).post(() -> {
-            deliveringLandedCallbacks = true;
-            for (IterableInitializationCallback callback : callbacks) {
-                try {
-                    callback.onSDKInitialized();
-                } catch (Exception e) {
-                    IterableLogger.e(TAG, "Exception in pending initialization callback", e);
+            beginLandedCallbackDelivery(handedOverTo);
+            try {
+                for (IterableInitializationCallback callback : callbacks) {
+                    try {
+                        callback.onSDKInitialized();
+                    } catch (Exception e) {
+                        IterableLogger.e(TAG, "Exception in pending initialization callback", e);
+                    }
                 }
+            } finally {
+                deliveringLandedCallbacks = false;
             }
-            deliveringLandedCallbacks = false;
         });
     }
 
@@ -1183,6 +1216,7 @@ class IterableBackgroundInitializer {
             isSwitchingProject = false;
             holdCallsForNextSwitch = false;
             deliveringLandedCallbacks = false;
+            landedCallbacksTail = null;
             inFlightSwitchApiKey = null;
             inFlightLeg = null;
             initializationLeg = null;

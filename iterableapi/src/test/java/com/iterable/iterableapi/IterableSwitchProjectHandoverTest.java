@@ -38,8 +38,10 @@ public class IterableSwitchProjectHandoverTest extends BaseTest {
     private static final String API_KEY_A = "project-a-key";
     private static final String API_KEY_B = "project-b-key";
     private static final String API_KEY_C = "project-c-key";
+    private static final String API_KEY_D = "project-d-key";
     private static final String EMAIL_A = "user-a@example.com";
     private static final String EMAIL_B = "user-b@example.com";
+    private static final String EMAIL_D = "user-d@example.com";
 
     private Context context;
     private MockWebServer server;
@@ -97,6 +99,29 @@ public class IterableSwitchProjectHandoverTest extends BaseTest {
         assertTrue(awaitSwitch(landedOnC));
         settle();
         assertEquals(List.of("queuedForC@" + API_KEY_C, "fromAnotherThread@" + API_KEY_C), ran);
+    }
+
+    /**
+     * B lands with C queued, and B's callback asks for D before it identifies a user. That user
+     * was identified after D was requested, so it belongs to D, not to B, which C then tears down.
+     */
+    @Test
+    public void testACallMadeFromTheLandedCallbackAfterItRequestedAnotherSwitchWaitsForThatSwitch() throws Exception {
+        CountDownLatch landedOnB = new CountDownLatch(1);
+        CountDownLatch landedOnD = new CountDownLatch(1);
+
+        switchTo(API_KEY_B, ignored -> {
+            switchTo(API_KEY_D, landed -> landedOnD.countDown());
+            IterableApi.getInstance().setEmail(EMAIL_D);
+            landedOnB.countDown();
+        });
+        switchTo(API_KEY_C, null);
+
+        assertTrue(awaitSwitch(landedOnB));
+        assertTrue(awaitSwitch(landedOnD));
+        settle();
+        assertEquals(API_KEY_D, liveApiKey());
+        assertEquals("the user identified after D was requested belongs to D", EMAIL_D, IterableApi.getInstance().getEmail());
     }
 
     /**
