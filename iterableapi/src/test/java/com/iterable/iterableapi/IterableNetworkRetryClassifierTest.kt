@@ -29,6 +29,31 @@ class IterableNetworkRetryClassifierTest {
     }
 
     @Test
+    fun statusCodeBoundariesAreClassifiedExactly() {
+        val expected = mapOf(
+            199 to Outcome.TERMINAL,
+            200 to Outcome.SUCCESS,
+            299 to Outcome.SUCCESS,
+            300 to Outcome.TERMINAL,
+            399 to Outcome.TERMINAL,
+            400 to Outcome.TERMINAL,
+            499 to Outcome.TERMINAL,
+            500 to Outcome.RETRIABLE,
+            599 to Outcome.RETRIABLE
+        )
+        for ((code, outcome) in expected) {
+            assertEquals("code $code", outcome, IterableNetworkRetryClassifier.classify(code, null))
+        }
+    }
+
+    @Test
+    fun jwtErrorBodyOnANon401IsTerminal() {
+        val body = jwtError(IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD)
+        assertEquals(Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(403, body))
+        assertEquals(Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(400, body))
+    }
+
+    @Test
     fun tooManyRequestsIsTerminal() {
         assertEquals(Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(429, null))
     }
@@ -92,6 +117,49 @@ class IterableNetworkRetryClassifierTest {
         val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineMillis = 10_000L))
         assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 8_000L))
         assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 8_001L))
+    }
+
+    @Test
+    fun hugeDelayDoesNotOverflowTheDeadlineCheck() {
+        val classifier = IterableNetworkRetryClassifier(
+            IterableNetworkRetryPolicy.Builder()
+                .setRetryEnabled(true)
+                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(Long.MAX_VALUE))
+                .build()
+        )
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start))
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 1L))
+    }
+
+    @Test
+    fun customMaxAttemptsIsHonoured() {
+        val classifier = IterableNetworkRetryClassifier(
+            IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).setMaxAttempts(3).build()
+        )
+        assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 2, start, start))
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 3, start, start))
+    }
+
+    @Test
+    fun singleAttemptNeverRetries() {
+        val classifier = IterableNetworkRetryClassifier(
+            IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).setMaxAttempts(1).build()
+        )
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start))
+    }
+
+    @Test
+    fun customIntervalFeedsTheDelayAndTheDeadline() {
+        val classifier = IterableNetworkRetryClassifier(
+            IterableNetworkRetryPolicy.Builder()
+                .setRetryEnabled(true)
+                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(500L))
+                .setTotalDeadlineMillis(10_000L)
+                .build()
+        )
+        assertEquals(500L, classifier.delayForAttempt(1))
+        assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 9_500L))
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 9_501L))
     }
 
     @Test

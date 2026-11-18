@@ -3,13 +3,16 @@ package com.iterable.iterableapi;
 import androidx.annotation.NonNull;
 
 /**
- * Retry policy for API requests that fail with a server error, a timeout or a connection failure.
- * Retry is disabled by default. The policy is not applied to requests yet.
+ * Retry policy for API requests that fail with a server error (5xx) or without a response, which covers
+ * any client-side failure including connection errors and timeouts.
+ * The policy only takes effect once enabled; when it is not enabled (the default), the SDK's existing
+ * request retry behaviour is unchanged. The policy is not applied to requests yet.
  */
 public final class IterableNetworkRetryPolicy {
 
     /**
-     * Retry disabled, 5 attempts, fixed 2 second interval, 60 second total deadline.
+     * Not enabled, so the SDK's existing request retry behaviour is unchanged. Once enabled: 5 attempts,
+     * fixed 2 second interval, 60 second total deadline.
      */
     @NonNull
     public static final IterableNetworkRetryPolicy DEFAULT = new Builder().build();
@@ -56,16 +59,9 @@ public final class IterableNetworkRetryPolicy {
      */
     public static final class BackoffPolicy {
 
-        public enum Type {
-            FIXED
-        }
-
-        @NonNull
-        private final Type type;
         private final long intervalMillis;
 
-        private BackoffPolicy(@NonNull Type type, long intervalMillis) {
-            this.type = type;
+        private BackoffPolicy(long intervalMillis) {
             this.intervalMillis = intervalMillis;
         }
 
@@ -78,12 +74,7 @@ public final class IterableNetworkRetryPolicy {
             if (intervalMillis < 0) {
                 throw new IllegalArgumentException("intervalMillis must be >= 0");
             }
-            return new BackoffPolicy(Type.FIXED, intervalMillis);
-        }
-
-        @NonNull
-        public Type getType() {
-            return type;
+            return new BackoffPolicy(intervalMillis);
         }
 
         public long getIntervalMillis() {
@@ -96,10 +87,12 @@ public final class IterableNetworkRetryPolicy {
     }
 
     public static final class Builder {
+        private static final BackoffPolicy DEFAULT_BACKOFF_POLICY = BackoffPolicy.fixed(2000L);
+
         private boolean retryEnabled = false;
         private int maxAttempts = 5;
         @NonNull
-        private BackoffPolicy backoffPolicy = BackoffPolicy.fixed(2000L);
+        private BackoffPolicy backoffPolicy = DEFAULT_BACKOFF_POLICY;
         private long totalDeadlineMillis = 60_000L;
 
         @NonNull
@@ -122,7 +115,7 @@ public final class IterableNetworkRetryPolicy {
 
         @NonNull
         public Builder setBackoffPolicy(@NonNull BackoffPolicy backoffPolicy) {
-            this.backoffPolicy = backoffPolicy;
+            this.backoffPolicy = backoffPolicy != null ? backoffPolicy : DEFAULT_BACKOFF_POLICY;
             return this;
         }
 
