@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Added `IterableNetworkRetryPolicy` and `IterableConfig.Builder.setNetworkRetryPolicy()` to configure retries for API requests that fail with a server error (5xx), a timeout or a connection failure. The default policy has retry disabled (5 attempts, fixed 2 second interval, 60 second total deadline once enabled). The policy is not applied to requests yet, so request behaviour is unchanged.
+
 ## [3.11.1]
 
 ### Fixed
