@@ -235,7 +235,7 @@ abstract class BaseIntegrationTest {
         dataFields: Map<String, Any>? = null,
         callback: ((Boolean) -> Unit)? = null
     ) {
-        testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+        testUtils.triggerCampaignViaAPI(campaignId, recipientEmail, dataFields, callback = callback)
     }
 
     /**
@@ -247,7 +247,7 @@ abstract class BaseIntegrationTest {
         dataFields: Map<String, Any>? = null,
         callback: ((Boolean) -> Unit)? = null
     ) {
-        testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback)
+        testUtils.triggerPushCampaignViaAPI(campaignId, recipientEmail, dataFields, callback = callback)
     }
 
 

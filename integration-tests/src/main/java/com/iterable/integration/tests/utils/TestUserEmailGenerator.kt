@@ -25,4 +25,13 @@ object TestUserEmailGenerator {
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = UTC }
         return "${formatter.format(date)}-integration-test-user@test.com"
     }
+
+    /**
+     * Project B's user, derived from project A's by a `-b` suffix on the local part, as the iOS
+     * harness does. A distinct identity makes a call replayed into the wrong project visible.
+     */
+    fun forProjectB(emailA: String): String {
+        val at = emailA.lastIndexOf('@')
+        return if (at < 0) "$emailA-b" else "${emailA.substring(0, at)}-b${emailA.substring(at)}"
+    }
 }
