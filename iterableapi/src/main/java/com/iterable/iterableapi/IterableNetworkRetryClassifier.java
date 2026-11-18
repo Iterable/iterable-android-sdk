@@ -21,7 +21,8 @@ class IterableNetworkRetryClassifier {
         this.policy = policy;
     }
 
-    // Expects the code as IterableRequestTask reports it: 0 for transport failures and timeouts.
+    // Expects the code as IterableRequestTask reports it: 0 for any client-side failure to get a response,
+    // including connection errors and timeouts.
     @NonNull
     static Outcome classify(int responseCode, @Nullable JSONObject json) {
         if (responseCode >= 200 && responseCode < 300) {
@@ -41,7 +42,11 @@ class IterableNetworkRetryClassifier {
             return false;
         }
         long deadline = policy.getTotalDeadlineMillis();
-        return deadline == 0 || nowMillis + delayForAttempt(failedAttempt) - firstAttemptStartMillis <= deadline;
+        if (deadline == 0) {
+            return true;
+        }
+        long elapsed = Math.max(0L, nowMillis - firstAttemptStartMillis);
+        return elapsed <= deadline && delayForAttempt(failedAttempt) <= deadline - elapsed;
     }
 
     long delayForAttempt(int failedAttempt) {

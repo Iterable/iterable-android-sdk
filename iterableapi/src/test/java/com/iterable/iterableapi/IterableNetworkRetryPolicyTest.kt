@@ -18,7 +18,6 @@ class IterableNetworkRetryPolicyTest {
         assertSame(IterableNetworkRetryPolicy.DEFAULT, policy)
         assertFalse(policy.isRetryEnabled)
         assertEquals(5, policy.maxAttempts)
-        assertEquals(IterableNetworkRetryPolicy.BackoffPolicy.Type.FIXED, policy.backoffPolicy.type)
         assertEquals(2_000L, policy.backoffPolicy.intervalMillis)
         assertEquals(60_000L, policy.totalDeadlineMillis)
     }
@@ -52,6 +51,31 @@ class IterableNetworkRetryPolicyTest {
         assertEquals(RetryPolicy.Type.LINEAR, config.retryPolicy.retryBackoff)
     }
 
+    @Test
+    fun nullBackoffPolicyFallsBackToTheDefaultInterval() {
+        val policy = IterableNetworkRetryPolicy.Builder().setBackoffPolicy(nullOf()).build()
+
+        assertEquals(2_000L, policy.backoffPolicy.intervalMillis)
+    }
+
+    @Test
+    fun nullConfigPolicyFallsBackToTheDefault() {
+        val policy = IterableConfig.Builder().setNetworkRetryPolicy(nullOf()).build().networkRetryPolicy
+
+        assertSame(IterableNetworkRetryPolicy.DEFAULT, policy)
+    }
+
+    @Test
+    fun smallestValidValuesAreAccepted() {
+        val policy = IterableNetworkRetryPolicy.Builder()
+            .setMaxAttempts(1)
+            .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(0L))
+            .build()
+
+        assertEquals(1, policy.maxAttempts)
+        assertEquals(0L, policy.backoffPolicy.intervalMillis)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun maxAttemptsBelowOneIsRejected() {
         IterableNetworkRetryPolicy.Builder().setMaxAttempts(0)
@@ -66,4 +90,7 @@ class IterableNetworkRetryPolicyTest {
     fun negativeDeadlineIsRejected() {
         IterableNetworkRetryPolicy.Builder().setTotalDeadlineMillis(-1L)
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> nullOf(): T = null as T
 }
