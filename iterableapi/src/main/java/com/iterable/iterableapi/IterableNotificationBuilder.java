@@ -27,6 +27,9 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
     private String expandedContent;
     int requestCode;
     IterableNotificationData iterableNotificationData;
+    boolean imageLoaded;
+    boolean imageDownloadFailed;
+    int imageTimeoutMillis;
 
     /**
      * Creates a custom Notification builder
@@ -70,11 +73,17 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
      */
     public Notification build() {
         NotificationCompat.Style style = null;
+        imageLoaded = false;
+        imageDownloadFailed = false;
 
         if (this.imageUrl != null) {
             try {
                 URL url = new URL(this.imageUrl);
                 URLConnection connection = url.openConnection();
+                if (imageTimeoutMillis > 0) {
+                    connection.setConnectTimeout(imageTimeoutMillis);
+                    connection.setReadTimeout(imageTimeoutMillis);
+                }
                 connection.setDoInput(true);
                 connection.connect();
                 Bitmap notificationImage = BitmapFactory.decodeStream(connection.getInputStream());
@@ -83,12 +92,14 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
                             .bigPicture(notificationImage)
                             .setSummaryText(expandedContent);
                     this.setLargeIcon(notificationImage);
+                    imageLoaded = true;
                 } else {
                     IterableLogger.e(TAG, "Notification image could not be loaded from url: " + this.imageUrl);
                 }
             } catch (MalformedURLException e) {
                 IterableLogger.e(TAG, e.toString());
             } catch (IOException e) {
+                imageDownloadFailed = true;
                 IterableLogger.e(TAG, e.toString());
             }
         }

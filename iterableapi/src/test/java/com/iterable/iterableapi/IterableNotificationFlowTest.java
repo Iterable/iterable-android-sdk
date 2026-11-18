@@ -1,24 +1,44 @@
 package com.iterable.iterableapi;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.os.Bundle;
+import android.service.notification.StatusBarNotification;
 
 import androidx.work.Configuration;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.OutOfQuotaPolicy;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+import androidx.work.impl.model.WorkSpec;
 import androidx.work.testing.SynchronousExecutor;
 import androidx.work.testing.WorkManagerTestInitHelper;
 
 import com.google.firebase.messaging.RemoteMessage;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
+import org.robolectric.annotation.Config;
 
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -26,6 +46,8 @@ import static org.mockito.Mockito.when;
 
 
 public class IterableNotificationFlowTest extends BaseTest {
+
+    private static final int IMAGE_PUSH_NOTIFICATION_ID = Math.abs("abc123imagepush".hashCode());
 
     private MockWebServer server;
     private IterableNotificationHelper.IterableNotificationHelperImpl helperSpy;
@@ -435,5 +457,112 @@ public class IterableNotificationFlowTest extends BaseTest {
         Bundle capturedBundle = bundleCaptor.getValue();
         assertEquals(testTitle, capturedBundle.getString(IterableConstants.ITERABLE_DATA_TITLE));
         assertEquals(testBody, capturedBundle.getString(IterableConstants.ITERABLE_DATA_BODY));
+    }
+
+    @Test
+    @Config(sdk = {31, 34})
+    public void testImageDownloadFailurePostsNotificationThenRetryAddsImage() throws Exception {
+        MockWebServer imageServer = new MockWebServer();
+        imageServer.enqueue(new MockResponse().setResponseCode(503));
+        imageServer.enqueue(IterableTestUtils.getImageResponse());
+        imageServer.start();
+        WorkManager workManagerSpy = spy(WorkManager.getInstance(getContext()));
+        try (MockedStatic<WorkManager> workManagerStatic = mockStatic(WorkManager.class)) {
+            workManagerStatic.when(() -> WorkManager.getInstance(any(Context.class))).thenReturn(workManagerSpy);
+            IterableFirebaseMessagingService.handleMessageReceived(getContext(),
+                    imagePush(imageServer.url("/image.png").toString()));
+        }
+
+        StatusBarNotification[] shown = getNotificationManager().getActiveNotifications();
+        assertEquals(1, shown.length);
+        assertEquals(IMAGE_PUSH_NOTIFICATION_ID, shown[0].getId());
+        assertFalse("Notification should be posted without the image",
+                shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+
+        List<WorkInfo> retries = WorkManager.getInstance(getContext())
+                .getWorkInfosForUniqueWork(
+                        IterableNotificationWorkScheduler.getImageRetryWorkName(IMAGE_PUSH_NOTIFICATION_ID))
+                .get(5, TimeUnit.SECONDS);
+        assertEquals(1, retries.size());
+        assertEquals(WorkInfo.State.ENQUEUED, retries.get(0).getState());
+
+        ArgumentCaptor<OneTimeWorkRequest> retryCaptor = ArgumentCaptor.forClass(OneTimeWorkRequest.class);
+        verify(workManagerSpy).enqueueUniqueWork(
+                eq(IterableNotificationWorkScheduler.getImageRetryWorkName(IMAGE_PUSH_NOTIFICATION_ID)),
+                eq(ExistingWorkPolicy.KEEP),
+                retryCaptor.capture());
+        WorkSpec retrySpec = retryCaptor.getValue().getWorkSpec();
+        assertTrue("Image retry should be expedited", retrySpec.expedited);
+        assertEquals(NetworkType.CONNECTED, retrySpec.constraints.getRequiredNetworkType());
+        assertEquals(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST, retrySpec.outOfQuotaPolicy);
+
+        WorkManagerTestInitHelper.getTestDriver(getContext()).setAllConstraintsMet(retries.get(0).getId());
+        long postTime = retrySpec.input.getLong(IterableNotificationImageRetryWorker.KEY_ORIGINAL_POST_TIME, 0L);
+        assertTrue("Retry should wait out the DNS failure cache", System.currentTimeMillis() - postTime
+                >= IterableNotificationImageRetryWorker.MIN_RETRY_DELAY_AFTER_POST_MILLIS);
+
+        shown = getNotificationManager().getActiveNotifications();
+        assertEquals(1, shown.length);
+        assertTrue("Retry should add the image",
+                shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+        assertTrue((shown[0].getNotification().flags & Notification.FLAG_ONLY_ALERT_ONCE) != 0);
+        imageServer.shutdown();
+    }
+
+    @Test
+    public void testImageDownloadFailureWithoutMessageIdDoesNotScheduleRetry() throws Exception {
+        JSONObject payload = new JSONObject(
+                IterableTestUtils.getImagePushPayload(IterableTestUtils.getUnreachableUrl()));
+        payload.remove(IterableConstants.KEY_MESSAGE_ID);
+
+        IterableFirebaseMessagingService.handleMessageReceived(getContext(), push(payload.toString()));
+
+        assertEquals(1, getNotificationManager().getActiveNotifications().length);
+        assertTrue("No image retry should be scheduled without a messageId", getImageRetryWork().isEmpty());
+    }
+
+    @Test
+    @Config(sdk = 30)
+    public void testImageDownloadFailureBelowApi31DoesNotScheduleRetry() throws Exception {
+        IterableFirebaseMessagingService.handleMessageReceived(getContext(),
+                imagePush(IterableTestUtils.getUnreachableUrl()));
+
+        StatusBarNotification[] shown = getNotificationManager().getActiveNotifications();
+        assertEquals(1, shown.length);
+        assertFalse(shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+        assertTrue("No image retry should be scheduled below API 31", getImageRetryWork().isEmpty());
+    }
+
+    @Test
+    public void testSuccessfulImageDownloadDoesNotScheduleRetry() throws Exception {
+        String imageUrl = getClass().getClassLoader().getResource("350x150.png").toString();
+
+        IterableFirebaseMessagingService.handleMessageReceived(getContext(), imagePush(imageUrl));
+
+        StatusBarNotification[] shown = getNotificationManager().getActiveNotifications();
+        assertEquals(1, shown.length);
+        assertTrue(shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+        assertTrue("No image retry should be scheduled when the image loads", getImageRetryWork().isEmpty());
+    }
+
+    private RemoteMessage imagePush(String imageUrl) throws Exception {
+        return push(IterableTestUtils.getImagePushPayload(imageUrl));
+    }
+
+    private RemoteMessage push(String iterablePayload) {
+        RemoteMessage.Builder builder = new RemoteMessage.Builder("test@gcm.googleapis.com");
+        builder.addData(IterableConstants.ITERABLE_DATA_KEY, iterablePayload);
+        builder.addData(IterableConstants.ITERABLE_DATA_BODY, "Image push");
+        return builder.build();
+    }
+
+    private NotificationManager getNotificationManager() {
+        return (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+    }
+
+    private List<WorkInfo> getImageRetryWork() throws Exception {
+        return WorkManager.getInstance(getContext())
+                .getWorkInfosByTag(IterableNotificationImageRetryWorker.class.getName())
+                .get(5, TimeUnit.SECONDS);
     }
 }
