@@ -46,10 +46,10 @@ class IterableNetworkRetryClassifier {
             return true;
         }
         long elapsed = Math.max(0L, nowMillis - firstAttemptStartMillis);
-        return elapsed <= deadline && delayForAttempt(failedAttempt) <= deadline - elapsed;
+        return elapsed <= deadline && delayMillis() <= deadline - elapsed;
     }
 
-    long delayForAttempt(int failedAttempt) {
-        return policy.getBackoffPolicy().delayForAttempt(failedAttempt);
+    long delayMillis() {
+        return policy.getBackoffPolicy().delayMillis();
     }
 }
