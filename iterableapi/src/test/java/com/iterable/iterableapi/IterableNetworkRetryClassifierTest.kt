@@ -157,7 +157,7 @@ class IterableNetworkRetryClassifierTest {
                 .setTotalDeadlineMillis(10_000L)
                 .build()
         )
-        assertEquals(500L, classifier.delayForAttempt(1))
+        assertEquals(500L, classifier.delayMillis())
         assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 9_500L))
         assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 9_501L))
     }
@@ -171,8 +171,6 @@ class IterableNetworkRetryClassifierTest {
     @Test
     fun defaultDelayIsAFixedTwoSeconds() {
         val classifier = IterableNetworkRetryClassifier(enabledPolicy())
-        for (attempt in 1..5) {
-            assertEquals(2_000L, classifier.delayForAttempt(attempt))
-        }
+        assertEquals(2_000L, classifier.delayMillis())
     }
 }

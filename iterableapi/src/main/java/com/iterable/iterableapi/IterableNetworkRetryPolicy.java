@@ -81,7 +81,7 @@ public final class IterableNetworkRetryPolicy {
             return intervalMillis;
         }
 
-        long delayForAttempt(int attempt) {
+        long delayMillis() {
             return intervalMillis;
         }
     }
