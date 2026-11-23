@@ -13,4 +13,10 @@ class IterableApiHelper {
     fun resetSharedInstance() {
         IterableApi.sharedInstance = IterableApi()
     }
+
+    // `_apiKey` and `config` are package-private. The project switch screen and test read the live
+    // project through these instead of widening SDK visibility.
+    fun currentApiKey(): String? = IterableApi.getInstance()._apiKey
+
+    fun currentBaseUrl(): String? = IterableApi.getInstance().config?.dataRegion?.endpoint
 }

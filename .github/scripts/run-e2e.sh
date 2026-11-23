@@ -13,6 +13,12 @@
 #   ITERABLE_API_KEY            — set as buildConfigField at runtime; not echoed.
 #   ITERABLE_SERVER_API_KEY     — set as buildConfigField at runtime; not echoed.
 #   ITERABLE_TEST_USER_EMAIL    — used by tests; not echoed (length only).
+#   ITERABLE_REQUEST_CAPTURE    optional; "true" builds the app with request capture on
+#                                 and fails the run if no requests were captured.
+#   ITERABLE_API_KEY_B, ITERABLE_SERVER_API_KEY_B, ITERABLE_PROJECT_ID_B,
+#   ITERABLE_API_KEY_C, ITERABLE_API_KEY_D
+#                               project switch config; not echoed (length only). Empty B keys
+#                                 only warn here; ProjectSwitchIntegrationTest fails in CI.
 #   GITHUB_WORKSPACE            — set by the runner; root for diagnostics output.
 #
 # Outputs:
@@ -20,6 +26,7 @@
 #     hierarchy.xml    — UiAutomator dump at the moment of test exit
 #     screenshot.png   — device screenshot at the moment of test exit
 #     logcat.txt       — full device logcat from start of test invocation
+#     request-capture.txt, BCIT-Capture lines (host + masked key), capture runs only
 #
 # Exit code:
 #   The gradle test task's exit code, propagated.
@@ -43,6 +50,13 @@ log "Diagnostics will be written to: $DIAG_DIR"
 log "ITERABLE_API_KEY length:        ${#ITERABLE_API_KEY}"
 log "ITERABLE_SERVER_API_KEY length: ${#ITERABLE_SERVER_API_KEY}"
 log "ITERABLE_TEST_USER_EMAIL length: ${#ITERABLE_TEST_USER_EMAIL}"
+log "ITERABLE_REQUEST_CAPTURE:        ${ITERABLE_REQUEST_CAPTURE:-false}"
+# Project switch config. B's keys feed ProjectSwitchIntegrationTest; the rest only feed the switch screen.
+for var in ITERABLE_API_KEY_B ITERABLE_SERVER_API_KEY_B ITERABLE_PROJECT_ID_B ITERABLE_API_KEY_C ITERABLE_API_KEY_D; do
+  value="${!var:-}"
+  log "$var length: ${#value}"
+done
+log "ITERABLE_DATA_REGION_B: ${ITERABLE_DATA_REGION_B:-<unset, US>}"
 
 # Fail fast if a BCIT_* secret didn't resolve. Without this, an empty secret falls
 # through to the gradle default 'test_api_key' (integration-tests/build.gradle) and
@@ -52,6 +66,14 @@ if [[ "${CI:-false}" == "true" ]]; then
     log "::error::One or more BCIT_* secrets are empty. Configure BCIT_ITERABLE_API_KEY, BCIT_ITERABLE_SERVER_API_KEY, BCIT_ITERABLE_TEST_USER_EMAIL on this branch/repo."
     exit 1
   fi
+  # A warning only, so the A-only tests still run. ProjectSwitchIntegrationTest fails itself in CI
+  # when B is empty, rather than skipping as it does locally.
+  if [[ -z "${ITERABLE_API_KEY_B:-}" || -z "${ITERABLE_SERVER_API_KEY_B:-}" ]]; then
+    log "::warning::Project B secrets are empty, so ProjectSwitchIntegrationTest will fail. Configure BCIT_ITERABLE_API_KEY_B and BCIT_ITERABLE_SERVER_API_KEY_B on this branch/repo."
+  fi
+  for var in ITERABLE_PROJECT_ID_B ITERABLE_API_KEY_C ITERABLE_API_KEY_D; do
+    [[ -z "${!var:-}" ]] && log "::warning::BCIT_$var is empty. Only the switch screen uses it, no CI test depends on it."
+  done
 fi
 
 # Grant permissions; ignore failures (the package may not be installed yet,
@@ -115,6 +137,25 @@ gradle_exit=0
 
 if [[ "$gradle_exit" -ne 0 ]]; then
   log "::error::Gradle test task failed with exit code $gradle_exit — see bcit-integration-diagnostics artifact"
+fi
+
+# Reads the streaming logcat.txt rather than `adb logcat -d`: the device ring buffer
+# rolls over during a long suite and would lose the install line logged at app start.
+if [[ "${ITERABLE_REQUEST_CAPTURE:-false}" == "true" ]]; then
+  sleep 2
+  grep "BCIT-Capture" "$DIAG_DIR/logcat.txt" > "$DIAG_DIR/request-capture.txt" || true
+  installed_count=$(grep -c "Request capture installed" "$DIAG_DIR/request-capture.txt" || true)
+  request_count=$(grep -cE "BCIT-Capture: [A-Z]+ api\." "$DIAG_DIR/request-capture.txt" || true)
+  log "Request capture: installed=$installed_count requests=$request_count"
+  grep -oE "BCIT-Capture: [A-Z]+ api\.[a-z.]*iterable\.com" "$DIAG_DIR/request-capture.txt" \
+    | sed 's/BCIT-Capture: //' | sort | uniq -c || true
+  log "Requests per project label:"
+  grep -oE "BCIT-Capture: [A-Z]+ api\..* \[[A-D?]\]$" "$DIAG_DIR/request-capture.txt" \
+    | grep -oE "\[[A-D?]\]$" | sort | uniq -c || true
+  if [[ "$installed_count" -eq 0 || "$request_count" -eq 0 ]]; then
+    log "::error::ITERABLE_REQUEST_CAPTURE=true but no requests were captured, see request-capture.txt and logcat.txt"
+    [[ "$gradle_exit" -eq 0 ]] && gradle_exit=1
+  fi
 fi
 
 # capture_post_test runs via EXIT trap; just propagate the exit code.

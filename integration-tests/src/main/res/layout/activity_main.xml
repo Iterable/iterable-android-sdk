@@ -157,6 +157,14 @@
                 android:layout_marginBottom="8dp"
                 style="@style/Widget.Material3.Button" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnProjectSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/project_switch_test"
+                android:layout_marginBottom="8dp"
+                style="@style/Widget.Material3.Button" />
+
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>

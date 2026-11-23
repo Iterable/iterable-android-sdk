@@ -50,4 +50,12 @@ class TestUserEmailGeneratorTest {
             TestUserEmailGenerator.generate(almostMidnightUtc)
         )
     }
+
+    @Test
+    fun `project B user adds a -b suffix to the local part`() {
+        assertEquals(
+            "2026-06-02-integration-test-user-b@test.com",
+            TestUserEmailGenerator.forProjectB("2026-06-02-integration-test-user@test.com")
+        )
+    }
 }

@@ -7,8 +7,8 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableConfig
-import com.iterable.iterableapi.IterableUrlHandler
 import com.iterable.integration.tests.activities.*
+import com.iterable.integration.tests.utils.BcitProjects
 import com.iterable.integration.tests.utils.IntegrationTestUtils
 import com.iterable.integration.tests.utils.TestUserEmailOverride
 import com.iterable.integration.tests.utils.maskEmail
@@ -51,31 +51,10 @@ class MainActivity : AppCompatActivity() {
             val config = IterableConfig.Builder()
                 .setAutoPushRegistration(true)
                 .setEnableEmbeddedMessaging(true)
-                .setInAppDisplayInterval(2.0)
-                .setUrlHandler(object : IterableUrlHandler {
-                    override fun handleIterableURL(url: android.net.Uri, context: com.iterable.iterableapi.IterableActionContext): Boolean {
-                        Log.d(TAG, "Deep link handled: $url")
-                        // Navigate to deep link test activity
-                        val intent = Intent(this@MainActivity, DeepLinkTestActivity::class.java)
-                        intent.putExtra(EXTRA_DEEP_LINK_URL, url.toString())
-                        startActivity(intent)
-                        return false
-                    }
-                })
-                .setCustomActionHandler(object : com.iterable.iterableapi.IterableCustomActionHandler {
-                    override fun handleIterableCustomAction(
-                        action: com.iterable.iterableapi.IterableAction,
-                        actionContext: com.iterable.iterableapi.IterableActionContext
-                    ): Boolean {
-                        val actionType = action.getType()
-                        // Log action.data()
-                        val actionData = action.getData()
-                        Log.d(TAG, "Custom action received: type=$actionType, data=$actionData")
-                        // You can add custom logic here to handle different action types
-                        // For now, just log and return true to indicate the action was handled
-                        return false
-                    }
-                })
+                .setInAppDisplayInterval(BcitHandlers.IN_APP_DISPLAY_INTERVAL_SECONDS)
+                .setAllowedProtocols(BcitHandlers.ALLOWED_PROTOCOLS)
+                .setUrlHandler(BcitHandlers.urlHandler(this))
+                .setCustomActionHandler(BcitHandlers.customActionHandler)
                 .build()
             
             IterableApi.initialize(this, BuildConfig.ITERABLE_API_KEY, config)
@@ -121,6 +100,14 @@ class MainActivity : AppCompatActivity() {
         
         findViewById<android.widget.Button>(R.id.btnCampaignTrigger).setOnClickListener {
             startActivity(Intent(this@MainActivity, CampaignTriggerTestActivity::class.java))
+        }
+
+        findViewById<android.widget.Button>(R.id.btnProjectSwitch).apply {
+            isEnabled = BcitProjects.isBConfigured
+            if (!isEnabled) setText(R.string.project_switch_test_unconfigured)
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, ProjectSwitchTestActivity::class.java))
+            }
         }
         
         findViewById<android.widget.Button>(R.id.btnRunAllTests).setOnClickListener {

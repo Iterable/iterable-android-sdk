@@ -7,9 +7,9 @@ import com.google.gson.Gson
 import com.iterable.iterableapi.IterableApi
 import com.iterable.iterableapi.IterableInAppMessage
 import com.iterable.iterableapi.IterableEmbeddedMessage
-import com.iterable.integration.tests.BuildConfig
 import com.iterable.integration.tests.TestConstants
 import okhttp3.*
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
@@ -20,9 +20,12 @@ class IntegrationTestUtils(private val context: Context) {
     
     companion object {
         private const val TAG = "IntegrationTestUtils"
-        private const val ITERABLE_API_BASE_URL = "https://api.iterable.com"
-        private const val ITERABLE_SEND_PUSH_ENDPOINT = "/api/push/target"
-        private const val ITERABLE_INAPP_TARGET_ENDPOINT = "/api/inApp/target"
+        // Relative to BcitProject.serverBaseUrl, which carries the project's region.
+        private const val ITERABLE_SEND_PUSH_ENDPOINT = "push/target"
+        private const val ITERABLE_INAPP_TARGET_ENDPOINT = "inApp/target"
+        private const val ITERABLE_GET_USER_ENDPOINT = "users/getByEmail"
+        private const val ITERABLE_UPDATE_USER_ENDPOINT = "users/update"
+        private const val UNKNOWN_EMAIL_ERROR = "UnknownEmailError"
     }
     
     private val httpClient = OkHttpClient()
@@ -126,15 +129,15 @@ class IntegrationTestUtils(private val context: Context) {
     }
 
     // Campaign Triggering Methods - Using Server-Side API
-    fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+    fun triggerCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, project: BcitProject = BcitProjects.A, callback: ((Boolean) -> Unit)? = null) {
         // Execute on background thread to avoid NetworkOnMainThreadException
         Thread {
             try {
                 val payload = createCampaignTriggerPayload(campaignId, recipientEmail, dataFields)
                 
                 val request = Request.Builder()
-                    .url("$ITERABLE_API_BASE_URL$ITERABLE_INAPP_TARGET_ENDPOINT")
-                    .addHeader("Api-Key", BuildConfig.ITERABLE_SERVER_API_KEY)
+                    .url("${project.serverBaseUrl}$ITERABLE_INAPP_TARGET_ENDPOINT")
+                    .addHeader("Api-Key", project.serverApiKey)
                     .addHeader("Content-Type", "application/json")
                     .post(payload.toRequestBody("application/json".toMediaType()))
                     .build()
@@ -159,15 +162,15 @@ class IntegrationTestUtils(private val context: Context) {
         }.start()
     }
     
-    fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, callback: ((Boolean) -> Unit)? = null) {
+    fun triggerPushCampaignViaAPI(campaignId: Int, recipientEmail: String = TestConstants.TEST_USER_EMAIL, dataFields: Map<String, Any>? = null, project: BcitProject = BcitProjects.A, callback: ((Boolean) -> Unit)? = null) {
         // Execute on background thread to avoid NetworkOnMainThreadException
         Thread {
             try {
                 val payload = createPushCampaignTriggerPayload(campaignId, recipientEmail, dataFields)
                 
                 val request = Request.Builder()
-                    .url("$ITERABLE_API_BASE_URL$ITERABLE_SEND_PUSH_ENDPOINT")
-                    .addHeader("Api-Key", BuildConfig.ITERABLE_SERVER_API_KEY)
+                    .url("${project.serverBaseUrl}$ITERABLE_SEND_PUSH_ENDPOINT")
+                    .addHeader("Api-Key", project.serverApiKey)
                     .addHeader("Content-Type", "application/json")
                     .post(payload.toRequestBody("application/json".toMediaType()))
                     .build()
@@ -191,6 +194,68 @@ class IntegrationTestUtils(private val context: Context) {
             }
         }.start()
     }
+
+    /**
+     * Creates [email] in [project] with the project's server key unless it already exists there.
+     * Blocking, so call it off the main thread.
+     */
+    fun ensureUserExists(email: String, project: BcitProject): Boolean {
+        lastErrorMessage = null
+        if (project.serverApiKey.isBlank()) {
+            Log.w(TAG, "No server key for project ${project.label}, cannot ensure ${maskEmail(email)} exists")
+            return false
+        }
+        return try {
+            val lookup = Request.Builder()
+                .url("${project.serverBaseUrl}$ITERABLE_GET_USER_ENDPOINT".toHttpUrl().newBuilder()
+                    .addQueryParameter("email", email)
+                    .build())
+                .addHeader("Api-Key", project.serverApiKey)
+                .get()
+                .build()
+            val exists = httpClient.newCall(lookup).execute().use { response ->
+                val body = response.body?.string().orEmpty()
+                when {
+                    response.isSuccessful -> JSONObject(body.ifBlank { "{}" }).has("user")
+                    // Email-based projects answer an unknown email with {}, hybrid ones with this.
+                    response.code == 400 && errorCodeOf(body) == UNKNOWN_EMAIL_ERROR -> false
+                    else -> {
+                        lastErrorMessage = "HTTP ${response.code}: ${body.replace(email, maskEmail(email))}"
+                        Log.e(TAG, "User lookup failed on project ${project.label}: $lastErrorMessage")
+                        return false
+                    }
+                }
+            }
+            if (exists) {
+                Log.d(TAG, "User ${maskEmail(email)} already exists on project ${project.label}")
+                return true
+            }
+
+            val payload = JSONObject().put("email", email).put("dataFields", JSONObject()).toString()
+            val create = Request.Builder()
+                .url("${project.serverBaseUrl}$ITERABLE_UPDATE_USER_ENDPOINT")
+                .addHeader("Api-Key", project.serverApiKey)
+                .post(payload.toRequestBody("application/json".toMediaType()))
+                .build()
+            httpClient.newCall(create).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val body = response.body?.string().orEmpty()
+                    lastErrorMessage = "HTTP ${response.code}: ${body.replace(email, maskEmail(email))}"
+                    Log.e(TAG, "User create failed on project ${project.label}: $lastErrorMessage")
+                } else {
+                    Log.d(TAG, "Created user ${maskEmail(email)} on project ${project.label}")
+                }
+                response.isSuccessful
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error ensuring user exists on project ${project.label}", e)
+            lastErrorMessage = e.toString()
+            false
+        }
+    }
+
+    private fun errorCodeOf(body: String): String? =
+        runCatching { JSONObject(body).optString("code") }.getOrNull()
     
     // Campaign Payload Creation Methods
     private fun createCampaignTriggerPayload(campaignId: Int, recipientEmail: String, dataFields: Map<String, Any>?): String {
